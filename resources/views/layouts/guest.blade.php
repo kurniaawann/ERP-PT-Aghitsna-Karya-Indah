@@ -11,7 +11,6 @@
     {{-- Vite Assets --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- Tambahan CSS opsional --}}
    
 </head>
 
