@@ -15,7 +15,7 @@
     <div class="flex h-screen">
         <!-- Sidebar -->
         <aside id="sidebar" class="sidebar-transition bg-white shadow-lg w-64 fixed lg:static inset-y-0 left-0 z-50 transform -translate-x-full lg:translate-x-0 flex flex-col">
-            <!-- Header Sidebar -->
+            <!-- Header Sidebar --> 
             <div class="p-4 border-b border-gray-200 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
@@ -32,12 +32,24 @@
             <!-- Navigasi Sidebar -->
             <nav class="flex-1 overflow-y-auto py-4">
                 <ul class="space-y-1 px-3">
-                    <!-- Item Dashboard -->
+                    <!--  Dashboard -->
                     <li>
                         <a href="{{ url('/dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 group active-sidebar-item" data-menu="dashboard">
                             <i class="fas fa-tachometer-alt w-5 text-gray-400 group-hover:text-blue-500"></i>
                             <span class="ml-3 font-medium">Dashboard</span>
                             <span class="active-indicator ml-auto w-2 h-8 bg-primary rounded-l-lg hidden"></span>
+                             <!-- <span class="active-indicator mr-auto w-2 h-8 bg-primary rounded-r-lg hidden"></span> -->
+
+                        </a>
+                    </li>
+                    <!-- Items -->
+                    <li>
+                        <a href="{{ url('/item') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 group active-sidebar-item" data-menu="item">
+                            <i class="fas fa-boxes w-5 text-gray-400 group-hover:text-blue-500"></i>
+                            <span class="ml-3 font-medium">Data Barang</span>
+                            <span class="active-indicator ml-auto w-2 h-8 bg-primary rounded-l-lg hidden"></span>
+                             <!-- <span class="active-indicator mr-auto w-2 h-8 bg-primary rounded-r-lg hidden"></span> -->
+
                         </a>
                     </li>
                     
@@ -45,7 +57,7 @@
                 </ul>
             </nav>
 
-            <!-- Footer Sidebar -->
+            <!-- Footer Sidebar
             <div class="p-4 border-t border-gray-200">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
@@ -56,7 +68,7 @@
                         <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email ?? 'guest@example.com' }}</p>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </aside>
 
         <!-- Main Content -->
@@ -132,6 +144,10 @@
             switch (currentPath) {
                 case '/dashboard':
                     activeMenu = 'dashboard';
+                    break;
+               
+                case '/item':
+                    activeMenu = 'item';
                     break;
                
             

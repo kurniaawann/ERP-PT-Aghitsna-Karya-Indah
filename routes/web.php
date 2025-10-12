@@ -24,4 +24,5 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Website pages
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
+    Route::get('/item', [PageController::class, 'item'])->name('item');
 });
