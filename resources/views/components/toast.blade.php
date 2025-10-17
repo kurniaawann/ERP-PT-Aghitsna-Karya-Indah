@@ -1,8 +1,9 @@
 <div id="toast"
-    class="hidden fixed top-5 right-5 z-50 items-center w-auto max-w-xs p-4 space-x-3 text-gray-700 bg-white border rounded-lg shadow-lg transition-all duration-500">
-    <div id="toastIcon" class="text-green-600">
+    class="hidden fixed top-5 right-5 z-50 items-center w-auto max-w-xs p-4 space-x-3 text-gray-700 bg-white border-2 rounded-xl shadow-xl transition-all duration-500">
+    <div id="toastIcon" class="flex-shrink-0">
         <!-- Ikon default (berhasil) -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
     </div>
@@ -24,17 +25,25 @@
             clearTimeout(toastTimeout);
             toastMessage.textContent = message;
 
-            // Ubah warna & ikon sesuai tipe
+            // Ubah warna & ikon sesuai tipe menggunakan Tailwind Config
             if (type === 'success') {
-                toast.classList.remove('bg-red-100', 'border-red-400');
-                toast.classList.add('bg-green-100', 'border-green-400');
+                toast.classList.remove('bg-error-light', 'border-error', 'bg-warning-light',
+                    'border-warning');
+                toast.classList.add('bg-success-light', 'border-success');
                 toastIcon.innerHTML =
-                    `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
-            } else {
-                toast.classList.remove('bg-green-100', 'border-green-400');
-                toast.classList.add('bg-red-100', 'border-red-400');
+                    `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            } else if (type === 'error') {
+                toast.classList.remove('bg-success-light', 'border-success', 'bg-warning-light',
+                    'border-warning');
+                toast.classList.add('bg-error-light', 'border-error');
                 toastIcon.innerHTML =
-                    `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
+                    `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            } else if (type === 'warning') {
+                toast.classList.remove('bg-success-light', 'border-success', 'bg-error-light',
+                    'border-error');
+                toast.classList.add('bg-warning-light', 'border-warning');
+                toastIcon.innerHTML =
+                    `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
             }
 
             toast.classList.remove('hidden', 'opacity-0', 'translate-y-2');
