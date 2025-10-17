@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Data Barang')
+@section('title', 'PT Aghitsna Karya Indah - Data Barang')
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
