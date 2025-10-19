@@ -8,4 +8,8 @@ class PageController extends Controller
     {
         return view('pages.dashboard');
     }
+    public function item()
+    {
+        return view('pages.item');
+    }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PageController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,4 +25,16 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Website pages
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
+
+    //Route All Item
+    Route::get('/item', [ItemController::class, 'index'])->name('item.index');
+    Route::post('/item', [ItemController::class, 'store'])->name('item.store');
+    Route::put('/item/{id_item}', [ItemController::class, 'update'])->name('item.update');
+    Route::delete('/items', [ItemController::class, 'destroySelected'])->name('items.destroySelected');
+
+    //Route Item Export
+    Route::get('/item/export/pdf', [ItemController::class, 'exportPdf'])->name('item.export.pdf');
+    Route::get('/item/export/excel', [ItemController::class, 'exportExcel'])->name('item.export.excel');
+
+
 });
