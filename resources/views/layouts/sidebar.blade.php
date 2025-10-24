@@ -48,6 +48,20 @@
                 </a>
             </li>
 
+            {{-- Invoice Aluminium --}}
+            <li>
+                <a href="{{ url('/aluminium-invoice') }}"
+                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
+                        {{ request()->is('aluminium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+
+                    <i
+                        class="fas fa-file-invoice-dollar w-5 
+                        {{ request()->is('aluminium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                    </i>
+                    <span class="ml-3 font-medium">Invoice Aluminium</span>
+                </a>
+            </li>
+
         </ul>
     </nav>
 </aside>
