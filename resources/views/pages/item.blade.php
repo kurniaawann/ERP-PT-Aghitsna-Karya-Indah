@@ -82,7 +82,6 @@
             @method('DELETE')
             <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
                 <div class="inline-block min-w-full align-middle">
-                    <!-- Border luar table -->
                     <div class="border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
@@ -233,53 +232,16 @@
 
 
     {{-- Modal Hapus --}}
-    <div id="deleteModal" class="hidden fixed inset-0 z-50 bg-gray-900/60 items-center justify-center px-4">
-        <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
-            <h2 class="text-lg font-semibold text-gray-700 mb-4">Konfirmasi Hapus</h2>
-
-            <div class="text-center space-y-4">
-                <svg class="mx-auto mb-4 text-red-600 w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                    fill="none" viewBox="0 0 20 20">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                </svg>
-                <h3 class="text-lg font-normal text-gray-600">
-                    Apakah kamu yakin ingin menghapus data yang dipilih?
-                </h3>
-            </div>
-
-            <div class="flex justify-end gap-2 mt-6">
-                <button type="button" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-                    onclick="closeModal('deleteModal')">
-                    Batal
-                </button>
-
-                <button type="button" onclick="submitDeleteForm()"
-                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
-                    Ya, Hapus
-                </button>
-            </div>
-
-            {{-- Tombol X --}}
-            <button type="button" onclick="closeModal('deleteModal')"
-                class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-xl font-bold">
-                &times;
-            </button>
-        </div>
-    </div>
+    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
+        buttonText="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus data yang dipilih?
+    </x-modal>
 
     <script>
         // Function untuk submit form delete
         function submitDeleteForm() {
             const form = document.getElementById('deleteForm');
             const checkboxes = form.querySelectorAll('input[name="selected_items[]"]:checked');
-
-            // if (checkboxes.length === 0) {
-            //     alert('Silakan pilih minimal satu item untuk dihapus!');
-            //     closeModal('deleteModal');
-            //     return;
-            // }
-
             form.submit();
         }
 
@@ -295,19 +257,6 @@
                     });
                 });
             }
-
-            // Uncheck "Select All" if any individual checkbox is unchecked
-            itemCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    if (!this.checked) {
-                        selectAllCheckbox.checked = false;
-                    } else {
-                        // Check if all checkboxes are checked
-                        const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
-                        selectAllCheckbox.checked = allChecked;
-                    }
-                });
-            });
 
             // Handle Print Format Dropdown
             const printFormatSelect = document.getElementById('print-format');
