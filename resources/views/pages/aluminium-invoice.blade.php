@@ -180,7 +180,8 @@
             </div>
 
             <div id="items-container" class="mb-4">
-                <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
+                        class="text-red-500">*</span></label>
                 <div id="items-list">
                     <div class="item-row mb-3 p-3 border rounded bg-gray-50">
                         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -246,7 +247,8 @@
                 </div>
 
                 <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
-                    <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span class="text-red-500">*</span></label>
+                    <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
+                            class="text-red-500">*</span></label>
                     <div id="items-list-edit-{{ $invoice->invoice_number }}">
                         @php
                             $existingItems = is_string($invoice->items)
