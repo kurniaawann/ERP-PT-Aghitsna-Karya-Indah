@@ -17,8 +17,8 @@ return new class extends Migration {
             $table->string('invoice_number')->primary(); // Invoice number as primary key
             $table->date('invoice_date'); // Tanggal : 09 Oktober 2025
             $table->string('recipient'); // Kepada Yth :
-            $table->text('regarding')->nullable(); // Regarding / Hal
-            $table->text('project_description')->nullable(); // Proyek Karbela 3 / Pak Sis
+            $table->text('regarding'); // Regarding / Hal
+            $table->text('project_description'); // Proyek Karbela 3 / Pak Sis
             $table->json('items'); // Array items: keterangan, volume, satuan, harga, jumlah
             $table->bigInteger('total_amount'); // Jumlah (total)
             $table->timestamps();

@@ -157,43 +157,43 @@
             method="POST" buttonText="Simpan">
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Tanggal Invoice</label>
+                <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
                 <input type="date" name="invoice_date" class="w-full border rounded p-2" required>
             </div>
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Kepada (Nama Penerima)</label>
+                <label class="block text-gray-700 mb-1">Kepada (Nama Penerima) <span class="text-red-500">*</span></label>
                 <input type="text" name="recipient" class="w-full border rounded p-2"
                     placeholder="Nama penerima invoice" required>
             </div>
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Hal / Regarding</label>
+                <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
                 <input type="text" name="regarding" class="w-full border rounded p-2"
-                    placeholder="Contoh: Penagihan Pembayaran">
+                    placeholder="Contoh: Penagihan Pembayaran" required>
             </div>
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Deskripsi Proyek</label>
+                <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
                 <textarea name="project_description" class="w-full border rounded p-2" rows="2"
-                    placeholder="Contoh: Proyek Karbela 3 / Pak Sis"></textarea>
+                    placeholder="Contoh: Proyek Karbela 3 / Pak Sis" required></textarea>
             </div>
 
             <div id="items-container" class="mb-4">
-                <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice</label>
+                <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span class="text-red-500">*</span></label>
                 <div id="items-list">
                     <div class="item-row mb-3 p-3 border rounded bg-gray-50">
                         <div class="grid grid-cols-2 gap-2 mb-2">
-                            <input type="text" class="item-keterangan border rounded p-2" placeholder="Keterangan"
+                            <input type="text" class="item-keterangan border rounded p-2" placeholder="Keterangan *"
                                 required>
                             <input type="number" step="0.01" class="item-volume border rounded p-2"
-                                placeholder="Volume" required>
+                                placeholder="Volume *" required>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             <input type="text" class="item-satuan border rounded p-2"
-                                placeholder="Satuan (m3, unit, dll)" required>
+                                placeholder="Satuan (m3, unit, dll) *" required>
                             <input type="number" step="0.01" class="item-harga border rounded p-2"
-                                placeholder="Harga" required>
+                                placeholder="Harga *" required>
                             <button type="button"
                                 class="remove-item bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
                                 <i class="fa-solid fa-trash"></i>
@@ -223,30 +223,30 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Tanggal Invoice</label>
+                    <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
                     <input type="date" name="invoice_date" value="{{ $invoice->invoice_date->format('Y-m-d') }}"
                         class="w-full border rounded p-2" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Kepada</label>
+                    <label class="block text-gray-700 mb-1">Kepada <span class="text-red-500">*</span></label>
                     <input type="text" name="recipient" value="{{ $invoice->recipient }}"
                         class="w-full border rounded p-2" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Hal / Regarding</label>
+                    <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
                     <input type="text" name="regarding" value="{{ $invoice->regarding }}"
-                        class="w-full border rounded p-2">
+                        class="w-full border rounded p-2" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Deskripsi Proyek</label>
-                    <textarea name="project_description" class="w-full border rounded p-2" rows="2">{{ $invoice->project_description }}</textarea>
+                    <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
+                    <textarea name="project_description" class="w-full border rounded p-2" rows="2" required>{{ $invoice->project_description }}</textarea>
                 </div>
 
                 <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
-                    <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span class="text-red-500">*</span></label>
                     <div id="items-list-edit-{{ $invoice->invoice_number }}">
                         @php
                             $existingItems = is_string($invoice->items)
@@ -457,12 +457,12 @@
                     newItem.className = 'item-row mb-3 p-3 border rounded bg-gray-50';
                     newItem.innerHTML = `
                         <div class="grid grid-cols-2 gap-2 mb-2">
-                            <input type="text" class="item-keterangan border rounded p-2" placeholder="Keterangan" required>
-                            <input type="number" step="0.01" class="item-volume border rounded p-2" placeholder="Volume" required>
+                            <input type="text" class="item-keterangan border rounded p-2" placeholder="Keterangan *" required>
+                            <input type="number" step="0.01" class="item-volume border rounded p-2" placeholder="Volume *" required>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
-                            <input type="text" class="item-satuan border rounded p-2" placeholder="Satuan" required>
-                            <input type="number" step="0.01" class="item-harga border rounded p-2" placeholder="Harga" required>
+                            <input type="text" class="item-satuan border rounded p-2" placeholder="Satuan *" required>
+                            <input type="number" step="0.01" class="item-harga border rounded p-2" placeholder="Harga *" required>
                             <button type="button" class="remove-item bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -501,15 +501,15 @@
                     newItem.innerHTML = `
                         <div class="grid grid-cols-2 gap-2 mb-2">
                             <input type="text" name="items[${newIndex}][keterangan]" 
-                                class="item-keterangan-edit border rounded p-2" placeholder="Keterangan" required>
+                                class="item-keterangan-edit border rounded p-2" placeholder="Keterangan *" required>
                             <input type="number" step="0.01" name="items[${newIndex}][volume]"
-                                class="item-volume-edit border rounded p-2" placeholder="Volume" required>
+                                class="item-volume-edit border rounded p-2" placeholder="Volume *" required>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             <input type="text" name="items[${newIndex}][satuan]"
-                                class="item-satuan-edit border rounded p-2" placeholder="Satuan" required>
+                                class="item-satuan-edit border rounded p-2" placeholder="Satuan *" required>
                             <input type="number" step="0.01" name="items[${newIndex}][harga]"
-                                class="item-harga-edit border rounded p-2" placeholder="Harga" required>
+                                class="item-harga-edit border rounded p-2" placeholder="Harga *" required>
                             <button type="button" class="remove-item-edit bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
                                 <i class="fa-solid fa-trash"></i>
                             </button>

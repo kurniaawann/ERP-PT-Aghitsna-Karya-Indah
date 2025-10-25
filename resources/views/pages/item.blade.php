@@ -147,7 +147,7 @@
                 action="{{ route('item.update', $item->id_item) }}" method="PUT" buttonText="Update">
 
                 <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Nama Barang</label>
+                    <label class="block text-gray-700 mb-1">Nama Barang <span class="text-red-500">*</span></label>
                     <input type="text" name="name_item" value="{{ $item->name_item }}" class="w-full border rounded p-2"
                         required>
                 </div>
@@ -207,7 +207,7 @@
         buttonText="Simpan">
 
         <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Nama Barang</label>
+            <label class="block text-gray-700 mb-1">Nama Barang <span class="text-red-500">*</span></label>
             <input type="text" name="name_item" class="w-full border rounded p-2" required>
         </div>
 
