@@ -86,7 +86,7 @@ class AluminiumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                 $sheet->mergeCells('A5:D5');
                 $sheet->setCellValue('A5', 'KEC. LIMO KOTA DEPOK');
-                
+
                 $sheet->mergeCells('A6:D6');
                 $sheet->setCellValue('A6', 'Telp. 0882 1303 1263 / 0882 1303 1264 | Email: Design@aghitsna.id');
 
