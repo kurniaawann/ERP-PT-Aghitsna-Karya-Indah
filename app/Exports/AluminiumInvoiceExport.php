@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -54,19 +55,25 @@ class AluminiumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $invoice = $this->invoice;
 
                 // Set row heights
-                $sheet->getRowDimension(1)->setRowHeight(25);
+                $sheet->getRowDimension(1)->setRowHeight(60);
                 $sheet->getRowDimension(2)->setRowHeight(15);
+
+                // Add logo image
+                $drawing = new Drawing();
+                $drawing->setName('Logo');
+                $drawing->setDescription('Company Logo');
+                $drawing->setPath(public_path('images/logo.jpeg'));
+                $drawing->setHeight(60);
+                $drawing->setCoordinates('A1');
+                $drawing->setOffsetX(10);
+                $drawing->setOffsetY(5);
+                $drawing->setWorksheet($sheet);
 
                 // Merge cells for header
                 $sheet->mergeCells('A1:D1');
                 $sheet->mergeCells('E1:F1');
 
-                // Company Logo placeholder
-                $sheet->setCellValue('A1', '?');
-                $sheet->getStyle('A1')->getFont()->setSize(40)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('999999'));
-                $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-
-                // Company Name & Info (Row 2-6)
+                // Company Name & Info (Row 2-5)
                 $sheet->mergeCells('A2:D2');
                 $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
                 $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF6600'));
@@ -79,46 +86,44 @@ class AluminiumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                 $sheet->mergeCells('A5:D5');
                 $sheet->setCellValue('A5', 'KEC. LIMO KOTA DEPOK');
-
+                
                 $sheet->mergeCells('A6:D6');
-                $sheet->setCellValue('A6', 'Telp. 0882 1303 1263 / 0882 1303 1264');
-
-                $sheet->mergeCells('A7:D7');
-                $sheet->setCellValue('A7', 'Email: Design@aghitsna.id');
+                $sheet->setCellValue('A6', 'Telp. 0882 1303 1263 / 0882 1303 1264 | Email: Design@aghitsna.id');
 
                 // Invoice Title (Right side)
-                $sheet->mergeCells('E2:F2');
-                $sheet->setCellValue('E2', 'INVOICE');
-                $sheet->getStyle('E2')->getFont()->setBold(true)->setSize(24);
-                $sheet->getStyle('E2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->mergeCells('E1:F1');
+                $sheet->setCellValue('E1', 'INVOICE');
+                $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(24)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
+                $sheet->getStyle('E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle('E1')->getFill()->setFillType(Fill::FILL_NONE);
 
                 // Invoice Information
                 $invoiceDate = \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
 
-                $sheet->setCellValue('E3', 'No');
-                $sheet->setCellValue('F3', ': ' . $invoice->invoice_number);
+                $sheet->setCellValue('E2', 'No');
+                $sheet->setCellValue('F2', ': ' . $invoice->invoice_number);
 
-                $sheet->setCellValue('E4', 'Tanggal');
-                $sheet->setCellValue('F4', ': ' . $invoiceDate);
+                $sheet->setCellValue('E3', 'Tanggal');
+                $sheet->setCellValue('F3', ': ' . $invoiceDate);
 
-                $sheet->setCellValue('E5', 'Hal');
-                $sheet->setCellValue('F5', ': ' . $invoice->regarding);
+                $sheet->setCellValue('E4', 'Hal');
+                $sheet->setCellValue('F4', ': ' . $invoice->regarding);
 
                 // Border for header
-                $sheet->getStyle('A1:F7')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THICK);
+                $sheet->getStyle('A1:F6')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THICK);
 
-                // Recipient (Row 9)
-                $currentRow = 9;
+                // Recipient (Row 8)
+                $currentRow = 8;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
-                // Recipient Name (Row 10)
+                // Recipient Name (Row 8)
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", '            ' . $invoice->recipient);
 
-                // Description (Row 12-13)
+                // Description (Row 10-11)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Ditempat');

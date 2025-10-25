@@ -51,12 +51,13 @@
             height: 80px;
             float: left;
             margin-right: 10px;
-            border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: #999;
+            object-fit: contain;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .company-info {
@@ -205,7 +206,9 @@
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                <div class="logo">?</div>
+                <div class="logo">
+                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
+                </div>
                 <div class="company-info">
                     <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
                     <div class="company-address">
@@ -213,7 +216,7 @@
                         JL. CEMARA RT 02 RW 07, KEL, GROGOL<br>
                         KEC. LIMO KOTA DEPOK<br>
                         Telp. 0882 1303 1263 / 0882 1303 1264<br>
-                        Email: Design@aghitsna.id
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Email: Design@aghitsna.id
                     </div>
                 </div>
             </div>
