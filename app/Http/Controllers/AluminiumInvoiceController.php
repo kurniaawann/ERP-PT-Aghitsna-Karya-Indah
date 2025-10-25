@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\InvoiceAlumunium;
-// Removed export-related imports
+use App\Exports\AluminiumInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AluminiumInvoiceController extends Controller
 {
@@ -200,5 +201,31 @@ class AluminiumInvoiceController extends Controller
             ->with('success', count($selectedInvoiceNumbers) . ' invoice berhasil dihapus!');
     }
 
-    // PDF/Excel export features removed by request
+    /**
+     * Export invoice to PDF
+     */
+    public function printPdf($invoiceNumber)
+    {
+        $invoice = InvoiceAlumunium::where('invoice_number', $invoiceNumber)->firstOrFail();
+
+        $pdf = Pdf::loadView('exports.aluminium-invoice-pdf', compact('invoice'));
+        $pdf->setPaper('a4', 'portrait');
+
+        // Replace / and \ with - for safe filename
+        $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
+
+        return $pdf->stream('Invoice-' . $safeFileName . '.pdf');
+    }
+
+    /**
+     * Export invoice to Excel
+     */
+    public function printExcel($invoiceNumber)
+    {
+        // Replace / and \ with - for safe filename
+        $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
+
+        return Excel::download(new AluminiumInvoiceExport($invoiceNumber), 'Invoice-' . $safeFileName . '.xlsx');
+    }
 }
+

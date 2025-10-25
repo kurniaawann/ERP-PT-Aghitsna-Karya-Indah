@@ -40,25 +40,8 @@
 
 
             <!-- Aksi di Kanan -->
+            <!-- Aksi di Kanan -->
             <div class="flex items-center gap-3 mt-2 sm:mt-0 flex-col sm:flex-row w-full sm:w-auto">
-                <!-- Dropdown Format Print -->
-                <div class="relative w-full sm:w-auto">
-                    <select id="print-format"
-                        class="block w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 pr-8 text-sm text-gray-700 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light transition-all duration-200">
-                        <option selected disabled hidden>Pilih Format Print</option>
-                        <option value="pdf">PDF</option>
-                        <option value="excel">Excel</option>
-                    </select>
-
-                    <!-- Ikon panah dropdown -->
-                    <span class="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </span>
-                </div>
-
                 <div class="flex gap-2 w-full sm:w-auto">
                     <!-- Tombol Hapus -->
                     <button type="button" onclick="openModal('deleteModal')"
@@ -74,9 +57,9 @@
                         Tambah Invoice
                     </button>
                 </div>
-
             </div>
         </div>
+
 
         {{-- Form Hapus Terpilih --}}
         <form id="deleteForm" method="POST" action="{{ route('aluminium-invoice.destroySelected') }}">
@@ -119,22 +102,42 @@
                                         </td>
 
                                         {{-- Aksi --}}
-                                        <td class="p-2 text-center flex justify-center gap-2">
-                                            {{-- Tombol Lihat Detail --}}
-                                            <button type="button"
-                                                onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
-                                                class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-sm">
-                                                <i class="fa-solid fa-eye w-4 h-4"></i>
-                                                Lihat
-                                            </button>
+                                        <td class="p-2 text-center">
+                                            <div class="flex justify-center gap-1 flex-wrap">
+                                                {{-- Tombol Lihat Detail --}}
+                                                <button type="button"
+                                                    onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
+                                                    class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    title="Lihat Detail">
+                                                    <i class="fa-solid fa-eye w-3 h-3"></i>
+                                                    Lihat
+                                                </button>
 
-                                            {{-- Tombol Edit --}}
-                                            <button type="button"
-                                                onclick="openModal('editModal-{{ $invoice->invoice_number }}')"
-                                                class="flex items-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-sm">
-                                                <i class="fa-solid fa-pen w-4 h-4"></i>
-                                                Edit
-                                            </button>
+                                                {{-- Tombol Edit --}}
+                                                <button type="button"
+                                                    onclick="openModal('editModal-{{ $invoice->invoice_number }}')"
+                                                    class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    title="Edit Invoice">
+                                                    <i class="fa-solid fa-pen w-3 h-3"></i>
+                                                    Edit
+                                                </button>
+
+                                                {{-- Tombol Print PDF --}}
+                                                <a href="{{ route('aluminium-invoice.print.pdf', $invoice->invoice_number) }}"
+                                                    class="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    title="Print PDF" target="_blank">
+                                                    <i class="fa-solid fa-file-pdf w-3 h-3"></i>
+                                                    PDF
+                                                </a>
+
+                                                {{-- Tombol Print Excel --}}
+                                                <a href="{{ route('aluminium-invoice.print.excel', $invoice->invoice_number) }}"
+                                                    class="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    title="Print Excel">
+                                                    <i class="fa-solid fa-file-excel w-3 h-3"></i>
+                                                    Excel
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -151,221 +154,6 @@
             </div>
 
         </form>
-
-        {{-- Modal Tambah Invoice --}}
-        <x-modal id="addModal" title="Tambah Invoice Aluminium" action="{{ route('aluminium-invoice.store') }}"
-            method="POST" buttonText="Simpan">
-
-            <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
-                <input type="date" name="invoice_date" class="w-full border rounded p-2" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Kepada (Nama Penerima) <span class="text-red-500">*</span></label>
-                <input type="text" name="recipient" class="w-full border rounded p-2"
-                    placeholder="Nama penerima invoice" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
-                <input type="text" name="regarding" class="w-full border rounded p-2"
-                    placeholder="Contoh: Penagihan Pembayaran" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
-                <textarea name="project_description" class="w-full border rounded p-2" rows="2"
-                    placeholder="Contoh: Proyek Karbela 3 / Pak Sis" required></textarea>
-            </div>
-
-            <div id="items-container" class="mb-4">
-                <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
-                        class="text-red-500">*</span></label>
-                <div id="items-list">
-                    <div class="item-row mb-3 p-3 border rounded bg-gray-50">
-                        <div class="grid grid-cols-2 gap-2 mb-2">
-                            <input type="text" class="item-keterangan border rounded p-2" placeholder="Keterangan *"
-                                required>
-                            <input type="number" step="0.01" class="item-volume border rounded p-2"
-                                placeholder="Volume *" required>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <input type="text" class="item-satuan border rounded p-2"
-                                placeholder="Satuan (m3, unit, dll) *" required>
-                            <input type="number" step="0.01" class="item-harga border rounded p-2"
-                                placeholder="Harga *" required>
-                            <button type="button"
-                                class="remove-item bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <button type="button" id="add-item" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    <i class="fa-solid fa-plus"></i> Tambah Item
-                </button>
-            </div>
-
-            <input type="hidden" name="items" id="items-json" value="[]">
-        </x-modal>
-
-        {{-- Modal Edit untuk setiap invoice --}}
-        @foreach ($invoices as $invoice)
-            <x-modal id="editModal-{{ $invoice->invoice_number }}" title="Edit Invoice"
-                action="{{ route('aluminium-invoice.update', $invoice->invoice_number) }}" method="PUT"
-                buttonText="Update">
-
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">No Invoice</label>
-                    <input type="text" value="{{ $invoice->invoice_number }}"
-                        class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed" readonly>
-                    <p class="text-xs text-gray-500 mt-1">No Invoice tidak dapat diubah</p>
-                </div>
-
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
-                    <input type="date" name="invoice_date" value="{{ $invoice->invoice_date->format('Y-m-d') }}"
-                        class="w-full border rounded p-2" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Kepada <span class="text-red-500">*</span></label>
-                    <input type="text" name="recipient" value="{{ $invoice->recipient }}"
-                        class="w-full border rounded p-2" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
-                    <input type="text" name="regarding" value="{{ $invoice->regarding }}"
-                        class="w-full border rounded p-2" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
-                    <textarea name="project_description" class="w-full border rounded p-2" rows="2" required>{{ $invoice->project_description }}</textarea>
-                </div>
-
-                <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
-                    <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
-                            class="text-red-500">*</span></label>
-                    <div id="items-list-edit-{{ $invoice->invoice_number }}">
-                        @php
-                            $existingItems = is_string($invoice->items)
-                                ? json_decode($invoice->items, true)
-                                : $invoice->items;
-                        @endphp
-                        @foreach ($existingItems as $index => $item)
-                            <div class="item-row-edit mb-3 p-3 border rounded bg-gray-50">
-                                <div class="grid grid-cols-2 gap-2 mb-2">
-                                    <input type="text" name="items[{{ $index }}][keterangan]"
-                                        value="{{ $item['keterangan'] ?? '' }}"
-                                        class="item-keterangan-edit border rounded p-2" placeholder="Keterangan" required>
-                                    <input type="number" step="0.01" name="items[{{ $index }}][volume]"
-                                        value="{{ $item['volume'] ?? 0 }}" class="item-volume-edit border rounded p-2"
-                                        placeholder="Volume" required>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2">
-                                    <input type="text" name="items[{{ $index }}][satuan]"
-                                        value="{{ $item['satuan'] ?? '' }}" class="item-satuan-edit border rounded p-2"
-                                        placeholder="Satuan" required>
-                                    <input type="number" step="0.01" name="items[{{ $index }}][harga]"
-                                        value="{{ $item['harga'] ?? 0 }}" class="item-harga-edit border rounded p-2"
-                                        placeholder="Harga" required>
-                                    <button type="button"
-                                        class="remove-item-edit bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    <button type="button"
-                        class="add-item-edit bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        data-invoice-id="{{ $invoice->invoice_number }}">
-                        <i class="fa-solid fa-plus"></i> Tambah Item
-                    </button>
-                </div>
-
-            </x-modal>
-
-            {{-- Modal Detail Invoice --}}
-            <x-modal id="detailModal-{{ $invoice->invoice_number }}"
-                title="Detail Invoice - {{ $invoice->invoice_number }}" :readonly="true">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm text-gray-600">No Invoice</label>
-                        <p class="font-semibold">{{ $invoice->invoice_number }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-600">Tanggal</label>
-                        <p class="font-semibold">{{ $invoice->invoice_date->format('d-m-Y') }}</p>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <label class="block text-sm text-gray-600">Kepada</label>
-                    <p class="font-semibold">{{ $invoice->recipient }}</p>
-                </div>
-
-                <div class="mt-4">
-                    <label class="block text-sm text-gray-600">Hal / Regarding</label>
-                    <p>{{ $invoice->regarding ?? '-' }}</p>
-                </div>
-
-                <div class="mt-4">
-                    <label class="block text-sm text-gray-600">Proyek</label>
-                    <p>{{ $invoice->project_description ?? '-' }}</p>
-                </div>
-
-                <div class="mt-4">
-                    <label class="block text-sm text-gray-600 font-semibold mb-2">Item-Item:</label>
-                    @php
-                        $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
-                    @endphp
-                    <table class="w-full text-sm border">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="border p-2">Keterangan</th>
-                                <th class="border p-2 text-center">Volume</th>
-                                <th class="border p-2 text-center">Satuan</th>
-                                <th class="border p-2 text-right">Harga</th>
-                                <th class="border p-2 text-right">Jumlah</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($items as $item)
-                                @php
-                                    $jumlah = ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
-                                @endphp
-                                <tr>
-                                    <td class="border p-2">{{ $item['keterangan'] ?? '-' }}</td>
-                                    <td class="border p-2 text-center">{{ $item['volume'] ?? 0 }}</td>
-                                    <td class="border p-2 text-center">{{ $item['satuan'] ?? '-' }}</td>
-                                    <td class="border p-2 text-right">
-                                        Rp{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                                    <td class="border p-2 text-right">Rp{{ number_format($jumlah, 0, ',', '.') }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="mt-4 text-right border-t pt-4">
-                    <p class="text-sm text-gray-600">Total</p>
-                    <p class="text-xl font-bold text-blue-600">Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
-                    </p>
-                </div>
-            </x-modal>
-        @endforeach
-
-        {{-- Modal Konfirmasi Delete --}}
-        <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-            buttonText="Ya, Hapus">
-            Apakah kamu yakin ingin menghapus data yang dipilih?
-        </x-modal>
-
-        {{-- Pagination --}}
         <div class="flex mt-4 justify-center">
             <div class="flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm">
 
@@ -392,6 +180,222 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal Tambah Invoice --}}
+    <x-modal id="addModal" title="Tambah Invoice Aluminium" action="{{ route('aluminium-invoice.store') }}" method="POST"
+        buttonText="Simpan">
+
+        <div class="mb-3">
+            <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
+            <input type="date" name="invoice_date" class="w-full border rounded p-2" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="block text-gray-700 mb-1">Kepada (Nama Penerima) <span class="text-red-500">*</span></label>
+            <input type="text" name="recipient" class="w-full border rounded p-2" placeholder="Nama penerima invoice"
+                required>
+        </div>
+
+        <div class="mb-3">
+            <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
+            <input type="text" name="regarding" class="w-full border rounded p-2"
+                placeholder="Contoh: Penagihan Pembayaran" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
+            <textarea name="project_description" class="w-full border rounded p-2" rows="2"
+                placeholder="Contoh: Proyek Karbela 3 / Pak Sis" required></textarea>
+        </div>
+
+        <div id="items-container" class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
+                    class="text-red-500">*</span></label>
+            <div id="items-list">
+                <div class="item-row mb-3 p-3 border rounded bg-gray-50">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="text" class="item-keterangan border rounded p-2" placeholder="Keterangan *"
+                            required>
+                        <input type="number" step="0.01" class="item-volume border rounded p-2"
+                            placeholder="Volume *" required>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input type="text" class="item-satuan border rounded p-2"
+                            placeholder="Satuan (m3, unit, dll) *" required>
+                        <input type="number" step="0.01" class="item-harga border rounded p-2" placeholder="Harga *"
+                            required>
+                        <button type="button"
+                            class="remove-item bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="add-item" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                <i class="fa-solid fa-plus"></i> Tambah Item
+            </button>
+        </div>
+
+        <input type="hidden" name="items" id="items-json" value="[]">
+    </x-modal>
+
+    {{-- Modal Edit untuk setiap invoice --}}
+    @foreach ($invoices as $invoice)
+        <x-modal id="editModal-{{ $invoice->invoice_number }}" title="Edit Invoice"
+            action="{{ route('aluminium-invoice.update', $invoice->invoice_number) }}" method="PUT"
+            buttonText="Update">
+
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1">No Invoice</label>
+                <input type="text" value="{{ $invoice->invoice_number }}"
+                    class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed" readonly>
+                <p class="text-xs text-gray-500 mt-1">No Invoice tidak dapat diubah</p>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
+                <input type="date" name="invoice_date" value="{{ $invoice->invoice_date->format('Y-m-d') }}"
+                    class="w-full border rounded p-2" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1">Kepada <span class="text-red-500">*</span></label>
+                <input type="text" name="recipient" value="{{ $invoice->recipient }}"
+                    class="w-full border rounded p-2" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
+                <input type="text" name="regarding" value="{{ $invoice->regarding }}"
+                    class="w-full border rounded p-2" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
+                <textarea name="project_description" class="w-full border rounded p-2" rows="2" required>{{ $invoice->project_description }}</textarea>
+            </div>
+
+            <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
+                        class="text-red-500">*</span></label>
+                <div id="items-list-edit-{{ $invoice->invoice_number }}">
+                    @php
+                        $existingItems = is_string($invoice->items)
+                            ? json_decode($invoice->items, true)
+                            : $invoice->items;
+                    @endphp
+                    @foreach ($existingItems as $index => $item)
+                        <div class="item-row-edit mb-3 p-3 border rounded bg-gray-50">
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <input type="text" name="items[{{ $index }}][keterangan]"
+                                    value="{{ $item['keterangan'] ?? '' }}"
+                                    class="item-keterangan-edit border rounded p-2" placeholder="Keterangan" required>
+                                <input type="number" step="0.01" name="items[{{ $index }}][volume]"
+                                    value="{{ $item['volume'] ?? 0 }}" class="item-volume-edit border rounded p-2"
+                                    placeholder="Volume" required>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" name="items[{{ $index }}][satuan]"
+                                    value="{{ $item['satuan'] ?? '' }}" class="item-satuan-edit border rounded p-2"
+                                    placeholder="Satuan" required>
+                                <input type="number" step="0.01" name="items[{{ $index }}][harga]"
+                                    value="{{ $item['harga'] ?? 0 }}" class="item-harga-edit border rounded p-2"
+                                    placeholder="Harga" required>
+                                <button type="button"
+                                    class="remove-item-edit bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <button type="button" class="add-item-edit bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    data-invoice-id="{{ $invoice->invoice_number }}">
+                    <i class="fa-solid fa-plus"></i> Tambah Item
+                </button>
+            </div>
+
+        </x-modal>
+
+        {{-- Modal Detail Invoice --}}
+        <x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice - {{ $invoice->invoice_number }}"
+            :readonly="true">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-600">No Invoice</label>
+                    <p class="font-semibold">{{ $invoice->invoice_number }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600">Tanggal</label>
+                    <p class="font-semibold">{{ $invoice->invoice_date->format('d-m-Y') }}</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm text-gray-600">Kepada</label>
+                <p class="font-semibold">{{ $invoice->recipient }}</p>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm text-gray-600">Hal / Regarding</label>
+                <p>{{ $invoice->regarding ?? '-' }}</p>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm text-gray-600">Proyek</label>
+                <p>{{ $invoice->project_description ?? '-' }}</p>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm text-gray-600 font-semibold mb-2">Item-Item:</label>
+                @php
+                    $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
+                @endphp
+                <table class="w-full text-sm border">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="border p-2">Keterangan</th>
+                            <th class="border p-2 text-center">Volume</th>
+                            <th class="border p-2 text-center">Satuan</th>
+                            <th class="border p-2 text-right">Harga</th>
+                            <th class="border p-2 text-right">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($items as $item)
+                            @php
+                                $jumlah = ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
+                            @endphp
+                            <tr>
+                                <td class="border p-2">{{ $item['keterangan'] ?? '-' }}</td>
+                                <td class="border p-2 text-center">{{ $item['volume'] ?? 0 }}</td>
+                                <td class="border p-2 text-center">{{ $item['satuan'] ?? '-' }}</td>
+                                <td class="border p-2 text-right">
+                                    Rp{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="border p-2 text-right">Rp{{ number_format($jumlah, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 text-right border-t pt-4">
+                <p class="text-sm text-gray-600">Total</p>
+                <p class="text-xl font-bold text-blue-600">Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
+                </p>
+            </div>
+        </x-modal>
+    @endforeach
+
+    {{-- Modal Konfirmasi Delete --}}
+    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
+        buttonText="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus data yang dipilih?
+    </x-modal>
+
+    {{-- Pagination --}}
+
+
 
     <script>
         function submitDeleteForm() {
@@ -425,30 +429,6 @@
                     }
                 });
             });
-
-            // Handle Print Format Dropdown
-            const printFormatSelect = document.getElementById('print-format');
-            if (printFormatSelect) {
-                printFormatSelect.addEventListener('change', function() {
-                    const format = this.value;
-                    const selectedCheckboxes = document.querySelectorAll(
-                        'input[name="selected_invoices[]"]:checked');
-
-                    if (selectedCheckboxes.length === 0) {
-                        showToast('Silakan pilih minimal satu invoice terlebih dahulu!', 'warning');
-                        this.selectedIndex = 0;
-                        return;
-                    }
-
-                    // Fitur export Aluminium dinonaktifkan
-                    showToast('Fitur export PDF/Excel untuk Aluminium telah dinonaktifkan.', 'warning');
-
-                    // Reset dropdown setelah redirect
-                    setTimeout(() => {
-                        this.selectedIndex = 0;
-                    }, 100);
-                });
-            }
 
             // Handle add item button
             if (document.getElementById('add-item')) {
