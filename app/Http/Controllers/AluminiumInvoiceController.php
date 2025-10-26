@@ -214,7 +214,7 @@ class AluminiumInvoiceController extends Controller
         // Replace / and \ with - for safe filename
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
 
-        return $pdf->stream('Invoice-' . $safeFileName . '.pdf');
+        return $pdf->download('Invoice-' . $safeFileName . '.pdf');
     }
 
     /**

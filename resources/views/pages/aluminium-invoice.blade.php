@@ -125,7 +125,7 @@
                                                 {{-- Tombol Print PDF --}}
                                                 <a href="{{ route('aluminium-invoice.print.pdf', $invoice->invoice_number) }}"
                                                     class="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                                    title="Print PDF" target="_blank">
+                                                    title="Print PDF">
                                                     <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                                     PDF
                                                 </a>
