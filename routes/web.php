@@ -3,7 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PageController;
-use App\Http\Controllers\AluminiumInvoiceController;
+use App\Http\Controllers\AlumuniumInvoiceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,16 +37,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/item/export/pdf', [ItemController::class, 'exportPdf'])->name('item.export.pdf');
     Route::get('/item/export/excel', [ItemController::class, 'exportExcel'])->name('item.export.excel');
 
-    // Route Aluminium Invoice
-    Route::get('/aluminium-invoice', [AluminiumInvoiceController::class, 'index'])->name('aluminium-invoice.index');
-    Route::get('/aluminium-invoice/next-number', [AluminiumInvoiceController::class, 'getNextInvoiceNumber'])->name('aluminium-invoice.getNextNumber');
-    Route::post('/aluminium-invoice', [AluminiumInvoiceController::class, 'store'])->name('aluminium-invoice.store');
-    Route::get('/aluminium-invoice/{aluminium_invoice}/edit', [AluminiumInvoiceController::class, 'edit'])->name('aluminium-invoice.edit')->where('aluminium_invoice', '.*');
-    Route::put('/aluminium-invoice/{aluminium_invoice}', [AluminiumInvoiceController::class, 'update'])->name('aluminium-invoice.update')->where('aluminium_invoice', '.*');
-    Route::delete('/aluminium-invoice/destroy-selected', [AluminiumInvoiceController::class, 'destroySelected'])->name('aluminium-invoice.destroySelected');
+    // Route Alumunium Invoice
+    Route::get('/alumunium-invoice', [AlumuniumInvoiceController::class, 'index'])->name('alumunium-invoice.index');
+    Route::get('/alumunium-invoice/next-number', [AlumuniumInvoiceController::class, 'getNextInvoiceNumber'])->name('alumunium-invoice.getNextNumber');
+    Route::post('/alumunium-invoice', [AlumuniumInvoiceController::class, 'store'])->name('alumunium-invoice.store');
+    Route::get('/alumunium-invoice/{alumunium_invoice}/edit', [AlumuniumInvoiceController::class, 'edit'])->name('alumunium-invoice.edit')->where('alumunium_invoice', '.*');
+    Route::put('/alumunium-invoice/{alumunium_invoice}', [AlumuniumInvoiceController::class, 'update'])->name('alumunium-invoice.update')->where('alumunium_invoice', '.*');
+    Route::delete('/alumunium-invoice/destroy-selected', [AlumuniumInvoiceController::class, 'destroySelected'])->name('alumunium-invoice.destroySelected');
 
-    // Aluminium Invoice Print Routes
-    Route::get('/aluminium-invoice/{invoice_number}/print/pdf', [AluminiumInvoiceController::class, 'printPdf'])->name('aluminium-invoice.print.pdf')->where('invoice_number', '.*');
-    Route::get('/aluminium-invoice/{invoice_number}/print/excel', [AluminiumInvoiceController::class, 'printExcel'])->name('aluminium-invoice.print.excel')->where('invoice_number', '.*');
+    // Alumunium Invoice Print Routes
+    Route::get('/alumunium-invoice/{invoice_number}/print/pdf', [AlumuniumInvoiceController::class, 'printPdf'])->name('alumunium-invoice.print.pdf')->where('invoice_number', '.*');
+    Route::get('/alumunium-invoice/{invoice_number}/print/excel', [AlumuniumInvoiceController::class, 'printExcel'])->name('alumunium-invoice.print.excel')->where('invoice_number', '.*');
 
 });

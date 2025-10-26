@@ -16,7 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class AluminiumInvoiceExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
+class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
     protected $invoice;
 

@@ -52,32 +52,32 @@
             <li>
                 <button onclick="toggleDropdown('invoiceDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('aluminium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                        {{ request()->is('alumunium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
 
                     <div class="flex items-center">
                         <i
                             class="fas fa-file-invoice-dollar w-5 
-                            {{ request()->is('aluminium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                            {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                         </i>
                         <span class="ml-3 font-medium">Invoice</span>
                     </div>
 
                     <i id="invoiceDropdownIcon"
                         class="fas fa-chevron-down text-sm transition-transform duration-200 
-                        {{ request()->is('aluminium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                        {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                     </i>
                 </button>
 
                 {{-- Submenu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('aluminium-invoice*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') ? '' : 'hidden' }}">
                     <li>
-                        <a href="{{ url('/aluminium-invoice') }}"
+                        <a href="{{ url('/alumunium-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('aluminium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' }}">
+                                {{ request()->is('alumunium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' }}">
                             <i
                                 class="fas fa-file-invoice w-4 
-                                {{ request()->is('aluminium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                                {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice Alumunium</span>
                         </a>

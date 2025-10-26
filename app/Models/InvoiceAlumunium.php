@@ -9,7 +9,7 @@ class InvoiceAlumunium extends Model
 {
     use HasFactory;
 
-    protected $table = 'aluminium_invoices';
+    protected $table = 'alumunium_invoices';
     protected $primaryKey = 'invoice_number'; // Set primary key to invoice_number
     public $incrementing = false; // Non-incrementing primary key
     protected $keyType = 'string'; // Primary key is string type

@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\InvoiceAlumunium;
 use Illuminate\Database\Seeder;
 
-class AluminiumInvoiceSeeder extends Seeder
+class AlumuniumInvoiceSeeder extends Seeder
 {
     /**
      * Run the database seeds.

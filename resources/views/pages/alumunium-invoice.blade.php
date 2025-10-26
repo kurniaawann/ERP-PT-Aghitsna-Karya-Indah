@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Invoice Aluminium')
+@section('title', 'PT Aghitsna Karya Indah - Invoice Alumunium')
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Invoice Aluminium</h1>
+        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Invoice Alumunium</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <!-- Form Pencarian -->
-            <form method="GET" action="{{ route('aluminium-invoice.index') }}"
+            <form method="GET" action="{{ route('alumunium-invoice.index') }}"
                 class="w-full md:w-auto md:max-w-md md:flex-1">
                 <label for="search-input" class="sr-only">Cari Invoice</label>
 
@@ -62,7 +62,7 @@
 
 
         {{-- Form Hapus Terpilih --}}
-        <form id="deleteForm" method="POST" action="{{ route('aluminium-invoice.destroySelected') }}">
+        <form id="deleteForm" method="POST" action="{{ route('alumunium-invoice.destroySelected') }}">
             @csrf
             @method('DELETE')
             <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -123,7 +123,7 @@
                                                 </button>
 
                                                 {{-- Tombol Print PDF --}}
-                                                <a href="{{ route('aluminium-invoice.print.pdf', $invoice->invoice_number) }}"
+                                                <a href="{{ route('alumunium-invoice.print.pdf', $invoice->invoice_number) }}"
                                                     class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                                     title="Print PDF">
                                                     <i class="fa-solid fa-file-pdf w-3 h-3"></i>
@@ -131,7 +131,7 @@
                                                 </a>
 
                                                 {{-- Tombol Print Excel --}}
-                                                <a href="{{ route('aluminium-invoice.print.excel', $invoice->invoice_number) }}"
+                                                <a href="{{ route('alumunium-invoice.print.excel', $invoice->invoice_number) }}"
                                                     class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                                     title="Print Excel">
                                                     <i class="fa-solid fa-file-excel w-3 h-3"></i>
@@ -182,7 +182,7 @@
     </div>
 
     {{-- Modal Tambah Invoice --}}
-    <x-modal id="addModal" title="Tambah Invoice Aluminium" action="{{ route('aluminium-invoice.store') }}" method="POST"
+    <x-modal id="addModal" title="Tambah Invoice Alumunium" action="{{ route('alumunium-invoice.store') }}" method="POST"
         buttonText="Simpan">
 
         <div class="mb-3">
@@ -242,7 +242,7 @@
     {{-- Modal Edit untuk setiap invoice --}}
     @foreach ($invoices as $invoice)
         <x-modal id="editModal-{{ $invoice->invoice_number }}" title="Edit Invoice"
-            action="{{ route('aluminium-invoice.update', $invoice->invoice_number) }}" method="PUT"
+            action="{{ route('alumunium-invoice.update', $invoice->invoice_number) }}" method="PUT"
             buttonText="Update">
 
             <div class="mb-3">
@@ -613,7 +613,7 @@
             }
 
             // Validation for EDIT forms
-            document.querySelectorAll('form[action*="aluminium-invoice"]').forEach(form => {
+            document.querySelectorAll('form[action*="alumunium-invoice"]').forEach(form => {
                 if (form.querySelector('[name="_method"][value="PUT"]')) {
                     form.addEventListener('submit', function(e) {
                         const editItems = this.querySelectorAll('.item-row-edit');

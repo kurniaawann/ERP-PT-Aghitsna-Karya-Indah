@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\InvoiceAlumunium;
-use App\Exports\AluminiumInvoiceExport;
+use App\Exports\AlumuniumInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class AluminiumInvoiceController extends Controller
+class AlumuniumInvoiceController extends Controller
 {
     /**
      * Generate next invoice number
@@ -55,7 +55,7 @@ class AluminiumInvoiceController extends Controller
 
         $invoices = $query->orderBy('invoice_date', 'desc')->paginate(10);
 
-        return view('pages.aluminium-invoice', compact('invoices'));
+        return view('pages.alumunium-invoice', compact('invoices'));
     }
 
     /**
@@ -88,7 +88,7 @@ class AluminiumInvoiceController extends Controller
 
 
         $validated = $request->validate([
-            'invoice_number' => 'required|string|unique:aluminium_invoices,invoice_number',
+            'invoice_number' => 'required|string|unique:alumunium_invoices,invoice_number',
             'invoice_date' => 'required|date',
             'recipient' => 'required|string',
             'regarding' => 'nullable|string',
@@ -118,7 +118,7 @@ class AluminiumInvoiceController extends Controller
 
         InvoiceAlumunium::create($validated);
 
-        return redirect()->route('aluminium-invoice.index')
+        return redirect()->route('alumunium-invoice.index')
             ->with('success', 'Invoice berhasil ditambahkan!');
     }
 
@@ -166,7 +166,7 @@ class AluminiumInvoiceController extends Controller
             'total_amount' => $totalAmount,
         ]);
 
-        return redirect()->route('aluminium-invoice.index')
+        return redirect()->route('alumunium-invoice.index')
             ->with('success', 'Invoice berhasil diupdate!');
     }
 
@@ -197,7 +197,7 @@ class AluminiumInvoiceController extends Controller
 
         InvoiceAlumunium::whereIn('invoice_number', $selectedInvoiceNumbers)->delete();
 
-        return redirect()->route('aluminium-invoice.index')
+        return redirect()->route('alumunium-invoice.index')
             ->with('success', count($selectedInvoiceNumbers) . ' invoice berhasil dihapus!');
     }
 
@@ -208,7 +208,7 @@ class AluminiumInvoiceController extends Controller
     {
         $invoice = InvoiceAlumunium::where('invoice_number', $invoiceNumber)->firstOrFail();
 
-        $pdf = Pdf::loadView('exports.aluminium-invoice-pdf', compact('invoice'));
+        $pdf = Pdf::loadView('exports.alumunium-invoice-pdf', compact('invoice'));
         $pdf->setPaper('a4', 'portrait');
 
         // Replace / and \ with - for safe filename
@@ -225,7 +225,7 @@ class AluminiumInvoiceController extends Controller
         // Replace / and \ with - for safe filename
         $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
 
-        return Excel::download(new AluminiumInvoiceExport($invoiceNumber), 'Invoice-' . $safeFileName . '.xlsx');
+        return Excel::download(new AlumuniumInvoiceExport($invoiceNumber), 'Invoice-' . $safeFileName . '.xlsx');
     }
 }
 
