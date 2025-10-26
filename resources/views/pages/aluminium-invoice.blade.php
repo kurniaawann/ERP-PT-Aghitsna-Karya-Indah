@@ -26,7 +26,7 @@
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="Cari no invoice atau kepada..."
                             class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 
-                       focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" />
+                       focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
                     </div>
 
                     <!-- Tombol Cari -->
@@ -87,10 +87,10 @@
                                         <td class="p-2 text-center">
                                             <input type="checkbox" name="selected_invoices[]"
                                                 value="{{ $invoice->invoice_number }}"
-                                                class="w-4 h-4 accent-blue-600 cursor-pointer">
+                                                class="w-4 h-4 accent-primary cursor-pointer">
                                         </td>
 
-                                        <td class="p-2 font-medium text-blue-600">{{ $invoice->invoice_number }}</td>
+                                        <td class="p-2 font-medium text-primary">{{ $invoice->invoice_number }}</td>
                                         <td class="p-2 text-sm">{{ $invoice->invoice_date->format('d-m-Y') }}</td>
                                         <td class="p-2">{{ $invoice->recipient }}</td>
                                         <td class="p-2 text-sm text-gray-600">
@@ -107,7 +107,7 @@
                                                 {{-- Tombol Lihat Detail --}}
                                                 <button type="button"
                                                     onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
-                                                    class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    class="flex items-center gap-1 bg-info hover:bg-info/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                                     title="Lihat Detail">
                                                     <i class="fa-solid fa-eye w-3 h-3"></i>
                                                     Lihat
@@ -124,7 +124,7 @@
 
                                                 {{-- Tombol Print PDF --}}
                                                 <a href="{{ route('aluminium-invoice.print.pdf', $invoice->invoice_number) }}"
-                                                    class="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                                     title="Print PDF">
                                                     <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                                     PDF
@@ -132,7 +132,7 @@
 
                                                 {{-- Tombol Print Excel --}}
                                                 <a href="{{ route('aluminium-invoice.print.excel', $invoice->invoice_number) }}"
-                                                    class="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                                     title="Print Excel">
                                                     <i class="fa-solid fa-file-excel w-3 h-3"></i>
                                                     Excel
@@ -186,31 +186,31 @@
         buttonText="Simpan">
 
         <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
+            <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-error">*</span></label>
             <input type="date" name="invoice_date" class="w-full border rounded p-2" required>
         </div>
 
         <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Kepada (Nama Penerima) <span class="text-red-500">*</span></label>
+            <label class="block text-gray-700 mb-1">Kepada (Nama Penerima) <span class="text-error">*</span></label>
             <input type="text" name="recipient" class="w-full border rounded p-2" placeholder="Nama penerima invoice"
                 required>
         </div>
 
         <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
+            <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-error">*</span></label>
             <input type="text" name="regarding" class="w-full border rounded p-2"
                 placeholder="Contoh: Penagihan Pembayaran" required>
         </div>
 
         <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
+            <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
             <textarea name="project_description" class="w-full border rounded p-2" rows="2"
                 placeholder="Contoh: Proyek Karbela 3 / Pak Sis" required></textarea>
         </div>
 
         <div id="items-container" class="mb-4">
             <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
-                    class="text-red-500">*</span></label>
+                    class="text-error">*</span></label>
             <div id="items-list">
                 <div class="item-row mb-3 p-3 border rounded bg-gray-50">
                     <div class="grid grid-cols-2 gap-2 mb-2">
@@ -225,13 +225,13 @@
                         <input type="number" step="0.01" class="item-harga border rounded p-2" placeholder="Harga *"
                             required>
                         <button type="button"
-                            class="remove-item bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
+                            class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
                 </div>
             </div>
-            <button type="button" id="add-item" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            <button type="button" id="add-item" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover">
                 <i class="fa-solid fa-plus"></i> Tambah Item
             </button>
         </div>
@@ -253,31 +253,31 @@
             </div>
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-error">*</span></label>
                 <input type="date" name="invoice_date" value="{{ $invoice->invoice_date->format('Y-m-d') }}"
                     class="w-full border rounded p-2" required>
             </div>
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Kepada <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 mb-1">Kepada <span class="text-error">*</span></label>
                 <input type="text" name="recipient" value="{{ $invoice->recipient }}"
                     class="w-full border rounded p-2" required>
             </div>
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-error">*</span></label>
                 <input type="text" name="regarding" value="{{ $invoice->regarding }}"
                     class="w-full border rounded p-2" required>
             </div>
 
             <div class="mb-3">
-                <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
                 <textarea name="project_description" class="w-full border rounded p-2" rows="2" required>{{ $invoice->project_description }}</textarea>
             </div>
 
             <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
                 <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
-                        class="text-red-500">*</span></label>
+                        class="text-error">*</span></label>
                 <div id="items-list-edit-{{ $invoice->invoice_number }}">
                     @php
                         $existingItems = is_string($invoice->items)
@@ -302,14 +302,15 @@
                                     value="{{ $item['harga'] ?? 0 }}" class="item-harga-edit border rounded p-2"
                                     placeholder="Harga" required>
                                 <button type="button"
-                                    class="remove-item-edit bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
+                                    class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
                         </div>
                     @endforeach
                 </div>
-                <button type="button" class="add-item-edit bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                <button type="button"
+                    class="add-item-edit bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover"
                     data-invoice-id="{{ $invoice->invoice_number }}">
                     <i class="fa-solid fa-plus"></i> Tambah Item
                 </button>
@@ -381,7 +382,7 @@
 
             <div class="mt-4 text-right border-t pt-4">
                 <p class="text-sm text-gray-600">Total</p>
-                <p class="text-xl font-bold text-blue-600">Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
+                <p class="text-xl font-bold text-primary">Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
                 </p>
             </div>
         </x-modal>
@@ -445,7 +446,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             <input type="text" class="item-satuan border rounded p-2" placeholder="Satuan *" required>
                             <input type="number" step="0.01" class="item-harga border rounded p-2" placeholder="Harga *" required>
-                            <button type="button" class="remove-item bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
+                            <button type="button" class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -492,7 +493,7 @@
                                 class="item-satuan-edit border rounded p-2" placeholder="Satuan *" required>
                             <input type="number" step="0.01" name="items[${newIndex}][harga]"
                                 class="item-harga-edit border rounded p-2" placeholder="Harga *" required>
-                            <button type="button" class="remove-item-edit bg-red-500 text-white px-2 py-2 rounded hover:bg-red-600">
+                            <button type="button" class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>

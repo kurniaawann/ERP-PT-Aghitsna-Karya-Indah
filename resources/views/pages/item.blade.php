@@ -24,7 +24,7 @@
 
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari barang..."
                             class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 
-                       focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200" />
+                       focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
                     </div>
 
                     <!-- Tombol Cari -->
@@ -100,7 +100,7 @@
                                     <tr class="border-t hover:bg-gray-50">
                                         <td class="p-2 text-center">
                                             <input type="checkbox" name="selected_items[]" value="{{ $item->id_item }}"
-                                                class="w-4 h-4 accent-blue-600 cursor-pointer">
+                                                class="w-4 h-4 accent-primary cursor-pointer">
                                         </td>
 
                                         <td class="p-2">{{ $item->id_item }}</td>
@@ -147,7 +147,7 @@
                 action="{{ route('item.update', $item->id_item) }}" method="PUT" buttonText="Update">
 
                 <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Nama Barang <span class="text-red-500">*</span></label>
+                    <label class="block text-gray-700 mb-1">Nama Barang <span class="text-error">*</span></label>
                     <input type="text" name="name_item" value="{{ $item->name_item }}" class="w-full border rounded p-2"
                         required>
                 </div>
@@ -207,7 +207,7 @@
         buttonText="Simpan">
 
         <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Nama Barang <span class="text-red-500">*</span></label>
+            <label class="block text-gray-700 mb-1">Nama Barang <span class="text-error">*</span></label>
             <input type="text" name="name_item" class="w-full border rounded p-2" required>
         </div>
 
