@@ -74,6 +74,7 @@
                                     <th class="p-2 text-center">Harga Jual</th>
                                     <th class="p-2 text-center">Profit</th>
                                     <th class="p-2 text-center">Status</th>
+                                    <th class="p-2 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -154,6 +155,21 @@
                                                         </span>
                                                     @endif
                                                 </td>
+
+                                                {{-- Aksi --}}
+                                                <td class="p-2 text-center {{ $verticalAlign }}"
+                                                    rowspan="{{ $itemCount }}">
+                                                    @if (!$sale->isLunas())
+                                                        <button type="button"
+                                                            onclick="openModal('editModal-{{ $sale->id_sales_report }}')"
+                                                            class="flex items-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200">
+                                                            <i class="fa-solid fa-pen w-4 h-4"></i>
+                                                            Edit
+                                                        </button>
+                                                    @else
+                                                        <span class="text-gray-400 text-sm">-</span>
+                                                    @endif
+                                                </td>
                                             @endif
                                         </tr>
                                     @endforeach
@@ -174,7 +190,7 @@
                                     </tr> --}}
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center p-4 text-gray-500">Data tidak ditemukan.
+                                        <td colspan="11" class="text-center p-4 text-gray-500">Data tidak ditemukan.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -195,7 +211,7 @@
                                         <td class="p-3 text-right text-success font-bold text-lg">
                                             Rp {{ number_format($grandTotals->grand_total_profit ?? 0, 0, ',', '.') }}
                                         </td>
-                                        <td></td>
+                                        <td colspan="2"></td>
                                     </tr>
                                 @endif
                             </tbody>
