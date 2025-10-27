@@ -24,7 +24,7 @@ class SalesReportController extends Controller
             })
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(perPage: 10);
 
         // Get all items for dropdown
         $items = Items::orderBy('name_item')->get();
@@ -100,12 +100,19 @@ class SalesReportController extends Controller
             $validated['items'] = json_encode($items);
             $validated['status'] = 'Belum Lunas';
 
+            // Calculate totals before creating
+            $totalCapital = 0;
+            $totalSelling = 0;
+            foreach ($items as $item) {
+                $totalCapital += ($item['capital_price'] ?? 0) * ($item['quantity'] ?? 0);
+                $totalSelling += ($item['selling_price'] ?? 0) * ($item['quantity'] ?? 0);
+            }
+            $validated['total_capital'] = $totalCapital;
+            $validated['total_selling'] = $totalSelling;
+            $validated['total_profit'] = $totalSelling - $totalCapital;
+
             // Create sales report
             $salesReport = SalesReport::create($validated);
-
-            // Calculate totals
-            $salesReport->calculateTotals();
-            $salesReport->save();
 
             DB::commit();
             return redirect()->route('sales-report.index')
@@ -269,15 +276,26 @@ class SalesReportController extends Controller
      */
     private function generateSalesReportId()
     {
-        $lastSalesReport = SalesReport::orderBy('created_at', 'desc')->first();
+        // Get the last sales report ordered by ID (not created_at)
+        $lastSalesReport = SalesReport::orderBy('id_sales_report', 'desc')->first();
 
         if ($lastSalesReport) {
+            // Extract number from ID (e.g., "SR-00002" -> 2)
             $lastNumber = intval(substr($lastSalesReport->id_sales_report, 3));
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        return 'SR-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+        // Generate new ID with zero padding
+        $newId = 'SR-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+
+        // Double-check for uniqueness (in case of race condition)
+        while (SalesReport::where('id_sales_report', $newId)->exists()) {
+            $newNumber++;
+            $newId = 'SR-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+        }
+
+        return $newId;
     }
 }
