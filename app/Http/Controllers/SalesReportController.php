@@ -78,7 +78,7 @@ class SalesReportController extends Controller
                     if ($stockItem->quantity < $item['quantity']) {
                         DB::rollBack();
                         return back()
-                            ->with('error', 'Stok barang "' . $item['name_item'] . '" tidak mencukupi! Stok tersedia: ' . $stockItem->quantity)
+                            ->with('error', 'Stok Barang Tidak Cukup Silahkan Sesuaikan Dengan Stook Yang Tersedia')
                             ->withInput();
                     }
 
@@ -174,7 +174,7 @@ class SalesReportController extends Controller
                     if ($stockItem && $stockItem->quantity < $item['quantity']) {
                         DB::rollBack();
                         return back()
-                            ->with('error', 'Stok barang "' . $item['name_item'] . '" tidak mencukupi!')
+                            ->with('error', 'Stok barang "' . $item['name_item'] . '" tidak cukup! Anda membutuhkan ' . $item['quantity'] . ' unit, tetapi stok yang tersedia hanya ' . $stockItem->quantity . ' unit.')
                             ->withInput();
                     }
 
