@@ -143,6 +143,8 @@ class SalesReportController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.capital_price' => 'required|integer|min:0',
             'items.*.selling_price' => 'required|integer|min:0',
+            'items.*.from_stock' => 'nullable|in:true,false,1,0',
+            'items.*.id_item' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -151,64 +153,98 @@ class SalesReportController extends Controller
 
         $validated = $validator->validated();
 
+        // DEBUG: Log data yang diterima
+        \Log::info('=== EDIT SALES REPORT DEBUG ===');
+        \Log::info('Old Items: ' . json_encode($salesReport->items));
+        \Log::info('New Items from Request: ' . json_encode($validated['items']));
+
         DB::beginTransaction();
         try {
-            // Step 1: Return stock for OLD items that were from stock
-            // Kembalikan stock lama ke database sebelum proses item baru
             $oldItems = is_string($salesReport->items) ? json_decode($salesReport->items, true) : $salesReport->items;
+            $newItems = $validated['items'];
 
+            // Create a map to track stock changes per item
+            $stockChanges = []; // [id_item => delta_quantity]
+
+            // Step 1: Calculate stock to RETURN from old items
             foreach ($oldItems as $oldItem) {
                 $isOldFromStock = isset($oldItem['from_stock']) && ($oldItem['from_stock'] === true || $oldItem['from_stock'] === 'true');
 
                 if ($isOldFromStock && !empty($oldItem['id_item'])) {
-                    $stockItem = Items::where('id_item', $oldItem['id_item'])->first();
-                    if ($stockItem) {
-                        // Kembalikan stock lama
-                        $stockItem->quantity += $oldItem['quantity'];
-                        $stockItem->save();
+                    $itemId = $oldItem['id_item'];
+                    // Tambahkan quantity yang akan dikembalikan (positif)
+                    if (!isset($stockChanges[$itemId])) {
+                        $stockChanges[$itemId] = 0;
                     }
+                    $stockChanges[$itemId] += $oldItem['quantity'];
+                    \Log::info("RETURN: Item {$itemId} +{$oldItem['quantity']}, Total: {$stockChanges[$itemId]}");
                 }
             }
 
-            // Step 2: Process NEW items
-            $newItems = $validated['items'];
-
+            // Step 2: Calculate stock to REDUCE from new items
             foreach ($newItems as &$item) {
-                // Check if new item is from stock (handle both boolean and string "true")
                 $isNewFromStock = isset($item['from_stock']) && ($item['from_stock'] === true || $item['from_stock'] === 'true');
 
                 if ($isNewFromStock && !empty($item['id_item'])) {
-                    // Item BARU dari stock - kurangi stock
-                    $stockItem = Items::lockForUpdate()->where('id_item', $item['id_item'])->first();
-
-                    if (!$stockItem) {
-                        DB::rollBack();
-                        return back()->with('error', 'Barang "' . $item['name_item'] . '" tidak ditemukan!')->withInput();
+                    $itemId = $item['id_item'];
+                    // Kurangi quantity yang akan diambil (negatif)
+                    if (!isset($stockChanges[$itemId])) {
+                        $stockChanges[$itemId] = 0;
                     }
+                    $stockChanges[$itemId] -= $item['quantity'];
+                    \Log::info("REDUCE: Item {$itemId} -{$item['quantity']}, Total: {$stockChanges[$itemId]}");
+                } else {
+                    // Item tidak dari stock
+                    $item['from_stock'] = false;
+                    $item['id_item'] = null;
+                }
+            }
 
-                    // Validasi: Check stock availability
-                    if ($stockItem->quantity < $item['quantity']) {
-                        DB::rollBack();
-                        return back()
-                            ->with('error', 'Stok Barang Tidak Cukup Silahkan Sesuaikan Dengan Stook Yang Tersedia')
-                            ->withInput();
+            // Step 3: Validate and apply stock changes
+            foreach ($stockChanges as $itemId => $delta) {
+                $stockItem = Items::lockForUpdate()->where('id_item', $itemId)->first();
+
+                if (!$stockItem) {
+                    DB::rollBack();
+                    return back()->with('error', 'Barang dengan ID "' . $itemId . '" tidak ditemukan!')->withInput();
+                }
+
+                // Calculate new stock: current + delta
+                // delta bisa positif (dikembalikan lebih banyak) atau negatif (diambil lebih banyak)
+                $newStock = $stockItem->quantity + $delta;
+                \Log::info("APPLY: Item {$itemId} ({$stockItem->name_item}) - Current: {$stockItem->quantity}, Delta: {$delta}, New: {$newStock}");
+
+                // Validate: new stock cannot be negative
+                if ($newStock < 0) {
+                    // Hitung berapa stock yang kurang
+                    $shortage = abs($newStock);
+                    DB::rollBack();
+                    return back()
+                        ->with('error', 'Stok barang "' . $stockItem->name_item . '" tidak cukup! Stock tersedia saat ini: ' . $stockItem->quantity . ' unit. Anda kekurangan ' . $shortage . ' unit.')
+                        ->withInput();
+                }
+
+                // Apply stock change
+                $stockItem->quantity = $newStock;
+                $stockItem->save();
+                \Log::info("SAVED: Item {$itemId} stock updated to {$newStock}");
+            }
+
+            // Step 4: Update item details for items from stock
+            foreach ($newItems as &$item) {
+                $isNewFromStock = isset($item['from_stock']) && ($item['from_stock'] === true || $item['from_stock'] === 'true');
+
+                if ($isNewFromStock && !empty($item['id_item'])) {
+                    $stockItem = Items::where('id_item', $item['id_item'])->first();
+
+                    if ($stockItem) {
+                        // Use item prices from stock
+                        $item['capital_price'] = $stockItem->capital_price;
+                        $item['selling_price'] = $stockItem->selling_price;
                     }
-
-                    // Kurangi stock dengan quantity baru
-                    $stockItem->quantity -= $item['quantity'];
-                    $stockItem->save();
-
-                    // Use item prices from stock
-                    $item['capital_price'] = $stockItem->capital_price;
-                    $item['selling_price'] = $stockItem->selling_price;
 
                     // Store as boolean true
                     $item['from_stock'] = true;
-                } else {
-                    // Item BARU tidak dari stock (manual input)
-                    // Store as boolean false
-                    $item['from_stock'] = false;
-                    $item['id_item'] = null;
                 }
 
                 // Calculate item profit
