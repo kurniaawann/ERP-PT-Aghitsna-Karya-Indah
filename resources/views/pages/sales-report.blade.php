@@ -173,21 +173,6 @@
                                             @endif
                                         </tr>
                                     @endforeach
-
-                                    {{-- Row Total per Proyek --}}
-                                    {{-- <tr class="bg-primary-light/20 border-t-2 border-primary/30 font-semibold">
-                                        <td colspan="6" class="p-2 text-right text-gray-700">Total Proyek:</td>
-                                        <td class="p-2 text-center text-gray-700">
-                                            Rp {{ number_format($sale->total_capital, 0, ',', '.') }}
-                                        </td>
-                                        <td class="p-2 text-center text-gray-700">
-                                            Rp {{ number_format($sale->total_selling, 0, ',', '.') }}
-                                        </td>
-                                        <td class="p-2 text-right text-success">
-                                            Rp {{ number_format($sale->total_profit, 0, ',', '.') }}
-                                        </td>
-                                        <td colspan="2"></td>
-                                    </tr> --}}
                                 @empty
                                     <tr>
                                         <td colspan="11" class="text-center p-4 text-gray-500">Data tidak ditemukan.
@@ -341,26 +326,60 @@
                             $existingItems = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
                         @endphp
                         @foreach ($existingItems as $index => $item)
-                            <div class="item-row-edit mb-3 p-3 border rounded bg-gray-50">
+                            <div class="item-row-edit mb-3 p-3 border rounded bg-gray-50"
+                                data-index="{{ $index }}">
+                                {{-- Checkbox Dari Stok --}}
+                                <div class="flex items-center gap-2 mb-2">
+                                    <label class="flex items-center gap-2">
+                                        <input type="checkbox" class="item-from-stock-edit accent-primary"
+                                            {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'checked' : '' }}>
+                                        <span class="text-sm">Dari Stok</span>
+                                    </label>
+                                </div>
+
+                                {{-- Dropdown Pilih Barang --}}
+                                <select class="item-select-edit w-full border rounded p-2 mb-2"
+                                    {{ empty($item['from_stock']) || $item['from_stock'] === 'false' ? 'disabled' : '' }}>
+                                    <option value="">-- Pilih Barang --</option>
+                                    @foreach ($items as $stockItem)
+                                        <option value="{{ $stockItem->id_item }}"
+                                            data-name="{{ $stockItem->name_item }}"
+                                            data-capital="{{ $stockItem->capital_price }}"
+                                            data-selling="{{ $stockItem->selling_price }}"
+                                            data-stock="{{ $stockItem->quantity }}"
+                                            {{ !empty($item['id_item']) && $item['id_item'] == $stockItem->id_item ? 'selected' : '' }}>
+                                            {{ $stockItem->name_item }} (Stok: {{ $stockItem->quantity }})
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                {{-- Input Nama Barang --}}
                                 <input type="text" name="items[{{ $index }}][name_item]"
-                                    value="{{ $item['name_item'] ?? '' }}" class="w-full border rounded p-2 mb-2"
-                                    placeholder="Nama Barang" required>
+                                    value="{{ $item['name_item'] ?? '' }}"
+                                    class="item-name-edit w-full border rounded p-2 mb-2" placeholder="Nama Barang *"
+                                    {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                                    required>
 
                                 <div class="grid grid-cols-3 gap-2">
                                     <input type="number" name="items[{{ $index }}][quantity]"
-                                        value="{{ $item['quantity'] ?? 0 }}" class="border rounded p-2"
-                                        placeholder="Qty" required min="1">
+                                        value="{{ $item['quantity'] ?? 0 }}" class="item-qty-edit border rounded p-2"
+                                        placeholder="Qty *" required min="1">
                                     <input type="number" name="items[{{ $index }}][capital_price]"
-                                        value="{{ $item['capital_price'] ?? 0 }}" class="border rounded p-2"
-                                        placeholder="Harga Modal" required min="0">
+                                        value="{{ $item['capital_price'] ?? 0 }}"
+                                        class="item-capital-edit border rounded p-2" placeholder="Harga Modal *"
+                                        {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                                        required min="0">
                                     <input type="number" name="items[{{ $index }}][selling_price]"
-                                        value="{{ $item['selling_price'] ?? 0 }}" class="border rounded p-2"
-                                        placeholder="Harga Jual" required min="0">
+                                        value="{{ $item['selling_price'] ?? 0 }}"
+                                        class="item-selling-edit border rounded p-2" placeholder="Harga Jual *"
+                                        {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                                        required min="0">
                                 </div>
 
                                 <input type="hidden" name="items[{{ $index }}][from_stock]"
-                                    value="{{ $item['from_stock'] ?? false }}">
-                                <input type="hidden" name="items[{{ $index }}][id_item]"
+                                    class="from-stock-hidden"
+                                    value="{{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'true' : 'false' }}">
+                                <input type="hidden" name="items[{{ $index }}][id_item]" class="id-item-hidden"
                                     value="{{ $item['id_item'] ?? '' }}">
 
                                 <button type="button"
@@ -655,21 +674,42 @@
 
                     const newItem = document.createElement('div');
                     newItem.className = 'item-row-edit mb-3 p-3 border rounded bg-gray-50';
+                    newItem.setAttribute('data-index', newIndex);
                     newItem.innerHTML = `
+                        <div class="flex items-center gap-2 mb-2">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" class="item-from-stock-edit accent-primary">
+                                <span class="text-sm">Dari Stok</span>
+                            </label>
+                        </div>
+
+                        <select class="item-select-edit w-full border rounded p-2 mb-2" disabled>
+                            <option value="">-- Pilih Barang --</option>
+                            @foreach ($items as $item)
+                                <option value="{{ $item->id_item }}" 
+                                        data-name="{{ $item->name_item }}"
+                                        data-capital="{{ $item->capital_price }}"
+                                        data-selling="{{ $item->selling_price }}"
+                                        data-stock="{{ $item->quantity }}">
+                                    {{ $item->name_item }} (Stok: {{ $item->quantity }})
+                                </option>
+                            @endforeach
+                        </select>
+
                         <input type="text" name="items[${newIndex}][name_item]"
-                            class="w-full border rounded p-2 mb-2" placeholder="Nama Barang" required>
+                            class="item-name-edit w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required>
                         
                         <div class="grid grid-cols-3 gap-2">
                             <input type="number" name="items[${newIndex}][quantity]"
-                                class="border rounded p-2" placeholder="Qty" required min="1" value="1">
+                                class="item-qty-edit border rounded p-2" placeholder="Qty *" required min="1" value="1">
                             <input type="number" name="items[${newIndex}][capital_price]"
-                                class="border rounded p-2" placeholder="Harga Modal" required min="0" value="0">
+                                class="item-capital-edit border rounded p-2" placeholder="Harga Modal *" required min="0" value="0">
                             <input type="number" name="items[${newIndex}][selling_price]"
-                                class="border rounded p-2" placeholder="Harga Jual" required min="0" value="0">
+                                class="item-selling-edit border rounded p-2" placeholder="Harga Jual *" required min="0" value="0">
                         </div>
 
-                        <input type="hidden" name="items[${newIndex}][from_stock]" value="false">
-                        <input type="hidden" name="items[${newIndex}][id_item]" value="">
+                        <input type="hidden" name="items[${newIndex}][from_stock]" class="from-stock-hidden" value="false">
+                        <input type="hidden" name="items[${newIndex}][id_item]" class="id-item-hidden" value="">
 
                         <button type="button"
                             class="remove-item-edit mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
@@ -678,8 +718,69 @@
                     `;
                     itemsContainer.appendChild(newItem);
                     attachEditRemoveListeners();
+                    attachEditStockListeners();
                 });
             });
+
+            // Handle checkbox "Dari Stok" di modal edit
+            function attachEditStockListeners() {
+                document.querySelectorAll('.item-from-stock-edit').forEach(checkbox => {
+                    checkbox.removeEventListener('change', toggleEditStockHandler);
+                    checkbox.addEventListener('change', toggleEditStockHandler);
+                });
+
+                document.querySelectorAll('.item-select-edit').forEach(select => {
+                    select.removeEventListener('change', selectEditItemHandler);
+                    select.addEventListener('change', selectEditItemHandler);
+                });
+            }
+
+            function toggleEditStockHandler() {
+                const row = this.closest('.item-row-edit');
+                const select = row.querySelector('.item-select-edit');
+                const nameInput = row.querySelector('.item-name-edit');
+                const capitalInput = row.querySelector('.item-capital-edit');
+                const sellingInput = row.querySelector('.item-selling-edit');
+                const fromStockHidden = row.querySelector('.from-stock-hidden');
+
+                if (this.checked) {
+                    select.disabled = false;
+                    select.required = true;
+                    nameInput.readOnly = true;
+                    capitalInput.readOnly = true;
+                    sellingInput.readOnly = true;
+                    fromStockHidden.value = 'true';
+                } else {
+                    select.disabled = true;
+                    select.required = false;
+                    select.value = '';
+                    nameInput.readOnly = false;
+                    capitalInput.readOnly = false;
+                    sellingInput.readOnly = false;
+                    fromStockHidden.value = 'false';
+                    row.querySelector('.id-item-hidden').value = '';
+                }
+            }
+
+            function selectEditItemHandler() {
+                const row = this.closest('.item-row-edit');
+                const selectedOption = this.options[this.selectedIndex];
+
+                if (selectedOption.value) {
+                    const nameInput = row.querySelector('.item-name-edit');
+                    const capitalInput = row.querySelector('.item-capital-edit');
+                    const sellingInput = row.querySelector('.item-selling-edit');
+                    const idItemHidden = row.querySelector('.id-item-hidden');
+
+                    nameInput.value = selectedOption.dataset.name;
+                    capitalInput.value = selectedOption.dataset.capital;
+                    sellingInput.value = selectedOption.dataset.selling;
+                    idItemHidden.value = selectedOption.value;
+                }
+            }
+
+            // Initialize edit stock listeners for existing items
+            attachEditStockListeners();
 
             function attachEditRemoveListeners() {
                 document.querySelectorAll('.remove-item-edit').forEach(btn => {
