@@ -46,8 +46,8 @@
         }
 
         th {
-            background-color: #FFFF00;
-            font-weight: bold;
+            background-color: #FFFF0'0;
+ font-weight: bold;
             text-align: center;
             font-size: 10px;
             vertical-align: middle;
@@ -59,11 +59,16 @@
 
         /* Style untuk kolom yang merged secara visual tanpa rowspan */
         .merged-cell {
+            border-top: none;
             border-bottom: none;
         }
 
         .merged-cell-last {
-            border-bottom: 1px solid black;
+            border-top: none;
+        }
+
+        .merged-cell-first {
+            border-bottom: none;
         }
 
         .text-center {
@@ -143,7 +148,8 @@
 
 <body>
     <div class="title">LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI</div>
-    <div class="subtitle">BULAN {{ strtoupper(\Carbon\Carbon::now()->locale('id')->translatedFormat('F Y')) }}</div>
+    <div class="subtitle">BULAN {{ strtoupper(string: \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y')) }}
+    </div>
 
     <table>
         <thead>
@@ -155,7 +161,6 @@
                 <th class="col-qty">QTY</th>
                 <th class="col-hpp">HPP (HARGA MODAL )</th>
                 <th class="col-selling">HARGA JUAL</th>
-                <th class="col-jumlah">JUMLAH &</th>
                 <th class="col-profit">PROFIT</th>
                 <th class="col-status">SUMBER UANG</th>
             </tr>
@@ -211,38 +216,44 @@
                             $projectItemCounter++;
                             $isLastItemInSale = $itemIndex === $itemCount - 1;
                             $isLastItemInProject = $projectItemCounter === $totalItemsInProject;
+
+                            // Hitung sisa items untuk status (hanya sekali di awal project)
+                            static $statusRowspanAdded = [];
+                            $projectKey = $projectName;
+                            $needStatusCell = !isset($statusRowspanAdded[$projectKey]);
+                            if ($needStatusCell) {
+                                $statusRowspanAdded[$projectKey] = true;
+                            }
                         @endphp
 
                         <tr>
-                            <td class="text-center {{ $isLastItemInSale ? 'merged-cell-last' : 'merged-cell' }}">
-                                @if ($firstInSale)
+                            @if ($firstInSale)
+                                <td rowspan="{{ $itemCount }}" class="text-center vertical-center">
                                     {{ $no }}
-                                @endif
-                            </td>
-                            <td class="text-center {{ $isLastItemInSale ? 'merged-cell-last' : 'merged-cell' }}">
-                                @if ($firstInSale)
+                                </td>
+                                <td rowspan="{{ $itemCount }}" class="text-center vertical-center">
                                     {{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}
-                                @endif
-                            </td>
-                            <td class="{{ $isLastItemInProject ? 'merged-cell-last' : 'merged-cell' }}">
-                                @if ($firstInProject)
+                                </td>
+                            @endif
+
+                            @if ($firstInProject)
+                                <td rowspan="{{ $totalItemsInProject }}" class="vertical-center">
                                     {{ strtoupper($projectName) }}
-                                    @php $firstInProject = false; @endphp
-                                @endif
-                            </td>
+                                </td>
+                                @php $firstInProject = false; @endphp
+                            @endif
 
                             <td>{{ $item['name_item'] ?? '-' }}</td>
                             <td class="text-center">{{ $qty }}</td>
                             <td class="text-right">Rp {{ number_format($capital, 0, ',', '.') }}</td>
                             <td class="text-right">Rp {{ number_format($selling, 0, ',', '.') }}</td>
-                            <td class="text-right">Rp {{ number_format($totalSelling, 0, ',', '.') }}</td>
                             <td class="text-right">Rp {{ number_format($profit, 0, ',', '.') }}</td>
 
-                            <td class="text-center {{ $isLastItemInProject ? 'merged-cell-last' : 'merged-cell' }}">
-                                @if ($isLastItemInProject)
+                            @if ($needStatusCell)
+                                <td rowspan="{{ $totalItemsInProject }}" class="text-center vertical-center">
                                     {{ strtoupper($sale->status) }}
-                                @endif
-                            </td>
+                                </td>
+                            @endif
                         </tr>
 
                         @if ($firstInSale)
@@ -254,7 +265,12 @@
 
                 <!-- Project Subtotal -->
                 <tr class="subtotal-row">
-                    <td colspan="7"></td>
+                    <td class="text-center"></td>
+                    <td class="text-center"></td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-center"></td>
+                    <td class="text-right">Rp {{ number_format($projectTotalCapital, 0, ',', '.') }}</td>
                     <td class="text-right">Rp {{ number_format($projectTotalSelling, 0, ',', '.') }}</td>
                     <td class="text-right">Rp {{ number_format($projectTotalProfit, 0, ',', '.') }}</td>
                     <td></td>
@@ -269,11 +285,11 @@
 
             <!-- Grand Total -->
             <tr class="total-row">
-                <td colspan="6"></td>
-                <td class="text-center">TOTAL</td>
+                <td colspan="5" class="text-center" style="font-weight: bold;">TOTAL PENJUALAN PROFIT</td>
+                <td class="text-right">Rp {{ number_format($totalCapitalAll, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($totalSellingAll, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($totalProfitAll, 0, ',', '.') }}</td>
-                <td></td>
+                <td class="text-center" style="background-color: white; border: none;"></td>
             </tr>
         </tbody>
     </table>
