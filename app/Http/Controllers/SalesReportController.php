@@ -89,6 +89,18 @@ class SalesReportController extends Controller
                     // Use item prices
                     $item['capital_price'] = $stockItem->capital_price;
                     $item['selling_price'] = $stockItem->selling_price;
+                } else {
+                    // Validate: Harga modal harus lebih kecil dari harga jual (untuk barang BUKAN dari stock)
+                    $capitalPrice = $item['capital_price'] ?? 0;
+                    $sellingPrice = $item['selling_price'] ?? 0;
+
+                    if ($capitalPrice >= $sellingPrice) {
+                        DB::rollBack();
+                        return back()
+                            // ->with('error', 'Harga modal barang "' . $item['name_item'] . '" harus lebih kecil dari harga jual!')
+                            ->with('error', "Harga modal harus lebih kecil dari harga jual untuk item")
+                            ->withInput();
+                    }
                 }
 
                 // Calculate item profit
@@ -245,6 +257,17 @@ class SalesReportController extends Controller
 
                     // Store as boolean true
                     $item['from_stock'] = true;
+                } else {
+                    // Validate: Harga modal harus lebih kecil dari harga jual (untuk barang BUKAN dari stock)
+                    $capitalPrice = $item['capital_price'] ?? 0;
+                    $sellingPrice = $item['selling_price'] ?? 0;
+
+                    if ($capitalPrice >= $sellingPrice) {
+                        DB::rollBack();
+                        return back()
+                            ->with('error', 'Harga modal barang "' . $item['name_item'] . '" harus lebih kecil dari harga jual!')
+                            ->withInput();
+                    }
                 }
 
                 // Calculate item profit

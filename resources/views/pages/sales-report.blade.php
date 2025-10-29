@@ -111,9 +111,7 @@
                                             {{-- Nama Barang --}}
                                             <td class="p-2">
                                                 {{ $saleItem['name_item'] ?? '-' }}
-                                                @if (!empty($saleItem['from_stock']))
-                                                    <span class="text-xs text-primary">(Stok)</span>
-                                                @endif
+
                                             </td>
 
                                             {{-- QTY --}}
