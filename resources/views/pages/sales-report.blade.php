@@ -77,7 +77,7 @@
                     <!-- Dropdown Print Laporan -->
                     <div class="relative inline-block text-left w-full sm:w-auto">
                         <button type="button" id="printDropdownButton"
-                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 lg:py-1.5 rounded-lg transition-colors duration-200 text-sm font-medium">
+                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-2 lg:py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium">
                             <i class="fa-solid fa-print w-4 h-4"></i>
                             <span>Print Laporan</span>
                             <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>

@@ -39,25 +39,33 @@
 
             <!-- Aksi di Kanan -->
             <div class="flex items-center gap-3 mt-2 sm:mt-0 flex-col sm:flex-row w-full sm:w-auto">
-                <!-- Dropdown Format Print -->
-                <div class="relative w-full sm:w-auto">
-                    <select id="print-format"
-                        class="block w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 pr-8 text-sm text-gray-700 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light transition-all duration-200">
-                        <option selected disabled hidden>Pilih Format Print</option>
-                        <option value="pdf">PDF</option>
-                        <option value="excel">Excel</option>
-                    </select>
-
-                    <!-- Ikon panah ``dropdown`` -->
-                    <span class="absolute inset-y-0 right-3 flex items-center text-gray-500 pointer-events-none">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </span>
-                </div>
-
                 <div class="flex gap-2 w-full sm:w-auto">
+                    <!-- Dropdown Print Laporan -->
+                    <div class="relative inline-block text-left w-full sm:w-auto">
+                        <button type="button" id="printDropdownButton"
+                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors duration-200 text-sm font-medium">
+                            <i class="fa-solid fa-print w-4 h-4"></i>
+                            <span>Print Laporan</span>
+                            <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="printDropdownMenu"
+                            class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="py-1" role="menu">
+                                <a href="{{ route('item.export.excel') }}"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                    <i class="fa-solid fa-file-excel text-green-600 w-4"></i>
+                                    <span>Export Excel</span>
+                                </a>
+                                <a href="{{ route('item.export.pdf') }}"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                    <i class="fa-solid fa-file-pdf text-red-600 w-4"></i>
+                                    <span>Export PDF</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Tombol Hapus -->
                     <button type="button" onclick="openModal('deleteModal')"
                         class="flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-1.5 rounded-lg transition-colors duration-200 flex-1 sm:flex-initial">
@@ -258,20 +266,21 @@
                 });
             }
 
-            // Handle Print Format Dropdown
-            const printFormatSelect = document.getElementById('print-format');
-            if (printFormatSelect) {
-                printFormatSelect.addEventListener('change', function() {
-                    const format = this.value;
-                    if (format === 'pdf') {
-                        window.location.href = "{{ route('item.export.pdf') }}";
-                    } else if (format === 'excel') {
-                        window.location.href = "{{ route('item.export.excel') }}";
+            // Toggle Print Dropdown
+            const printDropdownButton = document.getElementById('printDropdownButton');
+            const printDropdownMenu = document.getElementById('printDropdownMenu');
+
+            if (printDropdownButton && printDropdownMenu) {
+                printDropdownButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    printDropdownMenu.classList.toggle('hidden');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!printDropdownButton.contains(e.target) && !printDropdownMenu.contains(e.target)) {
+                        printDropdownMenu.classList.add('hidden');
                     }
-                    // Reset dropdown setelah redirect
-                    setTimeout(() => {
-                        this.selectedIndex = 0;
-                    }, 100);
                 });
             }
         });
