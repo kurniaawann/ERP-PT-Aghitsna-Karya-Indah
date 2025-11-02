@@ -44,6 +44,16 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             $projectTotalProfit = 0;
             $firstInProject = true;
 
+            // Hitung total items dalam project
+            $totalItemsInProject = 0;
+            foreach ($projectSales as $saleTemp) {
+                $itemsTemp = is_string($saleTemp->items) ? json_decode($saleTemp->items, true) : $saleTemp->items;
+                $totalItemsInProject += count($itemsTemp);
+            }
+
+            $projectItemCounter = 0;
+            $statusAdded = false;
+
             foreach ($projectSales as $sale) {
                 $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
                 $firstInSale = true;
@@ -60,28 +70,31 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                     $projectTotalSelling += $totalSelling;
                     $projectTotalProfit += $profit;
 
+                    $projectItemCounter++;
+
                     $data[] = [
                         $firstInSale ? $no : '',
                         $firstInSale ? \Carbon\Carbon::parse($sale->date)->format('d/m/Y') : '',
                         $firstInProject ? strtoupper($projectName) : '',
                         $item['name_item'] ?? '',
                         $qty,
-                        $item['unit'] ?? '',
                         'Rp ' . number_format($capital, 0, ',', '.'),
                         'Rp ' . number_format($selling, 0, ',', '.'),
-                        'Rp ' . number_format($totalSelling, 0, ',', '.'),
                         'Rp ' . number_format($profit, 0, ',', '.'),
-                        $firstInSale ? strtoupper($sale->status) : '',
+                        (!$statusAdded && $firstInSale) ? strtoupper($sale->status) : '',
                     ];
 
                     $firstInSale = false;
                     $firstInProject = false;
+                    if (!$statusAdded) {
+                        $statusAdded = true;
+                    }
                 }
                 $no++;
             }
 
+            // Project Subtotal
             $data[] = [
-                '',
                 '',
                 '',
                 '',
@@ -89,7 +102,6 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                 '',
                 'Rp ' . number_format($projectTotalCapital, 0, ',', '.'),
                 'Rp ' . number_format($projectTotalSelling, 0, ',', '.'),
-                '',
                 'Rp ' . number_format($projectTotalProfit, 0, ',', '.'),
                 '',
             ];
@@ -99,28 +111,25 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             $grandTotalProfit += $projectTotalProfit;
         }
 
+        // Grand Total
         $data[] = [
+            'TOTAL PENJUALAN PROFIT',
             '',
             '',
             '',
             '',
-            '',
-            'TOTAL',
             'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
             'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
-            '',
             'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
             '',
         ];
 
-        $data[] = ['', '', '', '', '', '', '', '', '', '', ''];
-        $data[] = ['', '', '', '', '', '', '', '', '', '', ''];
+        // Empty rows
+        $data[] = ['', '', '', '', '', '', '', '', ''];
+        $data[] = ['', '', '', '', '', '', '', '', ''];
 
+        // Footer info
         $data[] = [
-            '',
-            '',
-            '',
-            '',
             'Modal Aghitsna',
             'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
             '',
@@ -128,13 +137,11 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             '',
             '',
             '',
+            '',
+            '',
         ];
 
         $data[] = [
-            '',
-            '',
-            '',
-            '',
             'Modal Divisi Holo',
             'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
             '',
@@ -142,15 +149,15 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             '',
             '',
             '',
+            '',
+            '',
         ];
 
         $data[] = [
-            '',
-            '',
-            '',
-            '',
             'PROFIT',
             'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
+            '',
+            '',
             '',
             '',
             '',
@@ -175,7 +182,6 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                 'QTY',
                 'HPP (HARGA MODAL )',
                 'HARGA JUAL',
-                'JUMLAH &',
                 'PROFIT',
                 'SUMBER UANG',
             ],
@@ -186,21 +192,25 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
     {
         $highestRow = $sheet->getHighestRow();
 
-        $sheet->mergeCells('A1:K1');
+        // Merge title
+        $sheet->mergeCells('A1:I1');
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
-        $sheet->mergeCells('A2:K2');
+        // Merge subtitle
+        $sheet->mergeCells('A2:I2');
         $sheet->getStyle('A2')->applyFromArray([
             'font' => ['bold' => true, 'size' => 12],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
+        // Empty row
         $sheet->getRowDimension(3)->setRowHeight(5);
 
-        $sheet->getStyle('A4:K4')->applyFromArray([
+        // Header row styling
+        $sheet->getStyle('A4:I4')->applyFromArray([
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => 'FFFF00'],
@@ -216,13 +226,21 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         $sheet->getRowDimension(2)->setRowHeight(18);
         $sheet->getRowDimension(4)->setRowHeight(30);
 
-        $dataEndRow = $highestRow - 3;
-        $sheet->getStyle('A5:K' . $dataEndRow)->applyFromArray([
+        // Data rows border
+        $dataEndRow = $highestRow - 5;
+        $sheet->getStyle('A5:I' . $dataEndRow)->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
             ],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
+
+        // Align columns
+        $sheet->getStyle('A5:A' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('B5:B' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('E5:E' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('F5:H' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         return [];
     }
@@ -230,42 +248,65 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $highestRow = $sheet->getHighestRow();
 
                 for ($row = 5; $row <= $highestRow; $row++) {
-                    $cellValue = $sheet->getCell('D' . $row)->getValue();
-                    $satuan = $sheet->getCell('F' . $row)->getValue();
+                    $cellA = $sheet->getCell('A' . $row)->getValue();
+                    $cellD = $sheet->getCell('D' . $row)->getValue();
+                    $cellF = $sheet->getCell('F' . $row)->getValue();
 
-                    if (empty($cellValue) && empty($satuan) && !empty($sheet->getCell('G' . $row)->getValue())) {
-                        $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                    // Subtotal rows (empty NO, empty NAMA BARANG but has HPP value)
+                    if (empty($cellA) && empty($cellD) && !empty($cellF) && strpos($cellF, 'Rp') !== false) {
+                        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
                                 'startColor' => ['rgb' => 'FFFF00'],
                             ],
                             'font' => ['bold' => true],
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                            ],
                         ]);
                     }
 
-                    if ($satuan === 'TOTAL') {
-                        $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                    // Grand Total row (starts with "TOTAL PENJUALAN PROFIT")
+                    if ($cellA === 'TOTAL PENJUALAN PROFIT') {
+                        // Merge first 5 columns
+                        $sheet->mergeCells('A' . $row . ':E' . $row);
+
+                        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
                                 'startColor' => ['rgb' => 'FFFF00'],
                             ],
                             'font' => ['bold' => true],
                             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                            ],
+                        ]);
+
+                        // White background for SUMBER UANG column in grand total
+                        $sheet->getStyle('I' . $row)->applyFromArray([
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => 'FFFFFF'],
+                            ],
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_NONE],
+                            ],
                         ]);
                     }
 
-                    $modalValue = $sheet->getCell('E' . $row)->getValue();
-                    if (in_array($modalValue, ['Modal Aghitsna', 'Modal Divisi Holo', 'PROFIT'])) {
-                        $sheet->getStyle('E' . $row . ':F' . $row)->applyFromArray([
+                    // Footer info rows (Modal Aghitsna, Modal Divisi Holo, PROFIT)
+                    if (in_array($cellA, ['Modal Aghitsna', 'Modal Divisi Holo', 'PROFIT'])) {
+                        $sheet->getStyle('A' . $row . ':B' . $row)->applyFromArray([
                             'font' => ['bold' => true],
                         ]);
 
-                        $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_NONE],
                             ],
@@ -279,16 +320,15 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
     public function columnWidths(): array
     {
         return [
-            'A' => 5,
-            'B' => 12,
-            'C' => 20,
-            'D' => 25,
-            'E' => 6,
-            'F' => 20,
-            'G' => 15,
-            'H' => 15,
-            'I' => 15,
-            'J' => 15,
+            'A' => 5,     // NO
+            'B' => 12,    // TANGGAL
+            'C' => 20,    // PROYEK
+            'D' => 25,    // NAMA BARANG
+            'E' => 8,     // QTY
+            'F' => 20,    // HPP
+            'G' => 18,    // HARGA JUAL
+            'H' => 18,    // PROFIT
+            'I' => 20,    // SUMBER UANG
         ];
     }
 
