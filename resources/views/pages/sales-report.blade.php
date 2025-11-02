@@ -433,21 +433,50 @@
                                     </label>
                                 </div>
 
-                                {{-- Dropdown Pilih Barang --}}
-                                <select class="item-select-edit w-full border rounded p-2 mb-2"
-                                    {{ empty($item['from_stock']) || $item['from_stock'] === 'false' ? 'disabled' : '' }}>
-                                    <option value="">-- Pilih Barang --</option>
-                                    @foreach ($items as $stockItem)
-                                        <option value="{{ $stockItem->id_item }}"
-                                            data-name="{{ $stockItem->name_item }}"
-                                            data-capital="{{ $stockItem->capital_price }}"
-                                            data-selling="{{ $stockItem->selling_price }}"
-                                            data-stock="{{ $stockItem->quantity }}"
-                                            {{ !empty($item['id_item']) && $item['id_item'] == $stockItem->id_item ? 'selected' : '' }}>
-                                            {{ $stockItem->name_item }} (Stok: {{ $stockItem->quantity }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                                {{-- Custom Searchable Dropdown --}}
+                                <div class="relative mb-2 item-select-wrapper-edit"
+                                    style="display: {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'block' : 'none' }};">
+                                    <input type="text"
+                                        class="item-search-input-edit w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
+                                        placeholder="Cari barang..." autocomplete="off"
+                                        value="{{ !empty($item['id_item']) ? $item['name_item'] : '' }}">
+                                    <i
+                                        class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+
+                                    <div
+                                        class="item-dropdown-edit absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                                        <div class="item-options-edit">
+                                            <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b"
+                                                data-value="">
+                                                -- Pilih Barang --
+                                            </div>
+                                            @foreach ($items as $stockItem)
+                                                <div class="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 item-option-edit"
+                                                    data-value="{{ $stockItem->id_item }}"
+                                                    data-name="{{ $stockItem->name_item }}"
+                                                    data-capital="{{ $stockItem->capital_price }}"
+                                                    data-selling="{{ $stockItem->selling_price }}"
+                                                    data-stock="{{ $stockItem->quantity }}"
+                                                    data-search="{{ strtolower($stockItem->name_item) }}">
+                                                    <div class="font-medium text-gray-800">{{ $stockItem->name_item }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-500 mt-1">
+                                                        Stok: <span
+                                                            class="font-semibold text-primary">{{ $stockItem->quantity }}</span>
+                                                        unit
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        <div class="no-results-edit p-4 text-center text-sm text-gray-500 hidden">
+                                            <i class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
+                                            <p>Tidak ada barang ditemukan</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" class="item-select-hidden-edit"
+                                    value="{{ $item['id_item'] ?? '' }}">
 
                                 {{-- Input Nama Barang --}}
                                 <input type="text" name="items[{{ $index }}][name_item]"
@@ -916,18 +945,41 @@
                             </label>
                         </div>
 
-                        <select class="item-select-edit w-full border rounded p-2 mb-2" disabled>
-                            <option value="">-- Pilih Barang --</option>
-                            @foreach ($items as $item)
-                                <option value="{{ $item->id_item }}" 
-                                        data-name="{{ $item->name_item }}"
-                                        data-capital="{{ $item->capital_price }}"
-                                        data-selling="{{ $item->selling_price }}"
-                                        data-stock="{{ $item->quantity }}">
-                                    {{ $item->name_item }} (Stok: {{ $item->quantity }})
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="relative mb-2 item-select-wrapper-edit" style="display: none;">
+                            <input type="text" 
+                                class="item-search-input-edit w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" 
+                                placeholder="Cari barang..." 
+                                autocomplete="off">
+                            <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                            
+                            <div class="item-dropdown-edit absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                                <div class="item-options-edit">
+                                    <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b" data-value="">
+                                        -- Pilih Barang --
+                                    </div>
+                                    @foreach ($items as $item)
+                                        <div class="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 item-option-edit"
+                                            data-value="{{ $item->id_item }}"
+                                            data-name="{{ $item->name_item }}"
+                                            data-capital="{{ $item->capital_price }}"
+                                            data-selling="{{ $item->selling_price }}"
+                                            data-stock="{{ $item->quantity }}"
+                                            data-search="{{ strtolower($item->name_item) }}">
+                                            <div class="font-medium text-gray-800">{{ $item->name_item }}</div>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Stok: <span class="font-semibold text-primary">{{ $item->quantity }}</span> unit
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="no-results-edit p-4 text-center text-sm text-gray-500 hidden">
+                                    <i class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
+                                    <p>Tidak ada barang ditemukan</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" class="item-select-hidden-edit">
 
                         <input type="text" name="items[${newIndex}][name_item]"
                             class="item-name-edit w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required>
@@ -952,6 +1004,7 @@
                     itemsContainer.appendChild(newItem);
                     attachEditRemoveListeners();
                     attachEditStockListeners();
+                    initSearchableDropdownEdit(newItem);
                 });
             });
 
@@ -961,38 +1014,109 @@
                     checkbox.removeEventListener('change', toggleEditStockHandler);
                     checkbox.addEventListener('change', toggleEditStockHandler);
                 });
-
-                document.querySelectorAll('.item-select-edit').forEach(select => {
-                    select.removeEventListener('change', selectEditItemHandler);
-                    select.addEventListener('change', selectEditItemHandler);
-                });
             }
 
             function toggleEditStockHandler() {
                 const row = this.closest('.item-row-edit');
-                const select = row.querySelector('.item-select-edit');
+                const selectWrapper = row.querySelector('.item-select-wrapper-edit');
                 const nameInput = row.querySelector('.item-name-edit');
                 const capitalInput = row.querySelector('.item-capital-edit');
                 const sellingInput = row.querySelector('.item-selling-edit');
                 const fromStockHidden = row.querySelector('.from-stock-hidden');
 
                 if (this.checked) {
-                    select.disabled = false;
-                    select.required = true;
+                    selectWrapper.style.display = 'block';
                     nameInput.readOnly = true;
                     capitalInput.readOnly = true;
                     sellingInput.readOnly = true;
                     fromStockHidden.value = 'true';
                 } else {
-                    select.disabled = true;
-                    select.required = false;
-                    select.value = '';
+                    selectWrapper.style.display = 'none';
+                    const searchInput = row.querySelector('.item-search-input-edit');
+                    const hiddenInput = row.querySelector('.item-select-hidden-edit');
+                    if (searchInput) searchInput.value = '';
+                    if (hiddenInput) hiddenInput.value = '';
                     nameInput.readOnly = false;
                     capitalInput.readOnly = false;
                     sellingInput.readOnly = false;
                     fromStockHidden.value = 'false';
                     row.querySelector('.id-item-hidden').value = '';
                 }
+            }
+
+            // Initialize searchable dropdown for edit modal
+            function initSearchableDropdownEdit(row) {
+                const searchInput = row.querySelector('.item-search-input-edit');
+                const dropdown = row.querySelector('.item-dropdown-edit');
+                const options = row.querySelectorAll('.item-option-edit');
+                const noResults = row.querySelector('.no-results-edit');
+                const hiddenInput = row.querySelector('.item-select-hidden-edit');
+                const nameInput = row.querySelector('.item-name-edit');
+                const capitalInput = row.querySelector('.item-capital-edit');
+                const sellingInput = row.querySelector('.item-selling-edit');
+                const idItemHidden = row.querySelector('.id-item-hidden');
+
+                if (!searchInput) return;
+
+                // Show dropdown on focus
+                searchInput.addEventListener('focus', function() {
+                    dropdown.classList.remove('hidden');
+                });
+
+                // Search functionality
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    let hasResults = false;
+
+                    options.forEach(option => {
+                        const searchText = option.dataset.search || '';
+                        if (searchText.includes(searchTerm)) {
+                            option.style.display = 'block';
+                            hasResults = true;
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+
+                    // Show/hide no results message
+                    const itemOptionsDiv = row.querySelector('.item-options-edit');
+                    if (hasResults) {
+                        noResults.classList.add('hidden');
+                        itemOptionsDiv.classList.remove('hidden');
+                    } else {
+                        noResults.classList.remove('hidden');
+                        itemOptionsDiv.classList.add('hidden');
+                    }
+                });
+
+                // Handle option selection
+                options.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const value = this.dataset.value;
+                        const name = this.dataset.name;
+                        const capital = this.dataset.capital;
+                        const selling = this.dataset.selling;
+
+                        searchInput.value = name || '';
+                        hiddenInput.value = value || '';
+
+                        if (value) {
+                            nameInput.value = name;
+                            capitalInput.value = capital;
+                            sellingInput.value = selling;
+                            idItemHidden.value = value;
+                        }
+
+                        dropdown.classList.add('hidden');
+                    });
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!row.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
             }
 
             function selectEditItemHandler() {
@@ -1014,6 +1138,11 @@
 
             // Initialize edit stock listeners for existing items
             attachEditStockListeners();
+
+            // Initialize searchable dropdown for existing edit items
+            document.querySelectorAll('.item-row-edit').forEach(row => {
+                initSearchableDropdownEdit(row);
+            });
 
             function attachEditRemoveListeners() {
                 document.querySelectorAll('.remove-item-edit').forEach(btn => {
