@@ -89,12 +89,12 @@
                             <div class="py-1" role="menu">
                                 <a href="{{ route('sales-report.export.excel') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
                                     class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
-                                    <i class="fa-solid fa-file-excel text-green-600 w-4"></i>
+                                    <i class="fa-solid fa-file-excel text-success w-4"></i>
                                     <span>Export Excel</span>
                                 </a>
                                 <a href="{{ route('sales-report.export.pdf') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
                                     class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
-                                    <i class="fa-solid fa-file-pdf text-red-600 w-4"></i>
+                                    <i class="fa-solid fa-file-pdf text-error w-4"></i>
                                     <span>Export PDF</span>
                                 </a>
                             </div>
@@ -342,7 +342,7 @@
                                     -- Pilih Barang --
                                 </div>
                                 @foreach ($items as $item)
-                                    <div class="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 item-option"
+                                    <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option"
                                         data-value="{{ $item->id_item }}" data-name="{{ $item->name_item }}"
                                         data-capital="{{ $item->capital_price }}"
                                         data-selling="{{ $item->selling_price }}" data-stock="{{ $item->quantity }}"
@@ -451,7 +451,7 @@
                                                 -- Pilih Barang --
                                             </div>
                                             @foreach ($items as $stockItem)
-                                                <div class="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 item-option-edit"
+                                                <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option-edit"
                                                     data-value="{{ $stockItem->id_item }}"
                                                     data-name="{{ $stockItem->name_item }}"
                                                     data-capital="{{ $stockItem->capital_price }}"
@@ -693,7 +693,7 @@
                                         -- Pilih Barang --
                                     </div>
                                     @foreach ($items as $item)
-                                        <div class="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 item-option"
+                                        <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option"
                                             data-value="{{ $item->id_item }}"
                                             data-name="{{ $item->name_item }}"
                                             data-capital="{{ $item->capital_price }}"
@@ -958,7 +958,7 @@
                                         -- Pilih Barang --
                                     </div>
                                     @foreach ($items as $item)
-                                        <div class="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 item-option-edit"
+                                        <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option-edit"
                                             data-value="{{ $item->id_item }}"
                                             data-name="{{ $item->name_item }}"
                                             data-capital="{{ $item->capital_price }}"
