@@ -57,4 +57,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/sales-report/{id_sales_report}/status', [SalesReportController::class, 'updateStatus'])->name('sales-report.updateStatus');
     Route::delete('/sales-report/destroy-selected', [SalesReportController::class, 'destroySelected'])->name('sales-report.destroySelected');
 
+    // Export routes
+    Route::get('/sales-report/export/excel', [SalesReportController::class, 'exportExcel'])->name('sales-report.export.excel');
+    Route::get('/sales-report/export/pdf', [SalesReportController::class, 'exportPdf'])->name('sales-report.export.pdf');
+
 });

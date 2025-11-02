@@ -37,6 +37,33 @@
             <!-- Aksi di Kanan -->
             <div class="flex items-center gap-3 mt-2 sm:mt-0 flex-col sm:flex-row w-full sm:w-auto">
                 <div class="flex gap-2 w-full sm:w-auto">
+                    <!-- Dropdown Print Laporan -->
+                    <div class="relative inline-block text-left">
+                        <button type="button" id="printDropdownButton"
+                            class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors duration-200">
+                            <i class="fa-solid fa-print w-4 h-4"></i>
+                            Print Laporan
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="printDropdownMenu"
+                            class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="py-1" role="menu">
+                                <a href="{{ route('sales-report.export.excel') }}{{ request('search') ? '?search=' . request('search') : '' }}"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                    <i class="fa-solid fa-file-excel text-green-600 w-4"></i>
+                                    <span>Export Excel</span>
+                                </a>
+                                <a href="{{ route('sales-report.export.pdf') }}{{ request('search') ? '?search=' . request('search') : '' }}"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                    <i class="fa-solid fa-file-pdf text-red-600 w-4"></i>
+                                    <span>Export PDF</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Tombol Hapus -->
                     <button type="button" onclick="openModal('deleteModal')"
                         class="flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-1.5 rounded-lg transition-colors duration-200 flex-1 sm:flex-initial">
@@ -487,6 +514,24 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Toggle Print Dropdown
+            const printDropdownButton = document.getElementById('printDropdownButton');
+            const printDropdownMenu = document.getElementById('printDropdownMenu');
+
+            if (printDropdownButton && printDropdownMenu) {
+                printDropdownButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    printDropdownMenu.classList.toggle('hidden');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!printDropdownButton.contains(e.target) && !printDropdownMenu.contains(e.target)) {
+                        printDropdownMenu.classList.add('hidden');
+                    }
+                });
+            }
+
             // Select All Checkbox functionality
             const selectAllCheckbox = document.getElementById('selectAll');
             const saleCheckboxes = document.querySelectorAll('input[name="selected_sales[]"]');

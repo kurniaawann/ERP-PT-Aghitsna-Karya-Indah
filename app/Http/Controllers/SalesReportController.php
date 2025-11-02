@@ -385,4 +385,74 @@ class SalesReportController extends Controller
 
         return $newId;
     }
+
+    /**
+     * Export sales report to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $query = SalesReport::query()->with([]);
+
+        // Apply search filter if exists
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where('name_proyek', 'like', '%' . $search . '%');
+        }
+
+        $salesReports = $query->orderBy('date', 'desc')->get();
+
+        $monthYear = \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SalesReportExport($salesReports, $monthYear),
+            'Laporan_Penjualan_' . date('Y-m-d') . '.xlsx'
+        );
+    }
+
+    /**
+     * Export sales report to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        $query = SalesReport::query();
+
+        // Apply search filter if exists
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where('name_proyek', 'like', '%' . $search . '%');
+        }
+
+        $salesReports = $query->orderBy('date', 'desc')->get();
+
+        // Calculate grand totals
+        $grandTotalCapital = 0;
+        $grandTotalSelling = 0;
+        $grandTotalProfit = 0;
+
+        foreach ($salesReports as $sale) {
+            $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
+            foreach ($items as $item) {
+                $qty = $item['quantity'] ?? 0;
+                $capital = $item['capital_price'] ?? 0;
+                $selling = $item['selling_price'] ?? 0;
+                $grandTotalCapital += $capital * $qty;
+                $grandTotalSelling += $selling * $qty;
+            }
+        }
+        $grandTotalProfit = $grandTotalSelling - $grandTotalCapital;
+
+        $monthYear = \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.sales-report-pdf', [
+            'salesReports' => $salesReports,
+            'monthYear' => $monthYear,
+            'grandTotalCapital' => $grandTotalCapital,
+            'grandTotalSelling' => $grandTotalSelling,
+            'grandTotalProfit' => $grandTotalProfit,
+        ]);
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Penjualan_' . date('Y-m-d') . '.pdf');
+    }
 }

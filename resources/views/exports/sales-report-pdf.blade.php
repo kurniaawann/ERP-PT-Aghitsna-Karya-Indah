@@ -46,8 +46,8 @@
         }
 
         th {
-            background-color: #FFFF0'0;
- font-weight: bold;
+            background-color: #FFFF00;
+            font-weight: bold;
             text-align: center;
             font-size: 10px;
             vertical-align: middle;
@@ -106,42 +106,47 @@
 
         .col-no {
             width: 3%;
+            text-align: center;
         }
 
         .col-date {
             width: 7%;
+            text-align: center;
         }
 
         .col-project {
             width: 12%;
+            text-align: center;
         }
 
         .col-item {
             width: 15%;
+            text-align: center;
         }
 
         .col-qty {
             width: 4%;
+            text-align: center;
         }
 
         .col-hpp {
             width: 13%;
+            text-align: center;
         }
 
         .col-selling {
             width: 11%;
-        }
-
-        .col-jumlah {
-            width: 11%;
+            text-align: center;
         }
 
         .col-profit {
             width: 11%;
+            text-align: center;
         }
 
         .col-status {
             width: 13%;
+            text-align: center;
         }
     </style>
 </head>
