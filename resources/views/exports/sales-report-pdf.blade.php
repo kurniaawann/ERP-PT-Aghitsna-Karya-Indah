@@ -57,17 +57,34 @@
             vertical-align: middle;
         }
 
-        /* Style untuk kolom yang merged secara visual tanpa rowspan */
-        .merged-cell {
-            border-top: none;
-            border-bottom: none;
+        /* Ensure table headers repeat on each page */
+        thead {
+            display: table-header-group;
         }
 
-        .merged-cell-last {
+        tbody {
+            display: table-row-group;
+        }
+
+        /* Prevent page breaks inside table rows */
+        tr {
+            page-break-inside: avoid;
+        }
+
+        /* Style untuk merged cell - hide konten jika bukan first item */
+        .hide-content {
+            color: transparent;
+            font-size: 0;
+            line-height: 0;
+        }
+
+        /* Hide top border untuk merged cells (bukan first item) */
+        .border-top-none {
             border-top: none;
         }
 
-        .merged-cell-first {
+        /* Hide bottom border untuk merged cells (bukan last item) */
+        .border-bottom-none {
             border-bottom: none;
         }
 
@@ -184,11 +201,10 @@
                     $projectTotalCapital = 0;
                     $projectTotalSelling = 0;
                     $projectTotalProfit = 0;
-                    $firstInProject = true;
+                    $projectItemCounter = 0;
 
                     // Hitung total items dalam project ini
                     $totalItemsInProject = 0;
-                    $projectItemCounter = 0;
                     foreach ($projectSales as $saleTemp) {
                         $itemsTemp = is_string($saleTemp->items)
                             ? json_decode($saleTemp->items, true)
@@ -200,9 +216,7 @@
                 @foreach ($projectSales as $saleIndex => $sale)
                     @php
                         $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
-                        $firstInSale = true;
                         $itemCount = count($items);
-                        $isLastSaleInProject = $saleIndex === count($projectSales) - 1;
                     @endphp
 
                     @foreach ($items as $itemIndex => $item)
@@ -218,52 +232,51 @@
                             $projectTotalSelling += $totalSelling;
                             $projectTotalProfit += $profit;
 
-                            $projectItemCounter++;
-                            $isLastItemInSale = $itemIndex === $itemCount - 1;
-                            $isLastItemInProject = $projectItemCounter === $totalItemsInProject;
+                            // Tentukan apakah ini first/last item dalam sale
+                            $isFirstInSale = $itemIndex === 0;
+                            $isLastInSale = $itemIndex === $itemCount - 1;
 
-                            // Hitung sisa items untuk status (hanya sekali di awal project)
-                            static $statusRowspanAdded = [];
-                            $projectKey = $projectName;
-                            $needStatusCell = !isset($statusRowspanAdded[$projectKey]);
-                            if ($needStatusCell) {
-                                $statusRowspanAdded[$projectKey] = true;
-                            }
+                            // Tentukan apakah ini first/last item dalam project
+                            $isFirstInProject = $projectItemCounter === 0;
+                            $isLastInProject = $projectItemCounter === $totalItemsInProject - 1;
+
+                            $projectItemCounter++;
                         @endphp
 
                         <tr>
-                            @if ($firstInSale)
-                                <td rowspan="{{ $itemCount }}" class="text-center vertical-center">
-                                    {{ $no }}
-                                </td>
-                                <td rowspan="{{ $itemCount }}" class="text-center vertical-center">
-                                    {{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}
-                                </td>
-                            @endif
+                            <!-- NO Column: Tampilkan hanya di first item dalam sale, sisanya hide dengan border manipulation -->
+                            <td
+                                class="text-center vertical-center {{ !$isFirstInSale ? 'border-top-none' : '' }} {{ !$isLastInSale ? 'border-bottom-none' : '' }}">
+                                <span class="{{ !$isFirstInSale ? 'hide-content' : '' }}">{{ $no }}</span>
+                            </td>
 
-                            @if ($firstInProject)
-                                <td rowspan="{{ $totalItemsInProject }}" class="vertical-center">
-                                    {{ strtoupper($projectName) }}
-                                </td>
-                                @php $firstInProject = false; @endphp
-                            @endif
+                            <!-- TANGGAL Column: Tampilkan hanya di first item dalam sale -->
+                            <td
+                                class="text-center vertical-center {{ !$isFirstInSale ? 'border-top-none' : '' }} {{ !$isLastInSale ? 'border-bottom-none' : '' }}">
+                                <span
+                                    class="{{ !$isFirstInSale ? 'hide-content' : '' }}">{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</span>
+                            </td>
+
+                            <!-- PROYEK Column: Tampilkan hanya di first item dalam project -->
+                            <td
+                                class="vertical-center {{ !$isFirstInProject ? 'border-top-none' : '' }} {{ !$isLastInProject ? 'border-bottom-none' : '' }}">
+                                <span
+                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($projectName) }}</span>
+                            </td>
 
                             <td>{{ $item['name_item'] ?? '-' }}</td>
                             <td class="text-center">{{ $qty }}</td>
-                            <td class="text-right">Rp {{ number_format($capital, 0, ',', '.') }}</td>
-                            <td class="text-right">Rp {{ number_format($selling, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($capital, 0, ',', '.') }} | Rp {{ number_format($totalCapital, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($selling, 0, ',', '.') }} | Rp {{ number_format($totalSelling, 0, ',', '.') }}</td>
                             <td class="text-right">Rp {{ number_format($profit, 0, ',', '.') }}</td>
 
-                            @if ($needStatusCell)
-                                <td rowspan="{{ $totalItemsInProject }}" class="text-center vertical-center">
-                                    {{ strtoupper($sale->status) }}
-                                </td>
-                            @endif
+                            <!-- STATUS Column: Tampilkan hanya di first item dalam project -->
+                            <td
+                                class="text-center vertical-center {{ !$isFirstInProject ? 'border-top-none' : '' }} {{ !$isLastInProject ? 'border-bottom-none' : '' }}">
+                                <span
+                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($sale->status) }}</span>
+                            </td>
                         </tr>
-
-                        @if ($firstInSale)
-                            @php $firstInSale = false; @endphp
-                        @endif
                     @endforeach
                     @php $no++; @endphp
                 @endforeach
