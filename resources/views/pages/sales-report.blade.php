@@ -9,13 +9,13 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <!-- Form Pencarian dan Filter -->
             <form method="GET" action="{{ route('sales-report.index') }}"
-                class="w-full md:w-auto md:flex-1 flex flex-col md:flex-row gap-3">
+                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
                 <!-- Filter Bulan -->
-                <div class="w-full md:w-auto">
+                <div class="w-full lg:w-auto">
                     <label for="month-select" class="sr-only">Pilih Bulan</label>
                     <select name="month" id="month-select"
-                        class="block w-full md:w-40 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
+                        class="block w-full lg:w-40 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
                                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
                         <option value="">Semua Bulan</option>
                         <option value="1" {{ request('month') == '1' ? 'selected' : '' }}>Januari</option>
@@ -34,10 +34,10 @@
                 </div>
 
                 <!-- Filter Tahun -->
-                <div class="w-full md:w-auto">
+                <div class="w-full lg:w-auto">
                     <label for="year-select" class="sr-only">Pilih Tahun</label>
                     <select name="year" id="year-select"
-                        class="block w-full md:w-32 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
+                        class="block w-full lg:w-32 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
                                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
                         <option value="">Semua Tahun</option>
                         @for ($y = date('Y'); $y >= 2020; $y--)
@@ -48,7 +48,7 @@
                 </div>
 
                 <!-- Search Input -->
-                <div class="flex items-center gap-2 flex-1">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
                     <div class="relative flex-1">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -64,7 +64,7 @@
                     </div>
 
                     <button type="submit"
-                        class="rounded-lg bg-btn-search hover:bg-btn-search-hover px-4 md:px-6 py-3.5 text-sm font-medium text-white 
+                        class="w-full sm:w-auto rounded-lg bg-btn-search hover:bg-btn-search-hover px-4 lg:px-6 py-3.5 text-sm font-medium text-white 
                                focus:outline-none focus:ring-4 focus:ring-primary-light whitespace-nowrap transition-colors duration-200">
                         Cari
                     </button>
@@ -72,20 +72,20 @@
             </form>
 
             <!-- Aksi di Kanan -->
-            <div class="flex items-center gap-3 mt-2 sm:mt-0 flex-col sm:flex-row w-full sm:w-auto">
-                <div class="flex gap-2 w-full sm:w-auto">
+            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
+                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <!-- Dropdown Print Laporan -->
-                    <div class="relative inline-block text-left">
+                    <div class="relative inline-block text-left w-full sm:w-auto">
                         <button type="button" id="printDropdownButton"
-                            class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors duration-200">
+                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 lg:py-1.5 rounded-lg transition-colors duration-200 text-sm font-medium">
                             <i class="fa-solid fa-print w-4 h-4"></i>
-                            Print Laporan
-                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                            <span>Print Laporan</span>
+                            <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>
                         </button>
 
                         <!-- Dropdown Menu -->
                         <div id="printDropdownMenu"
-                            class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                             <div class="py-1" role="menu">
                                 <a href="{{ route('sales-report.export.excel') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
                                     class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
@@ -103,16 +103,16 @@
 
                     <!-- Tombol Hapus -->
                     <button type="button" onclick="openModal('deleteModal')"
-                        class="flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-1.5 rounded-lg transition-colors duration-200 flex-1 sm:flex-initial">
+                        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2 lg:py-1.5 rounded-lg transition-colors duration-200 text-sm font-medium">
                         <i class="fa-solid fa-trash w-4 h-4"></i>
-                        Hapus
+                        <span>Hapus</span>
                     </button>
 
                     <!-- Tombol Tambah -->
                     <button type="button" onclick="openModal('addModal')"
-                        class="flex items-center justify-center gap-2 rounded-lg bg-btn-add hover:bg-btn-add-hover px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-4 focus:ring-success-light flex-1 sm:flex-initial transition-colors duration-200">
+                        class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-btn-add hover:bg-btn-add-hover px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-4 focus:ring-success-light transition-colors duration-200">
                         <i class="fa-solid fa-plus"></i>
-                        Tambah Laporan
+                        <span>Tambah Laporan</span>
                     </button>
                 </div>
             </div>
