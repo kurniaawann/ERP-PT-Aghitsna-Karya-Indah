@@ -16,11 +16,19 @@ class SalesReportController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $month = $request->get('month');
+        $year = $request->get('year');
 
         $salesReports = SalesReport::query()
             ->when($search, function ($query, $search) {
                 return $query->where('id_sales_report', 'like', "%{$search}%")
                     ->orWhere('name_proyek', 'like', "%{$search}%");
+            })
+            ->when($month, function ($query, $month) {
+                return $query->whereMonth('date', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->whereYear('date', $year);
             })
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
@@ -29,12 +37,19 @@ class SalesReportController extends Controller
         // Get all items for dropdown
         $items = Items::orderBy('name_item')->get();
 
-        // Calculate grand totals
-        $grandTotals = SalesReport::select(
-            DB::raw('SUM(total_capital) as grand_total_capital'),
-            DB::raw('SUM(total_selling) as grand_total_selling'),
-            DB::raw('SUM(total_profit) as grand_total_profit')
-        )->first();
+        // Calculate grand totals with filters
+        $grandTotals = SalesReport::query()
+            ->when($month, function ($query, $month) {
+                return $query->whereMonth('date', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->whereYear('date', $year);
+            })
+            ->select(
+                DB::raw('SUM(total_capital) as grand_total_capital'),
+                DB::raw('SUM(total_selling) as grand_total_selling'),
+                DB::raw('SUM(total_profit) as grand_total_profit')
+            )->first();
 
         return view('pages.sales-report', compact('salesReports', 'items', 'grandTotals'));
     }
@@ -399,9 +414,20 @@ class SalesReportController extends Controller
             $query->where('name_proyek', 'like', '%' . $search . '%');
         }
 
+        // Apply month filter
+        if ($request->has('month') && $request->month) {
+            $query->whereMonth('date', $request->month);
+        }
+
+        // Apply year filter
+        if ($request->has('year') && $request->year) {
+            $query->whereYear('date', $request->year);
+        }
+
         $salesReports = $query->orderBy('date', 'desc')->get();
 
-        $monthYear = \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
+        // Generate month year label
+        $monthYear = $this->generateMonthYearLabel($request->month, $request->year);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\SalesReportExport($salesReports, $monthYear),
@@ -420,6 +446,16 @@ class SalesReportController extends Controller
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where('name_proyek', 'like', '%' . $search . '%');
+        }
+
+        // Apply month filter
+        if ($request->has('month') && $request->month) {
+            $query->whereMonth('date', $request->month);
+        }
+
+        // Apply year filter
+        if ($request->has('year') && $request->year) {
+            $query->whereYear('date', $request->year);
         }
 
         $salesReports = $query->orderBy('date', 'desc')->get();
@@ -441,7 +477,8 @@ class SalesReportController extends Controller
         }
         $grandTotalProfit = $grandTotalSelling - $grandTotalCapital;
 
-        $monthYear = \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
+        // Generate month year label
+        $monthYear = $this->generateMonthYearLabel($request->month, $request->year);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.sales-report-pdf', [
             'salesReports' => $salesReports,
@@ -454,5 +491,23 @@ class SalesReportController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         return $pdf->download('Laporan_Penjualan_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Generate month year label for export
+     */
+    private function generateMonthYearLabel($month = null, $year = null)
+    {
+        if ($month && $year) {
+            $date = \Carbon\Carbon::create($year, $month, 1);
+            return $date->locale('id')->translatedFormat('F Y');
+        } elseif ($year) {
+            return "Tahun $year";
+        } elseif ($month) {
+            $monthName = \Carbon\Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            return "$monthName " . date('Y');
+        }
+
+        return \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
     }
 }

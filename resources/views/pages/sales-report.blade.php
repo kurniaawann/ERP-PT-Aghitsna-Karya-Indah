@@ -7,11 +7,48 @@
         <h1 class="text-2xl font-semibold text-gray-700 mb-4">Laporan Penjualan</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <!-- Form Pencarian -->
-            <form method="GET" action="{{ route('sales-report.index') }}" class="w-full md:w-auto md:max-w-md md:flex-1">
-                <label for="search-input" class="sr-only">Cari Laporan</label>
+            <!-- Form Pencarian dan Filter -->
+            <form method="GET" action="{{ route('sales-report.index') }}"
+                class="w-full md:w-auto md:flex-1 flex flex-col md:flex-row gap-3">
 
-                <div class="flex items-center gap-2">
+                <!-- Filter Bulan -->
+                <div class="w-full md:w-auto">
+                    <label for="month-select" class="sr-only">Pilih Bulan</label>
+                    <select name="month" id="month-select"
+                        class="block w-full md:w-40 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
+                                   focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                        <option value="">Semua Bulan</option>
+                        <option value="1" {{ request('month') == '1' ? 'selected' : '' }}>Januari</option>
+                        <option value="2" {{ request('month') == '2' ? 'selected' : '' }}>Februari</option>
+                        <option value="3" {{ request('month') == '3' ? 'selected' : '' }}>Maret</option>
+                        <option value="4" {{ request('month') == '4' ? 'selected' : '' }}>April</option>
+                        <option value="5" {{ request('month') == '5' ? 'selected' : '' }}>Mei</option>
+                        <option value="6" {{ request('month') == '6' ? 'selected' : '' }}>Juni</option>
+                        <option value="7" {{ request('month') == '7' ? 'selected' : '' }}>Juli</option>
+                        <option value="8" {{ request('month') == '8' ? 'selected' : '' }}>Agustus</option>
+                        <option value="9" {{ request('month') == '9' ? 'selected' : '' }}>September</option>
+                        <option value="10" {{ request('month') == '10' ? 'selected' : '' }}>Oktober</option>
+                        <option value="11" {{ request('month') == '11' ? 'selected' : '' }}>November</option>
+                        <option value="12" {{ request('month') == '12' ? 'selected' : '' }}>Desember</option>
+                    </select>
+                </div>
+
+                <!-- Filter Tahun -->
+                <div class="w-full md:w-auto">
+                    <label for="year-select" class="sr-only">Pilih Tahun</label>
+                    <select name="year" id="year-select"
+                        class="block w-full md:w-32 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
+                                   focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                        <option value="">Semua Tahun</option>
+                        @for ($y = date('Y'); $y >= 2020; $y--)
+                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                                {{ $y }}</option>
+                        @endfor
+                    </select>
+                </div>
+
+                <!-- Search Input -->
+                <div class="flex items-center gap-2 flex-1">
                     <div class="relative flex-1">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -23,12 +60,12 @@
 
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari proyek..."
                             class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 
-                       focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
+                                   focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
                     </div>
 
                     <button type="submit"
                         class="rounded-lg bg-btn-search hover:bg-btn-search-hover px-4 md:px-6 py-3.5 text-sm font-medium text-white 
-                   focus:outline-none focus:ring-4 focus:ring-primary-light whitespace-nowrap transition-colors duration-200">
+                               focus:outline-none focus:ring-4 focus:ring-primary-light whitespace-nowrap transition-colors duration-200">
                         Cari
                     </button>
                 </div>
@@ -50,12 +87,12 @@
                         <div id="printDropdownMenu"
                             class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                             <div class="py-1" role="menu">
-                                <a href="{{ route('sales-report.export.excel') }}{{ request('search') ? '?search=' . request('search') : '' }}"
+                                <a href="{{ route('sales-report.export.excel') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
                                     class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
                                     <i class="fa-solid fa-file-excel text-green-600 w-4"></i>
                                     <span>Export Excel</span>
                                 </a>
-                                <a href="{{ route('sales-report.export.pdf') }}{{ request('search') ? '?search=' . request('search') : '' }}"
+                                <a href="{{ route('sales-report.export.pdf') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
                                     class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
                                     <i class="fa-solid fa-file-pdf text-red-600 w-4"></i>
                                     <span>Export PDF</span>
@@ -1007,6 +1044,15 @@
             }
 
             attachEditRemoveListeners();
+        });
+
+        // Auto-submit form when filter changes
+        document.getElementById('month-select').addEventListener('change', function() {
+            this.form.submit();
+        });
+
+        document.getElementById('year-select').addEventListener('change', function() {
+            this.form.submit();
         });
     </script>
 @endsection
