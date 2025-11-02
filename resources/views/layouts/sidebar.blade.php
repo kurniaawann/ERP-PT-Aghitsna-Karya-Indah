@@ -27,7 +27,7 @@
                         {{ request()->is('dashboard') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
 
                     <i
-                        class="fas fa-tachometer-alt w-5 
+                        class="fas fa-home w-5 
                         {{ request()->is('dashboard') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                     </i>
                     <span class="ml-3 font-medium">Dashboard</span>
@@ -41,7 +41,7 @@
                         {{ request()->is('item*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
 
                     <i
-                        class="fas fa-boxes w-5 
+                        class="fas fa-box-open w-5 
                         {{ request()->is('item*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                     </i>
                     <span class="ml-3 font-medium">Data Barang</span>
@@ -56,7 +56,7 @@
 
                     <div class="flex items-center">
                         <i
-                            class="fas fa-file-invoice-dollar w-5 
+                            class="fas fa-file-invoice w-5 
                             {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                         </i>
                         <span class="ml-3 font-medium">Invoice</span>
@@ -76,7 +76,7 @@
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('alumunium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' }}">
                             <i
-                                class="fas fa-file-invoice w-4 
+                                class="fas fa-receipt w-4 
                                 {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice Alumunium</span>
@@ -92,7 +92,7 @@
                         {{ request()->is('sales-report*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
 
                     <i
-                        class="fas fa-chart-line w-5 
+                        class="fas fa-chart-bar w-5 
                         {{ request()->is('sales-report*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
                     </i>
                     <span class="ml-3 font-medium">Laporan Penjualan</span>
