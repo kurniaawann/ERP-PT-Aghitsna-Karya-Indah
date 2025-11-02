@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\AlumuniumInvoiceController;
+use App\Http\Controllers\SalesReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,5 +49,16 @@ Route::middleware('auth')->group(function () {
     // Alumunium Invoice Print Routes
     Route::get('/alumunium-invoice/{invoice_number}/print/pdf', [AlumuniumInvoiceController::class, 'printPdf'])->name('alumunium-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/alumunium-invoice/{invoice_number}/print/excel', [AlumuniumInvoiceController::class, 'printExcel'])->name('alumunium-invoice.print.excel')->where('invoice_number', '.*');
+
+    // Route Sales Report
+    Route::get('/sales-report', [SalesReportController::class, 'index'])->name('sales-report.index');
+    Route::post('/sales-report', [SalesReportController::class, 'store'])->name('sales-report.store');
+    Route::put('/sales-report/{id_sales_report}', [SalesReportController::class, 'update'])->name('sales-report.update');
+    Route::patch('/sales-report/{id_sales_report}/status', [SalesReportController::class, 'updateStatus'])->name('sales-report.updateStatus');
+    Route::delete('/sales-report/destroy-selected', [SalesReportController::class, 'destroySelected'])->name('sales-report.destroySelected');
+
+    // Export routes
+    Route::get('/sales-report/export/excel', [SalesReportController::class, 'exportExcel'])->name('sales-report.export.excel');
+    Route::get('/sales-report/export/pdf', [SalesReportController::class, 'exportPdf'])->name('sales-report.export.pdf');
 
 });

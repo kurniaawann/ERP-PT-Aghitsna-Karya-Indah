@@ -24,11 +24,11 @@
             <li>
                 <a href="{{ url('/dashboard') }}"
                     class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('dashboard') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                        {{ request()->is('dashboard') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
 
                     <i
-                        class="fas fa-tachometer-alt w-5 
-                        {{ request()->is('dashboard') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                        class="fas fa-home w-5 
+                        {{ request()->is('dashboard') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                     </i>
                     <span class="ml-3 font-medium">Dashboard</span>
                 </a>
@@ -38,11 +38,11 @@
             <li>
                 <a href="{{ url('/item') }}"
                     class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('item*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                        {{ request()->is('item*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
 
                     <i
-                        class="fas fa-boxes w-5 
-                        {{ request()->is('item*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                        class="fas fa-box-open w-5 
+                        {{ request()->is('item*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                     </i>
                     <span class="ml-3 font-medium">Data Barang</span>
                 </a>
@@ -51,20 +51,16 @@
             {{-- Invoice Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('invoiceDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('alumunium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i
-                            class="fas fa-file-invoice-dollar w-5 
-                            {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                        <i class="fas fa-file-invoice w-5 text-gray-400 group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">Invoice</span>
                     </div>
 
                     <i id="invoiceDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 
-                        {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
                     </i>
                 </button>
 
@@ -74,15 +70,29 @@
                     <li>
                         <a href="{{ url('/alumunium-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('alumunium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' }}">
+                                {{ request()->is('alumunium-invoice*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-file-invoice w-4 
-                                {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                                class="fas fa-receipt w-4 
+                                {{ request()->is('alumunium-invoice*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice Alumunium</span>
                         </a>
                     </li>
                 </ul>
+            </li>
+
+            {{-- Laporan Penjualan --}}
+            <li>
+                <a href="{{ url('/sales-report') }}"
+                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
+                        {{ request()->is('sales-report*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+
+                    <i
+                        class="fas fa-chart-bar w-5 
+                        {{ request()->is('sales-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                    </i>
+                    <span class="ml-3 font-medium">Laporan Penjualan</span>
+                </a>
             </li>
 
         </ul>
