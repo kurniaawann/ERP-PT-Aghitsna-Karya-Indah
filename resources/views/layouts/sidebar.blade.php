@@ -51,20 +51,16 @@
             {{-- Invoice Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('invoiceDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('alumunium-invoice*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-blue-50 hover:text-blue-600">
 
                     <div class="flex items-center">
-                        <i
-                            class="fas fa-file-invoice w-5 
-                            {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                        <i class="fas fa-file-invoice w-5 text-gray-400 group-hover:text-blue-500">
                         </i>
                         <span class="ml-3 font-medium">Invoice</span>
                     </div>
 
                     <i id="invoiceDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 
-                        {{ request()->is('alumunium-invoice*') ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500' }}">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-blue-500">
                     </i>
                 </button>
 
