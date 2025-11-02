@@ -365,10 +365,20 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
 
                     // Footer info rows (Modal Aghitsna, Modal Divisi Holo, PROFIT)
                     if (in_array($cellA, ['Modal Aghitsna', 'Modal Divisi Holo', 'PROFIT'])) {
+                        // Set row height untuk footer info
+                        $sheet->getRowDimension($row)->setRowHeight(20);
+
+                        // Style untuk label dan value
                         $sheet->getStyle('A' . $row . ':B' . $row)->applyFromArray([
-                            'font' => ['bold' => true],
+                            'font' => ['bold' => true, 'size' => 10],
+                            'alignment' => [
+                                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                                'vertical' => Alignment::VERTICAL_CENTER,
+                                'wrapText' => false
+                            ],
                         ]);
 
+                        // Remove all borders
                         $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_NONE],
@@ -383,8 +393,8 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
     public function columnWidths(): array
     {
         return [
-            'A' => 5,     // NO
-            'B' => 12,    // TANGGAL
+            'A' => 22,    // NO - diperlebar untuk footer info
+            'B' => 18,    // TANGGAL - diperlebar untuk nilai
             'C' => 20,    // PROYEK
             'D' => 25,    // NAMA BARANG
             'E' => 8,     // QTY
