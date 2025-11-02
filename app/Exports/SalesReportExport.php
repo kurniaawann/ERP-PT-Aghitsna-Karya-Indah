@@ -108,8 +108,8 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                         'project' => '', // Will be filled by first row only
                         'item' => $item['name_item'] ?? '',
                         'qty' => $qty,
-                        'hpp' => 'Rp ' . number_format($capital, 0, ',', '.'),
-                        'selling' => 'Rp ' . number_format($selling, 0, ',', '.'),
+                        'hpp' => 'Rp ' . number_format($capital, 0, ',', '.') . ' | Rp ' . number_format($totalCapital, 0, ',', '.'),
+                        'selling' => 'Rp ' . number_format($selling, 0, ',', '.') . ' | Rp ' . number_format($totalSelling, 0, ',', '.'),
                         'profit' => 'Rp ' . number_format($profit, 0, ',', '.'),
                         'status' => '', // Will be filled by first row only
                     ];
@@ -423,8 +423,8 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             'C' => 20,    // PROYEK
             'D' => 25,    // NAMA BARANG
             'E' => 8,     // QTY
-            'F' => 20,    // HPP
-            'G' => 18,    // HARGA JUAL
+            'F' => 25,    // HPP
+            'G' => 25,    // HARGA JUAL
             'H' => 18,    // PROFIT
             'I' => 20,    // SUMBER UANG
         ];

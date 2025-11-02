@@ -183,7 +183,7 @@
                 <th class="col-qty">QTY</th>
                 <th class="col-hpp">HPP (HARGA MODAL )</th>
                 <th class="col-selling">HARGA JUAL</th>
-                <th class="col-profit">PROFIT</th>
+                <th class="col-profit">Jumlah & PROFIT</th>
                 <th class="col-status">SUMBER UANG</th>
             </tr>
         </thead>
@@ -266,8 +266,10 @@
 
                             <td>{{ $item['name_item'] ?? '-' }}</td>
                             <td class="text-center">{{ $qty }}</td>
-                            <td class="text-right">Rp {{ number_format($capital, 0, ',', '.') }} | Rp {{ number_format($totalCapital, 0, ',', '.') }}</td>
-                            <td class="text-right">Rp {{ number_format($selling, 0, ',', '.') }} | Rp {{ number_format($totalSelling, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($capital, 0, ',', '.') }} | Rp
+                                {{ number_format($totalCapital, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($selling, 0, ',', '.') }} | Rp
+                                {{ number_format($totalSelling, 0, ',', '.') }}</td>
                             <td class="text-right">Rp {{ number_format($profit, 0, ',', '.') }}</td>
 
                             <!-- STATUS Column: Tampilkan hanya di first item dalam project -->
