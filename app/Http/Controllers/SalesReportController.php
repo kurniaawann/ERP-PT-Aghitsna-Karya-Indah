@@ -180,11 +180,6 @@ class SalesReportController extends Controller
 
         $validated = $validator->validated();
 
-        // DEBUG: Log data yang diterima
-        \Log::info('=== EDIT SALES REPORT DEBUG ===');
-        \Log::info('Old Items: ' . json_encode($salesReport->items));
-        \Log::info('New Items from Request: ' . json_encode($validated['items']));
-
         DB::beginTransaction();
         try {
             $oldItems = is_string($salesReport->items) ? json_decode($salesReport->items, true) : $salesReport->items;
@@ -204,7 +199,6 @@ class SalesReportController extends Controller
                         $stockChanges[$itemId] = 0;
                     }
                     $stockChanges[$itemId] += $oldItem['quantity'];
-                    \Log::info("RETURN: Item {$itemId} +{$oldItem['quantity']}, Total: {$stockChanges[$itemId]}");
                 }
             }
 
@@ -239,7 +233,6 @@ class SalesReportController extends Controller
                 // Calculate new stock: current + delta
                 // delta bisa positif (dikembalikan lebih banyak) atau negatif (diambil lebih banyak)
                 $newStock = $stockItem->quantity + $delta;
-                \Log::info("APPLY: Item {$itemId} ({$stockItem->name_item}) - Current: {$stockItem->quantity}, Delta: {$delta}, New: {$newStock}");
 
                 // Validate: new stock cannot be negative
                 if ($newStock < 0) {
@@ -247,14 +240,13 @@ class SalesReportController extends Controller
                     $shortage = abs($newStock);
                     DB::rollBack();
                     return back()
-                        ->with('error', 'Stok barang "' . $stockItem->name_item . '" tidak cukup! Stock tersedia saat ini: ' . $stockItem->quantity . ' unit. Anda kekurangan ' . $shortage . ' unit.')
+                        ->with('error', "Stock barang yang diambil melebihi stok tersedia")
                         ->withInput();
                 }
 
                 // Apply stock change
                 $stockItem->quantity = $newStock;
                 $stockItem->save();
-                \Log::info("SAVED: Item {$itemId} stock updated to {$newStock}");
             }
 
             // Step 4: Update item details for items from stock
@@ -280,7 +272,7 @@ class SalesReportController extends Controller
                     if ($capitalPrice >= $sellingPrice) {
                         DB::rollBack();
                         return back()
-                            ->with('error', 'Harga modal barang "' . $item['name_item'] . '" harus lebih kecil dari harga jual!')
+                            ->with('error', "Harga modal harus lebih kecil dari harga jual untuk item")
                             ->withInput();
                     }
                 }
@@ -335,7 +327,7 @@ class SalesReportController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        $selectedIds = $request->input('selected_sales[]', []);
+        $selectedIds = $request->input('selected_sales', []);
 
         if (empty($selectedIds)) {
             return back()->with('error', 'Tidak ada data yang dipilih!');
