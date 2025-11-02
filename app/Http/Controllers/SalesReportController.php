@@ -418,11 +418,9 @@ class SalesReportController extends Controller
 
         $salesReports = $query->orderBy('date', 'desc')->get();
 
-        // Generate month year label
-        $monthYear = $this->generateMonthYearLabel($request->month, $request->year);
-
+        // Pass month and year to export class
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\SalesReportExport($salesReports, $monthYear),
+            new \App\Exports\SalesReportExport($salesReports, $request->month, $request->year),
             'Laporan_Penjualan_' . date('Y-m-d') . '.xlsx'
         );
     }
@@ -469,8 +467,36 @@ class SalesReportController extends Controller
         }
         $grandTotalProfit = $grandTotalSelling - $grandTotalCapital;
 
-        // Generate month year label
-        $monthYear = $this->generateMonthYearLabel($request->month, $request->year);
+        // Generate month year label based on filter or latest data
+        $month = $request->month;
+        $year = $request->year;
+
+        if (empty($month) && empty($year)) {
+            // If no filter, use the latest date from data
+            $latestDate = $salesReports->sortByDesc('date')->first()?->date;
+            if ($latestDate) {
+                $monthYear = \Carbon\Carbon::parse($latestDate)->locale('id')->translatedFormat('F Y');
+            } else {
+                $monthYear = \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
+            }
+        } elseif (!empty($month) && empty($year)) {
+            // If only month is filtered, get the latest year from data
+            $latestYear = $salesReports->sortByDesc('date')->first()?->date;
+            if ($latestYear) {
+                $year = \Carbon\Carbon::parse($latestYear)->year;
+            } else {
+                $year = \Carbon\Carbon::now()->year;
+            }
+            $monthName = \Carbon\Carbon::create()->month($month)->locale('id')->translatedFormat('F');
+            $monthYear = $monthName . ' ' . $year;
+        } elseif (empty($month) && !empty($year)) {
+            // If only year is filtered, show just the year
+            $monthYear = 'TAHUN ' . $year;
+        } else {
+            // Both month and year are filtered
+            $monthName = \Carbon\Carbon::create()->month($month)->locale('id')->translatedFormat('F');
+            $monthYear = $monthName . ' ' . $year;
+        }
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.sales-report-pdf', [
             'salesReports' => $salesReports,
@@ -483,23 +509,5 @@ class SalesReportController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         return $pdf->download('Laporan_Penjualan_' . date('Y-m-d') . '.pdf');
-    }
-
-    /**
-     * Generate month year label for export
-     */
-    private function generateMonthYearLabel($month = null, $year = null)
-    {
-        if ($month && $year) {
-            $date = \Carbon\Carbon::create($year, $month, 1);
-            return $date->locale('id')->translatedFormat('F Y');
-        } elseif ($year) {
-            return "Tahun $year";
-        } elseif ($month) {
-            $monthName = \Carbon\Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
-            return "$monthName " . date('Y');
-        }
-
-        return \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
     }
 }

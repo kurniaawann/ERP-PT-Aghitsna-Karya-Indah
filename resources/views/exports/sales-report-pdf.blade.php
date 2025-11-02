@@ -153,7 +153,7 @@
 
 <body>
     <div class="title">LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI</div>
-    <div class="subtitle">BULAN {{ strtoupper(string: \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y')) }}
+    <div class="subtitle">BULAN {{ strtoupper($monthYear) }}
     </div>
 
     <table>

@@ -21,10 +21,35 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
     protected $salesReports;
     protected $monthYear;
 
-    public function __construct($salesReports, $monthYear = null)
+    public function __construct($salesReports, $month = null, $year = null)
     {
         $this->salesReports = $salesReports;
-        $this->monthYear = $monthYear ?? Carbon::now()->locale('id')->translatedFormat('F Y');
+
+        // Jika tidak ada filter atau filter kosong, ambil dari data terbaru
+        if (empty($month) && empty($year)) {
+            // Ambil tanggal terbaru dari data
+            $latestDate = $salesReports->sortByDesc('date')->first()?->date;
+            if ($latestDate) {
+                $this->monthYear = Carbon::parse($latestDate)->locale('id')->translatedFormat('F Y');
+            } else {
+                $this->monthYear = Carbon::now()->locale('id')->translatedFormat('F Y');
+            }
+        } else {
+            // Gunakan filter yang dipilih
+            $monthName = $month ? Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F') : '';
+            $yearValue = $year ?: Carbon::now()->year;
+
+            if ($month && $year) {
+                $this->monthYear = $monthName . ' ' . $yearValue;
+            } elseif ($month) {
+                // Hanya bulan, gunakan tahun terbaru dari data
+                $latestYear = $salesReports->sortByDesc('date')->first()?->date->year ?? Carbon::now()->year;
+                $this->monthYear = $monthName . ' ' . $latestYear;
+            } else {
+                // Hanya tahun
+                $this->monthYear = 'TAHUN ' . $yearValue;
+            }
+        }
     }
 
     public function collection()
