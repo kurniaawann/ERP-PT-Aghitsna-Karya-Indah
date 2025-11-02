@@ -79,7 +79,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                     // Only first row of each sale has NO and TANGGAL
                     $data[] = [
                         'no' => $index === 0 ? $no : '',
-                        'date' => $index === 0 ? \Carbon\Carbon::parse($sale->date)->format('d/m/Y') : '',
+                        'date' => $index === 0 ? Carbon::parse($sale->date)->format('d/m/Y') : '',
                         'project' => '', // Will be filled by first row only
                         'item' => $item['name_item'] ?? '',
                         'qty' => $qty,
