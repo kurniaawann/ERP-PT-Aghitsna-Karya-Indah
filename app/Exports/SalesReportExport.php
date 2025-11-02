@@ -38,11 +38,14 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
 
         $projectGroups = $this->salesReports->groupBy('name_proyek');
 
+        // Store merge info for later use
+        $mergeInfo = [];
+        $currentRow = 5; // Start from row 5 (after header)
+
         foreach ($projectGroups as $projectName => $projectSales) {
             $projectTotalCapital = 0;
             $projectTotalSelling = 0;
             $projectTotalProfit = 0;
-            $firstInProject = true;
 
             // Hitung total items dalam project
             $totalItemsInProject = 0;
@@ -51,14 +54,17 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                 $totalItemsInProject += count($itemsTemp);
             }
 
-            $projectItemCounter = 0;
-            $statusAdded = false;
+            // Track project start row for merging
+            $projectStartRow = $currentRow;
 
             foreach ($projectSales as $sale) {
                 $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
-                $firstInSale = true;
+                $itemCount = count($items);
 
-                foreach ($items as $item) {
+                // Track sale start row for NO and TANGGAL merging
+                $saleStartRow = $currentRow;
+
+                foreach ($items as $index => $item) {
                     $qty = $item['quantity'] ?? 0;
                     $capital = $item['capital_price'] ?? 0;
                     $selling = $item['selling_price'] ?? 0;
@@ -70,103 +76,121 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                     $projectTotalSelling += $totalSelling;
                     $projectTotalProfit += $profit;
 
-                    $projectItemCounter++;
-
+                    // Only first row of each sale has NO and TANGGAL
                     $data[] = [
-                        $firstInSale ? $no : '',
-                        $firstInSale ? \Carbon\Carbon::parse($sale->date)->format('d/m/Y') : '',
-                        $firstInProject ? strtoupper($projectName) : '',
-                        $item['name_item'] ?? '',
-                        $qty,
-                        'Rp ' . number_format($capital, 0, ',', '.'),
-                        'Rp ' . number_format($selling, 0, ',', '.'),
-                        'Rp ' . number_format($profit, 0, ',', '.'),
-                        (!$statusAdded && $firstInSale) ? strtoupper($sale->status) : '',
+                        'no' => $index === 0 ? $no : '',
+                        'date' => $index === 0 ? \Carbon\Carbon::parse($sale->date)->format('d/m/Y') : '',
+                        'project' => '', // Will be filled by first row only
+                        'item' => $item['name_item'] ?? '',
+                        'qty' => $qty,
+                        'hpp' => 'Rp ' . number_format($capital, 0, ',', '.'),
+                        'selling' => 'Rp ' . number_format($selling, 0, ',', '.'),
+                        'profit' => 'Rp ' . number_format($profit, 0, ',', '.'),
+                        'status' => '', // Will be filled by first row only
                     ];
 
-                    $firstInSale = false;
-                    $firstInProject = false;
-                    if (!$statusAdded) {
-                        $statusAdded = true;
-                    }
+                    $currentRow++;
                 }
+
+                // Store merge info for NO and TANGGAL
+                if ($itemCount > 1) {
+                    $mergeInfo[] = ['col' => 'A', 'start' => $saleStartRow, 'end' => $currentRow - 1]; // NO
+                    $mergeInfo[] = ['col' => 'B', 'start' => $saleStartRow, 'end' => $currentRow - 1]; // TANGGAL
+                }
+
                 $no++;
             }
 
+            // Store merge info for PROJECT and STATUS
+            if ($totalItemsInProject > 1) {
+                $mergeInfo[] = ['col' => 'C', 'start' => $projectStartRow, 'end' => $currentRow - 1]; // PROYEK
+                $mergeInfo[] = ['col' => 'I', 'start' => $projectStartRow, 'end' => $currentRow - 1]; // SUMBER UANG
+            }
+
+            // Set PROJECT name and STATUS in first row
+            $data[$projectStartRow - 5]['project'] = strtoupper($projectName);
+            $data[$projectStartRow - 5]['status'] = strtoupper($projectSales->first()->status);
+
             // Project Subtotal
             $data[] = [
-                '',
-                '',
-                '',
-                '',
-                '',
-                'Rp ' . number_format($projectTotalCapital, 0, ',', '.'),
-                'Rp ' . number_format($projectTotalSelling, 0, ',', '.'),
-                'Rp ' . number_format($projectTotalProfit, 0, ',', '.'),
-                '',
+                'no' => '',
+                'date' => '',
+                'project' => '',
+                'item' => '',
+                'qty' => '',
+                'hpp' => 'Rp ' . number_format($projectTotalCapital, 0, ',', '.'),
+                'selling' => 'Rp ' . number_format($projectTotalSelling, 0, ',', '.'),
+                'profit' => 'Rp ' . number_format($projectTotalProfit, 0, ',', '.'),
+                'status' => '',
             ];
+            $currentRow++;
 
             $grandTotalCapital += $projectTotalCapital;
             $grandTotalSelling += $projectTotalSelling;
             $grandTotalProfit += $projectTotalProfit;
         }
 
+        // Store merge info in a property for use in events
+        $this->mergeInfo = $mergeInfo;
+
         // Grand Total
         $data[] = [
-            'TOTAL PENJUALAN PROFIT',
-            '',
-            '',
-            '',
-            '',
-            'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
-            'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
-            'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
-            '',
+            'no' => 'TOTAL PENJUALAN PROFIT',
+            'date' => '',
+            'project' => '',
+            'item' => '',
+            'qty' => '',
+            'hpp' => 'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
+            'selling' => 'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
+            'profit' => 'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
+            'status' => '',
         ];
 
         // Empty rows
-        $data[] = ['', '', '', '', '', '', '', '', ''];
-        $data[] = ['', '', '', '', '', '', '', '', ''];
+        $data[] = ['no' => '', 'date' => '', 'project' => '', 'item' => '', 'qty' => '', 'hpp' => '', 'selling' => '', 'profit' => '', 'status' => ''];
+        $data[] = ['no' => '', 'date' => '', 'project' => '', 'item' => '', 'qty' => '', 'hpp' => '', 'selling' => '', 'profit' => '', 'status' => ''];
 
         // Footer info
         $data[] = [
-            'Modal Aghitsna',
-            'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
+            'no' => 'Modal Aghitsna',
+            'date' => 'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
+            'project' => '',
+            'item' => '',
+            'qty' => '',
+            'hpp' => '',
+            'selling' => '',
+            'profit' => '',
+            'status' => '',
         ];
 
         $data[] = [
-            'Modal Divisi Holo',
-            'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
+            'no' => 'Modal Divisi Holo',
+            'date' => 'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
+            'project' => '',
+            'item' => '',
+            'qty' => '',
+            'hpp' => '',
+            'selling' => '',
+            'profit' => '',
+            'status' => '',
         ];
 
         $data[] = [
-            'PROFIT',
-            'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
+            'no' => 'PROFIT',
+            'date' => 'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
+            'project' => '',
+            'item' => '',
+            'qty' => '',
+            'hpp' => '',
+            'selling' => '',
+            'profit' => '',
+            'status' => '',
         ];
 
         return collect($data);
     }
+
+    protected $mergeInfo = [];
 
     public function headings(): array
     {
@@ -252,6 +276,45 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                 $sheet = $event->sheet->getDelegate();
                 $highestRow = $sheet->getHighestRow();
 
+                // Apply merges for NO, TANGGAL, PROYEK, and SUMBER UANG
+                foreach ($this->mergeInfo as $merge) {
+                    if ($merge['start'] < $merge['end']) {
+                        $range = $merge['col'] . $merge['start'] . ':' . $merge['col'] . $merge['end'];
+                        $sheet->mergeCells($range);
+
+                        // Center align vertically for merged cells
+                        $sheet->getStyle($range)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+                        // Remove internal borders for merged cells
+                        for ($row = $merge['start']; $row <= $merge['end']; $row++) {
+                            $cell = $merge['col'] . $row;
+
+                            // Keep outer borders, remove internal
+                            $borderStyle = [
+                                'left' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                                'right' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                            ];
+
+                            // Top border only for first row
+                            if ($row === $merge['start']) {
+                                $borderStyle['top'] = ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']];
+                            } else {
+                                $borderStyle['top'] = ['borderStyle' => Border::BORDER_NONE];
+                            }
+
+                            // Bottom border only for last row
+                            if ($row === $merge['end']) {
+                                $borderStyle['bottom'] = ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']];
+                            } else {
+                                $borderStyle['bottom'] = ['borderStyle' => Border::BORDER_NONE];
+                            }
+
+                            $sheet->getStyle($cell)->applyFromArray(['borders' => $borderStyle]);
+                        }
+                    }
+                }
+
+                // Process each row for styling
                 for ($row = 5; $row <= $highestRow; $row++) {
                     $cellA = $sheet->getCell('A' . $row)->getValue();
                     $cellD = $sheet->getCell('D' . $row)->getValue();
