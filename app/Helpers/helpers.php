@@ -50,3 +50,27 @@ if (!function_exists('terbilang')) {
         return '';
     }
 }
+
+if (!function_exists('generateExpenseReportId')) {
+    /**
+     * Generate unique Expense Report ID
+     * Format: ER-001, ER-002, etc
+     * 
+     * @return string
+     */
+    function generateExpenseReportId()
+    {
+        $lastExpenseReport = \App\Models\ExpenseReport::where('id', 'like', 'ER-%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$lastExpenseReport) {
+            return 'ER-001';
+        }
+
+        $lastNumber = intval(substr($lastExpenseReport->id, 3)); // Skip "ER-"
+        $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+
+        return 'ER-' . $newNumber;
+    }
+}
