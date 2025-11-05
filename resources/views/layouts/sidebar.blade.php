@@ -95,6 +95,20 @@
                 </a>
             </li>
 
+            {{-- Laporan Pengeluaran --}}
+            <li>
+                <a href="{{ url('/expense-report') }}"
+                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
+                        {{ request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+
+                    <i
+                        class="fas fa-wallet w-5 
+                        {{ request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                    </i>
+                    <span class="ml-3 font-medium">Laporan Pengeluaran</span>
+                </a>
+            </li>
+
         </ul>
     </nav>
 </aside>
