@@ -81,32 +81,52 @@
                 </ul>
             </li>
 
-            {{-- Laporan Penjualan --}}
+            {{-- Laporan Dropdown --}}
             <li>
-                <a href="{{ url('/sales-report') }}"
-                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('sales-report*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+                <button onclick="toggleDropdown('laporanDropdown')"
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group 
+                        {{ request()->is('sales-report*') || request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
 
-                    <i
-                        class="fas fa-chart-bar w-5 
-                        {{ request()->is('sales-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                    <div class="flex items-center">
+                        <i
+                            class="fas fa-chart-line w-5 
+                            {{ request()->is('sales-report*') || request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        </i>
+                        <span class="ml-3 font-medium">Laporan</span>
+                    </div>
+
+                    <i id="laporanDropdownIcon"
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 
+                            {{ request()->is('sales-report*') || request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                     </i>
-                    <span class="ml-3 font-medium">Laporan Penjualan</span>
-                </a>
-            </li>
+                </button>
 
-            {{-- Laporan Pengeluaran --}}
-            <li>
-                <a href="{{ url('/expense-report') }}"
-                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
-
-                    <i
-                        class="fas fa-wallet w-5 
-                        {{ request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
-                    </i>
-                    <span class="ml-3 font-medium">Laporan Pengeluaran</span>
-                </a>
+                {{-- Submenu --}}
+                <ul id="laporanDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('sales-report*') || request()->is('expense-report*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/sales-report') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('sales-report*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-bar w-4 
+                                {{ request()->is('sales-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Penjualan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/expense-report') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-money-bill-wave w-4 
+                                {{ request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
 
         </ul>
