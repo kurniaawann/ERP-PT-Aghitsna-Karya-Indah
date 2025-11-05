@@ -171,8 +171,8 @@
                                         </td>
                                         <td class="p-2">
                                             <span
-                                                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                                {{ $expense->category->type == 'INCOME' ? 'bg-success-light text-success' : 'bg-error-light text-error' }}">
+                                                class="inline-block px-2 py-1 text-xs font-semibold rounded-lg text-center whitespace-normal break-words max-w-[150px] sm:max-w-none
+                                                {{ $expense->category->type == 'INCOME' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                                 {{ $expense->category->name }}
                                             </span>
                                         </td>
