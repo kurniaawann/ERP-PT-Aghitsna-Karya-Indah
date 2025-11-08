@@ -48,6 +48,20 @@
                 </a>
             </li>
 
+            {{-- Kategori Transaksi --}}
+            <li>
+                <a href="{{ url('/transaction-category') }}"
+                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
+                        {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+
+                    <i
+                        class="fas fa-tags w-5 
+                        {{ request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                    </i>
+                    <span class="ml-3 font-medium">Kategori Transaksi</span>
+                </a>
+            </li>
+
             {{-- Invoice Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('invoiceDropdown')"
