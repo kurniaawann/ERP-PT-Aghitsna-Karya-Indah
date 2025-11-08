@@ -60,7 +60,7 @@ if (!function_exists('generateExpenseReportId')) {
      */
     function generateExpenseReportId()
     {
-        $lastExpenseReport = \App\Models\ExpenseReport::where('id', 'like', 'ER-%')
+        $lastExpenseReport = \App\Models\Report\ExpenseReport::where('id', 'like', 'ER-%')
             ->orderBy('id', 'desc')
             ->first();
 

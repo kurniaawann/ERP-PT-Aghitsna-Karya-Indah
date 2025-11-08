@@ -13,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Events\AfterSheet;
-use App\Models\SalesReport;
+use App\Models\Report\SalesReport;
 use Carbon\Carbon;
 
 class SalesReportExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents

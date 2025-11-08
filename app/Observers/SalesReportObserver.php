@@ -2,8 +2,8 @@
 
 namespace App\Observers;
 
-use App\Models\SalesReport;
-use App\Models\ExpenseReport;
+use App\Models\Report\SalesReport;
+use App\Models\Report\ExpenseReport;
 use App\Models\TransactionCategory;
 
 class SalesReportObserver

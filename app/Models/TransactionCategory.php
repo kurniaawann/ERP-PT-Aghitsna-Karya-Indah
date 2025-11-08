@@ -26,7 +26,7 @@ class TransactionCategory extends Model
      */
     public function expenseReports()
     {
-        return $this->hasMany(ExpenseReport::class, 'transaction_category_id');
+        return $this->hasMany(\App\Models\Report\ExpenseReport::class, 'transaction_category_id');
     }
 
     /**

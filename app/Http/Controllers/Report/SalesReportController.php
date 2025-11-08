@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Report;
 
-use App\Models\SalesReport;
+use App\Http\Controllers\Controller;
+use App\Models\Report\SalesReport;
 use App\Models\Items;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

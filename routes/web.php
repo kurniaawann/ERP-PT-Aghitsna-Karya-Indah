@@ -4,8 +4,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\AlumuniumInvoiceController;
-use App\Http\Controllers\SalesReportController;
-use App\Http\Controllers\ExpenseReportController;
+use App\Http\Controllers\Report\SalesReportController;
+use App\Http\Controllers\Report\ExpenseReportController;
 use Illuminate\Support\Facades\Route;
 
 /*

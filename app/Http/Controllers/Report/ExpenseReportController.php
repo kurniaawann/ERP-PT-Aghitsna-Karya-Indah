@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Report;
 
-use App\Models\ExpenseReport;
+use App\Http\Controllers\Controller;
+use App\Models\Report\ExpenseReport;
 use App\Models\TransactionCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -227,4 +228,3 @@ class ExpenseReportController extends Controller
         return back()->with('info', 'Fitur export PDF sedang dalam pengembangan');
     }
 }
-

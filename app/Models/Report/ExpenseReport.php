@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Report;
 
+use App\Models\TransactionCategory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -60,7 +62,7 @@ class ExpenseReport extends Model
      */
     public function salesReport()
     {
-        return $this->belongsTo(SalesReport::class, 'sales_report_id', 'id_sales_report');
+        return $this->belongsTo(\App\Models\Report\SalesReport::class, 'sales_report_id', 'id_sales_report');
     }
 
     /**
