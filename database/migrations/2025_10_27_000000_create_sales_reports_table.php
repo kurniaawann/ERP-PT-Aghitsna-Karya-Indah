@@ -15,9 +15,9 @@ return new class extends Migration {
             $table->date('date');
             $table->string('name_proyek');
             $table->json('items'); // Array of items dengan detail lengkap
-            $table->bigInteger('total_capital'); // Total harga modal
-            $table->bigInteger('total_selling'); // Total harga jual
-            $table->bigInteger('total_profit'); // Total profit
+            $table->integer('total_capital'); // Total harga modal
+            $table->integer('total_selling'); // Total harga jual
+            $table->integer('total_profit'); // Total profit
             $table->enum('status', ['Belum Lunas', 'Lunas'])->default('Belum Lunas');
             $table->timestamps();
         });
