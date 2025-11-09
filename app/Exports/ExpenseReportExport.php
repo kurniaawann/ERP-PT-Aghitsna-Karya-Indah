@@ -80,8 +80,8 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
                     'invoice' => $expense->invoice_number ?? '',
                     'date' => Carbon::parse($expense->transaction_date)->format('d/m/Y'),
                     'description' => $expense->description ?? '',
-                    'income' => $expense->income_amount ? 'Rp' : '',
-                    'expense' => $expense->expense_amount ? 'Rp' : '',
+                    'income' => $expense->income_amount ? 'Rp ' . number_format($expense->income_amount, 0, ',', '.') : '',
+                    'expense' => $expense->expense_amount ? 'Rp ' . number_format($expense->expense_amount, 0, ',', '.') : '',
                     'money_source' => $expense->money_source ?? '',
                 ];
 
@@ -160,6 +160,37 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
             'money_source' => 'SALDO',
         ];
 
+        // Empty rows before signatures
+        $data[] = ['no' => '', 'invoice' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'money_source' => ''];
+        $data[] = ['no' => '', 'invoice' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'money_source' => ''];
+
+        // Signature headers
+        $data[] = [
+            'no' => '',
+            'invoice' => 'Dibuat / Diperiksa',
+            'date' => '',
+            'description' => '',
+            'income' => '',
+            'expense' => '',
+            'money_source' => 'Direktur PT. Aghitsna',
+        ];
+
+        // Empty rows for signature space
+        $data[] = ['no' => '', 'invoice' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'money_source' => ''];
+        $data[] = ['no' => '', 'invoice' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'money_source' => ''];
+        $data[] = ['no' => '', 'invoice' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'money_source' => ''];
+
+        // Signature names
+        $data[] = [
+            'no' => '',
+            'invoice' => '( A.Khuluqi )',
+            'date' => '',
+            'description' => '',
+            'income' => '',
+            'expense' => '',
+            'money_source' => '( Zulkarnaen, ST )',
+        ];
+
         return collect($data);
     }
 
@@ -225,8 +256,18 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
 
         $sheet->getRowDimension(4)->setRowHeight(30);
 
-        // Data rows border
-        $sheet->getStyle('A5:G' . $highestRow)->applyFromArray([
+        // Find the last row with "Saldo" to stop borders before signature section
+        $lastDataRow = $highestRow;
+        for ($row = 5; $row <= $highestRow; $row++) {
+            $cellD = $sheet->getCell('D' . $row)->getValue();
+            if ($cellD === 'Saldo') {
+                $lastDataRow = $row;
+                break;
+            }
+        }
+
+        // Data rows border (only up to rekapitulasi section, excluding signatures)
+        $sheet->getStyle('A5:G' . $lastDataRow)->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
             ],
@@ -262,18 +303,31 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
                         !str_contains($cellD, 'Rekapitulasi')
                     ) {
 
-                        // Merge B to F for category header
-                        $sheet->mergeCells('B' . $row . ':F' . $row);
+                        // Merge A to D for category header (hanya sampai kolom KETERANGAN)
+                        $sheet->mergeCells('A' . $row . ':D' . $row);
 
-                        $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+                        // Background hijau hanya untuk kolom A sampai D (sampai KETERANGAN)
+                        $sheet->getStyle('A' . $row . ':D' . $row)->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
                                 'startColor' => ['rgb' => 'A9D08E'], // Hijau muda
                             ],
                             'font' => ['bold' => true, 'size' => 10],
                             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        ]);
+
+                        // Border untuk semua kolom (A sampai G)
+                        $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                            ],
+                        ]);
+
+                        // Kolom E, F, G tetap putih (tanpa background hijau)
+                        $sheet->getStyle('E' . $row . ':G' . $row)->applyFromArray([
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => 'FFFFFF'], // Putih
                             ],
                         ]);
                     }
@@ -348,6 +402,49 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
                         $sheet->getStyle('G' . $row)->applyFromArray([
                             'font' => ['bold' => true],
                         ]);
+                    }
+
+                    // Signature headers (Dibuat/Diperiksa, Direktur)
+                    $cellB = $sheet->getCell('B' . $row)->getValue();
+                    $cellG = $sheet->getCell('G' . $row)->getValue();
+
+                    if ($cellB === 'Dibuat / Diperiksa' || $cellG === 'Direktur PT. Aghitsna') {
+                        $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_NONE],
+                            ],
+                            'font' => ['bold' => true],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        ]);
+                    }
+
+                    // Signature names (A.Khuluqi, Zulkarnaen)
+                    if ($cellB === '( A.Khuluqi )' || $cellG === '( Zulkarnaen, ST )') {
+                        $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_NONE],
+                            ],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        ]);
+                    }
+
+                    // Empty rows before and between signature (remove borders)
+                    if (empty($cellA) && empty($cellB) && empty($cellD) && empty($cellE) && empty($cellF) && empty($cellG)) {
+                        // Check if this is after rekapitulasi section
+                        if ($row > 5) {
+                            $prevRow = $row - 1;
+                            $prevCellD = $sheet->getCell('D' . $prevRow)->getValue();
+                            $prevCellB = $sheet->getCell('B' . $prevRow)->getValue();
+
+                            // If previous row has Saldo or is signature-related, remove border
+                            if ($prevCellD === 'Saldo' || $prevCellB === 'Dibuat / Diperiksa' || strpos($prevCellB, 'Khuluqi') !== false) {
+                                $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+                                    'borders' => [
+                                        'allBorders' => ['borderStyle' => Border::BORDER_NONE],
+                                    ],
+                                ]);
+                            }
+                        }
                     }
                 }
             },
