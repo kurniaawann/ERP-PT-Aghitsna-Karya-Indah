@@ -162,19 +162,25 @@
 
         .footer-signatures {
             margin-top: 30px;
-            display: flex;
-            justify-content: space-between;
-            text-align: center;
+            width: 100%;
         }
 
-        .signature-box {
-            width: 30%;
+        .footer-signatures table {
+            width: 100%;
+            border: none;
+            margin: 0;
+        }
+
+        .footer-signatures td {
+            border: none;
+            text-align: center;
+            vertical-align: top;
+            padding: 5px;
+            width: 33.33%;
         }
 
         .signature-line {
-            margin-top: 50px;
-            border-top: 1px solid black;
-            padding-top: 5px;
+            margin-top: 60px;
         }
     </style>
 </head>
@@ -302,17 +308,22 @@
 
     {{-- Footer Signatures --}}
     <div class="footer-signatures">
-        <div class="signature-box">
-            <div>Dibuat / Diperikas</div>
-            <div class="signature-line">( A.Khuluqi )</div>
-        </div>
-        <div class="signature-box">
-            <div>Desktop 3</div>
-        </div>
-        <div class="signature-box">
-            <div>Direktur PT. Aghitsna</div>
-            <div class="signature-line">( Zulkarnaen, ST )</div>
-        </div>
+        <table>
+            <tr>
+                <td>
+                    <div>Dibuat / Diperiksa</div>
+                    <div class="signature-line">( A.Khuluqi )</div>
+                </td>
+                <td>
+                    <div>Desktop 3</div>
+                    <div class="signature-line"></div>
+                </td>
+                <td>
+                    <div>Direktur PT. Aghitsna</div>
+                    <div class="signature-line">( Zulkarnaen, ST )</div>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 
