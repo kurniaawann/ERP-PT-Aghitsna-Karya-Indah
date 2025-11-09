@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->text('regarding'); // Regarding / Hal
             $table->text('project_description'); // Proyek Karbela 3 / Pak Sis
             $table->json('items'); // Array items: keterangan, volume, satuan, harga, jumlah
-            $table->bigInteger('total_amount'); // Jumlah (total)
+            $table->integer('total_amount'); // Jumlah (total)
             $table->timestamps();
         });
     }
@@ -41,7 +41,7 @@ return new class extends Migration {
             $table->text('project_description')->nullable();
             $table->text('payment_purpose')->nullable();
             $table->json('items');
-            $table->bigInteger('total_amount');
+            $table->integer('total_amount');
             $table->text('payment_notes')->nullable();
             $table->string('bank_name')->nullable();
             $table->string('account_number')->nullable();

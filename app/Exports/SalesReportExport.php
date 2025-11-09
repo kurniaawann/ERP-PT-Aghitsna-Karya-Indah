@@ -13,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Events\AfterSheet;
-use App\Models\SalesReport;
+use App\Models\Report\SalesReport;
 use Carbon\Carbon;
 
 class SalesReportExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
@@ -175,13 +175,13 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         $data[] = ['no' => '', 'date' => '', 'project' => '', 'item' => '', 'qty' => '', 'hpp' => '', 'selling' => '', 'profit' => '', 'status' => ''];
         $data[] = ['no' => '', 'date' => '', 'project' => '', 'item' => '', 'qty' => '', 'hpp' => '', 'selling' => '', 'profit' => '', 'status' => ''];
 
-        // Footer info
+        // Footer info - menggunakan kolom C-D untuk label dan E-F untuk value agar center
         $data[] = [
-            'no' => 'Modal Aghitsna',
-            'date' => 'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
-            'project' => '',
+            'no' => '',
+            'date' => '',
+            'project' => 'Modal Aghitsna',
             'item' => '',
-            'qty' => '',
+            'qty' => 'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
             'hpp' => '',
             'selling' => '',
             'profit' => '',
@@ -189,11 +189,11 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         ];
 
         $data[] = [
-            'no' => 'Modal Divisi Holo',
-            'date' => 'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
-            'project' => '',
+            'no' => '',
+            'date' => '',
+            'project' => 'Modal Divisi Holo',
             'item' => '',
-            'qty' => '',
+            'qty' => 'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
             'hpp' => '',
             'selling' => '',
             'profit' => '',
@@ -201,11 +201,11 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         ];
 
         $data[] = [
-            'no' => 'PROFIT',
-            'date' => 'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
-            'project' => '',
+            'no' => '',
+            'date' => '',
+            'project' => 'PROFIT',
             'item' => '',
-            'qty' => '',
+            'qty' => 'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
             'hpp' => '',
             'selling' => '',
             'profit' => '',
@@ -342,6 +342,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                 // Process each row for styling
                 for ($row = 5; $row <= $highestRow; $row++) {
                     $cellA = $sheet->getCell('A' . $row)->getValue();
+                    $cellC = $sheet->getCell('C' . $row)->getValue();
                     $cellD = $sheet->getCell('D' . $row)->getValue();
                     $cellF = $sheet->getCell('F' . $row)->getValue();
 
@@ -350,7 +351,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                         $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
-                                'startColor' => ['rgb' => 'FFFF00'],
+                                'startColor' => ['rgb' => 'FFC000'],
                             ],
                             'font' => ['bold' => true],
                             'borders' => [
@@ -389,15 +390,31 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                     }
 
                     // Footer info rows (Modal Aghitsna, Modal Divisi Holo, PROFIT)
-                    if (in_array($cellA, ['Modal Aghitsna', 'Modal Divisi Holo', 'PROFIT'])) {
+                    if (in_array($cellC, ['Modal Aghitsna', 'Modal Divisi Holo', 'PROFIT'])) {
                         // Set row height untuk footer info
                         $sheet->getRowDimension($row)->setRowHeight(20);
 
-                        // Style untuk label dan value
-                        $sheet->getStyle('A' . $row . ':B' . $row)->applyFromArray([
+                        // Merge cells C-D untuk label
+                        $sheet->mergeCells('C' . $row . ':D' . $row);
+
+                        // Merge cells E-F untuk value
+                        $sheet->mergeCells('E' . $row . ':F' . $row);
+
+                        // Style untuk label (kolom C-D)
+                        $sheet->getStyle('C' . $row)->applyFromArray([
                             'font' => ['bold' => true, 'size' => 10],
                             'alignment' => [
-                                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                                'vertical' => Alignment::VERTICAL_CENTER,
+                                'wrapText' => false
+                            ],
+                        ]);
+
+                        // Style untuk value (kolom E-F)
+                        $sheet->getStyle('E' . $row)->applyFromArray([
+                            'font' => ['bold' => true, 'size' => 10],
+                            'alignment' => [
+                                'horizontal' => Alignment::HORIZONTAL_CENTER,
                                 'vertical' => Alignment::VERTICAL_CENTER,
                                 'wrapText' => false
                             ],

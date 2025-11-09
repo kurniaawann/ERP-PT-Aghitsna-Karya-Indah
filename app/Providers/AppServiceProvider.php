@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Report\SalesReport;
+use App\Observers\SalesReportObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register observer untuk auto-create expense report when sales report LUNAS
+        SalesReport::observe(SalesReportObserver::class);
     }
 }

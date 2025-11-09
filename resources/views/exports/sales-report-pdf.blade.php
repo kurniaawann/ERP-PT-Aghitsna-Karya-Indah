@@ -97,7 +97,7 @@
         }
 
         .subtotal-row {
-            background-color: #FFFF00;
+            background-color: #FFC000;
             font-weight: bold;
         }
 
@@ -109,11 +109,13 @@
         .footer-info {
             margin-top: 15px;
             font-weight: bold;
+            text-align: center;
         }
 
         .footer-info table {
             width: auto;
             border: none;
+            margin: 0 auto;
         }
 
         .footer-info td {

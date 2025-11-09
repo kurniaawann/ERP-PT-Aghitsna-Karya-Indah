@@ -4,7 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\AlumuniumInvoiceController;
-use App\Http\Controllers\SalesReportController;
+use App\Http\Controllers\TransactionCategoryController;
+use App\Http\Controllers\Report\SalesReportController;
+use App\Http\Controllers\Report\ExpenseReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,5 +62,23 @@ Route::middleware('auth')->group(function () {
     // Export routes
     Route::get('/sales-report/export/excel', [SalesReportController::class, 'exportExcel'])->name('sales-report.export.excel');
     Route::get('/sales-report/export/pdf', [SalesReportController::class, 'exportPdf'])->name('sales-report.export.pdf');
+
+    // Route Expense Report
+    Route::get('/expense-report', [ExpenseReportController::class, 'index'])->name('expense-report.index');
+    Route::post('/expense-report', [ExpenseReportController::class, 'store'])->name('expense-report.store');
+    Route::put('/expense-report/{id}', [ExpenseReportController::class, 'update'])->name('expense-report.update');
+    Route::delete('/expense-report/{id}', [ExpenseReportController::class, 'destroy'])->name('expense-report.destroy');
+    Route::delete('/expense-report/destroy-selected', [ExpenseReportController::class, 'destroySelected'])->name('expense-report.destroySelected');
+
+    // Expense Report Export routes
+    Route::get('/expense-report/export/excel', [ExpenseReportController::class, 'exportExcel'])->name('expense-report.export.excel');
+    Route::get('/expense-report/export/pdf', [ExpenseReportController::class, 'exportPdf'])->name('expense-report.export.pdf');
+
+    // Route Transaction Category
+    Route::get('/transaction-category', [TransactionCategoryController::class, 'index'])->name('transaction-category.index');
+    Route::post('/transaction-category', [TransactionCategoryController::class, 'store'])->name('transaction-category.store');
+    Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
+    Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
+    Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
 
 });

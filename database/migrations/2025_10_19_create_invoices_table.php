@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->text('project_description')->nullable(); // Proyek Karbela 3 / Pak Sis
             $table->text('payment_purpose')->nullable(); // Ditempatkan / Dengan ini kami sampaikan...
             $table->json('items'); // Array items: keterangan, volume, satuan, harga, jumlah
-            $table->bigInteger('total_amount'); // Jumlah (total)
+            $table->integer('total_amount'); // Jumlah (total)
             $table->text('payment_notes')->nullable(); // Catatan pembayaran
             $table->string('bank_name')->nullable(); // Nama Bank
             $table->string('account_number')->nullable(); // Nomor Rekening

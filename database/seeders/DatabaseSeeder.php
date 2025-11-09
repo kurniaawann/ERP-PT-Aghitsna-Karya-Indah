@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ItemSeeder::class,
             AlumuniumInvoiceSeeder::class,
+            TransactionCategorySeeder::class,
+            ExpenseReportSeeder::class,
         ]);
     }
 }
