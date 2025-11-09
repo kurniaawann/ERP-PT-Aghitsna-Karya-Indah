@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Exports;
+namespace App\Exports\Invoice;
 
-use App\Models\InvoiceAlumunium;
+use App\Models\Invoice\InvoiceAlumunium;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
