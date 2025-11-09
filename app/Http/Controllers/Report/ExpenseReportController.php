@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Report;
 use App\Http\Controllers\Controller;
 use App\Models\Report\ExpenseReport;
 use App\Models\TransactionCategory;
+use App\Exports\ExpenseReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class ExpenseReportController extends Controller
 {
@@ -17,44 +21,53 @@ class ExpenseReportController extends Controller
      */
     public function index(Request $request)
     {
-        $search = $request->get('search');
         $month = $request->get('month');
         $year = $request->get('year');
         $category = $request->get('category');
+        $search = $request->get('search');
 
         $expenseReports = ExpenseReport::query()
             ->with(['category', 'salesReport', 'creator'])
-            ->when($search, function ($query, $search) {
-                return $query->where('id', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('invoice_number', 'like', "%{$search}%");
-            })
-            ->when($category, function ($query, $category) {
-                return $query->where('transaction_category_id', $category);
-            })
             ->when($month, function ($query, $month) {
                 return $query->whereMonth('transaction_date', $month);
             })
             ->when($year, function ($query, $year) {
                 return $query->whereYear('transaction_date', $year);
+            })
+            ->when($category, function ($query, $category) {
+                return $query->where('transaction_category_id', $category);
+            })
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('money_source', 'like', "%{$search}%");
+                });
             })
             ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        // Get all categories for dropdown
+        // Get all categories for dropdown in add/edit modal
         $categories = TransactionCategory::active()->orderBy('sort_order')->get();
 
         // Calculate totals with filters
         $totals = ExpenseReport::query()
-            ->when($category, function ($query, $category) {
-                return $query->where('transaction_category_id', $category);
-            })
             ->when($month, function ($query, $month) {
                 return $query->whereMonth('transaction_date', $month);
             })
             ->when($year, function ($query, $year) {
                 return $query->whereYear('transaction_date', $year);
+            })
+            ->when($category, function ($query, $category) {
+                return $query->where('transaction_category_id', $category);
+            })
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('money_source', 'like', "%{$search}%");
+                });
             })
             ->select(
                 DB::raw('SUM(income_amount) as total_income'),
@@ -215,8 +228,36 @@ class ExpenseReportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        // TODO: Implement Excel export
-        return back()->with('info', 'Fitur export Excel sedang dalam pengembangan');
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        // Get filtered data (only by month and year)
+        $expenseReports = ExpenseReport::query()
+            ->with(['category', 'salesReport', 'creator'])
+            ->when($month, function ($query, $month) {
+                return $query->whereMonth('transaction_date', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->whereYear('transaction_date', $year);
+            })
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate totals
+        $totals = (object) [
+            'total_income' => $expenseReports->sum('income_amount'),
+            'total_expense' => $expenseReports->sum('expense_amount'),
+        ];
+        $totals->balance = $totals->total_income - $totals->total_expense;
+
+        // Generate filename
+        $filename = 'laporan-pengeluaran-' . date('Y-m-d-His') . '.xlsx';
+
+        return Excel::download(
+            new ExpenseReportExport($expenseReports, $month, $year, null, $totals),
+            $filename
+        );
     }
 
     /**
@@ -224,7 +265,54 @@ class ExpenseReportController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        // TODO: Implement PDF export
-        return back()->with('info', 'Fitur export PDF sedang dalam pengembangan');
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        // Get filtered data (only by month and year)
+        $expenseReports = ExpenseReport::query()
+            ->with(['category', 'salesReport', 'creator'])
+            ->when($month, function ($query, $month) {
+                return $query->whereMonth('transaction_date', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->whereYear('transaction_date', $year);
+            })
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate totals
+        $totals = (object) [
+            'total_income' => $expenseReports->sum('income_amount'),
+            'total_expense' => $expenseReports->sum('expense_amount'),
+        ];
+        $totals->balance = $totals->total_income - $totals->total_expense;
+
+        // Build period title (only month and year)
+        $periodParts = [];
+
+        if ($month && $year) {
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            $periodParts[] = $monthName . ' ' . $year;
+        } elseif ($month) {
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            $periodParts[] = 'Bulan ' . $monthName;
+        } elseif ($year) {
+            $periodParts[] = 'Tahun ' . $year;
+        }
+
+        $periodTitle = !empty($periodParts) ? implode(' - ', $periodParts) : 'Semua Periode';
+
+        // Generate PDF
+        $pdf = Pdf::loadView('exports.expense-report-pdf', [
+            'expenseReports' => $expenseReports,
+            'totals' => $totals,
+            'periodTitle' => $periodTitle,
+        ])->setPaper('a4', 'landscape');
+
+        // Generate filename
+        $filename = 'laporan-pengeluaran-' . date('Y-m-d-His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }
