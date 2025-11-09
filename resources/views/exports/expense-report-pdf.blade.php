@@ -315,7 +315,7 @@
                     <div class="signature-line">( A.Khuluqi )</div>
                 </td>
                 <td>
-                    <div>Desktop 3</div>
+                    <div>&nbsp;</div>
                     <div class="signature-line"></div>
                 </td>
                 <td>
