@@ -1,678 +1,734 @@
-@extends('layouts.app')
+                   @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Laporan Penjualan')
+                   @section('title', 'PT Aghitsna Karya Indah - Laporan Penjualan')
 
-@section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Laporan Penjualan</h1>
+                   @section('content')
+                       <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+                           <h1 class="text-2xl font-semibold text-gray-700 mb-4">Laporan Penjualan</h1>
 
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <!-- Form Pencarian dan Filter -->
-            <form method="GET" action="{{ route('sales-report.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                           <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
+                               <!-- Form Pencarian dan Filter -->
+                               <form method="GET" action="{{ route('sales-report.index') }}"
+                                   class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
-                <!-- Filter Bulan -->
-                <div class="w-full lg:w-auto">
-                    <label for="month-select" class="sr-only">Pilih Bulan</label>
-                    <select name="month" id="month-select"
-                        class="block w-full lg:w-40 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
+                                   <!-- Filter Bulan -->
+                                   <div class="w-full lg:w-auto">
+                                       <label for="month-select" class="sr-only">Pilih Bulan</label>
+                                       <select name="month" id="month-select"
+                                           class="block w-full lg:w-40 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
                                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
-                        <option value="">Semua Bulan</option>
-                        <option value="1" {{ request('month') == '1' ? 'selected' : '' }}>Januari</option>
-                        <option value="2" {{ request('month') == '2' ? 'selected' : '' }}>Februari</option>
-                        <option value="3" {{ request('month') == '3' ? 'selected' : '' }}>Maret</option>
-                        <option value="4" {{ request('month') == '4' ? 'selected' : '' }}>April</option>
-                        <option value="5" {{ request('month') == '5' ? 'selected' : '' }}>Mei</option>
-                        <option value="6" {{ request('month') == '6' ? 'selected' : '' }}>Juni</option>
-                        <option value="7" {{ request('month') == '7' ? 'selected' : '' }}>Juli</option>
-                        <option value="8" {{ request('month') == '8' ? 'selected' : '' }}>Agustus</option>
-                        <option value="9" {{ request('month') == '9' ? 'selected' : '' }}>September</option>
-                        <option value="10" {{ request('month') == '10' ? 'selected' : '' }}>Oktober</option>
-                        <option value="11" {{ request('month') == '11' ? 'selected' : '' }}>November</option>
-                        <option value="12" {{ request('month') == '12' ? 'selected' : '' }}>Desember</option>
-                    </select>
-                </div>
+                                           <option value="">Semua Bulan</option>
+                                           <option value="1" {{ request('month') == '1' ? 'selected' : '' }}>Januari
+                                           </option>
+                                           <option value="2" {{ request('month') == '2' ? 'selected' : '' }}>Februari
+                                           </option>
+                                           <option value="3" {{ request('month') == '3' ? 'selected' : '' }}>Maret
+                                           </option>
+                                           <option value="4" {{ request('month') == '4' ? 'selected' : '' }}>April
+                                           </option>
+                                           <option value="5" {{ request('month') == '5' ? 'selected' : '' }}>Mei
+                                           </option>
+                                           <option value="6" {{ request('month') == '6' ? 'selected' : '' }}>Juni
+                                           </option>
+                                           <option value="7" {{ request('month') == '7' ? 'selected' : '' }}>Juli
+                                           </option>
+                                           <option value="8" {{ request('month') == '8' ? 'selected' : '' }}>Agustus
+                                           </option>
+                                           <option value="9" {{ request('month') == '9' ? 'selected' : '' }}>September
+                                           </option>
+                                           <option value="10" {{ request('month') == '10' ? 'selected' : '' }}>Oktober
+                                           </option>
+                                           <option value="11" {{ request('month') == '11' ? 'selected' : '' }}>November
+                                           </option>
+                                           <option value="12" {{ request('month') == '12' ? 'selected' : '' }}>Desember
+                                           </option>
+                                       </select>
+                                   </div>
 
-                <!-- Filter Tahun -->
-                <div class="w-full lg:w-auto">
-                    <label for="year-select" class="sr-only">Pilih Tahun</label>
-                    <select name="year" id="year-select"
-                        class="block w-full lg:w-32 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
+                                   <!-- Filter Tahun -->
+                                   <div class="w-full lg:w-auto">
+                                       <label for="year-select" class="sr-only">Pilih Tahun</label>
+                                       <select name="year" id="year-select"
+                                           class="block w-full lg:w-32 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 
                                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
-                        <option value="">Semua Tahun</option>
-                        @for ($y = date('Y'); $y >= 2020; $y--)
-                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
-                                {{ $y }}</option>
-                        @endfor
-                    </select>
-                </div>
+                                           <option value="">Semua Tahun</option>
+                                           @for ($y = date('Y'); $y >= 2020; $y--)
+                                               <option value="{{ $y }}"
+                                                   {{ request('year') == $y ? 'selected' : '' }}>
+                                                   {{ $y }}</option>
+                                           @endfor
+                                       </select>
+                                   </div>
 
-                <!-- Search Input -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
-                    <div class="relative flex-1">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 20 20" aria-hidden="true">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                            </svg>
-                        </span>
+                                   <!-- Search Input -->
+                                   <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
+                                       <div class="relative flex-1">
+                                           <span
+                                               class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                               <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg"
+                                                   fill="none" viewBox="0 0 20 20" aria-hidden="true">
+                                                   <path stroke="currentColor" stroke-linecap="round"
+                                                       stroke-linejoin="round" stroke-width="2"
+                                                       d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                               </svg>
+                                           </span>
 
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari proyek..."
-                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 
+                                           <input type="text" name="search" value="{{ request('search') }}"
+                                               placeholder="Cari proyek..."
+                                               class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 pl-10 text-sm text-gray-900 
                                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
-                    </div>
+                                       </div>
 
-                    <button type="submit"
-                        class="w-full sm:w-auto rounded-lg bg-btn-search hover:bg-btn-search-hover px-4 lg:px-6 py-3.5 text-sm font-medium text-white 
+                                       <button type="submit"
+                                           class="w-full sm:w-auto rounded-lg bg-btn-search hover:bg-btn-search-hover px-4 lg:px-6 py-3.5 text-sm font-medium text-white 
                                focus:outline-none focus:ring-4 focus:ring-primary-light whitespace-nowrap transition-colors duration-200">
-                        Cari
-                    </button>
-                </div>
-            </form>
+                                           Cari
+                                       </button>
+                                   </div>
+                               </form>
 
-            <!-- Aksi di Kanan -->
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <!-- Dropdown Print Laporan -->
-                    <div class="relative inline-block text-left w-full sm:w-auto">
-                        <button type="button" id="printDropdownButton"
-                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-2 lg:py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium">
-                            <i class="fa-solid fa-print w-4 h-4"></i>
-                            <span>Print Laporan</span>
-                            <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>
-                        </button>
+                               <!-- Aksi di Kanan -->
+                               <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
+                                   <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                                       <!-- Dropdown Print Laporan -->
+                                       <div class="relative inline-block text-left w-full sm:w-auto">
+                                           <button type="button" id="printDropdownButton"
+                                               class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-2 lg:py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium">
+                                               <i class="fa-solid fa-print w-4 h-4"></i>
+                                               <span>Print Laporan</span>
+                                               <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>
+                                           </button>
 
-                        <!-- Dropdown Menu -->
-                        <div id="printDropdownMenu"
-                            class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                            <div class="py-1" role="menu">
-                                <a href="{{ route('sales-report.export.excel') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
-                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
-                                    <i class="fa-solid fa-file-excel text-success w-4"></i>
-                                    <span>Export Excel</span>
-                                </a>
-                                <a href="{{ route('sales-report.export.pdf') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
-                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
-                                    <i class="fa-solid fa-file-pdf text-error w-4"></i>
-                                    <span>Export PDF</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                                           <!-- Dropdown Menu -->
+                                           <div id="printDropdownMenu"
+                                               class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                               <div class="py-1" role="menu">
+                                                   <a href="{{ route('sales-report.export.excel') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
+                                                       class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                                       <i class="fa-solid fa-file-excel text-success w-4"></i>
+                                                       <span>Export Excel</span>
+                                                   </a>
+                                                   <a href="{{ route('sales-report.export.pdf') }}?{{ http_build_query(array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year')])) }}"
+                                                       class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                                       <i class="fa-solid fa-file-pdf text-error w-4"></i>
+                                                       <span>Export PDF</span>
+                                                   </a>
+                                               </div>
+                                           </div>
+                                       </div>
 
-                    <!-- Tombol Hapus -->
-                    <button type="button" onclick="openModal('deleteModal')"
-                        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2 lg:py-1.5 rounded-lg transition-colors duration-200 text-sm font-medium">
-                        <i class="fa-solid fa-trash w-4 h-4"></i>
-                        <span>Hapus</span>
-                    </button>
+                                       <!-- Tombol Hapus -->
+                                       <button type="button" onclick="openModal('deleteModal')"
+                                           class="w-full sm:w-auto flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2 lg:py-1.5 rounded-lg transition-colors duration-200 text-sm font-medium">
+                                           <i class="fa-solid fa-trash w-4 h-4"></i>
+                                           <span>Hapus</span>
+                                       </button>
 
-                    <!-- Tombol Tambah -->
-                    <button type="button" onclick="openModal('addModal')"
-                        class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-btn-add hover:bg-btn-add-hover px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-4 focus:ring-success-light transition-colors duration-200">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Tambah Laporan</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+                                       <!-- Tombol Tambah -->
+                                       <button type="button" onclick="openModal('addModal')"
+                                           class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-btn-add hover:bg-btn-add-hover px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-4 focus:ring-success-light transition-colors duration-200">
+                                           <i class="fa-solid fa-plus"></i>
+                                           <span>Tambah Laporan</span>
+                                       </button>
+                                   </div>
+                               </div>
+                           </div>
 
-        {{-- Form Hapus Terpilih --}}
-        <form id="deleteForm" method="POST" action="{{ route('sales-report.destroySelected') }}">
-            @csrf
-            @method('DELETE')
-            <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-                <div class="inline-block min-w-full align-middle">
-                    <div class="border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                                <tr>
-                                    <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
-                                    <th class="p-2 text-center">ID Laporan</th>
-                                    <th class="p-2 text-left">Tanggal</th>
-                                    <th class="p-2 text-left">Proyek</th>
-                                    <th class="p-2 text-left">Nama Barang</th>
-                                    <th class="p-2 text-center">Qty</th>
-                                    <th class="p-2 text-center">HPP (Harga Modal)</th>
-                                    <th class="p-2 text-center">Harga Jual</th>
-                                    <th class="p-2 text-center">Profit</th>
-                                    <th class="p-2 text-center">Status</th>
-                                    <th class="p-2 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($salesReports as $index => $sale)
-                                    @php
-                                        $saleItems = is_string($sale->items)
-                                            ? json_decode($sale->items, true)
-                                            : $sale->items;
-                                        $itemCount = count($saleItems);
-                                        $verticalAlign = $itemCount >= 3 ? 'align-middle' : 'align-top';
-                                    @endphp
+                           {{-- Form Hapus Terpilih --}}
+                           <form id="deleteForm" method="POST" action="{{ route('sales-report.destroySelected') }}">
+                               @csrf
+                               @method('DELETE')
+                               <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+                                   <div class="inline-block min-w-full align-middle">
+                                       <div class="border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+                                           <table class="min-w-full divide-y divide-gray-200">
+                                               <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                                   <tr>
+                                                       <th class="p-2 text-center"><input type="checkbox" id="selectAll">
+                                                       </th>
+                                                       <th class="p-2 text-center">ID Laporan</th>
+                                                       <th class="p-2 text-left">Tanggal</th>
+                                                       <th class="p-2 text-left">Proyek</th>
+                                                       <th class="p-2 text-left">Nama Barang</th>
+                                                       <th class="p-2 text-center">Qty</th>
+                                                       <th class="p-2 text-center">HPP (Harga Modal)</th>
+                                                       <th class="p-2 text-center">Harga Jual</th>
+                                                       <th class="p-2 text-center">Profit</th>
+                                                       <th class="p-2 text-center">Status</th>
+                                                       <th class="p-2 text-center">Aksi</th>
+                                                   </tr>
+                                               </thead>
+                                               <tbody>
+                                                   @forelse($salesReports as $index => $sale)
+                                                       @php
+                                                           $saleItems = is_string($sale->items)
+                                                               ? json_decode($sale->items, true)
+                                                               : $sale->items;
+                                                           $itemCount = count($saleItems);
+                                                           $verticalAlign =
+                                                               $itemCount >= 3 ? 'align-middle' : 'align-top';
+                                                       @endphp
 
-                                    @foreach ($saleItems as $itemIndex => $saleItem)
-                                        <tr
-                                            class="{{ $itemIndex === 0 ? 'border-t-2 border-primary/40' : 'border-t border-gray-200' }} transition-colors duration-150 hover:bg-gray-100">
-                                            @if ($itemIndex === 0)
-                                                <td class="p-2 text-center {{ $verticalAlign }}"
-                                                    rowspan="{{ $itemCount }}">
-                                                    <input type="checkbox" name="selected_sales[]"
-                                                        value="{{ $sale->id_sales_report }}"
-                                                        class="w-4 h-4 accent-primary cursor-pointer">
-                                                </td>
-                                                <td class="p-2 text-center {{ $verticalAlign }}"
-                                                    rowspan="{{ $itemCount }}">
-                                                    {{ $sale->id_sales_report }}</td>
-                                                <td class="p-2 text-sm {{ $verticalAlign }}"
-                                                    rowspan="{{ $itemCount }}">
-                                                    {{ $sale->date->format('d-m-Y') }}</td>
-                                                <td class="p-2 font-medium {{ $verticalAlign }}"
-                                                    rowspan="{{ $itemCount }}">
-                                                    {{ $sale->name_proyek }}</td>
-                                            @endif
+                                                       @foreach ($saleItems as $itemIndex => $saleItem)
+                                                           <tr
+                                                               class="{{ $itemIndex === 0 ? 'border-t-2 border-primary/40' : 'border-t border-gray-200' }} transition-colors duration-150 hover:bg-gray-100">
+                                                               @if ($itemIndex === 0)
+                                                                   <td class="p-2 text-center {{ $verticalAlign }}"
+                                                                       rowspan="{{ $itemCount }}">
+                                                                       <input type="checkbox" name="selected_sales[]"
+                                                                           value="{{ $sale->id_sales_report }}"
+                                                                           class="w-4 h-4 accent-primary cursor-pointer">
+                                                                   </td>
+                                                                   <td class="p-2 text-center {{ $verticalAlign }}"
+                                                                       rowspan="{{ $itemCount }}">
+                                                                       {{ $sale->id_sales_report }}</td>
+                                                                   <td class="p-2 text-sm {{ $verticalAlign }}"
+                                                                       rowspan="{{ $itemCount }}">
+                                                                       {{ $sale->date->format('d-m-Y') }}</td>
+                                                                   <td class="p-2 font-medium {{ $verticalAlign }}"
+                                                                       rowspan="{{ $itemCount }}">
+                                                                       {{ $sale->name_proyek }}</td>
+                                                               @endif
 
-                                            {{-- Nama Barang --}}
-                                            <td class="p-2">
-                                                {{ $saleItem['name_item'] ?? '-' }}
+                                                               {{-- Nama Barang --}}
+                                                               <td class="p-2">
+                                                                   {{ $saleItem['name_item'] ?? '-' }}
 
-                                            </td>
+                                                               </td>
 
-                                            {{-- QTY --}}
-                                            <td class="p-2 text-center">{{ $saleItem['quantity'] ?? 0 }}</td>
+                                                               {{-- QTY --}}
+                                                               <td class="p-2 text-center">
+                                                                   {{ $saleItem['quantity'] ?? 0 }}</td>
 
-                                            {{-- Harga Modal (satuan | total) --}}
-                                            <td class="p-2 text-center text-sm whitespace-nowrap">
-                                                Rp {{ number_format($saleItem['capital_price'] ?? 0, 0, ',', '.') }} |
-                                                <span class="font-semibold">Rp
-                                                    {{ number_format(($saleItem['capital_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
-                                            </td>
+                                                               {{-- Harga Modal (satuan | total) --}}
+                                                               <td class="p-2 text-center text-sm whitespace-nowrap">
+                                                                   Rp
+                                                                   {{ number_format($saleItem['capital_price'] ?? 0, 0, ',', '.') }}
+                                                                   |
+                                                                   <span class="font-semibold">Rp
+                                                                       {{ number_format(($saleItem['capital_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
+                                                               </td>
 
-                                            {{-- Harga Jual (satuan | total) --}}
-                                            <td class="p-2 text-center text-sm whitespace-nowrap">
-                                                Rp {{ number_format($saleItem['selling_price'] ?? 0, 0, ',', '.') }} |
-                                                <span class="font-semibold">Rp
-                                                    {{ number_format(($saleItem['selling_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
-                                            </td>
+                                                               {{-- Harga Jual (satuan | total) --}}
+                                                               <td class="p-2 text-center text-sm whitespace-nowrap">
+                                                                   Rp
+                                                                   {{ number_format($saleItem['selling_price'] ?? 0, 0, ',', '.') }}
+                                                                   |
+                                                                   <span class="font-semibold">Rp
+                                                                       {{ number_format(($saleItem['selling_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
+                                                               </td>
 
-                                            @if ($itemIndex === 0)
-                                                {{-- Profit (untuk seluruh proyek) --}}
-                                                <td class="p-2 text-center font-medium text-success {{ $verticalAlign }}"
-                                                    rowspan="{{ $itemCount }}">
-                                                    Rp {{ number_format($sale->total_profit, 0, ',', '.') }}
-                                                </td>
+                                                               @if ($itemIndex === 0)
+                                                                   {{-- Profit (untuk seluruh proyek) --}}
+                                                                   <td class="p-2 text-center font-medium text-success {{ $verticalAlign }}"
+                                                                       rowspan="{{ $itemCount }}">
+                                                                       Rp
+                                                                       {{ number_format($sale->total_profit, 0, ',', '.') }}
+                                                                   </td>
 
-                                                {{-- Status --}}
-                                                <td class="p-2 text-center {{ $verticalAlign }}"
-                                                    rowspan="{{ $itemCount }}">
-                                                    @if ($sale->status === 'Lunas')
-                                                        <span
-                                                            class="px-3 py-1.5 rounded-lg text-sm font-medium bg-success-light text-success inline-flex items-center gap-2">
-                                                            <i class="fa-solid fa-check-circle"></i> Lunas
-                                                        </span>
-                                                    @else
-                                                        <span
-                                                            class="px-3 py-1.5 rounded-lg text-sm font-medium bg-warning-light text-warning">
-                                                            {{ $sale->status }}
-                                                        </span>
-                                                    @endif
-                                                </td>
+                                                                   {{-- Status --}}
+                                                                   <td class="p-2 text-center {{ $verticalAlign }}"
+                                                                       rowspan="{{ $itemCount }}">
+                                                                       @if ($sale->status === 'Lunas')
+                                                                           <span
+                                                                               class="px-3 py-1.5 rounded-lg text-sm font-medium bg-success-light text-success inline-flex items-center gap-2">
+                                                                               <i class="fa-solid fa-check-circle"></i>
+                                                                               Lunas
+                                                                           </span>
+                                                                       @else
+                                                                           <span
+                                                                               class="px-3 py-1.5 rounded-lg text-sm font-medium bg-warning-light text-warning">
+                                                                               {{ $sale->status }}
+                                                                           </span>
+                                                                       @endif
+                                                                   </td>
 
-                                                {{-- Aksi --}}
-                                                <td class="p-2 text-center {{ $verticalAlign }}"
-                                                    rowspan="{{ $itemCount }}">
-                                                    @if (!$sale->isLunas())
-                                                        <div class="flex flex-col gap-2">
-                                                            <button type="button"
-                                                                onclick="openModal('editModal-{{ $sale->id_sales_report }}')"
-                                                                class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200">
-                                                                <i class="fa-solid fa-pen w-4 h-4"></i>
-                                                                Edit
-                                                            </button>
-                                                            <button type="button"
-                                                                onclick="openModal('statusModal-{{ $sale->id_sales_report }}')"
-                                                                class="flex items-center justify-center gap-2 bg-success hover:bg-success/90 text-white px-3 py-1 rounded-lg transition-colors duration-200">
-                                                                <i class="fa-solid fa-check-circle w-4 h-4"></i>
-                                                                Status
-                                                            </button>
-                                                        </div>
-                                                    @else
-                                                        <span class="text-gray-400 text-sm">-</span>
-                                                    @endif
-                                                </td>
-                                            @endif
-                                        </tr>
-                                    @endforeach
-                                @empty
-                                    <tr>
-                                        <td colspan="11" class="text-center p-4 text-gray-500">Data tidak ditemukan.
-                                        </td>
-                                    </tr>
-                                @endforelse
+                                                                   {{-- Aksi --}}
+                                                                   <td class="p-2 text-center {{ $verticalAlign }}"
+                                                                       rowspan="{{ $itemCount }}">
+                                                                       @if (!$sale->isLunas())
+                                                                           <div class="flex flex-col gap-2">
+                                                                               <button type="button"
+                                                                                   onclick="openModal('editModal-{{ $sale->id_sales_report }}')"
+                                                                                   class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200">
+                                                                                   <i class="fa-solid fa-pen w-4 h-4"></i>
+                                                                                   Edit
+                                                                               </button>
+                                                                               <button type="button"
+                                                                                   onclick="openModal('statusModal-{{ $sale->id_sales_report }}')"
+                                                                                   class="flex items-center justify-center gap-2 bg-success hover:bg-success/90 text-white px-3 py-1 rounded-lg transition-colors duration-200">
+                                                                                   <i
+                                                                                       class="fa-solid fa-check-circle w-4 h-4"></i>
+                                                                                   Status
+                                                                               </button>
+                                                                           </div>
+                                                                       @else
+                                                                           <span class="text-gray-400 text-sm">-</span>
+                                                                       @endif
+                                                                   </td>
+                                                               @endif
+                                                           </tr>
+                                                       @endforeach
+                                                   @empty
+                                                       <tr>
+                                                           <td colspan="11" class="text-center p-4 text-gray-500">Data
+                                                               tidak ditemukan.
+                                                           </td>
+                                                       </tr>
+                                                   @endforelse
 
-                                {{-- Grand Total Row --}}
-                                @if ($salesReports->isNotEmpty())
-                                    <tr
-                                        class="bg-gradient-to-r from-primary/20 to-primary/10 border-t-4 border-primary font-bold text-base">
-                                        <td colspan="6" class="p-3 text-right text-gray-800">
-                                            TOTAL PENJUALAN & PROFIT
-                                        </td>
-                                        <td class="p-3 text-center text-gray-800">
-                                            Rp {{ number_format($grandTotals->grand_total_capital ?? 0, 0, ',', '.') }}
-                                        </td>
-                                        <td class="p-3 text-center text-gray-800">
-                                            Rp {{ number_format($grandTotals->grand_total_selling ?? 0, 0, ',', '.') }}
-                                        </td>
-                                        <td class="p-3 text-right text-success font-bold text-lg">
-                                            Rp {{ number_format($grandTotals->grand_total_profit ?? 0, 0, ',', '.') }}
-                                        </td>
-                                        <td colspan="2"></td>
-                                    </tr>
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </form>
+                                                   {{-- Grand Total Row --}}
+                                                   @if ($salesReports->isNotEmpty())
+                                                       <tr
+                                                           class="bg-gradient-to-r from-primary/20 to-primary/10 border-t-4 border-primary font-bold text-base">
+                                                           <td colspan="6" class="p-3 text-right text-gray-800">
+                                                               TOTAL PENJUALAN & PROFIT
+                                                           </td>
+                                                           <td class="p-3 text-center text-gray-800">
+                                                               Rp
+                                                               {{ number_format($grandTotals->grand_total_capital ?? 0, 0, ',', '.') }}
+                                                           </td>
+                                                           <td class="p-3 text-center text-gray-800">
+                                                               Rp
+                                                               {{ number_format($grandTotals->grand_total_selling ?? 0, 0, ',', '.') }}
+                                                           </td>
+                                                           <td class="p-3 text-right text-success font-bold text-lg">
+                                                               Rp
+                                                               {{ number_format($grandTotals->grand_total_profit ?? 0, 0, ',', '.') }}
+                                                           </td>
+                                                           <td colspan="2"></td>
+                                                       </tr>
+                                                   @endif
+                                               </tbody>
+                                           </table>
+                                       </div>
+                                   </div>
+                               </div>
+                           </form>
 
-        {{-- Pagination --}}
-        <div class="flex mt-4 justify-center">
-            <div class="flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm">
-                <a href="{{ $salesReports->appends(request()->query())->previousPageUrl() }}"
-                    class="flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors duration-200
+                           {{-- Pagination --}}
+                           <div class="flex mt-4 justify-center">
+                               <div
+                                   class="flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm">
+                                   <a href="{{ $salesReports->appends(request()->query())->previousPageUrl() }}"
+                                       class="flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors duration-200
                     {{ $salesReports->onFirstPage() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:border-primary' }}">
-                    &lt;
-                </a>
+                                       &lt;
+                                   </a>
 
-                <span class="text-sm font-medium text-gray-700">
-                    {{ $salesReports->currentPage() }}
-                    <span class="text-gray-400">/</span>
-                    {{ $salesReports->lastPage() }}
-                </span>
+                                   <span class="text-sm font-medium text-gray-700">
+                                       {{ $salesReports->currentPage() }}
+                                       <span class="text-gray-400">/</span>
+                                       {{ $salesReports->lastPage() }}
+                                   </span>
 
-                <a href="{{ $salesReports->appends(request()->query())->nextPageUrl() }}"
-                    class="flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors duration-200
+                                   <a href="{{ $salesReports->appends(request()->query())->nextPageUrl() }}"
+                                       class="flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors duration-200
                     {{ !$salesReports->hasMorePages() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:border-primary' }}">
-                    &gt;
-                </a>
-            </div>
-        </div>
-    </div>
+                                       &gt;
+                                   </a>
+                               </div>
+                           </div>
+                       </div>
 
-    {{-- Modal Tambah --}}
-    <x-modal id="addModal" title="Tambah Laporan Penjualan" action="{{ route('sales-report.store') }}" method="POST"
-        buttonText="Simpan">
+                       {{-- Modal Tambah --}}
+                       <x-modal id="addModal" title="Tambah Laporan Penjualan"
+                           action="{{ route('sales-report.store') }}" method="POST" buttonText="Simpan">
 
-        <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
-            <input type="date" name="date" class="w-full border rounded p-2" required>
-        </div>
+                           <div class="mb-3">
+                               <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
+                               <input type="date" name="date" class="w-full border rounded p-2" required>
+                           </div>
 
-        <div class="mb-3">
-            <label class="block text-gray-700 mb-1">Nama Proyek <span class="text-error">*</span></label>
-            <input type="text" name="name_proyek" class="w-full border rounded p-2"
-                placeholder="Contoh: PROYEK KAHFI" required>
-        </div>
+                           <div class="mb-3">
+                               <label class="block text-gray-700 mb-1">Nama Proyek <span
+                                       class="text-error">*</span></label>
+                               <input type="text" name="name_proyek" class="w-full border rounded p-2"
+                                   placeholder="Contoh: PROYEK KAHFI" required>
+                           </div>
 
-        <div id="items-container" class="mb-4">
-            <label class="block text-gray-700 font-semibold mb-2">Item-Item Barang <span
-                    class="text-error">*</span></label>
-            <div id="items-list">
-                <div class="item-row mb-3 p-3 border rounded bg-gray-50">
-                    <div class="flex items-center gap-2 mb-2">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" class="item-from-stock accent-primary">
-                            <span class="text-sm">Dari Stok</span>
-                        </label>
-                    </div>
+                           <div id="items-container" class="mb-4">
+                               <label class="block text-gray-700 font-semibold mb-2">Item-Item Barang <span
+                                       class="text-error">*</span></label>
+                               <div id="items-list">
+                                   <div class="item-row mb-3 p-3 border rounded bg-gray-50">
+                                       <div class="flex items-center gap-2 mb-2">
+                                           <label class="flex items-center gap-2">
+                                               <input type="checkbox" class="item-from-stock accent-primary">
+                                               <span class="text-sm">Dari Stok</span>
+                                           </label>
+                                       </div>
 
-                    {{-- Custom Searchable Dropdown --}}
-                    <div class="relative mb-2 item-select-wrapper" style="display: none;">
-                        <input type="text"
-                            class="item-search-input w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
-                            placeholder="Cari barang..." autocomplete="off">
-                        <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                                       {{-- Custom Searchable Dropdown --}}
+                                       <div class="relative mb-2 item-select-wrapper" style="display: none;">
+                                           <input type="text"
+                                               class="item-search-input w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
+                                               placeholder="Cari barang..." autocomplete="off">
+                                           <i
+                                               class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
 
-                        <div
-                            class="item-dropdown absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
-                            <div class="item-options">
-                                <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b"
-                                    data-value="">
-                                    -- Pilih Barang --
-                                </div>
-                                @foreach ($items as $item)
-                                    <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option"
-                                        data-value="{{ $item->id_item }}" data-name="{{ $item->name_item }}"
-                                        data-capital="{{ $item->capital_price }}"
-                                        data-selling="{{ $item->selling_price }}" data-stock="{{ $item->quantity }}"
-                                        data-search="{{ strtolower($item->name_item) }}">
-                                        <div class="font-medium text-gray-800">{{ $item->name_item }}</div>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            Stok: <span class="font-semibold text-primary">{{ $item->quantity }}</span>
-                                            unit
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <div class="no-results p-4 text-center text-sm text-gray-500 hidden">
-                                <i class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
-                                <p>Tidak ada barang ditemukan</p>
-                            </div>
-                        </div>
-                    </div>
+                                           <div
+                                               class="item-dropdown absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                                               <div class="item-options">
+                                                   <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b"
+                                                       data-value="">
+                                                       -- Pilih Barang --
+                                                   </div>
+                                                   @foreach ($items as $item)
+                                                       <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option"
+                                                           data-value="{{ $item->id_item }}"
+                                                           data-name="{{ $item->name_item }}"
+                                                           data-capital="{{ $item->capital_price }}"
+                                                           data-selling="{{ $item->selling_price }}"
+                                                           data-stock="{{ $item->quantity }}"
+                                                           data-search="{{ strtolower($item->name_item) }}">
+                                                           <div class="font-medium text-gray-800">{{ $item->name_item }}
+                                                           </div>
+                                                           <div class="text-xs text-gray-500 mt-1">
+                                                               Stok: <span
+                                                                   class="font-semibold text-primary">{{ $item->quantity }}</span>
+                                                               unit
+                                                           </div>
+                                                       </div>
+                                                   @endforeach
+                                               </div>
+                                               <div class="no-results p-4 text-center text-sm text-gray-500 hidden">
+                                                   <i class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
+                                                   <p>Tidak ada barang ditemukan</p>
+                                               </div>
+                                           </div>
+                                       </div>
 
-                    <input type="hidden" class="item-select-hidden">
+                                       <input type="hidden" class="item-select-hidden">
 
-                    <input type="text" class="item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *"
-                        required>
+                                       <input type="text" class="item-name w-full border rounded p-2 mb-2"
+                                           placeholder="Nama Barang *" required>
 
-                    <div class="grid grid-cols-3 gap-2">
-                        <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required
-                            min="1" value="1">
-                        <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *"
-                            required min="0">
-                        <input type="number" class="item-selling border rounded p-2" placeholder="Harga Jual *" required
-                            min="0">
-                    </div>
+                                       <div class="grid grid-cols-3 gap-2">
+                                           <input type="number" class="item-qty border rounded p-2" placeholder="Qty *"
+                                               required min="1" value="1">
+                                           <input type="number" class="item-capital border rounded p-2"
+                                               placeholder="Harga Modal *" required min="0">
+                                           <input type="number" class="item-selling border rounded p-2"
+                                               placeholder="Harga Jual *" required min="0">
+                                       </div>
 
-                    <button type="button"
-                        class="remove-item mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
-                        <i class="fa-solid fa-trash"></i> Hapus Item
-                    </button>
-                </div>
-            </div>
-            <button type="button" id="add-item"
-                class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover w-full">
-                <i class="fa-solid fa-plus"></i> Tambah Item
-            </button>
-        </div>
+                                       <button type="button"
+                                           class="remove-item mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
+                                           <i class="fa-solid fa-trash"></i> Hapus Item
+                                       </button>
+                                   </div>
+                               </div>
+                               <button type="button" id="add-item"
+                                   class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover w-full">
+                                   <i class="fa-solid fa-plus"></i> Tambah Item
+                               </button>
+                           </div>
 
-        <input type="hidden" name="items" id="items-json" value="[]">
-    </x-modal>
+                           <input type="hidden" name="items" id="items-json" value="[]">
+                       </x-modal>
 
-    {{-- Modal Edit untuk setiap sale --}}
-    @foreach ($salesReports as $sale)
-        @if (!$sale->isLunas())
-            <x-modal id="editModal-{{ $sale->id_sales_report }}" title="Edit Laporan Penjualan"
-                action="{{ route('sales-report.update', $sale->id_sales_report) }}" method="PUT" buttonText="Update">
+                       {{-- Modal Edit untuk setiap sale --}}
+                       @foreach ($salesReports as $sale)
+                           @if (!$sale->isLunas())
+                               <x-modal id="editModal-{{ $sale->id_sales_report }}" title="Edit Laporan Penjualan"
+                                   action="{{ route('sales-report.update', $sale->id_sales_report) }}" method="PUT"
+                                   buttonText="Update">
 
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">ID Laporan</label>
-                    <input type="text" value="{{ $sale->id_sales_report }}"
-                        class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed" readonly>
-                </div>
+                                   <div class="mb-3">
+                                       <label class="block text-gray-700 mb-1">ID Laporan</label>
+                                       <input type="text" value="{{ $sale->id_sales_report }}"
+                                           class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed" readonly>
+                                   </div>
 
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
-                    <input type="date" name="date" value="{{ $sale->date->format('Y-m-d') }}"
-                        class="w-full border rounded p-2" required>
-                </div>
+                                   <div class="mb-3">
+                                       <label class="block text-gray-700 mb-1">Tanggal <span
+                                               class="text-error">*</span></label>
+                                       <input type="date" name="date" value="{{ $sale->date->format('Y-m-d') }}"
+                                           class="w-full border rounded p-2" required>
+                                   </div>
 
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Nama Proyek <span class="text-error">*</span></label>
-                    <input type="text" name="name_proyek" value="{{ $sale->name_proyek }}"
-                        class="w-full border rounded p-2" required>
-                </div>
+                                   <div class="mb-3">
+                                       <label class="block text-gray-700 mb-1">Nama Proyek <span
+                                               class="text-error">*</span></label>
+                                       <input type="text" name="name_proyek" value="{{ $sale->name_proyek }}"
+                                           class="w-full border rounded p-2" required>
+                                   </div>
 
-                <div id="items-container-edit-{{ $sale->id_sales_report }}" class="mb-4">
-                    <label class="block text-gray-700 font-semibold mb-2">Item-Item Barang</label>
-                    <div id="items-list-edit-{{ $sale->id_sales_report }}">
-                        @php
-                            $existingItems = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
-                        @endphp
-                        @foreach ($existingItems as $index => $item)
-                            <div class="item-row-edit mb-3 p-3 border rounded bg-gray-50"
-                                data-index="{{ $index }}">
-                                {{-- Checkbox Dari Stok --}}
-                                <div class="flex items-center gap-2 mb-2">
-                                    <label class="flex items-center gap-2">
-                                        <input type="checkbox" class="item-from-stock-edit accent-primary"
-                                            {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'checked' : '' }}>
-                                        <span class="text-sm">Dari Stok</span>
-                                    </label>
-                                </div>
+                                   <div id="items-container-edit-{{ $sale->id_sales_report }}" class="mb-4">
+                                       <label class="block text-gray-700 font-semibold mb-2">Item-Item Barang</label>
+                                       <div id="items-list-edit-{{ $sale->id_sales_report }}">
+                                           @php
+                                               $existingItems = is_string($sale->items)
+                                                   ? json_decode($sale->items, true)
+                                                   : $sale->items;
+                                           @endphp
+                                           @foreach ($existingItems as $index => $item)
+                                               <div class="item-row-edit mb-3 p-3 border rounded bg-gray-50"
+                                                   data-index="{{ $index }}">
+                                                   {{-- Checkbox Dari Stok --}}
+                                                   <div class="flex items-center gap-2 mb-2">
+                                                       <label class="flex items-center gap-2">
+                                                           <input type="checkbox"
+                                                               class="item-from-stock-edit accent-primary"
+                                                               {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'checked' : '' }}>
+                                                           <span class="text-sm">Dari Stok</span>
+                                                       </label>
+                                                   </div>
 
-                                {{-- Custom Searchable Dropdown --}}
-                                <div class="relative mb-2 item-select-wrapper-edit"
-                                    style="display: {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'block' : 'none' }};">
-                                    <input type="text"
-                                        class="item-search-input-edit w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
-                                        placeholder="Cari barang..." autocomplete="off"
-                                        value="{{ !empty($item['id_item']) ? $item['name_item'] : '' }}">
-                                    <i
-                                        class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                                                   {{-- Custom Searchable Dropdown --}}
+                                                   <div class="relative mb-2 item-select-wrapper-edit"
+                                                       style="display: {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'block' : 'none' }};">
+                                                       <input type="text"
+                                                           class="item-search-input-edit w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
+                                                           placeholder="Cari barang..." autocomplete="off"
+                                                           value="{{ !empty($item['id_item']) ? $item['name_item'] : '' }}">
+                                                       <i
+                                                           class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
 
-                                    <div
-                                        class="item-dropdown-edit absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
-                                        <div class="item-options-edit">
-                                            <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b"
-                                                data-value="">
-                                                -- Pilih Barang --
-                                            </div>
-                                            @foreach ($items as $stockItem)
-                                                <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option-edit"
-                                                    data-value="{{ $stockItem->id_item }}"
-                                                    data-name="{{ $stockItem->name_item }}"
-                                                    data-capital="{{ $stockItem->capital_price }}"
-                                                    data-selling="{{ $stockItem->selling_price }}"
-                                                    data-stock="{{ $stockItem->quantity }}"
-                                                    data-search="{{ strtolower($stockItem->name_item) }}">
-                                                    <div class="font-medium text-gray-800">{{ $stockItem->name_item }}
-                                                    </div>
-                                                    <div class="text-xs text-gray-500 mt-1">
-                                                        Stok: <span
-                                                            class="font-semibold text-primary">{{ $stockItem->quantity }}</span>
-                                                        unit
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                        <div class="no-results-edit p-4 text-center text-sm text-gray-500 hidden">
-                                            <i class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
-                                            <p>Tidak ada barang ditemukan</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                                       <div
+                                                           class="item-dropdown-edit absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                                                           <div class="item-options-edit">
+                                                               <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b"
+                                                                   data-value="">
+                                                                   -- Pilih Barang --
+                                                               </div>
+                                                               @foreach ($items as $stockItem)
+                                                                   <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option-edit"
+                                                                       data-value="{{ $stockItem->id_item }}"
+                                                                       data-name="{{ $stockItem->name_item }}"
+                                                                       data-capital="{{ $stockItem->capital_price }}"
+                                                                       data-selling="{{ $stockItem->selling_price }}"
+                                                                       data-stock="{{ $stockItem->quantity }}"
+                                                                       data-search="{{ strtolower($stockItem->name_item) }}">
+                                                                       <div class="font-medium text-gray-800">
+                                                                           {{ $stockItem->name_item }}
+                                                                       </div>
+                                                                       <div class="text-xs text-gray-500 mt-1">
+                                                                           Stok: <span
+                                                                               class="font-semibold text-primary">{{ $stockItem->quantity }}</span>
+                                                                           unit
+                                                                       </div>
+                                                                   </div>
+                                                               @endforeach
+                                                           </div>
+                                                           <div
+                                                               class="no-results-edit p-4 text-center text-sm text-gray-500 hidden">
+                                                               <i
+                                                                   class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
+                                                               <p>Tidak ada barang ditemukan</p>
+                                                           </div>
+                                                       </div>
+                                                   </div>
 
-                                <input type="hidden" class="item-select-hidden-edit"
-                                    value="{{ $item['id_item'] ?? '' }}">
+                                                   <input type="hidden" class="item-select-hidden-edit"
+                                                       value="{{ $item['id_item'] ?? '' }}">
 
-                                {{-- Input Nama Barang --}}
-                                <input type="text" name="items[{{ $index }}][name_item]"
-                                    value="{{ $item['name_item'] ?? '' }}"
-                                    class="item-name-edit w-full border rounded p-2 mb-2" placeholder="Nama Barang *"
-                                    {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                                    required>
+                                                   {{-- Input Nama Barang --}}
+                                                   <input type="text" name="items[{{ $index }}][name_item]"
+                                                       value="{{ $item['name_item'] ?? '' }}"
+                                                       class="item-name-edit w-full border rounded p-2 mb-2"
+                                                       placeholder="Nama Barang *"
+                                                       {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                                                       required>
 
-                                <div class="grid grid-cols-3 gap-2">
-                                    <input type="number" name="items[{{ $index }}][quantity]"
-                                        value="{{ $item['quantity'] ?? 0 }}" class="item-qty-edit border rounded p-2"
-                                        placeholder="Qty *" required min="1">
-                                    <input type="number" name="items[{{ $index }}][capital_price]"
-                                        value="{{ $item['capital_price'] ?? 0 }}"
-                                        class="item-capital-edit border rounded p-2" placeholder="Harga Modal *"
-                                        {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                                        required min="0">
-                                    <input type="number" name="items[{{ $index }}][selling_price]"
-                                        value="{{ $item['selling_price'] ?? 0 }}"
-                                        class="item-selling-edit border rounded p-2" placeholder="Harga Jual *"
-                                        {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                                        required min="0">
-                                </div>
+                                                   <div class="grid grid-cols-3 gap-2">
+                                                       <input type="number" name="items[{{ $index }}][quantity]"
+                                                           value="{{ $item['quantity'] ?? 0 }}"
+                                                           class="item-qty-edit border rounded p-2" placeholder="Qty *"
+                                                           required min="1">
+                                                       <input type="number"
+                                                           name="items[{{ $index }}][capital_price]"
+                                                           value="{{ $item['capital_price'] ?? 0 }}"
+                                                           class="item-capital-edit border rounded p-2"
+                                                           placeholder="Harga Modal *"
+                                                           {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                                                           required min="0">
+                                                       <input type="number"
+                                                           name="items[{{ $index }}][selling_price]"
+                                                           value="{{ $item['selling_price'] ?? 0 }}"
+                                                           class="item-selling-edit border rounded p-2"
+                                                           placeholder="Harga Jual *"
+                                                           {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                                                           required min="0">
+                                                   </div>
 
-                                <input type="hidden" name="items[{{ $index }}][from_stock]"
-                                    class="from-stock-hidden"
-                                    value="{{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'true' : 'false' }}">
-                                <input type="hidden" name="items[{{ $index }}][id_item]" class="id-item-hidden"
-                                    value="{{ $item['id_item'] ?? '' }}">
+                                                   <input type="hidden" name="items[{{ $index }}][from_stock]"
+                                                       class="from-stock-hidden"
+                                                       value="{{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'true' : 'false' }}">
+                                                   <input type="hidden" name="items[{{ $index }}][id_item]"
+                                                       class="id-item-hidden" value="{{ $item['id_item'] ?? '' }}">
 
-                                <button type="button"
-                                    class="remove-item-edit mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
-                                    <i class="fa-solid fa-trash"></i> Hapus Item
-                                </button>
-                            </div>
-                        @endforeach
-                    </div>
-                    <button type="button"
-                        class="add-item-edit bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover w-full"
-                        data-sale-id="{{ $sale->id_sales_report }}">
-                        <i class="fa-solid fa-plus"></i> Tambah Item
-                    </button>
-                </div>
-            </x-modal>
-        @endif
+                                                   <button type="button"
+                                                       class="remove-item-edit mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
+                                                       <i class="fa-solid fa-trash"></i> Hapus Item
+                                                   </button>
+                                               </div>
+                                           @endforeach
+                                       </div>
+                                       <button type="button"
+                                           class="add-item-edit bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover w-full"
+                                           data-sale-id="{{ $sale->id_sales_report }}">
+                                           <i class="fa-solid fa-plus"></i> Tambah Item
+                                       </button>
+                                   </div>
+                               </x-modal>
+                           @endif
 
-        {{-- Modal Update Status --}}
-        @if (!$sale->isLunas())
-            <x-modal id="statusModal-{{ $sale->id_sales_report }}" title="Update Status Pembayaran"
-                action="{{ route('sales-report.updateStatus', $sale->id_sales_report) }}" method="POST"
-                buttonText="Update Status">
-                @method('PATCH')
+                           {{-- Modal Update Status --}}
+                           @if (!$sale->isLunas())
+                               <x-modal id="statusModal-{{ $sale->id_sales_report }}" title="Update Status Pembayaran"
+                                   action="{{ route('sales-report.updateStatus', $sale->id_sales_report) }}"
+                                   method="POST" buttonText="Update Status">
+                                   @method('PATCH')
 
-                <div class="mb-4">
-                    <p class="text-gray-700 mb-3">Update status pembayaran laporan penjualan:</p>
-                    <div class="bg-gray-50 p-3 rounded-lg mb-4">
-                        <p class="font-semibold text-gray-800">{{ $sale->name_proyek }}</p>
-                        <p class="text-sm text-gray-600">Tanggal: {{ $sale->date->format('d-m-Y') }}</p>
-                        <p class="text-sm text-gray-600">Total Profit: Rp
-                            {{ number_format($sale->total_profit, 0, ',', '.') }}</p>
-                    </div>
+                                   <div class="mb-4">
+                                       <p class="text-gray-700 mb-3">Update status pembayaran laporan penjualan:</p>
+                                       <div class="bg-gray-50 p-3 rounded-lg mb-4">
+                                           <p class="font-semibold text-gray-800">{{ $sale->name_proyek }}</p>
+                                           <p class="text-sm text-gray-600">Tanggal: {{ $sale->date->format('d-m-Y') }}
+                                           </p>
+                                           <p class="text-sm text-gray-600">Total Profit: Rp
+                                               {{ number_format($sale->total_profit, 0, ',', '.') }}</p>
+                                       </div>
 
-                    <label class="block text-gray-700 font-semibold mb-2">Status Pembayaran <span
-                            class="text-error">*</span></label>
-                    <select name="status"
-                        class="w-full border border-gray-300 rounded-lg p-3 focus:border-primary focus:ring-2 focus:ring-primary-light"
-                        required>
-                        <option value="Belum Lunas" {{ $sale->status === 'Belum Lunas' ? 'selected' : '' }}>Belum Lunas
-                        </option>
-                        <option value="Lunas" {{ $sale->status === 'Lunas' ? 'selected' : '' }}>Lunas</option>
-                    </select>
+                                       <label class="block text-gray-700 font-semibold mb-2">Status Pembayaran <span
+                                               class="text-error">*</span></label>
+                                       <select name="status"
+                                           class="w-full border border-gray-300 rounded-lg p-3 focus:border-primary focus:ring-2 focus:ring-primary-light"
+                                           required>
+                                           <option value="Belum Lunas"
+                                               {{ $sale->status === 'Belum Lunas' ? 'selected' : '' }}>Belum Lunas
+                                           </option>
+                                           <option value="Lunas" {{ $sale->status === 'Lunas' ? 'selected' : '' }}>Lunas
+                                           </option>
+                                       </select>
 
-                    <div class="bg-warning-light border-l-4 border-warning p-4 mt-4 rounded">
-                        <div class="flex items-start gap-3">
-                            <i class="fa-solid fa-exclamation-triangle text-warning text-xl mt-0.5"></i>
-                            <div>
-                                <p class="font-semibold text-warning mb-1">Peringatan Penting!</p>
-                                <p class="text-sm text-gray-700">
-                                    Setelah status diubah menjadi <strong>"Lunas"</strong>, data laporan penjualan ini
-                                    <strong>tidak dapat diubah atau diedit lagi</strong>.
-                                    Pastikan semua informasi sudah benar sebelum mengonfirmasi.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </x-modal>
-        @endif
-    @endforeach
+                                       <div class="bg-warning-light border-l-4 border-warning p-4 mt-4 rounded">
+                                           <div class="flex items-start gap-3">
+                                               <i class="fa-solid fa-exclamation-triangle text-warning text-xl mt-0.5"></i>
+                                               <div>
+                                                   <p class="font-semibold text-warning mb-1">Peringatan Penting!</p>
+                                                   <p class="text-sm text-gray-700">
+                                                       Setelah status diubah menjadi <strong>"Lunas"</strong>, data laporan
+                                                       penjualan ini
+                                                       <strong>tidak dapat diubah atau diedit lagi</strong>.
+                                                       Pastikan semua informasi sudah benar sebelum mengonfirmasi.
+                                                   </p>
+                                               </div>
+                                           </div>
+                                       </div>
+                                   </div>
+                               </x-modal>
+                           @endif
+                       @endforeach
 
-    {{-- Modal Hapus Bulk --}}
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
-        <p>Apakah Anda yakin ingin menghapus data yang dipilih?</p>
-    </x-modal>
+                       {{-- Modal Hapus Bulk --}}
+                       <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true"
+                           onConfirm="submitDeleteForm()" buttonText="Ya, Hapus">
+                           <p>Apakah Anda yakin ingin menghapus data yang dipilih?</p>
+                       </x-modal>
 
-    <script>
-        function submitDeleteForm() {
-            const form = document.getElementById('deleteForm');
-            form.submit();
-        }
+                       <script>
+                           function submitDeleteForm() {
+                               const form = document.getElementById('deleteForm');
+                               form.submit();
+                           }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Toggle Print Dropdown
-            const printDropdownButton = document.getElementById('printDropdownButton');
-            const printDropdownMenu = document.getElementById('printDropdownMenu');
+                           document.addEventListener('DOMContentLoaded', function() {
+                               // Toggle Print Dropdown
+                               const printDropdownButton = document.getElementById('printDropdownButton');
+                               const printDropdownMenu = document.getElementById('printDropdownMenu');
 
-            if (printDropdownButton && printDropdownMenu) {
-                printDropdownButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    printDropdownMenu.classList.toggle('hidden');
-                });
+                               if (printDropdownButton && printDropdownMenu) {
+                                   printDropdownButton.addEventListener('click', function(e) {
+                                       e.stopPropagation();
+                                       printDropdownMenu.classList.toggle('hidden');
+                                   });
 
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!printDropdownButton.contains(e.target) && !printDropdownMenu.contains(e.target)) {
-                        printDropdownMenu.classList.add('hidden');
-                    }
-                });
-            }
+                                   // Close dropdown when clicking outside
+                                   document.addEventListener('click', function(e) {
+                                       if (!printDropdownButton.contains(e.target) && !printDropdownMenu.contains(e.target)) {
+                                           printDropdownMenu.classList.add('hidden');
+                                       }
+                                   });
+                               }
 
-            // Select All Checkbox functionality
-            const selectAllCheckbox = document.getElementById('selectAll');
-            const saleCheckboxes = document.querySelectorAll('input[name="selected_sales[]"]');
+                               // Select All Checkbox functionality
+                               const selectAllCheckbox = document.getElementById('selectAll');
+                               const saleCheckboxes = document.querySelectorAll('input[name="selected_sales[]"]');
 
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function() {
-                    saleCheckboxes.forEach(checkbox => {
-                        checkbox.checked = this.checked;
-                    });
-                });
-            }
+                               if (selectAllCheckbox) {
+                                   selectAllCheckbox.addEventListener('change', function() {
+                                       saleCheckboxes.forEach(checkbox => {
+                                           checkbox.checked = this.checked;
+                                       });
+                                   });
+                               }
 
-            saleCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    if (!this.checked) {
-                        selectAllCheckbox.checked = false;
-                    } else {
-                        const allChecked = Array.from(saleCheckboxes).every(cb => cb.checked);
-                        selectAllCheckbox.checked = allChecked;
-                    }
-                });
-            });
+                               saleCheckboxes.forEach(checkbox => {
+                                   checkbox.addEventListener('change', function() {
+                                       if (!this.checked) {
+                                           selectAllCheckbox.checked = false;
+                                       } else {
+                                           const allChecked = Array.from(saleCheckboxes).every(cb => cb.checked);
+                                           selectAllCheckbox.checked = allChecked;
+                                       }
+                                   });
+                               });
 
-            // Handle from_stock checkbox
-            document.querySelectorAll('.item-from-stock').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const row = this.closest('.item-row');
-                    const select = row.querySelector('.item-select');
-                    const nameInput = row.querySelector('.item-name');
-                    const capitalInput = row.querySelector('.item-capital');
-                    const sellingInput = row.querySelector('.item-selling');
+                               // Handle from_stock checkbox
+                               document.querySelectorAll('.item-from-stock').forEach(checkbox => {
+                                   checkbox.addEventListener('change', function() {
+                                       const row = this.closest('.item-row');
+                                       const select = row.querySelector('.item-select');
+                                       const nameInput = row.querySelector('.item-name');
+                                       const capitalInput = row.querySelector('.item-capital');
+                                       const sellingInput = row.querySelector('.item-selling');
 
-                    if (this.checked) {
-                        select.disabled = false;
-                        select.required = true;
-                        nameInput.readOnly = true;
-                        capitalInput.readOnly = true;
-                        sellingInput.readOnly = true;
-                    } else {
-                        select.disabled = true;
-                        select.required = false;
-                        select.value = '';
-                        nameInput.readOnly = false;
-                        capitalInput.readOnly = false;
-                        sellingInput.readOnly = false;
-                    }
-                });
-            });
+                                       if (this.checked) {
+                                           select.disabled = false;
+                                           select.required = true;
+                                           nameInput.readOnly = true;
+                                           capitalInput.readOnly = true;
+                                           sellingInput.readOnly = true;
+                                       } else {
+                                           select.disabled = true;
+                                           select.required = false;
+                                           select.value = '';
+                                           nameInput.readOnly = false;
+                                           capitalInput.readOnly = false;
+                                           sellingInput.readOnly = false;
+                                       }
+                                   });
+                               });
 
-            // Handle item selection from stock
-            document.querySelectorAll('.item-select').forEach(select => {
-                select.addEventListener('change', function() {
-                    const row = this.closest('.item-row');
-                    const selectedOption = this.options[this.selectedIndex];
+                               // Handle item selection from stock
+                               document.querySelectorAll('.item-select').forEach(select => {
+                                   select.addEventListener('change', function() {
+                                       const row = this.closest('.item-row');
+                                       const selectedOption = this.options[this.selectedIndex];
 
-                    if (selectedOption.value) {
-                        const nameInput = row.querySelector('.item-name');
-                        const capitalInput = row.querySelector('.item-capital');
-                        const sellingInput = row.querySelector('.item-selling');
+                                       if (selectedOption.value) {
+                                           const nameInput = row.querySelector('.item-name');
+                                           const capitalInput = row.querySelector('.item-capital');
+                                           const sellingInput = row.querySelector('.item-selling');
 
-                        nameInput.value = selectedOption.dataset.name;
-                        capitalInput.value = selectedOption.dataset.capital;
-                        sellingInput.value = selectedOption.dataset.selling;
-                    }
-                });
-            });
+                                           nameInput.value = selectedOption.dataset.name;
+                                           capitalInput.value = selectedOption.dataset.capital;
+                                           sellingInput.value = selectedOption.dataset.selling;
+                                       }
+                                   });
+                               });
 
-            // Add item button
-            if (document.getElementById('add-item')) {
-                document.getElementById('add-item').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const itemsContainer = document.getElementById('items-list');
-                    const newItem = document.createElement('div');
-                    newItem.className = 'item-row mb-3 p-3 border rounded bg-gray-50';
-                    newItem.innerHTML = `
+                               // Add item button
+                               if (document.getElementById('add-item')) {
+                                   document.getElementById('add-item').addEventListener('click', function(e) {
+                                       e.preventDefault();
+                                       const itemsContainer = document.getElementById('items-list');
+                                       const newItem = document.createElement('div');
+                                       newItem.className = 'item-row mb-3 p-3 border rounded bg-gray-50';
+                                       newItem.innerHTML = `
                         <div class="flex items-center gap-2 mb-2">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" class="item-from-stock accent-primary">
@@ -728,216 +784,216 @@
                             <i class="fa-solid fa-trash"></i> Hapus Item
                         </button>
                     `;
-                    itemsContainer.appendChild(newItem);
-                    attachItemListeners();
-                });
-            }
+                                       itemsContainer.appendChild(newItem);
+                                       attachItemListeners();
+                                   });
+                               }
 
-            function attachItemListeners() {
-                document.querySelectorAll('.remove-item').forEach(btn => {
-                    btn.removeEventListener('click', removeItemHandler);
-                    btn.addEventListener('click', removeItemHandler);
-                });
+                               function attachItemListeners() {
+                                   document.querySelectorAll('.remove-item').forEach(btn => {
+                                       btn.removeEventListener('click', removeItemHandler);
+                                       btn.addEventListener('click', removeItemHandler);
+                                   });
 
-                document.querySelectorAll('.item-from-stock').forEach(checkbox => {
-                    checkbox.removeEventListener('change', toggleStockHandler);
-                    checkbox.addEventListener('change', toggleStockHandler);
-                });
+                                   document.querySelectorAll('.item-from-stock').forEach(checkbox => {
+                                       checkbox.removeEventListener('change', toggleStockHandler);
+                                       checkbox.addEventListener('change', toggleStockHandler);
+                                   });
 
-                // Initialize searchable dropdown for each item row
-                document.querySelectorAll('.item-row').forEach(row => {
-                    initSearchableDropdown(row);
-                });
-            }
+                                   // Initialize searchable dropdown for each item row
+                                   document.querySelectorAll('.item-row').forEach(row => {
+                                       initSearchableDropdown(row);
+                                   });
+                               }
 
-            function removeItemHandler(e) {
-                e.preventDefault();
-                const itemsContainer = document.getElementById('items-list');
-                const remainingItems = itemsContainer.querySelectorAll('.item-row');
+                               function removeItemHandler(e) {
+                                   e.preventDefault();
+                                   const itemsContainer = document.getElementById('items-list');
+                                   const remainingItems = itemsContainer.querySelectorAll('.item-row');
 
-                if (remainingItems.length <= 1) {
-                    alert('Minimal harus ada 1 item!');
-                    return;
-                }
+                                   if (remainingItems.length <= 1) {
+                                       alert('Minimal harus ada 1 item!');
+                                       return;
+                                   }
 
-                this.closest('.item-row').remove();
-            }
+                                   this.closest('.item-row').remove();
+                               }
 
-            function toggleStockHandler() {
-                const row = this.closest('.item-row');
-                const selectWrapper = row.querySelector('.item-select-wrapper');
-                const nameInput = row.querySelector('.item-name');
-                const capitalInput = row.querySelector('.item-capital');
-                const sellingInput = row.querySelector('.item-selling');
+                               function toggleStockHandler() {
+                                   const row = this.closest('.item-row');
+                                   const selectWrapper = row.querySelector('.item-select-wrapper');
+                                   const nameInput = row.querySelector('.item-name');
+                                   const capitalInput = row.querySelector('.item-capital');
+                                   const sellingInput = row.querySelector('.item-selling');
 
-                if (this.checked) {
-                    selectWrapper.style.display = 'block';
-                    nameInput.readOnly = true;
-                    capitalInput.readOnly = true;
-                    sellingInput.readOnly = true;
-                } else {
-                    selectWrapper.style.display = 'none';
-                    const searchInput = row.querySelector('.item-search-input');
-                    const hiddenInput = row.querySelector('.item-select-hidden');
-                    if (searchInput) searchInput.value = '';
-                    if (hiddenInput) hiddenInput.value = '';
-                    nameInput.readOnly = false;
-                    capitalInput.readOnly = false;
-                    sellingInput.readOnly = false;
-                }
-            }
+                                   if (this.checked) {
+                                       selectWrapper.style.display = 'block';
+                                       nameInput.readOnly = true;
+                                       capitalInput.readOnly = true;
+                                       sellingInput.readOnly = true;
+                                   } else {
+                                       selectWrapper.style.display = 'none';
+                                       const searchInput = row.querySelector('.item-search-input');
+                                       const hiddenInput = row.querySelector('.item-select-hidden');
+                                       if (searchInput) searchInput.value = '';
+                                       if (hiddenInput) hiddenInput.value = '';
+                                       nameInput.readOnly = false;
+                                       capitalInput.readOnly = false;
+                                       sellingInput.readOnly = false;
+                                   }
+                               }
 
-            // Initialize searchable dropdown
-            function initSearchableDropdown(row) {
-                const searchInput = row.querySelector('.item-search-input');
-                const dropdown = row.querySelector('.item-dropdown');
-                const options = row.querySelectorAll('.item-option');
-                const noResults = row.querySelector('.no-results');
-                const hiddenInput = row.querySelector('.item-select-hidden');
-                const nameInput = row.querySelector('.item-name');
-                const capitalInput = row.querySelector('.item-capital');
-                const sellingInput = row.querySelector('.item-selling');
+                               // Initialize searchable dropdown
+                               function initSearchableDropdown(row) {
+                                   const searchInput = row.querySelector('.item-search-input');
+                                   const dropdown = row.querySelector('.item-dropdown');
+                                   const options = row.querySelectorAll('.item-option');
+                                   const noResults = row.querySelector('.no-results');
+                                   const hiddenInput = row.querySelector('.item-select-hidden');
+                                   const nameInput = row.querySelector('.item-name');
+                                   const capitalInput = row.querySelector('.item-capital');
+                                   const sellingInput = row.querySelector('.item-selling');
 
-                if (!searchInput) return;
+                                   if (!searchInput) return;
 
-                // Show dropdown on focus
-                searchInput.addEventListener('focus', function() {
-                    dropdown.classList.remove('hidden');
-                });
+                                   // Show dropdown on focus
+                                   searchInput.addEventListener('focus', function() {
+                                       dropdown.classList.remove('hidden');
+                                   });
 
-                // Search functionality
-                searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    let hasResults = false;
+                                   // Search functionality
+                                   searchInput.addEventListener('input', function() {
+                                       const searchTerm = this.value.toLowerCase();
+                                       let hasResults = false;
 
-                    options.forEach(option => {
-                        const searchText = option.dataset.search || '';
-                        if (searchText.includes(searchTerm)) {
-                            option.style.display = 'block';
-                            hasResults = true;
-                        } else {
-                            option.style.display = 'none';
-                        }
-                    });
+                                       options.forEach(option => {
+                                           const searchText = option.dataset.search || '';
+                                           if (searchText.includes(searchTerm)) {
+                                               option.style.display = 'block';
+                                               hasResults = true;
+                                           } else {
+                                               option.style.display = 'none';
+                                           }
+                                       });
 
-                    // Show/hide no results message
-                    const itemOptionsDiv = row.querySelector('.item-options');
-                    if (hasResults) {
-                        noResults.classList.add('hidden');
-                        itemOptionsDiv.classList.remove('hidden');
-                    } else {
-                        noResults.classList.remove('hidden');
-                        itemOptionsDiv.classList.add('hidden');
-                    }
-                });
+                                       // Show/hide no results message
+                                       const itemOptionsDiv = row.querySelector('.item-options');
+                                       if (hasResults) {
+                                           noResults.classList.add('hidden');
+                                           itemOptionsDiv.classList.remove('hidden');
+                                       } else {
+                                           noResults.classList.remove('hidden');
+                                           itemOptionsDiv.classList.add('hidden');
+                                       }
+                                   });
 
-                // Handle option selection
-                options.forEach(option => {
-                    option.addEventListener('click', function() {
-                        const value = this.dataset.value;
-                        const name = this.dataset.name;
-                        const capital = this.dataset.capital;
-                        const selling = this.dataset.selling;
+                                   // Handle option selection
+                                   options.forEach(option => {
+                                       option.addEventListener('click', function() {
+                                           const value = this.dataset.value;
+                                           const name = this.dataset.name;
+                                           const capital = this.dataset.capital;
+                                           const selling = this.dataset.selling;
 
-                        searchInput.value = name || '';
-                        hiddenInput.value = value || '';
+                                           searchInput.value = name || '';
+                                           hiddenInput.value = value || '';
 
-                        if (value) {
-                            nameInput.value = name;
-                            capitalInput.value = capital;
-                            sellingInput.value = selling;
-                        }
+                                           if (value) {
+                                               nameInput.value = name;
+                                               capitalInput.value = capital;
+                                               sellingInput.value = selling;
+                                           }
 
-                        dropdown.classList.add('hidden');
-                    });
-                });
+                                           dropdown.classList.add('hidden');
+                                       });
+                                   });
 
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!row.contains(e.target)) {
-                        dropdown.classList.add('hidden');
-                    }
-                });
-            }
+                                   // Close dropdown when clicking outside
+                                   document.addEventListener('click', function(e) {
+                                       if (!row.contains(e.target)) {
+                                           dropdown.classList.add('hidden');
+                                       }
+                                   });
+                               }
 
-            function selectItemHandler() {
-                const row = this.closest('.item-row');
-                const selectedOption = this.options[this.selectedIndex];
+                               function selectItemHandler() {
+                                   const row = this.closest('.item-row');
+                                   const selectedOption = this.options[this.selectedIndex];
 
-                if (selectedOption.value) {
-                    const nameInput = row.querySelector('.item-name');
-                    const capitalInput = row.querySelector('.item-capital');
-                    const sellingInput = row.querySelector('.item-selling');
+                                   if (selectedOption.value) {
+                                       const nameInput = row.querySelector('.item-name');
+                                       const capitalInput = row.querySelector('.item-capital');
+                                       const sellingInput = row.querySelector('.item-selling');
 
-                    nameInput.value = selectedOption.dataset.name;
-                    capitalInput.value = selectedOption.dataset.capital;
-                    sellingInput.value = selectedOption.dataset.selling;
-                }
-            }
+                                       nameInput.value = selectedOption.dataset.name;
+                                       capitalInput.value = selectedOption.dataset.capital;
+                                       sellingInput.value = selectedOption.dataset.selling;
+                                   }
+                               }
 
-            attachItemListeners();
+                               attachItemListeners();
 
-            // Initialize searchable dropdown for existing items
-            document.querySelectorAll('.item-row').forEach(row => {
-                initSearchableDropdown(row);
-            });
+                               // Initialize searchable dropdown for existing items
+                               document.querySelectorAll('.item-row').forEach(row => {
+                                   initSearchableDropdown(row);
+                               });
 
-            // Handle add form submission
-            const addModal = document.getElementById('addModal');
-            if (addModal) {
-                const addForm = addModal.querySelector('form');
-                if (addForm) {
-                    addForm.addEventListener('submit', function(e) {
-                        const items = [];
-                        const itemRows = document.querySelectorAll('.item-row');
+                               // Handle add form submission
+                               const addModal = document.getElementById('addModal');
+                               if (addModal) {
+                                   const addForm = addModal.querySelector('form');
+                                   if (addForm) {
+                                       addForm.addEventListener('submit', function(e) {
+                                           const items = [];
+                                           const itemRows = document.querySelectorAll('.item-row');
 
-                        itemRows.forEach(row => {
-                            const fromStockCheck = row.querySelector('.item-from-stock');
-                            const hiddenSelect = row.querySelector('.item-select-hidden');
-                            const itemName = row.querySelector('.item-name').value;
-                            const qty = parseInt(row.querySelector('.item-qty').value) || 0;
-                            const capital = parseInt(row.querySelector('.item-capital').value) || 0;
-                            const selling = parseInt(row.querySelector('.item-selling').value) || 0;
+                                           itemRows.forEach(row => {
+                                               const fromStockCheck = row.querySelector('.item-from-stock');
+                                               const hiddenSelect = row.querySelector('.item-select-hidden');
+                                               const itemName = row.querySelector('.item-name').value;
+                                               const qty = parseInt(row.querySelector('.item-qty').value) || 0;
+                                               const capital = parseInt(row.querySelector('.item-capital').value) || 0;
+                                               const selling = parseInt(row.querySelector('.item-selling').value) || 0;
 
-                            if (itemName && qty > 0) {
-                                const item = {
-                                    name_item: itemName,
-                                    quantity: qty,
-                                    capital_price: capital,
-                                    selling_price: selling,
-                                    from_stock: fromStockCheck.checked,
-                                    id_item: fromStockCheck.checked ? (hiddenSelect ?
-                                        hiddenSelect.value : null) : null
-                                };
-                                items.push(item);
-                            }
-                        });
+                                               if (itemName && qty > 0) {
+                                                   const item = {
+                                                       name_item: itemName,
+                                                       quantity: qty,
+                                                       capital_price: capital,
+                                                       selling_price: selling,
+                                                       from_stock: fromStockCheck.checked,
+                                                       id_item: fromStockCheck.checked ? (hiddenSelect ?
+                                                           hiddenSelect.value : null) : null
+                                                   };
+                                                   items.push(item);
+                                               }
+                                           });
 
-                        if (items.length === 0) {
-                            e.preventDefault();
-                            alert('Minimal harus ada 1 item dengan data lengkap!');
-                            return false;
-                        }
+                                           if (items.length === 0) {
+                                               e.preventDefault();
+                                               alert('Minimal harus ada 1 item dengan data lengkap!');
+                                               return false;
+                                           }
 
-                        document.getElementById('items-json').value = JSON.stringify(items);
-                        return true;
-                    });
-                }
-            }
+                                           document.getElementById('items-json').value = JSON.stringify(items);
+                                           return true;
+                                       });
+                                   }
+                               }
 
-            // Handle edit form - add item button
-            document.querySelectorAll('.add-item-edit').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const saleId = this.getAttribute('data-sale-id');
-                    const itemsContainer = document.getElementById('items-list-edit-' + saleId);
-                    const currentItems = itemsContainer.querySelectorAll('.item-row-edit');
-                    const newIndex = currentItems.length;
+                               // Handle edit form - add item button
+                               document.querySelectorAll('.add-item-edit').forEach(btn => {
+                                   btn.addEventListener('click', function(e) {
+                                       e.preventDefault();
+                                       const saleId = this.getAttribute('data-sale-id');
+                                       const itemsContainer = document.getElementById('items-list-edit-' + saleId);
+                                       const currentItems = itemsContainer.querySelectorAll('.item-row-edit');
+                                       const newIndex = currentItems.length;
 
-                    const newItem = document.createElement('div');
-                    newItem.className = 'item-row-edit mb-3 p-3 border rounded bg-gray-50';
-                    newItem.setAttribute('data-index', newIndex);
-                    newItem.innerHTML = `
+                                       const newItem = document.createElement('div');
+                                       newItem.className = 'item-row-edit mb-3 p-3 border rounded bg-gray-50';
+                                       newItem.setAttribute('data-index', newIndex);
+                                       newItem.innerHTML = `
                         <div class="flex items-center gap-2 mb-2">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" class="item-from-stock-edit accent-primary">
@@ -1001,187 +1057,187 @@
                             <i class="fa-solid fa-trash"></i> Hapus Item
                         </button>
                     `;
-                    itemsContainer.appendChild(newItem);
-                    attachEditRemoveListeners();
-                    attachEditStockListeners();
-                    initSearchableDropdownEdit(newItem);
-                });
-            });
+                                       itemsContainer.appendChild(newItem);
+                                       attachEditRemoveListeners();
+                                       attachEditStockListeners();
+                                       initSearchableDropdownEdit(newItem);
+                                   });
+                               });
 
-            // Handle checkbox "Dari Stok" di modal edit
-            function attachEditStockListeners() {
-                document.querySelectorAll('.item-from-stock-edit').forEach(checkbox => {
-                    checkbox.removeEventListener('change', toggleEditStockHandler);
-                    checkbox.addEventListener('change', toggleEditStockHandler);
-                });
-            }
+                               // Handle checkbox "Dari Stok" di modal edit
+                               function attachEditStockListeners() {
+                                   document.querySelectorAll('.item-from-stock-edit').forEach(checkbox => {
+                                       checkbox.removeEventListener('change', toggleEditStockHandler);
+                                       checkbox.addEventListener('change', toggleEditStockHandler);
+                                   });
+                               }
 
-            function toggleEditStockHandler() {
-                const row = this.closest('.item-row-edit');
-                const selectWrapper = row.querySelector('.item-select-wrapper-edit');
-                const nameInput = row.querySelector('.item-name-edit');
-                const capitalInput = row.querySelector('.item-capital-edit');
-                const sellingInput = row.querySelector('.item-selling-edit');
-                const fromStockHidden = row.querySelector('.from-stock-hidden');
+                               function toggleEditStockHandler() {
+                                   const row = this.closest('.item-row-edit');
+                                   const selectWrapper = row.querySelector('.item-select-wrapper-edit');
+                                   const nameInput = row.querySelector('.item-name-edit');
+                                   const capitalInput = row.querySelector('.item-capital-edit');
+                                   const sellingInput = row.querySelector('.item-selling-edit');
+                                   const fromStockHidden = row.querySelector('.from-stock-hidden');
 
-                if (this.checked) {
-                    selectWrapper.style.display = 'block';
-                    nameInput.readOnly = true;
-                    capitalInput.readOnly = true;
-                    sellingInput.readOnly = true;
-                    fromStockHidden.value = 'true';
-                } else {
-                    selectWrapper.style.display = 'none';
-                    const searchInput = row.querySelector('.item-search-input-edit');
-                    const hiddenInput = row.querySelector('.item-select-hidden-edit');
-                    if (searchInput) searchInput.value = '';
-                    if (hiddenInput) hiddenInput.value = '';
-                    nameInput.readOnly = false;
-                    capitalInput.readOnly = false;
-                    sellingInput.readOnly = false;
-                    fromStockHidden.value = 'false';
-                    row.querySelector('.id-item-hidden').value = '';
-                }
-            }
+                                   if (this.checked) {
+                                       selectWrapper.style.display = 'block';
+                                       nameInput.readOnly = true;
+                                       capitalInput.readOnly = true;
+                                       sellingInput.readOnly = true;
+                                       fromStockHidden.value = 'true';
+                                   } else {
+                                       selectWrapper.style.display = 'none';
+                                       const searchInput = row.querySelector('.item-search-input-edit');
+                                       const hiddenInput = row.querySelector('.item-select-hidden-edit');
+                                       if (searchInput) searchInput.value = '';
+                                       if (hiddenInput) hiddenInput.value = '';
+                                       nameInput.readOnly = false;
+                                       capitalInput.readOnly = false;
+                                       sellingInput.readOnly = false;
+                                       fromStockHidden.value = 'false';
+                                       row.querySelector('.id-item-hidden').value = '';
+                                   }
+                               }
 
-            // Initialize searchable dropdown for edit modal
-            function initSearchableDropdownEdit(row) {
-                const searchInput = row.querySelector('.item-search-input-edit');
-                const dropdown = row.querySelector('.item-dropdown-edit');
-                const options = row.querySelectorAll('.item-option-edit');
-                const noResults = row.querySelector('.no-results-edit');
-                const hiddenInput = row.querySelector('.item-select-hidden-edit');
-                const nameInput = row.querySelector('.item-name-edit');
-                const capitalInput = row.querySelector('.item-capital-edit');
-                const sellingInput = row.querySelector('.item-selling-edit');
-                const idItemHidden = row.querySelector('.id-item-hidden');
+                               // Initialize searchable dropdown for edit modal
+                               function initSearchableDropdownEdit(row) {
+                                   const searchInput = row.querySelector('.item-search-input-edit');
+                                   const dropdown = row.querySelector('.item-dropdown-edit');
+                                   const options = row.querySelectorAll('.item-option-edit');
+                                   const noResults = row.querySelector('.no-results-edit');
+                                   const hiddenInput = row.querySelector('.item-select-hidden-edit');
+                                   const nameInput = row.querySelector('.item-name-edit');
+                                   const capitalInput = row.querySelector('.item-capital-edit');
+                                   const sellingInput = row.querySelector('.item-selling-edit');
+                                   const idItemHidden = row.querySelector('.id-item-hidden');
 
-                if (!searchInput) return;
+                                   if (!searchInput) return;
 
-                // Show dropdown on focus
-                searchInput.addEventListener('focus', function() {
-                    dropdown.classList.remove('hidden');
-                });
+                                   // Show dropdown on focus
+                                   searchInput.addEventListener('focus', function() {
+                                       dropdown.classList.remove('hidden');
+                                   });
 
-                // Search functionality
-                searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    let hasResults = false;
+                                   // Search functionality
+                                   searchInput.addEventListener('input', function() {
+                                       const searchTerm = this.value.toLowerCase();
+                                       let hasResults = false;
 
-                    options.forEach(option => {
-                        const searchText = option.dataset.search || '';
-                        if (searchText.includes(searchTerm)) {
-                            option.style.display = 'block';
-                            hasResults = true;
-                        } else {
-                            option.style.display = 'none';
-                        }
-                    });
+                                       options.forEach(option => {
+                                           const searchText = option.dataset.search || '';
+                                           if (searchText.includes(searchTerm)) {
+                                               option.style.display = 'block';
+                                               hasResults = true;
+                                           } else {
+                                               option.style.display = 'none';
+                                           }
+                                       });
 
-                    // Show/hide no results message
-                    const itemOptionsDiv = row.querySelector('.item-options-edit');
-                    if (hasResults) {
-                        noResults.classList.add('hidden');
-                        itemOptionsDiv.classList.remove('hidden');
-                    } else {
-                        noResults.classList.remove('hidden');
-                        itemOptionsDiv.classList.add('hidden');
-                    }
-                });
+                                       // Show/hide no results message
+                                       const itemOptionsDiv = row.querySelector('.item-options-edit');
+                                       if (hasResults) {
+                                           noResults.classList.add('hidden');
+                                           itemOptionsDiv.classList.remove('hidden');
+                                       } else {
+                                           noResults.classList.remove('hidden');
+                                           itemOptionsDiv.classList.add('hidden');
+                                       }
+                                   });
 
-                // Handle option selection
-                options.forEach(option => {
-                    option.addEventListener('click', function() {
-                        const value = this.dataset.value;
-                        const name = this.dataset.name;
-                        const capital = this.dataset.capital;
-                        const selling = this.dataset.selling;
+                                   // Handle option selection
+                                   options.forEach(option => {
+                                       option.addEventListener('click', function() {
+                                           const value = this.dataset.value;
+                                           const name = this.dataset.name;
+                                           const capital = this.dataset.capital;
+                                           const selling = this.dataset.selling;
 
-                        searchInput.value = name || '';
-                        hiddenInput.value = value || '';
+                                           searchInput.value = name || '';
+                                           hiddenInput.value = value || '';
 
-                        if (value) {
-                            nameInput.value = name;
-                            capitalInput.value = capital;
-                            sellingInput.value = selling;
-                            idItemHidden.value = value;
-                        }
+                                           if (value) {
+                                               nameInput.value = name;
+                                               capitalInput.value = capital;
+                                               sellingInput.value = selling;
+                                               idItemHidden.value = value;
+                                           }
 
-                        dropdown.classList.add('hidden');
-                    });
-                });
+                                           dropdown.classList.add('hidden');
+                                       });
+                                   });
 
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!row.contains(e.target)) {
-                        dropdown.classList.add('hidden');
-                    }
-                });
-            }
+                                   // Close dropdown when clicking outside
+                                   document.addEventListener('click', function(e) {
+                                       if (!row.contains(e.target)) {
+                                           dropdown.classList.add('hidden');
+                                       }
+                                   });
+                               }
 
-            function selectEditItemHandler() {
-                const row = this.closest('.item-row-edit');
-                const selectedOption = this.options[this.selectedIndex];
+                               function selectEditItemHandler() {
+                                   const row = this.closest('.item-row-edit');
+                                   const selectedOption = this.options[this.selectedIndex];
 
-                if (selectedOption.value) {
-                    const nameInput = row.querySelector('.item-name-edit');
-                    const capitalInput = row.querySelector('.item-capital-edit');
-                    const sellingInput = row.querySelector('.item-selling-edit');
-                    const idItemHidden = row.querySelector('.id-item-hidden');
+                                   if (selectedOption.value) {
+                                       const nameInput = row.querySelector('.item-name-edit');
+                                       const capitalInput = row.querySelector('.item-capital-edit');
+                                       const sellingInput = row.querySelector('.item-selling-edit');
+                                       const idItemHidden = row.querySelector('.id-item-hidden');
 
-                    nameInput.value = selectedOption.dataset.name;
-                    capitalInput.value = selectedOption.dataset.capital;
-                    sellingInput.value = selectedOption.dataset.selling;
-                    idItemHidden.value = selectedOption.value;
-                }
-            }
+                                       nameInput.value = selectedOption.dataset.name;
+                                       capitalInput.value = selectedOption.dataset.capital;
+                                       sellingInput.value = selectedOption.dataset.selling;
+                                       idItemHidden.value = selectedOption.value;
+                                   }
+                               }
 
-            // Initialize edit stock listeners for existing items
-            attachEditStockListeners();
+                               // Initialize edit stock listeners for existing items
+                               attachEditStockListeners();
 
-            // Initialize searchable dropdown for existing edit items
-            document.querySelectorAll('.item-row-edit').forEach(row => {
-                initSearchableDropdownEdit(row);
-            });
+                               // Initialize searchable dropdown for existing edit items
+                               document.querySelectorAll('.item-row-edit').forEach(row => {
+                                   initSearchableDropdownEdit(row);
+                               });
 
-            function attachEditRemoveListeners() {
-                document.querySelectorAll('.remove-item-edit').forEach(btn => {
-                    btn.removeEventListener('click', removeEditItemHandler);
-                    btn.addEventListener('click', removeEditItemHandler);
-                });
-            }
+                               function attachEditRemoveListeners() {
+                                   document.querySelectorAll('.remove-item-edit').forEach(btn => {
+                                       btn.removeEventListener('click', removeEditItemHandler);
+                                       btn.addEventListener('click', removeEditItemHandler);
+                                   });
+                               }
 
-            function removeEditItemHandler(e) {
-                e.preventDefault();
-                const itemsContainer = this.closest('[id^="items-list-edit-"]');
-                const remainingItems = itemsContainer.querySelectorAll('.item-row-edit');
+                               function removeEditItemHandler(e) {
+                                   e.preventDefault();
+                                   const itemsContainer = this.closest('[id^="items-list-edit-"]');
+                                   const remainingItems = itemsContainer.querySelectorAll('.item-row-edit');
 
-                if (remainingItems.length <= 1) {
-                    alert('Minimal harus ada 1 item!');
-                    return;
-                }
+                                   if (remainingItems.length <= 1) {
+                                       alert('Minimal harus ada 1 item!');
+                                       return;
+                                   }
 
-                this.closest('.item-row-edit').remove();
+                                   this.closest('.item-row-edit').remove();
 
-                // Re-index items
-                itemsContainer.querySelectorAll('.item-row-edit').forEach((row, index) => {
-                    row.querySelectorAll('input[name^="items"]').forEach(input => {
-                        const fieldName = input.name.match(/\[(\w+)\]$/)[1];
-                        input.name = `items[${index}][${fieldName}]`;
-                    });
-                });
-            }
+                                   // Re-index items
+                                   itemsContainer.querySelectorAll('.item-row-edit').forEach((row, index) => {
+                                       row.querySelectorAll('input[name^="items"]').forEach(input => {
+                                           const fieldName = input.name.match(/\[(\w+)\]$/)[1];
+                                           input.name = `items[${index}][${fieldName}]`;
+                                       });
+                                   });
+                               }
 
-            attachEditRemoveListeners();
-        });
+                               attachEditRemoveListeners();
+                           });
 
-        // Auto-submit form when filter changes
-        document.getElementById('month-select').addEventListener('change', function() {
-            this.form.submit();
-        });
+                           // Auto-submit form when filter changes
+                           document.getElementById('month-select').addEventListener('change', function() {
+                               this.form.submit();
+                           });
 
-        document.getElementById('year-select').addEventListener('change', function() {
-            this.form.submit();
-        });
-    </script>
-@endsection
+                           document.getElementById('year-select').addEventListener('change', function() {
+                               this.form.submit();
+                           });
+                       </script>
+                   @endsection
