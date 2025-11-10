@@ -67,7 +67,7 @@
                     </button>
 
                     {{-- Warna tombol menyesuaikan method --}}
-                    <button type="submit"
+                    <button type="submit" id="submit-btn-{{ $id }}"
                         class="{{ strtoupper($method) === 'DELETE' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700' }}
                             text-white px-4 py-2 rounded">
                         {{ $buttonText }}
