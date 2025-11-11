@@ -67,7 +67,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/expense-report', [ExpenseReportController::class, 'index'])->name('expense-report.index');
     Route::post('/expense-report', [ExpenseReportController::class, 'store'])->name('expense-report.store');
     Route::put('/expense-report/{id}', [ExpenseReportController::class, 'update'])->name('expense-report.update');
-    Route::delete('/expense-report/{id}', [ExpenseReportController::class, 'destroy'])->name('expense-report.destroy');
     Route::delete('/expense-report/destroy-selected', [ExpenseReportController::class, 'destroySelected'])->name('expense-report.destroySelected');
 
     // Expense Report Export routes
