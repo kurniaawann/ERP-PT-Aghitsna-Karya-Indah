@@ -25,7 +25,11 @@
             <!-- Aksi di Kanan -->
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" />
+                    <button type="button" onclick="checkAndDelete()"
+                        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium">
+                        <i class="fa-solid fa-trash w-4 h-4"></i>
+                        <span>Hapus</span>
+                    </button>
 
                     <x-buttons.add-button modalId="addModal" text="Tambah Kategori" />
                 </div>
@@ -54,6 +58,49 @@
             <i class="fa-solid fa-exclamation-triangle"></i> Kategori yang sedang digunakan tidak akan dihapus.
         </p>
     </x-modal>
+
+    {{-- Modal Peringatan Kategori Digunakan --}}
+    <div id="warningUsedModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
+        <div
+            class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0">
+            {{-- Header --}}
+            <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-2xl">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white bg-opacity-20 p-3 rounded-full">
+                        <i class="fa-solid fa-exclamation-circle text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Kategori Sedang Digunakan</h3>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <div class="p-6">
+                <p class="text-gray-700 mb-4">
+                    Kategori berikut sedang digunakan dalam transaksi dan <strong>tidak dapat dihapus</strong>:
+                </p>
+
+                <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+                    <ul id="usedCategoriesList" class="list-disc list-inside space-y-1 text-sm text-red-800">
+                        {{-- Will be populated by JavaScript --}}
+                    </ul>
+                </div>
+
+                <p class="text-sm text-gray-600">
+                    <i class="fa-solid fa-info-circle text-blue-500"></i> Untuk menghapus kategori ini, pastikan tidak
+                    ada transaksi yang menggunakannya.
+                </p>
+            </div>
+
+            {{-- Footer --}}
+            <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end">
+                <button type="button" onclick="closeWarningModal()"
+                    class="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary-light">
+                    <i class="fa-solid fa-check mr-2"></i> Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
 
     @include('partials.transaction-category.transaction-category-scripts')
 @endsection

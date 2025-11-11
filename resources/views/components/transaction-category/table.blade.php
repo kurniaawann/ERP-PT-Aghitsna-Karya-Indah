@@ -24,7 +24,9 @@
                                 {{-- Checkbox --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_categories[]" value="{{ $category->id }}"
-                                        class="w-4 h-4 accent-primary cursor-pointer">
+                                        data-is-used="{{ in_array($category->id, $usedCategoryIds ?? []) ? 'true' : 'false' }}"
+                                        data-category-name="{{ $category->name }}"
+                                        class="w-4 h-4 accent-primary cursor-pointer category-checkbox">
                                 </td>
 
                                 {{-- No --}}

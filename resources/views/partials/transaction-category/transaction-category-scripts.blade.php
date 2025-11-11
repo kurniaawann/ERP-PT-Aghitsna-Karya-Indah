@@ -20,8 +20,72 @@
     }
 
     // ==========================================
-    // BULK DELETE FUNCTION
+    // BULK DELETE - CHECK USED CATEGORIES
     // ==========================================
+
+    function checkAndDelete() {
+        const checkboxes = document.querySelectorAll('.category-checkbox:checked');
+
+        if (checkboxes.length === 0) {
+            alert('Silakan pilih kategori yang ingin dihapus!');
+            return;
+        }
+
+        // Check if any selected category is being used
+        const usedCategories = [];
+        checkboxes.forEach(cb => {
+            if (cb.dataset.isUsed === 'true') {
+                usedCategories.push(cb.dataset.categoryName);
+            }
+        });
+
+        if (usedCategories.length > 0) {
+            // Show warning modal
+            showWarningModal(usedCategories);
+        } else {
+            // Show delete confirmation modal
+            openModal('deleteModal');
+        }
+    }
+
+    function showWarningModal(usedCategories) {
+        const modal = document.getElementById('warningUsedModal');
+        const list = document.getElementById('usedCategoriesList');
+        const modalContent = modal.querySelector('.bg-white');
+
+        // Clear previous list
+        list.innerHTML = '';
+
+        // Add used categories to list
+        usedCategories.forEach(categoryName => {
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>${categoryName}</strong>`;
+            li.classList.add('font-medium');
+            list.appendChild(li);
+        });
+
+        // Show modal with animation
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeWarningModal() {
+        const modal = document.getElementById('warningUsedModal');
+        const modalContent = modal.querySelector('.bg-white');
+
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
 
     function submitDeleteForm() {
         const form = document.getElementById('deleteForm');

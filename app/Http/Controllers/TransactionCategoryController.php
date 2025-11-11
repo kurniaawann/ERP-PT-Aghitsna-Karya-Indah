@@ -32,7 +32,10 @@ class TransactionCategoryController extends Controller
         // Get all existing codes for frontend validation
         $existingCodes = TransactionCategory::pluck('code', 'id')->toArray();
 
-        return view('pages.transaction-category', compact('categories', 'existingCodes'));
+        // Get IDs of categories that are being used
+        $usedCategoryIds = TransactionCategory::has('expenseReports')->pluck('id')->toArray();
+
+        return view('pages.transaction-category', compact('categories', 'existingCodes', 'usedCategoryIds'));
     }
 
     /**
