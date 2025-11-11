@@ -72,6 +72,12 @@
                         min="0">
                 </div>
 
+                {{-- Price Warning --}}
+                <p class="price-warning text-error text-sm mt-2 hidden">
+                    <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
+                    dengan harga jual!
+                </p>
+
                 <button type="button"
                     class="remove-item mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
                     <i class="fa-solid fa-trash"></i> Hapus Item

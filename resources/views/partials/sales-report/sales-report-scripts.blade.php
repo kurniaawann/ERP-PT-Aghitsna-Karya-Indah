@@ -150,12 +150,17 @@
                         <input type="number" class="item-selling border rounded p-2" placeholder="Harga Jual *" required min="0">
                     </div>
                     
+                    <p class="price-warning text-error text-sm mt-2 hidden">
+                        <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama dengan harga jual!
+                    </p>
+                    
                     <button type="button" class="remove-item mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
                         <i class="fa-solid fa-trash"></i> Hapus Item
                     </button>
                 `;
                 itemsContainer.appendChild(newItem);
                 attachItemListeners();
+                initPriceValidation(newItem); // Add price validation for new item
             });
         }
 
@@ -306,6 +311,103 @@
         // Initialize searchable dropdown for existing items
         document.querySelectorAll('.item-row').forEach(row => {
             initSearchableDropdown(row);
+            initPriceValidation(row); // Add price validation
+        });
+
+        // ==========================================
+        // PRICE VALIDATION FUNCTION
+        // ==========================================
+        function initPriceValidation(row) {
+            const capitalInput = row.querySelector('.item-capital');
+            const sellingInput = row.querySelector('.item-selling');
+            const priceWarning = row.querySelector('.price-warning');
+            const submitBtn = document.getElementById('submit-btn-addModal');
+
+            if (!capitalInput || !sellingInput || !priceWarning) return;
+
+            function validatePrices() {
+                const capital = parseFloat(capitalInput.value) || 0;
+                const selling = parseFloat(sellingInput.value) || 0;
+
+                if (capital >= selling && selling > 0) {
+                    priceWarning.classList.remove('hidden');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    return false;
+                } else {
+                    priceWarning.classList.add('hidden');
+                    // Check all rows before enabling submit
+                    const allValid = Array.from(document.querySelectorAll('.item-row')).every(r => {
+                        const cap = parseFloat(r.querySelector('.item-capital')?.value) || 0;
+                        const sel = parseFloat(r.querySelector('.item-selling')?.value) || 0;
+                        return sel === 0 || cap < sel;
+                    });
+                    if (submitBtn && allValid) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                    return true;
+                }
+            }
+
+            capitalInput.addEventListener('input', validatePrices);
+            sellingInput.addEventListener('input', validatePrices);
+        }
+
+        // ==========================================
+        // PRICE VALIDATION FOR EDIT MODAL
+        // ==========================================
+        function initPriceValidationEdit(row, saleId) {
+            const capitalInput = row.querySelector('.item-capital-edit');
+            const sellingInput = row.querySelector('.item-selling-edit');
+            const priceWarning = row.querySelector('.price-warning-edit');
+            const submitBtn = document.getElementById('submit-btn-editModal-' + saleId);
+
+            if (!capitalInput || !sellingInput || !priceWarning) return;
+
+            function validatePrices() {
+                const capital = parseFloat(capitalInput.value) || 0;
+                const selling = parseFloat(sellingInput.value) || 0;
+
+                if (capital >= selling && selling > 0) {
+                    priceWarning.classList.remove('hidden');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    return false;
+                } else {
+                    priceWarning.classList.add('hidden');
+                    // Check all rows in this edit modal before enabling submit
+                    const modalContainer = document.getElementById('items-list-edit-' + saleId);
+                    if (modalContainer) {
+                        const allValid = Array.from(modalContainer.querySelectorAll('.item-row-edit')).every(
+                            r => {
+                                const cap = parseFloat(r.querySelector('.item-capital-edit')?.value) || 0;
+                                const sel = parseFloat(r.querySelector('.item-selling-edit')?.value) || 0;
+                                return sel === 0 || cap < sel;
+                            });
+                        if (submitBtn && allValid) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                    return true;
+                }
+            }
+
+            capitalInput.addEventListener('input', validatePrices);
+            sellingInput.addEventListener('input', validatePrices);
+        }
+
+        // Initialize price validation for existing edit modals
+        document.querySelectorAll('[id^="items-list-edit-"]').forEach(container => {
+            const saleId = container.id.replace('items-list-edit-', '');
+            container.querySelectorAll('.item-row-edit').forEach(row => {
+                initPriceValidationEdit(row, saleId);
+            });
         });
 
         // Handle add form submission
@@ -316,6 +418,24 @@
                 addForm.addEventListener('submit', function(e) {
                     const items = [];
                     const itemRows = document.querySelectorAll('.item-row');
+
+                    // Validate all prices before submission
+                    let hasInvalidPrice = false;
+                    itemRows.forEach(row => {
+                        const capital = parseFloat(row.querySelector('.item-capital')?.value) ||
+                            0;
+                        const selling = parseFloat(row.querySelector('.item-selling')?.value) ||
+                            0;
+                        if (capital >= selling && selling > 0) {
+                            hasInvalidPrice = true;
+                        }
+                    });
+
+                    if (hasInvalidPrice) {
+                        e.preventDefault();
+                        alert('Harga modal tidak boleh lebih besar atau sama dengan harga jual!');
+                        return false;
+                    }
 
                     itemRows.forEach(row => {
                         const fromStockCheck = row.querySelector('.item-from-stock');
@@ -419,6 +539,10 @@
                             class="item-selling-edit border rounded p-2" placeholder="Harga Jual *" required min="0" value="0">
                     </div>
 
+                    <p class="price-warning-edit text-error text-sm mt-2 hidden">
+                        <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama dengan harga jual!
+                    </p>
+
                     <input type="hidden" name="items[${newIndex}][from_stock]" class="from-stock-hidden" value="false">
                     <input type="hidden" name="items[${newIndex}][id_item]" class="id-item-hidden" value="">
 
@@ -431,6 +555,8 @@
                 attachEditRemoveListeners();
                 attachEditStockListeners();
                 initSearchableDropdownEdit(newItem);
+                initPriceValidationEdit(newItem,
+                saleId); // Add price validation for new item in edit modal
             });
         });
 

@@ -105,6 +105,12 @@
                             required min="0">
                     </div>
 
+                    {{-- Price Warning --}}
+                    <p class="price-warning-edit text-error text-sm mt-2 hidden">
+                        <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
+                        dengan harga jual!
+                    </p>
+
                     <input type="hidden" name="items[{{ $index }}][from_stock]" class="from-stock-hidden"
                         value="{{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'true' : 'false' }}">
                     <input type="hidden" name="items[{{ $index }}][id_item]" class="id-item-hidden"
