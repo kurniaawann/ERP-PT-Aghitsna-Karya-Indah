@@ -24,7 +24,7 @@
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Keterangan <span class="text-error">*</span></label>
-        <textarea name="description" class="w-full border rounded p-2" rows="3" required>{{ $expense->description }}</textarea>
+        <textarea name="description" class="w-full border rounded p-2" rows="3" required maxlength="1000">{{ $expense->description }}</textarea>
     </div>
 
     <div class="mb-3">
@@ -36,13 +36,13 @@
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">No. Faktur (Opsional)</label>
         <input type="text" name="invoice_number" class="w-full border rounded p-2"
-            value="{{ $expense->invoice_number }}">
+            value="{{ $expense->invoice_number }}" maxlength="100">
     </div>
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Sumber Uang (Opsional)</label>
-        <input type="text" name="money_source" class="w-full border rounded p-2"
-            value="{{ $expense->money_source }}">
+        <input type="text" name="money_source" class="w-full border rounded p-2" value="{{ $expense->money_source }}"
+            maxlength="255">
     </div>
 
     <div class="mb-3">

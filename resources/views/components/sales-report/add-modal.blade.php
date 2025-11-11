@@ -10,7 +10,7 @@
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Nama Proyek <span class="text-error">*</span></label>
         <input type="text" name="name_proyek" class="w-full border rounded p-2" placeholder="Contoh: PROYEK KAHFI"
-            required>
+            required maxlength="255">
     </div>
 
     <div id="items-container" class="mb-4">

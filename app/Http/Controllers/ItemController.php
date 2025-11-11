@@ -43,19 +43,12 @@ class ItemController extends Controller
     //Simpan Data Baru
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'name_item' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'capital_price' => 'required|integer|min:0',
-            'selling_price' => 'required|integer|min:0',
-        ]);
-
         Items::create([
             'id_item' => $this->generateIdItem(),
-            'name_item' => $validatedData['name_item'],
-            'quantity' => $validatedData['quantity'],
-            'capital_price' => $validatedData['capital_price'],
-            'selling_price' => $validatedData['selling_price'],
+            'name_item' => $request->name_item,
+            'quantity' => $request->quantity,
+            'capital_price' => $request->capital_price,
+            'selling_price' => $request->selling_price,
         ]);
 
         return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
@@ -64,18 +57,11 @@ class ItemController extends Controller
     //Update Data
     public function update(Request $request, $id_item)
     {
-        $validatedData = $request->validate([
-            'name_item' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'capital_price' => 'required|integer|min:0',
-            'selling_price' => 'required|integer|min:0',
-        ]);
-
         Items::where('id_item', $id_item)->update([
-            'name_item' => $validatedData['name_item'],
-            'quantity' => $validatedData['quantity'],
-            'capital_price' => $validatedData['capital_price'],
-            'selling_price' => $validatedData['selling_price'],
+            'name_item' => $request->name_item,
+            'quantity' => $request->quantity,
+            'capital_price' => $request->capital_price,
+            'selling_price' => $request->selling_price,
         ]);
         return redirect()->back()->with('success', 'Data berhasil diupdate!');
     }

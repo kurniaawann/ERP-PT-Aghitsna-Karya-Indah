@@ -20,7 +20,7 @@
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Keterangan <span class="text-error">*</span></label>
         <textarea name="description" class="w-full border rounded p-2" rows="3"
-            placeholder="Contoh: Belanja ATK, Sampah Cemara, dll" required></textarea>
+            placeholder="Contoh: Belanja ATK, Sampah Cemara, dll" required maxlength="1000"></textarea>
     </div>
 
     <div class="mb-3">
@@ -31,13 +31,14 @@
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">No. Faktur (Opsional)</label>
-        <input type="text" name="invoice_number" class="w-full border rounded p-2" placeholder="Contoh: INV-001">
+        <input type="text" name="invoice_number" class="w-full border rounded p-2" placeholder="Contoh: INV-001"
+            maxlength="100">
     </div>
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Sumber Uang (Opsional)</label>
-        <input type="text" name="money_source" class="w-full border rounded p-2"
-            placeholder="Contoh: Kas Perusahaan">
+        <input type="text" name="money_source" class="w-full border rounded p-2" placeholder="Contoh: Kas Perusahaan"
+            maxlength="255">
     </div>
 
     <div class="mb-3">

@@ -11,8 +11,8 @@
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Nama Barang <span class="text-error">*</span></label>
-        <input type="text" name="name_item" value="{{ $item->name_item }}" class="w-full border rounded p-2"
-            required>
+        <input type="text" name="name_item" value="{{ $item->name_item }}" class="w-full border rounded p-2" required
+            maxlength="255">
     </div>
 
     <div class="mb-3">
