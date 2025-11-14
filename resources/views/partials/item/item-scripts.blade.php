@@ -169,12 +169,22 @@
 
         const selectAllCheckbox = document.getElementById('selectAll');
         const itemCheckboxes = document.querySelectorAll('input[name="selected_items[]"]');
+        const deleteButton = document.getElementById('delete-button');
+
+        // Function to update delete button state
+        function updateDeleteButtonState() {
+            const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
+            if (deleteButton) {
+                deleteButton.disabled = !anyChecked;
+            }
+        }
 
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 itemCheckboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
+                updateDeleteButtonState();
             });
         }
 
@@ -188,8 +198,12 @@
                     const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
                     selectAllCheckbox.checked = allChecked;
                 }
+                updateDeleteButtonState();
             });
         });
+
+        // Initialize button state on page load
+        updateDeleteButtonState();
 
         // ==========================================
         // PRINT DROPDOWN FUNCTIONALITY
