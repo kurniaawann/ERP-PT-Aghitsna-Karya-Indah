@@ -142,12 +142,20 @@
                     
                     <input type="hidden" class="item-select-hidden">
 
-                    <input type="text" class="item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required>
+                    <input type="text" class="item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required
+                        oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
                     
                     <div class="grid grid-cols-3 gap-2">
-                        <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required min="1" value="1">
-                        <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *" required min="0">
-                        <input type="number" class="item-selling border rounded p-2" placeholder="Harga Jual *" required min="0">
+                        <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required min="1" value="1"
+                            oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
+                        <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *" required min="0"
+                            oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
+                        <input type="number" class="item-selling border rounded p-2" placeholder="Harga Jual *" required min="0"
+                            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                     </div>
                     
                     <p class="price-warning text-error text-sm mt-2 hidden">
@@ -528,15 +536,23 @@
                     <input type="hidden" class="item-select-hidden-edit">
 
                     <input type="text" name="items[${newIndex}][name_item]"
-                        class="item-name-edit w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required>
+                        class="item-name-edit w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required
+                        oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
                     
                     <div class="grid grid-cols-3 gap-2">
                         <input type="number" name="items[${newIndex}][quantity]"
-                            class="item-qty-edit border rounded p-2" placeholder="Qty *" required min="1" value="1">
+                            class="item-qty-edit border rounded p-2" placeholder="Qty *" required min="1" value="1"
+                            oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                         <input type="number" name="items[${newIndex}][capital_price]"
-                            class="item-capital-edit border rounded p-2" placeholder="Harga Modal *" required min="0" value="0">
+                            class="item-capital-edit border rounded p-2" placeholder="Harga Modal *" required min="0" value="0"
+                            oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                         <input type="number" name="items[${newIndex}][selling_price]"
-                            class="item-selling-edit border rounded p-2" placeholder="Harga Jual *" required min="0" value="0">
+                            class="item-selling-edit border rounded p-2" placeholder="Harga Jual *" required min="0" value="0"
+                            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                     </div>
 
                     <p class="price-warning-edit text-error text-sm mt-2 hidden">
@@ -556,7 +572,7 @@
                 attachEditStockListeners();
                 initSearchableDropdownEdit(newItem);
                 initPriceValidationEdit(newItem,
-                saleId); // Add price validation for new item in edit modal
+                    saleId); // Add price validation for new item in edit modal
             });
         });
 

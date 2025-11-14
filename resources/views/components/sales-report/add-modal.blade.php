@@ -4,13 +4,15 @@
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="date" class="w-full border rounded p-2" required>
+        <input type="date" name="date" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Nama Proyek <span class="text-error">*</span></label>
         <input type="text" name="name_proyek" class="w-full border rounded p-2" placeholder="Contoh: PROYEK KAHFI"
-            required maxlength="255">
+            required maxlength="255" oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div id="items-container" class="mb-4">
@@ -61,15 +63,19 @@
                 <input type="hidden" class="item-select-hidden">
 
                 <input type="text" class="item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *"
-                    required>
+                    required oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
 
                 <div class="grid grid-cols-3 gap-2">
                     <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required
-                        min="1" value="1">
+                        min="1" value="1" oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
                     <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *" required
-                        min="0">
+                        min="0" oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
                     <input type="number" class="item-selling border rounded p-2" placeholder="Harga Jual *" required
-                        min="0">
+                        min="0" oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
                 </div>
 
                 {{-- Price Warning --}}

@@ -195,12 +195,20 @@
                 newItem.className = 'item-row mb-3 p-3 border rounded bg-gray-50';
                 newItem.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                        <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required>
-                        <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateRowTotal(this)">
+                        <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required
+                            oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
+                        <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateRowTotal(this)"
+                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
+                            oninput="calculateRowTotal(this); this.setCustomValidity('')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                        <input type="text" class="item-satuan border rounded p-2 w-full" placeholder="Satuan (m3, unit) *" required>
-                        <input type="number" step="0.01" min="0" class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateRowTotal(this)">
+                        <input type="text" class="item-satuan border rounded p-2 w-full" placeholder="Satuan (m3, unit) *" required
+                            oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
+                        <input type="number" step="0.01" min="0" class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateRowTotal(this)"
+                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
+                            oninput="calculateRowTotal(this); this.setCustomValidity('')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                         </div>
@@ -247,15 +255,23 @@
                 newItem.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                         <input type="text" name="items[${newIndex}][keterangan]" 
-                            class="item-keterangan-edit border rounded p-2 w-full" placeholder="Keterangan *" required>
+                            class="item-keterangan-edit border rounded p-2 w-full" placeholder="Keterangan *" required
+                            oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                         <input type="number" step="0.01" min="0" name="items[${newIndex}][volume]"
-                            class="item-volume-edit border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateEditRowTotal(this)">
+                            class="item-volume-edit border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateEditRowTotal(this)"
+                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
+                            oninput="calculateEditRowTotal(this); this.setCustomValidity('')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <input type="text" name="items[${newIndex}][satuan]"
-                            class="item-satuan-edit border rounded p-2 w-full" placeholder="Satuan *" required>
+                            class="item-satuan-edit border rounded p-2 w-full" placeholder="Satuan *" required
+                            oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                         <input type="number" step="0.01" min="0" name="items[${newIndex}][harga]"
-                            class="item-harga-edit border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateEditRowTotal(this)">
+                            class="item-harga-edit border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateEditRowTotal(this)"
+                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
+                            oninput="calculateEditRowTotal(this); this.setCustomValidity('')">
                         <div class="flex items-center">
                             <span class="item-total-edit text-sm font-semibold text-primary">Rp 0</span>
                         </div>

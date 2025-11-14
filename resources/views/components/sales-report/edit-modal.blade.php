@@ -13,13 +13,15 @@
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="date" value="{{ $sale->date->format('Y-m-d') }}"
-            class="w-full border rounded p-2" required>
+            class="w-full border rounded p-2" required oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Nama Proyek <span class="text-error">*</span></label>
         <input type="text" name="name_proyek" value="{{ $sale->name_proyek }}" class="w-full border rounded p-2"
-            required maxlength="255">
+            required maxlength="255" oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div id="items-container-edit-{{ $sale->id_sales_report }}" class="mb-4">
@@ -86,23 +88,28 @@
                     <input type="text" name="items[{{ $index }}][name_item]"
                         value="{{ $item['name_item'] ?? '' }}" class="item-name-edit w-full border rounded p-2 mb-2"
                         placeholder="Nama Barang *"
-                        {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                        required>
+                        {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }} required
+                        oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
 
                     <div class="grid grid-cols-3 gap-2">
                         <input type="number" name="items[{{ $index }}][quantity]"
                             value="{{ $item['quantity'] ?? 0 }}" class="item-qty-edit border rounded p-2"
-                            placeholder="Qty *" required min="1">
+                            placeholder="Qty *" required min="1"
+                            oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                         <input type="number" name="items[{{ $index }}][capital_price]"
                             value="{{ $item['capital_price'] ?? 0 }}" class="item-capital-edit border rounded p-2"
                             placeholder="Harga Modal *"
                             {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                            required min="0">
+                            required min="0" oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                         <input type="number" name="items[{{ $index }}][selling_price]"
                             value="{{ $item['selling_price'] ?? 0 }}" class="item-selling-edit border rounded p-2"
                             placeholder="Harga Jual *"
                             {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                            required min="0">
+                            required min="0" oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                     </div>
 
                     {{-- Price Warning --}}
