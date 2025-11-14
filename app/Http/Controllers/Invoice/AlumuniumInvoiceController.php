@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Invoice;
 
-use App\Models\InvoiceAlumunium;
-use App\Exports\AlumuniumInvoiceExport;
+use App\Http\Controllers\Controller;
+use App\Models\Invoice\InvoiceAlumunium;
+use App\Exports\Invoice\AlumuniumInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;

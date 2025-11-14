@@ -326,13 +326,26 @@ class SalesReportController extends Controller
     /**
      * Delete selected items (bulk delete).
      */
+    /**
+     * Delete selected sales reports (bulk delete).
+     */
     public function destroySelected(Request $request)
     {
-        $selectedIds = $request->input('selected_sales', []);
+        // Validasi input
+        $validator = Validator::make($request->all(), [
+            'selected_sales' => 'required|array|min:1',
+            'selected_sales.*' => 'exists:sales_reports,id_sales_report',
+        ], [
+            'selected_sales.required' => 'Tidak ada data yang dipilih!',
+            'selected_sales.min' => 'Pilih minimal satu data untuk dihapus!',
+            'selected_sales.*.exists' => 'Data yang dipilih tidak valid!',
+        ]);
 
-        if (empty($selectedIds)) {
-            return back()->with('error', 'Tidak ada data yang dipilih!');
+        if ($validator->fails()) {
+            return back()->withErrors($validator);
         }
+
+        $selectedIds = $request->input('selected_sales', []);
 
         DB::beginTransaction();
         try {
@@ -341,10 +354,15 @@ class SalesReportController extends Controller
 
             foreach ($salesReports as $salesReport) {
                 // Return stock for items that were from stock
-                $items = is_string($salesReport->items) ? json_decode($salesReport->items, true) : $salesReport->items;
+                $items = is_string($salesReport->items)
+                    ? json_decode($salesReport->items, true)
+                    : $salesReport->items;
+
                 foreach ($items as $item) {
                     if (!empty($item['from_stock']) && !empty($item['id_item'])) {
-                        $stockItem = Items::lockForUpdate()->where('id_item', $item['id_item'])->first();
+                        $stockItem = Items::lockForUpdate()
+                            ->where('id_item', $item['id_item'])
+                            ->first();
                         if ($stockItem) {
                             $stockItem->quantity += $item['quantity'];
                             $stockItem->save();
@@ -359,10 +377,11 @@ class SalesReportController extends Controller
             DB::commit();
 
             return redirect()->route('sales-report.index')
-                ->with('success', "Berhasil menghapus {$deletedCount} data.");
+                ->with('success', "Berhasil menghapus {$deletedCount} data penjualan.");
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
         }
     }
 

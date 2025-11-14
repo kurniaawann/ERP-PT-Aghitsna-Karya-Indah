@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\TransactionCategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class TransactionCategoryController extends Controller
 {
@@ -30,7 +29,13 @@ class TransactionCategoryController extends Controller
             ->orderBy('name')
             ->paginate(10);
 
-        return view('pages.transaction-category', compact('categories'));
+        // Get all existing codes for frontend validation
+        $existingCodes = TransactionCategory::pluck('code', 'id')->toArray();
+
+        // Get IDs of categories that are being used
+        $usedCategoryIds = TransactionCategory::has('expenseReports')->pluck('id')->toArray();
+
+        return view('pages.transaction-category', compact('categories', 'existingCodes', 'usedCategoryIds'));
     }
 
     /**
@@ -38,39 +43,23 @@ class TransactionCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'code' => 'required|string|max:50|unique:transaction_categories,code',
-            'type' => 'required|in:INCOME,EXPENSE',
-            'sort_order' => 'nullable|integer|min:1',
-        ], [
-            'name.required' => 'Nama kategori wajib diisi',
-            'code.required' => 'Kode kategori wajib diisi',
-            'code.unique' => 'Kode kategori sudah digunakan',
-            'type.required' => 'Tipe kategori wajib dipilih',
-            'type.in' => 'Tipe kategori tidak valid',
-            'sort_order.min' => 'Urutan minimal 1',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $validated = $validator->validated();
-        $validated['is_active'] = true;
-
-        // Auto-assign sort_order jika tidak diisi (ambil urutan terakhir + 1)
-        if (empty($validated['sort_order'])) {
-            $maxSortOrder = TransactionCategory::max('sort_order') ?? 0;
-            $validated['sort_order'] = $maxSortOrder + 1;
-        } else {
-            // Jika user mengisi sort_order, geser kategori yang >= sort_order tersebut
-            TransactionCategory::where('sort_order', '>=', $validated['sort_order'])
-                ->increment('sort_order');
+        // Cek apakah kode sudah digunakan (validasi unik)
+        $existingCode = TransactionCategory::where('code', $request->code)->exists();
+        if ($existingCode) {
+            return back()->with('error', 'Kode kategori sudah digunakan!')->withInput();
         }
 
         try {
-            TransactionCategory::create($validated);
+            // Auto-assign sort_order (ambil urutan terakhir + 1)
+            $maxSortOrder = TransactionCategory::max('sort_order') ?? 0;
+
+            TransactionCategory::create([
+                'name' => $request->name,
+                'code' => $request->code,
+                'type' => $request->type,
+                'sort_order' => $maxSortOrder + 1,
+                'is_active' => true,
+            ]);
 
             return redirect()->route('transaction-category.index')
                 ->with('success', 'Kategori transaksi berhasil ditambahkan!');
@@ -86,26 +75,16 @@ class TransactionCategoryController extends Controller
     {
         $category = TransactionCategory::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'code' => 'required|string|max:50|unique:transaction_categories,code,' . $id,
-            'type' => 'required|in:INCOME,EXPENSE',
-            'sort_order' => 'required|integer|min:1',
-        ], [
-            'name.required' => 'Nama kategori wajib diisi',
-            'code.required' => 'Kode kategori wajib diisi',
-            'code.unique' => 'Kode kategori sudah digunakan',
-            'type.required' => 'Tipe kategori wajib dipilih',
-            'sort_order.required' => 'Urutan wajib diisi',
-            'sort_order.min' => 'Urutan minimal 1',
-        ]);
+        // Cek apakah kode sudah digunakan (kecuali untuk kategori ini sendiri)
+        $existingCode = TransactionCategory::where('code', $request->code)
+            ->where('id', '!=', $id)
+            ->exists();
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        if ($existingCode) {
+            return back()->with('error', 'Kode kategori sudah digunakan!')->withInput();
         }
 
-        $validated = $validator->validated();
-        $newSortOrder = $validated['sort_order'];
+        $newSortOrder = $request->sort_order;
         $oldSortOrder = $category->sort_order;
 
         try {
@@ -125,7 +104,12 @@ class TransactionCategoryController extends Controller
             }
 
             // Update kategori dengan data baru
-            $category->update($validated);
+            $category->update([
+                'name' => $request->name,
+                'code' => $request->code,
+                'type' => $request->type,
+                'sort_order' => $newSortOrder,
+            ]);
 
             return redirect()->route('transaction-category.index')
                 ->with('success', 'Kategori transaksi berhasil diupdate!');

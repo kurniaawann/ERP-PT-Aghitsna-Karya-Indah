@@ -59,18 +59,7 @@ class SalesReportController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'date' => 'required|date',
-            'name_proyek' => 'required|string|max:255',
-            'items' => 'required|json',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $validated = $validator->validated();
-        $items = json_decode($validated['items'], true);
+        $items = json_decode($request->items, true);
 
         if (empty($items)) {
             return back()->with('error', 'Minimal harus ada 1 item!')->withInput();
@@ -123,9 +112,7 @@ class SalesReportController extends Controller
             }
 
             // Generate ID
-            $validated['id_sales_report'] = $this->generateSalesReportId();
-            $validated['items'] = json_encode($items);
-            $validated['status'] = 'Belum Lunas';
+            $salesReportId = $this->generateSalesReportId();
 
             // Calculate totals before creating
             $totalCapital = 0;
@@ -134,12 +121,18 @@ class SalesReportController extends Controller
                 $totalCapital += ($item['capital_price'] ?? 0) * ($item['quantity'] ?? 0);
                 $totalSelling += ($item['selling_price'] ?? 0) * ($item['quantity'] ?? 0);
             }
-            $validated['total_capital'] = $totalCapital;
-            $validated['total_selling'] = $totalSelling;
-            $validated['total_profit'] = $totalSelling - $totalCapital;
 
             // Create sales report
-            $salesReport = SalesReport::create($validated);
+            $salesReport = SalesReport::create([
+                'id_sales_report' => $salesReportId,
+                'date' => $request->date,
+                'name_proyek' => $request->name_proyek,
+                'items' => json_encode($items),
+                'status' => 'Belum Lunas',
+                'total_capital' => $totalCapital,
+                'total_selling' => $totalSelling,
+                'total_profit' => $totalSelling - $totalCapital,
+            ]);
 
             DB::commit();
             return redirect()->route('sales-report.index')
@@ -162,28 +155,10 @@ class SalesReportController extends Controller
             return back()->with('error', 'Data yang sudah lunas tidak dapat diubah!');
         }
 
-        $validator = Validator::make($request->all(), [
-            'date' => 'required|date',
-            'name_proyek' => 'required|string|max:255',
-            'items' => 'required|array',
-            'items.*.name_item' => 'required|string',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.capital_price' => 'required|integer|min:0',
-            'items.*.selling_price' => 'required|integer|min:0',
-            'items.*.from_stock' => 'nullable|in:true,false,1,0',
-            'items.*.id_item' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $validated = $validator->validated();
-
         DB::beginTransaction();
         try {
             $oldItems = is_string($salesReport->items) ? json_decode($salesReport->items, true) : $salesReport->items;
-            $newItems = $validated['items'];
+            $newItems = $request->items;
 
             // Create a map to track stock changes per item
             $stockChanges = []; // [id_item => delta_quantity]
@@ -281,8 +256,8 @@ class SalesReportController extends Controller
                 $item['profit'] = ($item['selling_price'] - $item['capital_price']) * $item['quantity'];
             }
 
-            $salesReport->date = $validated['date'];
-            $salesReport->name_proyek = $validated['name_proyek'];
+            $salesReport->date = $request->date;
+            $salesReport->name_proyek = $request->name_proyek;
             $salesReport->items = json_encode($newItems);
             $salesReport->calculateTotals();
             $salesReport->save();
@@ -303,20 +278,10 @@ class SalesReportController extends Controller
     {
         $salesReport = SalesReport::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|in:Belum Lunas,Lunas'
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator);
-        }
-
-        $validated = $validator->validated();
-
         try {
-            $salesReport->update(['status' => $validated['status']]);
+            $salesReport->update(['status' => $request->status]);
             return redirect()->route('sales-report.index')
-                ->with('success', 'Status berhasil diupdate menjadi ' . $validated['status'] . '!');
+                ->with('success', 'Status berhasil diupdate menjadi ' . $request->status . '!');
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

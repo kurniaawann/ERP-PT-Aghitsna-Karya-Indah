@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\InvoiceAlumunium;
+use App\Models\Invoice\InvoiceAlumunium;
 use Illuminate\Database\Seeder;
 
 class AlumuniumInvoiceSeeder extends Seeder

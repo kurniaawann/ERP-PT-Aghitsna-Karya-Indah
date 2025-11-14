@@ -70,33 +70,18 @@ class ExpenseReportController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'transaction_category_id' => 'required|exists:transaction_categories,id',
-            'transaction_date' => 'required|date',
-            'description' => 'required|string|max:1000',
-            'expense_amount' => 'required|integer|min:0',
-            'invoice_number' => 'nullable|string|max:100',
-            'money_source' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-        ], [
-            'transaction_category_id.required' => 'Kategori pengeluaran wajib dipilih',
-            'transaction_date.required' => 'Tanggal wajib diisi',
-            'description.required' => 'Keterangan wajib diisi',
-            'expense_amount.required' => 'Jumlah pengeluaran wajib diisi',
-            'expense_amount.integer' => 'Jumlah pengeluaran harus berupa angka',
-            'expense_amount.min' => 'Jumlah pengeluaran tidak boleh negatif',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $validated = $validator->validated();
-        $validated['created_by'] = Auth::id();
-        $validated['income_amount'] = null;
-
         try {
-            ExpenseReport::create($validated);
+            ExpenseReport::create([
+                'transaction_category_id' => $request->transaction_category_id,
+                'transaction_date' => $request->transaction_date,
+                'description' => $request->description,
+                'expense_amount' => $request->expense_amount,
+                'invoice_number' => $request->invoice_number,
+                'money_source' => $request->money_source,
+                'notes' => $request->notes,
+                'created_by' => Auth::id(),
+                'income_amount' => null,
+            ]);
 
             return redirect()->route('expense-report.index')
                 ->with('success', 'Data laporan pengeluaran berhasil ditambahkan!');
@@ -117,29 +102,16 @@ class ExpenseReportController extends Controller
             return back()->with('error', 'Data yang auto-generated dari sales report tidak dapat diubah!');
         }
 
-        $validator = Validator::make($request->all(), [
-            'transaction_category_id' => 'required|exists:transaction_categories,id',
-            'transaction_date' => 'required|date',
-            'description' => 'required|string|max:1000',
-            'expense_amount' => 'required|integer|min:0',
-            'invoice_number' => 'nullable|string|max:100',
-            'money_source' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-        ], [
-            'transaction_category_id.required' => 'Kategori pengeluaran wajib dipilih',
-            'transaction_date.required' => 'Tanggal wajib diisi',
-            'description.required' => 'Keterangan wajib diisi',
-            'expense_amount.required' => 'Jumlah pengeluaran wajib diisi',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $validated = $validator->validated();
-
         try {
-            $expenseReport->update($validated);
+            $expenseReport->update([
+                'transaction_category_id' => $request->transaction_category_id,
+                'transaction_date' => $request->transaction_date,
+                'description' => $request->description,
+                'expense_amount' => $request->expense_amount,
+                'invoice_number' => $request->invoice_number,
+                'money_source' => $request->money_source,
+                'notes' => $request->notes,
+            ]);
 
             return redirect()->route('expense-report.index')
                 ->with('success', 'Data laporan pengeluaran berhasil diupdate!');
