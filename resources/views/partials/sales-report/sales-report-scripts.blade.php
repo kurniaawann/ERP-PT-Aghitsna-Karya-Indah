@@ -27,12 +27,22 @@
         // Select All Checkbox functionality
         const selectAllCheckbox = document.getElementById('selectAll');
         const saleCheckboxes = document.querySelectorAll('input[name="selected_sales[]"]');
+        const deleteButton = document.getElementById('delete-button');
+
+        // Function to update delete button state
+        function updateDeleteButtonState() {
+            const anyChecked = Array.from(saleCheckboxes).some(cb => cb.checked);
+            if (deleteButton) {
+                deleteButton.disabled = !anyChecked;
+            }
+        }
 
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 saleCheckboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
+                updateDeleteButtonState();
             });
         }
 
@@ -44,8 +54,12 @@
                     const allChecked = Array.from(saleCheckboxes).every(cb => cb.checked);
                     selectAllCheckbox.checked = allChecked;
                 }
+                updateDeleteButtonState();
             });
         });
+
+        // Initialize button state on page load
+        updateDeleteButtonState();
 
         // Handle from_stock checkbox
         document.querySelectorAll('.item-from-stock').forEach(checkbox => {

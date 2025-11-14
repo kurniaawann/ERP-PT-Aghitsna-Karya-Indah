@@ -30,13 +30,6 @@
             return false;
         }
 
-        const checkboxes = form.querySelectorAll('input[name="selected_expenses[]"]:checked');
-
-        if (checkboxes.length === 0) {
-            alert('Pilih minimal satu data untuk dihapus!');
-            return false;
-        }
-
         // Submit the form
         form.submit();
         return true;
@@ -53,12 +46,22 @@
 
         const selectAllCheckbox = document.getElementById('selectAll');
         const expenseCheckboxes = document.querySelectorAll('input[name="selected_expenses[]"]');
+        const deleteButton = document.getElementById('delete-button');
+
+        // Function to update delete button state
+        function updateDeleteButtonState() {
+            const anyChecked = Array.from(expenseCheckboxes).some(cb => cb.checked);
+            if (deleteButton) {
+                deleteButton.disabled = !anyChecked;
+            }
+        }
 
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 expenseCheckboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
+                updateDeleteButtonState();
             });
         }
 
@@ -72,8 +75,12 @@
                     const allChecked = Array.from(expenseCheckboxes).every(cb => cb.checked);
                     selectAllCheckbox.checked = allChecked;
                 }
+                updateDeleteButtonState();
             });
         });
+
+        // Initialize button state on page load
+        updateDeleteButtonState();
 
         // ==========================================
         // AUTO-SUBMIT FILTER FORM

@@ -26,11 +26,6 @@
     function checkAndDelete() {
         const checkboxes = document.querySelectorAll('.category-checkbox:checked');
 
-        if (checkboxes.length === 0) {
-            alert('Silakan pilih kategori yang ingin dihapus!');
-            return;
-        }
-
         // Check if any selected category is being used
         const usedCategories = [];
         checkboxes.forEach(cb => {
@@ -270,12 +265,22 @@
 
         const selectAllCheckbox = document.getElementById('selectAll');
         const categoryCheckboxes = document.querySelectorAll('input[name="selected_categories[]"]');
+        const deleteButton = document.getElementById('delete-button');
+
+        // Function to update delete button state
+        function updateDeleteButtonState() {
+            const anyChecked = Array.from(categoryCheckboxes).some(cb => cb.checked);
+            if (deleteButton) {
+                deleteButton.disabled = !anyChecked;
+            }
+        }
 
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 categoryCheckboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
+                updateDeleteButtonState();
             });
         }
 
@@ -289,25 +294,11 @@
                     const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
                     selectAllCheckbox.checked = allChecked;
                 }
+                updateDeleteButtonState();
             });
         });
 
-        // ==========================================
-        // DELETE MODAL VALIDATION
-        // ==========================================
-
-        const deleteButton = document.querySelector('button[onclick*="deleteModal"]');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', function(e) {
-                const selectedCheckboxes = document.querySelectorAll(
-                    'input[name="selected_categories[]"]:checked');
-                if (selectedCheckboxes.length === 0) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert('Pilih minimal satu kategori untuk dihapus!');
-                    return false;
-                }
-            });
-        }
+        // Initialize button state on page load
+        updateDeleteButtonState();
     });
 </script>
