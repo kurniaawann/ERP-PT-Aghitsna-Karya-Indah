@@ -48,20 +48,6 @@
                 </a>
             </li>
 
-            {{-- Kategori Transaksi --}}
-            <li>
-                <a href="{{ url('/transaction-category') }}"
-                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
-
-                    <i
-                        class="fas fa-tags w-5 
-                        {{ request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
-                    </i>
-                    <span class="ml-3 font-medium">Kategori Transaksi</span>
-                </a>
-            </li>
-
             {{-- Invoice Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('invoiceDropdown')"
@@ -99,25 +85,25 @@
             <li>
                 <button onclick="toggleDropdown('laporanDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group 
-                        {{ request()->is('sales-report*') || request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+                        {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
 
                     <div class="flex items-center">
                         <i
                             class="fas fa-chart-line w-5 
-                            {{ request()->is('sales-report*') || request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                         </i>
                         <span class="ml-3 font-medium">Laporan</span>
                     </div>
 
                     <i id="laporanDropdownIcon"
                         class="fas fa-chevron-down text-sm transition-transform duration-200 
-                            {{ request()->is('sales-report*') || request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                     </i>
                 </button>
 
                 {{-- Submenu --}}
                 <ul id="laporanDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('sales-report*') || request()->is('expense-report*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/sales-report') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -138,6 +124,17 @@
                                 {{ request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/transaction-category') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-tags w-4 
+                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
                         </a>
                     </li>
                 </ul>
