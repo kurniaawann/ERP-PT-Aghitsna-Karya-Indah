@@ -8,16 +8,24 @@
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            {{-- Form Pencarian --}}
+            {{-- Form Pencarian dan Filter --}}
             <form method="GET" action="{{ route('payroll.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
-                <x-filters.search-input :value="request('search')" placeholder="Cari payroll..." />
+
+                {{-- Filter Bulan --}}
+                <x-filters.month-filter :value="request('month')" />
+
+                {{-- Filter Tahun --}}
+                <x-filters.year-filter :value="request('year')" />
+
+                {{-- Search Input --}}
+                <x-filters.search-input :value="request('search')" placeholder="Cari karyawan..." />
             </form>
 
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('payroll.export.excel')" :pdfRoute="route('payroll.export.pdf')" />
+                    <x-buttons.print-dropdown :excelRoute="route('payroll.export.excel')" :pdfRoute="route('payroll.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
 
                     <x-buttons.delete-button modalId="deleteModal" />
 
