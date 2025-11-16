@@ -37,7 +37,6 @@ class SalesReportObserver
                         'expense_amount' => null,
                         'money_source' => null,
                         'sales_report_id' => $salesReportId,
-                        'created_by' => null, // Auto-generated, no user
                         'notes' => 'Auto-generated from sales report',
                     ]);
                 }

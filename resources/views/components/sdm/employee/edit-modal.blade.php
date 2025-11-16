@@ -54,14 +54,4 @@
             required oninvalid="this.setCustomValidity('Tanggal masuk tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
-
-    <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Status <span class="text-error">*</span></label>
-        <select name="status" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Status tidak boleh kosong')" oninput="this.setCustomValidity('')">
-            <option value="">Pilih Status</option>
-            <option value="aktif" {{ $employee->status === 'aktif' ? 'selected' : '' }}>Aktif</option>
-            <option value="non-aktif" {{ $employee->status === 'non-aktif' ? 'selected' : '' }}>Non-Aktif</option>
-        </select>
-    </div>
 </x-modal>

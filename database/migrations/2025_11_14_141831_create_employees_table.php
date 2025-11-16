@@ -20,7 +20,6 @@ return new class extends Migration {
             $table->text('address')->nullable();
             $table->integer('base_salary'); // Gaji pokok karyawan
             $table->date('join_date');
-            $table->enum('status', ['aktif', 'non-aktif'])->default('aktif');
             $table->timestamps();
         });
     }

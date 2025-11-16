@@ -16,7 +16,6 @@
                             <th class="p-2 text-left">Email</th>
                             <th class="p-2 text-center">Gaji Pokok</th>
                             <th class="p-2 text-center">Tanggal Masuk</th>
-                            <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -44,21 +43,6 @@
                                     {{ \Carbon\Carbon::parse($employee->join_date)->format('d/m/Y') }}
                                 </td>
 
-                                {{-- Status --}}
-                                <td class="p-2 text-center">
-                                    @if ($employee->status === 'aktif')
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Aktif
-                                        </span>
-                                    @else
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            Non-Aktif
-                                        </span>
-                                    @endif
-                                </td>
-
                                 {{-- Aksi --}}
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-2">
@@ -73,7 +57,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center p-4 text-gray-500">
+                                <td colspan="9" class="text-center p-4 text-gray-500">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

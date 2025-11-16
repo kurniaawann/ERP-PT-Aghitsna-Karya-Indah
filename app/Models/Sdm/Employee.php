@@ -18,7 +18,6 @@ class Employee extends Model
         'address',
         'base_salary',
         'join_date',
-        'status',
     ];
 
     protected $casts = [
@@ -40,21 +39,5 @@ class Employee extends Model
     public function payrolls()
     {
         return $this->hasMany(Payroll::class);
-    }
-
-    /**
-     * Scope untuk karyawan aktif
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'aktif');
-    }
-
-    /**
-     * Check apakah karyawan aktif
-     */
-    public function isActive()
-    {
-        return $this->status === 'aktif';
     }
 }
