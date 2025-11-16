@@ -34,11 +34,6 @@ return new class extends Migration {
                 ->onDelete('cascade');
 
             // Audit trail (NULL untuk auto-generate, ada nilai untuk manual input)
-            $table->uuid('created_by')->nullable();
-            $table->foreign('created_by')
-                ->references('id')
-                ->on('users')
-                ->onDelete('set null');
             $table->text('notes')->nullable();
             $table->timestamps();
 
