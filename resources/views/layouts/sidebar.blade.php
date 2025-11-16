@@ -143,6 +143,76 @@
                 </ul>
             </li>
 
+            {{-- SDM (Sumber Daya Manusia) Dropdown --}}
+            <li>
+                <button onclick="toggleDropdown('sdmDropdown')"
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group 
+                        {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+
+                    <div class="flex items-center">
+                        <i
+                            class="fas fa-users w-5 
+                            {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        </i>
+                        <span class="ml-3 font-medium">SDM</span>
+                    </div>
+
+                    <i id="sdmDropdownIcon"
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 
+                            {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                    </i>
+                </button>
+
+                {{-- Submenu --}}
+                <ul id="sdmDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/employee') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('employee*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-user-tie w-4 
+                                {{ request()->is('employee*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Data Karyawan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/attendance') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('attendance*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-calendar-check w-4 
+                                {{ request()->is('attendance*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Absensi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/overtime') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-clock w-4 
+                                {{ request()->is('overtime*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Lembur</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/payroll') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-money-check-alt w-4 
+                                {{ request()->is('payroll*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Payroll</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
         </ul>
     </nav>
 </aside>
