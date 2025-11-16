@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\SalesReport;
+use App\Models\Report\SalesReport;
 use Illuminate\Database\Seeder;
 use Carbon\Carbon;
 
