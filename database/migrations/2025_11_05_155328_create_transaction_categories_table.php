@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('transaction_categories', function (Blueprint $table) {
-            $table->id(); // Auto-increment ID (1, 2, 3, 4...)
+            $table->increments('id'); // Auto-increment ID (1, 2, 3, 4...)
             $table->string('name', 100);
             $table->string('code', 50)->unique();
             $table->enum('type', ['INCOME', 'EXPENSE']);

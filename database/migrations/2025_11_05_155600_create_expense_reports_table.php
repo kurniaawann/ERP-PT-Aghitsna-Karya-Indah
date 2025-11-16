@@ -14,8 +14,10 @@ return new class extends Migration {
             $table->string('id', 20)->primary(); // Custom ID: ER-001, ER-002
 
             // Kategori transaksi (WAJIB)
-            $table->foreignId('transaction_category_id')
-                ->constrained('transaction_categories')
+            $table->unsignedInteger('transaction_category_id');
+            $table->foreign('transaction_category_id')
+                ->references('id')
+                ->on('transaction_categories')
                 ->onDelete('restrict');
 
             // Data transaksi (SEMUA NULLABLE kecuali yang di validasi controller)
