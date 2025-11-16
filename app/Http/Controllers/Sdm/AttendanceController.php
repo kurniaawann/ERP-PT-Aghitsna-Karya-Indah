@@ -12,11 +12,22 @@ class AttendanceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $attendances = Attendance::with('employee')->latest('attendance_date')->paginate(10);
-        $employees = Employee::active()->get();
-        return view('pages.sdm.attendance', compact('attendances', 'employees'));
+        $search = $request->input('search');
+
+        $attendances = Attendance::with('employee')
+            ->when($search, function ($query, $search) {
+                return $query->whereHas('employee', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                })->orWhere('attendance_date', 'like', "%{$search}%");
+            })
+            ->latest('attendance_date')
+            ->paginate(10);
+
+        $employees = Employee::all()->sortBy('name');
+        return view('pages.sdm.attendance', compact('attendances', 'employees', 'search'));
     }
 
     /**

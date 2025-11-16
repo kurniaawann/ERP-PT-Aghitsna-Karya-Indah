@@ -12,14 +12,23 @@ class OvertimeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->input('search');
+
         $overtimes = Attendance::where('status', 'lembur')
             ->with('employee')
+            ->when($search, function ($query, $search) {
+                return $query->whereHas('employee', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                });
+            })
             ->latest('attendance_date')
             ->paginate(10);
-        $employees = Employee::active()->get();
-        return view('pages.sdm.overtime', compact('overtimes', 'employees'));
+
+        $employees = Employee::all()->sortBy('name');
+        return view('pages.sdm.overtime', compact('overtimes', 'employees', 'search'));
     }
 
     /**

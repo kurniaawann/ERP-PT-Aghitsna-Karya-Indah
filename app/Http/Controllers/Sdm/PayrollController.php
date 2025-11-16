@@ -14,10 +14,30 @@ class PayrollController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $payrolls = Payroll::with('employee')->latest('period_year')->latest('period_month')->paginate(10);
-        return view('pages.sdm.payroll', compact('payrolls'));
+        $search = $request->input('search');
+        $month = $request->input('month');
+        $year = $request->input('year');
+
+        $payrolls = Payroll::with('employee')
+            ->when($search, function ($query, $search) {
+                return $query->whereHas('employee', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                });
+            })
+            ->when($month, function ($query, $month) {
+                return $query->where('period_month', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->where('period_year', $year);
+            })
+            ->latest('period_year')
+            ->latest('period_month')
+            ->paginate(10);
+
+        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year'));
     }
 
     /**
