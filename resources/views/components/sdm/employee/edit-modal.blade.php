@@ -49,7 +49,8 @@
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Tanggal Masuk <span class="text-error">*</span></label>
-        <input type="date" name="join_date" class="w-full border rounded p-2" value="{{ $employee->join_date }}"
+        <input type="date" name="join_date" class="w-full border rounded p-2"
+            value="{{ $employee->join_date ? \Carbon\Carbon::parse($employee->join_date)->format('Y-m-d') : '' }}"
             required oninvalid="this.setCustomValidity('Tanggal masuk tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
