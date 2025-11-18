@@ -45,7 +45,7 @@ class PayrollController extends Controller
      */
     public function create()
     {
-        $employees = Employee::active()->get();
+        $employees = Employee::all();
         return view('pages.sdm.payroll', compact('employees'));
     }
 
@@ -57,8 +57,8 @@ class PayrollController extends Controller
         $month = $request->period_month;
         $year = $request->period_year;
 
-        // Get all active employees
-        $employees = Employee::active()->get();
+        // Get all employees
+        $employees = Employee::all();
 
         foreach ($employees as $employee) {
             // Check if payroll already exists
