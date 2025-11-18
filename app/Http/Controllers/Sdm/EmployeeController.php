@@ -35,7 +35,12 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
-        Employee::create($request->all());
+        $data = $request->all();
+
+        // Auto-generate employee code
+        $data['employee_code'] = Employee::generateEmployeeCode();
+
+        Employee::create($data);
 
         return redirect()->route('employee.index')->with('success', 'Data karyawan berhasil ditambahkan!');
     }
@@ -61,7 +66,7 @@ class EmployeeController extends Controller
             return redirect()->route('employee.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        Employee::whereIn('id', $ids)->delete();
+        Employee::whereIn('employee_code', $ids)->delete();
 
         return redirect()->route('employee.index')->with('success', 'Data karyawan berhasil dihapus!');
     }

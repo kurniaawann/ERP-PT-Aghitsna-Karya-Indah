@@ -7,7 +7,8 @@
             oninvalid="this.setCustomValidity('Karyawan tidak boleh kosong')" oninput="this.setCustomValidity('')">
             <option value="">Pilih Karyawan</option>
             @foreach ($employees as $employee)
-                <option value="{{ $employee->id }}">{{ $employee->name }} - {{ $employee->employee_code }}</option>
+                <option value="{{ $employee->employee_code }}">{{ $employee->name }} - {{ $employee->employee_code }}
+                </option>
             @endforeach
         </select>
     </div>

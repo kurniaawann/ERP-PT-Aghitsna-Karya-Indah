@@ -2,13 +2,6 @@
 <x-modal id="addModal" title="Tambah Karyawan" action="{{ route('employee.store') }}" method="POST" buttonText="Simpan">
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Kode Karyawan <span class="text-error">*</span></label>
-        <input type="text" name="employee_code" class="w-full border rounded p-2" placeholder="Masukkan kode karyawan"
-            required maxlength="50" oninvalid="this.setCustomValidity('Kode karyawan tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-    </div>
-
-    <div class="mb-3">
         <label class="block text-gray-700 mb-1">Nama Lengkap <span class="text-error">*</span></label>
         <input type="text" name="name" class="w-full border rounded p-2" placeholder="Masukkan nama lengkap"
             required maxlength="255" oninvalid="this.setCustomValidity('Nama tidak boleh kosong')"

@@ -15,7 +15,7 @@ class AttendanceSeeder extends Seeder
     {
         $attendances = [];
 
-        // Generate attendance data untuk Oktober 2025 (karyawan 1-10)
+        // Generate attendance data untuk Oktober 2025 (karyawan EMP001-EMP010)
         $startDate = Carbon::create(2025, 10, 1);
         $endDate = Carbon::create(2025, 10, 31);
 
@@ -25,8 +25,9 @@ class AttendanceSeeder extends Seeder
                 continue;
             }
 
-            // Karyawan 1-10 (aktif) - Oktober
-            for ($empId = 1; $empId <= 10; $empId++) {
+            // Karyawan EMP001-EMP010 (aktif) - Oktober
+            for ($empNum = 1; $empNum <= 10; $empNum++) {
+                $empCode = 'EMP' . str_pad($empNum, 3, '0', STR_PAD_LEFT);
                 $rand = rand(1, 100);
 
                 if ($rand <= 85) {
@@ -48,7 +49,7 @@ class AttendanceSeeder extends Seeder
                 }
 
                 $attendances[] = [
-                    'employee_id' => $empId,
+                    'employee_id' => $empCode,
                     'attendance_date' => $date->format('Y-m-d'),
                     'status' => $status,
                     'overtime_hours' => null,
@@ -61,7 +62,7 @@ class AttendanceSeeder extends Seeder
             }
         }
 
-        // Generate attendance data untuk November 2025 (karyawan 1-14, 1-14 hari)
+        // Generate attendance data untuk November 2025 (karyawan EMP001-EMP014, 1-14 hari)
         $startDate = Carbon::create(2025, 11, 1);
         $endDate = Carbon::create(2025, 11, 14);
 
@@ -71,8 +72,9 @@ class AttendanceSeeder extends Seeder
                 continue;
             }
 
-            // Karyawan 1-14 (aktif) - November
-            for ($empId = 1; $empId <= 14; $empId++) {
+            // Karyawan EMP001-EMP014 (aktif) - November
+            for ($empNum = 1; $empNum <= 14; $empNum++) {
+                $empCode = 'EMP' . str_pad($empNum, 3, '0', STR_PAD_LEFT);
                 $rand = rand(1, 100);
 
                 if ($rand <= 90) {
@@ -94,7 +96,7 @@ class AttendanceSeeder extends Seeder
                 }
 
                 $attendances[] = [
-                    'employee_id' => $empId,
+                    'employee_id' => $empCode,
                     'attendance_date' => $date->format('Y-m-d'),
                     'status' => $status,
                     'overtime_hours' => null,

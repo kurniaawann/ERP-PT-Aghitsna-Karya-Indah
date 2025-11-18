@@ -1,13 +1,12 @@
 {{-- Modal Edit Karyawan --}}
-<x-modal id="editModal-{{ $employee->id }}" title="Edit Karyawan" action="{{ route('employee.update', $employee->id) }}"
-    method="POST" buttonText="Update">
+<x-modal id="editModal-{{ $employee->employee_code }}" title="Edit Karyawan"
+    action="{{ route('employee.update', $employee->employee_code) }}" method="POST" buttonText="Update">
     @method('PUT')
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Kode Karyawan <span class="text-error">*</span></label>
-        <input type="text" name="employee_code" class="w-full border rounded p-2" placeholder="Masukkan kode karyawan"
-            value="{{ $employee->employee_code }}" required maxlength="50"
-            oninvalid="this.setCustomValidity('Kode karyawan tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        <label class="block text-gray-700 mb-1">Kode Karyawan</label>
+        <input type="text" name="employee_code" class="w-full border rounded p-2 bg-gray-100"
+            value="{{ $employee->employee_code }}" readonly>
     </div>
 
     <div class="mb-3">

@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('attendances', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedInteger('employee_id');
-            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
+            $table->string('employee_id', 50);
+            $table->foreign('employee_id')->references('employee_code')->on('employees')->onDelete('cascade');
             $table->date('attendance_date');
             $table->enum('status', ['hadir', 'izin', 'sakit', 'cuti', 'lembur']);
 

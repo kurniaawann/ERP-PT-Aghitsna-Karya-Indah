@@ -23,7 +23,7 @@
                         @forelse($employees as $employee)
                             <tr class="border-t hover:bg-gray-50">
                                 <td class="p-2 text-center">
-                                    <input type="checkbox" name="ids[]" value="{{ $employee->id }}"
+                                    <input type="checkbox" name="ids[]" value="{{ $employee->employee_code }}"
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
@@ -46,7 +46,8 @@
                                 {{-- Aksi --}}
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-2">
-                                        <button type="button" onclick="openModal('editModal-{{ $employee->id }}')"
+                                        <button type="button"
+                                            onclick="openModal('editModal-{{ $employee->employee_code }}')"
                                             class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Edit Karyawan">
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
