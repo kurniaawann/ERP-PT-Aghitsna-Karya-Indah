@@ -110,7 +110,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
     Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
-    Route::put('/payroll/{payroll}/pay', [PayrollController::class, 'pay'])->name('payroll.pay');
+    Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
     Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
 
     // Payroll Export routes

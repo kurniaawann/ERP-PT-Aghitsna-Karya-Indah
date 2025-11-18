@@ -118,16 +118,30 @@ class PayrollController extends Controller
     }
 
     /**
-     * Update payroll status to paid.
+     * Bulk pay selected payrolls.
      */
-    public function pay(Request $request, Payroll $payroll)
+    public function bulkPay(Request $request)
     {
-        $payroll->update([
-            'payment_date' => $request->payment_date,
-            'status' => 'paid',
-        ]);
+        $ids = $request->input('ids');
+        $paymentDate = $request->input('payment_date', now()->toDateString());
 
-        return redirect()->route('payroll.index')->with('success', 'Payroll berhasil dibayar!');
+        if (empty($ids)) {
+            return redirect()->route('payroll.index')->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        // Only pay draft payrolls
+        $updated = Payroll::whereIn('id', $ids)
+            ->where('status', 'draft')
+            ->update([
+                'payment_date' => $paymentDate,
+                'status' => 'paid',
+            ]);
+
+        if ($updated > 0) {
+            return redirect()->route('payroll.index')->with('success', "Berhasil membayar {$updated} payroll!");
+        }
+
+        return redirect()->route('payroll.index')->with('error', 'Tidak ada payroll yang dapat dibayar!');
     }
 
     /**

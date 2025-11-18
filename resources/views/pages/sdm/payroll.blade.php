@@ -27,6 +27,13 @@
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <x-buttons.print-dropdown :excelRoute="route('payroll.export.excel')" :pdfRoute="route('payroll.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
 
+                    <button type="button" id="bulk-pay-button" onclick="openModal('bulkPayModal')"
+                        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
+                        disabled>
+                        <i class="fa-solid fa-money-check-alt"></i>
+                        Bayar Terpilih
+                    </button>
+
                     <x-buttons.delete-button modalId="deleteModal" />
 
                     <button type="button" onclick="openModal('generateModal')"
@@ -48,10 +55,7 @@
     {{-- Modal Generate Payroll --}}
     @include('components.sdm.payroll.generate-modal')
 
-    {{-- Modal Pay untuk setiap payroll --}}
-    @foreach ($payrolls as $payroll)
-        @include('components.sdm.payroll.pay-modal', ['payroll' => $payroll])
-    @endforeach
+    {{-- Hapus modal Bayar per-item: kini pembayaran hanya via Bulk Pay --}}
 
     {{-- Modal Detail untuk setiap payroll --}}
     @foreach ($payrolls as $payroll)
@@ -61,7 +65,15 @@
     {{-- Modal Konfirmasi Bulk Delete --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
-        Apakah kamu yakin ingin menghapus data yang dipilih? (Hanya payroll dengan status Draft yang dapat dihapus)
+        Apakah kamu yakin ingin menghapus data yang dipilih?
+
+        (Hanya payroll dengan status Draft yang dapat dihapus)
+    </x-modal>
+
+    {{-- Modal Konfirmasi Bulk Pay --}}
+    <x-modal id="bulkPayModal" title="Konfirmasi Bayar" method="PATCH" onConfirm="submitBulkPayForm()"
+        buttonText="Ya, Bayar">
+        <p class="text-gray-700">Apakah kamu yakin ingin membayar payroll yang dipilih?</p>
     </x-modal>
 
     {{-- JavaScript --}}
