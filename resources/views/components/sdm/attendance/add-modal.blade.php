@@ -13,13 +13,14 @@
             <hr class="my-2">
             @foreach ($employees as $employee)
                 <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
-                    <input type="checkbox" name="employee_ids[]" value="{{ $employee->id }}"
-                        class="w-4 h-4 accent-primary employee-checkbox" required>
+                    <input type="checkbox" name="employee_ids[]" value="{{ $employee->employee_code }}"
+                        class="w-4 h-4 accent-primary employee-checkbox">
                     <span>{{ $employee->name }} - {{ $employee->employee_code }}</span>
                 </label>
             @endforeach
         </div>
         <p class="text-xs text-gray-500 mt-1">Pilih satu atau lebih karyawan</p>
+        <p id="employee-error" class="text-xs text-red-600 mt-1 hidden">Silakan pilih minimal 1 karyawan!</p>
     </div>
 
     <div class="mb-3">

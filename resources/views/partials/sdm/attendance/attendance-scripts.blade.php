@@ -61,6 +61,33 @@
         document.getElementById('deleteForm').submit();
     }
 
+    // Validasi form add modal - minimal 1 karyawan dipilih
+    const addModalForm = document.querySelector('#addModal form');
+    const employeeError = document.getElementById('employee-error');
+
+    if (addModalForm) {
+        addModalForm.addEventListener('submit', function(e) {
+            const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
+            if (checkedEmployees.length === 0) {
+                e.preventDefault();
+                if (employeeError) {
+                    employeeError.classList.remove('hidden');
+                }
+                return false;
+            }
+        });
+
+        // Hide error message when checkbox is clicked
+        document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
+                if (checkedEmployees.length > 0 && employeeError) {
+                    employeeError.classList.add('hidden');
+                }
+            });
+        });
+    }
+
     // Initialize delete button state on page load
     updateDeleteButtonState();
 </script>

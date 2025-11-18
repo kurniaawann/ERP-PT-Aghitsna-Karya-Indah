@@ -21,9 +21,10 @@ class EmployeeController extends Controller
         $search = $request->input('search');
 
         $employees = Employee::when($search, function ($query, $search) {
-            return $query->where('name', 'like', "%{$search}%");
+            return $query->where('name', 'like', "%{$search}%")
+                ->orWhere('employee_code', 'like', "%{$search}%");
         })
-            ->latest()
+            ->latest('created_at')
             ->paginate(10);
 
         return view('pages.sdm.employee', compact('employees', 'search'));

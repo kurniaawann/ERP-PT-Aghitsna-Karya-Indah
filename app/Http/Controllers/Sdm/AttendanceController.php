@@ -24,6 +24,7 @@ class AttendanceController extends Controller
                 })->orWhere('attendance_date', 'like', "%{$search}%");
             })
             ->latest('attendance_date')
+            ->latest('created_at')
             ->paginate(10);
 
         $employees = Employee::all()->sortBy('name');
