@@ -13,8 +13,9 @@
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="attendance_date" class="w-full border rounded p-2"
-            value="{{ $attendance->attendance_date }}" required
-            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
+            value="{{ $attendance->attendance_date ? \Carbon\Carbon::parse($attendance->attendance_date)->format('Y-m-d') : '' }}"
+            required oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
