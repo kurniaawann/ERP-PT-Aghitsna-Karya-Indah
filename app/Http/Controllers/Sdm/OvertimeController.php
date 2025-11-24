@@ -29,7 +29,23 @@ class OvertimeController extends Controller
             ->paginate(10);
 
         $employees = Employee::all()->sortBy('name');
-        return view('pages.sdm.overtime', compact('overtimes', 'employees', 'search'));
+
+        // Get existing attendance data untuk validasi duplikat di client-side
+        $existingAttendance = Attendance::select('employee_id', 'attendance_date', 'id', 'status')
+            ->get()
+            ->groupBy('employee_id')
+            ->map(function ($items) {
+                return $items->mapWithKeys(function ($item) {
+                    return [
+                        \Carbon\Carbon::parse($item->attendance_date)->format('Y-m-d') => [
+                            'id' => $item->id,
+                            'status' => $item->status
+                        ]
+                    ];
+                });
+            });
+
+        return view('pages.sdm.overtime', compact('overtimes', 'employees', 'search', 'existingAttendance'));
     }
 
     /**

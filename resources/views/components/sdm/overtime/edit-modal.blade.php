@@ -12,9 +12,26 @@
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="attendance_date" class="w-full border rounded p-2"
-            value="{{ $overtime->attendance_date }}" required
+        <input type="date" name="attendance_date" id="edit-attendance-date-{{ $overtime->id }}"
+            class="w-full border rounded p-2" value="{{ $overtime->attendance_date }}" required
+            data-original-date="{{ $overtime->attendance_date }}" data-overtime-id="{{ $overtime->id }}"
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
+    </div>
+
+    {{-- Error Message untuk Duplicate Overtime --}}
+    <div id="edit-duplicate-warning-{{ $overtime->id }}"
+        class="hidden mb-3 p-3 bg-red-50 border-l-4 border-red-500 rounded">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-500 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clip-rule="evenodd" />
+            </svg>
+            <div>
+                <p class="font-semibold text-red-800 text-sm mb-1">Data Sudah Ada!</p>
+                <p id="edit-duplicate-warning-text-{{ $overtime->id }}" class="text-sm text-red-700"></p>
+            </div>
+        </div>
     </div>
 
     <div class="mb-3">
@@ -36,8 +53,9 @@
 
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Total Lembur</label>
-        <input type="text" id="edit-overtime-total-{{ $overtime->id }}" class="w-full border rounded p-2 bg-gray-100"
-            readonly value="Rp {{ number_format($overtime->overtime_total, 0, ',', '.') }}">
+        <input type="text" id="edit-overtime-total-{{ $overtime->id }}"
+            class="w-full border rounded p-2 bg-gray-100" readonly
+            value="Rp {{ number_format($overtime->overtime_total, 0, ',', '.') }}">
         <p class="text-xs text-gray-500 mt-1">Otomatis dihitung: Jam Lembur × Tarif</p>
     </div>
 
