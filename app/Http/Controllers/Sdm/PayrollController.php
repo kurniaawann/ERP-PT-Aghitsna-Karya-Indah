@@ -51,6 +51,83 @@ class PayrollController extends Controller
     }
 
     /**
+     * Check attendance completeness for all employees in a period.
+     */
+    public function checkAttendanceCompleteness(Request $request)
+    {
+        $month = $request->period_month;
+        $year = $request->period_year;
+
+        // Get all employees
+        $employees = Employee::all();
+
+        // Calculate working days in the period (exclude weekends)
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+
+        $workingDays = 0;
+        $allDates = [];
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            // Exclude Sabtu (6) dan Minggu (0)
+            if (!in_array($currentDate->dayOfWeek, [0, 6])) {
+                $workingDays++;
+                $allDates[] = $currentDate->format('Y-m-d');
+            }
+            $currentDate->addDay();
+        }
+
+        $incompleteEmployees = [];
+        $alreadyGenerated = [];
+
+        foreach ($employees as $employee) {
+            // Check if payroll already exists
+            $existingPayroll = Payroll::where('employee_id', $employee->employee_code)
+                ->where('period_month', $month)
+                ->where('period_year', $year)
+                ->first();
+
+            if ($existingPayroll) {
+                $alreadyGenerated[] = [
+                    'name' => $employee->name,
+                    'employee_code' => $employee->employee_code,
+                ];
+                continue;
+            }
+
+            // Get attendance data for the period
+            $attendances = Attendance::where('employee_id', $employee->employee_code)
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->get();
+
+            $attendanceDates = $attendances->pluck('attendance_date')->map(function ($date) {
+                return Carbon::parse($date)->format('Y-m-d');
+            })->toArray();
+
+            // Find missing dates (only weekdays)
+            $missingDates = array_diff($allDates, $attendanceDates);
+
+            if (count($missingDates) > 0) {
+                $incompleteEmployees[] = [
+                    'name' => $employee->name,
+                    'employee_code' => $employee->employee_code,
+                    'total_days' => $workingDays,
+                    'filled_days' => count($attendanceDates),
+                    'missing_days' => count($missingDates),
+                    'missing_dates' => array_values($missingDates),
+                ];
+            }
+        }
+
+        return response()->json([
+            'working_days' => $workingDays,
+            'incomplete_employees' => $incompleteEmployees,
+            'already_generated' => $alreadyGenerated,
+        ]);
+    }
+
+    /**
      * Generate payroll for a specific period.
      */
     public function generate(Request $request)
@@ -63,7 +140,7 @@ class PayrollController extends Controller
 
         foreach ($employees as $employee) {
             // Check if payroll already exists
-            $existingPayroll = Payroll::where('employee_id', $employee->id)
+            $existingPayroll = Payroll::where('employee_id', $employee->employee_code)
                 ->where('period_month', $month)
                 ->where('period_year', $year)
                 ->first();
@@ -76,7 +153,7 @@ class PayrollController extends Controller
             $startDate = Carbon::create($year, $month, 1)->startOfMonth();
             $endDate = Carbon::create($year, $month, 1)->endOfMonth();
 
-            $attendances = Attendance::where('employee_id', $employee->id)
+            $attendances = Attendance::where('employee_id', $employee->employee_code)
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->get();
 
@@ -99,7 +176,7 @@ class PayrollController extends Controller
 
             // Create payroll record
             Payroll::create([
-                'employee_id' => $employee->id,
+                'employee_id' => $employee->employee_code,
                 'period_month' => $month,
                 'period_year' => $year,
                 'base_salary' => $employee->base_salary,
