@@ -1,5 +1,25 @@
 <script>
     // ==========================================
+    // PREVENT DOUBLE SUBMIT & LOADING STATE
+    // ==========================================
+
+    let isSubmitting = false;
+
+    function handleFormSubmit(submitBtn, originalText) {
+        if (isSubmitting) return false;
+
+        isSubmitting = true;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        return true;
+    }
+
+    // ==========================================
     // VALIDASI DUPLIKAT OVERTIME (CLIENT-SIDE)
     // ==========================================
 
@@ -213,9 +233,48 @@
 
     // Submit Delete Form
     function submitDeleteForm() {
+        const deleteBtn = document.querySelector('#deleteConfirmationModal button[type="submit"]');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
         document.getElementById('deleteForm').submit();
     }
 
     // Initialize delete button state on page load
     updateDeleteButtonState();
+
+    // ==========================================
+    // ADD/EDIT FORM SUBMIT HANDLERS
+    // ==========================================
+
+    // Handle Add Modal Submit
+    const addOvertimeForm = document.querySelector('#addModal form');
+    if (addOvertimeForm) {
+        addOvertimeForm.addEventListener('submit', function(e) {
+            // Validasi sudah dilakukan, jika lolos tambahkan loading
+            if (!validateAddOvertime()) {
+                e.preventDefault();
+                return false;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+
+    // Handle Edit Modal Submits
+    document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
 </script>

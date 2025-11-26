@@ -1,5 +1,25 @@
 <script>
     // ==========================================
+    // PREVENT DOUBLE SUBMIT & LOADING STATE
+    // ==========================================
+
+    let isSubmitting = false;
+
+    function handleFormSubmit(submitBtn, originalText) {
+        if (isSubmitting) return false;
+
+        isSubmitting = true;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        return true;
+    }
+
+    // ==========================================
     // AUTO-CHECK ATTENDANCE SAAT PILIH BULAN/TAHUN
     // ==========================================
 
@@ -206,6 +226,14 @@
             deleteForm.appendChild(input);
         });
 
+        // Add loading state to delete button
+        const deleteBtn = document.querySelector('#deleteConfirmationModal button[type="submit"]');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
         // Submit form
         deleteForm.submit();
     }
@@ -241,10 +269,45 @@
         dateInput.value = new Date().toISOString().split('T')[0];
         bulkPayForm.appendChild(dateInput);
 
+        // Add loading state to bulk pay button
+        const bulkPayBtn = document.querySelector('#bulkPayConfirmationModal button[type="submit"]');
+        if (bulkPayBtn) {
+            bulkPayBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+            bulkPayBtn.disabled = true;
+            bulkPayBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
         // Submit form
         bulkPayForm.submit();
     }
 
     // Initialize button states on page load
     updateButtonStates();
+
+    // ==========================================
+    // GENERATE PAYROLL FORM SUBMIT HANDLER
+    // ==========================================
+
+    // Handle Generate Modal Submit
+    const generateForm = document.querySelector('#generateModal form');
+    if (generateForm) {
+        generateForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+
+    // Handle Edit Modal Submits
+    document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
 </script>
