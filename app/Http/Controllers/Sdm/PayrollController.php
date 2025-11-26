@@ -164,8 +164,8 @@ class PayrollController extends Controller
             $leaveDays = $attendances->where('status', 'cuti')->count();
             $overtimeDays = $attendances->where('status', 'lembur')->count();
 
-            // Calculate deduction (Rp 30,000 per day for izin/sakit/cuti)
-            $deductionDays = $permissionDays + $sickDays + $leaveDays;
+            // Calculate deduction (Rp 30,000 per day for izin/sakit only, NOT cuti)
+            $deductionDays = $permissionDays + $sickDays;
             $deductionAmount = $deductionDays * 30000;
 
             // Calculate overtime total

@@ -10,7 +10,7 @@
                 <ul class="list-disc list-inside space-y-1">
                     <li>Sistem akan menghitung payroll untuk semua karyawan aktif</li>
                     <li>Data diambil berdasarkan absensi pada periode yang dipilih</li>
-                    <li>Potongan: Rp 30.000 per hari untuk Izin/Sakit/Cuti</li>
+                    <li>Potongan: Rp 30.000 per hari untuk Izin/Sakit (Cuti tidak dipotong)</li>
                     <li>Lembur dihitung otomatis dari data lembur yang ada</li>
                 </ul>
             </div>
