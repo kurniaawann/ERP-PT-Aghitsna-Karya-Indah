@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Inventory;
 
-use App\Models\Items;
+use App\Http\Controllers\Controller;
+use App\Models\Inventory\Items;
 use App\Exports\ItemsExport;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -38,7 +39,7 @@ class ItemController extends Controller
             ->paginate(10);
 
         // render view yang sama
-        return view('pages.item', compact('items'));
+        return view('pages.inventory.item', compact('items'));
     }
     //Simpan Data Baru
     public function store(Request $request)

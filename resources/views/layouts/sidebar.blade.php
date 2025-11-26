@@ -34,18 +34,36 @@
                 </a>
             </li>
 
-            {{-- Data Barang --}}
+            {{-- Inventory Dropdown --}}
             <li>
-                <a href="{{ url('/item') }}"
-                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('item*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+                <button onclick="toggleDropdown('inventoryDropdown')"
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
 
-                    <i
-                        class="fas fa-box-open w-5 
-                        {{ request()->is('item*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                    <div class="flex items-center">
+                        <i class="fas fa-box-open w-5 text-gray-400 group-hover:text-primary">
+                        </i>
+                        <span class="ml-3 font-medium">Inventory</span>
+                    </div>
+
+                    <i id="inventoryDropdownIcon"
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
                     </i>
-                    <span class="ml-3 font-medium">Data Barang</span>
-                </a>
+                </button>
+
+                {{-- Submenu --}}
+                <ul id="inventoryDropdown" class="ml-8 mt-2 space-y-1 {{ request()->is('item*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/item') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('item*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-boxes w-4 
+                                {{ request()->is('item*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Data Barang</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
 
             {{-- Invoice Dropdown --}}

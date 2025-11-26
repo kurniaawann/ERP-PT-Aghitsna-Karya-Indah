@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Items;
+use App\Models\Inventory\Items;
 use Maatwebsite\Excel\Concerns\{
     FromCollection,
     WithHeadings,

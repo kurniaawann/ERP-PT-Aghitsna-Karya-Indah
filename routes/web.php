@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ItemController;
+use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Invoice\AlumuniumInvoiceController;
 use App\Http\Controllers\Report\TransactionCategoryController;
