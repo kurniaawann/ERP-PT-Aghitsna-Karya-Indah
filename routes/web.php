@@ -4,7 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Invoice\AlumuniumInvoiceController;
-use App\Http\Controllers\TransactionCategoryController;
+use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
 use App\Http\Controllers\Sdm\EmployeeController;

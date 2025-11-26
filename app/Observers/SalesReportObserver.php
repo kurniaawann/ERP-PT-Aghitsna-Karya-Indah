@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\Report\SalesReport;
 use App\Models\Report\ExpenseReport;
-use App\Models\TransactionCategory;
+use App\Models\Report\TransactionCategory;
 
 class SalesReportObserver
 {

@@ -37,18 +37,18 @@
         </div>
 
         {{-- Table Component --}}
-        @include('components.transaction-category.table')
+        @include('components.report.transaction-category.table')
 
         {{-- Pagination --}}
         <x-pagination :paginator="$categories" />
     </div>
 
     {{-- Modal Tambah --}}
-    @include('components.transaction-category.add-modal')
+    @include('components.report.transaction-category.add-modal')
 
     {{-- Modal Edit untuk setiap kategori --}}
     @foreach ($categories as $category)
-        @include('components.transaction-category.edit-modal', ['category' => $category])
+        @include('components.report.transaction-category.edit-modal', ['category' => $category])
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}
@@ -102,5 +102,5 @@
         </div>
     </div>
 
-    @include('partials.transaction-category.transaction-category-scripts')
+    @include('partials.report.transaction-category.transaction-category-scripts')
 @endsection

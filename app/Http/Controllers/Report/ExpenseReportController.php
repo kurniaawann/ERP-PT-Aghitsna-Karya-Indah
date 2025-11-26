@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Report;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report\ExpenseReport;
-use App\Models\TransactionCategory;
+use App\Models\Report\TransactionCategory;
 use App\Exports\ExpenseReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

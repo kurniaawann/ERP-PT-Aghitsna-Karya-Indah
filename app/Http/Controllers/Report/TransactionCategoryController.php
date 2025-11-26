@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Report;
 
-use App\Models\TransactionCategory;
+use App\Http\Controllers\Controller;
+use App\Models\Report\TransactionCategory;
 use Illuminate\Http\Request;
 
 class TransactionCategoryController extends Controller
@@ -35,7 +36,7 @@ class TransactionCategoryController extends Controller
         // Get IDs of categories that are being used
         $usedCategoryIds = TransactionCategory::has('expenseReports')->pluck('id')->toArray();
 
-        return view('pages.transaction-category', compact('categories', 'existingCodes', 'usedCategoryIds'));
+        return view('pages.report.transaction-category', compact('categories', 'existingCodes', 'usedCategoryIds'));
     }
 
     /**

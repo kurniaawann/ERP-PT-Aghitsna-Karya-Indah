@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Report\ExpenseReport;
-use App\Models\TransactionCategory;
+use App\Models\Report\TransactionCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Carbon\Carbon;
