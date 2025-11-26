@@ -227,7 +227,7 @@
         });
 
         // Add loading state to delete button
-        const deleteBtn = document.querySelector('#deleteConfirmationModal button[type="submit"]');
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
         if (deleteBtn) {
             deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
             deleteBtn.disabled = true;
@@ -270,7 +270,7 @@
         bulkPayForm.appendChild(dateInput);
 
         // Add loading state to bulk pay button
-        const bulkPayBtn = document.querySelector('#bulkPayConfirmationModal button[type="submit"]');
+        const bulkPayBtn = document.getElementById('confirm-btn-bulkPayModal');
         if (bulkPayBtn) {
             bulkPayBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
             bulkPayBtn.disabled = true;

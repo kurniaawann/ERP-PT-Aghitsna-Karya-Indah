@@ -32,7 +32,7 @@
                     Batal
                 </button>
 
-                <button type="button" onclick="{{ $onConfirm }}"
+                <button type="button" id="confirm-btn-{{ $id }}" onclick="{{ $onConfirm }}"
                     class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
                     {{ $buttonText }}
                 </button>
@@ -61,7 +61,7 @@
                     Batal
                 </button>
 
-                <button type="button" onclick="{{ $onConfirm }}"
+                <button type="button" id="confirm-btn-{{ $id }}" onclick="{{ $onConfirm }}"
                     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
                     {{ $buttonText }}
                 </button>

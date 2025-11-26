@@ -62,7 +62,7 @@
 
     // Submit Delete Form
     function submitDeleteForm() {
-        const deleteBtn = document.querySelector('#deleteConfirmationModal button[type="submit"]');
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
         if (deleteBtn) {
             deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
             deleteBtn.disabled = true;
