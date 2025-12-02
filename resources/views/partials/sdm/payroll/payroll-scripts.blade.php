@@ -31,6 +31,7 @@
     const alreadyGeneratedWarningDiv = document.getElementById('already-generated-warning');
     const incompleteList = document.getElementById('incomplete-list');
     const alreadyGeneratedList = document.getElementById('already-generated-list');
+    const generateSubmitBtn = document.querySelector('#generateModal button[type="submit"]');
 
     let checkTimeout = null;
 
@@ -44,6 +45,11 @@
         alreadyGeneratedWarningDiv.classList.add('hidden');
 
         if (!month || !year) {
+            // Disable button if no period selected
+            if (generateSubmitBtn) {
+                generateSubmitBtn.disabled = true;
+                generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
             return;
         }
 
@@ -72,17 +78,14 @@
                 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
             ];
 
-            // Show payroll yang sudah digenerate
-            if (data.already_generated.length > 0) {
-                alreadyGeneratedWarningDiv.classList.remove('hidden');
-                alreadyGeneratedList.innerHTML = '<ul class="list-disc list-inside space-y-1">' +
-                    data.already_generated.map(emp =>
-                        `<li class="text-sm">${emp.name} <span class="text-xs text-yellow-600">(${emp.employee_code})</span></li>`
-                    ).join('') + '</ul>';
-            }
+            // Default: enable button
+            let canGenerate = true;
+            let disableReason = '';
 
-            // Show data incomplete
+            // Check 1: If there are incomplete employees - CANNOT GENERATE
             if (data.incomplete_employees.length > 0) {
+                canGenerate = false;
+                disableReason = 'Data absensi belum lengkap';
                 incompleteWarningDiv.classList.remove('hidden');
 
                 incompleteList.innerHTML = data.incomplete_employees.map(emp => {
@@ -111,13 +114,70 @@
                         </div>
                     `;
                 }).join('');
-            } else if (data.already_generated.length === 0) {
-                // Semua data lengkap dan belum digenerate
+            }
+
+            // Check 2: If already generated AND no new employees - CANNOT GENERATE
+            if (data.already_generated.length > 0 && !data.has_new_employees) {
+                canGenerate = false;
+                disableReason = 'Payroll sudah digenerate untuk semua karyawan';
+                alreadyGeneratedWarningDiv.classList.remove('hidden');
+                alreadyGeneratedList.innerHTML = '<ul class="list-disc list-inside space-y-1">' +
+                    data.already_generated.map(emp =>
+                        `<li class="text-sm">${emp.name} <span class="text-xs text-yellow-600">(${emp.employee_code})</span></li>`
+                    ).join('') + '</ul>';
+
+                // Add additional message
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'mt-3 p-2 bg-white rounded border border-yellow-300';
+                noteDiv.innerHTML =
+                    '<p class="text-xs text-yellow-700"><strong>Catatan:</strong> Semua karyawan sudah memiliki payroll untuk periode ini. Tidak dapat melakukan generate ulang.</p>';
+                alreadyGeneratedList.appendChild(noteDiv);
+            }
+            // If already generated BUT there are new employees - CAN GENERATE (for new employees only)
+            else if (data.already_generated.length > 0 && data.has_new_employees) {
+                // Show info about already generated, but allow generation for new employees
+                alreadyGeneratedWarningDiv.classList.remove('hidden');
+                alreadyGeneratedList.innerHTML = '<ul class="list-disc list-inside space-y-1">' +
+                    data.already_generated.map(emp =>
+                        `<li class="text-sm">${emp.name} <span class="text-xs text-yellow-600">(${emp.employee_code})</span></li>`
+                    ).join('') + '</ul>';
+
+                // Add info message
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'mt-3 p-2 bg-green-50 rounded border border-green-300';
+                noteDiv.innerHTML =
+                    '<p class="text-xs text-green-700"><strong>Info:</strong> Ada karyawan baru yang belum memiliki payroll. Anda dapat melanjutkan generate untuk karyawan baru tersebut.</p>';
+                alreadyGeneratedList.appendChild(noteDiv);
+            }
+
+            // Check 3: If all complete and no issues - CAN GENERATE
+            if (data.incomplete_employees.length === 0 && (data.already_generated.length === 0 || data
+                    .has_new_employees)) {
                 allCompleteDiv.classList.remove('hidden');
             }
+
+            // Update button state
+            if (generateSubmitBtn) {
+                if (canGenerate) {
+                    generateSubmitBtn.disabled = false;
+                    generateSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    generateSubmitBtn.classList.add('hover:bg-green-700');
+                } else {
+                    generateSubmitBtn.disabled = true;
+                    generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    generateSubmitBtn.classList.remove('hover:bg-green-700');
+                    generateSubmitBtn.title = disableReason;
+                }
+            }
+
         } catch (error) {
             console.error('Error:', error);
             checkingLoader.classList.add('hidden');
+            // Disable button on error
+            if (generateSubmitBtn) {
+                generateSubmitBtn.disabled = true;
+                generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
         }
     }
 
@@ -137,6 +197,13 @@
         });
     }
 
+    // Initialize button state to disabled on page load
+    if (generateSubmitBtn) {
+        generateSubmitBtn.disabled = true;
+        generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        generateSubmitBtn.classList.remove('hover:bg-green-700');
+    }
+
     // Reset saat modal ditutup
     window.addEventListener('modalClosed', function(e) {
         if (e.detail === 'generateModal') {
@@ -146,6 +213,14 @@
             checkingLoader.classList.add('hidden');
             periodMonthSelect.value = '';
             periodYearInput.value = '{{ date('Y') }}';
+
+            // Reset button state
+            if (generateSubmitBtn) {
+                generateSubmitBtn.disabled = true;
+                generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                generateSubmitBtn.classList.remove('hover:bg-green-700');
+                generateSubmitBtn.title = '';
+            }
         }
     });
 

@@ -83,6 +83,7 @@ class PayrollController extends Controller
 
         $incompleteEmployees = [];
         $alreadyGenerated = [];
+        $newEmployees = [];
 
         foreach ($employees as $employee) {
             // Check if payroll already exists
@@ -99,6 +100,17 @@ class PayrollController extends Controller
                 continue;
             }
 
+            // Check if employee joined before or during this period
+            $employeeJoinDate = Carbon::parse($employee->join_date);
+            if ($employeeJoinDate->lessThanOrEqualTo($endDate)) {
+                // This is a new employee (no payroll yet for this period)
+                $newEmployees[] = [
+                    'name' => $employee->name,
+                    'employee_code' => $employee->employee_code,
+                    'join_date' => $employeeJoinDate->format('Y-m-d'),
+                ];
+            }
+
             // Get attendance data for the period
             $attendances = Attendance::where('employee_id', $employee->employee_code)
                 ->whereBetween('attendance_date', [$startDate, $endDate])
@@ -108,14 +120,28 @@ class PayrollController extends Controller
                 return Carbon::parse($date)->format('Y-m-d');
             })->toArray();
 
-            // Find missing dates (only weekdays)
-            $missingDates = array_diff($allDates, $attendanceDates);
+            // Calculate working dates for this employee (only count days after join date)
+            $employeeWorkingDates = [];
+            if ($employeeJoinDate->lessThanOrEqualTo($endDate)) {
+                $employeeStartDate = $employeeJoinDate->greaterThan($startDate) ? $employeeJoinDate : $startDate;
+                $currentCheckDate = $employeeStartDate->copy();
+
+                while ($currentCheckDate->lte($endDate)) {
+                    if (!in_array($currentCheckDate->dayOfWeek, [0, 6])) {
+                        $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
+                    }
+                    $currentCheckDate->addDay();
+                }
+            }
+
+            // Find missing dates (only weekdays after employee join date)
+            $missingDates = array_diff($employeeWorkingDates, $attendanceDates);
 
             if (count($missingDates) > 0) {
                 $incompleteEmployees[] = [
                     'name' => $employee->name,
                     'employee_code' => $employee->employee_code,
-                    'total_days' => $workingDays,
+                    'total_days' => count($employeeWorkingDates),
                     'filled_days' => count($attendanceDates),
                     'missing_days' => count($missingDates),
                     'missing_dates' => array_values($missingDates),
@@ -124,15 +150,16 @@ class PayrollController extends Controller
         }
 
         // Check if there are new employees (employees without payroll for this period)
-        $newEmployeesCount = count($employees) - count($alreadyGenerated);
-        $hasNewEmployees = $newEmployeesCount > 0;
+        $hasNewEmployees = count($newEmployees) > 0;
 
         return response()->json([
             'working_days' => $workingDays,
             'incomplete_employees' => $incompleteEmployees,
             'already_generated' => $alreadyGenerated,
             'has_new_employees' => $hasNewEmployees,
+            'new_employees' => $newEmployees,
             'total_employees' => count($employees),
+            'can_generate' => count($incompleteEmployees) === 0, // Can only generate if no incomplete attendance
         ]);
     }
 
