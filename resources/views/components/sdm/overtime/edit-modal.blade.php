@@ -13,8 +13,9 @@
     <div class="mb-3">
         <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="attendance_date" id="edit-attendance-date-{{ $overtime->id }}"
-            class="w-full border rounded p-2" value="{{ $overtime->attendance_date }}" required
-            data-original-date="{{ $overtime->attendance_date }}" data-overtime-id="{{ $overtime->id }}"
+            class="w-full border rounded p-2"
+            value="{{ $overtime->attendance_date ? \Carbon\Carbon::parse($overtime->attendance_date)->format('Y-m-d') : '' }}"
+            required data-original-date="{{ $overtime->attendance_date }}" data-overtime-id="{{ $overtime->id }}"
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
