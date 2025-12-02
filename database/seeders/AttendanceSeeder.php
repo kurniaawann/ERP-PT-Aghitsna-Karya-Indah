@@ -20,8 +20,8 @@ class AttendanceSeeder extends Seeder
         $endDate = Carbon::create(2025, 10, 31);
 
         for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-            // Skip weekends
-            if ($date->isWeekend()) {
+            // Skip hanya Minggu (Sabtu adalah hari kerja)
+            if ($date->isSunday()) {
                 continue;
             }
 
@@ -67,8 +67,8 @@ class AttendanceSeeder extends Seeder
         $endDate = Carbon::create(2025, 11, 14);
 
         for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-            // Skip weekends
-            if ($date->isWeekend()) {
+            // Skip hanya Minggu (Sabtu adalah hari kerja)
+            if ($date->isSunday()) {
                 continue;
             }
 

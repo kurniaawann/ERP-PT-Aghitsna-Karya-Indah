@@ -64,7 +64,7 @@ class PayrollController extends Controller
         // Get all employees
         $employees = Employee::all();
 
-        // Calculate working days in the period (exclude weekends)
+        // Calculate working days in the period (Senin-Sabtu, exclude Minggu saja)
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
 
@@ -73,8 +73,8 @@ class PayrollController extends Controller
         $currentDate = $startDate->copy();
 
         while ($currentDate->lte($endDate)) {
-            // Exclude Sabtu (6) dan Minggu (0)
-            if (!in_array($currentDate->dayOfWeek, [0, 6])) {
+            // Exclude hanya Minggu (0) - Senin-Sabtu adalah hari kerja
+            if ($currentDate->dayOfWeek !== 0) {
                 $workingDays++;
                 $allDates[] = $currentDate->format('Y-m-d');
             }
@@ -127,7 +127,8 @@ class PayrollController extends Controller
                 $currentCheckDate = $employeeStartDate->copy();
 
                 while ($currentCheckDate->lte($endDate)) {
-                    if (!in_array($currentCheckDate->dayOfWeek, [0, 6])) {
+                    // Exclude hanya Minggu (0) - Senin-Sabtu adalah hari kerja
+                    if ($currentCheckDate->dayOfWeek !== 0) {
                         $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
                     }
                     $currentCheckDate->addDay();
