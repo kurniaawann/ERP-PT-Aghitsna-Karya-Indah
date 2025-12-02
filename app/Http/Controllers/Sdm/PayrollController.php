@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
+use App\Exports\PayrollExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PayrollController extends Controller
 {
@@ -242,18 +245,101 @@ class PayrollController extends Controller
     /**
      * Export payroll to Excel.
      */
-    public function exportExcel()
+    public function exportExcel(Request $request)
     {
-        // TODO: Implement Excel export
-        return redirect()->route('payroll.index')->with('info', 'Export Excel will be implemented soon!');
+        $month = $request->input('month');
+        $year = $request->input('year');
+
+        // Get payrolls with filters
+        $payrolls = Payroll::with('employee')
+            ->when($month, function ($query, $month) {
+                return $query->where('period_month', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->where('period_year', $year);
+            })
+            ->latest('period_year')
+            ->latest('period_month')
+            ->latest('created_at')
+            ->get();
+
+        if ($payrolls->isEmpty()) {
+            return redirect()->route('payroll.index')->with('error', 'Tidak ada data payroll untuk diexport!');
+        }
+
+        $fileName = 'Laporan_Payroll_' . ($month ? $month . '_' : '') . ($year ? $year : 'Semua') . '_' . date('Ymd_His') . '.xlsx';
+
+        return Excel::download(new PayrollExport($payrolls, $month, $year), $fileName);
     }
 
     /**
      * Export payroll to PDF.
      */
-    public function exportPdf()
+    public function exportPdf(Request $request)
     {
-        // TODO: Implement PDF export
-        return redirect()->route('payroll.index')->with('info', 'Export PDF will be implemented soon!');
+        $month = $request->input('month');
+        $year = $request->input('year');
+
+        // Get payrolls with filters
+        $payrolls = Payroll::with('employee')
+            ->when($month, function ($query, $month) {
+                return $query->where('period_month', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->where('period_year', $year);
+            })
+            ->latest('period_year')
+            ->latest('period_month')
+            ->latest('created_at')
+            ->get();
+
+        if ($payrolls->isEmpty()) {
+            return redirect()->route('payroll.index')->with('error', 'Tidak ada data payroll untuk diexport!');
+        }
+
+        // Format periode untuk header
+        if ($month && $year) {
+            $monthNames = [
+                1 => 'Januari',
+                2 => 'Februari',
+                3 => 'Maret',
+                4 => 'April',
+                5 => 'Mei',
+                6 => 'Juni',
+                7 => 'Juli',
+                8 => 'Agustus',
+                9 => 'September',
+                10 => 'Oktober',
+                11 => 'November',
+                12 => 'Desember'
+            ];
+            $periodText = $monthNames[$month] . ' ' . $year;
+        } elseif ($year) {
+            $periodText = 'Tahun ' . $year;
+        } else {
+            $periodText = 'Semua Periode';
+        }
+
+        // Calculate totals
+        $totalBaseSalary = $payrolls->sum('base_salary');
+        $totalDeduction = $payrolls->sum('deduction_amount');
+        $totalOvertime = $payrolls->sum('overtime_total');
+        $totalNetSalary = $payrolls->sum('net_salary');
+
+        $data = [
+            'payrolls' => $payrolls,
+            'periodText' => $periodText,
+            'totalBaseSalary' => $totalBaseSalary,
+            'totalDeduction' => $totalDeduction,
+            'totalOvertime' => $totalOvertime,
+            'totalNetSalary' => $totalNetSalary,
+        ];
+
+        $pdf = Pdf::loadView('exports.payroll_pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        $fileName = 'Laporan_Payroll_' . ($month ? $month . '_' : '') . ($year ? $year : 'Semua') . '_' . date('Ymd_His') . '.pdf';
+
+        return $pdf->download($fileName);
     }
 }
