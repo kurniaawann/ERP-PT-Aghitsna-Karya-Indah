@@ -14,6 +14,24 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
+/**
+ * Controller untuk mengelola laporan pengeluaran/expense.
+ * 
+ * Fitur Utama:
+ * - CRUD expense dengan kategori transaksi
+ * - Filter berdasarkan bulan, tahun, kategori, dan keyword pencarian
+ * - Relasi dengan SalesReport (untuk expense yang terkait penjualan)
+ * - Bulk delete dengan validasi constraint
+ * - Export ke PDF dan Excel dengan filtering
+ * - Summary statistics (total expense per kategori, per bulan)
+ * - Tracking created_by dan updated_by (user audit)
+ * 
+ * Field Expense:
+ * - invoice_number, transaction_date, description
+ * - transaction_category_id (relasi ke TransactionCategory)
+ * - amount, money_source
+ * - sales_report_id (optional, untuk expense terkait sales)
+ */
 class ExpenseReportController extends Controller
 {
     /**

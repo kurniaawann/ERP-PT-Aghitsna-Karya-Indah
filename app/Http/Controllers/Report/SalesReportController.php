@@ -9,6 +9,30 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * Controller untuk mengelola laporan penjualan/sales report.
+ * 
+ * Fitur Utama:
+ * - CRUD sales report dengan multiple items per sales
+ * - Filter berdasarkan bulan, tahun, dan keyword pencarian
+ * - Integrasi dengan inventory (stock deduction saat create/update)
+ * - Perhitungan otomatis profit (total_selling - total_capital)
+ * - Bulk delete dengan stock restoration (kembalikan stock saat delete)
+ * - Grand totals calculation dengan filtering
+ * - Export ke PDF dan Excel
+ * - DB Transaction untuk ensure consistency stock management
+ * 
+ * Field Sales Report:
+ * - id_sales_report (auto-generated), date, name_proyek
+ * - items_data (JSON: array of { id_item, quantity, capital_price, selling_price })
+ * - total_capital, total_selling, profit
+ * - Stock management: kurangi stock saat create/update, kembalikan saat delete
+ * 
+ * Catatan Penting:
+ * - Menggunakan DB transaction untuk stock management
+ * - Validasi stock availability sebelum create/update
+ * - Bulk update/restore stock saat delete multiple reports
+ */
 class SalesReportController extends Controller
 {
     /**
