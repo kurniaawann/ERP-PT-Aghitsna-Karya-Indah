@@ -123,10 +123,16 @@ class PayrollController extends Controller
             }
         }
 
+        // Check if there are new employees (employees without payroll for this period)
+        $newEmployeesCount = count($employees) - count($alreadyGenerated);
+        $hasNewEmployees = $newEmployeesCount > 0;
+
         return response()->json([
             'working_days' => $workingDays,
             'incomplete_employees' => $incompleteEmployees,
             'already_generated' => $alreadyGenerated,
+            'has_new_employees' => $hasNewEmployees,
+            'total_employees' => count($employees),
         ]);
     }
 
