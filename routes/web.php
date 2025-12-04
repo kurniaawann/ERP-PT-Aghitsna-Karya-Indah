@@ -1,12 +1,16 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ItemController;
+use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Invoice\AlumuniumInvoiceController;
-use App\Http\Controllers\TransactionCategoryController;
+use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
+use App\Http\Controllers\Sdm\EmployeeController;
+use App\Http\Controllers\Sdm\AttendanceController;
+use App\Http\Controllers\Sdm\OvertimeController;
+use App\Http\Controllers\Sdm\PayrollController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -79,5 +83,37 @@ Route::middleware('auth')->group(function () {
     Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
     Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
     Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
+
+    // ============================================
+    // SDM (Sumber Daya Manusia) Routes
+    // ============================================
+
+    // Route Employee (Karyawan)
+    Route::get('/employee', [EmployeeController::class, 'index'])->name('employee.index');
+    Route::post('/employee', [EmployeeController::class, 'store'])->name('employee.store');
+    Route::put('/employee/{employee}', [EmployeeController::class, 'update'])->name('employee.update');
+    Route::delete('/employee/destroy-selected', [EmployeeController::class, 'destroy'])->name('employee.destroy');
+
+    // Route Attendance (Absensi)
+    Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+    Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])->name('attendance.update');
+    Route::delete('/attendance/destroy-selected', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+
+    // Route Overtime (Lembur)
+    Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
+    Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
+    Route::put('/overtime/{overtime}', [OvertimeController::class, 'update'])->name('overtime.update');
+    Route::delete('/overtime/destroy-selected', [OvertimeController::class, 'destroy'])->name('overtime.destroy');
+
+    // Route Payroll (Penggajian)
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('/payroll/export/excel', [PayrollController::class, 'exportExcel'])->name('payroll.export.excel');
+    Route::get('/payroll/export/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export.pdf');
+    Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+    Route::post('/payroll/check-attendance', [PayrollController::class, 'checkAttendanceCompleteness'])->name('payroll.check-attendance');
+    Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
+    Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
+    Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
 
 });

@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Report\ExpenseReport;
-use App\Models\TransactionCategory;
+use App\Models\Report\TransactionCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Carbon\Carbon;
@@ -18,14 +18,6 @@ class ExpenseReportSeeder extends Seeder
         // Get all categories
         $categories = TransactionCategory::all()->keyBy('code');
 
-        // Get the first user (admin)
-        $adminUser = User::first();
-
-        if (!$adminUser) {
-            $this->command->error('❌ User tidak ditemukan! Jalankan UserSeeder terlebih dahulu.');
-            return;
-        }
-
         $expenseReports = [
             // UANG MASUK PENJUALAN
             [
@@ -36,7 +28,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => 15000000,
                 'expense_amount' => null,
                 'money_source' => 'Transfer BCA',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['UANG_MASUK']->id ?? null,
@@ -46,7 +37,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => 8500000,
                 'expense_amount' => null,
                 'money_source' => 'Tunai',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['UANG_MASUK']->id ?? null,
@@ -56,7 +46,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => 12000000,
                 'expense_amount' => null,
                 'money_source' => 'Transfer Mandiri',
-                'created_by' => $adminUser->id,
             ],
 
             // UPAH KERJA / KASBON
@@ -68,7 +57,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 500000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['UPAH_KERJA']->id ?? null,
@@ -78,7 +66,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 3500000,
                 'money_source' => 'Transfer',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['UPAH_KERJA']->id ?? null,
@@ -88,7 +75,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 750000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
 
             // ATK / OPERASIONAL & ALAT
@@ -100,7 +86,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 250000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['ATK_OPERASIONAL']->id ?? null,
@@ -110,7 +95,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 1200000,
                 'money_source' => 'Transfer',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['ATK_OPERASIONAL']->id ?? null,
@@ -120,7 +104,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 850000,
                 'money_source' => 'Tunai',
-                'created_by' => $adminUser->id,
             ],
 
             // PENGELUARAN MATERIAL
@@ -132,7 +115,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 450000,
                 'money_source' => 'Tunai',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['MATERIAL']->id ?? null,
@@ -142,7 +124,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 2800000,
                 'money_source' => 'Transfer',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['MATERIAL']->id ?? null,
@@ -152,7 +133,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 680000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
 
             // PENGELUARAN PEMBELIAN COIL
@@ -164,7 +144,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 8500000,
                 'money_source' => 'Transfer BCA',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['PEMBELIAN_COIL']->id ?? null,
@@ -174,7 +153,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 9200000,
                 'money_source' => 'Transfer Mandiri',
-                'created_by' => $adminUser->id,
             ],
 
             // TRANSPORT
@@ -186,7 +164,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 350000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['TRANSPORT']->id ?? null,
@@ -196,7 +173,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 500000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['TRANSPORT']->id ?? null,
@@ -206,7 +182,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 450000,
                 'money_source' => 'Tunai',
-                'created_by' => $adminUser->id,
             ],
 
             // TOKEN LISTRIK
@@ -218,7 +193,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 1000000,
                 'money_source' => 'Transfer',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['TOKEN_LISTRIK']->id ?? null,
@@ -228,7 +202,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 500000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
 
             // LAIN - LAIN
@@ -240,7 +213,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 150000,
                 'money_source' => 'Transfer',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['LAIN_LAIN']->id ?? null,
@@ -250,7 +222,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 350000,
                 'money_source' => 'Kas Kecil',
-                'created_by' => $adminUser->id,
             ],
             [
                 'transaction_category_id' => $categories['LAIN_LAIN']->id ?? null,
@@ -260,7 +231,6 @@ class ExpenseReportSeeder extends Seeder
                 'income_amount' => null,
                 'expense_amount' => 280000,
                 'money_source' => 'Tunai',
-                'created_by' => $adminUser->id,
             ],
         ];
 

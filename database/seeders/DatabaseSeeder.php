@@ -17,7 +17,11 @@ class DatabaseSeeder extends Seeder
             ItemSeeder::class,
             AlumuniumInvoiceSeeder::class,
             TransactionCategorySeeder::class,
+            SalesReportSeeder::class,
             ExpenseReportSeeder::class,
+            EmployeeSeeder::class,
+            AttendanceSeeder::class,
+            OvertimeSeeder::class,
         ]);
     }
 }

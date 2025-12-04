@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\Report\SalesReport;
 use App\Models\Report\ExpenseReport;
-use App\Models\TransactionCategory;
+use App\Models\Report\TransactionCategory;
 
 class SalesReportObserver
 {
@@ -37,7 +37,6 @@ class SalesReportObserver
                         'expense_amount' => null,
                         'money_source' => null,
                         'sales_report_id' => $salesReportId,
-                        'created_by' => null, // Auto-generated, no user
                         'notes' => 'Auto-generated from sales report',
                     ]);
                 }

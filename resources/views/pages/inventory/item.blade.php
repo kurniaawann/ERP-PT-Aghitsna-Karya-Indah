@@ -27,18 +27,18 @@
         </div>
 
         {{-- Table Component --}}
-        @include('components.item.table', ['items' => $items])
+        @include('components.inventory.item.table', ['items' => $items])
 
         {{-- Pagination --}}
         <x-pagination :paginator="$items" />
     </div>
 
     {{-- Modal Tambah --}}
-    @include('components.item.add-modal')
+    @include('components.inventory.item.add-modal')
 
     {{-- Modal Edit untuk setiap item --}}
     @foreach ($items as $item)
-        @include('components.item.edit-modal', ['item' => $item])
+        @include('components.inventory.item.edit-modal', ['item' => $item])
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}
@@ -48,5 +48,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.item.item-scripts')
+    @include('partials.inventory.item.item-scripts')
 @endsection
