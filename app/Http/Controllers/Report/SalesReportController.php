@@ -55,8 +55,8 @@ class SalesReportController extends Controller
             ->when($year, function ($query, $year) {
                 return $query->whereYear('date', $year);
             })
-            ->orderBy('date', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'desc')  // Data yang baru dibuat muncul di atas
+            ->orderBy('date', 'desc')        // Jika created_at sama, urutkan berdasarkan date
             ->paginate(perPage: 10);
 
         // Get all items for dropdown
@@ -144,24 +144,27 @@ class SalesReportController extends Controller
                 $item['profit'] = ($item['selling_price'] - $item['capital_price']) * $item['quantity'];
             }
 
-            // Generate ID
-            $validated['id_sales_report'] = $this->generateSalesReportId();
-            $validated['items'] = json_encode($items);
-            $validated['status'] = 'Belum Lunas';
+            // Siapkan data untuk insert ke database
+            $data = [];
+            $data['id_sales_report'] = $this->generateSalesReportId();
+            $data['date'] = $request->date;  // Ambil dari request
+            $data['name_proyek'] = $request->name_proyek;  // Ambil dari request
+            $data['items'] = json_encode($items);
+            $data['status'] = 'Belum Lunas';
 
-            // Calculate totals before creating
+            // Hitung total capital, selling, dan profit
             $totalCapital = 0;
             $totalSelling = 0;
             foreach ($items as $item) {
                 $totalCapital += ($item['capital_price'] ?? 0) * ($item['quantity'] ?? 0);
                 $totalSelling += ($item['selling_price'] ?? 0) * ($item['quantity'] ?? 0);
             }
-            $validated['total_capital'] = $totalCapital;
-            $validated['total_selling'] = $totalSelling;
-            $validated['total_profit'] = $totalSelling - $totalCapital;
+            $data['total_capital'] = $totalCapital;
+            $data['total_selling'] = $totalSelling;
+            $data['total_profit'] = $totalSelling - $totalCapital;
 
-            // Create sales report
-            $salesReport = SalesReport::create($validated);
+            // Create sales report dengan data lengkap
+            $salesReport = SalesReport::create($data);
 
             DB::commit();
             return redirect()->route('sales-report.index')
