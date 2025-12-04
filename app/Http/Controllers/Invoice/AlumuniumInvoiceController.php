@@ -69,60 +69,48 @@ class AlumuniumInvoiceController extends Controller
 
         // Auto-generate invoice number jika kosong atau berisi placeholder
         if (empty($request->invoice_number) || strpos($request->invoice_number, 'Akan digenerate') !== false) {
+            // Ambil tahun 2 digit (contoh: 25 untuk tahun 2025)
             $year = date('y');
 
-            // Cari invoice terakhir tahun ini
+            // Cari invoice terakhir untuk tahun ini
             $lastInvoice = InvoiceAlumunium::where('invoice_number', 'like', "%/ALU/{$year}")
                 ->orderBy('invoice_number', 'desc')
                 ->first();
 
             if ($lastInvoice) {
-                // Extract nomor dari invoice terakhir
+                // Extract nomor dari invoice terakhir menggunakan regex
+                // Format: {n}/{n}/ALU/{yy}, ambil {n} pertama
                 preg_match('/^(\d+)\//', $lastInvoice->invoice_number, $matches);
                 $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
                 $nextNumber = $lastNumber + 1;
             } else {
-                // Invoice pertama tahun ini
+                // Invoice pertama tahun ini, mulai dari 1
                 $nextNumber = 1;
             }
 
-            // Inject invoice_number ke request
+            // Set invoice_number ke request dengan format {n}/{n}/ALU/{yy}
             $request->merge(['invoice_number' => "{$nextNumber}/{$nextNumber}/ALU/{$year}"]);
         }
 
-        // Validasi form dengan custom error messages
-        $validated = $request->validate([
-            'invoice_number' => 'required|string|unique:alumunium_invoices,invoice_number',
-            'invoice_date' => 'required|date',
-            'recipient' => 'required|string',
-            'regarding' => 'nullable|string',
-            'project_description' => 'nullable|string',
-            'items' => 'required|json',
-        ], [
-            'invoice_number.unique' => 'No Invoice sudah digunakan, gunakan nomor yang berbeda',
-            'invoice_number.required' => 'No Invoice wajib diisi',
-            'invoice_date.required' => 'Tanggal Invoice wajib diisi',
-            'recipient.required' => 'Nama penerima wajib diisi',
-            'items.required' => 'Minimal harus ada 1 item dalam invoice',
-            'items.json' => 'Format data items tidak valid',
-        ]);
-
-        // Parse items JSON dan hitung total amount
+        // Parse items JSON dari request dan hitung total amount
         $items = json_decode($request->items, true);
         $totalAmount = 0;
 
+        // Loop setiap item untuk hitung total: volume × harga
         foreach ($items as $item) {
-            // Hitung jumlah per item: volume × harga
             $jumlah = ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
             $totalAmount += $jumlah;
         }
 
-        // Tambahkan items (array) dan total_amount ke validated data
-        $validated['items'] = $items;
-        $validated['total_amount'] = $totalAmount;
+        // Ambil semua data dari request (validasi sudah dilakukan di HTML)
+        $data = $request->all();
+        // Override items dengan array (bukan JSON string)
+        $data['items'] = $items;
+        // Set total_amount yang sudah dihitung
+        $data['total_amount'] = $totalAmount;
 
         // Simpan invoice ke database
-        InvoiceAlumunium::create($validated);
+        InvoiceAlumunium::create($data);
 
         return redirect()->route('alumunium-invoice.index')
             ->with('success', 'Invoice berhasil ditambahkan!');
@@ -132,50 +120,31 @@ class AlumuniumInvoiceController extends Controller
     public function update(Request $request, InvoiceAlumunium $aluminium_invoice)
     {
         try {
-            // Validasi form dengan custom error messages
-            $validated = $request->validate([
-                'invoice_date' => 'required|date',
-                'recipient' => 'required|string',
-                'regarding' => 'nullable|string',
-                'project_description' => 'nullable|string',
-                'items' => 'required|array|min:1', // Items harus array dengan minimal 1 item
-                'items.*.keterangan' => 'required|string',
-                'items.*.volume' => 'required|numeric|min:0',
-                'items.*.satuan' => 'required|string',
-                'items.*.harga' => 'required|numeric|min:0',
-            ], [
-                'invoice_date.required' => 'Tanggal Invoice wajib diisi',
-                'recipient.required' => 'Nama penerima wajib diisi',
-                'items.required' => 'Minimal harus ada 1 item dalam invoice',
-                'items.min' => 'Minimal harus ada 1 item dalam invoice',
+            // Ambil items dari request (validasi sudah dilakukan di HTML)
+            $items = $request->items;
+            $totalAmount = 0;
+
+            // Hitung ulang total_amount dari items baru: volume × harga
+            foreach ($items as $item) {
+                $jumlah = $item['volume'] * $item['harga'];
+                $totalAmount += $jumlah;
+            }
+
+            // Update data invoice (invoice_number tidak diupdate karena sebagai primary key)
+            $aluminium_invoice->update([
+                'invoice_date' => $request->invoice_date,
+                'recipient' => $request->recipient,
+                'regarding' => $request->regarding ?? null,
+                'project_description' => $request->project_description,
+                'items' => $items, // Laravel akan auto-encode ke JSON karena cast di Model
+                'total_amount' => $totalAmount,
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Redirect back dengan error message pertama
-            return back()->with('error', $e->validator->errors()->first())->withInput();
+
+            return redirect()->route('alumunium-invoice.index')
+                ->with('success', 'Invoice berhasil diupdate!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
-
-        // Ambil items dari request
-        $items = $request->items;
-        $totalAmount = 0;
-
-        // Hitung ulang total_amount dari items baru
-        foreach ($items as $item) {
-            $jumlah = $item['volume'] * $item['harga'];
-            $totalAmount += $jumlah;
-        }
-
-        // Update data (invoice_number tidak diupdate karena sebagai primary key)
-        $aluminium_invoice->update([
-            'invoice_date' => $validated['invoice_date'],
-            'recipient' => $validated['recipient'],
-            'regarding' => $validated['regarding'] ?? null,
-            'project_description' => $validated['project_description'],
-            'items' => $items, // Laravel akan auto-encode ke JSON karena cast di Model
-            'total_amount' => $totalAmount,
-        ]);
-
-        return redirect()->route('alumunium-invoice.index')
-            ->with('success', 'Invoice berhasil diupdate!');
     }
 
 

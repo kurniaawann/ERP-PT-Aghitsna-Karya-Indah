@@ -8,7 +8,6 @@ use App\Models\Inventory\Items;
 use App\Exports\Report\SalesReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 /**
  * Controller untuk mengelola laporan penjualan/sales report.
@@ -85,37 +84,34 @@ class SalesReportController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'date' => 'required|date',
-            'name_proyek' => 'required|string|max:255',
-            'items' => 'required|json',
-        ]);
+        // Ambil data dari request (validasi sudah dilakukan di HTML)
+        $itemsJson = $request->input('items');
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
+        // Decode JSON items menjadi array
+        $items = json_decode($itemsJson, true);
 
-        $validated = $validator->validated();
-        $items = json_decode($validated['items'], true);
-
+        // Validasi sederhana: minimal harus ada 1 item
         if (empty($items)) {
             return back()->with('error', 'Minimal harus ada 1 item!')->withInput();
         }
 
+        // Mulai database transaction untuk ensure consistency
         DB::beginTransaction();
         try {
-            // Process each item
+            // Proses setiap item untuk stock management dan pricing
             foreach ($items as &$item) {
-                // Check if from stock
+                // Cek apakah item dari stock inventory
                 if (!empty($item['from_stock']) && !empty($item['id_item'])) {
+                    // Lock stock item untuk concurrency control
                     $stockItem = Items::lockForUpdate()->where('id_item', $item['id_item'])->first();
 
+                    // Validasi: stock item harus ada
                     if (!$stockItem) {
                         DB::rollBack();
                         return back()->with('error', 'Barang "' . $item['name_item'] . '" tidak ditemukan!')->withInput();
                     }
 
-                    // Check stock availability
+                    // Validasi: stock harus cukup
                     if ($stockItem->quantity < $item['quantity']) {
                         DB::rollBack();
                         return back()
@@ -123,28 +119,28 @@ class SalesReportController extends Controller
                             ->withInput();
                     }
 
-                    // Reduce stock
+                    // Kurangi stock dengan quantity yang dijual
                     $stockItem->quantity -= $item['quantity'];
                     $stockItem->save();
 
-                    // Use item prices
+                    // Gunakan harga dari stock item
                     $item['capital_price'] = $stockItem->capital_price;
                     $item['selling_price'] = $stockItem->selling_price;
                 } else {
-                    // Validate: Harga modal harus lebih kecil dari harga jual (untuk barang BUKAN dari stock)
+                    // Item bukan dari stock - validasi harga manual
                     $capitalPrice = $item['capital_price'] ?? 0;
                     $sellingPrice = $item['selling_price'] ?? 0;
 
+                    // Validasi business logic: harga modal < harga jual
                     if ($capitalPrice >= $sellingPrice) {
                         DB::rollBack();
                         return back()
-                            // ->with('error', 'Harga modal barang "' . $item['name_item'] . '" harus lebih kecil dari harga jual!')
                             ->with('error', "Harga modal harus lebih kecil dari harga jual untuk item")
                             ->withInput();
                     }
                 }
 
-                // Calculate item profit
+                // Hitung profit per item: (harga jual - harga modal) × quantity
                 $item['profit'] = ($item['selling_price'] - $item['capital_price']) * $item['quantity'];
             }
 
@@ -181,74 +177,63 @@ class SalesReportController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Cari sales report berdasarkan ID
         $salesReport = SalesReport::findOrFail($id);
 
-        // Check if already paid (lunas)
+        // Cek apakah sudah lunas (data lunas tidak bisa diubah)
         if ($salesReport->isLunas()) {
             return back()->with('error', 'Data yang sudah lunas tidak dapat diubah!');
         }
 
-        $validator = Validator::make($request->all(), [
-            'date' => 'required|date',
-            'name_proyek' => 'required|string|max:255',
-            'items' => 'required|array',
-            'items.*.name_item' => 'required|string',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.capital_price' => 'required|integer|min:0',
-            'items.*.selling_price' => 'required|integer|min:0',
-            'items.*.from_stock' => 'nullable|in:true,false,1,0',
-            'items.*.id_item' => 'nullable|string',
-        ]);
+        // Ambil items dari request (validasi sudah dilakukan di HTML)
+        $newItems = $request->items;
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $validated = $validator->validated();
-
+        // Mulai database transaction untuk ensure consistency
         DB::beginTransaction();
         try {
+            // Ambil old items untuk stock restoration
             $oldItems = is_string($salesReport->items) ? json_decode($salesReport->items, true) : $salesReport->items;
-            $newItems = $validated['items'];
 
-            // Create a map to track stock changes per item
-            $stockChanges = []; // [id_item => delta_quantity]
+            // Map untuk tracking perubahan stock per item: [id_item => delta_quantity]
+            $stockChanges = [];
 
-            // Step 1: Calculate stock to RETURN from old items
+            // STEP 1: Hitung stock yang akan DIKEMBALIKAN dari old items
             foreach ($oldItems as $oldItem) {
                 $isOldFromStock = isset($oldItem['from_stock']) && ($oldItem['from_stock'] === true || $oldItem['from_stock'] === 'true');
 
                 if ($isOldFromStock && !empty($oldItem['id_item'])) {
                     $itemId = $oldItem['id_item'];
-                    // Tambahkan quantity yang akan dikembalikan (positif)
+                    // Initialize jika belum ada
                     if (!isset($stockChanges[$itemId])) {
                         $stockChanges[$itemId] = 0;
                     }
+                    // Tambahkan quantity yang dikembalikan (positif)
                     $stockChanges[$itemId] += $oldItem['quantity'];
                 }
             }
 
-            // Step 2: Calculate stock to REDUCE from new items
+            // STEP 2: Hitung stock yang akan DIKURANGI dari new items
             foreach ($newItems as &$item) {
                 $isNewFromStock = isset($item['from_stock']) && ($item['from_stock'] === true || $item['from_stock'] === 'true');
 
                 if ($isNewFromStock && !empty($item['id_item'])) {
                     $itemId = $item['id_item'];
-                    // Kurangi quantity yang akan diambil (negatif)
+                    // Initialize jika belum ada
                     if (!isset($stockChanges[$itemId])) {
                         $stockChanges[$itemId] = 0;
                     }
+                    // Kurangi quantity yang akan diambil (negatif)
                     $stockChanges[$itemId] -= $item['quantity'];
-                    \Log::info("REDUCE: Item {$itemId} -{$item['quantity']}, Total: {$stockChanges[$itemId]}");
                 } else {
-                    // Item tidak dari stock
+                    // Item tidak dari stock, set flag
                     $item['from_stock'] = false;
                     $item['id_item'] = null;
                 }
             }
 
-            // Step 3: Validate and apply stock changes
+            // STEP 3: Validasi dan apply perubahan stock
             foreach ($stockChanges as $itemId => $delta) {
+                // Lock item untuk concurrency
                 $stockItem = Items::lockForUpdate()->where('id_item', $itemId)->first();
 
                 if (!$stockItem) {
@@ -256,42 +241,40 @@ class SalesReportController extends Controller
                     return back()->with('error', 'Barang dengan ID "' . $itemId . '" tidak ditemukan!')->withInput();
                 }
 
-                // Calculate new stock: current + delta
-                // delta bisa positif (dikembalikan lebih banyak) atau negatif (diambil lebih banyak)
+                // Hitung new stock: current + delta
+                // delta bisa positif (return lebih banyak) atau negatif (ambil lebih banyak)
                 $newStock = $stockItem->quantity + $delta;
 
-                // Validate: new stock cannot be negative
+                // Validasi: stock tidak boleh negatif
                 if ($newStock < 0) {
-                    // Hitung berapa stock yang kurang
-                    $shortage = abs($newStock);
                     DB::rollBack();
                     return back()
                         ->with('error', "Stock barang yang diambil melebihi stok tersedia")
                         ->withInput();
                 }
 
-                // Apply stock change
+                // Apply perubahan stock
                 $stockItem->quantity = $newStock;
                 $stockItem->save();
             }
 
-            // Step 4: Update item details for items from stock
+            // STEP 4: Update item details untuk items from stock
             foreach ($newItems as &$item) {
                 $isNewFromStock = isset($item['from_stock']) && ($item['from_stock'] === true || $item['from_stock'] === 'true');
 
                 if ($isNewFromStock && !empty($item['id_item'])) {
+                    // Ambil harga dari stock
                     $stockItem = Items::where('id_item', $item['id_item'])->first();
 
                     if ($stockItem) {
-                        // Use item prices from stock
                         $item['capital_price'] = $stockItem->capital_price;
                         $item['selling_price'] = $stockItem->selling_price;
                     }
 
-                    // Store as boolean true
+                    // Store sebagai boolean true
                     $item['from_stock'] = true;
                 } else {
-                    // Validate: Harga modal harus lebih kecil dari harga jual (untuk barang BUKAN dari stock)
+                    // Item bukan dari stock - validasi harga
                     $capitalPrice = $item['capital_price'] ?? 0;
                     $sellingPrice = $item['selling_price'] ?? 0;
 
@@ -303,16 +286,19 @@ class SalesReportController extends Controller
                     }
                 }
 
-                // Calculate item profit
+                // Hitung profit per item
                 $item['profit'] = ($item['selling_price'] - $item['capital_price']) * $item['quantity'];
             }
 
-            $salesReport->date = $validated['date'];
-            $salesReport->name_proyek = $validated['name_proyek'];
+            // Update sales report
+            $salesReport->date = $request->date;
+            $salesReport->name_proyek = $request->name_proyek;
             $salesReport->items = json_encode($newItems);
+            // calculateTotals() method di model untuk hitung total_capital, total_selling, total_profit
             $salesReport->calculateTotals();
             $salesReport->save();
 
+            // Commit transaction
             DB::commit();
             return redirect()->route('sales-report.index')
                 ->with('success', 'Data laporan penjualan berhasil diupdate!');
@@ -327,22 +313,16 @@ class SalesReportController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        // Cari sales report berdasarkan ID
         $salesReport = SalesReport::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|in:Belum Lunas,Lunas'
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator);
-        }
-
-        $validated = $validator->validated();
-
         try {
-            $salesReport->update(['status' => $validated['status']]);
+            // Update status dari request (validasi sudah dilakukan di HTML)
+            // Status: 'Belum Lunas' atau 'Lunas'
+            $salesReport->update(['status' => $request->status]);
+
             return redirect()->route('sales-report.index')
-                ->with('success', 'Status berhasil diupdate menjadi ' . $validated['status'] . '!');
+                ->with('success', 'Status berhasil diupdate menjadi ' . $request->status . '!');
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -356,55 +336,59 @@ class SalesReportController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'selected_sales' => 'required|array|min:1',
-            'selected_sales.*' => 'exists:sales_reports,id_sales_report',
-        ], [
-            'selected_sales.required' => 'Tidak ada data yang dipilih!',
-            'selected_sales.min' => 'Pilih minimal satu data untuk dihapus!',
-            'selected_sales.*.exists' => 'Data yang dipilih tidak valid!',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator);
-        }
-
+        // Ambil array ID yang dipilih dari checkbox
         $selectedIds = $request->input('selected_sales', []);
 
+        // Validasi sederhana: pastikan ada data yang dipilih
+        if (empty($selectedIds)) {
+            return back()->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        // Mulai database transaction untuk stock restoration
         DB::beginTransaction();
         try {
+            // Ambil semua sales reports yang dipilih
             $salesReports = SalesReport::whereIn('id_sales_report', $selectedIds)->get();
             $deletedCount = 0;
 
+            // Loop setiap sales report untuk restore stock
             foreach ($salesReports as $salesReport) {
-                // Return stock for items that were from stock
+                // Kembalikan stock untuk items yang from_stock
+                // Decode items dari JSON ke array
                 $items = is_string($salesReport->items)
                     ? json_decode($salesReport->items, true)
                     : $salesReport->items;
 
+                // Loop setiap item untuk restore stock
                 foreach ($items as $item) {
+                    // Cek apakah item dari stock
                     if (!empty($item['from_stock']) && !empty($item['id_item'])) {
+                        // Lock item untuk concurrency
                         $stockItem = Items::lockForUpdate()
                             ->where('id_item', $item['id_item'])
                             ->first();
+
                         if ($stockItem) {
+                            // Kembalikan stock: tambahkan quantity yang sebelumnya dikurangi
                             $stockItem->quantity += $item['quantity'];
                             $stockItem->save();
                         }
                     }
                 }
 
+                // Hapus sales report dari database
                 $salesReport->delete();
                 $deletedCount++;
             }
 
+            // Commit transaction jika semua berhasil
             DB::commit();
 
             return redirect()->route('sales-report.index')
                 ->with('success', "Berhasil menghapus {$deletedCount} data penjualan.");
 
         } catch (\Exception $e) {
+            // Rollback jika ada error
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
         }

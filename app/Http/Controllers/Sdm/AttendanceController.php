@@ -68,29 +68,6 @@ class AttendanceController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi input dari form dengan rules Laravel
-        $validated = $request->validate([
-            // Field employee_ids wajib diisi, harus berupa array, minimal 1 item (minimal 1 karyawan dipilih)
-            'employee_ids' => 'required|array|min:1',
-            // Setiap item dalam array employee_ids harus exist di tabel employees kolom employee_code
-            'employee_ids.*' => 'exists:employees,employee_code',
-            // Tanggal mulai wajib diisi, harus format date, tidak boleh lebih dari hari ini (before_or_equal:today)
-            'start_date' => 'required|date|before_or_equal:today',
-            // Tanggal akhir wajib diisi, harus >= start_date, dan tidak boleh lebih dari hari ini
-            'end_date' => 'required|date|after_or_equal:start_date|before_or_equal:today',
-            // Status wajib diisi, harus salah satu dari: Hadir, Sakit, Izin, Alfa, atau Cuti
-            'status' => 'required|in:Hadir,Sakit,Izin,Alfa,Cuti',
-            // Catatan boleh kosong (nullable), harus string, maksimal 255 karakter
-            'notes' => 'nullable|string|max:255',
-        ], [
-            // Custom error message untuk tanggal mulai (jika lebih dari hari ini)
-            'start_date.before_or_equal' => 'Tanggal mulai tidak boleh lebih dari hari ini.',
-            // Custom error message untuk tanggal akhir (jika lebih dari hari ini)
-            'end_date.before_or_equal' => 'Tanggal akhir tidak boleh lebih dari hari ini.',
-            // Custom error message untuk tanggal akhir (jika kurang dari tanggal mulai)
-            'end_date.after_or_equal' => 'Tanggal akhir harus sama atau setelah tanggal mulai.',
-        ]);
-
         // Ambil array employee_ids dari request (default empty array jika tidak ada)
         $employeeIds = $request->input('employee_ids', []);
         // Parse start_date dari string menjadi Carbon instance untuk manipulasi tanggal

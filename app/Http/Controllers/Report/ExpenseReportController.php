@@ -8,7 +8,6 @@ use App\Models\Report\TransactionCategory;
 use App\Exports\Report\ExpenseReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -132,65 +131,18 @@ class ExpenseReportController extends Controller
      */
     public function store(Request $request)
     {
-        // Buat validator untuk validasi input dari form
-        $validator = Validator::make($request->all(), [
-            // Kategori transaksi wajib diisi dan harus ada di tabel transaction_categories
-            'transaction_category_id' => 'required|exists:transaction_categories,id',
-
-            // Tanggal transaksi wajib diisi dan harus format date yang valid
-            'transaction_date' => 'required|date',
-
-            // Deskripsi/keterangan wajib diisi, maksimal 1000 karakter
-            'description' => 'required|string|max:1000',
-
-            // Jumlah pengeluaran wajib diisi, harus integer, dan tidak boleh negatif
-            'expense_amount' => 'required|integer|min:0',
-
-            // Nomor invoice boleh kosong, maksimal 100 karakter
-            'invoice_number' => 'nullable|string|max:100',
-
-            // Sumber uang boleh kosong, maksimal 255 karakter
-            'money_source' => 'nullable|string|max:255',
-
-            // Catatan tambahan boleh kosong
-            'notes' => 'nullable|string',
-        ], [
-            // Custom error message untuk kategori
-            'transaction_category_id.required' => 'Kategori pengeluaran wajib dipilih',
-
-            // Custom error message untuk tanggal
-            'transaction_date.required' => 'Tanggal wajib diisi',
-
-            // Custom error message untuk deskripsi
-            'description.required' => 'Keterangan wajib diisi',
-
-            // Custom error message untuk jumlah pengeluaran (required)
-            'expense_amount.required' => 'Jumlah pengeluaran wajib diisi',
-
-            // Custom error message untuk jumlah pengeluaran (harus integer)
-            'expense_amount.integer' => 'Jumlah pengeluaran harus berupa angka',
-
-            // Custom error message untuk jumlah pengeluaran (tidak boleh negatif)
-            'expense_amount.min' => 'Jumlah pengeluaran tidak boleh negatif',
-        ]);
-
-        // Jika validasi gagal, redirect kembali dengan error dan input sebelumnya
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        // Ambil data yang sudah divalidasi
-        $validated = $validator->validated();
+        // Ambil semua data dari form (validasi sudah dilakukan di HTML)
+        $data = $request->all();
 
         // Tambahkan field created_by dengan ID user yang sedang login (untuk audit trail)
-        $validated['created_by'] = Auth::id();
+        $data['created_by'] = Auth::id();
 
         // Set income_amount ke null (karena ini expense, bukan income)
-        $validated['income_amount'] = null;
+        $data['income_amount'] = null;
 
         try {
             // Simpan data expense report ke database
-            ExpenseReport::create($validated);
+            ExpenseReport::create($data);
 
             // Redirect ke halaman index dengan pesan sukses
             return redirect()->route('expense-report.index')
@@ -217,53 +169,12 @@ class ExpenseReportController extends Controller
             return back()->with('error', 'Data yang auto-generated dari sales report tidak dapat diubah!');
         }
 
-        // Buat validator untuk validasi input dari form edit
-        $validator = Validator::make($request->all(), [
-            // Kategori transaksi wajib diisi dan harus ada di tabel transaction_categories
-            'transaction_category_id' => 'required|exists:transaction_categories,id',
-
-            // Tanggal transaksi wajib diisi dan harus format date yang valid
-            'transaction_date' => 'required|date',
-
-            // Deskripsi/keterangan wajib diisi, maksimal 1000 karakter
-            'description' => 'required|string|max:1000',
-
-            // Jumlah pengeluaran wajib diisi, harus integer, dan tidak boleh negatif
-            'expense_amount' => 'required|integer|min:0',
-
-            // Nomor invoice boleh kosong, maksimal 100 karakter
-            'invoice_number' => 'nullable|string|max:100',
-
-            // Sumber uang boleh kosong, maksimal 255 karakter
-            'money_source' => 'nullable|string|max:255',
-
-            // Catatan tambahan boleh kosong
-            'notes' => 'nullable|string',
-        ], [
-            // Custom error message untuk kategori
-            'transaction_category_id.required' => 'Kategori pengeluaran wajib dipilih',
-
-            // Custom error message untuk tanggal
-            'transaction_date.required' => 'Tanggal wajib diisi',
-
-            // Custom error message untuk deskripsi
-            'description.required' => 'Keterangan wajib diisi',
-
-            // Custom error message untuk jumlah pengeluaran
-            'expense_amount.required' => 'Jumlah pengeluaran wajib diisi',
-        ]);
-
-        // Jika validasi gagal, redirect kembali dengan error dan input sebelumnya
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        // Ambil data yang sudah divalidasi
-        $validated = $validator->validated();
+        // Ambil semua data dari form (validasi sudah dilakukan di HTML)
+        $data = $request->all();
 
         try {
-            // Update data expense report dengan data yang sudah divalidasi
-            $expenseReport->update($validated);
+            // Update data expense report dengan data dari form
+            $expenseReport->update($data);
 
             // Redirect ke halaman index dengan pesan sukses
             return redirect()->route('expense-report.index')
@@ -280,31 +191,13 @@ class ExpenseReportController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        // Buat validator untuk validasi input dari checkbox selection
-        $validator = Validator::make($request->all(), [
-            // Field selected_expenses wajib ada, harus array, minimal 1 item
-            'selected_expenses' => 'required|array|min:1',
-
-            // Setiap item dalam array harus exist di tabel expense_reports kolom id
-            'selected_expenses.*' => 'exists:expense_reports,id',
-        ], [
-            // Custom error message jika tidak ada data yang dipilih
-            'selected_expenses.required' => 'Tidak ada data yang dipilih!',
-
-            // Custom error message jika minimal tidak terpenuhi
-            'selected_expenses.min' => 'Pilih minimal satu data untuk dihapus!',
-
-            // Custom error message jika ID tidak valid
-            'selected_expenses.*.exists' => 'Data yang dipilih tidak valid!',
-        ]);
-
-        // Jika validasi gagal, redirect kembali dengan error
-        if ($validator->fails()) {
-            return back()->withErrors($validator);
-        }
-
         // Ambil array ID yang dipilih dari input (default empty array jika tidak ada)
         $selectedIds = $request->input('selected_expenses', []);
+
+        // Validasi sederhana: pastikan ada data yang dipilih
+        if (empty($selectedIds)) {
+            return back()->with('error', 'Tidak ada data yang dipilih!');
+        }
 
         // Hapus semua expense report yang ID-nya ada dalam array $selectedIds
         // whereIn() akan match semua record dengan id di dalam array
