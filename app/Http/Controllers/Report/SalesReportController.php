@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Report;
 use App\Http\Controllers\Controller;
 use App\Models\Report\SalesReport;
 use App\Models\Inventory\Items;
+use App\Exports\Report\SalesReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -464,7 +465,7 @@ class SalesReportController extends Controller
 
         // Pass month and year to export class
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\SalesReportExport($salesReports, $request->month, $request->year),
+            new SalesReportExport($salesReports, $request->month, $request->year),
             'Laporan_Penjualan_' . date('Y-m-d') . '.xlsx'
         );
     }

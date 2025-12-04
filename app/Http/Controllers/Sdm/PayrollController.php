@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
-use App\Exports\PayrollExport;
+use App\Exports\Sdm\PayrollExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;

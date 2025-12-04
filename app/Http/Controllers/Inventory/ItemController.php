@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inventory\Items;
-use App\Exports\ItemsExport;
+use App\Exports\Inventory\ItemsExport;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -40,15 +40,15 @@ class ItemController extends Controller
     {
         // Ambil item terakhir berdasarkan id_item descending
         $lastItem = Items::orderBy('id_item', 'desc')->first();
-        
+
         // Jika belum ada data, mulai dari ITM-0001
         if (!$lastItem) {
             return 'ITM-0001';
         }
-        
+
         // Extract nomor dari id_item (ambil substring setelah 'ITM-')
         $lastNumber = (int) substr($lastItem->id_item, 4);
-        
+
         // Format dengan padding 0 di depan (4 digit)
         return 'ITM-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
@@ -126,7 +126,7 @@ class ItemController extends Controller
             'capital_price' => $request->capital_price,
             'selling_price' => $request->selling_price,
         ]);
-        
+
         return redirect()->back()->with('success', 'Data berhasil diupdate!');
     }
     /**

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Report;
 use App\Http\Controllers\Controller;
 use App\Models\Report\ExpenseReport;
 use App\Models\Report\TransactionCategory;
-use App\Exports\ExpenseReportExport;
+use App\Exports\Report\ExpenseReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;

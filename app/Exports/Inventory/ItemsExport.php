@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exports;
+namespace App\Exports\Inventory;
 
 use App\Models\Inventory\Items;
 use Maatwebsite\Excel\Concerns\{
