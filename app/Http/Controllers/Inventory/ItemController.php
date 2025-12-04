@@ -9,193 +9,144 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 
-/**
- * Controller untuk mengelola data barang inventory (hollow/aluminium).
- * 
- * Fitur:
- * - CRUD barang dengan auto-generate ID (ITM-0001, ITM-0002, dst)
- * - Pencarian berdasarkan nama atau ID barang
- * - Bulk delete dengan checkbox selection
- * - Export ke PDF dan Excel dengan timestamp
- * - Tracking harga modal, harga jual, dan quantity stok
- */
 class ItemController extends Controller
 {
-
-    /**
-     * Generate ID item otomatis dengan format ITM-XXXX (4 digit).
-     * 
-     * Logic:
-     * 1. Ambil item terakhir dari database (ORDER BY id_item DESC)
-     * 2. Jika belum ada data, return 'ITM-0001'
-     * 3. Extract nomor dari id_item terakhir (ambil substring setelah 'ITM-')
-     * 4. Tambah 1, lalu format dengan padding 0 di depan (4 digit)
-     * 
-     * Contoh:
-     * - Item terakhir: ITM-0005 → Generate: ITM-0006
-     * - Item terakhir: ITM-0099 → Generate: ITM-0100
-     * - Item terakhir: ITM-9999 → Generate: ITM-10000 (5 digit)
-     */
     private function generateIdItem()
     {
-        // Ambil item terakhir berdasarkan id_item descending
+        // Ambil item terakhir dari database, urutkan berdasarkan id_item descending (terbesar di atas)
+        // first() akan return model instance atau null jika tabel kosong
         $lastItem = Items::orderBy('id_item', 'desc')->first();
 
-        // Jika belum ada data, mulai dari ITM-0001
+        // Jika belum ada data (tabel kosong), mulai dari ITM-0001
         if (!$lastItem) {
             return 'ITM-0001';
         }
 
-        // Extract nomor dari id_item (ambil substring setelah 'ITM-')
+        // Extract nomor dari id_item terakhir
+        // substr($lastItem->id_item, 4) mengambil substring mulai dari index 4 sampai akhir
+        // Contoh: 'ITM-0005' → substring dari index 4 = '0005'
+        // (int) untuk convert string '0005' menjadi integer 5
         $lastNumber = (int) substr($lastItem->id_item, 4);
 
-        // Format dengan padding 0 di depan (4 digit)
+        // Tambah 1 untuk nomor berikutnya, lalu format dengan padding 0 di depan
+        // str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT) akan format angka dengan 4 digit, padding 0 di kiri
+        // Contoh: 5 + 1 = 6 → str_pad(6, 4, '0', STR_PAD_LEFT) → '0006'
+        // 'ITM-' . '0006' → 'ITM-0006'
         return 'ITM-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
 
-
-    /**
-     * Menampilkan halaman daftar barang inventory dengan fitur pencarian.
-     * 
-     * Fitur:
-     * - Pencarian berdasarkan nama barang atau ID barang
-     * - Sorting berdasarkan id_item terbaru (descending)
-     * - Pagination 10 data per halaman
-     * - Menampilkan semua info: id_item, name_item, quantity, capital_price, selling_price
-     */
     public function index(Request $request)
     {
-        // Ambil keyword pencarian dari request
+        // Ambil keyword pencarian dari request (untuk filter nama atau ID item)
         $search = $request->input('search');
 
-        // Query data items dengan filter pencarian
+        // Mulai query untuk mengambil data items
         $items = Items::query()
+            // Filter berdasarkan pencarian jika parameter $search ada
             ->when($search, function ($query, $search) {
-                // Cari berdasarkan nama barang atau ID barang
+                // when() menjalankan closure hanya jika $search tidak null/empty
+                // Cari berdasarkan nama item dengan LIKE (partial match)
                 $query->where('name_item', 'like', "%{$search}%")
+                    // ATAU cari berdasarkan ID item dengan LIKE (partial match)
                     ->orWhere('id_item', 'like', "%{$search}%");
             })
-            ->orderBy('id_item', 'desc') // Urutkan ID terbaru di atas
+            // Urutkan berdasarkan id_item descending (ID terbaru di atas)
+            ->orderBy('id_item', 'desc')
+            // Pagination 10 data per halaman
             ->paginate(10);
 
+        // Return view dengan data items (barang inventory + pagination)
         return view('pages.inventory.item', compact('items'));
     }
-    /**
-     * Menyimpan data barang baru ke database.
-     * 
-     * Proses:
-     * 1. Generate id_item otomatis (ITM-XXXX)
-     * 2. Ambil data dari form: name_item, quantity, capital_price, selling_price
-     * 3. Simpan ke database
-     * 
-     * Catatan:
-     * - id_item di-generate otomatis, tidak perlu input manual
-     * - capital_price = harga modal/beli
-     * - selling_price = harga jual ke customer
-     */
     public function store(Request $request)
     {
-        // Simpan data barang dengan id_item auto-generated
+        // Insert data item baru ke database
+        // create() menerima array associative dan akan insert record baru
         Items::create([
-            'id_item' => $this->generateIdItem(), // Generate ID otomatis
+            // Generate id_item otomatis menggunakan private method generateIdItem()
+            // Format: ITM-0001, ITM-0002, ITM-0003, dst
+            'id_item' => $this->generateIdItem(),
+            // Nama item dari input form
             'name_item' => $request->name_item,
+            // Quantity/jumlah stok dari input form (integer)
             'quantity' => $request->quantity,
+            // Harga modal/beli dari supplier dari input form (integer, dalam Rupiah)
             'capital_price' => $request->capital_price,
+            // Harga jual ke customer dari input form (integer, dalam Rupiah)
             'selling_price' => $request->selling_price,
         ]);
 
+        // Redirect kembali ke halaman sebelumnya (halaman index) dengan flash message sukses
         return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
     }
 
-    /**
-     * Mengupdate data barang yang sudah ada.
-     * 
-     * Proses:
-     * 1. Cari barang berdasarkan id_item (route parameter)
-     * 2. Update field: name_item, quantity, capital_price, selling_price
-     * 3. id_item tidak bisa diubah (sebagai identifier unik)
-     * 
-     * Catatan: Menggunakan where()->update() karena id_item bukan primary key
-     */
     public function update(Request $request, $id_item)
     {
-        // Update barang berdasarkan id_item
+        // Update data item berdasarkan id_item
+        // where('id_item', $id_item) mencari record dengan id_item yang sesuai
+        // update() akan mengubah field yang ada di array
+        // Note: Menggunakan where()->update() karena id_item bukan primary key (primary key adalah id auto-increment)
         Items::where('id_item', $id_item)->update([
+            // Update nama item dari input form edit
             'name_item' => $request->name_item,
+            // Update quantity dari input form edit
             'quantity' => $request->quantity,
+            // Update harga modal dari input form edit
             'capital_price' => $request->capital_price,
+            // Update harga jual dari input form edit
             'selling_price' => $request->selling_price,
         ]);
 
+        // Redirect kembali ke halaman sebelumnya dengan flash message sukses
         return redirect()->back()->with('success', 'Data berhasil diupdate!');
     }
-    /**
-     * Menghapus data barang secara bulk (multiple selection).
-     * 
-     * Proses:
-     * 1. Ambil array id_item yang dipilih dari checkbox (parameter 'selected_items')
-     * 2. Validasi apakah ada data yang dipilih
-     * 3. Hapus semua data berdasarkan id_item
-     * 
-     * Catatan:
-     * - Bulk delete untuk efisiensi (hapus banyak data sekaligus)
-     * - Menggunakan id_item sebagai identifier (bukan primary key)
-     */
+
     public function destroySelected(Request $request)
     {
-        // Ambil array id_item dari checkbox (default empty array jika tidak ada)
+        // Ambil array id_item dari input dengan nama 'selected_items'
+        // Default empty array jika input tidak ada (untuk handle jika user tidak centang checkbox)
         $selectedIds = $request->input('selected_items', []);
 
-        // Validasi: pastikan ada data yang dipilih
+        // Validasi: cek apakah $selectedIds kosong (empty() return true jika null, [], atau '')
         if (empty($selectedIds)) {
+            // Redirect kembali dengan flash message error
             return redirect()->back()->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
         }
 
-        // Hapus semua item yang dipilih berdasarkan id_item
+        // Hapus semua item yang ID-nya ada dalam array $selectedIds
+        // whereIn('id_item', $selectedIds) akan match semua record dengan id_item di dalam array
+        // delete() akan menghapus record tersebut dari database
         Items::whereIn('id_item', $selectedIds)->delete();
 
+        // Redirect kembali dengan flash message sukses
         return redirect()->back()->with('success', 'Data terpilih berhasil dihapus.');
     }
 
-    /**
-     * Export daftar barang ke format PDF.
-     * 
-     * Proses:
-     * 1. Ambil semua data items (ORDER BY id_item ASC)
-     * 2. Load view 'exports.item-pdf' dengan data items
-     * 3. Generate PDF menggunakan DomPDF
-     * 4. Download dengan nama file 'stock-hollow-YYYY-MM-DD.pdf'
-     * 
-     * Library: Barryvdh\DomPDF (wrapper untuk DomPDF)
-     */
     public function exportPdf()
     {
-        // Ambil semua data items, urutkan berdasarkan id_item ascending
+        // Ambil semua data items dari database tanpa pagination
+        // orderBy('id_item', 'asc') mengurutkan berdasarkan id_item ascending (ITM-0001, ITM-0002, dst)
+        // get() mengambil semua record (bukan paginate, karena untuk export)
         $items = Items::orderBy('id_item', 'asc')->get();
 
-        // Generate PDF dari view
+        // Generate PDF dari view 'exports.item-pdf' dengan data items
+        // Pdf::loadView() akan render blade template menjadi PDF
+        // compact('items') mengirim variable $items ke view
         $pdf = Pdf::loadView('exports.item-pdf', compact('items'));
 
-        // Download PDF dengan timestamp
+        // Download PDF dengan nama file dinamis: stock-hollow-YYYY-MM-DD.pdf
+        // date('Y-m-d') menghasilkan format tanggal: 2025-01-01
+        // download() akan trigger browser download file (bukan display inline)
         return $pdf->download('stock-hollow-' . date('Y-m-d') . '.pdf');
     }
 
-    /**
-     * Export daftar barang ke format Excel.
-     * 
-     * Proses:
-     * 1. Gunakan class ItemsExport (implements FromCollection)
-     * 2. Generate file Excel dengan Maatwebsite\Excel
-     * 3. Download dengan nama file 'stock-hollow-YYYY-MM-DD.xlsx'
-     * 
-     * Catatan:
-     * - Logic export ada di app/Exports/ItemsExport.php
-     * - Library: Maatwebsite\Excel (wrapper untuk PhpSpreadsheet)
-     * - Format Excel: .xlsx (Excel 2007+)
-     */
     public function exportExcel()
     {
-        // Download Excel menggunakan ItemsExport class dengan timestamp
+        // Download file Excel menggunakan ItemsExport class
+        // new ItemsExport membuat instance dari class export (implements FromCollection)
+        // Logic export ada di app/Exports/Inventory/ItemsExport.php (query, format, dll)
+        // Excel::download() akan generate file .xlsx dan trigger browser download
+        // Nama file: stock-hollow-YYYY-MM-DD.xlsx (dengan timestamp)
         return Excel::download(new ItemsExport, 'stock-hollow-' . date('Y-m-d') . '.xlsx');
     }
 

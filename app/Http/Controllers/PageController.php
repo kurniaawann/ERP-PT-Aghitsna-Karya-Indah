@@ -2,33 +2,21 @@
 
 namespace App\Http\Controllers;
 
-/**
- * Controller untuk menampilkan halaman-halaman statis.
- * 
- * Controller ini menangani route untuk halaman-halaman utama
- * yang tidak memerlukan logika kompleks.
- */
 class PageController extends Controller
 {
-    /**
-     * Menampilkan halaman dashboard utama.
-     * 
-     * Dashboard adalah halaman pertama yang dilihat user setelah login.
-     * Berisi ringkasan informasi dan statistik sistem.
-     */
     public function dashboard()
     {
+        // Return view halaman dashboard utama (resources/views/pages/dashboard.blade.php)
+        // Dashboard adalah halaman pertama yang dilihat user setelah login
+        // Berisi ringkasan informasi, statistik, dan quick access ke fitur-fitur utama sistem ERP
         return view('pages.dashboard');
     }
 
-    /**
-     * Menampilkan halaman item (legacy/tidak digunakan).
-     * 
-     * Catatan: Method ini mungkin tidak digunakan lagi karena
-     * item management sudah dipindah ke ItemController.
-     */
     public function item()
     {
+        // Return view halaman item (resources/views/pages/item.blade.php)
+        // Method ini mungkin tidak digunakan lagi (legacy code)
+        // Item management sekarang sudah dipindah ke ItemController di namespace Inventory
         return view('pages.item');
     }
 }

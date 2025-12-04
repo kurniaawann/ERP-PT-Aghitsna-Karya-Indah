@@ -7,148 +7,132 @@ use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Employee;
 use Illuminate\Http\Request;
 
-/**
- * Controller untuk mengelola data lembur karyawan.
- * 
- * Catatan Penting:
- * - Data lembur disimpan dalam tabel attendances dengan status = 'lembur'
- * - Lembur biasanya terjadi di hari Minggu (hari libur)
- * - Rate lembur bisa berbeda-beda (default Rp 50.000/jam, tapi bisa custom)
- * - Perhitungan total lembur: overtime_hours × overtime_rate
- */
 class OvertimeController extends Controller
 {
-    /**
-     * Menampilkan daftar data lembur dengan fitur pencarian dan validasi duplikat.
-     * 
-     * Fitur:
-     * - Filter hanya attendance dengan status='lembur'
-     * - Pencarian berdasarkan nama atau kode karyawan (search dalam relasi)
-     * - Eager loading relasi employee untuk efisiensi query
-     * - Sorting berdasarkan tanggal absensi dan waktu input
-     * - Kirim data karyawan untuk dropdown form
-     * - Kirim existing attendance untuk validasi duplikat di frontend
-     */
     public function index(Request $request)
     {
-        // Ambil keyword pencarian dari request
+        // Ambil keyword pencarian dari request (untuk filter nama atau kode karyawan)
         $search = $request->input('search');
 
-        // Query data lembur dengan filter dan relasi
+        // Query data lembur dari tabel attendances dengan filter status='lembur'
+        // Note: Data lembur disimpan di tabel attendances dengan status khusus 'lembur'
         $overtimes = Attendance::where('status', 'lembur')
-            ->with('employee') // Load relasi employee untuk efisiensi
+            // Eager load relasi employee untuk efisiensi query (hindari N+1 problem)
+            ->with('employee')
+            // Filter berdasarkan pencarian jika parameter $search ada
             ->when($search, function ($query, $search) {
-                // Cari berdasarkan nama atau kode karyawan (search dalam relasi)
+                // Filter dengan whereHas untuk search dalam relasi employee
                 return $query->whereHas('employee', function ($q) use ($search) {
+                    // Cari di kolom name karyawan dengan LIKE (partial match)
                     $q->where('name', 'like', "%{$search}%")
+                        // ATAU cari di kolom employee_code dengan LIKE (partial match)
                         ->orWhere('employee_code', 'like', "%{$search}%");
                 });
             })
-            ->latest('attendance_date') // Urutkan berdasarkan tanggal absensi terbaru
-            ->latest('created_at') // Jika tanggal sama, urutkan berdasarkan waktu input
+            // Urutkan berdasarkan attendance_date descending (tanggal lembur terbaru di atas)
+            ->latest('attendance_date')
+            // Jika tanggal sama, urutkan berdasarkan created_at descending (yang dibuat terakhir di atas)
+            ->latest('created_at')
+            // Pagination 10 data per halaman
             ->paginate(10);
 
-        // Ambil semua karyawan untuk dropdown form
+        // Ambil semua karyawan dari database untuk dropdown form
+        // all() mengambil semua record tanpa filter
+        // sortBy('name') mengurutkan collection berdasarkan nama karyawan (ascending alphabetical)
         $employees = Employee::all()->sortBy('name');
 
-        // Ambil data absensi yang sudah ada untuk validasi duplikat di client-side
-        // Struktur: { employee_id: { 'YYYY-MM-DD': { id, status } } }
+        // Ambil data absensi yang sudah ada untuk validasi duplikat di client-side (frontend)
+        // Pilih kolom: employee_id, attendance_date, id, dan status
         $existingAttendance = Attendance::select('employee_id', 'attendance_date', 'id', 'status')
+            // Ambil semua data absensi (tidak hanya lembur, tapi semua status)
             ->get()
-            ->groupBy('employee_id') // Group by karyawan
+            // Group collection berdasarkan employee_id
+            // Hasilnya: ['EMP001' => collection1, 'EMP002' => collection2]
+            ->groupBy('employee_id')
+            // Transform setiap group karyawan menjadi mapping tanggal => {id, status}
             ->map(function ($items) {
+                // mapWithKeys untuk custom key-value mapping
                 return $items->mapWithKeys(function ($item) {
-                    // Mapping: tanggal => { id, status }
+                    // Key = tanggal format Y-m-d (misal: '2025-01-01')
+                    // Value = array associative dengan id dan status
                     return [
                         \Carbon\Carbon::parse($item->attendance_date)->format('Y-m-d') => [
-                            'id' => $item->id,
-                            'status' => $item->status
+                            'id' => $item->id, // ID attendance untuk update/delete
+                            'status' => $item->status // Status untuk display (Hadir/Lembur/Sakit/dll)
                         ]
                     ];
                 });
             });
 
+        // Return view dengan data: overtimes (data lembur + pagination), employees (dropdown),
+        // search (maintain keyword), existingAttendance (validasi duplikat)
         return view('pages.sdm.overtime', compact('overtimes', 'employees', 'search', 'existingAttendance'));
     }
 
-    /**
-     * Menyimpan data lembur baru ke database.
-     * 
-     * Proses Perhitungan:
-     * 1. Ambil semua data dari form (employee_id, attendance_date, overtime_hours, overtime_rate)
-     * 2. Set status = 'lembur' untuk identifikasi di tabel attendances
-     * 3. Hitung overtime_total = overtime_hours × overtime_rate
-     * 4. Simpan ke tabel attendances
-     * 
-     * Catatan:
-     * - Rate lembur bisa berbeda-beda per input (flexible)
-     * - Default biasanya Rp 50.000/jam, tapi user bisa input custom
-     */
     public function store(Request $request)
     {
-        // Ambil semua data dari form
+        // Ambil semua input dari form dan simpan ke variable $data
+        // all() mengembalikan array associative dengan semua field dari form
+        // Field: employee_id, attendance_date, overtime_hours, overtime_rate, notes
         $data = $request->all();
-        
-        // Set status = 'lembur' untuk identifikasi
+
+        // Set status = 'lembur' untuk identifikasi di tabel attendances
+        // Ini penting karena tabel attendances shared untuk absensi regular dan lembur
         $data['status'] = 'lembur';
-        
-        // Hitung total lembur: jam lembur × rate lembur
+
+        // Hitung total uang lembur: jam lembur × rate per jam
+        // overtime_hours dari input (misal: 4 jam)
+        // overtime_rate dari input (misal: Rp 50.000)
+        // overtime_total = 4 × 50000 = Rp 200.000
         $data['overtime_total'] = $request->overtime_hours * $request->overtime_rate;
 
-        // Simpan data lembur ke tabel attendances
+        // Insert data lembur ke tabel attendances
+        // create() akan insert record baru dan return model instance
         Attendance::create($data);
 
+        // Redirect ke halaman index overtime dengan flash message sukses
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil ditambahkan!');
     }
 
-    /**
-     * Mengupdate data lembur yang sudah ada.
-     * 
-     * Proses:
-     * 1. Terima model Attendance dari route model binding
-     * 2. Ambil data update dari form
-     * 3. Recalculate overtime_total berdasarkan overtime_hours dan overtime_rate terbaru
-     * 4. Update data ke database
-     * 
-     * Catatan: Route model binding otomatis mencari Attendance by ID
-     */
     public function update(Request $request, Attendance $overtime)
     {
-        // Ambil data dari form
+        // Parameter $overtime sudah otomatis di-inject oleh Laravel Route Model Binding
+        // Laravel otomatis mencari Attendance by ID dari route parameter
+        // Ambil semua input dari form edit dan simpan ke variable $data
         $data = $request->all();
-        
-        // Recalculate: jam lembur × rate lembur
+
+        // Recalculate (hitung ulang) total uang lembur berdasarkan data terbaru
+        // overtime_hours dari input form (misal: user ubah dari 4 jam menjadi 5 jam)
+        // overtime_rate dari input form (misal: user ubah dari Rp 50.000 menjadi Rp 60.000)
+        // Contoh: 5 jam × Rp 60.000 = Rp 300.000
         $data['overtime_total'] = $request->overtime_hours * $request->overtime_rate;
 
-        // Update data lembur
+        // Update data lembur ke database dengan data terbaru
+        // update() akan mengubah record yang sudah ada berdasarkan ID
         $overtime->update($data);
 
+        // Redirect ke halaman index overtime dengan flash message sukses
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil diperbarui!');
     }
 
-    /**
-     * Menghapus data lembur secara bulk (multiple selection).
-     * 
-     * Proses:
-     * 1. Ambil array ID yang dipilih dari checkbox
-     * 2. Validasi apakah ada data yang dipilih
-     * 3. Hapus data dari tabel attendances
-     * 
-     * Catatan: Bulk delete untuk efisiensi (hapus banyak data sekaligus)
-     */
     public function destroy(Request $request)
     {
-        // Ambil array ID dari checkbox
+        // Ambil array ID dari input dengan nama 'ids' (dari checkbox selection)
+        // ids berisi array ID attendance yang dipilih, misal: [1, 5, 10]
         $ids = $request->input('ids');
 
-        // Validasi: pastikan ada data yang dipilih
+        // Validasi: cek apakah $ids kosong (empty() return true jika null, [], atau '')
         if (empty($ids)) {
+            // Redirect ke halaman index dengan flash message error
             return redirect()->route('overtime.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus data lembur by ID
+        // Hapus data lembur dari tabel attendances berdasarkan ID
+        // whereIn('id', $ids) akan match semua record dengan id di dalam array
+        // delete() akan menghapus record tersebut dari database
         Attendance::whereIn('id', $ids)->delete();
 
+        // Redirect ke halaman index dengan flash message sukses
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil dihapus!');
     }
 }

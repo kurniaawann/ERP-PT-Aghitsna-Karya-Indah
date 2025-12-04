@@ -6,108 +6,81 @@ use App\Http\Controllers\Controller;
 use App\Models\Sdm\Employee;
 use Illuminate\Http\Request;
 
-/**
- * Controller untuk mengelola data karyawan.
- * 
- * Menangani CRUD (Create, Read, Update, Delete) untuk master data karyawan.
- * Termasuk auto-generate kode karyawan dengan format EMP001, EMP002, dst.
- */
 class EmployeeController extends Controller
 {
-    /**
-     * Menampilkan halaman daftar karyawan dengan fitur pencarian.
-     * 
-     * Fitur:
-     * - Pencarian berdasarkan nama atau kode karyawan
-     * - Pagination 10 data per halaman
-     * - Sorting berdasarkan data terbaru (created_at)
-     */
     public function index(Request $request)
     {
-        // Ambil keyword pencarian dari request
+        // Ambil keyword pencarian dari request (untuk filter nama atau kode karyawan)
         $search = $request->input('search');
 
-        // Query data karyawan dengan filter pencarian
+        // Mulai query untuk mengambil data karyawan dengan filter pencarian
         $employees = Employee::when($search, function ($query, $search) {
-            // Cari berdasarkan nama atau kode karyawan
+            // when() menjalankan closure hanya jika $search tidak null/empty
+            // Cari berdasarkan nama karyawan dengan LIKE (partial match)
             return $query->where('name', 'like', "%{$search}%")
+                // ATAU cari berdasarkan employee_code dengan LIKE (partial match)
                 ->orWhere('employee_code', 'like', "%{$search}%");
         })
-            ->latest('created_at') // Urutkan berdasarkan data terbaru
+            // Urutkan berdasarkan created_at descending (data terbaru di atas)
+            ->latest('created_at')
+            // Pagination 10 data per halaman
             ->paginate(10);
 
+        // Return view dengan data employees (karyawan + pagination) dan search (untuk maintain keyword)
         return view('pages.sdm.employee', compact('employees', 'search'));
     }
 
-
-    /**
-     * Menyimpan data karyawan baru ke database.
-     * 
-     * Proses:
-     * 1. Ambil semua data dari form
-     * 2. Generate kode karyawan otomatis (EMP001, EMP002, dst)
-     * 3. Simpan ke database
-     * 
-     * Catatan:
-     * - Kode karyawan di-generate otomatis oleh sistem
-     * - Format kode: EMP + nomor urut 3 digit (EMP001, EMP002, ...)
-     */
     public function store(Request $request)
     {
-        // Ambil semua data dari request
+        // Ambil semua input dari form dan simpan ke variable $data
+        // all() mengembalikan array associative dengan semua field dari form
         $data = $request->all();
 
-        // Auto-generate kode karyawan (EMP001, EMP002, dst)
+        // Auto-generate kode karyawan menggunakan method generateEmployeeCode() dari model Employee
+        // Format kode: EMP001, EMP002, EMP003, dst (prefix EMP + nomor urut 3 digit)
+        // Method ini ada di Model Employee, berfungsi untuk generate kode otomatis berdasarkan data terakhir
         $data['employee_code'] = Employee::generateEmployeeCode();
 
-        // Simpan data karyawan ke database
+        // Insert data karyawan ke database
+        // create() akan insert record baru ke tabel employees dan return model instance
         Employee::create($data);
 
+        // Redirect ke halaman index employee dengan flash message sukses
         return redirect()->route('employee.index')->with('success', 'Data karyawan berhasil ditambahkan!');
     }
 
-    /**
-     * Mengupdate data karyawan yang sudah ada.
-     * 
-     * Proses:
-     * - Update semua field yang dikirim dari form edit
-     * - Employee code tidak bisa diubah (sebagai identifier unik)
-     * 
-     * Catatan: Route model binding otomatis mencari employee by ID
-     */
     public function update(Request $request, Employee $employee)
     {
-        // Update data karyawan dengan semua input dari form
+        // Parameter $employee sudah otomatis di-inject oleh Laravel Route Model Binding
+        // Laravel otomatis mencari Employee by ID dari route parameter
+        // Update semua field dari request ke model employee
+        // all() mengambil semua input dari form edit
+        // Note: employee_code tidak akan berubah karena tidak ada di form edit (sebagai identifier unik)
         $employee->update($request->all());
 
+        // Redirect ke halaman index employee dengan flash message sukses
         return redirect()->route('employee.index')->with('success', 'Data karyawan berhasil diperbarui!');
     }
 
-    /**
-     * Menghapus data karyawan secara bulk (multiple selection).
-     * 
-     * Proses:
-     * 1. Ambil array employee_code yang dipilih dari checkbox
-     * 2. Validasi apakah ada data yang dipilih
-     * 3. Hapus data berdasarkan employee_code
-     * 
-     * Catatan:
-     * - Menggunakan employee_code sebagai identifier (bukan ID)
-     * - Bulk delete untuk efisiensi (hapus banyak data sekaligus)
-     */
     public function destroy(Request $request)
     {
-        // Ambil array employee_code dari checkbox
+        // Ambil array employee_code dari input dengan nama 'ids' (dari checkbox selection)
+        // ids berisi array employee_code (bukan ID auto-increment), misal: ['EMP001', 'EMP002']
         $ids = $request->input('ids');
 
-        // Validasi: pastikan ada data yang dipilih
+        // Validasi: cek apakah $ids kosong (empty() return true jika null, [], atau '')
         if (empty($ids)) {
+            // Redirect ke halaman index dengan flash message error
             return redirect()->route('employee.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus karyawan berdasarkan employee_code
+        // Hapus karyawan berdasarkan employee_code (bukan ID auto-increment)
+        // whereIn('employee_code', $ids) akan match semua record dengan employee_code di dalam array
+        // delete() akan menghapus record tersebut dari database
+        // Note: Menggunakan employee_code sebagai identifier untuk delete (lebih aman dari sisi business logic)
         Employee::whereIn('employee_code', $ids)->delete();
 
+        // Redirect ke halaman index dengan flash message sukses
         return redirect()->route('employee.index')->with('success', 'Data karyawan berhasil dihapus!');
     }
 }
