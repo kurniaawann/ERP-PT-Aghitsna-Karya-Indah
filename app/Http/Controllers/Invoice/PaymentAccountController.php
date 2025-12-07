@@ -28,12 +28,6 @@ class PaymentAccountController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'bank_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:255',
-            'account_holder' => 'required|string|max:255',
-        ]);
-
         PaymentAccount::create([
             'bank_name' => $request->bank_name,
             'account_number' => $request->account_number,
@@ -47,12 +41,6 @@ class PaymentAccountController extends Controller
 
     public function update(Request $request, PaymentAccount $paymentAccount)
     {
-        $request->validate([
-            'bank_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:255',
-            'account_holder' => 'required|string|max:255',
-        ]);
-
         $paymentAccount->update([
             'bank_name' => $request->bank_name,
             'account_number' => $request->account_number,
@@ -76,10 +64,6 @@ class PaymentAccountController extends Controller
 
     public function destroySelected(Request $request)
     {
-        $request->validate([
-            'selected_accounts' => 'required|array',
-            'selected_accounts.*' => 'exists:payment_accounts,id',
-        ]);
 
         $selectedIds = $request->selected_accounts;
         $totalAccounts = PaymentAccount::count();
