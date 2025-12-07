@@ -92,7 +92,9 @@
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Nilai Discount</label>
                 <input type="number" step="0.01" min="0" name="discount_value" id="discount-value"
-                    class="w-full border rounded p-2" placeholder="0" oninput="calculateDiscount()">
+                    class="w-full border rounded p-2" placeholder="0" oninput="calculateDiscount()"
+                    oninvalid="this.setCustomValidity('Nilai discount tidak valid')"
+                    onchange="this.setCustomValidity('')">
             </div>
         </div>
         <div class="mt-2 p-2 bg-white rounded">
@@ -122,7 +124,9 @@
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Nilai DP</label>
                 <input type="number" step="0.01" min="0" name="dp_value" id="dp-value"
-                    class="w-full border rounded p-2" placeholder="0" oninput="calculateDP()">
+                    class="w-full border rounded p-2" placeholder="0" oninput="calculateDP()" 
+                    oninvalid="this.setCustomValidity('Nilai DP tidak valid')"
+                    onchange="this.setCustomValidity('')">
             </div>
         </div>
         <div class="mt-2 p-2 bg-white rounded">

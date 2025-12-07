@@ -62,7 +62,24 @@
     // Calculate Discount
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValueInput = document.getElementById('discount-value');
+        const discountValue = parseFloat(discountValueInput?.value) || 0;
+
+        // Set max attribute based on discount type
+        if (discountValueInput) {
+            if (discountType === 'percentage') {
+                discountValueInput.setAttribute('max', '100');
+                // Validate if current value exceeds 100
+                if (discountValue > 100) {
+                    discountValueInput.setCustomValidity('Persentase discount tidak boleh lebih dari 100%');
+                } else {
+                    discountValueInput.setCustomValidity('');
+                }
+            } else {
+                discountValueInput.removeAttribute('max');
+                discountValueInput.setCustomValidity('');
+            }
+        }
 
         // Get base total
         let baseTotal = 0;
@@ -75,7 +92,10 @@
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
             if (discountType === 'percentage') {
-                discountAmount = (baseTotal * discountValue) / 100;
+                // Only calculate if percentage is valid
+                if (discountValue <= 100) {
+                    discountAmount = (baseTotal * discountValue) / 100;
+                }
             } else {
                 discountAmount = discountValue;
             }
@@ -101,7 +121,24 @@
     // Calculate DP
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
-        const dpValue = parseFloat(document.getElementById('dp-value')?.value) || 0;
+        const dpValueInput = document.getElementById('dp-value');
+        const dpValue = parseFloat(dpValueInput?.value) || 0;
+
+        // Set max attribute based on DP type
+        if (dpValueInput) {
+            if (dpType === 'percentage') {
+                dpValueInput.setAttribute('max', '100');
+                // Validate if current value exceeds 100
+                if (dpValue > 100) {
+                    dpValueInput.setCustomValidity('Persentase DP tidak boleh lebih dari 100%');
+                } else {
+                    dpValueInput.setCustomValidity('');
+                }
+            } else {
+                dpValueInput.removeAttribute('max');
+                dpValueInput.setCustomValidity('');
+            }
+        }
 
         // Get base total
         let baseTotal = 0;
@@ -130,7 +167,10 @@
         let dpAmount = 0;
         if (dpType && dpValue > 0) {
             if (dpType === 'percentage') {
-                dpAmount = (calculationBase * dpValue) / 100;
+                // Only calculate if percentage is valid
+                if (dpValue <= 100) {
+                    dpAmount = (calculationBase * dpValue) / 100;
+                }
             } else {
                 dpAmount = dpValue;
             }
@@ -576,9 +616,119 @@
         });
 
         // ==========================================
+        // EDIT MODAL - DISCOUNT AND DP TYPE VALIDATION
+        // ==========================================
+
+        // Setup validation for all edit modals
+        document.querySelectorAll('[id^="editModal-"]').forEach(modal => {
+            const discountTypeSelect = modal.querySelector('select[name="discount_type"]');
+            const discountValueInput = modal.querySelector('input[name="discount_value"]');
+            const dpTypeSelect = modal.querySelector('select[name="dp_type"]');
+            const dpValueInput = modal.querySelector('input[name="dp_value"]');
+
+            // Discount type change handler
+            if (discountTypeSelect && discountValueInput) {
+                // Set initial max if needed
+                if (discountTypeSelect.value === 'percentage') {
+                    discountValueInput.setAttribute('max', '100');
+                    if (parseFloat(discountValueInput.value) > 100) {
+                        discountValueInput.setCustomValidity('Persentase discount tidak boleh lebih dari 100%');
+                    }
+                }
+
+                discountTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'percentage') {
+                        discountValueInput.setAttribute('max', '100');
+                        const currentValue = parseFloat(discountValueInput.value) || 0;
+                        if (currentValue > 100) {
+                            discountValueInput.setCustomValidity('Persentase discount tidak boleh lebih dari 100%');
+                        } else {
+                            discountValueInput.setCustomValidity('');
+                        }
+                    } else {
+                        discountValueInput.removeAttribute('max');
+                        discountValueInput.setCustomValidity('');
+                    }
+                });
+
+                // Validate on input
+                discountValueInput.addEventListener('input', function() {
+                    if (discountTypeSelect.value === 'percentage') {
+                        const currentValue = parseFloat(this.value) || 0;
+                        if (currentValue > 100) {
+                            this.setCustomValidity('Persentase discount tidak boleh lebih dari 100%');
+                        } else {
+                            this.setCustomValidity('');
+                        }
+                    }
+                });
+            }
+
+            // DP type change handler
+            if (dpTypeSelect && dpValueInput) {
+                // Set initial max if needed
+                if (dpTypeSelect.value === 'percentage') {
+                    dpValueInput.setAttribute('max', '100');
+                    if (parseFloat(dpValueInput.value) > 100) {
+                        dpValueInput.setCustomValidity('Persentase DP tidak boleh lebih dari 100%');
+                    }
+                }
+
+                dpTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'percentage') {
+                        dpValueInput.setAttribute('max', '100');
+                        const currentValue = parseFloat(dpValueInput.value) || 0;
+                        if (currentValue > 100) {
+                            dpValueInput.setCustomValidity('Persentase DP tidak boleh lebih dari 100%');
+                        } else {
+                            dpValueInput.setCustomValidity('');
+                        }
+                    } else {
+                        dpValueInput.removeAttribute('max');
+                        dpValueInput.setCustomValidity('');
+                    }
+                });
+
+                // Validate on input
+                dpValueInput.addEventListener('input', function() {
+                    if (dpTypeSelect.value === 'percentage') {
+                        const currentValue = parseFloat(this.value) || 0;
+                        if (currentValue > 100) {
+                            this.setCustomValidity('Persentase DP tidak boleh lebih dari 100%');
+                        } else {
+                            this.setCustomValidity('');
+                        }
+                    }
+                });
+            }
+        });
+
+        // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
         // ==========================================
 
         updateInvoiceTotal();
+
+        // ==========================================
+        // DISCOUNT TYPE CHANGE LISTENER
+        // ==========================================
+        
+        const discountTypeSelect = document.getElementById('discount-type');
+        if (discountTypeSelect) {
+            discountTypeSelect.addEventListener('change', function() {
+                calculateDiscount();
+            });
+        }
+
+        // ==========================================
+        // DP TYPE CHANGE LISTENER
+        // ==========================================
+        
+        const dpTypeSelect = document.getElementById('dp-type');
+        if (dpTypeSelect) {
+            dpTypeSelect.addEventListener('change', function() {
+                calculateDP();
+            });
+        }
     });
 </script>
