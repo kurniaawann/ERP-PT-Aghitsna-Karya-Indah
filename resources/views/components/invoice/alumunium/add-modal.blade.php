@@ -83,7 +83,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Tipe Discount</label>
-                <select name="discount_type" id="discount-type" class="w-full border rounded p-2">
+                <select name="discount_type" id="discount-type" class="w-full border rounded p-2"
+                    onchange="updateDiscountValidation()">
                     <option value="">Tidak Ada Discount</option>
                     <option value="percentage">Persentase (%)</option>
                     <option value="amount">Nominal (Rp)</option>
