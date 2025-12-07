@@ -116,7 +116,9 @@
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Nilai Discount</label>
                 <input type="number" step="0.01" min="0" name="discount_value"
-                    value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0">
+                    value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
+                    oninvalid="this.setCustomValidity('Nilai discount tidak valid')"
+                    onchange="this.setCustomValidity('')">
             </div>
         </div>
     </div>
@@ -138,7 +140,9 @@
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Nilai DP</label>
                 <input type="number" step="0.01" min="0" name="dp_value"
-                    value="{{ $invoice->dp_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0">
+                    value="{{ $invoice->dp_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
+                    oninvalid="this.setCustomValidity('Nilai DP tidak valid')"
+                    onchange="this.setCustomValidity('')">
             </div>
         </div>
     </div>
