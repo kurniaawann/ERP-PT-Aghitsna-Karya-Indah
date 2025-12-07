@@ -65,6 +65,16 @@ class PaymentAccountController extends Controller
 
     public function toggleActive(PaymentAccount $paymentAccount)
     {
+        // Check if trying to deactivate the last active payment account
+        if ($paymentAccount->is_active) {
+            $totalActiveAccounts = PaymentAccount::where('is_active', true)->count();
+            
+            if ($totalActiveAccounts <= 1) {
+                return redirect()->route('payment-accounts.index')
+                    ->with('error', 'Tidak dapat menonaktifkan rekening aktif terakhir. Minimal 1 rekening aktif harus tetap ada!');
+            }
+        }
+        
         $paymentAccount->update([
             'is_active' => !$paymentAccount->is_active,
         ]);
@@ -82,6 +92,18 @@ class PaymentAccountController extends Controller
         ]);
 
         $selectedIds = $request->selected_accounts;
+        
+        // Check if deleting these accounts would leave no active payment accounts
+        $totalActiveAccounts = PaymentAccount::where('is_active', true)->count();
+        $selectedActiveCount = PaymentAccount::whereIn('id', $selectedIds)
+            ->where('is_active', true)
+            ->count();
+        
+        if ($totalActiveAccounts - $selectedActiveCount < 1) {
+            return redirect()->route('payment-accounts.index')
+                ->with('error', 'Tidak dapat menghapus semua rekening pembayaran aktif. Minimal 1 rekening aktif harus tetap ada!');
+        }
+        
         PaymentAccount::whereIn('id', $selectedIds)->delete();
 
         $count = count($selectedIds);
@@ -91,6 +113,14 @@ class PaymentAccountController extends Controller
 
     public function destroy(PaymentAccount $paymentAccount)
     {
+        // Check if this is the last active payment account
+        $totalActiveAccounts = PaymentAccount::where('is_active', true)->count();
+        
+        if ($paymentAccount->is_active && $totalActiveAccounts <= 1) {
+            return redirect()->route('payment-accounts.index')
+                ->with('error', 'Tidak dapat menghapus rekening aktif terakhir. Minimal 1 rekening aktif harus tetap ada!');
+        }
+        
         $paymentAccount->delete();
 
         return redirect()->route('payment-accounts.index')
