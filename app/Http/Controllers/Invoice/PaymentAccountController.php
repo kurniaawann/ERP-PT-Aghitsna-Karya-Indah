@@ -65,6 +65,18 @@ class PaymentAccountController extends Controller
 
     public function toggleActive(PaymentAccount $paymentAccount)
     {
+        // If trying to deactivate an active account, check if it's the last active one
+        if ($paymentAccount->is_active) {
+            $remainingActiveCount = PaymentAccount::where('is_active', true)
+                ->where('id', '!=', $paymentAccount->id)
+                ->count();
+                
+            if ($remainingActiveCount < 1) {
+                return redirect()->route('payment-accounts.index')
+                    ->with('error', 'Tidak dapat menonaktifkan rekening pembayaran terakhir yang aktif. Minimal 1 rekening pembayaran aktif harus tersedia untuk membuat invoice.');
+            }
+        }
+
         $paymentAccount->update([
             'is_active' => !$paymentAccount->is_active,
         ]);
@@ -82,6 +94,25 @@ class PaymentAccountController extends Controller
         ]);
 
         $selectedIds = $request->selected_accounts;
+        
+        // Check if any of the selected accounts are active
+        $hasActiveAccounts = PaymentAccount::whereIn('id', $selectedIds)
+            ->where('is_active', true)
+            ->exists();
+            
+        // Only validate if we're deleting active accounts
+        if ($hasActiveAccounts) {
+            // Check if deleting these accounts would leave no active payment accounts
+            $remainingActiveCount = PaymentAccount::where('is_active', true)
+                ->whereNotIn('id', $selectedIds)
+                ->count();
+                
+            if ($remainingActiveCount < 1) {
+                return redirect()->route('payment-accounts.index')
+                    ->with('error', 'Tidak dapat menghapus semua rekening pembayaran aktif. Minimal 1 rekening pembayaran aktif harus tersedia untuk membuat invoice.');
+            }
+        }
+
         PaymentAccount::whereIn('id', $selectedIds)->delete();
 
         $count = count($selectedIds);
@@ -91,6 +122,19 @@ class PaymentAccountController extends Controller
 
     public function destroy(PaymentAccount $paymentAccount)
     {
+        // Only validate if the account being deleted is active
+        if ($paymentAccount->is_active) {
+            // Check if deleting this account would leave no active payment accounts
+            $remainingActiveCount = PaymentAccount::where('is_active', true)
+                ->where('id', '!=', $paymentAccount->id)
+                ->count();
+                
+            if ($remainingActiveCount < 1) {
+                return redirect()->route('payment-accounts.index')
+                    ->with('error', 'Tidak dapat menghapus rekening pembayaran terakhir yang aktif. Minimal 1 rekening pembayaran aktif harus tersedia untuk membuat invoice.');
+            }
+        }
+
         $paymentAccount->delete();
 
         return redirect()->route('payment-accounts.index')
