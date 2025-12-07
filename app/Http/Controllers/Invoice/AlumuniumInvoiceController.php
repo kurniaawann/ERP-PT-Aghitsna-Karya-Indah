@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Invoice;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice\InvoiceAlumunium;
+use App\Models\Invoice\PaymentAccount;
 use App\Exports\Invoice\AlumuniumInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -56,7 +57,10 @@ class AlumuniumInvoiceController extends Controller
         // Urutkan berdasarkan tanggal invoice terbaru, lalu pagination
         $invoices = $query->orderBy('invoice_date', 'desc')->paginate(10);
 
-        return view('pages.alumunium-invoice', compact('invoices'));
+        // Get active payment accounts
+        $paymentAccounts = \App\Models\Invoice\PaymentAccount::active()->get();
+
+        return view('pages.alumunium-invoice', compact('invoices', 'paymentAccounts'));
     }
 
 
@@ -65,6 +69,21 @@ class AlumuniumInvoiceController extends Controller
         // Validasi awal: pastikan items ada dan tidak kosong
         if (!$request->has('items') || empty($request->items)) {
             return back()->with('error', 'Data items tidak ditemukan atau kosong')->withInput();
+        }
+
+        // Validasi payment accounts
+        if (!$request->has('selected_payment_accounts') || empty($request->selected_payment_accounts)) {
+            return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih')->withInput();
+        }
+
+        // Validasi discount percentage
+        if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
+            return back()->with('error', 'Persentase diskon tidak boleh lebih dari 100%')->withInput();
+        }
+
+        // Validasi DP percentage
+        if ($request->dp_type === 'percentage' && $request->dp_value > 100) {
+            return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
         }
 
         // Auto-generate invoice number jika kosong atau berisi placeholder
@@ -102,12 +121,17 @@ class AlumuniumInvoiceController extends Controller
             $totalAmount += $jumlah;
         }
 
+        // Hitung discount dan DP menggunakan method helper
+        $calculations = $this->calculateInvoiceTotals($request, $totalAmount);
+
         // Ambil semua data dari request (validasi sudah dilakukan di HTML)
         $data = $request->all();
         // Override items dengan array (bukan JSON string)
         $data['items'] = $items;
         // Set total_amount yang sudah dihitung
         $data['total_amount'] = $totalAmount;
+        $data['total_after_discount'] = $calculations['totalAfterDiscount'] > 0 && $calculations['totalAfterDiscount'] != $totalAmount ? $calculations['totalAfterDiscount'] : null;
+        $data['dp_amount'] = $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null;
 
         // Simpan invoice ke database
         InvoiceAlumunium::create($data);
@@ -120,6 +144,16 @@ class AlumuniumInvoiceController extends Controller
     public function update(Request $request, InvoiceAlumunium $aluminium_invoice)
     {
         try {
+            // Validasi discount percentage
+            if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
+                return back()->with('error', 'Persentase diskon tidak boleh lebih dari 100%')->withInput();
+            }
+
+            // Validasi DP percentage
+            if ($request->dp_type === 'percentage' && $request->dp_value > 100) {
+                return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
+            }
+
             // Ambil items dari request (validasi sudah dilakukan di HTML)
             $items = $request->items;
             $totalAmount = 0;
@@ -130,6 +164,9 @@ class AlumuniumInvoiceController extends Controller
                 $totalAmount += $jumlah;
             }
 
+            // Hitung discount dan DP menggunakan method helper
+            $calculations = $this->calculateInvoiceTotals($request, $totalAmount);
+
             // Update data invoice (invoice_number tidak diupdate karena sebagai primary key)
             $aluminium_invoice->update([
                 'invoice_date' => $request->invoice_date,
@@ -138,6 +175,13 @@ class AlumuniumInvoiceController extends Controller
                 'project_description' => $request->project_description,
                 'items' => $items, // Laravel akan auto-encode ke JSON karena cast di Model
                 'total_amount' => $totalAmount,
+                'discount_type' => $request->discount_type,
+                'discount_value' => $request->discount_value,
+                'total_after_discount' => $calculations['totalAfterDiscount'] > 0 && $calculations['totalAfterDiscount'] != $totalAmount ? $calculations['totalAfterDiscount'] : null,
+                'dp_type' => $request->dp_type,
+                'dp_value' => $request->dp_value,
+                'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
+                'selected_payment_accounts' => $request->selected_payment_accounts,
             ]);
 
             return redirect()->route('alumunium-invoice.index')
@@ -203,6 +247,42 @@ class AlumuniumInvoiceController extends Controller
 
         // Download Excel dengan parameter invoiceNumber dan nama file aman
         return Excel::download(new AlumuniumInvoiceExport($invoiceNumber), 'Invoice-' . $safeFileName . '.xlsx');
+    }
+
+    /**
+     * Calculate invoice totals including discount and DP
+     */
+    private function calculateInvoiceTotals(Request $request, float $totalAmount): array
+    {
+        // Hitung discount
+        $discountAmount = 0;
+        $totalAfterDiscount = $totalAmount;
+
+        if ($request->filled('discount_value') && $request->discount_value > 0) {
+            if ($request->discount_type === 'percentage') {
+                $discountAmount = round(($totalAmount * $request->discount_value) / 100);
+            } else {
+                $discountAmount = round($request->discount_value);
+            }
+            $totalAfterDiscount = $totalAmount - $discountAmount;
+        }
+
+        // Hitung DP
+        $dpAmount = 0;
+        if ($request->filled('dp_value') && $request->dp_value > 0) {
+            $baseAmount = $totalAfterDiscount != $totalAmount ? $totalAfterDiscount : $totalAmount;
+            if ($request->dp_type === 'percentage') {
+                $dpAmount = round(($baseAmount * $request->dp_value) / 100);
+            } else {
+                $dpAmount = round($request->dp_value);
+            }
+        }
+
+        return [
+            'discountAmount' => $discountAmount,
+            'totalAfterDiscount' => $totalAfterDiscount,
+            'dpAmount' => $dpAmount,
+        ];
     }
 }
 

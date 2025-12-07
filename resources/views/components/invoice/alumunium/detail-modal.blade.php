@@ -67,14 +67,81 @@
                             Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
                         </td>
                     </tr>
+
+                    @php
+                        $totalAfterDiscount = $invoice->total_amount;
+                        $discountAmount = 0;
+                        $dpAmount = 0;
+                    @endphp
+
+                    @if ($invoice->discount_value && $invoice->discount_value > 0)
+                        @php
+                            if ($invoice->discount_type === 'percentage') {
+                                $discountAmount = ($invoice->total_amount * $invoice->discount_value) / 100;
+                            } else {
+                                $discountAmount = $invoice->discount_value;
+                            }
+                            $totalAfterDiscount = $invoice->total_amount - $discountAmount;
+                        @endphp
+                        <tr class="bg-red-50 font-semibold">
+                            <td colspan="5" class="border border-gray-300 px-2 py-2 text-right text-sm">
+                                DISCOUNT
+                                @if ($invoice->discount_type === 'percentage')
+                                    ({{ number_format($invoice->discount_value, 0) }}%)
+                                @else
+                                    (Nominal)
+                                @endif
+                            </td>
+                            <td class="border border-gray-300 px-2 py-2 text-right text-sm text-red-600">
+                                Rp {{ number_format($discountAmount, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                        <tr class="bg-green-50 font-bold">
+                            <td colspan="5" class="border border-gray-300 px-2 py-2 text-right text-sm">
+                                TOTAL SETELAH DISCOUNT</td>
+                            <td class="border border-gray-300 px-2 py-2 text-right text-sm text-green-600">
+                                Rp {{ number_format($totalAfterDiscount, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    @endif
+
+                    @if ($invoice->dp_value && $invoice->dp_value > 0)
+                        @php
+                            $baseForDP = $totalAfterDiscount;
+                            if ($invoice->dp_type === 'percentage') {
+                                $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
+                            } else {
+                                $dpAmount = $invoice->dp_value;
+                            }
+                        @endphp
+                        <tr class="bg-blue-50 font-semibold">
+                            <td colspan="5" class="border border-gray-300 px-2 py-2 text-right text-sm">
+                                DP
+                                @if ($invoice->dp_type === 'percentage')
+                                    ({{ number_format($invoice->dp_value, 0) }}%)
+                                @else
+                                    (Nominal)
+                                @endif
+                            </td>
+                            <td class="border border-gray-300 px-2 py-2 text-right text-sm text-blue-600">
+                                Rp {{ number_format($dpAmount, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
     </div>
 
+    @php
+        $terbilangAmount = $totalAfterDiscount;
+        if ($invoice->dp_value && $invoice->dp_value > 0) {
+            $terbilangAmount = $totalAfterDiscount;
+        }
+    @endphp
     <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
         <p class="text-sm text-gray-700"><span class="font-semibold">Terbilang:</span> <span
-                class="italic">{{ terbilang($invoice->total_amount) }} Rupiah</span></p>
+                class="italic">{{ terbilang($terbilangAmount) }} Rupiah</span></p>
     </div>
 
 </x-modal>

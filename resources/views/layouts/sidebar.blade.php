@@ -84,7 +84,7 @@
 
                 {{-- Submenu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') || request()->is('payment-accounts*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/alumunium-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -94,6 +94,17 @@
                                 {{ request()->is('alumunium-invoice*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice Alumunium</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/payment-accounts') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('payment-accounts*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-building-columns w-4 
+                                {{ request()->is('payment-accounts*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Rekening Pembayaran</span>
                         </a>
                     </li>
                 </ul>
@@ -249,7 +260,8 @@
                 </button>
 
                 {{-- Submenu --}}
-                <ul id="financeDropdown" class="ml-8 mt-2 space-y-1 {{ request()->is('reimburse*') ? '' : 'hidden' }}">
+                <ul id="financeDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/reimburse') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group

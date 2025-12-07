@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Invoice\AlumuniumInvoiceController;
+use App\Http\Controllers\Invoice\PaymentAccountController;
 use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
@@ -56,6 +57,13 @@ Route::middleware('auth')->group(function () {
     // Alumunium Invoice Print Routes
     Route::get('/alumunium-invoice/{invoice_number}/print/pdf', [AlumuniumInvoiceController::class, 'printPdf'])->name('alumunium-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/alumunium-invoice/{invoice_number}/print/excel', [AlumuniumInvoiceController::class, 'printExcel'])->name('alumunium-invoice.print.excel')->where('invoice_number', '.*');
+
+    // Route Payment Accounts
+    Route::get('/payment-accounts', [PaymentAccountController::class, 'index'])->name('payment-accounts.index');
+    Route::post('/payment-accounts', [PaymentAccountController::class, 'store'])->name('payment-accounts.store');
+    Route::put('/payment-accounts/{paymentAccount}', [PaymentAccountController::class, 'update'])->name('payment-accounts.update');
+    Route::post('/payment-accounts/{paymentAccount}/toggle', [PaymentAccountController::class, 'toggleActive'])->name('payment-accounts.toggle');
+    Route::delete('/payment-accounts/destroy-selected', [PaymentAccountController::class, 'destroySelected'])->name('payment-accounts.destroySelected');
 
     // Route Sales Report
     Route::get('/sales-report', [SalesReportController::class, 'index'])->name('sales-report.index');
