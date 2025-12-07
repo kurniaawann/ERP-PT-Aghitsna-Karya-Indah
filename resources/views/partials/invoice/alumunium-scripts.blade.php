@@ -238,6 +238,36 @@
     }
 
     // ==========================================
+    // DISCOUNT VALIDATION
+    // ==========================================
+
+    function updateDiscountValidation() {
+        const discountType = document.getElementById('discount-type')?.value;
+        const discountValueInput = document.getElementById('discount-value');
+        
+        if (discountValueInput) {
+            if (discountType === 'percentage') {
+                discountValueInput.setAttribute('max', '100');
+            } else {
+                discountValueInput.removeAttribute('max');
+            }
+        }
+    }
+
+    function updateDiscountValidationEdit(invoiceNumber) {
+        const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
+        const discountValueInput = document.getElementById('discount-value-edit-' + invoiceNumber);
+        
+        if (discountValueInput) {
+            if (discountType === 'percentage') {
+                discountValueInput.setAttribute('max', '100');
+            } else {
+                discountValueInput.removeAttribute('max');
+            }
+        }
+    }
+
+    // ==========================================
     // PAYMENT ACCOUNT VALIDATION
     // ==========================================
 
