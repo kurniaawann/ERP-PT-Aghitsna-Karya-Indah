@@ -87,7 +87,9 @@ class Reimburse extends Model
      */
     public function getFormattedDateAttribute()
     {
-        return $this->date ? $this->date->format('d/m/Y') : '-';
+        /** @var \Carbon\Carbon|null $date */
+        $date = $this->date;
+        return $date ? $date->format('d/m/Y') : '-';
     }
 
     /**
@@ -95,7 +97,9 @@ class Reimburse extends Model
      */
     public function getFormattedDueDateAttribute()
     {
-        return $this->due_date ? $this->due_date->format('d/m/Y') : '-';
+        /** @var \Carbon\Carbon|null $dueDate */
+        $dueDate = $this->due_date;
+        return $dueDate ? $dueDate->format('d/m/Y') : '-';
     }
 
     /**
