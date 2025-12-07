@@ -143,7 +143,7 @@
         }
 
         const totalAfterDiscount = baseTotal - discountAmount;
-        const calculationBase = totalAfterDiscount != baseTotal ? totalAfterDiscount : baseTotal;
+        const calculationBase = totalAfterDiscount !== baseTotal ? totalAfterDiscount : baseTotal;
 
         let dpAmount = 0;
         if (dpType && dpValue > 0) {

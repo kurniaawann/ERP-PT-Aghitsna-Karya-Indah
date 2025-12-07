@@ -23,6 +23,7 @@ class PaymentAccount extends Model
 
     /**
      * Scope untuk hanya mendapatkan rekening aktif
+     * Note: Soft-deleted records are automatically excluded by the SoftDeletes trait
      */
     public function scopeActive($query)
     {
