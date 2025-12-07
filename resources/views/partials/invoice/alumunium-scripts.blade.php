@@ -275,6 +275,93 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         // ==========================================
+        // DP TYPE VALIDATION
+        // ==========================================
+        
+        const dpTypeSelect = document.getElementById('dp-type');
+        const dpValueInput = document.getElementById('dp-value');
+        const dpValueHint = document.getElementById('dp-value-hint');
+        
+        if (dpTypeSelect && dpValueInput) {
+            dpTypeSelect.addEventListener('change', function() {
+                if (this.value === 'percentage') {
+                    dpValueInput.setAttribute('max', '100');
+                    if (dpValueHint) {
+                        dpValueHint.textContent = 'Maksimal 100%';
+                        dpValueHint.classList.remove('hidden');
+                    }
+                    // Validate current value
+                    const currentValue = parseFloat(dpValueInput.value) || 0;
+                    if (currentValue > 100) {
+                        dpValueInput.value = 100;
+                        calculateDP();
+                    }
+                } else {
+                    dpValueInput.removeAttribute('max');
+                    if (dpValueHint) {
+                        dpValueHint.classList.add('hidden');
+                    }
+                }
+            });
+            
+            // Add input validation
+            dpValueInput.addEventListener('input', function() {
+                if (dpTypeSelect.value === 'percentage') {
+                    const value = parseFloat(this.value) || 0;
+                    if (value > 100) {
+                        this.value = 100;
+                    }
+                }
+            });
+        }
+        
+        // ==========================================
+        // DP TYPE VALIDATION FOR EDIT MODALS
+        // ==========================================
+        
+        document.querySelectorAll('.dp-type-edit').forEach(function(dpTypeSelect) {
+            const modal = dpTypeSelect.closest('[id^="editModal-"]');
+            if (!modal) return;
+            
+            const invoiceId = modal.id.replace('editModal-', '');
+            const dpValueInput = document.getElementById('dp-value-edit-' + invoiceId);
+            const dpValueHint = document.getElementById('dp-value-hint-edit-' + invoiceId);
+            
+            if (dpValueInput) {
+                dpTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'percentage') {
+                        dpValueInput.setAttribute('max', '100');
+                        if (dpValueHint) {
+                            dpValueHint.textContent = 'Maksimal 100%';
+                            dpValueHint.classList.remove('hidden');
+                        }
+                        // Validate current value
+                        const currentValue = parseFloat(dpValueInput.value) || 0;
+                        if (currentValue > 100) {
+                            dpValueInput.value = 100;
+                        }
+                    } else {
+                        dpValueInput.removeAttribute('max');
+                        if (dpValueHint) {
+                            dpValueHint.classList.add('hidden');
+                        }
+                    }
+                });
+                
+                // Add input validation
+                dpValueInput.addEventListener('input', function() {
+                    const typeSelect = document.getElementById('dp-type-edit-' + invoiceId);
+                    if (typeSelect && typeSelect.value === 'percentage') {
+                        const value = parseFloat(this.value) || 0;
+                        if (value > 100) {
+                            this.value = 100;
+                        }
+                    }
+                });
+            }
+        });
+        
+        // ==========================================
         // SELECT ALL CHECKBOX FUNCTIONALITY
         // ==========================================
 
