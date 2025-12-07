@@ -14,12 +14,10 @@ class PaymentAccount extends Model
         'account_number',
         'account_holder',
         'is_active',
-        'order',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'order' => 'integer',
     ];
 
     /**
@@ -27,6 +25,6 @@ class PaymentAccount extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)->orderBy('order');
+        return $query->where('is_active', true)->orderBy('id');
     }
 }

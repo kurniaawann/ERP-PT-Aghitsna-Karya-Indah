@@ -327,7 +327,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                 if (!empty($selectedAccountIds)) {
                     $paymentAccounts = \App\Models\Invoice\PaymentAccount::whereIn('id', $selectedAccountIds)
-                        ->orderBy('order')
+                        ->orderBy('id')
                         ->get();
                 } else {
                     // Fallback ke semua rekening aktif jika tidak ada yang dipilih

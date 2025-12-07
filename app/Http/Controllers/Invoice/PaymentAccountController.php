@@ -22,7 +22,7 @@ class PaymentAccountController extends Controller
             });
         }
 
-        $accounts = $query->orderBy('order')->paginate(10);
+        $accounts = $query->orderBy('id')->paginate(10);
         return view('pages.invoice.payment-accounts', compact('accounts'));
     }
 
@@ -34,14 +34,11 @@ class PaymentAccountController extends Controller
             'account_holder' => 'required|string|max:255',
         ]);
 
-        $maxOrder = PaymentAccount::max('order') ?? 0;
-
         PaymentAccount::create([
             'bank_name' => $request->bank_name,
             'account_number' => $request->account_number,
             'account_holder' => $request->account_holder,
             'is_active' => true,
-            'order' => $maxOrder + 1,
         ]);
 
         return redirect()->route('payment-accounts.index')
@@ -54,20 +51,13 @@ class PaymentAccountController extends Controller
             'bank_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:255',
             'account_holder' => 'required|string|max:255',
-            'order' => 'nullable|integer|min:1',
         ]);
 
-        $updateData = [
+        $paymentAccount->update([
             'bank_name' => $request->bank_name,
             'account_number' => $request->account_number,
             'account_holder' => $request->account_holder,
-        ];
-
-        if ($request->has('order')) {
-            $updateData['order'] = $request->order;
-        }
-
-        $paymentAccount->update($updateData);
+        ]);
 
         return redirect()->route('payment-accounts.index')
             ->with('success', 'Rekening pembayaran berhasil diupdate!');
@@ -84,19 +74,23 @@ class PaymentAccountController extends Controller
             ->with('success', "Rekening pembayaran berhasil {$status}!");
     }
 
-    public function destroy(Request $request, PaymentAccount $paymentAccount)
+    public function destroySelected(Request $request)
     {
-        // Check if bulk delete
-        if ($request->has('selected_accounts')) {
-            $selectedIds = $request->selected_accounts;
-            PaymentAccount::whereIn('id', $selectedIds)->delete();
+        $request->validate([
+            'selected_accounts' => 'required|array',
+            'selected_accounts.*' => 'exists:payment_accounts,id',
+        ]);
 
-            $count = count($selectedIds);
-            return redirect()->route('payment-accounts.index')
-                ->with('success', "{$count} rekening pembayaran berhasil dihapus!");
-        }
+        $selectedIds = $request->selected_accounts;
+        PaymentAccount::whereIn('id', $selectedIds)->delete();
 
-        // Single delete
+        $count = count($selectedIds);
+        return redirect()->route('payment-accounts.index')
+            ->with('success', "{$count} rekening pembayaran berhasil dihapus!");
+    }
+
+    public function destroy(PaymentAccount $paymentAccount)
+    {
         $paymentAccount->delete();
 
         return redirect()->route('payment-accounts.index')

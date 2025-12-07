@@ -53,6 +53,14 @@
             return;
         }
 
+        // Show loading on delete button
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
         const form = document.getElementById('deleteForm');
         if (form) {
             form.submit();
@@ -103,17 +111,28 @@
         }
 
         // ==========================================
-        // FORM SUBMIT PREVENTION
+        // ADD/EDIT FORM SUBMIT HANDLERS
         // ==========================================
 
-        const forms = document.querySelectorAll('form[id^="form-"]');
-        forms.forEach(form => {
+        // Handle Add Modal Submit
+        const addForm = document.querySelector('#addModal form');
+        if (addForm) {
+            addForm.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (!handleFormSubmit(submitBtn)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        // Handle Edit Modal Submits
+        document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
             form.addEventListener('submit', function(e) {
                 const submitBtn = this.querySelector('button[type="submit"]');
-                const originalText = submitBtn ? submitBtn.innerHTML : '';
-
-                if (!handleFormSubmit(submitBtn, originalText)) {
+                if (!handleFormSubmit(submitBtn)) {
                     e.preventDefault();
+                    return false;
                 }
             });
         });

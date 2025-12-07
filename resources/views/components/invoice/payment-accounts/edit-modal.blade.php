@@ -30,12 +30,4 @@
             oninvalid="this.setCustomValidity('Nama pemilik rekening wajib diisi')"
             oninput="this.setCustomValidity('')">
     </div>
-
-    <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Urutan (Order) <span class="text-error">*</span></label>
-        <input type="number" name="order" value="{{ $account->order }}" class="w-full border rounded p-2"
-            min="1" required oninvalid="this.setCustomValidity('Urutan wajib diisi (minimal 1)')"
-            oninput="this.setCustomValidity('')">
-        <p class="text-xs text-gray-500 mt-1">Ubah urutan untuk mengatur tampilan rekening di invoice</p>
-    </div>
 </x-modal>
