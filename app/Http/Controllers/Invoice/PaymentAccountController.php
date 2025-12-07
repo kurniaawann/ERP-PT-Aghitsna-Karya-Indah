@@ -84,7 +84,7 @@ class PaymentAccountController extends Controller
         $selectedIds = $request->selected_accounts;
         
         // Check if deleting selected accounts would leave no active accounts
-        $totalAccounts = PaymentAccount::count();
+        $totalAccounts = PaymentAccount::withoutTrashed()->count();
         $remainingAccounts = $totalAccounts - count($selectedIds);
         
         if ($remainingAccounts < 1) {
@@ -102,7 +102,7 @@ class PaymentAccountController extends Controller
     public function destroy(PaymentAccount $paymentAccount)
     {
         // Check if this is the last payment account
-        $totalAccounts = PaymentAccount::count();
+        $totalAccounts = PaymentAccount::withoutTrashed()->count();
         
         if ($totalAccounts <= 1) {
             return redirect()->route('payment-accounts.index')

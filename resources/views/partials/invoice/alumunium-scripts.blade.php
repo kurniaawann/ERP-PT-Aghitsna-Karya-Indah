@@ -96,9 +96,9 @@
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
             if (discountType === 'percentage') {
-                discountAmount = (baseTotal * discountValue) / 100;
+                discountAmount = Math.round((baseTotal * discountValue) / 100);
             } else {
-                discountAmount = discountValue;
+                discountAmount = Math.round(discountValue);
             }
         }
 
@@ -148,9 +148,9 @@
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
             if (discountType === 'percentage') {
-                discountAmount = (baseTotal * discountValue) / 100;
+                discountAmount = Math.round((baseTotal * discountValue) / 100);
             } else {
-                discountAmount = discountValue;
+                discountAmount = Math.round(discountValue);
             }
         }
 
@@ -160,9 +160,9 @@
         let dpAmount = 0;
         if (dpType && dpValue > 0) {
             if (dpType === 'percentage') {
-                dpAmount = (calculationBase * dpValue) / 100;
+                dpAmount = Math.round((calculationBase * dpValue) / 100);
             } else {
-                dpAmount = dpValue;
+                dpAmount = Math.round(dpValue);
             }
         }
 
