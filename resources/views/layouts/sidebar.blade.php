@@ -228,6 +228,42 @@
                 </ul>
             </li>
 
+            {{-- Finance (Keuangan) Dropdown --}}
+            <li>
+                <button onclick="toggleDropdown('financeDropdown')"
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group 
+                        {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+
+                    <div class="flex items-center">
+                        <i
+                            class="fas fa-wallet w-5 
+                            {{ request()->is('reimburse*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        </i>
+                        <span class="ml-3 font-medium">Keuangan</span>
+                    </div>
+
+                    <i id="financeDropdownIcon"
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 
+                            {{ request()->is('reimburse*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                    </i>
+                </button>
+
+                {{-- Submenu --}}
+                <ul id="financeDropdown" class="ml-8 mt-2 space-y-1 {{ request()->is('reimburse*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/reimburse') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-hand-holding-usd w-4 
+                                {{ request()->is('reimburse*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Reimbursement</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
         </ul>
     </nav>
 </aside>
