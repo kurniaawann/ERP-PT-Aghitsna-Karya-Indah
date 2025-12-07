@@ -68,9 +68,14 @@
                         </td>
                     </tr>
 
+                    @php
+                        $totalAfterDiscount = $invoice->total_amount;
+                        $discountAmount = 0;
+                        $dpAmount = 0;
+                    @endphp
+
                     @if ($invoice->discount_value && $invoice->discount_value > 0)
                         @php
-                            $discountAmount = 0;
                             if ($invoice->discount_type === 'percentage') {
                                 $discountAmount = ($invoice->total_amount * $invoice->discount_value) / 100;
                             } else {
@@ -83,6 +88,8 @@
                                 DISCOUNT
                                 @if ($invoice->discount_type === 'percentage')
                                     ({{ number_format($invoice->discount_value, 0) }}%)
+                                @else
+                                    (Nominal)
                                 @endif
                             </td>
                             <td class="border border-gray-300 px-2 py-2 text-right text-sm text-red-600">
@@ -100,8 +107,7 @@
 
                     @if ($invoice->dp_value && $invoice->dp_value > 0)
                         @php
-                            $baseForDP = isset($totalAfterDiscount) ? $totalAfterDiscount : $invoice->total_amount;
-                            $dpAmount = 0;
+                            $baseForDP = $totalAfterDiscount;
                             if ($invoice->dp_type === 'percentage') {
                                 $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
                             } else {
@@ -113,6 +119,8 @@
                                 DP
                                 @if ($invoice->dp_type === 'percentage')
                                     ({{ number_format($invoice->dp_value, 0) }}%)
+                                @else
+                                    (Nominal)
                                 @endif
                             </td>
                             <td class="border border-gray-300 px-2 py-2 text-right text-sm text-blue-600">
@@ -126,7 +134,10 @@
     </div>
 
     @php
-        $terbilangAmount = isset($totalAfterDiscount) ? $totalAfterDiscount : $invoice->total_amount;
+        $terbilangAmount = $totalAfterDiscount;
+        if ($invoice->dp_value && $invoice->dp_value > 0) {
+            $terbilangAmount = $totalAfterDiscount;
+        }
     @endphp
     <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
         <p class="text-sm text-gray-700"><span class="font-semibold">Terbilang:</span> <span
