@@ -14,6 +14,28 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class AlumuniumInvoiceController extends Controller
 {
 
+    /**
+     * Validate percentage values for discount and DP
+     */
+    private function validatePercentageValues(Request $request)
+    {
+        // Validasi discount percentage
+        if ($request->filled('discount_type') && $request->discount_type === 'percentage' && $request->filled('discount_value')) {
+            if ($request->discount_value > 100) {
+                return back()->with('error', 'Persentase discount tidak boleh lebih dari 100%')->withInput();
+            }
+        }
+
+        // Validasi DP percentage
+        if ($request->filled('dp_type') && $request->dp_type === 'percentage' && $request->filled('dp_value')) {
+            if ($request->dp_value > 100) {
+                return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
+            }
+        }
+
+        return null;
+    }
+
     public function getNextInvoiceNumber()
     {
         // Ambil tahun 2 digit (contoh: 25 untuk tahun 2025)
@@ -76,18 +98,10 @@ class AlumuniumInvoiceController extends Controller
             return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih')->withInput();
         }
 
-        // Validasi discount percentage
-        if ($request->filled('discount_type') && $request->discount_type === 'percentage' && $request->filled('discount_value')) {
-            if ($request->discount_value > 100) {
-                return back()->with('error', 'Persentase discount tidak boleh lebih dari 100%')->withInput();
-            }
-        }
-
-        // Validasi DP percentage
-        if ($request->filled('dp_type') && $request->dp_type === 'percentage' && $request->filled('dp_value')) {
-            if ($request->dp_value > 100) {
-                return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
-            }
+        // Validasi percentage values
+        $validationError = $this->validatePercentageValues($request);
+        if ($validationError) {
+            return $validationError;
         }
 
         // Auto-generate invoice number jika kosong atau berisi placeholder
@@ -169,18 +183,10 @@ class AlumuniumInvoiceController extends Controller
     public function update(Request $request, InvoiceAlumunium $aluminium_invoice)
     {
         try {
-            // Validasi discount percentage
-            if ($request->filled('discount_type') && $request->discount_type === 'percentage' && $request->filled('discount_value')) {
-                if ($request->discount_value > 100) {
-                    return back()->with('error', 'Persentase discount tidak boleh lebih dari 100%')->withInput();
-                }
-            }
-
-            // Validasi DP percentage
-            if ($request->filled('dp_type') && $request->dp_type === 'percentage' && $request->filled('dp_value')) {
-                if ($request->dp_value > 100) {
-                    return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
-                }
+            // Validasi percentage values
+            $validationError = $this->validatePercentageValues($request);
+            if ($validationError) {
+                return $validationError;
             }
 
             // Ambil items dari request (validasi sudah dilakukan di HTML)

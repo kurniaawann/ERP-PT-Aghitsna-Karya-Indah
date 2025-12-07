@@ -1,5 +1,55 @@
 <script>
     // ==========================================
+    // HELPER FUNCTIONS
+    // ==========================================
+
+    /**
+     * Setup percentage validation for input fields
+     * @param {HTMLElement} typeSelect - The select element for type (percentage/amount)
+     * @param {HTMLElement} valueInput - The input element for value
+     * @param {string} fieldName - Name of the field for error messages
+     */
+    function setupPercentageValidation(typeSelect, valueInput, fieldName) {
+        if (!typeSelect || !valueInput) return;
+
+        // Set initial max if needed
+        if (typeSelect.value === 'percentage') {
+            valueInput.setAttribute('max', '100');
+            if (parseFloat(valueInput.value) > 100) {
+                valueInput.setCustomValidity(`Persentase ${fieldName} tidak boleh lebih dari 100%`);
+            }
+        }
+
+        // Type change handler
+        typeSelect.addEventListener('change', function() {
+            if (this.value === 'percentage') {
+                valueInput.setAttribute('max', '100');
+                const currentValue = parseFloat(valueInput.value) || 0;
+                if (currentValue > 100) {
+                    valueInput.setCustomValidity(`Persentase ${fieldName} tidak boleh lebih dari 100%`);
+                } else {
+                    valueInput.setCustomValidity('');
+                }
+            } else {
+                valueInput.removeAttribute('max');
+                valueInput.setCustomValidity('');
+            }
+        });
+
+        // Validate on input
+        valueInput.addEventListener('input', function() {
+            if (typeSelect.value === 'percentage') {
+                const currentValue = parseFloat(this.value) || 0;
+                if (currentValue > 100) {
+                    this.setCustomValidity(`Persentase ${fieldName} tidak boleh lebih dari 100%`);
+                } else {
+                    this.setCustomValidity('');
+                }
+            }
+        });
+    }
+
+    // ==========================================
     // LIVE CALCULATION FUNCTIONS
     // ==========================================
 
