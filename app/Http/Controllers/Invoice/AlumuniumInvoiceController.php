@@ -76,6 +76,20 @@ class AlumuniumInvoiceController extends Controller
             return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih')->withInput();
         }
 
+        // Validasi discount percentage
+        if ($request->filled('discount_type') && $request->discount_type === 'percentage' && $request->filled('discount_value')) {
+            if ($request->discount_value > 100) {
+                return back()->with('error', 'Persentase discount tidak boleh lebih dari 100%')->withInput();
+            }
+        }
+
+        // Validasi DP percentage
+        if ($request->filled('dp_type') && $request->dp_type === 'percentage' && $request->filled('dp_value')) {
+            if ($request->dp_value > 100) {
+                return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
+            }
+        }
+
         // Auto-generate invoice number jika kosong atau berisi placeholder
         if (empty($request->invoice_number) || strpos($request->invoice_number, 'Akan digenerate') !== false) {
             // Ambil tahun 2 digit (contoh: 25 untuk tahun 2025)
@@ -155,6 +169,20 @@ class AlumuniumInvoiceController extends Controller
     public function update(Request $request, InvoiceAlumunium $aluminium_invoice)
     {
         try {
+            // Validasi discount percentage
+            if ($request->filled('discount_type') && $request->discount_type === 'percentage' && $request->filled('discount_value')) {
+                if ($request->discount_value > 100) {
+                    return back()->with('error', 'Persentase discount tidak boleh lebih dari 100%')->withInput();
+                }
+            }
+
+            // Validasi DP percentage
+            if ($request->filled('dp_type') && $request->dp_type === 'percentage' && $request->filled('dp_value')) {
+                if ($request->dp_value > 100) {
+                    return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
+                }
+            }
+
             // Ambil items dari request (validasi sudah dilakukan di HTML)
             $items = $request->items;
             $totalAmount = 0;
