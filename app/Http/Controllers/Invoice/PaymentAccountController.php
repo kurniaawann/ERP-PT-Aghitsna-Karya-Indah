@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice\PaymentAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PaymentAccountController extends Controller
 {
@@ -85,45 +86,39 @@ class PaymentAccountController extends Controller
         $selectedIds = $request->selected_accounts;
         $selectedCount = count($selectedIds);
         
-        try {
-            DB::transaction(function () use ($selectedIds, $selectedCount) {
-                // Check if trying to delete all payment accounts within transaction
-                $totalAccounts = PaymentAccount::lockForUpdate()->count();
-                
-                if ($selectedCount >= $totalAccounts) {
-                    throw new \Exception('Tidak dapat menghapus semua rekening pembayaran. Minimal 1 rekening pembayaran harus tersedia untuk invoice.');
-                }
+        DB::transaction(function () use ($selectedIds, $selectedCount) {
+            // Check if trying to delete all payment accounts within transaction
+            $totalAccounts = PaymentAccount::lockForUpdate()->count();
+            
+            if ($selectedCount >= $totalAccounts) {
+                throw ValidationException::withMessages([
+                    'selected_accounts' => 'Tidak dapat menghapus semua rekening pembayaran. Minimal 1 rekening pembayaran harus tersedia untuk invoice.'
+                ]);
+            }
 
-                PaymentAccount::whereIn('id', $selectedIds)->delete();
-            });
+            PaymentAccount::whereIn('id', $selectedIds)->delete();
+        });
 
-            return redirect()->route('payment-accounts.index')
-                ->with('success', "{$selectedCount} rekening pembayaran berhasil dihapus!");
-        } catch (\Exception $e) {
-            return redirect()->route('payment-accounts.index')
-                ->with('error', $e->getMessage());
-        }
+        return redirect()->route('payment-accounts.index')
+            ->with('success', "{$selectedCount} rekening pembayaran berhasil dihapus!");
     }
 
     public function destroy(PaymentAccount $paymentAccount)
     {
-        try {
-            DB::transaction(function () use ($paymentAccount) {
-                // Check if this is the last payment account within transaction
-                $totalAccounts = PaymentAccount::lockForUpdate()->count();
-                
-                if ($totalAccounts <= 1) {
-                    throw new \Exception('Tidak dapat menghapus rekening pembayaran terakhir. Minimal 1 rekening pembayaran harus tersedia untuk invoice.');
-                }
+        DB::transaction(function () use ($paymentAccount) {
+            // Check if this is the last payment account within transaction
+            $totalAccounts = PaymentAccount::lockForUpdate()->count();
+            
+            if ($totalAccounts <= 1) {
+                throw ValidationException::withMessages([
+                    'payment_account' => 'Tidak dapat menghapus rekening pembayaran terakhir. Minimal 1 rekening pembayaran harus tersedia untuk invoice.'
+                ]);
+            }
 
-                $paymentAccount->delete();
-            });
+            $paymentAccount->delete();
+        });
 
-            return redirect()->route('payment-accounts.index')
-                ->with('success', 'Rekening pembayaran berhasil dihapus!');
-        } catch (\Exception $e) {
-            return redirect()->route('payment-accounts.index')
-                ->with('error', $e->getMessage());
-        }
+        return redirect()->route('payment-accounts.index')
+            ->with('success', 'Rekening pembayaran berhasil dihapus!');
     }
 }
