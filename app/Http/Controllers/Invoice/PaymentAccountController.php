@@ -65,6 +65,16 @@ class PaymentAccountController extends Controller
 
     public function toggleActive(PaymentAccount $paymentAccount)
     {
+        // Check if trying to deactivate the last active payment account
+        if ($paymentAccount->is_active) {
+            $totalActiveAccounts = PaymentAccount::where('is_active', true)->count();
+            
+            if ($totalActiveAccounts <= 1) {
+                return redirect()->route('payment-accounts.index')
+                    ->with('error', 'Tidak dapat menonaktifkan rekening aktif terakhir. Minimal 1 rekening aktif harus tetap ada!');
+            }
+        }
+        
         $paymentAccount->update([
             'is_active' => !$paymentAccount->is_active,
         ]);
