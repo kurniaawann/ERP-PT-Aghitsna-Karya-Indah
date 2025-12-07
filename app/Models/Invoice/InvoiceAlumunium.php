@@ -50,4 +50,40 @@ class InvoiceAlumunium extends Model
     {
         return 'invoice_number';
     }
+
+    /**
+     * Calculate discount amount based on total amount
+     */
+    public function getDiscountAmount(float $totalAmount = null): float
+    {
+        if (!$this->discount_value || $this->discount_value <= 0) {
+            return 0;
+        }
+
+        $amount = $totalAmount ?? $this->total_amount;
+
+        if ($this->discount_type === 'percentage') {
+            return round(($amount * floatval($this->discount_value)) / 100);
+        }
+
+        return round(floatval($this->discount_value));
+    }
+
+    /**
+     * Calculate DP amount based on total after discount
+     */
+    public function getDpAmount(float $baseAmount = null): float
+    {
+        if (!$this->dp_value || $this->dp_value <= 0) {
+            return 0;
+        }
+
+        $amount = $baseAmount ?? ($this->total_after_discount ?? $this->total_amount);
+
+        if ($this->dp_type === 'percentage') {
+            return round(($amount * floatval($this->dp_value)) / 100);
+        }
+
+        return round(floatval($this->dp_value));
+    }
 }

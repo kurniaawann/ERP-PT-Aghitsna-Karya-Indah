@@ -321,12 +321,7 @@
                 @if ($invoice->dp_value && $invoice->dp_value > 0)
                     @php
                         $baseForDP = isset($finalTotal) ? $finalTotal : $totalAmount;
-                        $dpAmount = 0;
-                        if ($invoice->dp_type === 'percentage') {
-                            $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
-                        } else {
-                            $dpAmount = $invoice->dp_value;
-                        }
+                        $dpAmount = $invoice->getDpAmount($baseForDP);
                     @endphp
 
                     <!-- DP Row -->
@@ -371,6 +366,9 @@
                 <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
                 <strong>{{ $account->account_holder }}</strong><br>
             @endforeach
+            @if ($paymentAccounts->isEmpty())
+                <em>Tidak ada rekening pembayaran yang tersedia</em>
+            @endif
         </div>
 
         <!-- Closing -->

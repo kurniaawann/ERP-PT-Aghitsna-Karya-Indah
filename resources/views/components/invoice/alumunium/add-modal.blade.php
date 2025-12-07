@@ -83,7 +83,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Tipe Discount</label>
-                <select name="discount_type" id="discount-type" class="w-full border rounded p-2">
+                <select name="discount_type" id="discount-type" class="w-full border rounded p-2"
+                    onchange="calculateDiscount()">
                     <option value="">Tidak Ada Discount</option>
                     <option value="percentage">Persentase (%)</option>
                     <option value="amount">Nominal (Rp)</option>
@@ -93,6 +94,12 @@
                 <label class="block text-gray-600 text-sm mb-1">Nilai Discount</label>
                 <input type="number" step="0.01" min="0" name="discount_value" id="discount-value"
                     class="w-full border rounded p-2" placeholder="0" oninput="calculateDiscount()">
+                <small class="text-xs text-gray-500" id="discount-helper">Maksimal 100% untuk persentase</small>
+                <div id="discount-error"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span id="discount-error-text">Persentase diskon tidak boleh lebih dari 100%</span>
+                </div>
             </div>
         </div>
         <div class="mt-2 p-2 bg-white rounded">
@@ -113,7 +120,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Tipe DP</label>
-                <select name="dp_type" id="dp-type" class="w-full border rounded p-2">
+                <select name="dp_type" id="dp-type" class="w-full border rounded p-2" onchange="calculateDP()">
                     <option value="">Tidak Ada DP</option>
                     <option value="percentage">Persentase (%)</option>
                     <option value="amount">Nominal (Rp)</option>
@@ -123,6 +130,12 @@
                 <label class="block text-gray-600 text-sm mb-1">Nilai DP</label>
                 <input type="number" step="0.01" min="0" name="dp_value" id="dp-value"
                     class="w-full border rounded p-2" placeholder="0" oninput="calculateDP()">
+                <small class="text-xs text-gray-500" id="dp-helper">Maksimal 100% untuk persentase</small>
+                <div id="dp-error"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span id="dp-error-text">Persentase DP tidak boleh lebih dari 100%</span>
+                </div>
             </div>
         </div>
         <div class="mt-2 p-2 bg-white rounded">

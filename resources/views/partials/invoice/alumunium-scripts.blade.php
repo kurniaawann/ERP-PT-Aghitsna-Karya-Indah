@@ -62,7 +62,28 @@
     // Calculate Discount
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValueInput = document.getElementById('discount-value');
+        let discountValue = parseFloat(discountValueInput?.value) || 0;
+        const discountError = document.getElementById('discount-error');
+
+        // Validasi: jika percentage, batasi maksimal 100
+        if (discountType === 'percentage' && discountValue > 100) {
+            discountValue = 100;
+            if (discountValueInput) discountValueInput.value = 100;
+
+            // Tampilkan error message di modal
+            if (discountError) {
+                discountError.classList.remove('hidden');
+                setTimeout(() => {
+                    discountError.classList.add('hidden');
+                }, 3000); // Hide after 3 seconds
+            }
+        } else {
+            // Sembunyikan error message jika valid
+            if (discountError) {
+                discountError.classList.add('hidden');
+            }
+        }
 
         // Get base total
         let baseTotal = 0;
@@ -101,7 +122,28 @@
     // Calculate DP
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
-        const dpValue = parseFloat(document.getElementById('dp-value')?.value) || 0;
+        const dpValueInput = document.getElementById('dp-value');
+        let dpValue = parseFloat(dpValueInput?.value) || 0;
+        const dpError = document.getElementById('dp-error');
+
+        // Validasi: jika percentage, batasi maksimal 100
+        if (dpType === 'percentage' && dpValue > 100) {
+            dpValue = 100;
+            if (dpValueInput) dpValueInput.value = 100;
+
+            // Tampilkan error message di modal
+            if (dpError) {
+                dpError.classList.remove('hidden');
+                setTimeout(() => {
+                    dpError.classList.add('hidden');
+                }, 3000); // Hide after 3 seconds
+            }
+        } else {
+            // Sembunyikan error message jika valid
+            if (dpError) {
+                dpError.classList.add('hidden');
+            }
+        }
 
         // Get base total
         let baseTotal = 0;
