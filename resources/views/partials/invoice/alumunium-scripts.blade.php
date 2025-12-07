@@ -1,5 +1,12 @@
 <script>
     // ==========================================
+    // CONSTANTS
+    // ==========================================
+    
+    const DP_PERCENTAGE_ERROR_MESSAGE = 'DP persentase tidak boleh lebih dari 100%';
+    const MAX_DP_PERCENTAGE = 100;
+
+    // ==========================================
     // LIVE CALCULATION FUNCTIONS
     // ==========================================
 
@@ -143,19 +150,17 @@
         }
     }
 
-    // Validate DP Percentage
-    function validateDPPercentage() {
-        const dpType = document.getElementById('dp-type')?.value;
-        const dpValueInput = document.getElementById('dp-value');
+    // Validate DP Percentage - Common validation function
+    function validateDPPercentageCommon(dpTypeElement, dpValueInput) {
+        if (!dpValueInput || !dpTypeElement) return;
         
-        if (!dpValueInput) return;
-        
+        const dpType = dpTypeElement.value;
         if (dpType === 'percentage') {
             const dpValue = parseFloat(dpValueInput.value) || 0;
-            if (dpValue > 100) {
-                dpValueInput.setCustomValidity('DP persentase tidak boleh lebih dari 100%');
+            if (dpValue > MAX_DP_PERCENTAGE) {
+                dpValueInput.setCustomValidity(DP_PERCENTAGE_ERROR_MESSAGE);
                 dpValueInput.reportValidity();
-                dpValueInput.value = 100; // Cap at 100%
+                dpValueInput.value = MAX_DP_PERCENTAGE; // Cap at max percentage
             } else {
                 dpValueInput.setCustomValidity('');
             }
@@ -164,23 +169,11 @@
         }
     }
 
-    // Validate DP Percentage for Edit Modals
-    function validateDPPercentageEdit(dpTypeSelect, dpValueInput) {
-        if (!dpValueInput || !dpTypeSelect) return;
-        
-        const dpType = dpTypeSelect.value;
-        if (dpType === 'percentage') {
-            const dpValue = parseFloat(dpValueInput.value) || 0;
-            if (dpValue > 100) {
-                dpValueInput.setCustomValidity('DP persentase tidak boleh lebih dari 100%');
-                dpValueInput.reportValidity();
-                dpValueInput.value = 100; // Cap at 100%
-            } else {
-                dpValueInput.setCustomValidity('');
-            }
-        } else {
-            dpValueInput.setCustomValidity('');
-        }
+    // Validate DP Percentage - Add Modal wrapper
+    function validateDPPercentage() {
+        const dpType = document.getElementById('dp-type');
+        const dpValueInput = document.getElementById('dp-value');
+        validateDPPercentageCommon(dpType, dpValueInput);
     }
 
     // Calculate edit modal total
@@ -642,12 +635,12 @@
             if (dpValueInput) {
                 // Add change listener to dp type select
                 dpTypeSelect.addEventListener('change', function() {
-                    validateDPPercentageEdit(dpTypeSelect, dpValueInput);
+                    validateDPPercentageCommon(dpTypeSelect, dpValueInput);
                 });
                 
                 // Add input listener to dp value input
                 dpValueInput.addEventListener('input', function() {
-                    validateDPPercentageEdit(dpTypeSelect, dpValueInput);
+                    validateDPPercentageCommon(dpTypeSelect, dpValueInput);
                 });
             }
         });
