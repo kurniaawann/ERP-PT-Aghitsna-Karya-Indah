@@ -4,10 +4,11 @@ namespace App\Models\Invoice;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaymentAccount extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'bank_name',
@@ -22,6 +23,7 @@ class PaymentAccount extends Model
 
     /**
      * Scope untuk hanya mendapatkan rekening aktif
+     * Note: Soft-deleted records are automatically excluded by the SoftDeletes trait
      */
     public function scopeActive($query)
     {

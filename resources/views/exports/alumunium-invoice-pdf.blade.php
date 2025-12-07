@@ -359,7 +359,9 @@
                     : $invoice->selected_payment_accounts ?? [];
 
                 if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    // Use withTrashed() to include soft-deleted accounts for historical invoices
+                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::withTrashed()
+                        ->whereIn('id', $selectedAccountIds)
                         ->orderBy('id')
                         ->get();
                 } else {
@@ -371,6 +373,9 @@
                 <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
                 <strong>{{ $account->account_holder }}</strong><br>
             @endforeach
+            @if($paymentAccounts->isEmpty())
+                <em>Tidak ada rekening pembayaran yang tersedia</em>
+            @endif
         </div>
 
         <!-- Closing -->
