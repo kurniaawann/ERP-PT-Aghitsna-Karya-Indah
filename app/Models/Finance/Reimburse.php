@@ -27,33 +27,15 @@ class Reimburse extends Model
         'due_date',
         'status',
         'notes',
-        'submitted_by',
-        'approved_by',
-        'approved_at',
+        'status_changed_at',
     ];
 
     protected $casts = [
         'date' => 'date',
         'due_date' => 'date',
         'total_amount' => 'integer',
-        'approved_at' => 'datetime',
+        'status_changed_at' => 'datetime',
     ];
-
-    /**
-     * Relasi ke User yang mengajukan reimburse (admin)
-     */
-    public function submitter()
-    {
-        return $this->belongsTo(User::class, 'submitted_by');
-    }
-
-    /**
-     * Relasi ke User yang menyetujui/menolak (super admin)
-     */
-    public function approver()
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
 
     /**
      * Generate kode reimburse berikutnya
@@ -136,5 +118,15 @@ class Reimburse extends Model
         ];
 
         return $classes[$this->status] ?? 'bg-gray-100 text-gray-800';
+    }
+
+    /**
+     * Accessor untuk format tanggal status changed
+     */
+    public function getFormattedStatusChangedAtAttribute()
+    {
+        /** @var \Carbon\Carbon|null $statusChangedAt */
+        $statusChangedAt = $this->status_changed_at;
+        return $statusChangedAt ? $statusChangedAt->format('d/m/Y H:i') : '-';
     }
 }

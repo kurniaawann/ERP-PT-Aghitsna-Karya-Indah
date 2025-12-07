@@ -47,9 +47,8 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
                 'total_amount' => 'Rp ' . number_format($reimburse->total_amount, 0, ',', '.'),
                 'due_date' => $reimburse->formatted_due_date,
                 'status' => strtoupper($reimburse->status_label),
+                'status_changed_at' => $reimburse->formatted_status_changed_at,
                 'notes' => $reimburse->notes ?? '-',
-                'submitted_by' => $reimburse->submitter->name ?? '-',
-                'approved_by' => $reimburse->approver->name ?? '-',
             ];
 
             $totalAmount += $reimburse->total_amount;
@@ -65,9 +64,8 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
             'total_amount' => 'Rp ' . number_format($totalAmount, 0, ',', '.'),
             'due_date' => '',
             'status' => '',
+            'status_changed_at' => '',
             'notes' => '',
-            'submitted_by' => '',
-            'approved_by' => '',
         ];
 
         return collect($data);
@@ -101,9 +99,8 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
                 'TOTAL',
                 'TGL JATUH TEMPO',
                 'STATUS',
+                'TGL PERUBAHAN STATUS',
                 'CATATAN',
-                'DIAJUKAN OLEH',
-                'DISETUJUI OLEH',
             ],
         ];
     }
@@ -116,14 +113,14 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
         $highestRow = $sheet->getHighestRow();
 
         // Merge title
-        $sheet->mergeCells('A1:K1');
+        $sheet->mergeCells('A1:J1');
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
         // Merge subtitle
-        $sheet->mergeCells('A2:K2');
+        $sheet->mergeCells('A2:J2');
         $sheet->getStyle('A2')->applyFromArray([
             'font' => ['bold' => true, 'size' => 12],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -133,7 +130,7 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
         $sheet->getRowDimension(3)->setRowHeight(5);
 
         // Header row styling
-        $sheet->getStyle('A4:K4')->applyFromArray([
+        $sheet->getStyle('A4:J4')->applyFromArray([
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => '4472C4'],
@@ -152,7 +149,7 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
 
         // Data rows border
         $dataEndRow = $highestRow;
-        $sheet->getStyle('A5:K' . $dataEndRow)->applyFromArray([
+        $sheet->getStyle('A5:J' . $dataEndRow)->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
             ],
@@ -168,12 +165,11 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
         $sheet->getStyle('F5:F' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT); // TOTAL
         $sheet->getStyle('G5:G' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // TGL TEMPO
         $sheet->getStyle('H5:H' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // STATUS
-        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // CATATAN
-        $sheet->getStyle('J5:J' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // DIAJUKAN
-        $sheet->getStyle('K5:K' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // DISETUJUI
+        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // TGL PERUBAHAN STATUS
+        $sheet->getStyle('J5:J' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // CATATAN
 
         // Bold untuk baris total (row terakhir)
-        $sheet->getStyle('A' . $highestRow . ':K' . $highestRow)->applyFromArray([
+        $sheet->getStyle('A' . $highestRow . ':J' . $highestRow)->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -198,9 +194,8 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
             'F' => 18,  // TOTAL
             'G' => 14,  // TGL JATUH TEMPO
             'H' => 12,  // STATUS
-            'I' => 30,  // CATATAN
-            'J' => 20,  // DIAJUKAN OLEH
-            'K' => 20,  // DISETUJUI OLEH
+            'I' => 18,  // TGL PERUBAHAN STATUS
+            'J' => 30,  // CATATAN
         ];
     }
 
@@ -223,7 +218,7 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
 
                 // Auto-wrap text untuk kolom keterangan dan catatan
                 $event->sheet->getDelegate()->getStyle('E5:E' . $highestRow)->getAlignment()->setWrapText(true);
-                $event->sheet->getDelegate()->getStyle('I5:I' . $highestRow)->getAlignment()->setWrapText(true);
+                $event->sheet->getDelegate()->getStyle('J5:J' . $highestRow)->getAlignment()->setWrapText(true);
             },
         ];
     }

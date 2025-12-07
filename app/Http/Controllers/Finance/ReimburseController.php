@@ -22,8 +22,8 @@ class ReimburseController extends Controller
         $search = $request->input('search');
         $status = $request->input('status');
 
-        // Query reimburse dengan eager loading relasi submitter & approver
-        $reimburses = Reimburse::with(['submitter', 'approver'])
+        // Query reimburse
+        $reimburses = Reimburse::query()
             // Filter pencarian (project name atau reimburse code)
             ->when($search, function ($query, $search) {
                 return $query->where('project_name', 'like', "%{$search}%")
@@ -55,9 +55,6 @@ class ReimburseController extends Controller
 
         // Set default status = draft
         $data['status'] = 'draft';
-
-        // Set user yang mengajukan (submitted_by = user login saat ini)
-        $data['submitted_by'] = Auth::id();
 
         // Insert data reimburse ke database
         Reimburse::create($data);
@@ -124,8 +121,7 @@ class ReimburseController extends Controller
             ->where('status', 'draft') // Hanya yang statusnya draft
             ->update([
                 'status' => 'approved',
-                'approved_by' => Auth::id(), // User yang menyetujui
-                'approved_at' => now(), // Waktu approval
+                'status_changed_at' => now(), // Waktu approval
             ]);
 
         return redirect()->route('reimburse.index')->with('success', 'Reimburse berhasil disetujui!');
@@ -150,8 +146,7 @@ class ReimburseController extends Controller
             ->where('status', 'draft') // Hanya yang statusnya draft
             ->update([
                 'status' => 'rejected',
-                'approved_by' => Auth::id(), // User yang menolak
-                'approved_at' => now(), // Waktu rejection
+                'status_changed_at' => now(), // Waktu rejection
             ]);
 
         return redirect()->route('reimburse.index')->with('success', 'Reimburse berhasil ditolak!');
@@ -167,7 +162,7 @@ class ReimburseController extends Controller
         $status = $request->input('status');
 
         // Query reimburse dengan filter yang sama seperti di index
-        $reimburses = Reimburse::with(['submitter', 'approver'])
+        $reimburses = Reimburse::query()
             ->when($search, function ($query, $search) {
                 return $query->where('project_name', 'like', "%{$search}%")
                     ->orWhere('reimburse_code', 'like', "%{$search}%");
@@ -201,7 +196,7 @@ class ReimburseController extends Controller
         $status = $request->input('status');
 
         // Query reimburse dengan filter
-        $reimburses = Reimburse::with(['submitter', 'approver'])
+        $reimburses = Reimburse::query()
             ->when($search, function ($query, $search) {
                 return $query->where('project_name', 'like', "%{$search}%")
                     ->orWhere('reimburse_code', 'like', "%{$search}%");

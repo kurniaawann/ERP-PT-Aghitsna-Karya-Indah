@@ -140,11 +140,12 @@
                 <th style="width: 8%;">Kode</th>
                 <th style="width: 8%;">Tanggal</th>
                 <th style="width: 15%;">Nama Proyek</th>
-                <th style="width: 22%;">Keterangan Belanja</th>
+                <th style="width: 20%;">Keterangan Belanja</th>
                 <th style="width: 12%;">Total</th>
                 <th style="width: 8%;">Tgl Jatuh Tempo</th>
                 <th style="width: 8%;">Status</th>
-                <th style="width: 15%;">Catatan</th>
+                <th style="width: 10%;">Tgl Perubahan</th>
+                <th style="width: 12%;">Catatan</th>
             </tr>
         </thead>
         <tbody>
@@ -161,11 +162,12 @@
                     <td class="text-right">{{ $reimburse->formatted_total_amount }}</td>
                     <td class="text-center">{{ $reimburse->formatted_due_date }}</td>
                     <td class="status-{{ $reimburse->status }}">{{ strtoupper($reimburse->status_label) }}</td>
+                    <td class="text-center">{{ $reimburse->formatted_status_changed_at }}</td>
                     <td class="text-left">{{ $reimburse->notes ?? '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center">Tidak ada data reimbursement</td>
+                    <td colspan="10" class="text-center">Tidak ada data reimbursement</td>
                 </tr>
             @endforelse
 
@@ -173,7 +175,7 @@
                 <tr class="total-row">
                     <td colspan="5" class="text-center">TOTAL</td>
                     <td class="text-right">Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
-                    <td colspan="3"></td>
+                    <td colspan="4"></td>
                 </tr>
             @endif
         </tbody>

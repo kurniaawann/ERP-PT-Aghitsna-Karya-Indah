@@ -41,14 +41,10 @@ return new class extends Migration {
             // Keterangan/notes tambahan (misal: "Sudah ditransfer", "Menunggu verifikasi", dll)
             $table->text('notes')->nullable();
 
-            // User ID yang mengajukan reimburse (admin)
-            $table->foreignUuid('submitted_by')->nullable()->constrained('users')->onDelete('set null');
-
-            // User ID yang menyetujui/menolak (super admin)
-            $table->foreignUuid('approved_by')->nullable()->constrained('users')->onDelete('set null');
-
-            // Tanggal approval/rejection
-            $table->timestamp('approved_at')->nullable();
+            // Tanggal ketika status berubah (approved/rejected)
+            // Ketika status = approved, ini adalah tanggal approval
+            // Ketika status = rejected, ini adalah tanggal rejection
+            $table->timestamp('status_changed_at')->nullable();
 
             $table->timestamps();
         });

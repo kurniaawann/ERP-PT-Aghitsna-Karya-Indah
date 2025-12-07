@@ -17,6 +17,7 @@
                             <th class="p-2 text-right">Total</th>
                             <th class="p-2 text-center">Tgl Jatuh Tempo</th>
                             <th class="p-2 text-center">Status</th>
+                            <th class="p-2 text-center">Tgl Perubahan</th>
                             <th class="p-2 text-left">Catatan</th>
                             @if (Auth::user()->role === 'admin')
                                 <th class="p-2 text-center">Aksi</th>
@@ -54,6 +55,11 @@
                                     </span>
                                 </td>
 
+                                {{-- Tanggal Perubahan Status --}}
+                                <td class="p-2 text-center text-xs text-gray-600">
+                                    {{ $reimburse->formatted_status_changed_at }}
+                                </td>
+
                                 <td class="p-2 text-sm">{{ Str::limit($reimburse->notes ?? '-', 30) }}</td>
 
                                 {{-- Aksi (Admin only, only for draft) --}}
@@ -77,7 +83,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ Auth::user()->role === 'admin' ? '10' : '9' }}"
+                                <td colspan="{{ Auth::user()->role === 'admin' ? '11' : '10' }}"
                                     class="text-center p-4 text-gray-500">
                                     Data tidak ditemukan.
                                 </td>
