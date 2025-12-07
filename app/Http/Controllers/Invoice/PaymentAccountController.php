@@ -84,6 +84,7 @@ class PaymentAccountController extends Controller
         $selectedIds = $request->selected_accounts;
         
         // Check if deleting these accounts would leave no active accounts
+        // Note: count() automatically excludes soft-deleted records due to SoftDeletes trait
         $remainingActiveCount = PaymentAccount::where('is_active', true)
             ->whereNotIn('id', $selectedIds)
             ->count();
@@ -103,6 +104,7 @@ class PaymentAccountController extends Controller
     public function destroy(PaymentAccount $paymentAccount)
     {
         // Check if this is the last active payment account
+        // Note: count() automatically excludes soft-deleted records due to SoftDeletes trait
         $activeAccountCount = PaymentAccount::where('is_active', true)->count();
         
         if ($paymentAccount->is_active && $activeAccountCount <= 1) {
