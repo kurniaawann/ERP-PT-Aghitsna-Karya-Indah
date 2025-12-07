@@ -164,6 +164,25 @@
         }
     }
 
+    // Validate DP Percentage for Edit Modals
+    function validateDPPercentageEdit(dpTypeSelect, dpValueInput) {
+        if (!dpValueInput || !dpTypeSelect) return;
+        
+        const dpType = dpTypeSelect.value;
+        if (dpType === 'percentage') {
+            const dpValue = parseFloat(dpValueInput.value) || 0;
+            if (dpValue > 100) {
+                dpValueInput.setCustomValidity('DP persentase tidak boleh lebih dari 100%');
+                dpValueInput.reportValidity();
+                dpValueInput.value = 100; // Cap at 100%
+            } else {
+                dpValueInput.setCustomValidity('');
+            }
+        } else {
+            dpValueInput.setCustomValidity('');
+        }
+    }
+
     // Calculate edit modal total
     function updateEditInvoiceTotal(input) {
         const modal = input.closest('[id^="editModal-"]');
@@ -608,6 +627,30 @@
                 validateDPPercentage();
             });
         }
+
+        // ==========================================
+        // DP VALIDATION - EDIT MODALS
+        // ==========================================
+
+        document.querySelectorAll('.dp-type-edit').forEach(dpTypeSelect => {
+            const modal = dpTypeSelect.closest('[id^="editModal-"]');
+            if (!modal) return;
+            
+            const invoiceNumber = modal.id.replace('editModal-', '');
+            const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
+            
+            if (dpValueInput) {
+                // Add change listener to dp type select
+                dpTypeSelect.addEventListener('change', function() {
+                    validateDPPercentageEdit(dpTypeSelect, dpValueInput);
+                });
+                
+                // Add input listener to dp value input
+                dpValueInput.addEventListener('input', function() {
+                    validateDPPercentageEdit(dpTypeSelect, dpValueInput);
+                });
+            }
+        });
 
         // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
