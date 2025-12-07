@@ -1,5 +1,12 @@
 <script>
     // ==========================================
+    // CONSTANTS
+    // ==========================================
+    
+    const DP_PERCENTAGE_ERROR_MESSAGE = 'DP persentase tidak boleh lebih dari 100%';
+    const MAX_DP_PERCENTAGE = 100;
+
+    // ==========================================
     // LIVE CALCULATION FUNCTIONS
     // ==========================================
 
@@ -141,6 +148,32 @@
         if (dpAmountEl) {
             dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
         }
+    }
+
+    // Validate DP Percentage - Common validation function
+    function validateDPPercentageCommon(dpTypeElement, dpValueInput) {
+        if (!dpValueInput || !dpTypeElement) return;
+        
+        const dpType = dpTypeElement.value;
+        if (dpType === 'percentage') {
+            const dpValue = parseFloat(dpValueInput.value) || 0;
+            if (dpValue > MAX_DP_PERCENTAGE) {
+                dpValueInput.setCustomValidity(DP_PERCENTAGE_ERROR_MESSAGE);
+                dpValueInput.reportValidity();
+                dpValueInput.value = MAX_DP_PERCENTAGE; // Cap at max percentage
+            } else {
+                dpValueInput.setCustomValidity('');
+            }
+        } else {
+            dpValueInput.setCustomValidity('');
+        }
+    }
+
+    // Validate DP Percentage - Add Modal wrapper
+    function validateDPPercentage() {
+        const dpType = document.getElementById('dp-type');
+        const dpValueInput = document.getElementById('dp-value');
+        validateDPPercentageCommon(dpType, dpValueInput);
     }
 
     // Calculate edit modal total
@@ -571,6 +604,43 @@
 
                     // Set loading state
                     handleFormSubmit(submitBtn);
+                });
+            }
+        });
+
+        // ==========================================
+        // DP VALIDATION - ADD MODAL
+        // ==========================================
+
+        const dpTypeSelect = document.getElementById('dp-type');
+        const dpValueInput = document.getElementById('dp-value');
+
+        if (dpTypeSelect && dpValueInput) {
+            dpTypeSelect.addEventListener('change', function() {
+                validateDPPercentage();
+            });
+        }
+
+        // ==========================================
+        // DP VALIDATION - EDIT MODALS
+        // ==========================================
+
+        document.querySelectorAll('.dp-type-edit').forEach(dpTypeSelect => {
+            const modal = dpTypeSelect.closest('[id^="editModal-"]');
+            if (!modal) return;
+            
+            const invoiceNumber = modal.id.replace('editModal-', '');
+            const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
+            
+            if (dpValueInput) {
+                // Add change listener to dp type select
+                dpTypeSelect.addEventListener('change', function() {
+                    validateDPPercentageCommon(dpTypeSelect, dpValueInput);
+                });
+                
+                // Add input listener to dp value input
+                dpValueInput.addEventListener('input', function() {
+                    validateDPPercentageCommon(dpTypeSelect, dpValueInput);
                 });
             }
         });

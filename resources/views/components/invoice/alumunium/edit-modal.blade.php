@@ -127,7 +127,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Tipe DP</label>
-                <select name="dp_type" class="w-full border rounded p-2">
+                <select name="dp_type" id="dp-type-edit-{{ $invoice->invoice_number }}" class="w-full border rounded p-2 dp-type-edit">
                     <option value="">Tidak Ada DP</option>
                     <option value="percentage" {{ $invoice->dp_type === 'percentage' ? 'selected' : '' }}>Persentase
                         (%)</option>
@@ -137,8 +137,8 @@
             </div>
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Nilai DP</label>
-                <input type="number" step="0.01" min="0" name="dp_value"
-                    value="{{ $invoice->dp_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0">
+                <input type="number" step="0.01" min="0" name="dp_value" id="dp-value-edit-{{ $invoice->invoice_number }}"
+                    value="{{ $invoice->dp_value ?? 0 }}" class="w-full border rounded p-2 dp-value-edit" placeholder="0">
             </div>
         </div>
     </div>
