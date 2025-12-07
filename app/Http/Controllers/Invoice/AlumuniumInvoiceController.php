@@ -127,7 +127,7 @@ class AlumuniumInvoiceController extends Controller
         // Hitung DP
         $dpAmount = 0;
         if ($request->filled('dp_value') && $request->dp_value > 0) {
-            $baseAmount = $totalAfterDiscount > 0 ? $totalAfterDiscount : $totalAmount;
+            $baseAmount = $totalAfterDiscount != $totalAmount ? $totalAfterDiscount : $totalAmount;
             if ($request->dp_type === 'percentage') {
                 $dpAmount = ($baseAmount * $request->dp_value) / 100;
             } else {
