@@ -143,6 +143,36 @@
         }
     }
 
+    // Update discount value constraints for ADD modal
+    function updateDiscountValueConstraints() {
+        const discountType = document.getElementById('discount-type')?.value;
+        const discountValueInput = document.getElementById('discount-value');
+        
+        if (discountValueInput) {
+            if (discountType === 'percentage') {
+                discountValueInput.setAttribute('max', '100');
+            } else {
+                discountValueInput.removeAttribute('max');
+            }
+            // Trigger recalculation
+            calculateDiscount();
+        }
+    }
+
+    // Update discount value constraints for EDIT modal
+    function updateEditDiscountValueConstraints(invoiceNumber) {
+        const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
+        const discountValueInput = document.getElementById('discount-value-edit-' + invoiceNumber);
+        
+        if (discountValueInput) {
+            if (discountType === 'percentage') {
+                discountValueInput.setAttribute('max', '100');
+            } else {
+                discountValueInput.removeAttribute('max');
+            }
+        }
+    }
+
     // Calculate edit modal total
     function updateEditInvoiceTotal(input) {
         const modal = input.closest('[id^="editModal-"]');
@@ -578,6 +608,15 @@
         // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
         // ==========================================
+
+        // Initialize discount constraints for add modal
+        updateDiscountValueConstraints();
+
+        // Initialize discount constraints for all edit modals
+        document.querySelectorAll('[id^="discount-type-edit-"]').forEach(discountTypeSelect => {
+            const invoiceNumber = discountTypeSelect.id.replace('discount-type-edit-', '');
+            updateEditDiscountValueConstraints(invoiceNumber);
+        });
 
         updateInvoiceTotal();
     });
