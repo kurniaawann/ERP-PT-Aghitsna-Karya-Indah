@@ -11,6 +11,7 @@ use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
+use App\Http\Controllers\Finance\ReimburseController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -115,5 +116,26 @@ Route::middleware('auth')->group(function () {
     Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
     Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
     Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+
+    // ============================================
+    // Finance (Keuangan) Routes
+    // ============================================
+
+    // Route Reimburse
+    Route::get('/reimburse', [ReimburseController::class, 'index'])->name('reimburse.index');
+    Route::post('/reimburse', [ReimburseController::class, 'store'])->name('reimburse.store');
+    Route::put('/reimburse/{reimburse}', [ReimburseController::class, 'update'])->name('reimburse.update');
+    Route::delete('/reimburse/destroy-selected', [ReimburseController::class, 'destroy'])->name('reimburse.destroy');
+
+    // Route Reimburse - Approve/Reject (Super Admin)
+    Route::post('/reimburse/approve', [ReimburseController::class, 'approve'])->name('reimburse.approve');
+    Route::post('/reimburse/reject', [ReimburseController::class, 'reject'])->name('reimburse.reject');
+
+    // Route Reimburse - Export
+    Route::get('/reimburse/export/pdf', [ReimburseController::class, 'exportPdf'])->name('reimburse.export.pdf');
+    Route::get('/reimburse/export/excel', [ReimburseController::class, 'exportExcel'])->name('reimburse.export.excel');
+
+    // Route Reimburse - API untuk get total selected
+    Route::post('/reimburse/get-selected-total', [ReimburseController::class, 'getSelectedTotal'])->name('reimburse.getSelectedTotal');
 
 });

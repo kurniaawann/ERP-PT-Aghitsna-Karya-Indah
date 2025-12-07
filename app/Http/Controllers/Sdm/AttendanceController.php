@@ -96,7 +96,7 @@ class AttendanceController extends Controller
                 // Jika data sudah ada (existing bukan null)
                 if ($existing) {
                     // Ambil data karyawan dari database berdasarkan employee_code
-                    $employee = \App\Models\Sdm\Employee::where('employee_code', $employeeId)->first();
+                    $employee = Employee::where('employee_code', $employeeId)->first();
                     // Buat pesan error detail dengan sprintf (formatting string)
                     // Format: "Nama Karyawan pada tanggal DD-MM-YYYY (Status: Hadir)"
                     $duplicates[] = sprintf(
