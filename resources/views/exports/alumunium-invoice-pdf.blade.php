@@ -364,7 +364,8 @@
                     : $invoice->selected_payment_accounts ?? [];
 
                 if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::withTrashed()
+                        ->whereIn('id', $selectedAccountIds)
                         ->orderBy('id')
                         ->get();
                 } else {
