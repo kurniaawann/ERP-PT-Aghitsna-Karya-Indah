@@ -76,6 +76,16 @@ class AlumuniumInvoiceController extends Controller
             return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih')->withInput();
         }
 
+        // Validasi discount percentage (max 100%)
+        if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
+            return back()->with('error', 'Persentase discount tidak boleh lebih dari 100%')->withInput();
+        }
+
+        // Validasi DP percentage (max 100%)
+        if ($request->dp_type === 'percentage' && $request->dp_value > 100) {
+            return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
+        }
+
         // Auto-generate invoice number jika kosong atau berisi placeholder
         if (empty($request->invoice_number) || strpos($request->invoice_number, 'Akan digenerate') !== false) {
             // Ambil tahun 2 digit (contoh: 25 untuk tahun 2025)
@@ -112,26 +122,28 @@ class AlumuniumInvoiceController extends Controller
         }
 
         // Hitung discount
+        // NOTE: This calculation logic must be kept in sync with frontend logic in alumunium-scripts.blade.php
         $discountAmount = 0;
         $totalAfterDiscount = $totalAmount;
 
         if ($request->filled('discount_value') && $request->discount_value > 0) {
             if ($request->discount_type === 'percentage') {
-                $discountAmount = ($totalAmount * $request->discount_value) / 100;
+                $discountAmount = round(($totalAmount * $request->discount_value) / 100);
             } else {
-                $discountAmount = $request->discount_value;
+                $discountAmount = round($request->discount_value);
             }
             $totalAfterDiscount = $totalAmount - $discountAmount;
         }
 
         // Hitung DP
+        // NOTE: This calculation logic must be kept in sync with frontend logic in alumunium-scripts.blade.php
         $dpAmount = 0;
         if ($request->filled('dp_value') && $request->dp_value > 0) {
             $baseAmount = $totalAfterDiscount != $totalAmount ? $totalAfterDiscount : $totalAmount;
             if ($request->dp_type === 'percentage') {
-                $dpAmount = ($baseAmount * $request->dp_value) / 100;
+                $dpAmount = round(($baseAmount * $request->dp_value) / 100);
             } else {
-                $dpAmount = $request->dp_value;
+                $dpAmount = round($request->dp_value);
             }
         }
 
@@ -155,6 +167,16 @@ class AlumuniumInvoiceController extends Controller
     public function update(Request $request, InvoiceAlumunium $aluminium_invoice)
     {
         try {
+            // Validasi discount percentage (max 100%)
+            if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
+                return back()->with('error', 'Persentase discount tidak boleh lebih dari 100%')->withInput();
+            }
+
+            // Validasi DP percentage (max 100%)
+            if ($request->dp_type === 'percentage' && $request->dp_value > 100) {
+                return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
+            }
+
             // Ambil items dari request (validasi sudah dilakukan di HTML)
             $items = $request->items;
             $totalAmount = 0;
@@ -166,26 +188,28 @@ class AlumuniumInvoiceController extends Controller
             }
 
             // Hitung discount
+            // NOTE: This calculation logic must be kept in sync with frontend logic in alumunium-scripts.blade.php
             $discountAmount = 0;
             $totalAfterDiscount = $totalAmount;
 
             if ($request->filled('discount_value') && $request->discount_value > 0) {
                 if ($request->discount_type === 'percentage') {
-                    $discountAmount = ($totalAmount * $request->discount_value) / 100;
+                    $discountAmount = round(($totalAmount * $request->discount_value) / 100);
                 } else {
-                    $discountAmount = $request->discount_value;
+                    $discountAmount = round($request->discount_value);
                 }
                 $totalAfterDiscount = $totalAmount - $discountAmount;
             }
 
             // Hitung DP
+            // NOTE: This calculation logic must be kept in sync with frontend logic in alumunium-scripts.blade.php
             $dpAmount = 0;
             if ($request->filled('dp_value') && $request->dp_value > 0) {
                 $baseAmount = $totalAfterDiscount > 0 ? $totalAfterDiscount : $totalAmount;
                 if ($request->dp_type === 'percentage') {
-                    $dpAmount = ($baseAmount * $request->dp_value) / 100;
+                    $dpAmount = round(($baseAmount * $request->dp_value) / 100);
                 } else {
-                    $dpAmount = $request->dp_value;
+                    $dpAmount = round($request->dp_value);
                 }
             }
 

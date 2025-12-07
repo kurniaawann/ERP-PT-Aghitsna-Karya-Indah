@@ -215,13 +215,16 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 ]);
                 $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
+                // Initialize totalAfterDiscount before discount check
+                $totalAfterDiscount = $totalAmount;
+
                 // Discount row (if exists)
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
                     $discountAmount = 0;
                     if ($invoice->discount_type === 'percentage') {
-                        $discountAmount = ($totalAmount * $invoice->discount_value) / 100;
+                        $discountAmount = round(($totalAmount * $invoice->discount_value) / 100);
                     } else {
-                        $discountAmount = $invoice->discount_value;
+                        $discountAmount = round($invoice->discount_value);
                     }
                     $totalAfterDiscount = $totalAmount - $discountAmount;
 
@@ -269,8 +272,6 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                         ]
                     ]);
                     $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                } else {
-                    $totalAfterDiscount = $totalAmount;
                 }
 
                 // DP row (if exists)
@@ -278,9 +279,9 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $baseForDP = $totalAfterDiscount;
                     $dpAmount = 0;
                     if ($invoice->dp_type === 'percentage') {
-                        $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
+                        $dpAmount = round(($baseForDP * $invoice->dp_value) / 100);
                     } else {
-                        $dpAmount = $invoice->dp_value;
+                        $dpAmount = round($invoice->dp_value);
                     }
 
                     $currentRow++;
