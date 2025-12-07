@@ -143,6 +143,27 @@
         }
     }
 
+    // Validate DP Percentage
+    function validateDPPercentage() {
+        const dpType = document.getElementById('dp-type')?.value;
+        const dpValueInput = document.getElementById('dp-value');
+        
+        if (!dpValueInput) return;
+        
+        if (dpType === 'percentage') {
+            const dpValue = parseFloat(dpValueInput.value) || 0;
+            if (dpValue > 100) {
+                dpValueInput.setCustomValidity('DP persentase tidak boleh lebih dari 100%');
+                dpValueInput.reportValidity();
+                dpValueInput.value = 100; // Cap at 100%
+            } else {
+                dpValueInput.setCustomValidity('');
+            }
+        } else {
+            dpValueInput.setCustomValidity('');
+        }
+    }
+
     // Calculate edit modal total
     function updateEditInvoiceTotal(input) {
         const modal = input.closest('[id^="editModal-"]');
@@ -574,6 +595,19 @@
                 });
             }
         });
+
+        // ==========================================
+        // DP VALIDATION - ADD MODAL
+        // ==========================================
+
+        const dpTypeSelect = document.getElementById('dp-type');
+        const dpValueInput = document.getElementById('dp-value');
+
+        if (dpTypeSelect && dpValueInput) {
+            dpTypeSelect.addEventListener('change', function() {
+                validateDPPercentage();
+            });
+        }
 
         // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
