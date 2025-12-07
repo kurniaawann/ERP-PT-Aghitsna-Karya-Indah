@@ -62,7 +62,15 @@
     // Calculate Discount
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValueInput = document.getElementById('discount-value');
+        const discountValue = parseFloat(discountValueInput?.value) || 0;
+
+        // Validate percentage discount (max 100%)
+        if (discountType === 'percentage' && discountValue > 100) {
+            if (discountValueInput) {
+                discountValueInput.value = 100;
+            }
+        }
 
         // Get base total
         let baseTotal = 0;
@@ -73,11 +81,13 @@
         });
 
         let discountAmount = 0;
-        if (discountType && discountValue > 0) {
+        // Use the capped value from the input
+        const cappedDiscountValue = parseFloat(discountValueInput?.value) || 0;
+        if (discountType && cappedDiscountValue > 0) {
             if (discountType === 'percentage') {
-                discountAmount = (baseTotal * discountValue) / 100;
+                discountAmount = (baseTotal * cappedDiscountValue) / 100;
             } else {
-                discountAmount = discountValue;
+                discountAmount = cappedDiscountValue;
             }
         }
 
@@ -574,6 +584,33 @@
                 });
             }
         });
+
+        // ==========================================
+        // DISCOUNT TYPE VALIDATION
+        // ==========================================
+
+        const discountTypeSelect = document.getElementById('discount-type');
+        const discountValueInput = document.getElementById('discount-value');
+
+        if (discountTypeSelect && discountValueInput) {
+            discountTypeSelect.addEventListener('change', function() {
+                if (this.value === 'percentage') {
+                    discountValueInput.setAttribute('max', '100');
+                    // If current value exceeds 100, reset to 100
+                    if (parseFloat(discountValueInput.value) > 100) {
+                        discountValueInput.value = 100;
+                        calculateDiscount();
+                    }
+                } else {
+                    discountValueInput.removeAttribute('max');
+                }
+            });
+
+            // Set initial max if percentage is selected
+            if (discountTypeSelect.value === 'percentage') {
+                discountValueInput.setAttribute('max', '100');
+            }
+        }
 
         // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
