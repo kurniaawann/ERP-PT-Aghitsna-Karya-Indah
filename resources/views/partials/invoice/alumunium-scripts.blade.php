@@ -143,6 +143,7 @@
         }
 
         const totalAfterDiscount = baseTotal - discountAmount;
+        // Use totalAfterDiscount if different from baseTotal (i.e., a discount was applied)
         const calculationBase = totalAfterDiscount !== baseTotal ? totalAfterDiscount : baseTotal;
 
         let dpAmount = 0;
