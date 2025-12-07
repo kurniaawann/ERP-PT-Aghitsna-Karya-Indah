@@ -81,12 +81,13 @@
         });
 
         let discountAmount = 0;
-        const validDiscountValue = discountType === 'percentage' && discountValue > 100 ? 100 : discountValue;
-        if (discountType && validDiscountValue > 0) {
+        // Use the capped value from the input
+        const cappedDiscountValue = parseFloat(discountValueInput?.value) || 0;
+        if (discountType && cappedDiscountValue > 0) {
             if (discountType === 'percentage') {
-                discountAmount = (baseTotal * validDiscountValue) / 100;
+                discountAmount = (baseTotal * cappedDiscountValue) / 100;
             } else {
-                discountAmount = validDiscountValue;
+                discountAmount = cappedDiscountValue;
             }
         }
 
