@@ -105,7 +105,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Tipe Discount</label>
-                <select name="discount_type" class="w-full border rounded p-2">
+                <select name="discount_type" id="discount-type-edit-{{ $invoice->invoice_number }}" class="w-full border rounded p-2" onchange="updateEditDiscountValueConstraints('{{ $invoice->invoice_number }}')">
                     <option value="">Tidak Ada Discount</option>
                     <option value="percentage" {{ $invoice->discount_type === 'percentage' ? 'selected' : '' }}>
                         Persentase (%)</option>
@@ -115,7 +115,7 @@
             </div>
             <div>
                 <label class="block text-gray-600 text-sm mb-1">Nilai Discount</label>
-                <input type="number" step="0.01" min="0" name="discount_value"
+                <input type="number" step="0.01" min="0" name="discount_value" id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0">
             </div>
         </div>
