@@ -60,9 +60,18 @@
     }
 
     // Calculate Discount
+    // NOTE: This calculation logic must be kept in sync with the backend calculation
+    // in AlumuniumInvoiceController::calculateInvoiceTotals() to ensure consistency.
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValueInput = document.getElementById('discount-value');
+        let discountValue = parseFloat(discountValueInput?.value) || 0;
+
+        // Validate percentage discount does not exceed 100%
+        if (discountType === 'percentage' && discountValue > 100) {
+            discountValue = 100;
+            if (discountValueInput) discountValueInput.value = 100;
+        }
 
         // Get base total
         let baseTotal = 0;
@@ -75,9 +84,9 @@
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
             if (discountType === 'percentage') {
-                discountAmount = (baseTotal * discountValue) / 100;
+                discountAmount = Math.round((baseTotal * discountValue) / 100);
             } else {
-                discountAmount = discountValue;
+                discountAmount = Math.round(discountValue);
             }
         }
 
@@ -99,9 +108,18 @@
     }
 
     // Calculate DP
+    // NOTE: This calculation logic must be kept in sync with the backend calculation
+    // in AlumuniumInvoiceController::calculateInvoiceTotals() to ensure consistency.
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
-        const dpValue = parseFloat(document.getElementById('dp-value')?.value) || 0;
+        const dpValueInput = document.getElementById('dp-value');
+        let dpValue = parseFloat(dpValueInput?.value) || 0;
+
+        // Validate percentage DP does not exceed 100%
+        if (dpType === 'percentage' && dpValue > 100) {
+            dpValue = 100;
+            if (dpValueInput) dpValueInput.value = 100;
+        }
 
         // Get base total
         let baseTotal = 0;
@@ -118,21 +136,21 @@
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
             if (discountType === 'percentage') {
-                discountAmount = (baseTotal * discountValue) / 100;
+                discountAmount = Math.round((baseTotal * discountValue) / 100);
             } else {
-                discountAmount = discountValue;
+                discountAmount = Math.round(discountValue);
             }
         }
 
         const totalAfterDiscount = baseTotal - discountAmount;
-        const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
+        const calculationBase = totalAfterDiscount != baseTotal ? totalAfterDiscount : baseTotal;
 
         let dpAmount = 0;
         if (dpType && dpValue > 0) {
             if (dpType === 'percentage') {
-                dpAmount = (calculationBase * dpValue) / 100;
+                dpAmount = Math.round((calculationBase * dpValue) / 100);
             } else {
-                dpAmount = dpValue;
+                dpAmount = Math.round(dpValue);
             }
         }
 
