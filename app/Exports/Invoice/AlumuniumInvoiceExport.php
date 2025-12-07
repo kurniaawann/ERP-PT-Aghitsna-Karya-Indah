@@ -334,10 +334,21 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $paymentAccounts = \App\Models\Invoice\PaymentAccount::active()->get();
                 }
 
+                // Helper to sanitize Excel cell values to prevent formula injection
+                $sanitizeForExcel = function($value) {
+                    if (is_string($value) && preg_match('/^[=+\-@]/', $value)) {
+                        return "'" . $value;
+                    }
+                    return $value;
+                };
+
                 foreach ($paymentAccounts as $account) {
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", "{$account->bank_name} / No : {$account->account_number} a/n {$account->account_holder}");
+                    $bankName = $sanitizeForExcel($account->bank_name);
+                    $accountNumber = $sanitizeForExcel($account->account_number);
+                    $accountHolder = $sanitizeForExcel($account->account_holder);
+                    $sheet->setCellValue("A{$currentRow}", "{$bankName} / No : {$accountNumber} a/n {$accountHolder}");
                     $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
                 }
 
