@@ -215,10 +215,104 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 ]);
                 $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
+                // Discount row (if exists)
+                if ($invoice->discount_value && $invoice->discount_value > 0) {
+                    $discountAmount = 0;
+                    if ($invoice->discount_type === 'percentage') {
+                        $discountAmount = ($totalAmount * $invoice->discount_value) / 100;
+                    } else {
+                        $discountAmount = $invoice->discount_value;
+                    }
+                    $totalAfterDiscount = $totalAmount - $discountAmount;
+
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
+                    $discountLabel = 'Discount';
+                    if ($invoice->discount_type === 'percentage') {
+                        $discountLabel .= ' (' . number_format((float) $invoice->discount_value, 0) . '%)';
+                    }
+                    $sheet->setCellValue("A{$currentRow}", $discountLabel);
+                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($discountAmount, 0, ',', '.'));
+
+                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FFE6E6']
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER
+                        ]
+                    ]);
+                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+                    // Total after discount
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", 'Total Setelah Discount');
+                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($totalAfterDiscount, 0, ',', '.'));
+
+                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => '90EE90']
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER
+                        ]
+                    ]);
+                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                } else {
+                    $totalAfterDiscount = $totalAmount;
+                }
+
+                // DP row (if exists)
+                if ($invoice->dp_value && $invoice->dp_value > 0) {
+                    $baseForDP = $totalAfterDiscount;
+                    $dpAmount = 0;
+                    if ($invoice->dp_type === 'percentage') {
+                        $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
+                    } else {
+                        $dpAmount = $invoice->dp_value;
+                    }
+
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
+                    $dpLabel = 'DP';
+                    if ($invoice->dp_type === 'percentage') {
+                        $dpLabel .= ' (' . number_format((float) $invoice->dp_value, 0) . '%)';
+                    }
+                    $sheet->setCellValue("A{$currentRow}", $dpLabel);
+                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($dpAmount, 0, ',', '.'));
+
+                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'ADD8E6']
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER
+                        ]
+                    ]);
+                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                }
+
                 // Terbilang
+                $terbilangAmount = $totalAfterDiscount;
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($totalAmount)) . ' rupiah');
+                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($terbilangAmount)) . ' rupiah');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
 
                 // Payment Information
@@ -226,20 +320,26 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Pembayaran dapat ditransfer melalui nomor rekening');
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Bank MANDIRI / No : 1260-0097-9284-6 a/n AKHMAD KHAIDIR');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                // Get selected payment accounts from invoice
+                $selectedAccountIds = is_string($invoice->selected_payment_accounts)
+                    ? json_decode($invoice->selected_payment_accounts, true)
+                    : ($invoice->selected_payment_accounts ?? []);
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Bank BCA / No : 715.199.7531 a/n AKHMAD KHAIDIR');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                if (!empty($selectedAccountIds)) {
+                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::whereIn('id', $selectedAccountIds)
+                        ->orderBy('order')
+                        ->get();
+                } else {
+                    // Fallback ke semua rekening aktif jika tidak ada yang dipilih
+                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::active()->get();
+                }
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Bank BCA / No : 546.588.8773 a/n PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                foreach ($paymentAccounts as $account) {
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", "{$account->bank_name} / No : {$account->account_number} a/n {$account->account_holder}");
+                    $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                }
 
                 // Closing
                 $currentRow += 2;

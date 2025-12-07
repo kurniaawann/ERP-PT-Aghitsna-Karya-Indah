@@ -77,5 +77,97 @@
         <div class="text-xs text-gray-500 mt-1" id="invoice-total-words"></div>
     </div>
 
+    <!-- Discount Section -->
+    <div class="mb-3 p-3 border rounded bg-yellow-50">
+        <label class="block text-gray-700 font-semibold mb-2">Discount (Opsional)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Tipe Discount</label>
+                <select name="discount_type" id="discount-type" class="w-full border rounded p-2">
+                    <option value="">Tidak Ada Discount</option>
+                    <option value="percentage">Persentase (%)</option>
+                    <option value="amount">Nominal (Rp)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Nilai Discount</label>
+                <input type="number" step="0.01" min="0" name="discount_value" id="discount-value"
+                    class="w-full border rounded p-2" placeholder="0" oninput="calculateDiscount()">
+            </div>
+        </div>
+        <div class="mt-2 p-2 bg-white rounded">
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Discount:</span>
+                <span id="discount-amount" class="text-sm font-semibold text-red-600">Rp 0</span>
+            </div>
+            <div class="flex justify-between mt-1">
+                <span class="text-sm font-bold text-gray-700">Total Setelah Discount:</span>
+                <span id="total-after-discount" class="text-sm font-bold text-green-600">Rp 0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DP Section -->
+    <div class="mb-3 p-3 border rounded bg-blue-50">
+        <label class="block text-gray-700 font-semibold mb-2">DP / Uang Muka (Opsional)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Tipe DP</label>
+                <select name="dp_type" id="dp-type" class="w-full border rounded p-2">
+                    <option value="">Tidak Ada DP</option>
+                    <option value="percentage">Persentase (%)</option>
+                    <option value="amount">Nominal (Rp)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Nilai DP</label>
+                <input type="number" step="0.01" min="0" name="dp_value" id="dp-value"
+                    class="w-full border rounded p-2" placeholder="0" oninput="calculateDP()">
+            </div>
+        </div>
+        <div class="mt-2 p-2 bg-white rounded">
+            <div class="flex justify-between">
+                <span class="text-sm font-bold text-gray-700">Nilai DP:</span>
+                <span id="dp-amount" class="text-sm font-bold text-blue-600">Rp 0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Accounts Selection -->
+    <div class="mb-3 p-3 border rounded bg-green-50">
+        <label class="block text-gray-700 font-semibold mb-2">
+            Pilih Rekening Pembayaran <span class="text-error">*</span>
+            <span class="text-xs font-normal text-gray-600">(Minimal 1 rekening harus dipilih)</span>
+        </label>
+        <div class="space-y-2">
+            @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
+                @foreach ($paymentAccounts as $account)
+                    <label class="flex items-start p-2 bg-white rounded border hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
+                            class="mt-1 mr-3 payment-account-checkbox" onchange="validatePaymentSelection()">
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800">{{ $account->bank_name }}</div>
+                            <div class="text-sm text-gray-600">
+                                No: {{ $account->account_number }} a/n {{ $account->account_holder }}
+                            </div>
+                        </div>
+                    </label>
+                @endforeach
+            @else
+                <div class="p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-triangle text-yellow-600"></i>
+                    Belum ada rekening pembayaran.
+                    <a href="{{ route('payment-accounts.index') }}" class="text-blue-600 hover:underline"
+                        target="_blank">
+                        Tambah rekening pembayaran
+                    </a>
+                </div>
+            @endif
+        </div>
+        <div id="payment-account-error" class="text-red-600 text-sm mt-2 hidden">
+            <i class="fa-solid fa-exclamation-circle"></i> Minimal 1 rekening harus dipilih
+        </div>
+    </div>
+
     <input type="hidden" name="items" id="items-json" value="[]">
 </x-modal>

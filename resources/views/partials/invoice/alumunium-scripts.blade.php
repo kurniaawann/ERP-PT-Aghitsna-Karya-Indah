@@ -54,6 +54,93 @@
         } else if (wordsElement) {
             wordsElement.textContent = '';
         }
+
+        // Recalculate discount and DP when total changes
+        calculateDiscount();
+    }
+
+    // Calculate Discount
+    function calculateDiscount() {
+        const discountType = document.getElementById('discount-type')?.value;
+        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+
+        // Get base total
+        let baseTotal = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            baseTotal += (volume * harga);
+        });
+
+        let discountAmount = 0;
+        if (discountType && discountValue > 0) {
+            if (discountType === 'percentage') {
+                discountAmount = (baseTotal * discountValue) / 100;
+            } else {
+                discountAmount = discountValue;
+            }
+        }
+
+        const totalAfterDiscount = baseTotal - discountAmount;
+
+        // Update UI
+        const discountAmountEl = document.getElementById('discount-amount');
+        const totalAfterDiscountEl = document.getElementById('total-after-discount');
+
+        if (discountAmountEl) {
+            discountAmountEl.textContent = 'Rp ' + discountAmount.toLocaleString('id-ID');
+        }
+        if (totalAfterDiscountEl) {
+            totalAfterDiscountEl.textContent = 'Rp ' + totalAfterDiscount.toLocaleString('id-ID');
+        }
+
+        // Recalculate DP based on new total after discount
+        calculateDP();
+    }
+
+    // Calculate DP
+    function calculateDP() {
+        const dpType = document.getElementById('dp-type')?.value;
+        const dpValue = parseFloat(document.getElementById('dp-value')?.value) || 0;
+
+        // Get base total
+        let baseTotal = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            baseTotal += (volume * harga);
+        });
+
+        // Check if there's discount
+        const discountType = document.getElementById('discount-type')?.value;
+        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+
+        let discountAmount = 0;
+        if (discountType && discountValue > 0) {
+            if (discountType === 'percentage') {
+                discountAmount = (baseTotal * discountValue) / 100;
+            } else {
+                discountAmount = discountValue;
+            }
+        }
+
+        const totalAfterDiscount = baseTotal - discountAmount;
+        const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
+
+        let dpAmount = 0;
+        if (dpType && dpValue > 0) {
+            if (dpType === 'percentage') {
+                dpAmount = (calculationBase * dpValue) / 100;
+            } else {
+                dpAmount = dpValue;
+            }
+        }
+
+        // Update UI
+        const dpAmountEl = document.getElementById('dp-amount');
+        if (dpAmountEl) {
+            dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
+        }
     }
 
     // Calculate edit modal total
@@ -148,6 +235,38 @@
         if (form) {
             form.submit();
         }
+    }
+
+    // ==========================================
+    // PAYMENT ACCOUNT VALIDATION
+    // ==========================================
+
+    function validatePaymentSelection() {
+        const checkboxes = document.querySelectorAll('.payment-account-checkbox:checked');
+        const errorDiv = document.getElementById('payment-account-error');
+
+        if (checkboxes.length === 0) {
+            errorDiv?.classList.remove('hidden');
+            return false;
+        } else {
+            errorDiv?.classList.add('hidden');
+            return true;
+        }
+    }
+
+    // Override form submit to validate payment accounts
+    function validateFormBeforeSubmit(form) {
+        const checkboxes = form.querySelectorAll('.payment-account-checkbox:checked');
+        if (checkboxes.length === 0) {
+            const errorDiv = document.getElementById('payment-account-error');
+            errorDiv?.classList.remove('hidden');
+            errorDiv?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            return false;
+        }
+        return true;
     }
 
     // ==========================================

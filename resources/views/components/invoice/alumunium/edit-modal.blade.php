@@ -99,4 +99,79 @@
         </div>
     </div>
 
+    <!-- Discount Section -->
+    <div class="mb-3 p-3 border rounded bg-yellow-50">
+        <label class="block text-gray-700 font-semibold mb-2">Discount (Opsional)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Tipe Discount</label>
+                <select name="discount_type" class="w-full border rounded p-2">
+                    <option value="">Tidak Ada Discount</option>
+                    <option value="percentage" {{ $invoice->discount_type === 'percentage' ? 'selected' : '' }}>
+                        Persentase (%)</option>
+                    <option value="amount" {{ $invoice->discount_type === 'amount' ? 'selected' : '' }}>Nominal (Rp)
+                    </option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Nilai Discount</label>
+                <input type="number" step="0.01" min="0" name="discount_value"
+                    value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0">
+            </div>
+        </div>
+    </div>
+
+    <!-- DP Section -->
+    <div class="mb-3 p-3 border rounded bg-blue-50">
+        <label class="block text-gray-700 font-semibold mb-2">DP / Uang Muka (Opsional)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Tipe DP</label>
+                <select name="dp_type" class="w-full border rounded p-2">
+                    <option value="">Tidak Ada DP</option>
+                    <option value="percentage" {{ $invoice->dp_type === 'percentage' ? 'selected' : '' }}>Persentase
+                        (%)</option>
+                    <option value="amount" {{ $invoice->dp_type === 'amount' ? 'selected' : '' }}>Nominal (Rp)
+                    </option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm mb-1">Nilai DP</label>
+                <input type="number" step="0.01" min="0" name="dp_value"
+                    value="{{ $invoice->dp_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0">
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Accounts Selection -->
+    <div class="mb-3 p-3 border rounded bg-green-50">
+        <label class="block text-gray-700 font-semibold mb-2">
+            Pilih Rekening Pembayaran <span class="text-error">*</span>
+            <span class="text-xs font-normal text-gray-600">(Minimal 1 rekening harus dipilih)</span>
+        </label>
+        <div class="space-y-2">
+            @php
+                $selectedAccounts = is_string($invoice->selected_payment_accounts)
+                    ? json_decode($invoice->selected_payment_accounts, true)
+                    : $invoice->selected_payment_accounts ?? [];
+                $paymentAccounts = \App\Models\Invoice\PaymentAccount::active()->get();
+            @endphp
+            @if ($paymentAccounts->count() > 0)
+                @foreach ($paymentAccounts as $account)
+                    <label class="flex items-start p-2 bg-white rounded border hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
+                            class="mt-1 mr-3 payment-account-checkbox-edit"
+                            {{ in_array($account->id, $selectedAccounts) ? 'checked' : '' }}>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800">{{ $account->bank_name }}</div>
+                            <div class="text-sm text-gray-600">
+                                No: {{ $account->account_number }} a/n {{ $account->account_holder }}
+                            </div>
+                        </div>
+                    </label>
+                @endforeach
+            @endif
+        </div>
+    </div>
+
 </x-modal>
