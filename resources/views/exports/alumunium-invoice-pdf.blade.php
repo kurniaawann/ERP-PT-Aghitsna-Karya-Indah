@@ -297,12 +297,7 @@
 
                 @if ($invoice->discount_value && $invoice->discount_value > 0)
                     @php
-                        $discountAmount = 0;
-                        if ($invoice->discount_type === 'percentage') {
-                            $discountAmount = ($totalAmount * $invoice->discount_value) / 100;
-                        } else {
-                            $discountAmount = $invoice->discount_value;
-                        }
+                        $discountAmount = $invoice->getDiscountAmount($totalAmount);
                         $finalTotal = $totalAmount - $discountAmount;
                     @endphp
 
