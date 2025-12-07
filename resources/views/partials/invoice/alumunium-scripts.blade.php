@@ -59,6 +59,28 @@
         calculateDiscount();
     }
 
+    // Validate discount input (max 100% for percentage)
+    function validateDiscountInput(input) {
+        const discountType = document.getElementById('discount-type')?.value;
+        if (discountType === 'percentage') {
+            const value = parseFloat(input.value);
+            if (value > 100) {
+                input.value = 100;
+            }
+        }
+    }
+
+    // Validate DP input (max 100% for percentage)
+    function validateDPInput(input) {
+        const dpType = document.getElementById('dp-type')?.value;
+        if (dpType === 'percentage') {
+            const value = parseFloat(input.value);
+            if (value > 100) {
+                input.value = 100;
+            }
+        }
+    }
+
     // Calculate Discount
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;

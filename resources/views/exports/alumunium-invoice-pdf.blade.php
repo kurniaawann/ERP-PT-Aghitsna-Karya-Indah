@@ -367,10 +367,14 @@
                     $paymentAccounts = \App\Models\Invoice\PaymentAccount::active()->get();
                 }
             @endphp
-            @foreach ($paymentAccounts as $account)
-                <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
-                <strong>{{ $account->account_holder }}</strong><br>
-            @endforeach
+            @if($paymentAccounts->isEmpty())
+                <em>Tidak ada rekening pembayaran yang tersedia</em>
+            @else
+                @foreach ($paymentAccounts as $account)
+                    <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
+                    <strong>{{ $account->account_holder }}</strong><br>
+                @endforeach
+            @endif
         </div>
 
         <!-- Closing -->
