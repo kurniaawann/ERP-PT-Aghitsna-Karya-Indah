@@ -111,29 +111,11 @@ class AlumuniumInvoiceController extends Controller
             $totalAmount += $jumlah;
         }
 
-        // Hitung discount
-        $discountAmount = 0;
-        $totalAfterDiscount = $totalAmount;
-
-        if ($request->filled('discount_value') && $request->discount_value > 0) {
-            if ($request->discount_type === 'percentage') {
-                $discountAmount = ($totalAmount * $request->discount_value) / 100;
-            } else {
-                $discountAmount = $request->discount_value;
-            }
-            $totalAfterDiscount = $totalAmount - $discountAmount;
-        }
-
-        // Hitung DP
-        $dpAmount = 0;
-        if ($request->filled('dp_value') && $request->dp_value > 0) {
-            $baseAmount = $totalAfterDiscount > 0 ? $totalAfterDiscount : $totalAmount;
-            if ($request->dp_type === 'percentage') {
-                $dpAmount = ($baseAmount * $request->dp_value) / 100;
-            } else {
-                $dpAmount = $request->dp_value;
-            }
-        }
+        // Calculate discount and DP using extracted method
+        $totals = $this->calculateInvoiceTotals($request, $totalAmount);
+        $discountAmount = $totals['discountAmount'];
+        $totalAfterDiscount = $totals['totalAfterDiscount'];
+        $dpAmount = $totals['dpAmount'];
 
         // Ambil semua data dari request (validasi sudah dilakukan di HTML)
         $data = $request->all();
@@ -165,29 +147,11 @@ class AlumuniumInvoiceController extends Controller
                 $totalAmount += $jumlah;
             }
 
-            // Hitung discount
-            $discountAmount = 0;
-            $totalAfterDiscount = $totalAmount;
-
-            if ($request->filled('discount_value') && $request->discount_value > 0) {
-                if ($request->discount_type === 'percentage') {
-                    $discountAmount = ($totalAmount * $request->discount_value) / 100;
-                } else {
-                    $discountAmount = $request->discount_value;
-                }
-                $totalAfterDiscount = $totalAmount - $discountAmount;
-            }
-
-            // Hitung DP
-            $dpAmount = 0;
-            if ($request->filled('dp_value') && $request->dp_value > 0) {
-                $baseAmount = $totalAfterDiscount > 0 ? $totalAfterDiscount : $totalAmount;
-                if ($request->dp_type === 'percentage') {
-                    $dpAmount = ($baseAmount * $request->dp_value) / 100;
-                } else {
-                    $dpAmount = $request->dp_value;
-                }
-            }
+            // Calculate discount and DP using extracted method
+            $totals = $this->calculateInvoiceTotals($request, $totalAmount);
+            $discountAmount = $totals['discountAmount'];
+            $totalAfterDiscount = $totals['totalAfterDiscount'];
+            $dpAmount = $totals['dpAmount'];
 
             // Update data invoice (invoice_number tidak diupdate karena sebagai primary key)
             $aluminium_invoice->update([
@@ -269,6 +233,46 @@ class AlumuniumInvoiceController extends Controller
 
         // Download Excel dengan parameter invoiceNumber dan nama file aman
         return Excel::download(new AlumuniumInvoiceExport($invoiceNumber), 'Invoice-' . $safeFileName . '.xlsx');
+    }
+
+    /**
+     * Calculate invoice totals including discount and DP amounts
+     *
+     * @param Request $request
+     * @param float $totalAmount
+     * @return array Array containing discountAmount, totalAfterDiscount, and dpAmount
+     */
+    private function calculateInvoiceTotals(Request $request, float $totalAmount): array
+    {
+        // Hitung discount
+        $discountAmount = 0;
+        $totalAfterDiscount = $totalAmount;
+
+        if ($request->filled('discount_value') && $request->discount_value > 0) {
+            if ($request->discount_type === 'percentage') {
+                $discountAmount = ($totalAmount * $request->discount_value) / 100;
+            } else {
+                $discountAmount = $request->discount_value;
+            }
+            $totalAfterDiscount = $totalAmount - $discountAmount;
+        }
+
+        // Hitung DP
+        $dpAmount = 0;
+        if ($request->filled('dp_value') && $request->dp_value > 0) {
+            $baseAmount = $totalAfterDiscount > 0 ? $totalAfterDiscount : $totalAmount;
+            if ($request->dp_type === 'percentage') {
+                $dpAmount = ($baseAmount * $request->dp_value) / 100;
+            } else {
+                $dpAmount = $request->dp_value;
+            }
+        }
+
+        return [
+            'discountAmount' => $discountAmount,
+            'totalAfterDiscount' => $totalAfterDiscount,
+            'dpAmount' => $dpAmount,
+        ];
     }
 }
 
