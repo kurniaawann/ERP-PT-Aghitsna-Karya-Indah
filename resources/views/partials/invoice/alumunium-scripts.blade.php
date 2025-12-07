@@ -59,10 +59,31 @@
         calculateDiscount();
     }
 
+    /**
+     * IMPORTANT: The following calculation functions (calculateDiscount, calculateDP) must be kept in sync
+     * with the backend calculation logic in AlumuniumInvoiceController.php.
+     * 
+     * Any changes to the calculation formulas here MUST be reflected in:
+     * - app/Http/Controllers/Invoice/AlumuniumInvoiceController.php (store and update methods)
+     * - resources/views/exports/alumunium-invoice-pdf.blade.php (discount and DP calculation)
+     * - app/Exports/Invoice/AlumuniumInvoiceExport.php (discount and DP calculation)
+     * 
+     * This ensures consistency between frontend preview and backend storage/export.
+     */
+
     // Calculate Discount
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        let discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        
+        // Validate percentage discount (max 100%)
+        if (discountType === 'percentage' && discountValue > 100) {
+            discountValue = 100;
+            const discountValueInput = document.getElementById('discount-value');
+            if (discountValueInput) {
+                discountValueInput.value = 100;
+            }
+        }
 
         // Get base total
         let baseTotal = 0;
@@ -101,7 +122,16 @@
     // Calculate DP
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
-        const dpValue = parseFloat(document.getElementById('dp-value')?.value) || 0;
+        let dpValue = parseFloat(document.getElementById('dp-value')?.value) || 0;
+        
+        // Validate percentage DP (max 100%)
+        if (dpType === 'percentage' && dpValue > 100) {
+            dpValue = 100;
+            const dpValueInput = document.getElementById('dp-value');
+            if (dpValueInput) {
+                dpValueInput.value = 100;
+            }
+        }
 
         // Get base total
         let baseTotal = 0;

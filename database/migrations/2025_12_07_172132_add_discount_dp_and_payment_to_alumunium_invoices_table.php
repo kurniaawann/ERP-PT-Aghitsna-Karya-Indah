@@ -29,7 +29,6 @@ return new class extends Migration {
             $table->string('account_number'); // Nomor Rekening
             $table->string('account_holder'); // Nama Pemilik Rekening
             $table->boolean('is_active')->default(true); // Status aktif/tidak
-            $table->integer('order')->default(0); // Urutan tampilan
             $table->timestamps();
         });
     }

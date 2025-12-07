@@ -215,6 +215,9 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 ]);
                 $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
+                // Initialize totalAfterDiscount to totalAmount before discount check
+                $totalAfterDiscount = $totalAmount;
+
                 // Discount row (if exists)
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
                     $discountAmount = 0;
@@ -269,8 +272,6 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                         ]
                     ]);
                     $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                } else {
-                    $totalAfterDiscount = $totalAmount;
                 }
 
                 // DP row (if exists)

@@ -82,6 +82,16 @@ class PaymentAccountController extends Controller
         ]);
 
         $selectedIds = $request->selected_accounts;
+        
+        // Check if deleting selected accounts would leave no active accounts
+        $totalAccounts = PaymentAccount::count();
+        $remainingAccounts = $totalAccounts - count($selectedIds);
+        
+        if ($remainingAccounts < 1) {
+            return redirect()->route('payment-accounts.index')
+                ->withErrors(['error' => 'Tidak dapat menghapus semua rekening pembayaran. Minimal harus ada 1 rekening yang tersisa.']);
+        }
+        
         PaymentAccount::whereIn('id', $selectedIds)->delete();
 
         $count = count($selectedIds);
@@ -91,6 +101,14 @@ class PaymentAccountController extends Controller
 
     public function destroy(PaymentAccount $paymentAccount)
     {
+        // Check if this is the last payment account
+        $totalAccounts = PaymentAccount::count();
+        
+        if ($totalAccounts <= 1) {
+            return redirect()->route('payment-accounts.index')
+                ->withErrors(['error' => 'Tidak dapat menghapus rekening pembayaran terakhir. Minimal harus ada 1 rekening yang tersisa.']);
+        }
+        
         $paymentAccount->delete();
 
         return redirect()->route('payment-accounts.index')

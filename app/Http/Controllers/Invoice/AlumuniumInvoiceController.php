@@ -116,10 +116,15 @@ class AlumuniumInvoiceController extends Controller
         $totalAfterDiscount = $totalAmount;
 
         if ($request->filled('discount_value') && $request->discount_value > 0) {
+            // Validate percentage discount (max 100%)
+            if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
+                return back()->withErrors(['discount_value' => 'Discount persentase tidak boleh lebih dari 100%'])->withInput();
+            }
+            
             if ($request->discount_type === 'percentage') {
-                $discountAmount = ($totalAmount * $request->discount_value) / 100;
+                $discountAmount = round(($totalAmount * $request->discount_value) / 100);
             } else {
-                $discountAmount = $request->discount_value;
+                $discountAmount = round($request->discount_value);
             }
             $totalAfterDiscount = $totalAmount - $discountAmount;
         }
@@ -127,11 +132,16 @@ class AlumuniumInvoiceController extends Controller
         // Hitung DP
         $dpAmount = 0;
         if ($request->filled('dp_value') && $request->dp_value > 0) {
+            // Validate percentage DP (max 100%)
+            if ($request->dp_type === 'percentage' && $request->dp_value > 100) {
+                return back()->withErrors(['dp_value' => 'DP persentase tidak boleh lebih dari 100%'])->withInput();
+            }
+            
             $baseAmount = $totalAfterDiscount != $totalAmount ? $totalAfterDiscount : $totalAmount;
             if ($request->dp_type === 'percentage') {
-                $dpAmount = ($baseAmount * $request->dp_value) / 100;
+                $dpAmount = round(($baseAmount * $request->dp_value) / 100);
             } else {
-                $dpAmount = $request->dp_value;
+                $dpAmount = round($request->dp_value);
             }
         }
 
@@ -170,10 +180,15 @@ class AlumuniumInvoiceController extends Controller
             $totalAfterDiscount = $totalAmount;
 
             if ($request->filled('discount_value') && $request->discount_value > 0) {
+                // Validate percentage discount (max 100%)
+                if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
+                    return back()->withErrors(['discount_value' => 'Discount persentase tidak boleh lebih dari 100%'])->withInput();
+                }
+                
                 if ($request->discount_type === 'percentage') {
-                    $discountAmount = ($totalAmount * $request->discount_value) / 100;
+                    $discountAmount = round(($totalAmount * $request->discount_value) / 100);
                 } else {
-                    $discountAmount = $request->discount_value;
+                    $discountAmount = round($request->discount_value);
                 }
                 $totalAfterDiscount = $totalAmount - $discountAmount;
             }
@@ -181,11 +196,16 @@ class AlumuniumInvoiceController extends Controller
             // Hitung DP
             $dpAmount = 0;
             if ($request->filled('dp_value') && $request->dp_value > 0) {
+                // Validate percentage DP (max 100%)
+                if ($request->dp_type === 'percentage' && $request->dp_value > 100) {
+                    return back()->withErrors(['dp_value' => 'DP persentase tidak boleh lebih dari 100%'])->withInput();
+                }
+                
                 $baseAmount = $totalAfterDiscount > 0 ? $totalAfterDiscount : $totalAmount;
                 if ($request->dp_type === 'percentage') {
-                    $dpAmount = ($baseAmount * $request->dp_value) / 100;
+                    $dpAmount = round(($baseAmount * $request->dp_value) / 100);
                 } else {
-                    $dpAmount = $request->dp_value;
+                    $dpAmount = round($request->dp_value);
                 }
             }
 
