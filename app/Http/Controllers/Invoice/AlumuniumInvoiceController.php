@@ -60,7 +60,7 @@ class AlumuniumInvoiceController extends Controller
         // Get active payment accounts
         $paymentAccounts = \App\Models\Invoice\PaymentAccount::active()->get();
 
-        return view('pages.alumunium-invoice', compact('invoices', 'paymentAccounts'));
+        return view('pages.invoice.alumunium-invoice', compact('invoices', 'paymentAccounts'));
     }
 
 
