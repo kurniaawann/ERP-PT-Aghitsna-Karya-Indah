@@ -169,26 +169,6 @@
     }
 
     // ==========================================
-    // EXPORT FUNCTIONS
-    // ==========================================
-
-    function exportData(type) {
-        const search = new URLSearchParams(window.location.search).get('search') || '';
-        const status = new URLSearchParams(window.location.search).get('status') || '';
-
-        let url = '';
-        if (type === 'pdf') {
-            url = `{{ route('reimburse.export.pdf') }}?search=${search}&status=${status}`;
-        } else if (type === 'excel') {
-            url = `{{ route('reimburse.export.excel') }}?search=${search}&status=${status}`;
-        }
-
-        if (url) {
-            window.location.href = url;
-        }
-    }
-
-    // ==========================================
     // ADD/EDIT FORM SUBMIT HANDLERS
     // ==========================================
 

@@ -26,18 +26,8 @@
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    {{-- Export Buttons --}}
-                    <button type="button" onclick="exportData('pdf')"
-                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        Export PDF
-                    </button>
-
-                    <button type="button" onclick="exportData('excel')"
-                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        Export Excel
-                    </button>
+                    {{-- Print Dropdown --}}
+                    <x-buttons.print-dropdown :excelRoute="route('reimburse.export.excel')" :pdfRoute="route('reimburse.export.pdf')" :queryParams="['search' => request('search'), 'status' => request('status')]" />
 
                     @if (Auth::user()->role === 'admin')
                         {{-- Admin can add new reimburse --}}
@@ -106,4 +96,5 @@
 
     {{-- JavaScript --}}
     @include('partials.finance.reimburse.reimburse-scripts')
+    @include('partials.shared.print-dropdown-script')
 @endsection
