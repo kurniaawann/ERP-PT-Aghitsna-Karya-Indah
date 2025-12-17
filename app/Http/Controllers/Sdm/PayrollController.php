@@ -486,7 +486,7 @@ class PayrollController extends Controller
         ];
 
         // Generate PDF dari view dengan orientasi landscape
-        $pdf = Pdf::loadView('exports.payroll_pdf', $data);
+        $pdf = Pdf::loadView('exports.sdm.payroll-pdf', $data);
         $pdf->setPaper('a4', 'landscape'); // Kertas A4 landscape (karena banyak kolom)
 
         // Generate nama file dengan format: Laporan_Payroll_{periode}_{timestamp}.pdf

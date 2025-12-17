@@ -96,7 +96,7 @@ class DocumentReceiptController extends Controller
             ->get();
 
         // Load view PDF - gunakan template yang sama untuk semua kondisi
-        $pdf = Pdf::loadView('exports.document-receipt-pdf', compact('documents'));
+        $pdf = Pdf::loadView('exports.administrasi.document-receipt-pdf', compact('documents'));
 
         // Set paper size dan orientation
         $pdf->setPaper('a4', 'portrait');
@@ -124,7 +124,7 @@ class DocumentReceiptController extends Controller
             ->get();
 
         // Load view PDF - gunakan template yang sama untuk semua kondisi
-        $pdf = Pdf::loadView('exports.document-receipt-pdf', compact('documents'));
+        $pdf = Pdf::loadView('exports.administrasi.document-receipt-pdf', compact('documents'));
 
         // Set paper size dan orientation
         $pdf->setPaper('a4', 'portrait');

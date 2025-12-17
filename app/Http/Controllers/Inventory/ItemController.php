@@ -132,7 +132,7 @@ class ItemController extends Controller
         // Generate PDF dari view 'exports.item-pdf' dengan data items
         // Pdf::loadView() akan render blade template menjadi PDF
         // compact('items') mengirim variable $items ke view
-        $pdf = Pdf::loadView('exports.item-pdf', compact('items'));
+        $pdf = Pdf::loadView('exports.inventory.item-pdf', compact('items'));
 
         // Download PDF dengan nama file dinamis: stock-hollow-YYYY-MM-DD.pdf
         // date('Y-m-d') menghasilkan format tanggal: 2025-01-01

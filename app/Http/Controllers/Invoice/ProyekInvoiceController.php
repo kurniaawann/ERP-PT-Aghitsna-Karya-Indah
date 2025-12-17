@@ -246,7 +246,7 @@ class ProyekInvoiceController extends Controller
         $invoice = InvoiceProyek::where('invoice_number', $invoiceNumber)->firstOrFail();
 
         // Generate PDF dari view
-        $pdf = Pdf::loadView('exports.proyek-invoice-pdf', compact('invoice'));
+        $pdf = Pdf::loadView('exports.invoice.proyek-invoice-pdf', compact('invoice'));
         $pdf->setPaper('a4', 'portrait');
 
         // Replace karakter tidak aman di filename (/ dan \)

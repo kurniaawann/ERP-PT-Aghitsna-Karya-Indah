@@ -352,7 +352,7 @@ class ExpenseReportController extends Controller
         $periodTitle = !empty($periodParts) ? implode(' - ', $periodParts) : 'Semua Periode';
 
         // Generate PDF dari view 'expense-report-pdf' dengan data yang diperlukan
-        $pdf = Pdf::loadView('exports.expense-report-pdf', [
+        $pdf = Pdf::loadView('exports.report.expense-report-pdf', [
             // Data expense reports yang sudah di-filter
             'expenseReports' => $expenseReports,
 

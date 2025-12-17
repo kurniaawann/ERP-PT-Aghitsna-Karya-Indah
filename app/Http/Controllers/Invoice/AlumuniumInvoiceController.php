@@ -229,7 +229,7 @@ class AlumuniumInvoiceController extends Controller
         $invoice = InvoiceAlumunium::where('invoice_number', $invoiceNumber)->firstOrFail();
 
         // Generate PDF dari view
-        $pdf = Pdf::loadView('exports.alumunium-invoice-pdf', compact('invoice'));
+        $pdf = Pdf::loadView('exports.invoice.alumunium-invoice-pdf', compact('invoice'));
         $pdf->setPaper('a4', 'portrait');
 
         // Replace karakter tidak aman di filename (/ dan \)
