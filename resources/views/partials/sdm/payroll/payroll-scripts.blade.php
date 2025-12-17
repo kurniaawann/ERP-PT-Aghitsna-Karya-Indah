@@ -98,12 +98,12 @@
                     return `
                         <div class="bg-white p-3 rounded border border-red-200">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="font-semibold text-gray-800">${emp.name}</span>
+                                <span class="font-semibold text-text-heading">${emp.name}</span>
                                 <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">${emp.employee_code}</span>
                             </div>
-                            <div class="text-xs text-gray-600 space-y-1">
+                            <div class="text-xs text-text-label space-y-1">
                                 <div class="flex items-center gap-1">
-                                    <i class="fa-solid fa-calendar-check text-gray-400"></i>
+                                    <i class="fa-solid fa-calendar-check text-text-tertiary"></i>
                                     <span>Data: <strong class="text-blue-600">${emp.filled_days}</strong> dari <strong>${emp.total_days}</strong> hari kerja</span>
                                 </div>
                                 <div class="flex items-start gap-1">

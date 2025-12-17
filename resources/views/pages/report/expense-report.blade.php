@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Laporan Pengeluaran</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Laporan Pengeluaran</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <!-- Form Pencarian dan Filter -->
@@ -64,8 +64,8 @@
     {{-- Modal Delete Confirmation --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
-        <p class="text-gray-700 mb-4">Apakah Anda yakin ingin menghapus data yang dipilih?</p>
-        <p class="text-sm text-gray-500">
+        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data yang dipilih?</p>
+        <p class="text-sm text-text-secondary">
             <i class="fa-solid fa-info-circle"></i> Data yang auto-generated dari sales report tidak akan dihapus.
         </p>
     </x-modal>

@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Reimbursement</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Reimbursement</h1>
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -15,7 +15,7 @@
 
                 {{-- Filter Status --}}
                 <select name="status" onchange="this.form.submit()"
-                    class="border rounded p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                    class="border rounded p-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="">Semua Status</option>
                     <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Disetujui</option>
@@ -57,7 +57,7 @@
         {{-- Total Info untuk Super Admin --}}
         @if (Auth::user()->role === 'superadmin')
             <div id="selected-info" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p class="text-sm text-gray-700">
+                <p class="text-sm text-text-primary">
                     <span id="selected-count">0</span> reimburse terpilih | Total: <strong id="selected-total">Rp 0</strong>
                 </p>
             </div>

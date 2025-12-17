@@ -3,28 +3,28 @@
     action="{{ route('payment-accounts.update', $account->id) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">ID Rekening</label>
-        <input type="text" value="{{ $account->id }}" class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed"
+        <label class="block text-text-primary mb-1">ID Rekening</label>
+        <input type="text" value="{{ $account->id }}" class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed"
             readonly>
-        <p class="text-xs text-gray-500 mt-1">ID Rekening tidak dapat diubah</p>
+        <p class="text-xs text-text-secondary mt-1">ID Rekening tidak dapat diubah</p>
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Nama Bank <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nama Bank <span class="text-error">*</span></label>
         <input type="text" name="bank_name" value="{{ $account->bank_name }}" class="w-full border rounded p-2"
             required maxlength="255" oninvalid="this.setCustomValidity('Nama bank wajib diisi')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Nomor Rekening <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nomor Rekening <span class="text-error">*</span></label>
         <input type="text" name="account_number" value="{{ $account->account_number }}"
             class="w-full border rounded p-2" required maxlength="255"
             oninvalid="this.setCustomValidity('Nomor rekening wajib diisi')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Nama Pemilik Rekening <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nama Pemilik Rekening <span class="text-error">*</span></label>
         <input type="text" name="account_holder" value="{{ $account->account_holder }}"
             class="w-full border rounded p-2" required maxlength="255"
             oninvalid="this.setCustomValidity('Nama pemilik rekening wajib diisi')"

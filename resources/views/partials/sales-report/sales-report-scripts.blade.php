@@ -125,30 +125,30 @@
                             class="item-search-input w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" 
                             placeholder="Cari barang..." 
                             autocomplete="off">
-                        <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                        <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options">
-                                <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b" data-value="">
+                                <div class="p-2 text-sm text-text-secondary hover:bg-gray-50 cursor-pointer border-b" data-value="">
                                     -- Pilih Barang --
                                 </div>
                                 @foreach ($items as $item)
-                                    <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option"
+                                    <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light item-option"
                                         data-value="{{ $item->id_item }}"
                                         data-name="{{ $item->name_item }}"
                                         data-capital="{{ $item->capital_price }}"
                                         data-selling="{{ $item->selling_price }}"
                                         data-stock="{{ $item->quantity }}"
                                         data-search="{{ strtolower($item->name_item) }}">
-                                        <div class="font-medium text-gray-800">{{ $item->name_item }}</div>
-                                        <div class="text-xs text-gray-500 mt-1">
+                                        <div class="font-medium text-text-heading">{{ $item->name_item }}</div>
+                                        <div class="text-xs text-text-secondary mt-1">
                                             Stok: <span class="font-semibold text-primary">{{ $item->quantity }}</span> unit
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
-                            <div class="no-results p-4 text-center text-sm text-gray-500 hidden">
-                                <i class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
+                            <div class="no-results p-4 text-center text-sm text-text-secondary hidden">
+                                <i class="fa-solid fa-search mb-2 text-2xl text-text-placeholder"></i>
                                 <p>Tidak ada barang ditemukan</p>
                             </div>
                         </div>
@@ -518,30 +518,30 @@
                             class="item-search-input-edit w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" 
                             placeholder="Cari barang..." 
                             autocomplete="off">
-                        <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                        <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown-edit absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown-edit absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options-edit">
-                                <div class="p-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer border-b" data-value="">
+                                <div class="p-2 text-sm text-text-secondary hover:bg-gray-50 cursor-pointer border-b" data-value="">
                                     -- Pilih Barang --
                                 </div>
                                 @foreach ($items as $item)
-                                    <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-gray-100 item-option-edit"
+                                    <div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light item-option-edit"
                                         data-value="{{ $item->id_item }}"
                                         data-name="{{ $item->name_item }}"
                                         data-capital="{{ $item->capital_price }}"
                                         data-selling="{{ $item->selling_price }}"
                                         data-stock="{{ $item->quantity }}"
                                         data-search="{{ strtolower($item->name_item) }}">
-                                        <div class="font-medium text-gray-800">{{ $item->name_item }}</div>
-                                        <div class="text-xs text-gray-500 mt-1">
+                                        <div class="font-medium text-text-heading">{{ $item->name_item }}</div>
+                                        <div class="text-xs text-text-secondary mt-1">
                                             Stok: <span class="font-semibold text-primary">{{ $item->quantity }}</span> unit
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
-                            <div class="no-results-edit p-4 text-center text-sm text-gray-500 hidden">
-                                <i class="fa-solid fa-search mb-2 text-2xl text-gray-300"></i>
+                            <div class="no-results-edit p-4 text-center text-sm text-text-secondary hidden">
+                                <i class="fa-solid fa-search mb-2 text-2xl text-text-placeholder"></i>
                                 <p>Tidak ada barang ditemukan</p>
                             </div>
                         </div>

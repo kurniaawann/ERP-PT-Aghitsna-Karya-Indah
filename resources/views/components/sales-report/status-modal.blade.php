@@ -6,18 +6,18 @@
     @method('PATCH')
 
     <div class="mb-4">
-        <p class="text-gray-700 mb-3">Update status pembayaran laporan penjualan:</p>
-        <div class="bg-gray-50 p-3 rounded-lg mb-4">
-            <p class="font-semibold text-gray-800">{{ $sale->name_proyek }}</p>
-            <p class="text-sm text-gray-600">Tanggal: {{ $sale->date->format('d-m-Y') }}</p>
-            <p class="text-sm text-gray-600">Total Profit: Rp
+        <p class="text-text-primary mb-3">Update status pembayaran laporan penjualan:</p>
+        <div class="bg-surface-secondary p-3 rounded-lg mb-4">
+            <p class="font-semibold text-text-heading">{{ $sale->name_proyek }}</p>
+            <p class="text-sm text-text-label">Tanggal: {{ $sale->date->format('d-m-Y') }}</p>
+            <p class="text-sm text-text-label">Total Profit: Rp
                 {{ number_format($sale->total_profit, 0, ',', '.') }}</p>
         </div>
 
-        <label class="block text-gray-700 font-semibold mb-2">Status Pembayaran <span
+        <label class="block text-text-primary font-semibold mb-2">Status Pembayaran <span
                 class="text-error">*</span></label>
         <select name="status"
-            class="w-full border border-gray-300 rounded-lg p-3 focus:border-primary focus:ring-2 focus:ring-primary-light"
+            class="w-full border border-border-strong rounded-lg p-3 focus:border-primary focus:ring-2 focus:ring-primary-light"
             required>
             <option value="Belum Lunas" {{ $sale->status === 'Belum Lunas' ? 'selected' : '' }}>Belum Lunas
             </option>
@@ -30,7 +30,7 @@
                 <i class="fa-solid fa-exclamation-triangle text-warning text-xl mt-0.5"></i>
                 <div>
                     <p class="font-semibold text-warning mb-1">Peringatan Penting!</p>
-                    <p class="text-sm text-gray-700">
+                    <p class="text-sm text-text-primary">
                         Setelah status diubah menjadi <strong>"Lunas"</strong>, data laporan penjualan ini
                         <strong>tidak dapat diubah atau diedit lagi</strong>.
                         Pastikan semua informasi sudah benar sebelum mengonfirmasi.

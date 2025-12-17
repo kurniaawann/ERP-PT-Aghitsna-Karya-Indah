@@ -4,14 +4,14 @@
            -translate-x-full lg:translate-x-0 flex flex-col transition-transform duration-300 ease-in-out">
 
     <!-- Header Sidebar -->
-    <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+    <div class="p-4 border-b border-border flex items-center justify-between">
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                 <span class="text-white font-bold text-lg">AGI</span>
             </div>
-            <span class="font-semibold text-gray-800">PT Aghitsna Karya Indah</span>
+            <span class="font-semibold text-text-heading">PT Aghitsna Karya Indah</span>
         </div>
-        <button id="closeSidebar" class="lg:hidden text-gray-500 hover:text-gray-700">
+        <button id="closeSidebar" class="lg:hidden text-text-secondary hover:text-text-primary">
             <i class="fas fa-times text-lg"></i>
         </button>
     </div>
@@ -24,11 +24,11 @@
             <li>
                 <a href="{{ url('/dashboard') }}"
                     class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('dashboard') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+                        {{ request()->is('dashboard') ? 'bg-primary-light text-primary' : 'text-text-primary hover:bg-primary-light hover:text-primary' }}">
 
                     <i
                         class="fas fa-home w-5 
-                        {{ request()->is('dashboard') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        {{ request()->is('dashboard') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                     </i>
                     <span class="ml-3 font-medium">Dashboard</span>
                 </a>
@@ -37,16 +37,16 @@
             {{-- Inventory Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('inventoryDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i class="fas fa-box-open w-5 text-gray-400 group-hover:text-primary">
+                        <i class="fas fa-box-open w-5 text-text-tertiary group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">Inventory</span>
                     </div>
 
                     <i id="inventoryDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
                     </i>
                 </button>
 
@@ -55,10 +55,10 @@
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('item*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('item*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-boxes w-4 
-                                {{ request()->is('item*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('item*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Data Barang</span>
                         </a>
@@ -69,16 +69,16 @@
             {{-- Invoice Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('invoiceDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i class="fas fa-file-invoice w-5 text-gray-400 group-hover:text-primary">
+                        <i class="fas fa-file-invoice w-5 text-text-tertiary group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">Invoice</span>
                     </div>
 
                     <i id="invoiceDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
                     </i>
                 </button>
 
@@ -88,10 +88,10 @@
                     <li>
                         <a href="{{ url('/alumunium-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('alumunium-invoice*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('alumunium-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-receipt w-4 
-                                {{ request()->is('alumunium-invoice*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('alumunium-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice Alumunium</span>
                         </a>
@@ -99,10 +99,10 @@
                     <li>
                         <a href="{{ url('/proyek-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-file-contract w-4 
-                                {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice Proyek</span>
                         </a>
@@ -110,10 +110,10 @@
                     <li>
                         <a href="{{ url('/payment-accounts') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('payment-accounts*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('payment-accounts*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-building-columns w-4 
-                                {{ request()->is('payment-accounts*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('payment-accounts*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Rekening Pembayaran</span>
                         </a>
@@ -124,16 +124,16 @@
             {{-- Laporan Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('laporanDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i class="fas fa-chart-line w-5 text-gray-400 group-hover:text-primary">
+                        <i class="fas fa-chart-line w-5 text-text-tertiary group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">Laporan</span>
                     </div>
 
                     <i id="laporanDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
                     </i>
                 </button>
 
@@ -143,10 +143,10 @@
                     <li>
                         <a href="{{ url('/sales-report') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('sales-report*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('sales-report*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-chart-bar w-4 
-                                {{ request()->is('sales-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('sales-report*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Laporan Penjualan</span>
                         </a>
@@ -154,10 +154,10 @@
                     <li>
                         <a href="{{ url('/expense-report') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-money-bill-wave w-4 
-                                {{ request()->is('expense-report*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('expense-report*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
                         </a>
@@ -165,10 +165,10 @@
                     <li>
                         <a href="{{ url('/transaction-category') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-tags w-4 
-                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
                         </a>
@@ -179,16 +179,16 @@
             {{-- SDM (Sumber Daya Manusia) Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('sdmDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i class="fas fa-users w-5 text-gray-400 group-hover:text-primary">
+                        <i class="fas fa-users w-5 text-text-tertiary group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">SDM</span>
                     </div>
 
                     <i id="sdmDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
                     </i>
                 </button>
 
@@ -198,10 +198,10 @@
                     <li>
                         <a href="{{ url('/employee') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('employee*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('employee*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-user-tie w-4 
-                                {{ request()->is('employee*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('employee*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Data Karyawan</span>
                         </a>
@@ -209,10 +209,10 @@
                     <li>
                         <a href="{{ url('/attendance') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('attendance*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('attendance*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-calendar-check w-4 
-                                {{ request()->is('attendance*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('attendance*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Absensi</span>
                         </a>
@@ -220,10 +220,10 @@
                     <li>
                         <a href="{{ url('/overtime') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-clock w-4 
-                                {{ request()->is('overtime*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('overtime*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Lembur</span>
                         </a>
@@ -231,10 +231,10 @@
                     <li>
                         <a href="{{ url('/payroll') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-money-check-alt w-4 
-                                {{ request()->is('payroll*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('payroll*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Payroll</span>
                         </a>
@@ -245,16 +245,16 @@
             {{-- Finance (Keuangan) Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('financeDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i class="fas fa-wallet w-5 text-gray-400 group-hover:text-primary">
+                        <i class="fas fa-wallet w-5 text-text-tertiary group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">Keuangan</span>
                     </div>
 
                     <i id="financeDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
                     </i>
                 </button>
 
@@ -264,10 +264,10 @@
                     <li>
                         <a href="{{ url('/reimburse') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-gray-600 hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-hand-holding-usd w-4 
-                                {{ request()->is('reimburse*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                                {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Reimbursement</span>
                         </a>

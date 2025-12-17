@@ -2,47 +2,47 @@
 <x-modal id="addModal" title="Tambah Absensi" action="{{ route('attendance.store') }}" method="POST" buttonText="Simpan">
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Pilih Karyawan <span class="text-error">*</span></label>
-        <div class="border rounded p-3 max-h-48 overflow-y-auto bg-gray-50">
+        <label class="block text-text-primary mb-1">Pilih Karyawan <span class="text-error">*</span></label>
+        <div class="border rounded p-3 max-h-48 overflow-y-auto bg-surface-secondary">
             <div class="mb-2">
-                <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
                     <input type="checkbox" id="selectAllEmployees" class="w-4 h-4 accent-primary">
                     <span class="font-semibold">Pilih Semua</span>
                 </label>
             </div>
             <hr class="my-2">
             @foreach ($employees as $employee)
-                <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
                     <input type="checkbox" name="employee_ids[]" value="{{ $employee->employee_code }}"
                         class="w-4 h-4 accent-primary employee-checkbox">
                     <span>{{ $employee->name }} - {{ $employee->employee_code }}</span>
                 </label>
             @endforeach
         </div>
-        <p class="text-xs text-gray-500 mt-1">Pilih satu atau lebih karyawan</p>
+        <p class="text-xs text-text-secondary mt-1">Pilih satu atau lebih karyawan</p>
         <p id="employee-error" class="text-xs text-red-600 mt-1 hidden">Silakan pilih minimal 1 karyawan!</p>
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Tanggal Mulai <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Tanggal Mulai <span class="text-error">*</span></label>
         <input type="date" name="start_date" id="start_date" class="w-full border rounded p-2"
             max="{{ date('Y-m-d') }}" required oninvalid="this.setCustomValidity('Tanggal mulai tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
-        <p class="text-xs text-gray-500 mt-1">Tanggal tidak boleh lebih dari hari ini</p>
+        <p class="text-xs text-text-secondary mt-1">Tanggal tidak boleh lebih dari hari ini</p>
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Tanggal Akhir <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Tanggal Akhir <span class="text-error">*</span></label>
         <input type="date" name="end_date" id="end_date" class="w-full border rounded p-2" max="{{ date('Y-m-d') }}"
             required oninvalid="this.setCustomValidity('Tanggal akhir tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
-        <p class="text-xs text-gray-500 mt-1">Untuk 1 hari, isi tanggal yang sama</p>
+        <p class="text-xs text-text-secondary mt-1">Untuk 1 hari, isi tanggal yang sama</p>
         <p id="date-error" class="text-xs text-red-600 mt-1 hidden">Tanggal akhir tidak boleh lebih kecil dari tanggal
             mulai!</p>
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Status <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Status <span class="text-error">*</span></label>
         <select name="status" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Status tidak boleh kosong')" oninput="this.setCustomValidity('')">
             <option value="">Pilih Status</option>
@@ -55,7 +55,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Keterangan</label>
+        <label class="block text-text-primary mb-1">Keterangan</label>
         <textarea name="notes" class="w-full border rounded p-2" placeholder="Masukkan keterangan (opsional)" rows="3"></textarea>
     </div>
 

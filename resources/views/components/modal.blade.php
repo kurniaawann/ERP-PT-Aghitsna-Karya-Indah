@@ -11,7 +11,7 @@
 
 <div id="{{ $id }}" class="hidden fixed inset-0 z-50 bg-gray-900/60 items-center justify-center px-4">
     <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-gray-700 mb-4">{{ $title }}</h2>
+        <h2 class="text-lg font-semibold text-text-primary mb-4">{{ $title }}</h2>
 
         @if ($confirmDelete || (strtoupper($method) === 'DELETE' && $onConfirm))
             {{-- Delete Confirmation mode - tampilan warning dengan icon merah --}}
@@ -21,13 +21,13 @@
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <h3 class="text-lg font-normal text-gray-600">
+                <h3 class="text-lg font-normal text-text-label">
                     {{ $slot }}
                 </h3>
             </div>
 
             <div class="flex justify-end gap-2 mt-6">
-                <button type="button" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+                <button type="button" class="bg-button-cancel px-4 py-2 rounded hover:bg-button-cancel-hover"
                     onclick="closeModal('{{ $id }}')">
                     Batal
                 </button>
@@ -44,7 +44,7 @@
             </div>
 
             <div class="flex justify-end gap-2 mt-4">
-                <button type="button" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+                <button type="button" class="bg-button-cancel px-4 py-2 rounded hover:bg-button-cancel-hover"
                     onclick="closeModal('{{ $id }}')">
                     Tutup
                 </button>
@@ -56,7 +56,7 @@
             </div>
 
             <div class="flex justify-end gap-2 mt-4">
-                <button type="button" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+                <button type="button" class="bg-button-cancel px-4 py-2 rounded hover:bg-button-cancel-hover"
                     onclick="closeModal('{{ $id }}')">
                     Batal
                 </button>
@@ -78,7 +78,7 @@
                 {{ $slot }}
 
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+                    <button type="button" class="bg-button-cancel px-4 py-2 rounded hover:bg-button-cancel-hover"
                         onclick="closeModal('{{ $id }}')">
                         Batal
                     </button>
@@ -99,7 +99,7 @@
 
         {{-- Tombol X --}}
         <button type="button" onclick="closeModal('{{ $id }}')"
-            class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-xl font-bold">
+            class="absolute top-2 right-3 text-text-tertiary hover:text-text-label text-xl font-bold">
             &times;
         </button>
     </div>

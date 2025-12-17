@@ -5,7 +5,7 @@
 
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
-            <div class="border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+            <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
@@ -26,7 +26,7 @@
                     </thead>
                     <tbody>
                         @forelse($reimburses as $reimburse)
-                            <tr class="border-t hover:bg-gray-50">
+                            <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
                                     @if (Auth::user()->role === 'superadmin' && $reimburse->status === 'draft')
                                         {{-- Super admin can select draft items --}}
@@ -56,7 +56,7 @@
                                 </td>
 
                                 {{-- Tanggal Perubahan Status --}}
-                                <td class="p-2 text-center text-xs text-gray-600">
+                                <td class="p-2 text-center text-xs text-text-label">
                                     {{ $reimburse->formatted_status_changed_at }}
                                 </td>
 
@@ -76,7 +76,7 @@
                                                 </button>
                                             </div>
                                         @else
-                                            <span class="text-gray-400 text-xs">-</span>
+                                            <span class="text-text-tertiary text-xs">-</span>
                                         @endif
                                     </td>
                                 @endif
@@ -84,7 +84,7 @@
                         @empty
                             <tr>
                                 <td colspan="{{ Auth::user()->role === 'admin' ? '11' : '10' }}"
-                                    class="text-center p-4 text-gray-500">
+                                    class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

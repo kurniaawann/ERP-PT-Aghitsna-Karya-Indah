@@ -18,7 +18,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Bulan <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
         <select name="period_month" id="period_month" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Bulan tidak boleh kosong')" oninput="this.setCustomValidity('')">
             <option value="">Pilih Bulan</option>
@@ -38,16 +38,16 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Tahun <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Tahun <span class="text-error">*</span></label>
         <input type="number" name="period_year" id="period_year" class="w-full border rounded p-2"
             placeholder="Contoh: 2025" value="{{ date('Y') }}" required min="2000" max="2100"
             oninvalid="this.setCustomValidity('Tahun tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Loading State --}}
-    <div id="checking-loader" class="hidden mb-3 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+    <div id="checking-loader" class="hidden mb-3 p-4 bg-surface-secondary border border-border rounded-lg text-center">
         <i class="fa-solid fa-spinner fa-spin text-blue-600 text-2xl mb-2"></i>
-        <p class="text-sm text-gray-600">Memeriksa kelengkapan data absensi...</p>
+        <p class="text-sm text-text-label">Memeriksa kelengkapan data absensi...</p>
     </div>
 
     {{-- Warning - Payroll Sudah Ada --}}

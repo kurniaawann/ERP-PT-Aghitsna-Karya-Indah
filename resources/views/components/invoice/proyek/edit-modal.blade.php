@@ -3,14 +3,14 @@
     action="{{ route('proyek-invoice.update', $invoice->invoice_number) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">No Invoice</label>
+        <label class="block text-text-primary mb-1">No Invoice</label>
         <input type="text" value="{{ $invoice->invoice_number }}"
-            class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed" readonly>
-        <p class="text-xs text-gray-500 mt-1">No Invoice tidak dapat diubah</p>
+            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" readonly>
+        <p class="text-xs text-text-secondary mt-1">No Invoice tidak dapat diubah</p>
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Tanggal Invoice <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
         <input type="date" name="invoice_date" value="{{ $invoice->invoice_date->format('Y-m-d') }}"
             class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
@@ -18,34 +18,34 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Kepada <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Kepada <span class="text-error">*</span></label>
         <input type="text" name="recipient" value="{{ $invoice->recipient }}" class="w-full border rounded p-2"
             required oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Hal / Regarding <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Hal / Regarding <span class="text-error">*</span></label>
         <input type="text" name="regarding" value="{{ $invoice->regarding }}" class="w-full border rounded p-2"
             required oninvalid="this.setCustomValidity('Hal/Regarding tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2" required
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
     <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
-        <label class="block text-gray-700 font-semibold mb-2">Item-Item Invoice <span
+        <label class="block text-text-primary font-semibold mb-2">Item-Item Invoice <span
                 class="text-error">*</span></label>
         <div id="items-list-edit-{{ $invoice->invoice_number }}">
             @php
                 $existingItems = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
             @endphp
             @foreach ($existingItems as $index => $item)
-                <div class="item-row-edit mb-3 p-3 border rounded bg-gray-50">
+                <div class="item-row-edit mb-3 p-3 border rounded bg-surface-secondary">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                         <input type="text" name="items[{{ $index }}][keterangan]"
                             value="{{ $item['keterangan'] ?? '' }}" class="item-keterangan border rounded p-2 w-full"
@@ -92,7 +92,7 @@
     <!-- Live Total Preview -->
     <div class="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
         <div class="flex justify-between items-center">
-            <span class="text-gray-700 font-semibold">Total Invoice:</span>
+            <span class="text-text-primary font-semibold">Total Invoice:</span>
             <span id="invoice-total-preview-edit-{{ $invoice->invoice_number }}"
                 class="text-2xl font-bold text-primary">Rp
                 {{ number_format($invoice->total_amount, 0, ',', '.') }}</span>
@@ -101,10 +101,10 @@
 
     <!-- Discount Section -->
     <div class="mb-3 p-3 border rounded bg-yellow-50">
-        <label class="block text-gray-700 font-semibold mb-2">Discount (Opsional)</label>
+        <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-                <label class="block text-gray-600 text-sm mb-1">Tipe Discount</label>
+                <label class="block text-text-label text-sm mb-1">Tipe Discount</label>
                 <select name="discount_type" id="discount-type-edit-{{ $invoice->invoice_number }}"
                     class="w-full border rounded p-2"
                     onchange="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
@@ -117,7 +117,7 @@
                 </select>
             </div>
             <div>
-                <label class="block text-gray-600 text-sm mb-1">Nilai Discount</label>
+                <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
                 <input type="number" step="0.01" min="0" name="discount_value"
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
@@ -126,12 +126,12 @@
         </div>
         <div class="mt-2 p-2 bg-white rounded">
             <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Discount:</span>
+                <span class="text-sm text-text-label">Discount:</span>
                 <span id="discount-amount-edit-{{ $invoice->invoice_number }}"
                     class="text-sm font-semibold text-red-600">Rp 0</span>
             </div>
             <div class="flex justify-between mt-1">
-                <span class="text-sm font-bold text-gray-700">Total Setelah Discount:</span>
+                <span class="text-sm font-bold text-text-primary">Total Setelah Discount:</span>
                 <span id="total-after-discount-edit-{{ $invoice->invoice_number }}"
                     class="text-sm font-bold text-green-600">Rp 0</span>
             </div>
@@ -140,10 +140,10 @@
 
     <!-- DP Section -->
     <div class="mb-3 p-3 border rounded bg-blue-50">
-        <label class="block text-gray-700 font-semibold mb-2">DP / Uang Muka (Opsional)</label>
+        <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-                <label class="block text-gray-600 text-sm mb-1">Tipe DP</label>
+                <label class="block text-text-label text-sm mb-1">Tipe DP</label>
                 <select name="dp_type" id="dp-type-edit-{{ $invoice->invoice_number }}"
                     class="w-full border rounded p-2" onchange="calculateDPEdit('{{ $invoice->invoice_number }}')">
                     <option value="" {{ !$invoice->dp_type ? 'selected' : '' }}>Tidak Ada DP</option>
@@ -154,7 +154,7 @@
                 </select>
             </div>
             <div>
-                <label class="block text-gray-600 text-sm mb-1">Nilai DP</label>
+                <label class="block text-text-label text-sm mb-1">Nilai DP</label>
                 <input type="number" step="0.01" min="0" name="dp_value"
                     id="dp-value-edit-{{ $invoice->invoice_number }}" value="{{ $invoice->dp_value ?? 0 }}"
                     class="w-full border rounded p-2" placeholder="0"
@@ -163,7 +163,7 @@
         </div>
         <div class="mt-2 p-2 bg-white rounded">
             <div class="flex justify-between">
-                <span class="text-sm font-bold text-gray-700">Nilai DP:</span>
+                <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
                 <span id="dp-amount-edit-{{ $invoice->invoice_number }}" class="text-sm font-bold text-blue-600">Rp
                     0</span>
             </div>
@@ -172,11 +172,11 @@
 
     <!-- Payment Installments Section -->
     <div class="mb-3 p-3 border rounded bg-purple-50">
-        <label class="block text-gray-700 font-semibold mb-2">
+        <label class="block text-text-primary font-semibold mb-2">
             Pembayaran Bertahap (Opsional)
-            <span class="text-xs font-normal text-gray-600">- Contoh: Pembayaran Ke 1, Ke 2, Sisa</span>
+            <span class="text-xs font-normal text-text-label">- Contoh: Pembayaran Ke 1, Ke 2, Sisa</span>
         </label>
-        <p class="text-xs text-gray-600 mb-3">
+        <p class="text-xs text-text-label mb-3">
             <i class="fa-solid fa-info-circle"></i>
             Tambahkan detail pembayaran jika invoice ini dibayar secara bertahap
         </p>
@@ -214,7 +214,7 @@
 
     <!-- Payment Accounts Selection -->
     <div class="mb-3 p-3 border rounded bg-green-50">
-        <label class="block text-gray-700 font-semibold mb-2">
+        <label class="block text-text-primary font-semibold mb-2">
             Pilih Rekening Pembayaran <span class="text-error">*</span>
         </label>
         <div class="space-y-2">
@@ -225,13 +225,13 @@
             @endphp
             @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)
-                    <label class="flex items-start p-2 bg-white rounded border hover:bg-gray-50 cursor-pointer">
+                    <label class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox"
                             {{ in_array($account->id, $selectedAccounts ?? []) ? 'checked' : '' }}>
                         <div class="flex-1">
-                            <div class="font-semibold text-gray-800">{{ $account->bank_name }}</div>
-                            <div class="text-sm text-gray-600">
+                            <div class="font-semibold text-text-heading">{{ $account->bank_name }}</div>
+                            <div class="text-sm text-text-label">
                                 No: {{ $account->account_number }} a/n {{ $account->account_holder }}
                             </div>
                         </div>

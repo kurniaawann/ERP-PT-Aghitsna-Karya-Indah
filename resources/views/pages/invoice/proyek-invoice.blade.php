@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Invoice Proyek</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Proyek</h1>
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">

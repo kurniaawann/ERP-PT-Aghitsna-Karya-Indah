@@ -4,7 +4,7 @@
     @method('DELETE')
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
-            <div class="border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+            <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
@@ -18,7 +18,7 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($accounts as $index => $account)
-                            <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <tr class="hover:bg-surface-secondary transition-colors duration-150">
                                 {{-- Checkbox --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_accounts[]" value="{{ $account->id }}"
@@ -26,7 +26,7 @@
                                 </td>
 
                                 {{-- Nama Bank --}}
-                                <td class="p-2 text-gray-700 font-medium">
+                                <td class="p-2 text-text-primary font-medium">
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-building-columns text-primary"></i>
                                         {{ $account->bank_name }}
@@ -36,13 +36,13 @@
                                 {{-- Nomor Rekening --}}
                                 <td class="p-2">
                                     <span
-                                        class="inline-block px-2 py-1 text-sm font-mono bg-gray-100 text-gray-700 rounded">
+                                        class="inline-block px-2 py-1 text-sm font-mono bg-surface-hover text-text-primary rounded">
                                         {{ $account->account_number }}
                                     </span>
                                 </td>
 
                                 {{-- Nama Pemilik --}}
-                                <td class="p-2 text-gray-700">
+                                <td class="p-2 text-text-primary">
                                     {{ $account->account_holder }}
                                 </td>
 
@@ -50,7 +50,7 @@
                                 <td class="p-2 text-center">
                                     <button type="button" onclick="toggleActive({{ $account->id }})"
                                         class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-lg gap-1 transition-colors duration-200
-                                    {{ $account->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-400 hover:text-white' }}">
+                                    {{ $account->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-button-cancel text-text-label hover:bg-gray-400 hover:text-white' }}">
                                         <i
                                             class="fa-solid {{ $account->is_active ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
                                         {{ $account->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -68,7 +68,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center p-4 text-gray-500">Data tidak ditemukan.</td>
+                                <td colspan="6" class="text-center p-4 text-text-secondary">Data tidak ditemukan.</td>
                             </tr>
                         @endforelse
                     </tbody>
