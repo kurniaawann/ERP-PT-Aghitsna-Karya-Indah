@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Invoice Alumunium')
+@section('title', 'PT Aghitsna Karya Indah - Invoice Proyek')
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Alumunium</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Proyek</h1>
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian --}}
-            <form method="GET" action="{{ route('alumunium-invoice.index') }}"
+            <form method="GET" action="{{ route('proyek-invoice.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
                 <x-filters.search-input :value="request('search')" placeholder="Cari no invoice atau kepada..." />
             </form>
@@ -25,19 +25,20 @@
         </div>
 
         {{-- Table Component --}}
-        @include('components.invoice.alumunium.table', ['invoices' => $invoices])
+        @include('components.invoice.proyek.table', ['invoices' => $invoices])
 
         {{-- Pagination --}}
         <x-pagination :paginator="$invoices" />
     </div>
 
     {{-- Modal Tambah Invoice --}}
-    @include('components.invoice.alumunium.add-modal')
+    @include('components.invoice.proyek.add-modal')
 
     {{-- Modal Edit & Detail untuk setiap invoice --}}
     @foreach ($invoices as $invoice)
-        @include('components.invoice.alumunium.edit-modal', ['invoice' => $invoice])
-        @include('components.invoice.alumunium.detail-modal', ['invoice' => $invoice])
+        @include('components.invoice.proyek.edit-modal', ['invoice' => $invoice])
+        @include('components.invoice.proyek.detail-modal', ['invoice' => $invoice])
+        @include('components.invoice.proyek.delete-modal', ['invoice' => $invoice])
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}
@@ -47,5 +48,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.invoice.alumunium-scripts')
+    @include('partials.invoice.proyek-scripts')
 @endsection

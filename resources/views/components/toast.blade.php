@@ -1,5 +1,5 @@
 <div id="toast"
-    class="hidden fixed top-5 right-5 z-50 items-center w-auto max-w-xs p-4 space-x-3 text-gray-700 bg-white border-2 rounded-xl shadow-xl transition-all duration-500">
+    class="hidden fixed top-5 right-5 z-50 items-center w-auto max-w-xs p-4 space-x-3 text-text-primary bg-white border-2 rounded-xl shadow-xl transition-all duration-500">
     <div id="toastIcon" class="flex-shrink-0">
         <!-- Ikon default (berhasil) -->
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24"

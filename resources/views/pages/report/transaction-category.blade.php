@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Kategori Transaksi</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Kategori Transaksi</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <!-- Form Pencarian dan Filter -->
@@ -53,7 +53,7 @@
 
     {{-- Modal Konfirmasi Bulk Delete --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()" buttonText="Hapus">
-        <p class="text-gray-700 mb-4">Apakah Anda yakin ingin menghapus kategori yang dipilih?</p>
+        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus kategori yang dipilih?</p>
         <p class="text-sm text-error">
             <i class="fa-solid fa-exclamation-triangle"></i> Kategori yang sedang digunakan tidak akan dihapus.
         </p>
@@ -76,7 +76,7 @@
 
             {{-- Body --}}
             <div class="p-6">
-                <p class="text-gray-700 mb-4">
+                <p class="text-text-primary mb-4">
                     Kategori berikut sedang digunakan dalam transaksi dan <strong>tidak dapat dihapus</strong>:
                 </p>
 
@@ -86,7 +86,7 @@
                     </ul>
                 </div>
 
-                <p class="text-sm text-gray-600">
+                <p class="text-sm text-text-label">
                     <i class="fa-solid fa-info-circle text-blue-500"></i> Untuk menghapus kategori ini, pastikan tidak
                     ada transaksi yang menggunakannya.
                 </p>

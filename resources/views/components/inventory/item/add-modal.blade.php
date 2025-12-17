@@ -2,28 +2,28 @@
 <x-modal id="addModal" title="Tambah Barang" action="{{ route('item.store') }}" method="POST" buttonText="Simpan">
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Nama Barang <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nama Barang <span class="text-error">*</span></label>
         <input type="text" name="name_item" class="w-full border rounded p-2" placeholder="Masukkan nama barang"
             required maxlength="255" oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Jumlah <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Jumlah <span class="text-error">*</span></label>
         <input type="number" name="quantity" value="0" class="w-full border rounded p-2"
             placeholder="Masukkan jumlah" required min="0"
             oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Harga Modal <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Harga Modal <span class="text-error">*</span></label>
         <input type="number" name="capital_price" value="0" class="w-full border rounded p-2"
             placeholder="Masukkan harga modal" required min="0" step="0.01" id="add-capital-price"
             oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Harga Jual <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Harga Jual <span class="text-error">*</span></label>
         <input type="number" name="selling_price" value="0" class="w-full border rounded p-2"
             placeholder="Masukkan harga jual" required min="0" step="0.01" id="add-selling-price"
             oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">

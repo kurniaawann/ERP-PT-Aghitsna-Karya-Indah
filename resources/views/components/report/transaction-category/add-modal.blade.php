@@ -3,19 +3,19 @@
     buttonText="Simpan">
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Nama Kategori <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nama Kategori <span class="text-error">*</span></label>
         <input type="text" name="name" class="w-full border rounded p-2" placeholder="Contoh: Belanja ATK" required
             maxlength="100" oninvalid="this.setCustomValidity('Nama kategori wajib diisi')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Kode <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Kode <span class="text-error">*</span></label>
         <input type="text" id="add-code" name="code" class="w-full border rounded p-2 uppercase"
             placeholder="Contoh: BELANJA_ATK" required maxlength="50" pattern="[A-Z_]+"
             oninvalid="this.setCustomValidity('Kode wajib diisi dengan format: HURUF_BESAR_UNDERSCORE')"
             oninput="this.setCustomValidity(''); this.value = this.value.toUpperCase()">
-        <p class="text-xs text-gray-500 mt-1">Kode harus unik dan menggunakan format: HURUF_BESAR_UNDERSCORE</p>
+        <p class="text-xs text-text-secondary mt-1">Kode harus unik dan menggunakan format: HURUF_BESAR_UNDERSCORE</p>
 
         {{-- Warning Error untuk kode duplikat --}}
         <div id="add-code-warning"
@@ -26,7 +26,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Tipe <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Tipe <span class="text-error">*</span></label>
         <select name="type" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Tipe kategori wajib dipilih')" oninput="this.setCustomValidity('')">
             <option value="">-- Pilih Tipe --</option>

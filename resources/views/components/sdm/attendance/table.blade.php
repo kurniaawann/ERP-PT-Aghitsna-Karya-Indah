@@ -4,7 +4,7 @@
     @method('DELETE')
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
-            <div class="border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+            <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
@@ -18,7 +18,7 @@
                     </thead>
                     <tbody>
                         @forelse($attendances as $attendance)
-                            <tr class="border-t hover:bg-gray-50">
+                            <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="ids[]" value="{{ $attendance->id }}"
                                         class="w-4 h-4 accent-primary cursor-pointer">
@@ -72,7 +72,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center p-4 text-gray-500">
+                                <td colspan="6" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

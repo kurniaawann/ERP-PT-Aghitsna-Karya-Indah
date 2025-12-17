@@ -4,14 +4,14 @@
     @method('PUT')
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Karyawan</label>
-        <input type="text" class="w-full border rounded p-2 bg-gray-100" value="{{ $attendance->employee->name }}"
+        <label class="block text-text-primary mb-1">Karyawan</label>
+        <input type="text" class="w-full border rounded p-2 bg-surface-hover" value="{{ $attendance->employee->name }}"
             disabled>
         <input type="hidden" name="employee_id" value="{{ $attendance->employee_id }}">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Tanggal <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="attendance_date" class="w-full border rounded p-2"
             value="{{ $attendance->attendance_date ? \Carbon\Carbon::parse($attendance->attendance_date)->format('Y-m-d') : '' }}"
             required oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
@@ -19,7 +19,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Status <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Status <span class="text-error">*</span></label>
         <select name="status" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Status tidak boleh kosong')" oninput="this.setCustomValidity('')">
             <option value="">Pilih Status</option>
@@ -31,7 +31,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Keterangan</label>
+        <label class="block text-text-primary mb-1">Keterangan</label>
         <textarea name="notes" class="w-full border rounded p-2" placeholder="Masukkan keterangan (opsional)" rows="3">{{ $attendance->notes }}</textarea>
     </div>
 </x-modal>

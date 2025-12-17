@@ -1,5 +1,5 @@
-{{-- Alumunium Invoice Table Component --}}
-<form id="deleteForm" method="POST" action="{{ route('alumunium-invoice.destroySelected') }}">
+{{-- Proyek Invoice Table Component --}}
+<form id="deleteForm" method="POST" action="{{ route('proyek-invoice.destroySelected') }}">
     @csrf
     @method('DELETE')
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -55,14 +55,14 @@
                                             Edit
                                         </button>
 
-                                        <a href="{{ route('alumunium-invoice.print.pdf', $invoice->invoice_number) }}"
+                                        <a href="{{ route('proyek-invoice.print.pdf', $invoice->invoice_number) }}"
                                             class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Print PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                             PDF
                                         </a>
 
-                                        <a href="{{ route('alumunium-invoice.print.excel', $invoice->invoice_number) }}"
+                                        <a href="{{ route('proyek-invoice.print.excel', $invoice->invoice_number) }}"
                                             class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Print Excel">
                                             <i class="fa-solid fa-file-excel w-3 h-3"></i>
@@ -82,4 +82,5 @@
                 </table>
             </div>
         </div>
+    </div>
 </form>

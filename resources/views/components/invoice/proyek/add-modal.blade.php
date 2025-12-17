@@ -1,5 +1,5 @@
-{{-- Modal Tambah Invoice Alumunium --}}
-<x-modal id="addModal" title="Tambah Invoice Alumunium" action="{{ route('alumunium-invoice.store') }}" method="POST"
+{{-- Modal Tambah Invoice Proyek --}}
+<x-modal id="addModal" title="Tambah Invoice Proyek" action="{{ route('proyek-invoice.store') }}" method="POST"
     buttonText="Simpan">
 
     <div class="mb-3">
@@ -18,15 +18,15 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Hal / Regarding <span class="text-error">*</span></label>
-        <input type="text" name="regarding" class="w-full border rounded p-2"
-            placeholder="Contoh: Penagihan Pembayaran" required
-            oninvalid="this.setCustomValidity('Hal/Regarding tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        <input type="text" name="regarding" class="w-full border rounded p-2" placeholder="Contoh: Pengajuan Dana"
+            required oninvalid="this.setCustomValidity('Hal/Regarding tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2"
-            placeholder="Contoh: Proyek Karbela 3 / Pak Sis" required
+            placeholder="Contoh: Renovasi Rumah" required
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
@@ -146,7 +146,24 @@
         </div>
     </div>
 
-    <!-- Payment Accounts Selection -->
+    <!-- Payment Installments Section -->
+    <div class="mb-3 p-3 border rounded bg-purple-50">
+        <label class="block text-text-primary font-semibold mb-2">
+            Pembayaran Bertahap (Opsional)
+            <span class="text-xs font-normal text-text-label">- Contoh: Pembayaran Ke 1, Ke 2, Sisa</span>
+        </label>
+        <p class="text-xs text-text-label mb-3">
+            <i class="fa-solid fa-info-circle"></i>
+            Tambahkan detail pembayaran jika invoice ini dibayar secara bertahap
+        </p>
+        <div id="payment-installments-list" class="space-y-2">
+            <!-- Installments will be added here dynamically -->
+        </div>
+        <button type="button" id="add-payment-installment"
+            class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 mt-2">
+            <i class="fa-solid fa-plus"></i> Tambah Pembayaran
+        </button>
+    </div> <!-- Payment Accounts Selection -->
     <div class="mb-3 p-3 border rounded bg-green-50">
         <label class="block text-text-primary font-semibold mb-2">
             Pilih Rekening Pembayaran <span class="text-error">*</span>
@@ -183,4 +200,5 @@
     </div>
 
     <input type="hidden" name="items" id="items-json" value="[]">
+    <input type="hidden" name="payment_installments" id="payment-installments-json" value="[]">
 </x-modal>

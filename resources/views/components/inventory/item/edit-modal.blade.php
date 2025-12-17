@@ -3,28 +3,28 @@
     method="PUT" buttonText="Update">
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">ID Barang</label>
-        <input type="text" value="{{ $item->id_item }}" class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed"
+        <label class="block text-text-primary mb-1">ID Barang</label>
+        <input type="text" value="{{ $item->id_item }}" class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed"
             readonly>
-        <p class="text-xs text-gray-500 mt-1">ID Barang tidak dapat diubah</p>
+        <p class="text-xs text-text-secondary mt-1">ID Barang tidak dapat diubah</p>
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Nama Barang <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nama Barang <span class="text-error">*</span></label>
         <input type="text" name="name_item" value="{{ $item->name_item }}" class="w-full border rounded p-2" required
             maxlength="255" oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Jumlah <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Jumlah <span class="text-error">*</span></label>
         <input type="number" name="quantity" value="{{ $item->quantity }}" class="w-full border rounded p-2" required
             min="0" oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Harga Modal <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Harga Modal <span class="text-error">*</span></label>
         <input type="number" name="capital_price" value="{{ $item->capital_price ?? 0 }}"
             class="w-full border rounded p-2" required min="0" step="0.01"
             id="edit-capital-price-{{ $item->id_item }}"
@@ -32,7 +32,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Harga Jual <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Harga Jual <span class="text-error">*</span></label>
         <input type="number" name="selling_price" value="{{ $item->selling_price ?? 0 }}"
             class="w-full border rounded p-2" required min="0" step="0.01"
             id="edit-selling-price-{{ $item->id_item }}"

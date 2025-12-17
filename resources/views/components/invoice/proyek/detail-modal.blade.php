@@ -1,5 +1,5 @@
-{{-- Modal Detail Invoice Alumunium --}}
-<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice" :readOnly="true">
+{{-- Modal Detail Invoice Proyek --}}
+<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice Proyek" :readOnly="true">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
@@ -127,6 +127,24 @@
                                 Rp {{ number_format($dpAmount, 0, ',', '.') }}
                             </td>
                         </tr>
+                    @endif
+
+                    @php
+                        $paymentInstallments = is_string($invoice->payment_installments)
+                            ? json_decode($invoice->payment_installments, true)
+                            : $invoice->payment_installments;
+                    @endphp
+                    @if ($paymentInstallments && is_array($paymentInstallments) && count($paymentInstallments) > 0)
+                        @foreach ($paymentInstallments as $index => $payment)
+                            <tr class="bg-purple-50 font-semibold">
+                                <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
+                                    {{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}
+                                </td>
+                                <td class="border border-border-strong px-2 py-2 text-right text-sm text-purple-600">
+                                    Rp {{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}
+                                </td>
+                            </tr>
+                        @endforeach
                     @endif
                 </tbody>
             </table>

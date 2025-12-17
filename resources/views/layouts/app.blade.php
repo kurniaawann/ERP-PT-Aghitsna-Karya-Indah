@@ -37,7 +37,7 @@
 
                     {{-- User Info + Logout --}}
                     <div class="flex items-center space-x-4">
-                        <div class="hidden md:flex items-center space-x-2 text-gray-700">
+                        <div class="hidden md:flex items-center space-x-2 text-text-primary">
                             <i class="fas fa-user-circle"></i>
                             <span>{{ auth()->user()->name ?? 'Guest' }}</span>
                         </div>

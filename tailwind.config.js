@@ -63,6 +63,46 @@ export default {
         // Neutral Colors
         neutral: '#374151',
         white: '#FFFFFF',
+        
+        // Text Semantic Colors - Untuk tipografi dan konten
+        text: {
+          primary: '#374151',     // gray-700 - Text utama body
+          secondary: '#6B7280',   // gray-500 - Text sekunder/muted
+          tertiary: '#9CA3AF',    // gray-400 - Icon default, separator
+          heading: '#1F2937',     // gray-800 - Heading dan emphasis
+          label: '#4B5563',       // gray-600 - Label form, info field
+          placeholder: '#D1D5DB', // gray-300 - Placeholder & disabled
+          input: '#111827',       // gray-900 - Input text value
+        },
+        
+        // Background Semantic Colors - Untuk latar belakang elemen
+        surface: {
+          base: '#FFFFFF',        // white - Background utama
+          secondary: '#F9FAFB',   // gray-50 - Filter bg, info box
+          hover: '#F3F4F6',       // gray-100 - Hover state, readonly field
+          disabled: '#F3F4F6',    // gray-100 - Disabled input
+          overlay: '#111827E6',   // gray-900/90 - Modal overlay
+        },
+        
+        // Border Semantic Colors - Untuk garis tepi
+        border: {
+          light: '#F3F4F6',       // gray-100 - Divider subtle
+          DEFAULT: '#E5E7EB',     // gray-200 - Border default, divider
+          strong: '#D1D5DB',      // gray-300 - Border input, card border
+        },
+        
+        // Button Variant Colors - State untuk button secondary/cancel
+        button: {
+          cancel: {
+            DEFAULT: '#E5E7EB',   // gray-200 - Cancel button
+            hover: '#D1D5DB',     // gray-300 - Cancel button hover
+            text: '#1F2937',      // gray-800 - Cancel button text
+          },
+          inactive: {
+            DEFAULT: '#E5E7EB',   // gray-200 - Inactive state
+            text: '#4B5563',      // gray-600 - Inactive text
+          },
+        },
       }, 
     },
   },

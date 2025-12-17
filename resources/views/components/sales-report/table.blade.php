@@ -4,7 +4,7 @@
     @method('DELETE')
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
-            <div class="border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+            <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
@@ -31,7 +31,7 @@
 
                             @foreach ($saleItems as $itemIndex => $saleItem)
                                 <tr
-                                    class="{{ $itemIndex === 0 ? 'border-t-2 border-primary/40' : 'border-t border-gray-200' }} transition-colors duration-150 hover:bg-gray-100">
+                                    class="{{ $itemIndex === 0 ? 'border-t-2 border-primary/40' : 'border-t border-border' }} transition-colors duration-150 hover:bg-surface-hover">
                                     @if ($itemIndex === 0)
                                         <td class="p-2 text-center {{ $verticalAlign }}" rowspan="{{ $itemCount }}">
                                             <input type="checkbox" name="selected_sales[]"
@@ -118,7 +118,7 @@
                                                     </button>
                                                 </div>
                                             @else
-                                                <span class="text-gray-400 text-sm">-</span>
+                                                <span class="text-text-tertiary text-sm">-</span>
                                             @endif
                                         </td>
                                     @endif
@@ -126,7 +126,7 @@
                             @endforeach
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center p-4 text-gray-500">Data tidak ditemukan.
+                                <td colspan="11" class="text-center p-4 text-text-secondary">Data tidak ditemukan.
                                 </td>
                             </tr>
                         @endforelse
@@ -135,14 +135,14 @@
                         @if ($salesReports->isNotEmpty())
                             <tr
                                 class="bg-gradient-to-r from-primary/20 to-primary/10 border-t-4 border-primary font-bold text-base">
-                                <td colspan="6" class="p-3 text-right text-gray-800">
+                                <td colspan="6" class="p-3 text-right text-text-heading">
                                     TOTAL PENJUALAN & PROFIT
                                 </td>
-                                <td class="p-3 text-center text-gray-800">
+                                <td class="p-3 text-center text-text-heading">
                                     Rp
                                     {{ number_format($grandTotals->grand_total_capital ?? 0, 0, ',', '.') }}
                                 </td>
-                                <td class="p-3 text-center text-gray-800">
+                                <td class="p-3 text-center text-text-heading">
                                     Rp
                                     {{ number_format($grandTotals->grand_total_selling ?? 0, 0, ',', '.') }}
                                 </td>

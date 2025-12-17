@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-gray-700 mb-4">Data Payroll</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Payroll</h1>
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -73,7 +73,7 @@
     {{-- Modal Konfirmasi Bulk Pay --}}
     <x-modal id="bulkPayModal" title="Konfirmasi Bayar" method="PATCH" onConfirm="submitBulkPayForm()"
         buttonText="Ya, Bayar">
-        <p class="text-gray-700">Apakah kamu yakin ingin membayar payroll yang dipilih?</p>
+        <p class="text-text-primary">Apakah kamu yakin ingin membayar payroll yang dipilih?</p>
     </x-modal>
 
     {{-- JavaScript --}}

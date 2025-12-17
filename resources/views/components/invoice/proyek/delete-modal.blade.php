@@ -1,4 +1,4 @@
-{{-- Modal Delete Invoice Alumunium --}}
+{{-- Modal Delete Invoice Proyek --}}
 <div id="deleteModal-{{ $invoice->invoice_number }}"
     class="hidden fixed inset-0 z-50 bg-gray-900/60 items-center justify-center px-4">
     <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
@@ -18,7 +18,7 @@
             </div>
             <h4 class="text-lg font-bold text-text-heading mb-2">Apakah Anda yakin?</h4>
             <p class="text-text-label">
-                Data invoice ini akan dihapus secara permanen dan tidak dapat dikembalikan.
+                Data invoice proyek ini akan dihapus secara permanen dan tidak dapat dikembalikan.
             </p>
         </div>
 
@@ -51,13 +51,13 @@
                 <i class="fa-solid fa-times"></i> Batal
             </button>
             <button type="button" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onclick="deleteInvoice('{{ $invoice->invoice_number }}')">
+                onclick="deleteInvoiceProyek('{{ $invoice->invoice_number }}')">
                 <i class="fa-solid fa-trash-can"></i> Ya, Hapus
             </button>
         </div>
 
         {{-- Hidden form untuk submit --}}
-        <form id="deleteForm-{{ $invoice->invoice_number }}" action="{{ route('alumunium-invoice.destroySelected') }}"
+        <form id="deleteForm-{{ $invoice->invoice_number }}" action="{{ route('proyek-invoice.destroySelected') }}"
             method="POST" style="display: none;">
             @csrf
             @method('DELETE')

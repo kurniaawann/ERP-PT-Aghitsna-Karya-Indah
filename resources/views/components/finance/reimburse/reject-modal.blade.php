@@ -11,8 +11,8 @@
                 </svg>
             </div>
             <div class="flex-1">
-                <h3 class="text-sm font-semibold text-gray-800">Konfirmasi Penolakan</h3>
-                <p class="text-sm text-gray-600 mt-1">
+                <h3 class="text-sm font-semibold text-text-heading">Konfirmasi Penolakan</h3>
+                <p class="text-sm text-text-label mt-1">
                     Apakah Anda yakin ingin menolak <span id="reject-count-text"
                         class="font-semibold text-red-700">0</span> reimburse yang dipilih?
                 </p>
@@ -20,15 +20,15 @@
         </div>
     </div>
 
-    <div class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+    <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
         <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-gray-700">Total Amount:</span>
+            <span class="text-sm font-medium text-text-primary">Total Amount:</span>
             <span id="reject-total-modal" class="text-lg font-bold text-red-600">Rp 0</span>
         </div>
     </div>
 
     <div class="mb-3">
-        <p class="text-xs text-gray-500">
+        <p class="text-xs text-text-secondary">
             <i class="fa-solid fa-info-circle"></i>
             Reimburse yang ditolak akan berubah status menjadi "Ditolak" dan tidak dapat diajukan kembali.
         </p>
