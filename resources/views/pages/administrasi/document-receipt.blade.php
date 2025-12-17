@@ -17,7 +17,7 @@
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.print-dropdown :pdfRoute="route('document-receipt.export.pdf')" :queryParams="['search' => request('search')]" />
+                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('document-receipt.export.pdf')" :queryParams="['search' => request('search')]" />
 
                     <x-buttons.delete-button modalId="deleteModal" />
 

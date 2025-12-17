@@ -80,11 +80,6 @@
         }
     }
 
-    // Old function for backwards compatibility
-    function updateDeleteButtonState() {
-        updateButtonStates();
-    }
-
     // Submit Delete Form
     function submitDeleteForm() {
         const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -99,48 +94,44 @@
     // Initialize button states on page load
     updateButtonStates();
 
-    // Handle Print Selected Button Click
-    document.addEventListener('DOMContentLoaded', function() {
-        const printSelectedButton = document.getElementById('printSelectedButton');
+    // ==========================================
+    // PRINT SELECTED HANDLER
+    // ==========================================
 
-        if (printSelectedButton) {
-            printSelectedButton.addEventListener('click', function() {
-                const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-                // const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
+    function printSelected() {
+        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
 
-                // if (selectedIds.length === 0) {
-                //     alert('Silakan pilih dokumen terlebih dahulu!');
-                //     return;
-                // }
-
-                // Create a form and submit
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '{{ route('document-receipt.export.pdf.selected') }}';
-                form.target = '_blank';
-
-                // Add CSRF token
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = '{{ csrf_token() }}';
-                form.appendChild(csrfInput);
-
-                // Add selected IDs
-                selectedIds.forEach(id => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'ids[]';
-                    input.value = id;
-                    form.appendChild(input);
-                });
-
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-            });
+        if (selectedIds.length === 0) {
+            alert('Silakan pilih dokumen terlebih dahulu!');
+            return;
         }
-    });
+
+        // Create a form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route('document-receipt.export.pdf.selected') }}';
+
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+
+        // Add selected IDs
+        selectedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
 
     // ==========================================
     // ADD/EDIT FORM SUBMIT HANDLERS

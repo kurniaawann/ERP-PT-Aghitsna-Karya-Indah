@@ -123,13 +123,13 @@ class DocumentReceiptController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Load view PDF - gunakan template yang sama untuk semua kondisi
+        // Load view PDF
         $pdf = Pdf::loadView('exports.administrasi.document-receipt-pdf', compact('documents'));
 
         // Set paper size dan orientation
         $pdf->setPaper('a4', 'portrait');
 
         // Download PDF
-        return $pdf->download('tanda_terima_dokumen_' . date('YmdHis') . '.pdf');
+        return $pdf->download('tanda_terima_dokumen_selected_' . date('YmdHis') . '.pdf');
     }
 }
