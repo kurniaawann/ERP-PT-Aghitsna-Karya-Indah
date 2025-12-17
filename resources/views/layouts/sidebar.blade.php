@@ -124,20 +124,16 @@
             {{-- Laporan Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('laporanDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group 
-                        {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i
-                            class="fas fa-chart-line w-5 
-                            {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        <i class="fas fa-chart-line w-5 text-gray-400 group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">Laporan</span>
                     </div>
 
                     <i id="laporanDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 
-                            {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
                     </i>
                 </button>
 
@@ -183,20 +179,16 @@
             {{-- SDM (Sumber Daya Manusia) Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('sdmDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group 
-                        {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i
-                            class="fas fa-users w-5 
-                            {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        <i class="fas fa-users w-5 text-gray-400 group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">SDM</span>
                     </div>
 
                     <i id="sdmDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 
-                            {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
                     </i>
                 </button>
 
@@ -253,20 +245,16 @@
             {{-- Finance (Keuangan) Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('financeDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group 
-                        {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-gray-700 hover:bg-primary-light hover:text-primary' }}">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-gray-700 hover:bg-primary-light hover:text-primary">
 
                     <div class="flex items-center">
-                        <i
-                            class="fas fa-wallet w-5 
-                            {{ request()->is('reimburse*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        <i class="fas fa-wallet w-5 text-gray-400 group-hover:text-primary">
                         </i>
                         <span class="ml-3 font-medium">Keuangan</span>
                     </div>
 
                     <i id="financeDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 
-                            {{ request()->is('reimburse*') ? 'text-primary' : 'text-gray-400 group-hover:text-primary' }}">
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-gray-400 group-hover:text-primary">
                     </i>
                 </button>
 
