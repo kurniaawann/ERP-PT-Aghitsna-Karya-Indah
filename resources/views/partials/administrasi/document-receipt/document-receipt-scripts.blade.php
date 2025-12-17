@@ -106,12 +106,12 @@
         if (printSelectedButton) {
             printSelectedButton.addEventListener('click', function() {
                 const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-                const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
+                // const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
 
-                if (selectedIds.length === 0) {
-                    alert('Silakan pilih dokumen terlebih dahulu!');
-                    return;
-                }
+                // if (selectedIds.length === 0) {
+                //     alert('Silakan pilih dokumen terlebih dahulu!');
+                //     return;
+                // }
 
                 // Create a form and submit
                 const form = document.createElement('form');
