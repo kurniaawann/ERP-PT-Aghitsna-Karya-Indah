@@ -14,6 +14,7 @@ use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
 use App\Http\Controllers\Finance\ReimburseController;
+use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -158,5 +159,19 @@ Route::middleware('auth')->group(function () {
 
     // Route Reimburse - API untuk get total selected
     Route::post('/reimburse/get-selected-total', [ReimburseController::class, 'getSelectedTotal'])->name('reimburse.getSelectedTotal');
+
+    // ============================================
+    // Administrasi Routes
+    // ============================================
+
+    // Route Document Receipt (Tanda Terima Dokumen)
+    Route::get('/document-receipt', [DocumentReceiptController::class, 'index'])->name('document-receipt.index');
+    Route::post('/document-receipt', [DocumentReceiptController::class, 'store'])->name('document-receipt.store');
+    Route::put('/document-receipt/{documentReceipt}', [DocumentReceiptController::class, 'update'])->name('document-receipt.update');
+    Route::delete('/document-receipt/destroy-selected', [DocumentReceiptController::class, 'destroySelected'])->name('document-receipt.destroySelected');
+
+    // Route Document Receipt - Export PDF
+    Route::get('/document-receipt/export/pdf', [DocumentReceiptController::class, 'exportPdfAll'])->name('document-receipt.export.pdf');
+    Route::post('/document-receipt/export/pdf-selected', [DocumentReceiptController::class, 'exportPdfSelected'])->name('document-receipt.export.pdf.selected');
 
 });
