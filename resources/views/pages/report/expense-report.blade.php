@@ -71,5 +71,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.expense-report.expense-report-scripts')
+    @include('partials.report.expense-report-scripts')
 @endsection

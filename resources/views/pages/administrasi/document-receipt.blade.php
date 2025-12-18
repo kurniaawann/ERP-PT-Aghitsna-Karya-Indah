@@ -48,6 +48,6 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.administrasi.document-receipt.document-receipt-scripts')
+    @include('partials.administrasi.document-receipt-scripts')
     @include('partials.shared.print-dropdown-script')
 @endsection

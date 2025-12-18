@@ -95,6 +95,6 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.finance.reimburse.reimburse-scripts')
+    @include('partials.finance.reimburse-scripts')
     @include('partials.shared.print-dropdown-script')
 @endsection

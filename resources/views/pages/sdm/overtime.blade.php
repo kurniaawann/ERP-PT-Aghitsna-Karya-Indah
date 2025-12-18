@@ -46,5 +46,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.sdm.overtime.overtime-scripts')
+    @include('partials.sdm.overtime-scripts')
 @endsection

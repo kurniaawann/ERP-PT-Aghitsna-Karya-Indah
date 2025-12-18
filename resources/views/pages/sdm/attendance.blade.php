@@ -46,5 +46,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.sdm.attendance.attendance-scripts')
+    @include('partials.sdm.attendance-scripts')
 @endsection

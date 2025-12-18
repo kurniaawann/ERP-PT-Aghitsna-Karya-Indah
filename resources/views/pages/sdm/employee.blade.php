@@ -46,5 +46,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.sdm.employee.employee-scripts')
+    @include('partials.sdm.employee-scripts')
 @endsection

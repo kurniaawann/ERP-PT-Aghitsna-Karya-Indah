@@ -48,5 +48,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.inventory.item.item-scripts')
+    @include('partials.inventory.item-scripts')
 @endsection
