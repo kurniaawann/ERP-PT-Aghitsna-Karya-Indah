@@ -16,6 +16,7 @@ use App\Http\Controllers\Sdm\PayrollController;
 use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
+use App\Http\Controllers\Administrasi\KwintansiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -184,5 +185,15 @@ Route::middleware('auth')->group(function () {
     // Route Cash Out Proof - Export PDF
     Route::get('/cash-out-proof/export/pdf', [CashOutProofController::class, 'exportPdfAll'])->name('cash-out-proof.export.pdf');
     Route::post('/cash-out-proof/export/pdf-selected', [CashOutProofController::class, 'exportPdfSelected'])->name('cash-out-proof.export.pdf.selected');
+
+    // Route Kwintansi
+    Route::get('/kwintansi', [KwintansiController::class, 'index'])->name('kwintansi.index');
+    Route::post('/kwintansi', [KwintansiController::class, 'store'])->name('kwintansi.store');
+    Route::put('/kwintansi/{kwintansi}', [KwintansiController::class, 'update'])->name('kwintansi.update');
+    Route::delete('/kwintansi/destroy-selected', [KwintansiController::class, 'destroySelected'])->name('kwintansi.destroySelected');
+
+    // Route Kwintansi - Export PDF
+    Route::get('/kwintansi/export/pdf', [KwintansiController::class, 'exportPdfAll'])->name('kwintansi.export.pdf');
+    Route::post('/kwintansi/export/pdf-selected', [KwintansiController::class, 'exportPdfSelected'])->name('kwintansi.export.pdf.selected');
 
 });
