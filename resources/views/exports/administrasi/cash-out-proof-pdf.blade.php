@@ -1,376 +1,229 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
     <title>Bukti Kas Keluar</title>
     <style>
         @page {
-            margin: 10mm 10mm;
             size: A4 portrait;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            margin: 5mm 5mm 5mm 5mm;
         }
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 10pt;
-            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+            font-size: 10px;
         }
 
-        .page-break {
-            page-break-after: always;
-        }
-
-        /* Container untuk 2 form dalam 1 halaman */
-        .form-container {
-            width: 100%;
-            height: 48%;
-            /* Setengah halaman dengan margin */
-            margin-bottom: 15px;
+        .container {
             border: 2px solid #000;
-            padding: 12px;
-            position: relative;
+            padding: 10px;
+            /* width: 70%; */
+            box-sizing: border-box;
+            margin-bottom: 20px;
         }
 
-        /* Header dengan logo dan company info */
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
         }
 
-        .logo-section {
+        .header-left {
             display: table-cell;
-            width: 80px;
+            width: 25%;
             vertical-align: middle;
-            padding-right: 10px;
         }
 
-        .logo-section img {
-            width: 70px;
-            height: auto;
+        .logo-container {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
         }
 
-        .company-info {
+        .logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+
+        .header-center {
             display: table-cell;
+            width: 50%;
+            text-align: center;
             vertical-align: middle;
+        }
+
+        .header-right {
+            display: table-cell;
+            width: 25%;
+            vertical-align: top;
+            text-align: left;
+            font-size: 9px;
         }
 
         .company-name {
-            font-size: 11pt;
+            font-size: 11px;
             font-weight: bold;
             margin-bottom: 2px;
         }
 
-        .company-tagline {
-            font-size: 8pt;
-            font-style: italic;
-            margin-bottom: 2px;
+        .company-subtitle {
+            font-size: 9px;
         }
 
-        .company-address {
-            font-size: 7pt;
-            line-height: 1.3;
-        }
-
-        /* Title area */
-        .title-section {
-            text-align: center;
-            margin-bottom: 8px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 5px;
-        }
-
-        .title-main {
-            font-size: 13pt;
+        .title {
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 3px;
+            letter-spacing: 2px;
         }
 
-        /* Document info (BKK, Cek, Tanggal) - kanan atas */
-        .doc-info {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            text-align: right;
-            font-size: 8pt;
-            line-height: 1.6;
-        }
-
-        .doc-info-row {
-            margin-bottom: 1px;
-        }
-
-        .doc-info-label {
-            display: inline-block;
-            width: 55px;
-            text-align: left;
-        }
-
-        .doc-info-colon {
-            display: inline-block;
-            width: 8px;
-        }
-
-        .doc-info-value {
-            display: inline-block;
-            min-width: 80px;
-            border-bottom: 1px solid #000;
-            text-align: left;
-        }
-
-        /* Main content */
-        .content-section {
-            margin-top: 50px;
-            /* Beri ruang untuk doc-info */
-        }
-
-        /* Form row untuk Dibayarkan Kepada */
         .form-row {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: table;
             width: 100%;
         }
 
         .form-label {
             display: table-cell;
-            width: 140px;
-            vertical-align: top;
-            font-size: 9pt;
+            width: 20%;
+            padding: 3px 0;
         }
 
-        .form-colon {
+        .form-separator {
             display: table-cell;
-            width: 10px;
-            vertical-align: top;
+            width: 1%;
+            text-align: center;
         }
 
         .form-value {
             display: table-cell;
+            width: 79%;
             border-bottom: 1px solid #000;
-            padding-bottom: 2px;
-            font-size: 9pt;
+            padding: 3px 0;
+            min-height: 15px;
         }
 
-        /* Jumlah Dibayar dengan garis */
-        .amount-lines {
-            margin-bottom: 10px;
+        .amount-section {
+            text-align: right;
+            margin-top: 50px;
+            /* margin-bottom: 50px; */
         }
 
-        .amount-line {
-            border-bottom: 1px solid #000;
-            min-height: 18px;
-            margin-bottom: 3px;
-            padding-top: 2px;
-            font-size: 9pt;
-        }
-
-        /* Keterangan */
-        .description-section {
-            margin-bottom: 10px;
-        }
-
-        .description-label {
-            font-size: 9pt;
-            margin-bottom: 3px;
-        }
-
-        .description-box {
-            border: 1px solid #000;
-            min-height: 50px;
-            padding: 5px;
-            font-size: 8pt;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        /* Bottom section - Box Nominal dan Signatures */
-        .bottom-section {
-            margin-top: 12px;
-            display: table;
-            width: 100%;
-        }
-
-        /* Box nominal besar kanan bawah */
-        .nominal-box-container {
-            display: table-cell;
-            width: 35%;
-            vertical-align: top;
-            padding-right: 10px;
-        }
-
-        .nominal-box {
+        .amount-box {
+            display: inline-block;
             border: 2px solid #000;
-            padding: 8px;
-            text-align: center;
+            padding: 8px 15px;
+            min-width: 200px;
+            text-align: left;
+            font-size: 11px;
         }
 
-        .nominal-label {
-            font-size: 9pt;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .nominal-value {
-            font-size: 12pt;
-            font-weight: bold;
-            border-bottom: 1px solid #000;
-            padding-bottom: 3px;
-            min-height: 25px;
-        }
-
-        /* Signature section */
-        .signatures-container {
-            display: table-cell;
-            width: 65%;
-            vertical-align: top;
-        }
-
-        .signatures {
+        .signature-section {
             display: table;
             width: 100%;
+            margin-top: 40px;
         }
 
         .signature-col {
             display: table-cell;
+            width: 33.33%;
             text-align: center;
-            vertical-align: top;
-            font-size: 8pt;
+            vertical-align: bottom;
+
         }
 
-        .signature-label {
-            margin-bottom: 35px;
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 70px;
+            font-size: 10px;
+            margin-top: 25px;
         }
 
         .signature-name {
-            border-bottom: 1px solid #000;
+            border-top: 1px solid #000;
             display: inline-block;
-            min-width: 100px;
-            padding-bottom: 2px;
-            font-size: 8pt;
+            padding-top: 25px;
+            min-width: 150px;
+            font-size: 9px;
+        }
+
+        .keterangan-box {
+            min-height: 40px;
+            padding: 5px;
         }
     </style>
 </head>
 
 <body>
-    @php
-        $chunked = $cashOuts->chunk(2); // Bagi menjadi grup 2 form per halaman
-    @endphp
-
-    @foreach ($chunked as $pageIndex => $pageItems)
-        @if ($pageIndex > 0)
-            <div class="page-break"></div>
+    @foreach ($cashOuts as $index => $cashOut)
+        @if ($index > 0 && $index % 2 == 0)
+            <div style="page-break-before: always;"></div>
         @endif
 
-        @foreach ($pageItems as $cashOut)
-            <div class="form-container">
-                {{-- Header --}}
-                <div class="header">
-                    <div class="logo-section">
-                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
+        <div class="container">
+            <div class="header">
+                <div class="header-left">
+                    <div class="logo-container">
+                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
                     </div>
-                    <div class="company-info">
-                        <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
-                        <div class="company-tagline">DESIGN AND BUILD</div>
-                        <div class="company-address">
-                            JL. PETITION NO.34, TAMAN SARI/ RAWA BUAYA/ CENGKARENG/ BARAT
-                        </div>
-                    </div>
+
                 </div>
-
-                {{-- Document Info (kanan atas) --}}
-                <div class="doc-info">
-                    <div class="doc-info-row">
-                        <span class="doc-info-label">BKK No.</span>
-                        <span class="doc-info-colon">:</span>
-                        <span class="doc-info-value">{{ $cashOut->bkk_no }}</span>
-                    </div>
-                    <div class="doc-info-row">
-                        <span class="doc-info-label">Cek No.</span>
-                        <span class="doc-info-colon">:</span>
-                        <span class="doc-info-value">{{ $cashOut->cek_no }}</span>
-                    </div>
-                    <div class="doc-info-row">
-                        <span class="doc-info-label">Tanggal</span>
-                        <span class="doc-info-colon">:</span>
-                        <span class="doc-info-value">{{ \Carbon\Carbon::parse($cashOut->date)->format('d/m/Y') }}</span>
-                    </div>
+                <div class="header-center">
+                    <div class="title">BUKTI KAS KELUAR</div>
                 </div>
-
-                {{-- Title --}}
-                <div class="title-section">
-                    <div class="title-main">BUKTI KAS KELUAR</div>
-                </div>
-
-                {{-- Content Section --}}
-                <div class="content-section">
-                    {{-- Dibayarkan Kepada --}}
-                    <div class="form-row">
-                        <div class="form-label">Dibayarkan Kepada</div>
-                        <div class="form-colon">:</div>
-                        <div class="form-value">{{ $cashOut->paid_to }}</div>
-                    </div>
-
-                    {{-- Jumlah Dibayar --}}
-                    <div class="form-row">
-                        <div class="form-label">Jumlah Dibayar</div>
-                        <div class="form-colon">:</div>
-                        <div class="form-value"></div>
-                    </div>
-
-                    {{-- Additional lines for amount (garis kosong) --}}
-                    <div class="amount-lines">
-                        <div class="amount-line"></div>
-                        <div class="amount-line"></div>
-                    </div>
-
-                    {{-- Keterangan --}}
-                    <div class="description-section">
-                        <div class="description-label">Keterangan :</div>
-                        <div class="description-box">{{ $cashOut->description ?? '' }}</div>
-                    </div>
-
-                    {{-- Bottom: Nominal Box & Signatures --}}
-                    <div class="bottom-section">
-                        {{-- Box Nominal --}}
-                        <div class="nominal-box-container">
-                            <div class="nominal-box">
-                                <div class="nominal-label">Rp.</div>
-                                <div class="nominal-value">{{ number_format($cashOut->amount, 0, ',', '.') }}</div>
-                            </div>
-                        </div>
-
-                        {{-- Signatures --}}
-                        <div class="signatures-container">
-                            <div class="signatures">
-                                <div class="signature-col">
-                                    <div class="signature-label">DIREKTUR,</div>
-                                    <div class="signature-name">({{ $cashOut->director ?? 'Zulkarnain,ST.,MT' }})</div>
-                                </div>
-
-                                <div class="signature-col">
-                                    <div class="signature-label">KABAG KEUANGAN,</div>
-                                    <div class="signature-name">({{ $cashOut->finance_head ?? 'Kamila,AMK' }})</div>
-                                </div>
-
-                                <div class="signature-col">
-                                    <div class="signature-label">DITERIMA OLEH,</div>
-                                    <div class="signature-name">
-                                        (&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="header-right">
+                    <div><strong>BKK No.</strong> : {{ $cashOut->bkk_no }}</div>
+                    <div><strong>Cek No.</strong> : {{ $cashOut->cek_no }}</div>
+                    <div><strong>Tanggal</strong> :
+                        {{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</div>
                 </div>
             </div>
-        @endforeach
+
+            <div class="form-row">
+                <div class="form-label">Dibayarkan Kepada</div>
+                <div class="form-separator">:</div>
+                <div class="form-value">{{ $cashOut->paid_to }}</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-label">Jumlah Dibayar</div>
+                <div class="form-separator">:</div>
+                <div class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-label" style="vertical-align: top;">Keterangan</div>
+                <div class="form-separator" style="vertical-align: top;">:</div>
+                <div class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</div>
+            </div>
+
+            <div class="amount-section">
+                <div class="amount-box">
+                    <strong>Rp.</strong> {{ number_format($cashOut->amount, 0, ',', '.') }}
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <div class="signature-col">
+                    <div class="signature-title">DIREKTUR,</div>
+                    <div class="signature-name">( {{ $cashOut->director ?? 'Zulkarnain,ST.,MT' }} )</div>
+                </div>
+                <div class="signature-col">
+                    <div class="signature-title">KABAG.KEUANGAN,</div>
+                    <div class="signature-name">( {{ $cashOut->finance_head ?? 'Kamila,AMK' }} )</div>
+                </div>
+                <div class="signature-col">
+                    <div class="signature-title">DITERIMA OLEH,</div>
+                    <div class="signature-name">( _________________ )</div>
+                </div>
+            </div>
+        </div>
     @endforeach
 </body>
 
