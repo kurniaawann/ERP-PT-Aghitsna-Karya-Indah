@@ -1,0 +1,57 @@
+{{-- Modal Edit Bukti Kas Keluar --}}
+<x-modal id="editModal-{{ $cashOut->bkk_no }}" title="Edit Bukti Kas Keluar"
+    action="{{ route('cash-out-proof.update', $cashOut->bkk_no) }}" method="PUT" buttonText="Update">
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">BKK No.</label>
+        <input type="text" class="w-full border rounded p-2 bg-gray-100" value="{{ $cashOut->bkk_no }}" disabled>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Cek No.</label>
+        <input type="text" class="w-full border rounded p-2 bg-gray-100" value="{{ $cashOut->cek_no }}" disabled>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
+        <input type="date" name="date" class="w-full border rounded p-2" required
+            value="{{ $cashOut->date->format('Y-m-d') }}"
+            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Dibayarkan Kepada <span class="text-error">*</span></label>
+        <input type="text" name="paid_to" class="w-full border rounded p-2" placeholder="Masukkan nama penerima"
+            required maxlength="255" value="{{ $cashOut->paid_to }}"
+            oninvalid="this.setCustomValidity('Dibayarkan kepada tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Jumlah (Rp) <span class="text-error">*</span></label>
+        <input type="number" name="amount" class="w-full border rounded p-2" placeholder="Masukkan jumlah nominal"
+            required min="0" value="{{ $cashOut->amount }}"
+            oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        <small class="text-gray-500 text-xs">Masukkan nominal dalam Rupiah (tanpa desimal)</small>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Keterangan</label>
+        <textarea name="description" class="w-full border rounded p-2" rows="4"
+            placeholder="Masukkan keterangan (opsional)">{{ $cashOut->description }}</textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Direktur</label>
+        <input type="text" name="director" class="w-full border rounded p-2"
+            placeholder="Zulkarnain,ST.,MT (default)" maxlength="255" value="{{ $cashOut->director }}">
+        <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Kabag Keuangan</label>
+        <input type="text" name="finance_head" class="w-full border rounded p-2" placeholder="Kamila,AMK (default)"
+            maxlength="255" value="{{ $cashOut->finance_head }}">
+        <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
+    </div>
+</x-modal>

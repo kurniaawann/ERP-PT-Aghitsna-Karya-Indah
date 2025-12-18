@@ -15,6 +15,7 @@ use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
 use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
+use App\Http\Controllers\Administrasi\CashOutProofController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -173,5 +174,15 @@ Route::middleware('auth')->group(function () {
     // Route Document Receipt - Export PDF
     Route::get('/document-receipt/export/pdf', [DocumentReceiptController::class, 'exportPdfAll'])->name('document-receipt.export.pdf');
     Route::post('/document-receipt/export/pdf-selected', [DocumentReceiptController::class, 'exportPdfSelected'])->name('document-receipt.export.pdf.selected');
+
+    // Route Cash Out Proof (Bukti Kas Keluar)
+    Route::get('/cash-out-proof', [CashOutProofController::class, 'index'])->name('cash-out-proof.index');
+    Route::post('/cash-out-proof', [CashOutProofController::class, 'store'])->name('cash-out-proof.store');
+    Route::put('/cash-out-proof/{cashOutProof}', [CashOutProofController::class, 'update'])->name('cash-out-proof.update');
+    Route::delete('/cash-out-proof/destroy-selected', [CashOutProofController::class, 'destroySelected'])->name('cash-out-proof.destroySelected');
+
+    // Route Cash Out Proof - Export PDF
+    Route::get('/cash-out-proof/export/pdf', [CashOutProofController::class, 'exportPdfAll'])->name('cash-out-proof.export.pdf');
+    Route::post('/cash-out-proof/export/pdf-selected', [CashOutProofController::class, 'exportPdfSelected'])->name('cash-out-proof.export.pdf.selected');
 
 });

@@ -293,7 +293,7 @@
 
                 {{-- Submenu --}}
                 <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') || request()->is('cash-out-proof*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/document-receipt') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -303,6 +303,17 @@
                                 {{ request()->is('document-receipt*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Tanda Terima Dokumen</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/cash-out-proof') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('cash-out-proof*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-money-bill-wave w-4 
+                                {{ request()->is('cash-out-proof*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Bukti Kas Keluar</span>
                         </a>
                     </li>
                 </ul>
