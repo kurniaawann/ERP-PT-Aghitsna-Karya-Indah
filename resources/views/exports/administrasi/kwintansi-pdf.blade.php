@@ -125,49 +125,50 @@
 
         .amount-box {
             border: 2px solid #4a90a4;
-            padding: 8px 10px;
+            padding: 10px 15px;
             margin: 6px 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            position: relative;
+            min-height: 60px;
+        }
+
+        .amount-section {
+            display: inline-block;
+            vertical-align: top;
+            width: 45%;
         }
 
         .amount-label {
-            font-size: 15px;
+            font-size: 11px;
             font-weight: bold;
-            margin-right: 20px;
-            flex-shrink: 0;
+            margin-bottom: 3px;
         }
 
         .amount-value {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            flex: 1;
-            text-align: center;
-            padding: 5px 40px;
-            border-left: 2px solid #4a90a4;
-            border-right: 2px solid #4a90a4;
-            margin: 0 20px;
         }
 
         .remainder-section {
-            display: flex;
-            align-items: center;
-            font-size: 12px;
-            flex-shrink: 0;
+            display: inline-block;
+            vertical-align: top;
+            width: 45%;
+            float: right;
+            text-align: left;
         }
 
         .remainder-label {
-            margin-right: 10px;
             font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 3px;
+            display: block;
         }
 
         .remainder-value {
             border-bottom: 1px dotted #999;
-            min-width: 150px;
-            display: inline-block;
-            padding: 0 10px;
-            height: 18px;
+            min-width: 120px;
+            display: block;
+            padding: 0 5px;
+            font-size: 10px;
         }
 
         .signature-section {
@@ -348,8 +349,10 @@
             </div>
 
             <div class="amount-box">
-                <div class="amount-label">Rp.</div>
-                <div class="amount-value">{{ number_format($kwintansi->amount, 0, ',', '.') }}</div>
+                <div class="amount-section">
+                    <div class="amount-label">Rp.</div>
+                    <div class="amount-value">{{ number_format($kwintansi->amount, 0, ',', '.') }}</div>
+                </div>
                 <div class="remainder-section">
                     <div class="remainder-label">Sisa:</div>
                     <div class="remainder-value">
