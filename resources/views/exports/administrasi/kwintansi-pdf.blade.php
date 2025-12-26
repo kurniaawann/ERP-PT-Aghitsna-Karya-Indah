@@ -237,11 +237,12 @@
         .signature-label {
             font-size: 8px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 30px;
         }
 
-        .signature-line {
-            border: 1px solid #333;
+        /* .signature-line {
+            border: none;
+            border-bottom: 1px solid #333;
             padding: 25px 10px 5px 10px;
             position: relative;
         }
@@ -249,18 +250,18 @@
         .signature-line::before {
             content: '(';
             position: absolute;
-            left: 5px;
-            bottom: 3px;
+            left: 0px;
+            bottom: -2px;
             font-size: 10px;
         }
 
         .signature-line::after {
             content: ')';
             position: absolute;
-            right: 5px;
-            bottom: 3px;
+            right: 0px;
+            bottom: -2px;
             font-size: 10px;
-        }
+        } */
 
         .footer-note {
             font-size: 7px;
@@ -389,7 +390,7 @@
                         </div>
                         <div class="signature-box">
                             <div class="signature-label">SIGNATURE</div>
-                            <div class="signature-line"></div>
+                            <div class="signature-line">(__________________)</div>
                         </div>
                     </div>
                 @else
