@@ -125,27 +125,30 @@
 
         .amount-box {
             border: 2px solid #4a90a4;
-            padding: 10px 15px;
+            padding: 8px 15px;
             margin: 6px 0;
             position: relative;
-            min-height: 60px;
+            min-height: 50px;
+            background: linear-gradient(135deg, transparent 45%, #e8f4f8 45%, #e8f4f8 55%, transparent 55%);
         }
 
         .amount-section {
             display: inline-block;
             vertical-align: top;
-            width: 45%;
+            width: 50%;
         }
 
         .amount-label {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+            display: block;
         }
 
         .amount-value {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
+            line-height: 1.1;
         }
 
         .remainder-section {
@@ -154,21 +157,23 @@
             width: 45%;
             float: right;
             text-align: left;
+            padding-left: 10px;
         }
 
         .remainder-label {
             font-weight: bold;
-            font-size: 10px;
+            font-size: 11px;
             margin-bottom: 3px;
             display: block;
         }
 
         .remainder-value {
             border-bottom: 1px dotted #999;
-            min-width: 120px;
+            min-width: 140px;
             display: block;
-            padding: 0 5px;
-            font-size: 10px;
+            padding: 2px 5px;
+            font-size: 11px;
+            min-height: 18px;
         }
 
         .signature-section {
