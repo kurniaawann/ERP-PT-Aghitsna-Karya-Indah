@@ -304,7 +304,7 @@
         <div class="container {{ $index < count($kwintansis) - 1 ? 'page-break' : '' }}">
             <div class="header">
                 <div style="display: flex; flex: 1;">
-                    <img src="{{ public_path('images/logo-company.png') }}" alt="Logo" class="logo">
+                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
                     <div class="company-info">
                         <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
                         <div class="company-details">
@@ -384,7 +384,7 @@
                         <div class="bank-info">
                             <div class="bank-row">
                                 <div class="bank-label">BANK</div>
-                                <div class="bank-value">{{ $kwintansi->paymentAccount->account_name }}</div>
+                                <div class="bank-value">{{ $kwintansi->paymentAccount->bank_name }}</div>
                             </div>
                             <div class="bank-row">
                                 <div class="bank-label">NO.</div>
