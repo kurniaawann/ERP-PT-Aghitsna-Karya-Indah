@@ -17,6 +17,7 @@ use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
 use App\Http\Controllers\Administrasi\KwintansiController;
+use App\Http\Controllers\Administrasi\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -195,5 +196,15 @@ Route::middleware('auth')->group(function () {
     // Route Kwintansi - Export PDF
     Route::get('/kwintansi/export/pdf', [KwintansiController::class, 'exportPdfAll'])->name('kwintansi.export.pdf');
     Route::post('/kwintansi/export/pdf-selected', [KwintansiController::class, 'exportPdfSelected'])->name('kwintansi.export.pdf.selected');
+
+    // Route Invoice Administrasi
+    Route::get('/invoice-administrasi', [InvoiceController::class, 'index'])->name('invoice.administrasi.index');
+    Route::post('/invoice-administrasi', [InvoiceController::class, 'store'])->name('invoice.administrasi.store');
+    Route::put('/invoice-administrasi/{invoice}', [InvoiceController::class, 'update'])->name('invoice.administrasi.update');
+    Route::delete('/invoice-administrasi/destroy-selected', [InvoiceController::class, 'destroySelected'])->name('invoice.administrasi.destroySelected');
+
+    // Route Invoice Administrasi - Export PDF
+    Route::get('/invoice-administrasi/export/pdf', [InvoiceController::class, 'exportPdfAll'])->name('invoice.administrasi.export.pdf');
+    Route::post('/invoice-administrasi/export/pdf-selected', [InvoiceController::class, 'exportPdfSelected'])->name('invoice.administrasi.export.pdf.selected');
 
 });

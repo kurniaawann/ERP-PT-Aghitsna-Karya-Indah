@@ -293,7 +293,7 @@
 
                 {{-- Submenu --}}
                 <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') || request()->is('cash-out-proof*') || request()->is('kwintansi*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') || request()->is('cash-out-proof*') || request()->is('kwintansi*') || request()->is('invoice-administrasi*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/document-receipt') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -325,6 +325,17 @@
                                 {{ request()->is('kwintansi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Kwintansi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/invoice-administrasi') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('invoice-administrasi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-file-invoice w-4 
+                                {{ request()->is('invoice-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Invoice</span>
                         </a>
                     </li>
                 </ul>
