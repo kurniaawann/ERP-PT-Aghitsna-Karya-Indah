@@ -54,7 +54,7 @@
         <div id="itemsContainer-addModal" class="space-y-2">
             {{-- Initial item row --}}
             <div class="item-row border rounded p-3 bg-gray-50">
-                <div class="grid grid-cols-12 gap-2 mb-2">
+                <div class="grid grid-cols-12 gap-4 mb-2">
                     <div class="col-span-2">
                         <label class="block text-xs mb-1">Banyaknya</label>
                         <input type="number" name="item_banyaknya[]" class="w-full border rounded p-2 text-sm"
@@ -79,6 +79,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <div class="mb-3">
