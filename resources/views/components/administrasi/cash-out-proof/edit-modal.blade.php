@@ -21,8 +21,9 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tipe Template <span class="text-error">*</span></label>
-        <select name="template_type" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Tipe template tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        <select name="template_type" id="editTemplateType-{{ $cashOut->bkk_no }}" class="w-full border rounded p-2"
+            required oninvalid="this.setCustomValidity('Tipe template tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
             <option value="standard" {{ $cashOut->template_type == 'standard' ? 'selected' : '' }}>Standard (BUKTI KAS
                 KELUAR)</option>
             <option value="hollow" {{ $cashOut->template_type == 'hollow' ? 'selected' : '' }}>Hollow (HOLLOW - BUKTI
@@ -54,9 +55,12 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Direktur</label>
-        <input type="text" name="director" class="w-full border rounded p-2"
-            placeholder="Zulkarnain,ST.,MT (default)" maxlength="255" value="{{ $cashOut->director }}">
+        <label class="block text-text-primary mb-1"
+            id="editDirectorLabel-{{ $cashOut->bkk_no }}">{{ $cashOut->template_type == 'hollow' ? 'Manager' : 'Direktur' }}</label>
+        <input type="text" name="director" id="editDirectorInput-{{ $cashOut->bkk_no }}"
+            class="w-full border rounded p-2"
+            placeholder="{{ $cashOut->template_type == 'hollow' ? 'SISWORO SUBENO (default)' : 'Zulkarnain,ST.,MT (default)' }}"
+            maxlength="255" value="{{ $cashOut->director }}">
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
 
@@ -66,4 +70,24 @@
             maxlength="255" value="{{ $cashOut->finance_head }}">
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateType = document.getElementById('editTemplateType-{{ $cashOut->bkk_no }}');
+            const directorLabel = document.getElementById('editDirectorLabel-{{ $cashOut->bkk_no }}');
+            const directorInput = document.getElementById('editDirectorInput-{{ $cashOut->bkk_no }}');
+
+            if (templateType && directorLabel && directorInput) {
+                templateType.addEventListener('change', function() {
+                    if (this.value === 'hollow') {
+                        directorLabel.textContent = 'Manager';
+                        directorInput.placeholder = 'SISWORO SUBENO (default)';
+                    } else {
+                        directorLabel.textContent = 'Direktur';
+                        directorInput.placeholder = 'Zulkarnain,ST.,MT (default)';
+                    }
+                });
+            }
+        });
+    </script>
 </x-modal>
