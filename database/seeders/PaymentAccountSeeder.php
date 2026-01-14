@@ -15,21 +15,15 @@ class PaymentAccountSeeder extends Seeder
     {
         $accounts = [
             [
-                'bank_name' => 'Bank MANDIRI',
-                'account_number' => '1260-0097-9284-6',
-                'account_holder' => 'AKHMAD KHAIDIR',
+                'bank_name' => 'BCA',
+                'account_number' => '791 2937 21',
+                'account_holder' => 'AHMAD KHOIUR',
                 'is_active' => true,
             ],
             [
-                'bank_name' => 'Bank BCA',
-                'account_number' => '715.199.7531',
-                'account_holder' => 'AKHMAD KHAIDIR',
-                'is_active' => true,
-            ],
-            [
-                'bank_name' => 'Bank BCA',
-                'account_number' => '546.588.8773',
-                'account_holder' => 'PT. AGHITSNA KARYA INDAH',
+                'bank_name' => 'Mandiri',
+                'account_number' => '126 0009 792 046',
+                'account_holder' => 'AHMAD KHOIUR',
                 'is_active' => true,
             ],
         ];

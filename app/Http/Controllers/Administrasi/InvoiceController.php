@@ -78,6 +78,14 @@ class InvoiceController extends Controller
         // Calculate total
         $jumlahTotal = $itemsTotal + ($sewaJual ?? 0) + ($ongkosKirim ?? 0) + ($bongkarPasang ?? 0) + ($lembur ?? 0) + ($uangJaminan ?? 0);
 
+        // Process selected payment accounts
+        $selectedPaymentAccounts = $request->input('selected_payment_accounts', []);
+
+        // Process PPN
+        $ppnPercentage = $request->input('ppn_percentage', 12);
+        $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
+        $totalWithPpn = $jumlahTotal + $ppnAmount;
+
         // Create invoice
         Invoice::create([
             'id_invoice' => $invoiceCode,
@@ -94,6 +102,10 @@ class InvoiceController extends Controller
             'lembur' => $lembur,
             'uang_jaminan' => $uangJaminan,
             'jumlah_total' => $jumlahTotal,
+            'selected_payment_accounts' => $selectedPaymentAccounts,
+            'ppn_percentage' => $ppnPercentage,
+            'ppn_amount' => $ppnAmount,
+            'total_with_ppn' => $totalWithPpn,
         ]);
 
         return redirect()->route('invoice.administrasi.index')->with('success', 'Invoice berhasil ditambahkan!');
@@ -149,6 +161,14 @@ class InvoiceController extends Controller
         // Calculate total
         $jumlahTotal = $itemsTotal + ($sewaJual ?? 0) + ($ongkosKirim ?? 0) + ($bongkarPasang ?? 0) + ($lembur ?? 0) + ($uangJaminan ?? 0);
 
+        // Process selected payment accounts
+        $selectedPaymentAccounts = $request->input('selected_payment_accounts', []);
+
+        // Process PPN
+        $ppnPercentage = $request->input('ppn_percentage', 12);
+        $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
+        $totalWithPpn = $jumlahTotal + $ppnAmount;
+
         // Update invoice
         $invoice->update([
             'location' => $location,
@@ -164,6 +184,10 @@ class InvoiceController extends Controller
             'lembur' => $lembur,
             'uang_jaminan' => $uangJaminan,
             'jumlah_total' => $jumlahTotal,
+            'selected_payment_accounts' => $selectedPaymentAccounts,
+            'ppn_percentage' => $ppnPercentage,
+            'ppn_amount' => $ppnAmount,
+            'total_with_ppn' => $totalWithPpn,
         ]);
 
         return redirect()->route('invoice.administrasi.index')->with('success', 'Invoice berhasil diperbarui!');

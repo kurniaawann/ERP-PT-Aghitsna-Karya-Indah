@@ -122,4 +122,46 @@
             </div>
         </div>
     </div>
+
+    {{-- Bank Information --}}
+    <div class="border-t pt-3 mt-3">
+        <label class="block text-text-primary font-semibold mb-2">Informasi Bank</label>
+        <p class="text-sm text-gray-600 mb-2">Pilih rekening bank yang akan ditampilkan di invoice:</p>
+
+        <div class="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
+            @php
+                $paymentAccounts = \App\Models\Invoice\PaymentAccount::where('is_active', true)->orderBy('id')->get();
+            @endphp
+
+            @if ($paymentAccounts->count() > 0)
+                @foreach ($paymentAccounts as $account)
+                    <label class="flex items-center space-x-2 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                        <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
+                            class="rounded border-gray-300">
+                        <span class="text-sm">
+                            <strong>{{ $account->bank_name }}</strong> -
+                            {{ $account->account_number }}
+                            (a/n {{ $account->account_holder }})
+                        </span>
+                    </label>
+                @endforeach
+            @else
+                <p class="text-sm text-gray-500 italic">Belum ada data bank. Silakan tambahkan di menu pengaturan.</p>
+            @endif
+        </div>
+    </div>
+
+    {{-- PPN Section --}}
+    <div class="border-t pt-3 mt-3">
+        <label class="block text-text-primary font-semibold mb-2">PPN (Pajak Pertambahan Nilai)</label>
+
+        <div class="flex items-center space-x-3">
+            <div class="flex-1">
+                <label class="block text-text-primary mb-1 text-sm">Persentase PPN (%)</label>
+                <input type="number" name="ppn_percentage" class="w-full border rounded p-2" placeholder="12"
+                    value="12" min="0" max="100" step="0.01">
+                <small class="text-gray-500 text-xs">Default: 12%. Isi 0 jika tidak dikenakan PPN</small>
+            </div>
+        </div>
+    </div>
 </x-modal>

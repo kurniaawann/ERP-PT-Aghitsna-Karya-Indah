@@ -4,6 +4,7 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Invoice\PaymentAccount;
 
 class Invoice extends Model
 {
@@ -29,6 +30,10 @@ class Invoice extends Model
         'lembur',
         'uang_jaminan',
         'jumlah_total',
+        'selected_payment_accounts',
+        'ppn_percentage',
+        'ppn_amount',
+        'total_with_ppn',
     ];
 
     protected $casts = [
@@ -40,6 +45,10 @@ class Invoice extends Model
         'lembur' => 'integer',
         'uang_jaminan' => 'integer',
         'jumlah_total' => 'integer',
+        'selected_payment_accounts' => 'array',
+        'ppn_percentage' => 'decimal:2',
+        'ppn_amount' => 'integer',
+        'total_with_ppn' => 'integer',
     ];
 
     /**
@@ -95,5 +104,34 @@ class Invoice extends Model
             + ($this->uang_jaminan ?? 0);
 
         return $itemsTotal + $optionalTotal;
+    }
+
+    /**
+     * Get selected payment accounts relation
+     */
+    public function paymentAccounts()
+    {
+        if (!$this->selected_payment_accounts) {
+            return collect();
+        }
+
+        return PaymentAccount::whereIn('id', $this->selected_payment_accounts)->get();
+    }
+
+    /**
+     * Calculate PPN amount
+     */
+    public function calculatePpn()
+    {
+        $ppnPercentage = $this->ppn_percentage ?? 12;
+        return (int) ($this->jumlah_total * ($ppnPercentage / 100));
+    }
+
+    /**
+     * Calculate total with PPN
+     */
+    public function calculateTotalWithPpn()
+    {
+        return $this->jumlah_total + $this->calculatePpn();
     }
 }
