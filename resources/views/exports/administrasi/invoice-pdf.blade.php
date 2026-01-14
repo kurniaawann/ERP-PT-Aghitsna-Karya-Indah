@@ -227,15 +227,8 @@
             {{-- Header --}}
             <div class="header">
                 <div class="header-left">
-                    <div class="company-name">Aghits</div>
-                    <div class="company-tagline">DESIGN AND BUILT</div>
-                    <div class="company-detail">PT. AGHITSNA KARYA INDAH</div>
-                    <div class="company-address">
-                        <strong>Scaffolding</strong><br>
-                        <strong>Alat - Alat Kontruksi ,dll</strong><br>
-                        JL. TANAH BARU RAYA PERTIWI RT 01/05, BEJI. DEPOK, JAWA BARAT<br>
-                        Telp. 021-29034923 - 0812.9596.552 Email: zulkarnainmarzuki@yahoo.com
-                    </div>
+                    <img src="{{ public_path('images/invoice_administrasi.jpeg') }}" alt="PT. Aghitsna Karya Indah"
+                        style="max-width: 50%; height: auto;">
                 </div>
                 <div class="header-right">
                     <div class="header-info">
