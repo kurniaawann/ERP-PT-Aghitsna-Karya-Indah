@@ -48,10 +48,17 @@
     function updateButtonStates() {
         const deleteButton = document.getElementById('delete-button');
         const printButton = document.getElementById('printDropdownButton');
+        const selectedCountText = document.getElementById('selectedCountText');
         const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const count = checkedCheckboxes.length;
+
+        // Update selected count text
+        if (selectedCountText) {
+            selectedCountText.textContent = count;
+        }
 
         if (deleteButton) {
-            if (checkedCheckboxes.length > 0) {
+            if (count > 0) {
                 deleteButton.disabled = false;
                 deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
@@ -61,7 +68,7 @@
         }
 
         if (printButton) {
-            if (checkedCheckboxes.length > 0) {
+            if (count > 0) {
                 printButton.disabled = false;
                 printButton.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
@@ -87,6 +94,51 @@
 
         const form = document.getElementById('deleteForm');
         form.submit();
+    }
+
+    // ==========================================
+    // PRINT SELECTED FUNCTION
+    // ==========================================
+
+    function printSelected() {
+        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+
+        if (checkedCheckboxes.length === 0) {
+            alert('Tidak ada data yang dipilih!');
+            return;
+        }
+
+        // Create a temporary form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route('invoice.administrasi.export.pdf.selected') }}';
+        form.style.display = 'none';
+
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+
+        // Add all checked IDs
+        checkedCheckboxes.forEach(checkbox => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = checkbox.value;
+            form.appendChild(input);
+        });
+
+        // Submit form
+        document.body.appendChild(form);
+        form.submit();
+
+        // Close dropdown after submit
+        const dropdownMenu = document.getElementById('printDropdownMenu');
+        if (dropdownMenu) {
+            dropdownMenu.classList.add('hidden');
+        }
     }
 
     // ==========================================

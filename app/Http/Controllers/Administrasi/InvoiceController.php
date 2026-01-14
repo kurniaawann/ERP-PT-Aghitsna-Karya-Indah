@@ -210,7 +210,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Export all invoices to PDF
+     * Export invoices to PDF (dinamis untuk all atau selected)
      */
     public function exportPdfAll(Request $request)
     {
@@ -226,13 +226,15 @@ class InvoiceController extends Controller
             ->latest('created_at')
             ->get();
 
-        // Generate PDF
-        $pdf = Pdf::loadView('exports.administrasi.invoice-all', compact('invoices'));
-        return $pdf->download('invoice-all.pdf');
+        // Generate PDF dengan 1 file template yang sama
+        $pdf = Pdf::loadView('exports.administrasi.invoice-pdf', compact('invoices'));
+
+        $filename = 'invoice-administrasi-' . date('Y-m-d') . '.pdf';
+        return $pdf->download($filename);
     }
 
     /**
-     * Export selected invoices to PDF
+     * Export selected invoices to PDF (dinamis untuk 1 atau banyak)
      */
     public function exportPdfSelected(Request $request)
     {
@@ -248,8 +250,20 @@ class InvoiceController extends Controller
             ->latest('created_at')
             ->get();
 
-        // Generate PDF
-        $pdf = Pdf::loadView('exports.administrasi.invoice-selected', compact('invoices'));
-        return $pdf->download('invoice-selected.pdf');
+        // Generate PDF dengan 1 file template yang sama
+        // Otomatis handle 1 invoice atau multiple invoices
+        $pdf = Pdf::loadView('exports.administrasi.invoice-pdf', compact('invoices'));
+
+        // Generate filename yang aman (tanpa karakter "/" atau "\")
+        if (count($ids) == 1) {
+            // Untuk 1 invoice, gunakan ID yang sudah di-sanitize
+            $safeId = str_replace(['/', '\\'], '-', $ids[0]);
+            $filename = 'invoice-' . $safeId . '.pdf';
+        } else {
+            // Untuk multiple invoices, gunakan timestamp
+            $filename = 'invoice-selected-' . date('Y-m-d') . '.pdf';
+        }
+
+        return $pdf->download($filename);
     }
 }
