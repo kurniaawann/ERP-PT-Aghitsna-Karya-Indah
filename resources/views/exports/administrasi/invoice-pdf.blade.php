@@ -8,7 +8,7 @@
     <style>
         @page {
             size: A4;
-            margin: 1cm 1.5cm;
+            margin: 1cm 1cm 1cm 1cm;
         }
 
         * {
@@ -26,7 +26,7 @@
         .invoice-container {
             width: 100%;
             max-width: 19cm;
-            border: 2px solid #000;
+            /* border: 2px solid #000; */
             padding: 8px;
             margin: 0 auto;
         }
