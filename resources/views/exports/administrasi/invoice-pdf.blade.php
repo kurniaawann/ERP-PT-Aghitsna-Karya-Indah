@@ -138,7 +138,7 @@
 
         /* Bank Information in Table */
         .bank-row td {
-            border-left: 1px solid #000;
+            border-left: none;
             border-right: 1px solid #000;
             border-bottom: none;
             border-top: none;
@@ -292,24 +292,6 @@
                             </tr>
                         @endforeach
                     @endif
-
-                    {{-- Empty rows for spacing if needed --}}
-                    @php
-                        $itemCount = count($invoice->items);
-                        $bankCount = $banks->count();
-                        $totalRows = $itemCount + $bankCount;
-                        $minRows = 8;
-                        $emptyRows = max(0, $minRows - $totalRows);
-                    @endphp
-
-                    @for ($i = 0; $i < $emptyRows; $i++)
-                        <tr>
-                            <td>&nbsp;</td>
-                            <td>&nbsp;</td>
-                            <td>&nbsp;</td>
-                            <td>&nbsp;</td>
-                        </tr>
-                    @endfor
                 </tbody>
             </table>
 
