@@ -303,10 +303,6 @@
                             <strong>Periode :</strong> {{ $invoice->period }}
                         </div>
                     @endif
-                    <div class="footer-note">
-                        <strong>*) Faktur dianggap lunas setelah dana kami terima</strong><br>
-                        <strong style="padding-left: 10px;">tunai atau telah ditransfer ke rekening kami.</strong>
-                    </div>
                 </div>
                 <div class="bottom-right">
                     <table class="totals-table">
@@ -374,10 +370,16 @@
                 </div>
             </div>
 
+            {{-- Footer Note --}}
+            <div class="footer-note" style="margin-top: 10px; margin-left: 20px;">
+                <strong>*) Faktur dianggap lunas setelah dana kami terima</strong><br>
+                <strong style="padding-left: 10px;">tunai atau telah ditransfer ke rekening kami.</strong>
+            </div>
+
             {{-- Signature --}}
             <div class="signature-section">
-                <strong>Penerima,</strong>
-                <div>
+                <strong style="margin-left: 60px;">Penerima,</strong>
+                <div style="margin-top: 50px; margin-left: 30px;">
                     <strong>(__________________)</strong>
                 </div>
             </div>
