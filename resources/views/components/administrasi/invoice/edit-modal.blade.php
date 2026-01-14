@@ -43,44 +43,66 @@
 
     {{-- Items Section --}}
     <div class="mb-4">
-        <div class="flex items-center justify-between mb-2">
-            <label class="block text-text-primary font-semibold">Daftar Barang <span class="text-error">*</span></label>
+        <div class="flex items-center justify-between mb-3">
+            <label class="block text-text-primary font-semibold text-base">Daftar Barang <span
+                    class="text-error">*</span></label>
             <button type="button" onclick="addItemRow('editModal-{{ $invoice->id_invoice }}')"
-                class="bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded text-sm">
+                class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-all duration-200">
                 <i class="fa-solid fa-plus mr-1"></i> Tambah Item
             </button>
         </div>
 
-        <div id="itemsContainer-editModal-{{ $invoice->id_invoice }}" class="space-y-2">
+        <div id="itemsContainer-editModal-{{ $invoice->id_invoice }}" class="space-y-3">
             @foreach ($invoice->items as $item)
-                <div class="item-row border rounded p-3 bg-gray-50">
-                    <div class="grid grid-cols-12 gap-2 mb-2">
-                        <div class="col-span-2">
-                            <label class="block text-xs mb-1">Banyaknya</label>
-                            <input type="number" name="item_banyaknya[]" class="w-full border rounded p-2 text-sm"
-                                placeholder="Qty" min="1" value="{{ $item['banyaknya'] }}" required>
+                <div
+                    class="item-row bg-white border-2 border-gray-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="space-y-3">
+                        {{-- Row 1: Qty and Nama Barang --}}
+                        <div class="grid grid-cols-12 gap-3">
+                            <div class="col-span-2">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Qty <span
+                                        class="text-red-500">*</span></label>
+                                <input type="number" name="item_banyaknya[]"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    placeholder="0" min="1" value="{{ $item['banyaknya'] }}" required>
+                            </div>
+                            <div class="col-span-10">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Barang <span
+                                        class="text-red-500">*</span></label>
+                                <input type="text" name="item_nama_barang[]"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    placeholder="Masukkan nama barang..." value="{{ $item['nama_barang'] }}" required>
+                            </div>
                         </div>
-                        <div class="col-span-5">
-                            <label class="block text-xs mb-1">Nama Barang</label>
-                            <input type="text" name="item_nama_barang[]" class="w-full border rounded p-2 text-sm"
-                                placeholder="Nama barang" value="{{ $item['nama_barang'] }}" required>
-                        </div>
-                        <div class="col-span-3">
-                            <label class="block text-xs mb-1">Harga Satuan</label>
-                            <input type="text" name="item_harga_satuan[]"
-                                class="w-full border rounded p-2 text-sm price-input" placeholder="0"
-                                value="{{ number_format($item['harga_satuan'], 0, ',', '.') }}" required>
-                        </div>
-                        <div class="col-span-2 flex items-end">
-                            <button type="button" onclick="removeItemRow(this)"
-                                class="w-full bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded text-sm">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+
+                        {{-- Row 2: Harga Satuan and Delete Button --}}
+                        <div class="grid grid-cols-12 gap-3">
+                            <div class="col-span-9">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Harga Satuan <span
+                                        class="text-red-500">*</span></label>
+                                <input type="text" name="item_harga_satuan[]"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-right price-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    placeholder="0" value="{{ number_format($item['harga_satuan'], 0, ',', '.') }}"
+                                    required>
+                            </div>
+                            <div class="col-span-3 flex items-end">
+                                <button type="button" onclick="removeItemRow(this)"
+                                    style="{{ $loop->first && count($invoice->items) == 1 ? 'display: none;' : '' }}"
+                                    class="delete-btn w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-trash"></i>
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             @endforeach
         </div>
+
+        <p class="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
+            <i class="fa-solid fa-info-circle text-blue-500"></i>
+            <span>Klik <strong>"Tambah Item"</strong> untuk menambahkan barang baru ke daftar.</span>
+        </p>
     </div>
 
     <div class="mb-3">

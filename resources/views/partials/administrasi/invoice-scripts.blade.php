@@ -145,32 +145,56 @@
     // DYNAMIC ITEM ROWS
     // ==========================================
 
+    function updateDeleteButtons(modalId) {
+        const container = document.getElementById('itemsContainer-' + modalId);
+        const items = container.querySelectorAll('.item-row');
+        const deleteButtons = container.querySelectorAll('.delete-btn');
+
+        // Show delete buttons only if there are more than 1 items
+        deleteButtons.forEach(btn => {
+            if (items.length > 1) {
+                btn.style.display = 'flex';
+            } else {
+                btn.style.display = 'none';
+            }
+        });
+    }
+
     function addItemRow(modalId) {
         const container = document.getElementById('itemsContainer-' + modalId);
         const newRow = document.createElement('div');
-        newRow.className = 'item-row border rounded p-3 bg-gray-50';
+        newRow.className =
+            'item-row bg-white border-2 border-gray-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
         newRow.innerHTML = `
-            <div class="grid grid-cols-12 gap-2 mb-2">
-                <div class="col-span-2">
-                    <label class="block text-xs mb-1">Banyaknya</label>
-                    <input type="number" name="item_banyaknya[]" class="w-full border rounded p-2 text-sm"
-                        placeholder="Qty" min="1" required>
+            <div class="space-y-3">
+                <div class="grid grid-cols-12 gap-3">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Qty <span class="text-red-500">*</span></label>
+                        <input type="number" name="item_banyaknya[]" 
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="0" min="1" required>
+                    </div>
+                    <div class="col-span-10">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Barang <span class="text-red-500">*</span></label>
+                        <input type="text" name="item_nama_barang[]" 
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="Masukkan nama barang..." required>
+                    </div>
                 </div>
-                <div class="col-span-5">
-                    <label class="block text-xs mb-1">Nama Barang</label>
-                    <input type="text" name="item_nama_barang[]" class="w-full border rounded p-2 text-sm"
-                        placeholder="Nama barang" required>
-                </div>
-                <div class="col-span-3">
-                    <label class="block text-xs mb-1">Harga Satuan</label>
-                    <input type="text" name="item_harga_satuan[]" class="w-full border rounded p-2 text-sm price-input"
-                        placeholder="0" required>
-                </div>
-                <div class="col-span-2 flex items-end">
-                    <button type="button" onclick="removeItemRow(this)"
-                        class="w-full bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded text-sm">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                <div class="grid grid-cols-12 gap-3">
+                    <div class="col-span-9">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Harga Satuan <span class="text-red-500">*</span></label>
+                        <input type="text" name="item_harga_satuan[]"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-right price-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                            placeholder="0" required>
+                    </div>
+                    <div class="col-span-3 flex items-end">
+                        <button type="button" onclick="removeItemRow(this)"
+                            class="delete-btn w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-trash"></i>
+                            <span>Hapus</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -181,16 +205,34 @@
         if (newPriceInput) {
             initPriceInput(newPriceInput);
         }
+
+        // Update delete button visibility
+        updateDeleteButtons(modalId);
     }
 
     function removeItemRow(button) {
-        const container = button.closest('.item-row').parentElement;
-        if (container.children.length > 1) {
-            button.closest('.item-row').remove();
-        } else {
-            alert('Minimal harus ada 1 item!');
-        }
+        const itemRow = button.closest('.item-row');
+        const container = itemRow.parentElement;
+        const modalId = container.id.replace('itemsContainer-', '');
+
+        // Remove the item
+        itemRow.remove();
+
+        // Update delete button visibility
+        updateDeleteButtons(modalId);
     }
+
+    // Initialize delete buttons on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // For add modal
+        updateDeleteButtons('addModal');
+
+        // For edit modals
+        document.querySelectorAll('[id^="itemsContainer-editModal-"]').forEach(container => {
+            const modalId = container.id.replace('itemsContainer-', '');
+            updateDeleteButtons(modalId);
+        });
+    });
 
     // ==========================================
     // PRICE INPUT FORMATTING
