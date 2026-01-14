@@ -8,7 +8,7 @@
     <style>
         @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 1cm 1.5cm;
         }
 
         * {
@@ -19,119 +19,105 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
+            font-size: 10px;
+            line-height: 1.3;
         }
 
         .invoice-container {
             width: 100%;
+            max-width: 19cm;
             border: 2px solid #000;
-            padding: 10px;
-            margin-bottom: 20px;
+            padding: 8px;
+            margin: 0 auto;
         }
 
         /* Header Section */
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 10px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
         }
 
         .header-left {
             display: table-cell;
-            width: 60%;
+            width: 55%;
             vertical-align: top;
+        }
+
+        .header-left img {
+            max-width: 330px;
+            height: auto;
+            display: block;
         }
 
         .header-right {
             display: table-cell;
-            width: 40%;
+            width: 45%;
             vertical-align: top;
             text-align: right;
-            padding-right: 10px;
-        }
-
-        .company-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2563a4;
-            margin-bottom: 5px;
-        }
-
-        .company-tagline {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 3px;
-        }
-
-        .company-detail {
-            font-size: 16px;
-            font-weight: bold;
-            color: #000;
-            margin-bottom: 5px;
-        }
-
-        .company-address {
-            font-size: 9px;
-            color: #333;
-            line-height: 1.3;
+            padding-right: 5px;
         }
 
         .header-info {
             text-align: right;
+            line-height: 1.4;
         }
 
         .location-date {
-            font-size: 11px;
-            margin-bottom: 3px;
+            font-size: 10px;
+            margin-bottom: 8px;
         }
 
         .kepada-label {
             font-size: 10px;
-            font-weight: bold;
+            font-weight: normal;
             margin-bottom: 2px;
         }
 
         .kepada-name {
-            font-size: 11px;
-            font-weight: bold;
-            text-decoration: underline;
+            font-size: 10px;
+            font-weight: normal;
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            min-width: 150px;
+            padding-bottom: 1px;
         }
 
         /* Invoice Number Section */
         .invoice-numbers {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .invoice-numbers table {
-            width: 40%;
+            width: 300px;
             border-collapse: collapse;
         }
 
         .invoice-numbers td {
             border: 1px solid #000;
-            padding: 5px 8px;
+            padding: 3px 6px;
             font-size: 10px;
+            font-weight: bold;
         }
 
         .invoice-numbers td:first-child {
-            font-weight: bold;
-            width: 35%;
+            width: 90px;
+            background-color: #f5f5f5;
         }
 
         /* Items Table */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 0;
         }
 
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 4px 6px;
             font-size: 10px;
         }
 
@@ -139,6 +125,7 @@
             background-color: #f5f5f5;
             font-weight: bold;
             text-align: center;
+            padding: 5px;
         }
 
         .items-table td.center {
@@ -154,65 +141,80 @@
             border-left: 1px solid #000;
             border-right: 1px solid #000;
             border-bottom: none;
-            font-size: 10px;
-            padding: 3px 6px;
+            border-top: none;
+            font-size: 9px;
+            padding: 2px 6px;
+            font-weight: normal;
         }
 
-        /* Right Section with Totals */
+        /* Bottom Section */
         .bottom-section {
             display: table;
             width: 100%;
+            margin-top: 0;
         }
 
         .bottom-left {
             display: table-cell;
-            width: 50%;
+            width: 45%;
             vertical-align: top;
-            font-size: 9px;
             padding-right: 10px;
+            padding-top: 8px;
+        }
+
+        .period-section {
+            font-size: 10px;
+            margin-bottom: 15px;
+        }
+
+        .footer-note {
+            font-size: 9px;
+            line-height: 1.3;
         }
 
         .bottom-right {
             display: table-cell;
-            width: 50%;
+            width: 55%;
             vertical-align: top;
         }
 
         .totals-table {
             width: 100%;
             border-collapse: collapse;
+            margin-left: auto;
         }
 
         .totals-table td {
             border: 1px solid #000;
-            padding: 5px 8px;
+            padding: 3px 8px;
             font-size: 10px;
         }
 
         .totals-table td:first-child {
-            width: 50%;
+            width: 55%;
+            font-weight: normal;
         }
 
         .totals-table td:last-child {
             text-align: right;
-            font-weight: bold;
+            width: 45%;
         }
 
-        .grand-total {
-            font-size: 11px;
+        .totals-table .total-row td {
+            border-bottom: 2px solid #000;
             font-weight: bold;
-        }
-
-        .footer-note {
-            font-size: 9px;
-            margin-top: 10px;
-            font-style: italic;
         }
 
         .signature-section {
-            text-align: center;
-            margin-top: 30px;
+            text-align: left;
+            margin-top: 20px;
+            margin-left: 20px;
             font-size: 10px;
+        }
+
+        .signature-section strong {
+            display: block;
+            margin-bottom: 50px;
         }
 
         .page-break {
@@ -227,14 +229,13 @@
             {{-- Header --}}
             <div class="header">
                 <div class="header-left">
-                    <img src="{{ public_path('images/invoice_administrasi.jpeg') }}" alt="PT. Aghitsna Karya Indah"
-                        style="max-width: 50%; height: auto;">
+                    <img src="{{ public_path('images/invoice_administrasi.jpeg') }}" alt="PT. Aghitsna Karya Indah">
                 </div>
                 <div class="header-right">
                     <div class="header-info">
                         <div class="location-date">
                             <strong>{{ $invoice->location }}</strong>,
-                            {{ \Carbon\Carbon::parse($invoice->invoice_date)->translatedFormat('d F Y') }}
+                            <em>{{ \Carbon\Carbon::parse($invoice->invoice_date)->translatedFormat('d F Y') }}</em>
                         </div>
                         <div class="kepada-label">Kepada Yth,</div>
                         <div class="kepada-name">{{ $invoice->kepada }}</div>
@@ -260,10 +261,10 @@
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width: 12%">BANYAKNYA</th>
-                        <th style="width: 48%">NAMA BARANG</th>
-                        <th style="width: 20%">HARGA SATUAN</th>
-                        <th style="width: 20%">JUMLAH</th>
+                        <th style="width: 15%">BANYAKNYA</th>
+                        <th style="width: 40%">NAMA BARANG</th>
+                        <th style="width: 22.5%">HARGA SATUAN</th>
+                        <th style="width: 22.5%">JUMLAH</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -284,80 +285,57 @@
                     @if ($banks->count() > 0)
                         @foreach ($banks as $bank)
                             <tr class="bank-row">
-                                <td colspan="4"
-                                    style="border-bottom: {{ $loop->last ? '1px solid #000' : 'none' }};">
-                                    <strong>{{ $bank->bank_name }}:</strong> {{ $bank->account_number }}
-                                    a/n <strong>{{ $bank->account_holder }}</strong>
+                                <td colspan="4">
+                                    <strong>{{ $bank->bank_name }}:</strong> {{ $bank->account_number }} a/n
+                                    <strong>{{ $bank->account_holder }}</strong>
                                 </td>
                             </tr>
                         @endforeach
                     @endif
 
-                    {{-- Receiver Info --}}
-                    @if ($invoice->penerima)
-                        <tr class="bank-row">
-                            <td colspan="4" style="border-bottom: 1px solid #000; padding-top: 8px;">
-                                <strong>Penerima:</strong> {{ $invoice->penerima }}
-                            </td>
+                    {{-- Empty rows for spacing if needed --}}
+                    @php
+                        $itemCount = count($invoice->items);
+                        $bankCount = $banks->count();
+                        $totalRows = $itemCount + $bankCount;
+                        $minRows = 8;
+                        $emptyRows = max(0, $minRows - $totalRows);
+                    @endphp
+
+                    @for ($i = 0; $i < $emptyRows; $i++)
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
                         </tr>
-                    @endif
+                    @endfor
                 </tbody>
             </table>
 
             {{-- Bottom Section --}}
             <div class="bottom-section">
                 <div class="bottom-left">
+                    @if ($invoice->period)
+                        <div class="period-section">
+                            <strong>Periode :</strong> {{ $invoice->period }}
+                        </div>
+                    @endif
                     <div class="footer-note">
                         <strong>*) Faktur dianggap lunas setelah dana kami terima</strong><br>
-                        <strong>tunai atau telah ditransfer ke rekening kami.</strong>
+                        <strong style="padding-left: 10px;">tunai atau telah ditransfer ke rekening kami.</strong>
                     </div>
                 </div>
                 <div class="bottom-right">
                     <table class="totals-table">
-                        @if ($invoice->sewa_jual)
-                            <tr>
-                                <td>Sewa / Jual</td>
-                                <td>{{ number_format($invoice->sewa_jual, 0, ',', '.') }}</td>
-                            </tr>
-                        @endif
+                        @php
+                            $subtotal = 0;
+                            foreach ($invoice->items as $item) {
+                                $subtotal += $item['jumlah'];
+                            }
+                        @endphp
 
-                        @if ($invoice->ongkos_kirim)
-                            <tr>
-                                <td>Ongkos Kirim PP / 1x</td>
-                                <td>{{ number_format($invoice->ongkos_kirim, 0, ',', '.') }}</td>
-                            </tr>
-                        @endif
-
-                        @if ($invoice->bongkar_pasang)
-                            <tr>
-                                <td>Bongkar / Pasang</td>
-                                <td>{{ number_format($invoice->bongkar_pasang, 0, ',', '.') }}</td>
-                            </tr>
-                        @endif
-
-                        @if ($invoice->lembur)
-                            <tr>
-                                <td>Lembur Antar / Ambil</td>
-                                <td>{{ number_format($invoice->lembur, 0, ',', '.') }}</td>
-                            </tr>
-                        @endif
-
-                        @if ($invoice->uang_jaminan)
-                            <tr>
-                                <td>Uang Jaminan</td>
-                                <td>{{ number_format($invoice->uang_jaminan, 0, ',', '.') }}</td>
-                            </tr>
-                        @endif
-
-                        {{-- Subtotal before PPN --}}
-                        <tr>
-                            <td style="border-bottom: 2px solid #000;"><strong>Sub Total</strong></td>
-                            <td style="border-bottom: 2px solid #000;">
-                                <strong>{{ number_format($invoice->jumlah_total, 0, ',', '.') }}</strong>
-                            </td>
-                        </tr>
-
-                        {{-- PPN --}}
+                        {{-- PPN Row --}}
                         @if ($invoice->ppn_percentage > 0)
                             <tr>
                                 <td>PPN {{ number_format($invoice->ppn_percentage, 0) }}%</td>
@@ -365,8 +343,48 @@
                             </tr>
                         @endif
 
+                        {{-- Sewa/Jual --}}
+                        @if ($invoice->sewa_jual)
+                            <tr>
+                                <td>Sewa / Jual</td>
+                                <td>{{ number_format($invoice->sewa_jual, 0, ',', '.') }}</td>
+                            </tr>
+                        @endif
+
+                        {{-- Ongkos Kirim --}}
+                        @if ($invoice->ongkos_kirim)
+                            <tr>
+                                <td>Ongkos Kirim PP / 1x</td>
+                                <td>{{ number_format($invoice->ongkos_kirim, 0, ',', '.') }}</td>
+                            </tr>
+                        @endif
+
+                        {{-- Bongkar Pasang --}}
+                        @if ($invoice->bongkar_pasang)
+                            <tr>
+                                <td>Bongkar / Pasang</td>
+                                <td>{{ number_format($invoice->bongkar_pasang, 0, ',', '.') }}</td>
+                            </tr>
+                        @endif
+
+                        {{-- Lembur --}}
+                        @if ($invoice->lembur)
+                            <tr>
+                                <td>Lembur Antar / Ambil</td>
+                                <td>{{ number_format($invoice->lembur, 0, ',', '.') }}</td>
+                            </tr>
+                        @endif
+
+                        {{-- Uang Jaminan --}}
+                        @if ($invoice->uang_jaminan)
+                            <tr>
+                                <td>Uang Jaminan</td>
+                                <td>{{ number_format($invoice->uang_jaminan, 0, ',', '.') }}</td>
+                            </tr>
+                        @endif
+
                         {{-- Grand Total --}}
-                        <tr class="grand-total">
+                        <tr class="total-row">
                             <td>Jumlah *)</td>
                             <td>{{ number_format($invoice->total_with_ppn, 0, ',', '.') }}</td>
                         </tr>
@@ -377,7 +395,7 @@
             {{-- Signature --}}
             <div class="signature-section">
                 <strong>Penerima,</strong>
-                <div style="margin-top: 50px;">
+                <div>
                     <strong>(__________________)</strong>
                 </div>
             </div>
