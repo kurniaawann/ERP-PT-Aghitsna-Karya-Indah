@@ -22,6 +22,7 @@ class CashOutProof extends Model
         'description',
         'director',
         'finance_head',
+        'template_type',
     ];
 
     protected $casts = [

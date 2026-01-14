@@ -37,6 +37,7 @@ class CashOutProofController extends Controller
             'description' => 'nullable|string',
             'director' => 'nullable|string|max:255',
             'finance_head' => 'nullable|string|max:255',
+            'template_type' => 'required|in:standard,hollow',
         ]);
 
         // Ambil semua input dari form
@@ -70,6 +71,7 @@ class CashOutProofController extends Controller
             'description' => 'nullable|string',
             'director' => 'nullable|string|max:255',
             'finance_head' => 'nullable|string|max:255',
+            'template_type' => 'required|in:standard,hollow',
         ]);
 
         // Ambil semua input dari form

@@ -20,6 +20,18 @@
     </div>
 
     <div class="mb-3">
+        <label class="block text-text-primary mb-1">Tipe Template <span class="text-error">*</span></label>
+        <select name="template_type" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Tipe template tidak boleh kosong')" oninput="this.setCustomValidity('')">
+            <option value="standard" {{ $cashOut->template_type == 'standard' ? 'selected' : '' }}>Standard (BUKTI KAS
+                KELUAR)</option>
+            <option value="hollow" {{ $cashOut->template_type == 'hollow' ? 'selected' : '' }}>Hollow (HOLLOW - BUKTI
+                KAS KELUAR)</option>
+        </select>
+        <small class="text-gray-500 text-xs">Pilih format template yang akan digunakan</small>
+    </div>
+
+    <div class="mb-3">
         <label class="block text-text-primary mb-1">Dibayarkan Kepada <span class="text-error">*</span></label>
         <input type="text" name="paid_to" class="w-full border rounded p-2" placeholder="Masukkan nama penerima"
             required maxlength="255" value="{{ $cashOut->paid_to }}"
