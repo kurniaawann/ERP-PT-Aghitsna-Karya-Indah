@@ -102,5 +102,5 @@
         </div>
     </div>
 
-    @include('partials.report.transaction-category.transaction-category-scripts')
+    @include('partials.report.transaction-category-scripts')
 @endsection

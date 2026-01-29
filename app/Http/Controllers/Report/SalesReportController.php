@@ -530,7 +530,7 @@ class SalesReportController extends Controller
             $monthYear = $monthName . ' ' . $year;
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.sales-report-pdf', [
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.report.sales-report-pdf', [
             'salesReports' => $salesReports,
             'monthYear' => $monthYear,
             'grandTotalCapital' => $grandTotalCapital,

@@ -18,18 +18,26 @@ class PageController extends Controller
         // Get current month and year
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
+        $currentDay = Carbon::now()->day;
+
+        // Check if it's past the 26th of the month (payroll date)
+        $isPayrollPeriod = $currentDay >= 26;
 
         // Get employees who haven't received salary this month
-        $employeesWithoutSalary = Employee::whereDoesntHave('payrolls', function ($query) use ($currentMonth, $currentYear) {
-            $query->where('period_month', $currentMonth)
-                ->where('period_year', $currentYear)
-                ->where('status', 'paid');
-        })->get();
+        // Only check after the 26th
+        $employeesWithoutSalary = collect([]);
+        if ($isPayrollPeriod) {
+            $employeesWithoutSalary = Employee::whereDoesntHave('payrolls', function ($query) use ($currentMonth, $currentYear) {
+                $query->where('period_month', $currentMonth)
+                    ->where('period_year', $currentYear)
+                    ->where('status', 'paid');
+            })->get();
+        }
 
         // Get items with low stock (quantity <= 5)
         $lowStockItems = Items::where('quantity', '<=', 5)->get();
 
-        return view('pages.dashboard', compact('employeesWithoutSalary', 'lowStockItems'));
+        return view('pages.dashboard', compact('employeesWithoutSalary', 'lowStockItems', 'isPayrollPeriod'));
     }
 
     public function item()

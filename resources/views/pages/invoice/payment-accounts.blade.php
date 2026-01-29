@@ -49,5 +49,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.invoice.payment-accounts.payment-accounts-scripts')
+    @include('partials.invoice.payment-accounts-scripts')
 @endsection

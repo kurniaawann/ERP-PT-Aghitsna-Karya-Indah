@@ -275,6 +275,72 @@
                 </ul>
             </li>
 
+            {{-- Administrasi Dropdown --}}
+            <li>
+                <button onclick="toggleDropdown('administrasiDropdown')"
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
+
+                    <div class="flex items-center">
+                        <i class="fas fa-folder-open w-5 text-text-tertiary group-hover:text-primary">
+                        </i>
+                        <span class="ml-3 font-medium">Administrasi</span>
+                    </div>
+
+                    <i id="administrasiDropdownIcon"
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
+                    </i>
+                </button>
+
+                {{-- Submenu --}}
+                <ul id="administrasiDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') || request()->is('cash-out-proof*') || request()->is('kwintansi*') || request()->is('invoice-administrasi*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/document-receipt') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('document-receipt*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-file-signature w-4 
+                                {{ request()->is('document-receipt*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Tanda Terima Dokumen</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/cash-out-proof') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('cash-out-proof*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-money-bill-wave w-4 
+                                {{ request()->is('cash-out-proof*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Bukti Kas Keluar</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/kwintansi') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('kwintansi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-receipt w-4 
+                                {{ request()->is('kwintansi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Kwintansi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/invoice-administrasi') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('invoice-administrasi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-file-invoice w-4 
+                                {{ request()->is('invoice-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Invoice</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
         </ul>
     </nav>
 </aside>

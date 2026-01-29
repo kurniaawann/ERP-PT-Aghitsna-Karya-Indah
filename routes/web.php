@@ -14,6 +14,10 @@ use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
 use App\Http\Controllers\Finance\ReimburseController;
+use App\Http\Controllers\Administrasi\DocumentReceiptController;
+use App\Http\Controllers\Administrasi\CashOutProofController;
+use App\Http\Controllers\Administrasi\KwintansiController;
+use App\Http\Controllers\Administrasi\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -158,5 +162,49 @@ Route::middleware('auth')->group(function () {
 
     // Route Reimburse - API untuk get total selected
     Route::post('/reimburse/get-selected-total', [ReimburseController::class, 'getSelectedTotal'])->name('reimburse.getSelectedTotal');
+
+    // ============================================
+    // Administrasi Routes
+    // ============================================
+
+    // Route Document Receipt (Tanda Terima Dokumen)
+    Route::get('/document-receipt', [DocumentReceiptController::class, 'index'])->name('document-receipt.index');
+    Route::post('/document-receipt', [DocumentReceiptController::class, 'store'])->name('document-receipt.store');
+    Route::put('/document-receipt/{documentReceipt}', [DocumentReceiptController::class, 'update'])->name('document-receipt.update');
+    Route::delete('/document-receipt/destroy-selected', [DocumentReceiptController::class, 'destroySelected'])->name('document-receipt.destroySelected');
+
+    // Route Document Receipt - Export PDF
+    Route::get('/document-receipt/export/pdf', [DocumentReceiptController::class, 'exportPdfAll'])->name('document-receipt.export.pdf');
+    Route::post('/document-receipt/export/pdf-selected', [DocumentReceiptController::class, 'exportPdfSelected'])->name('document-receipt.export.pdf.selected');
+
+    // Route Cash Out Proof (Bukti Kas Keluar)
+    Route::get('/cash-out-proof', [CashOutProofController::class, 'index'])->name('cash-out-proof.index');
+    Route::post('/cash-out-proof', [CashOutProofController::class, 'store'])->name('cash-out-proof.store');
+    Route::put('/cash-out-proof/{cashOutProof}', [CashOutProofController::class, 'update'])->name('cash-out-proof.update');
+    Route::delete('/cash-out-proof/destroy-selected', [CashOutProofController::class, 'destroySelected'])->name('cash-out-proof.destroySelected');
+
+    // Route Cash Out Proof - Export PDF
+    Route::get('/cash-out-proof/export/pdf', [CashOutProofController::class, 'exportPdfAll'])->name('cash-out-proof.export.pdf');
+    Route::post('/cash-out-proof/export/pdf-selected', [CashOutProofController::class, 'exportPdfSelected'])->name('cash-out-proof.export.pdf.selected');
+
+    // Route Kwintansi
+    Route::get('/kwintansi', [KwintansiController::class, 'index'])->name('kwintansi.index');
+    Route::post('/kwintansi', [KwintansiController::class, 'store'])->name('kwintansi.store');
+    Route::put('/kwintansi/{kwintansi}', [KwintansiController::class, 'update'])->name('kwintansi.update');
+    Route::delete('/kwintansi/destroy-selected', [KwintansiController::class, 'destroySelected'])->name('kwintansi.destroySelected');
+
+    // Route Kwintansi - Export PDF
+    Route::get('/kwintansi/export/pdf', [KwintansiController::class, 'exportPdfAll'])->name('kwintansi.export.pdf');
+    Route::post('/kwintansi/export/pdf-selected', [KwintansiController::class, 'exportPdfSelected'])->name('kwintansi.export.pdf.selected');
+
+    // Route Invoice Administrasi
+    Route::get('/invoice-administrasi', [InvoiceController::class, 'index'])->name('invoice.administrasi.index');
+    Route::post('/invoice-administrasi', [InvoiceController::class, 'store'])->name('invoice.administrasi.store');
+    Route::put('/invoice-administrasi/{invoice}', [InvoiceController::class, 'update'])->name('invoice.administrasi.update')->where('invoice', '.*');
+    Route::delete('/invoice-administrasi/destroy-selected', [InvoiceController::class, 'destroySelected'])->name('invoice.administrasi.destroySelected');
+
+    // Route Invoice Administrasi - Export PDF
+    Route::get('/invoice-administrasi/export/pdf', [InvoiceController::class, 'exportPdfAll'])->name('invoice.administrasi.export.pdf');
+    Route::post('/invoice-administrasi/export/pdf-selected', [InvoiceController::class, 'exportPdfSelected'])->name('invoice.administrasi.export.pdf.selected');
 
 });

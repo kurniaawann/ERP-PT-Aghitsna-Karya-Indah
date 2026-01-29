@@ -77,5 +77,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.sdm.payroll.payroll-scripts')
+    @include('partials.sdm.payroll-scripts')
 @endsection
