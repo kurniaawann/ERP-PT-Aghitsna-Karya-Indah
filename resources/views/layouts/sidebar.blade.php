@@ -74,7 +74,7 @@
                     <div class="flex items-center">
                         <i class="fas fa-file-invoice w-5 text-text-tertiary group-hover:text-primary">
                         </i>
-                        <span class="ml-3 font-medium">Invoice</span>
+                        <span class="ml-3 font-medium">Keuangan</span>
                     </div>
 
                     <i id="invoiceDropdownIcon"
