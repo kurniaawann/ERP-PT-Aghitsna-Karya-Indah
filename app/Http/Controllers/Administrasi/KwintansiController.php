@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Administrasi;
 
 use App\Http\Controllers\Controller;
 use App\Models\Administrasi\Kwintansi;
-use App\Models\Invoice\PaymentAccount;
+use App\Models\Finance\PaymentAccount;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 

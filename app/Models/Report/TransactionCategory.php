@@ -22,11 +22,11 @@ class TransactionCategory extends Model
     ];
 
     /**
-     * Get all expense reports for this category
+     * Get all expense recaps for this category
      */
-    public function expenseReports()
+    public function expenseRecaps()
     {
-        return $this->hasMany(\App\Models\Report\ExpenseReport::class, 'transaction_category_id');
+        return $this->hasMany(\App\Models\Report\ExpenseRecap::class, 'transaction_category_id');
     }
 
     /**

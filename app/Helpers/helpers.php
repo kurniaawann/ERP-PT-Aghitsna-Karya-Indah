@@ -51,24 +51,24 @@ if (!function_exists('terbilang')) {
     }
 }
 
-if (!function_exists('generateExpenseReportId')) {
+if (!function_exists('generateExpenseRecapId')) {
     /**
-     * Generate unique Expense Report ID
+     * Generate unique Expense Recap ID
      * Format: ER-001, ER-002, etc
      * 
      * @return string
      */
-    function generateExpenseReportId()
+    function generateExpenseRecapId()
     {
-        $lastExpenseReport = \App\Models\Report\ExpenseReport::where('id', 'like', 'ER-%')
+        $lastExpenseRecap = \App\Models\Report\ExpenseRecap::where('id', 'like', 'ER-%')
             ->orderBy('id', 'desc')
             ->first();
 
-        if (!$lastExpenseReport) {
+        if (!$lastExpenseRecap) {
             return 'ER-001';
         }
 
-        $lastNumber = intval(substr($lastExpenseReport->id, 3)); // Skip "ER-"
+        $lastNumber = intval(substr($lastExpenseRecap->id, 3)); // Skip "ER-"
         $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
 
         return 'ER-' . $newNumber;

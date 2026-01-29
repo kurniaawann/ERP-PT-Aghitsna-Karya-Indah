@@ -192,7 +192,7 @@
         <tbody>
             @php
                 $no = 1;
-                $projectGroups = $salesReports->groupBy('name_proyek');
+                $projectGroups = $salesRecaps->groupBy('name_proyek');
                 $totalCapitalAll = 0;
                 $totalSellingAll = 0;
                 $totalProfitAll = 0;
@@ -335,3 +335,4 @@
 </body>
 
 </html>
+

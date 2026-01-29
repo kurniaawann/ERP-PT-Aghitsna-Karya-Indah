@@ -56,7 +56,7 @@
             {{ $kwintansi->include_bank ? 'required' : '' }}
             oninvalid="this.setCustomValidity('Bank tidak boleh kosong')" oninput="this.setCustomValidity('')">
             <option value="">Pilih Bank</option>
-            @foreach (\App\Models\Invoice\PaymentAccount::active()->get() as $account)
+            @foreach (\App\Models\Finance\PaymentAccount::active()->get() as $account)
                 <option value="{{ $account->id }}"
                     {{ $kwintansi->payment_account_id == $account->id ? 'selected' : '' }}>
                     {{ $account->bank_name }} - {{ $account->account_number }} ({{ $account->account_holder }})

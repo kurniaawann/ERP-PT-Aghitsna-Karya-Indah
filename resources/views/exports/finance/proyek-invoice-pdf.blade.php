@@ -334,6 +334,26 @@
                         <td class="right"><strong>Rp {{ number_format($dpAmount, 0, ',', '.') }}</strong></td>
                     </tr>
                 @endif
+
+                @if ($invoice->payment_installments)
+                    @php
+                        $paymentInstallments = is_string($invoice->payment_installments)
+                            ? json_decode($invoice->payment_installments, true)
+                            : $invoice->payment_installments;
+                    @endphp
+
+                    @if (is_array($paymentInstallments) && count($paymentInstallments) > 0)
+                        @foreach ($paymentInstallments as $index => $payment)
+                            <!-- Payment Installment Row -->
+                            <tr style="background-color: #E9D5FF;">
+                                <td colspan="5" class="center">
+                                    <strong>{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</strong></td>
+                                <td class="right"><strong>Rp
+                                        {{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}</strong></td>
+                            </tr>
+                        @endforeach
+                    @endif
+                @endif
             </tbody>
         </table>
 

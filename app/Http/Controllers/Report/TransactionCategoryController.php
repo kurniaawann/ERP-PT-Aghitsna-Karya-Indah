@@ -47,10 +47,10 @@ class TransactionCategoryController extends Controller
         $existingCodes = TransactionCategory::pluck('code', 'id')->toArray();
 
         // Ambil ID kategori yang sedang digunakan di expense reports (untuk disable delete button)
-        // has('expenseReports') filter hanya kategori yang punya relasi dengan expense reports
+        // has('expenseRecaps') filter hanya kategori yang punya relasi dengan expense reports
         // pluck('id') ambil hanya kolom id, hasilnya collection [1, 5, 10]
         // toArray() convert collection menjadi array biasa
-        $usedCategoryIds = TransactionCategory::has('expenseReports')->pluck('id')->toArray();
+        $usedCategoryIds = TransactionCategory::has('expenseRecaps')->pluck('id')->toArray();
 
         // Return view dengan data categories (kategori + pagination), existingCodes (validasi duplikat),
         // dan usedCategoryIds (untuk disable delete button kategori yang sedang digunakan)
@@ -220,11 +220,11 @@ class TransactionCategoryController extends Controller
         try {
             // CEK CONSTRAINT: Cek apakah ada kategori yang sedang digunakan di expense reports
             // whereIn('id', $selectedIds) filter hanya kategori yang dipilih
-            // has('expenseReports') filter hanya yang punya relasi expense (sudah dipakai)
+            // has('expenseRecaps') filter hanya yang punya relasi expense (sudah dipakai)
             // pluck('name') ambil hanya kolom name, hasilnya collection nama-nama kategori
             // toArray() convert collection menjadi array biasa
             $usedCategories = TransactionCategory::whereIn('id', $selectedIds)
-                ->has('expenseReports')
+                ->has('expenseRecaps')
                 ->pluck('name')
                 ->toArray();
 
@@ -255,3 +255,4 @@ class TransactionCategoryController extends Controller
         }
     }
 }
+

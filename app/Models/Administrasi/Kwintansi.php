@@ -2,7 +2,7 @@
 
 namespace App\Models\Administrasi;
 
-use App\Models\Invoice\PaymentAccount;
+use App\Models\Finance\PaymentAccount;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

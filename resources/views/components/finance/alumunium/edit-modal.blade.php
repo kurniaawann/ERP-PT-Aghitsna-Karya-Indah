@@ -158,8 +158,7 @@
             @endphp
             @if ($paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)
-                    <label
-                        class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
+                    <label class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox-edit"
                             {{ in_array($account->id, $selectedAccounts) ? 'checked' : '' }}>

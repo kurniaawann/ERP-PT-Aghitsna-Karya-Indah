@@ -205,7 +205,7 @@
         <tbody>
             @php
                 $no = 1;
-                $categoryGroups = $expenseReports->groupBy('transaction_category_id');
+                $categoryGroups = $expenseRecaps->groupBy('transaction_category_id');
             @endphp
 
             @foreach ($categoryGroups as $categoryId => $expenses)
@@ -328,3 +328,4 @@
 </body>
 
 </html>
+
