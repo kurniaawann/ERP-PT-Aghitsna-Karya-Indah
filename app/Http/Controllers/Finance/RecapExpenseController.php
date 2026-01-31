@@ -74,8 +74,8 @@ class RecapExpenseController extends Controller
             // Jika tanggal sama, urutkan berdasarkan created_at descending (yang dibuat terakhir di atas)
             ->orderBy('created_at', 'desc')
 
-            // Pagination 10 data per halaman
-            ->paginate(10);
+            // Pagination 10 data per halaman dengan append query parameters agar filter tetap ada saat pindah halaman
+            ->paginate(10)->appends($request->all());
 
         // Ambil semua kategori transaksi yang aktif untuk ditampilkan di dropdown form
         // Urutkan berdasarkan sort_order agar sesuai urutan yang diinginkan user
