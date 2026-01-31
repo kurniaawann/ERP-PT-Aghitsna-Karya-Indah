@@ -9,6 +9,8 @@ use App\Http\Controllers\Finance\PaymentAccountController;
 use App\Http\Controllers\Finance\RecapSalesController;
 use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Report\TransactionCategoryController;
+use App\Http\Controllers\Report\SalesReportController;
+use App\Http\Controllers\Report\ExpenseReportController;
 use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
@@ -109,6 +111,16 @@ Route::middleware('auth')->group(function () {
     Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
     Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
     Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
+
+    // ============================================
+    // Laporan Routes
+    // ============================================
+
+    // Route Laporan Rekap Penjualan
+    Route::get('/report/sales', [SalesReportController::class, 'index'])->name('report.sales');
+
+    // Route Laporan Rekap Pengeluaran
+    Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
 
     // ============================================
     // SDM (Sumber Daya Manusia) Routes
