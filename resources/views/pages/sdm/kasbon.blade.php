@@ -12,6 +12,9 @@
             <form method="GET" action="{{ route('kasbon.index') }}" id="filterForm"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
+                {{-- Hidden inputs untuk mempertahankan parameter --}}
+                <input type="hidden" name="search" value="{{ request('search') }}">
+
                 {{-- Filter Bulan --}}
                 <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" />
 
@@ -28,14 +31,29 @@
 
                 {{-- Filter Jenis --}}
                 <select name="type" onchange="document.getElementById('filterForm').submit()"
-                    class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    class="border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
                     <option value="">Semua Jenis</option>
                     <option value="personal" {{ request('type') == 'personal' ? 'selected' : '' }}>Per Orang</option>
                     <option value="team" {{ request('type') == 'team' ? 'selected' : '' }}>Per Tim</option>
                 </select>
 
                 {{-- Search Input --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari kasbon..." />
+                <div class="relative w-full lg:w-64">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kasbon..."
+                        class="w-full border border-border rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                </div>
+
+                {{-- Tombol Reset Filter --}}
+                @if (request()->hasAny(['search', 'month', 'year', 'status', 'type']))
+                    <a href="{{ route('kasbon.index') }}"
+                        class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                        <i class="fa-solid fa-rotate-left mr-2"></i>
+                        Reset
+                    </a>
+                @endif
             </form>
 
             {{-- Aksi di Kanan --}}

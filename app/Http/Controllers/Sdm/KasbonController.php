@@ -45,7 +45,8 @@ class KasbonController extends Controller
             })
             ->latest('kasbon_date')
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(10)
+            ->appends($request->only(['search', 'month', 'year', 'status', 'type']));
 
         // Ambil data employees dan divisions untuk dropdown
         $employees = Employee::orderBy('name')->get();
