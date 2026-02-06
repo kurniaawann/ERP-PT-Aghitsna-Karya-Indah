@@ -20,13 +20,16 @@ class Employee extends Model
         'phone',
         'email',
         'address',
+        'division',
         'base_salary',
+        'daily_wage',
         'join_date',
     ];
 
     protected $casts = [
         'join_date' => 'date',
         'base_salary' => 'integer',
+        'daily_wage' => 'integer',
     ];
 
     /**
@@ -62,5 +65,29 @@ class Employee extends Model
     public function payrolls()
     {
         return $this->hasMany(Payroll::class, 'employee_id', 'employee_code');
+    }
+
+    /**
+     * Relasi ke Kasbon
+     */
+    public function kasbons()
+    {
+        return $this->hasMany(Kasbon::class, 'employee_id', 'employee_code');
+    }
+
+    /**
+     * Get upah yang digunakan (prioritas: daily_wage, jika tidak ada gunakan base_salary)
+     */
+    public function getEffectiveWageAttribute()
+    {
+        return $this->daily_wage ?? $this->base_salary;
+    }
+
+    /**
+     * Calculate total upah berdasarkan hari masuk
+     */
+    public function calculateWage($daysWorked)
+    {
+        return $this->effective_wage * $daysWorked;
     }
 }

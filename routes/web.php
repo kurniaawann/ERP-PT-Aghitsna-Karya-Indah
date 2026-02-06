@@ -15,6 +15,7 @@ use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
+use App\Http\Controllers\Sdm\KasbonController;
 use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
@@ -153,6 +154,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
     Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
     Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+
+    // Route Kasbon (Cash Advance)
+    Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');
+    Route::post('/kasbon', [KasbonController::class, 'store'])->name('kasbon.store');
+    Route::put('/kasbon/{kasbonCode}', [KasbonController::class, 'update'])->name('kasbon.update');
+    Route::delete('/kasbon/{kasbonCode}', [KasbonController::class, 'destroy'])->name('kasbon.destroy');
+    Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
 
     // ============================================
     // Finance (Keuangan) Routes

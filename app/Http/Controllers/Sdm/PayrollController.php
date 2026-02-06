@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
+use App\Models\Sdm\Kasbon;
 use App\Exports\Sdm\PayrollExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -18,7 +19,7 @@ class PayrollController extends Controller
      * Menampilkan halaman daftar payroll dengan fitur filter dan pencarian.
      * 
      * Fitur:
-     * - Filter berdasarkan bulan dan tahun
+     * - Filter berdasarkan bulan, tahun, dan minggu
      * - Pencarian berdasarkan nama atau kode karyawan
      * - Pagination 10 data per halaman
      * - Sorting berdasarkan periode terbaru
@@ -29,6 +30,7 @@ class PayrollController extends Controller
         $search = $request->input('search');
         $month = $request->input('month');
         $year = $request->input('year');
+        $weekNumber = $request->input('week_number');
 
         $payrolls = Payroll::with('employee')
             ->when($search, function ($query, $search) {
@@ -43,12 +45,16 @@ class PayrollController extends Controller
             ->when($year, function ($query, $year) {
                 return $query->where('period_year', $year);
             })
+            ->when($weekNumber, function ($query, $weekNumber) {
+                return $query->where('week_number', $weekNumber);
+            })
             ->latest('period_year')
             ->latest('period_month')
+            ->latest('week_number')
             ->latest('created_at')
             ->paginate(10);
 
-        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year'));
+        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber'));
     }
 
     /**
@@ -65,16 +71,16 @@ class PayrollController extends Controller
     }
 
     /**
-     * Memeriksa kelengkapan data absensi sebelum generate payroll.
+     * Memeriksa kelengkapan data absensi sebelum generate payroll MINGGUAN.
      * 
      * Proses validasi:
-     * 1. Hitung total hari kerja (Senin-Sabtu, ~26-27 hari/bulan)
-     * 2. Cek setiap karyawan apakah sudah punya payroll untuk periode ini
+     * 1. Hitung total hari kerja dalam 1 minggu (Senin-Sabtu, 6 hari)
+     * 2. Cek setiap karyawan apakah sudah punya payroll untuk minggu ini
      * 3. Cek kelengkapan absensi berdasarkan tanggal join karyawan
      * 4. Identifikasi karyawan baru (belum punya payroll)
      * 
      * Return JSON:
-     * - working_days: Total hari kerja dalam periode
+     * - working_days: Total hari kerja dalam minggu (6 hari)
      * - incomplete_employees: Karyawan dengan absensi tidak lengkap
      * - already_generated: Karyawan yang sudah di-generate payroll
      * - has_new_employees: Boolean ada karyawan baru atau tidak
@@ -82,22 +88,24 @@ class PayrollController extends Controller
      */
     public function checkAttendanceCompleteness(Request $request)
     {
-        // Ambil parameter bulan dan tahun dari request
+        // Ambil parameter periode dari request
         $month = $request->period_month;
         $year = $request->period_year;
+        $weekNumber = $request->week_number; // 1, 2, 3, atau 4
 
         // Ambil semua data karyawan aktif
         $employees = Employee::all();
 
-        // Hitung total hari kerja dalam periode (Senin-Sabtu saja, Minggu libur)
-        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
-        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+        // Hitung range tanggal untuk minggu yang dipilih
+        $weekDates = $this->getWeekDateRange($year, $month, $weekNumber);
+        $startDate = $weekDates['start'];
+        $endDate = $weekDates['end'];
 
         $workingDays = 0;
         $allDates = [];
         $currentDate = $startDate->copy();
 
-        // Loop setiap tanggal dalam periode untuk menghitung hari kerja
+        // Loop setiap tanggal dalam minggu untuk menghitung hari kerja (Senin-Sabtu)
         while ($currentDate->lte($endDate)) {
             // Hanya hitung Senin-Sabtu (dayOfWeek 1-6), skip Minggu (0)
             if ($currentDate->dayOfWeek !== 0) {
@@ -114,10 +122,11 @@ class PayrollController extends Controller
 
         // Loop setiap karyawan untuk dicek kelengkapan absensinya
         foreach ($employees as $employee) {
-            // Cek apakah payroll untuk periode ini sudah ada
+            // Cek apakah payroll untuk minggu ini sudah ada
             $existingPayroll = Payroll::where('employee_id', $employee->employee_code)
                 ->where('period_month', $month)
                 ->where('period_year', $year)
+                ->where('week_number', $weekNumber)
                 ->first();
 
             if ($existingPayroll) {
@@ -201,87 +210,179 @@ class PayrollController extends Controller
     }
 
     /**
-     * Generate payroll untuk periode tertentu (bulan & tahun).
+     * Generate payroll MINGGUAN untuk pekerja harian.
      * 
      * Proses perhitungan:
-     * 1. Loop semua karyawan aktif
-     * 2. Skip karyawan yang sudah punya payroll untuk periode ini
-     * 3. Ambil data absensi karyawan untuk periode tersebut
-     * 4. Hitung breakdown absensi (hadir, izin, sakit, cuti, lembur)
-     * 5. Hitung potongan: Rp 30.000/hari untuk izin & sakit (BUKAN cuti)
-     * 6. Hitung total lembur dari data overtime
-     * 7. Hitung gaji bersih: Base Salary - Potongan + Overtime
+     * 1. Loop semua pekerja harian aktif
+     * 2. Skip yang sudah punya payroll untuk minggu ini
+     * 3. Ambil data absensi untuk minggu tersebut (Senin-Sabtu)
+     * 4. Hitung upah: daily_wage × hari masuk (tidak masuk = tidak dibayar)
+     * 5. Hitung kasbon yang perlu dipotong (personal + bagian dari team kasbon)
+     * 6. Tambah additional expenses (token listrik/air, dll)
+     * 7. Hitung upah bersih: Total Upah - Kasbon
      * 8. Simpan ke database dengan status 'draft'
      * 
      * Catatan:
-     * - Cuti tidak dipotong gaji
-     * - Izin dan sakit dipotong Rp 30.000/hari
-     * - Payroll awal berstatus 'draft', bisa diubah ke 'paid' nanti
+     * - Pekerja harian dibayar per hari × hari masuk
+     * - Tidak masuk = tidak dapat upah hari itu
+     * - Kasbon otomatis dipotong saat generate payroll
+     * - Additional expenses adalah pengeluaran PT untuk benefit karyawan
      */
     public function generate(Request $request)
     {
         // Ambil parameter periode dari request
         $month = $request->period_month;
         $year = $request->period_year;
+        $weekNumber = $request->week_number; // 1, 2, 3, atau 4
+        $additionalExpenses = $request->additional_expenses ?? 0; // Token listrik/air, dll (opsional)
+        $additionalExpensesNotes = $request->additional_expenses_notes;
 
-        // Ambil semua data karyawan
+        // Hitung range tanggal untuk minggu yang dipilih
+        $weekDates = $this->getWeekDateRange($year, $month, $weekNumber);
+        $startDate = $weekDates['start'];
+        $endDate = $weekDates['end'];
+
+        // Ambil semua pekerja
         $employees = Employee::all();
 
-        // Loop setiap karyawan untuk generate payroll
+        // Group employees by division untuk hitung kasbon team per divisi
+        $divisionGroups = $employees->groupBy('division');
+
+        // Hitung kasbon team per divisi
+        $kasbonPerDivision = [];
+        foreach ($divisionGroups as $division => $divisionEmployees) {
+            if ($division) { // Skip if division is null
+                $totalTeamKasbonForDivision = Kasbon::where('kasbon_type', 'team')
+                    ->where('division', $division)
+                    ->where('period_month', $month)
+                    ->where('period_year', $year)
+                    ->where('week_number', $weekNumber)
+                    ->where('status', 'pending')
+                    ->sum('amount');
+
+                $employeeCountInDivision = $divisionEmployees->count();
+                $kasbonPerDivision[$division] = $employeeCountInDivision > 0
+                    ? $totalTeamKasbonForDivision / $employeeCountInDivision
+                    : 0;
+            }
+        }
+
+        // Loop setiap pekerja untuk generate payroll
         foreach ($employees as $employee) {
-            // Cek apakah payroll untuk periode ini sudah ada
+            // Cek apakah payroll untuk minggu ini sudah ada
             $existingPayroll = Payroll::where('employee_id', $employee->employee_code)
                 ->where('period_month', $month)
                 ->where('period_year', $year)
+                ->where('week_number', $weekNumber)
                 ->first();
 
             if ($existingPayroll) {
                 continue; // Skip jika sudah pernah digenerate
             }
 
-            // Tentukan range tanggal untuk periode ini
-            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
-            $endDate = Carbon::create($year, $month, 1)->endOfMonth();
-
-            // Ambil semua data absensi karyawan untuk periode ini
+            // Ambil data absensi pekerja untuk minggu ini
             $attendances = Attendance::where('employee_id', $employee->employee_code)
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->get();
 
-            // Hitung breakdown berdasarkan status absensi
-            $presentDays = $attendances->where('status', 'hadir')->count(); // Hari hadir
-            $permissionDays = $attendances->where('status', 'izin')->count(); // Hari izin
-            $sickDays = $attendances->where('status', 'sakit')->count(); // Hari sakit
-            $leaveDays = $attendances->where('status', 'cuti')->count(); // Hari cuti
-            $overtimeDays = $attendances->where('status', 'lembur')->count(); // Hari lembur
+            // Hitung hari masuk (hadir + lembur)
+            $presentDays = $attendances->whereIn('status', ['hadir', 'lembur'])->count();
+            $permissionDays = $attendances->where('status', 'izin')->count();
+            $sickDays = $attendances->where('status', 'sakit')->count();
+            $leaveDays = $attendances->where('status', 'cuti')->count();
+            $overtimeDays = $attendances->where('status', 'lembur')->count();
 
-            // Hitung potongan gaji: Rp 30.000 per hari untuk izin & sakit
-            // PENTING: Cuti TIDAK dipotong!
-            $deductionDays = $permissionDays + $sickDays;
-            $deductionAmount = $deductionDays * 30000;
+            // Hitung total hari kerja dalam minggu (Senin-Sabtu = 6 hari)
+            $totalWorkDays = $weekDates['working_days'];
 
-            // Hitung total uang lembur dari field overtime_total
+            // Upah pekerja harian = daily_wage × hari masuk
+            // Jika tidak masuk = tidak dapat upah
+            $dailyWage = $employee->daily_wage ?? $employee->base_salary;
+            $totalWage = $dailyWage * $presentDays;
+
+            // Hitung bonus lembur jika ada
             $overtimeTotal = $attendances->where('status', 'lembur')->sum('overtime_total');
 
-            // Hitung gaji bersih = Base Salary - Potongan + Overtime
-            $netSalary = $employee->base_salary - $deductionAmount + $overtimeTotal;
+            // Total upah kotor = upah harian × hari masuk + bonus lembur
+            $grossWage = $totalWage + $overtimeTotal;
 
-            // Simpan data payroll ke database dengan status 'draft'
-            Payroll::create([
+            // Hitung kasbon yang perlu dipotong
+            // 1. Kasbon personal
+            $personalKasbon = Kasbon::getTotalForEmployee($employee->employee_code, $month, $year, $weekNumber);
+            // 2. Bagian dari kasbon team (hanya untuk divisi yang sama)
+            $teamKasbonPerPerson = $employee->division && isset($kasbonPerDivision[$employee->division])
+                ? $kasbonPerDivision[$employee->division]
+                : 0;
+            $totalKasbonDeduction = $personalKasbon + $teamKasbonPerPerson;
+
+            // Hitung upah bersih = Upah Kotor - Kasbon
+            $netWage = $grossWage - $totalKasbonDeduction;
+
+            // Buat payroll record
+            $payroll = Payroll::create([
                 'employee_id' => $employee->employee_code,
                 'period_month' => $month,
                 'period_year' => $year,
-                'base_salary' => $employee->base_salary,
+                'period_type' => 'weekly',
+                'week_number' => $weekNumber,
+                'base_salary' => $dailyWage, // Simpan daily wage di base_salary
+                'total_work_days' => $totalWorkDays,
                 'present_days' => $presentDays,
                 'permission_days' => $permissionDays,
                 'sick_days' => $sickDays,
                 'leave_days' => $leaveDays,
                 'overtime_days' => $overtimeDays,
-                'deduction_amount' => $deductionAmount,
+                'deduction_amount' => 0, // Tidak ada potongan izin/sakit untuk pekerja harian
                 'overtime_total' => $overtimeTotal,
-                'net_salary' => $netSalary,
-                'status' => 'draft', // Status awal adalah draft
+                'kasbon_deduction' => $totalKasbonDeduction,
+                'additional_expenses' => $additionalExpenses, // Token listrik/air, dll
+                'additional_expenses_notes' => $additionalExpensesNotes,
+                'net_salary' => $netWage,
+                'status' => 'draft',
             ]);
+
+            // Update status kasbon menjadi 'deducted'
+            $kasbons = Kasbon::where('employee_id', $employee->employee_code)
+                ->where('period_month', $month)
+                ->where('period_year', $year)
+                ->where('week_number', $weekNumber)
+                ->pending()
+                ->get();
+
+            foreach ($kasbons as $kasbon) {
+                $kasbon->markAsDeducted($payroll->id);
+            }
+        }
+
+        // Update kasbon team untuk setiap divisi (hanya sekali per divisi)
+        $processedDivisions = [];
+        foreach ($employees as $employee) {
+            if ($employee->division && !in_array($employee->division, $processedDivisions)) {
+                $teamKasbons = Kasbon::where('kasbon_type', 'team')
+                    ->where('division', $employee->division)
+                    ->where('period_month', $month)
+                    ->where('period_year', $year)
+                    ->where('week_number', $weekNumber)
+                    ->pending()
+                    ->get();
+
+                foreach ($teamKasbons as $kasbon) {
+                    // Ambil payroll pertama dari divisi ini untuk referensi
+                    $firstPayrollInDivision = Payroll::whereHas('employee', function ($q) use ($employee) {
+                        $q->where('division', $employee->division);
+                    })
+                        ->where('period_month', $month)
+                        ->where('period_year', $year)
+                        ->where('week_number', $weekNumber)
+                        ->first();
+
+                    if ($firstPayrollInDivision) {
+                        $kasbon->markAsDeducted($firstPayrollInDivision->id);
+                    }
+                }
+
+                $processedDivisions[] = $employee->division;
+            }
         }
 
         return redirect()->route('payroll.index')->with('success', 'Payroll berhasil digenerate!');
@@ -494,5 +595,58 @@ class PayrollController extends Controller
 
         // Download file PDF
         return $pdf->download($fileName);
+    }
+
+    /**
+     * Helper: Hitung range tanggal untuk minggu tertentu dalam bulan.
+     * 
+     * Minggu 1: Tanggal 1-7
+     * Minggu 2: Tanggal 8-14
+     * Minggu 3: Tanggal 15-21
+     * Minggu 4: Tanggal 22-akhir bulan
+     * 
+     * @param int $year Tahun
+     * @param int $month Bulan (1-12)
+     * @param int $weekNumber Minggu ke berapa (1-4)
+     * @return array ['start' => Carbon, 'end' => Carbon, 'working_days' => int]
+     */
+    private function getWeekDateRange($year, $month, $weekNumber)
+    {
+        // Tentukan tanggal awal dan akhir berdasarkan minggu
+        if ($weekNumber == 1) {
+            $startDay = 1;
+            $endDay = 7;
+        } elseif ($weekNumber == 2) {
+            $startDay = 8;
+            $endDay = 14;
+        } elseif ($weekNumber == 3) {
+            $startDay = 15;
+            $endDay = 21;
+        } else { // Minggu 4
+            $startDay = 22;
+            // Akhir bulan bisa 28, 29, 30, atau 31 tergantung bulannya
+            $endDay = Carbon::create($year, $month, 1)->endOfMonth()->day;
+        }
+
+        $startDate = Carbon::create($year, $month, $startDay);
+        $endDate = Carbon::create($year, $month, $endDay);
+
+        // Hitung hari kerja (Senin-Sabtu saja, skip Minggu)
+        $workingDays = 0;
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            // dayOfWeek: 0=Minggu, 1=Senin, ..., 6=Sabtu
+            if ($currentDate->dayOfWeek !== 0) {
+                $workingDays++;
+            }
+            $currentDate->addDay();
+        }
+
+        return [
+            'start' => $startDate,
+            'end' => $endDate,
+            'working_days' => $workingDays,
+        ];
     }
 }

@@ -20,11 +20,12 @@
     }
 
     // ==========================================
-    // AUTO-CHECK ATTENDANCE SAAT PILIH BULAN/TAHUN
+    // AUTO-CHECK ATTENDANCE SAAT PILIH BULAN/TAHUN/MINGGU
     // ==========================================
 
     const periodMonthSelect = document.getElementById('period_month');
     const periodYearInput = document.getElementById('period_year');
+    const weekNumberSelect = document.getElementById('week_number');
     const checkingLoader = document.getElementById('checking-loader');
     const allCompleteDiv = document.getElementById('all-complete');
     const incompleteWarningDiv = document.getElementById('incomplete-warning');
@@ -38,13 +39,14 @@
     async function checkAttendanceData() {
         const month = periodMonthSelect.value;
         const year = periodYearInput.value;
+        const weekNumber = weekNumberSelect.value;
 
         // Reset tampilan
         allCompleteDiv.classList.add('hidden');
         incompleteWarningDiv.classList.add('hidden');
         alreadyGeneratedWarningDiv.classList.add('hidden');
 
-        if (!month || !year) {
+        if (!month || !year || !weekNumber) {
             // Disable button if no period selected
             if (generateSubmitBtn) {
                 generateSubmitBtn.disabled = true;
@@ -65,7 +67,8 @@
                 },
                 body: JSON.stringify({
                     period_month: month,
-                    period_year: year
+                    period_year: year,
+                    week_number: weekNumber
                 })
             });
 
@@ -194,6 +197,14 @@
         periodYearInput.addEventListener('input', function() {
             clearTimeout(checkTimeout);
             checkTimeout = setTimeout(checkAttendanceData, 500);
+        });
+    }
+
+    // Auto-check saat pilih minggu
+    if (weekNumberSelect) {
+        weekNumberSelect.addEventListener('change', function() {
+            clearTimeout(checkTimeout);
+            checkTimeout = setTimeout(checkAttendanceData, 300);
         });
     }
 

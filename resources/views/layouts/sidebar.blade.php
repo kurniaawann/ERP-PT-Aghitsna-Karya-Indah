@@ -216,7 +216,7 @@
 
                 {{-- Submenu --}}
                 <ul id="sdmDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('reimburse*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/employee') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -251,6 +251,17 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ url('/kasbon') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-hand-holding-usd w-4 
+                                {{ request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Kasbon</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ url('/payroll') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
@@ -266,7 +277,7 @@
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-hand-holding-usd w-4 
+                                class="fas fa-receipt w-4 
                                 {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Reimbursement</span>

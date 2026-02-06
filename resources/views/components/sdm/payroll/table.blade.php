@@ -8,10 +8,11 @@
                         <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                         <th class="p-2 text-left">Nama Karyawan</th>
                         <th class="p-2 text-center">Periode</th>
-                        <th class="p-2 text-center">Gaji Pokok</th>
-                        <th class="p-2 text-center">Potongan</th>
+                        <th class="p-2 text-center">Upah/Hari</th>
+                        <th class="p-2 text-center">Hari Masuk</th>
+                        <th class="p-2 text-center">Kasbon</th>
                         <th class="p-2 text-center">Lembur</th>
-                        <th class="p-2 text-center">Gaji Bersih</th>
+                        <th class="p-2 text-center">Upah Bersih</th>
                         <th class="p-2 text-center">Status</th>
                         <th class="p-2 text-center">Aksi</th>
                     </tr>
@@ -31,26 +32,38 @@
                             <td class="p-2">{{ $payroll->employee->name }}</td>
 
                             {{-- Periode --}}
-                            <td class="p-2 text-center">
-                                {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('F Y') }}
+                            <td class="p-2 text-center text-sm">
+                                {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('M Y') }}
+                                @if ($payroll->week_number)
+                                    <br><span class="text-xs text-text-label">Minggu {{ $payroll->week_number }}</span>
+                                @endif
                             </td>
 
-                            {{-- Gaji Pokok --}}
-                            <td class="p-2 text-right">
+                            {{-- Upah Per Hari --}}
+                            <td class="p-2 text-right text-sm">
                                 {{ 'Rp ' . number_format($payroll->base_salary, 0, ',', '.') }}
                             </td>
 
-                            {{-- Potongan --}}
-                            <td class="p-2 text-right text-red-600">
-                                {{ 'Rp ' . number_format($payroll->deduction_amount, 0, ',', '.') }}
+                            {{-- Hari Masuk --}}
+                            <td class="p-2 text-center font-medium">
+                                {{ $payroll->present_days }} hari
+                            </td>
+
+                            {{-- Kasbon --}}
+                            <td class="p-2 text-right text-red-600 text-sm">
+                                @if ($payroll->kasbon_deduction)
+                                    {{ 'Rp ' . number_format($payroll->kasbon_deduction, 0, ',', '.') }}
+                                @else
+                                    <span class="text-text-label">-</span>
+                                @endif
                             </td>
 
                             {{-- Lembur --}}
-                            <td class="p-2 text-right text-green-600">
+                            <td class="p-2 text-right text-green-600 text-sm">
                                 {{ 'Rp ' . number_format($payroll->overtime_total, 0, ',', '.') }}
                             </td>
 
-                            {{-- Gaji Bersih --}}
+                            {{-- Upah Bersih --}}
                             <td class="p-2 text-right font-semibold text-primary">
                                 {{ 'Rp ' . number_format($payroll->net_salary, 0, ',', '.') }}
                             </td>
@@ -84,7 +97,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center p-4 text-text-secondary">
+                            <td colspan="10" class="text-center p-4 text-text-secondary">
                                 Data tidak ditemukan.
                             </td>
                         </tr>
