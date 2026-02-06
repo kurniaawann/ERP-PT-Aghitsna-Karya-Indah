@@ -162,6 +162,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/kasbon/{kasbonCode}', [KasbonController::class, 'destroy'])->name('kasbon.destroy');
     Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
 
+    // Route Division
+    Route::get('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'index'])->name('division.index');
+    Route::post('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'store'])->name('division.store');
+    Route::put('/division/{division}', [\App\Http\Controllers\Sdm\DivisionController::class, 'update'])->name('division.update');
+    Route::delete('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'destroy'])->name('division.destroy');
+
     // ============================================
     // Finance (Keuangan) Routes
     // ============================================

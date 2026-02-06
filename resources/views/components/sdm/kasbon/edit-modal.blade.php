@@ -29,12 +29,11 @@
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
         <select name="division" id="edit_{{ $kasbon->kasbon_code }}_division" class="w-full border rounded p-2">
             <option value="">Pilih Divisi</option>
-            <option value="Produksi" {{ $kasbon->division === 'Produksi' ? 'selected' : '' }}>Produksi</option>
-            <option value="Pemasaran" {{ $kasbon->division === 'Pemasaran' ? 'selected' : '' }}>Pemasaran</option>
-            <option value="Keuangan" {{ $kasbon->division === 'Keuangan' ? 'selected' : '' }}>Keuangan</option>
-            <option value="Gudang" {{ $kasbon->division === 'Gudang' ? 'selected' : '' }}>Gudang</option>
-            <option value="Administrasi" {{ $kasbon->division === 'Administrasi' ? 'selected' : '' }}>Administrasi
-            </option>
+            @foreach ($divisions as $division)
+                <option value="{{ $division->name }}" {{ $kasbon->division === $division->name ? 'selected' : '' }}>
+                    {{ $division->name }}
+                </option>
+            @endforeach
         </select>
     </div>
 

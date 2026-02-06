@@ -26,8 +26,11 @@ class EmployeeController extends Controller
             // Pagination 10 data per halaman
             ->paginate(10);
 
+        // Get all divisions for dropdown
+        $divisions = \App\Models\Sdm\Division::orderBy('name')->get();
+
         // Return view dengan data employees (karyawan + pagination) dan search (untuk maintain keyword)
-        return view('pages.sdm.employee', compact('employees', 'search'));
+        return view('pages.sdm.employee', compact('employees', 'search', 'divisions'));
     }
 
     public function store(Request $request)

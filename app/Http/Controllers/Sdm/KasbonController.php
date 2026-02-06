@@ -47,10 +47,11 @@ class KasbonController extends Controller
             ->latest('created_at')
             ->paginate(10);
 
-        // Ambil data employees untuk dropdown
+        // Ambil data employees dan divisions untuk dropdown
         $employees = Employee::orderBy('name')->get();
+        $divisions = \App\Models\Sdm\Division::orderBy('name')->get();
 
-        return view('pages.sdm.kasbon', compact('kasbons', 'employees', 'search', 'month', 'year', 'status', 'type'));
+        return view('pages.sdm.kasbon', compact('kasbons', 'employees', 'divisions', 'search', 'month', 'year', 'status', 'type'));
     }
 
     /**

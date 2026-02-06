@@ -9,17 +9,17 @@
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian dan Filter --}}
-            <form method="GET" action="{{ route('kasbon.index') }}"
+            <form method="GET" action="{{ route('kasbon.index') }}" id="filterForm"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" />
+                <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" />
+                <x-filters.year-filter :value="request('year')" onchange="document.getElementById('filterForm').submit()" />
 
                 {{-- Filter Status --}}
-                <select name="status"
+                <select name="status" onchange="document.getElementById('filterForm').submit()"
                     class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="">Semua Status</option>
                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Belum Dipotong</option>
@@ -27,7 +27,7 @@
                 </select>
 
                 {{-- Filter Jenis --}}
-                <select name="type"
+                <select name="type" onchange="document.getElementById('filterForm').submit()"
                     class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="">Semua Jenis</option>
                     <option value="personal" {{ request('type') == 'personal' ? 'selected' : '' }}>Per Orang</option>
@@ -59,7 +59,11 @@
 
     {{-- Modal Edit untuk setiap kasbon --}}
     @foreach ($kasbons as $kasbon)
-        @include('components.sdm.kasbon.edit-modal', ['kasbon' => $kasbon, 'employees' => $employees])
+        @include('components.sdm.kasbon.edit-modal', [
+            'kasbon' => $kasbon,
+            'employees' => $employees,
+            'divisions' => $divisions,
+        ])
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}

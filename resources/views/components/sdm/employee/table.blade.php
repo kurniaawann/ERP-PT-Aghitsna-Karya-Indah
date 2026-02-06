@@ -12,6 +12,7 @@
                             <th class="p-2 text-left">Kode</th>
                             <th class="p-2 text-left">Nama</th>
                             <th class="p-2 text-center">Upah Per Hari</th>
+                            <th class="p-2 text-left">Divisi</th>
                             <th class="p-2 text-left">No. Telp</th>
                             <th class="p-2 text-left">Alamat</th>
                             <th class="p-2 text-center">Aksi</th>
@@ -33,25 +34,28 @@
                                     {{ 'Rp ' . number_format($employee->daily_wage ?? 0, 0, ',', '.') }}
                                 </td>
 
+                                <td class="p-2">
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                        {{ $employee->division ?? '-' }}
+                                    </span>
+                                </td>
+
                                 <td class="p-2">{{ $employee->phone ?? '-' }}</td>
                                 <td class="p-2">{{ $employee->address ?? '-' }}</td>
 
-                                {{-- Aksi --}}
                                 <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-2">
-                                        <button type="button"
-                                            onclick="openModal('editModal-{{ $employee->employee_code }}')"
-                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit Karyawan">
-                                            <i class="fa-solid fa-pen w-3 h-3"></i>
-                                            Edit
-                                        </button>
-                                    </div>
+                                    <button type="button"
+                                        onclick="openModal('editModal-{{ $employee->employee_code }}')"
+                                        class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                        title="Edit Karyawan">
+                                        <i class="fa-solid fa-pen w-3 h-3"></i>
+                                        Edit
+                                    </button>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center p-4 text-text-secondary">
+                                <td colspan="8" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

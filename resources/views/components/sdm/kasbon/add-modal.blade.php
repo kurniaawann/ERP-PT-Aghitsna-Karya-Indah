@@ -41,11 +41,9 @@
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
         <select name="division" id="add_division" class="w-full border rounded p-2">
             <option value="">Pilih Divisi</option>
-            <option value="Produksi">Produksi</option>
-            <option value="Pemasaran">Pemasaran</option>
-            <option value="Keuangan">Keuangan</option>
-            <option value="Gudang">Gudang</option>
-            <option value="Administrasi">Administrasi</option>
+            @foreach ($divisions as $division)
+                <option value="{{ $division->name }}">{{ $division->name }}</option>
+            @endforeach
         </select>
     </div>
 

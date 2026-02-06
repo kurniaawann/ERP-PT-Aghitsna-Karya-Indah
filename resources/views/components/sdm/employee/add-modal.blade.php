@@ -16,6 +16,17 @@
     </div>
 
     <div class="mb-3">
+        <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
+        <select name="division" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Divisi tidak boleh kosong')" oninput="this.setCustomValidity('')">
+            <option value="">Pilih Divisi</option>
+            @foreach ($divisions as $division)
+                <option value="{{ $division->name }}">{{ $division->name }}</option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="mb-3">
         <label class="block text-text-primary mb-1">No. Telepon <span class="text-error">*</span></label>
         <input type="text" name="phone" class="w-full border rounded p-2" placeholder="Masukkan no. telepon"
             required maxlength="20" oninvalid="this.setCustomValidity('No. telepon tidak boleh kosong')"
