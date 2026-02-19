@@ -29,8 +29,10 @@
     const checkingLoader = document.getElementById('checking-loader');
     const allCompleteDiv = document.getElementById('all-complete');
     const incompleteWarningDiv = document.getElementById('incomplete-warning');
+    const completeInfoDiv = document.getElementById('complete-info');
     const alreadyGeneratedWarningDiv = document.getElementById('already-generated-warning');
     const incompleteList = document.getElementById('incomplete-list');
+    const completeList = document.getElementById('complete-list');
     const alreadyGeneratedList = document.getElementById('already-generated-list');
     const generateSubmitBtn = document.querySelector('#generateModal button[type="submit"]');
 
@@ -44,6 +46,7 @@
         // Reset tampilan
         allCompleteDiv.classList.add('hidden');
         incompleteWarningDiv.classList.add('hidden');
+        completeInfoDiv.classList.add('hidden');
         alreadyGeneratedWarningDiv.classList.add('hidden');
 
         if (!month || !year || !weekNumber) {
@@ -81,17 +84,48 @@
                 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
             ];
 
-            // Default: enable button
-            let canGenerate = true;
+            // Gunakan can_generate dari backend
+            let canGenerate = data.can_generate;
             let disableReason = '';
+
+            // Tampilkan informasi periode
+            const periodInfo =
+                `Periode: <strong>${data.period_start} - ${data.period_end}</strong> (${data.working_days} hari kerja)`;
+
+            // Tampilkan karyawan dengan data lengkap (jika ada)
+            if (data.complete_employees && data.complete_employees.length > 0) {
+                completeInfoDiv.classList.remove('hidden');
+
+                // Tambahkan info periode di bagian atas
+                let completeHTML =
+                    `<p class="text-xs text-green-700 mb-2 pb-2 border-b border-green-200">${periodInfo}</p>`;
+
+                completeHTML += data.complete_employees.map(emp => {
+                    return `
+                        <div class="flex items-center justify-between text-sm bg-white p-2 rounded border border-green-200">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-green-600"></i>
+                                <span class="font-medium text-text-heading">${emp.name}</span>
+                                <span class="text-xs text-text-label">(${emp.employee_code})</span>
+                            </div>
+                            <span class="text-xs text-green-700 font-semibold">${emp.filled_days}/${emp.total_days} hari</span>
+                        </div>
+                    `;
+                }).join('');
+
+                completeList.innerHTML = completeHTML;
+            }
 
             // Check 1: If there are incomplete employees - CANNOT GENERATE
             if (data.incomplete_employees.length > 0) {
-                canGenerate = false;
                 disableReason = 'Data absensi belum lengkap';
                 incompleteWarningDiv.classList.remove('hidden');
 
-                incompleteList.innerHTML = data.incomplete_employees.map(emp => {
+                // Tambahkan info periode di bagian atas
+                let incompleteHTML =
+                    `<p class="text-xs text-red-700 mb-2 pb-2 border-b border-red-200 font-semibold">${periodInfo}</p>`;
+
+                incompleteHTML += data.incomplete_employees.map(emp => {
                     // Format tanggal yang kosong
                     const missingDatesFormatted = emp.missing_dates.map(date => {
                         const d = new Date(date);
@@ -99,29 +133,32 @@
                     }).join(', ');
 
                     return `
-                        <div class="bg-white p-3 rounded border border-red-200">
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="font-semibold text-text-heading">${emp.name}</span>
+                        <div class="bg-white p-2 rounded border border-red-200">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="font-semibold text-text-heading text-sm">${emp.name}</span>
                                 <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">${emp.employee_code}</span>
                             </div>
                             <div class="text-xs text-text-label space-y-1">
                                 <div class="flex items-center gap-1">
-                                    <i class="fa-solid fa-calendar-check text-text-tertiary"></i>
-                                    <span>Data: <strong class="text-blue-600">${emp.filled_days}</strong> dari <strong>${emp.total_days}</strong> hari kerja</span>
+                                    <i class="fa-solid fa-calendar-xmark text-red-500"></i>
+                                    <span><strong class="text-red-600">${emp.filled_days}</strong> dari <strong>${emp.total_days}</strong> hari kerja</span>
                                 </div>
+                                ${emp.missing_dates.length > 0 ? `
                                 <div class="flex items-start gap-1">
-                                    <i class="fa-solid fa-calendar-xmark text-red-500 mt-0.5"></i>
-                                    <span>Tanggal belum absen: <strong class="text-red-600">${missingDatesFormatted}</strong> ${monthNames[month]} ${year}</span>
+                                    <i class="fa-solid fa-ban text-red-400 text-xs mt-0.5"></i>
+                                    <span>Tanggal kosong: <strong class="text-red-600">${missingDatesFormatted}</strong> ${monthNames[month]}</span>
                                 </div>
+                                ` : ''}
                             </div>
                         </div>
                     `;
                 }).join('');
+
+                incompleteList.innerHTML = incompleteHTML;
             }
 
             // Check 2: If already generated AND no new employees - CANNOT GENERATE
             if (data.already_generated.length > 0 && !data.has_new_employees) {
-                canGenerate = false;
                 disableReason = 'Payroll sudah digenerate untuk semua karyawan';
                 alreadyGeneratedWarningDiv.classList.remove('hidden');
                 alreadyGeneratedList.innerHTML = '<ul class="list-disc list-inside space-y-1">' +
@@ -136,7 +173,7 @@
                     '<p class="text-xs text-yellow-700"><strong>Catatan:</strong> Semua karyawan sudah memiliki payroll untuk periode ini. Tidak dapat melakukan generate ulang.</p>';
                 alreadyGeneratedList.appendChild(noteDiv);
             }
-            // If already generated BUT there are new employees - CAN GENERATE (for new employees only)
+            // If already generated BUT there are new employees - Show info
             else if (data.already_generated.length > 0 && data.has_new_employees) {
                 // Show info about already generated, but allow generation for new employees
                 alreadyGeneratedWarningDiv.classList.remove('hidden');
@@ -153,9 +190,21 @@
                 alreadyGeneratedList.appendChild(noteDiv);
             }
 
-            // Check 3: If all complete and no issues - CAN GENERATE
-            if (data.incomplete_employees.length === 0 && (data.already_generated.length === 0 || data
-                    .has_new_employees)) {
+            // Check 3: Jika tidak ada karyawan yang perlu di-generate
+            if (!data.has_new_employees && data.already_generated.length === 0) {
+                disableReason = 'Tidak ada karyawan yang perlu di-generate untuk periode ini';
+                incompleteWarningDiv.classList.remove('hidden');
+                incompleteList.innerHTML = `
+                    <p class="text-xs text-red-700 mb-2 pb-2 border-b border-red-200 font-semibold">${periodInfo}</p>
+                    <div class="bg-white p-3 rounded border border-red-200 text-center">
+                        <i class="fa-solid fa-users-slash text-red-500 text-3xl mb-2"></i>
+                        <p class="text-sm text-text-heading font-semibold">Tidak Ada Karyawan</p>
+                        <p class="text-xs text-text-label mt-1">Tidak ada karyawan yang perlu di-generate payroll untuk periode ini.</p>
+                    </div>
+                `;
+            }
+            // Check 4: If can generate (all conditions met) - SHOW SUCCESS
+            else if (canGenerate) {
                 allCompleteDiv.classList.remove('hidden');
             }
 

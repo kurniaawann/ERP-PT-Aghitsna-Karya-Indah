@@ -11,6 +11,8 @@
                     <li>Sistem menghitung upah harian × hari masuk untuk pekerja harian</li>
                     <li>Data diambil dari absensi minggu yang dipilih (Senin-Sabtu)</li>
                     <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
+                    <li><strong class="text-red-600">Setiap karyawan harus memiliki absensi lengkap sesuai hari
+                            kerjanya</strong></li>
                     <li>Kasbon personal dan tim otomatis dipotong saat generate</li>
                     <li>Bisa menambahkan pengeluaran (token listrik/air, dll)</li>
                 </ul>
@@ -93,12 +95,25 @@
             <i class="fa-solid fa-exclamation-circle text-red-600 text-lg mt-0.5"></i>
             <div class="flex-1">
                 <p class="font-semibold text-red-800 text-sm mb-2">⚠️ Data Absensi Belum Lengkap!</p>
-                <div id="incomplete-list" class="max-h-80 overflow-y-auto space-y-3">
+                <div id="incomplete-list" class="max-h-60 overflow-y-auto space-y-2">
                     <!-- Will be filled by JavaScript -->
                 </div>
                 <div class="mt-3 p-2 bg-white rounded border border-red-300">
-                    <p class="text-xs text-red-700"><strong>Catatan:</strong> Karyawan di atas belum memiliki data
-                        absensi lengkap. Pastikan semua tanggal sudah diinput sebelum generate payroll.</p>
+                    <p class="text-xs text-red-700"><strong>Catatan:</strong> Karyawan di atas belum memiliki absensi
+                        lengkap untuk semua hari kerjanya. Pastikan data sudah diinput sebelum generate payroll.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Info - Karyawan dengan Data Lengkap --}}
+    <div id="complete-info" class="hidden mb-3 p-4 bg-green-50 border-l-4 border-green-500 rounded">
+        <div class="flex items-start gap-2">
+            <i class="fa-solid fa-check-circle text-green-600 text-lg mt-0.5"></i>
+            <div class="flex-1">
+                <p class="font-semibold text-green-800 text-sm mb-2">✅ Karyawan dengan Data Lengkap</p>
+                <div id="complete-list" class="max-h-40 overflow-y-auto space-y-1">
+                    <!-- Will be filled by JavaScript -->
                 </div>
             </div>
         </div>

@@ -93,8 +93,15 @@ class PayrollController extends Controller
         $year = $request->period_year;
         $weekNumber = $request->week_number; // 1, 2, 3, atau 4
 
-        // Ambil semua data karyawan aktif
+        // Ambil semua data karyawan
         $employees = Employee::all();
+
+        \Log::info('Starting attendance check', [
+            'total_employees_in_db' => $employees->count(),
+            'month' => $month,
+            'year' => $year,
+            'week' => $weekNumber,
+        ]);
 
         // Hitung range tanggal untuk minggu yang dipilih
         $weekDates = $this->getWeekDateRange($year, $month, $weekNumber);
@@ -117,8 +124,10 @@ class PayrollController extends Controller
 
         // Siapkan array untuk menampung hasil pengecekan
         $incompleteEmployees = []; // Karyawan dengan absensi tidak lengkap
+        $completeEmployees = []; // Karyawan dengan absensi lengkap
         $alreadyGenerated = []; // Karyawan yang sudah punya payroll
         $newEmployees = []; // Karyawan baru yang belum punya payroll
+        $skippedEmployees = []; // Karyawan yang di-skip (belum join pada periode ini)
 
         // Loop setiap karyawan untuk dicek kelengkapan absensinya
         foreach ($employees as $employee) {
@@ -141,13 +150,39 @@ class PayrollController extends Controller
             // Ambil tanggal join karyawan
             $employeeJoinDate = Carbon::parse($employee->join_date);
 
-            // Jika karyawan join sebelum atau pada periode ini, masukkan ke new_employees
-            if ($employeeJoinDate->lessThanOrEqualTo($endDate)) {
-                $newEmployees[] = [
-                    'name' => $employee->name,
-                    'employee_code' => $employee->employee_code,
-                    'join_date' => $employeeJoinDate->format('Y-m-d'),
-                ];
+            // Debug: Log setiap karyawan
+            \Log::info('Checking employee', [
+                'name' => $employee->name,
+                'join_date' => $employeeJoinDate->format('Y-m-d'),
+                'period_start' => $startDate->format('Y-m-d'),
+                'period_end' => $endDate->format('Y-m-d'),
+                'is_after_period' => $employeeJoinDate->greaterThan($endDate)
+            ]);
+
+            // Skip karyawan yang join SETELAH periode berakhir
+            if ($employeeJoinDate->greaterThan($endDate)) {
+                \Log::info('Skipping employee (join after period)', ['name' => $employee->name]);
+                continue;
+            }
+
+            // Karyawan ini adalah karyawan yang HARUS punya payroll (belum di-generate)
+            $newEmployees[] = [
+                'name' => $employee->name,
+                'employee_code' => $employee->employee_code,
+                'join_date' => $employeeJoinDate->format('Y-m-d'),
+            ];
+
+            // Hitung hari kerja yang seharusnya diisi untuk karyawan ini (Senin-Sabtu)
+            $employeeWorkingDates = [];
+            $employeeStartDate = $employeeJoinDate->greaterThan($startDate) ? $employeeJoinDate : $startDate;
+            $currentCheckDate = $employeeStartDate->copy();
+
+            while ($currentCheckDate->lte($endDate)) {
+                // Hanya hitung Senin-Sabtu (dayOfWeek 1-6), skip Minggu (0)
+                if ($currentCheckDate->dayOfWeek !== 0) {
+                    $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
+                }
+                $currentCheckDate->addDay();
             }
 
             // Ambil semua data absensi karyawan untuk periode ini
@@ -155,41 +190,56 @@ class PayrollController extends Controller
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->get();
 
+            \Log::info('Fetched attendances', [
+                'employee' => $employee->name,
+                'employee_code' => $employee->employee_code,
+                'attendance_count' => $attendances->count(),
+                'attendances' => $attendances->pluck('attendance_date')->toArray(),
+            ]);
+
             // Mapping tanggal absensi ke format Y-m-d
             $attendanceDates = $attendances->pluck('attendance_date')->map(function ($date) {
                 return Carbon::parse($date)->format('Y-m-d');
             })->toArray();
 
-            // Hitung hari kerja yang seharusnya diisi untuk karyawan ini
-            // (hanya hitung sejak tanggal join sampai akhir periode)
-            $employeeWorkingDates = [];
-            if ($employeeJoinDate->lessThanOrEqualTo($endDate)) {
-                // Tentukan start date: jika join di tengah bulan, mulai dari join date
-                $employeeStartDate = $employeeJoinDate->greaterThan($startDate) ? $employeeJoinDate : $startDate;
-                $currentCheckDate = $employeeStartDate->copy();
-
-                // Loop dari start date sampai end date
-                while ($currentCheckDate->lte($endDate)) {
-                    // Hanya hitung Senin-Sabtu (skip Minggu)
-                    if ($currentCheckDate->dayOfWeek !== 0) {
-                        $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
-                    }
-                    $currentCheckDate->addDay();
-                }
-            }
-
             // Cari tanggal yang belum diisi absensi (tanggal kerja minus tanggal absensi)
             $missingDates = array_diff($employeeWorkingDates, $attendanceDates);
 
-            // Jika ada tanggal yang kosong, masukkan ke array incomplete
-            if (count($missingDates) > 0) {
+            \Log::info('Employee attendance check', [
+                'name' => $employee->name,
+                'employee_code' => $employee->employee_code,
+                'employee_start_date' => $employeeStartDate->format('Y-m-d'),
+                'working_dates' => $employeeWorkingDates,
+                'working_dates_count' => count($employeeWorkingDates),
+                'attendance_dates' => $attendanceDates,
+                'filled_dates_count' => count($attendanceDates),
+                'missing_dates_count' => count($missingDates),
+                'missing_dates' => array_values($missingDates)
+            ]);
+
+            // VALIDASI: Semua hari kerja karyawan harus terisi absensi
+            // Hari kerja dihitung dari tanggal join atau awal periode (mana yang lebih akhir)
+            // Minimal harus ada absensi dan semua tanggal kerja terisi
+            $requiredDays = count($employeeWorkingDates);
+            $filledDays = count($attendanceDates);
+
+            if ($filledDays < $requiredDays || count($missingDates) > 0) {
                 $incompleteEmployees[] = [
                     'name' => $employee->name,
                     'employee_code' => $employee->employee_code,
-                    'total_days' => count($employeeWorkingDates), // Total hari kerja yang seharusnya
-                    'filled_days' => count($attendanceDates), // Hari yang sudah diisi
-                    'missing_days' => count($missingDates), // Hari yang belum diisi
-                    'missing_dates' => array_values($missingDates), // Detail tanggal yang kosong
+                    'total_days' => $requiredDays,
+                    'filled_days' => $filledDays,
+                    'missing_days' => count($missingDates),
+                    'missing_dates' => array_values($missingDates),
+                    'join_date' => $employeeJoinDate->format('Y-m-d'),
+                ];
+            } else {
+                // Karyawan dengan absensi lengkap
+                $completeEmployees[] = [
+                    'name' => $employee->name,
+                    'employee_code' => $employee->employee_code,
+                    'total_days' => $requiredDays,
+                    'filled_days' => $filledDays,
                 ];
             }
         }
@@ -197,15 +247,43 @@ class PayrollController extends Controller
         // Tentukan apakah ada karyawan baru (belum punya payroll untuk periode ini)
         $hasNewEmployees = count($newEmployees) > 0;
 
+        // Tentukan apakah boleh generate:
+        // 1. Harus ada karyawan yang perlu di-generate (newEmployees tidak kosong)
+        // 2. Tidak boleh ada karyawan dengan absensi tidak lengkap (incompleteEmployees kosong)
+        $canGenerate = count($newEmployees) > 0 && count($incompleteEmployees) === 0;
+
+        // Debug log
+        \Log::info('Payroll Check Attendance RESULT', [
+            'month' => $month,
+            'year' => $year,
+            'week' => $weekNumber,
+            'period' => $startDate->format('Y-m-d') . ' to ' . $endDate->format('Y-m-d'),
+            'total_employees' => count($employees),
+            'new_employees_count' => count($newEmployees),
+            'new_employees_list' => array_column($newEmployees, 'name'),
+            'complete_count' => count($completeEmployees),
+            'complete_list' => array_column($completeEmployees, 'name'),
+            'incomplete_count' => count($incompleteEmployees),
+            'incomplete_list' => array_column($incompleteEmployees, 'name'),
+            'already_generated_count' => count($alreadyGenerated),
+            'already_generated_list' => array_column($alreadyGenerated, 'name'),
+            'can_generate' => $canGenerate,
+        ]);
+
         // Return response JSON untuk AJAX request dari frontend
         return response()->json([
             'working_days' => $workingDays,
+            'period_start' => $startDate->format('d/m/Y'),
+            'period_end' => $endDate->format('d/m/Y'),
+            'period_start_day' => $startDate->format('l, d M Y'),
+            'period_end_day' => $endDate->format('l, d M Y'),
             'incomplete_employees' => $incompleteEmployees,
+            'complete_employees' => $completeEmployees,
             'already_generated' => $alreadyGenerated,
             'has_new_employees' => $hasNewEmployees,
             'new_employees' => $newEmployees,
             'total_employees' => count($employees),
-            'can_generate' => count($incompleteEmployees) === 0, // Hanya boleh generate jika tidak ada incomplete
+            'can_generate' => $canGenerate, // Boleh generate hanya jika ada karyawan baru DAN tidak ada yang incomplete
         ]);
     }
 
@@ -213,6 +291,7 @@ class PayrollController extends Controller
      * Generate payroll MINGGUAN untuk pekerja harian.
      * 
      * Proses perhitungan:
+     * 0. VALIDASI: Cek kelengkapan absensi semua karyawan terlebih dahulu
      * 1. Loop semua pekerja harian aktif
      * 2. Skip yang sudah punya payroll untuk minggu ini
      * 3. Ambil data absensi untuk minggu tersebut (Senin-Sabtu)
@@ -227,6 +306,7 @@ class PayrollController extends Controller
      * - Tidak masuk = tidak dapat upah hari itu
      * - Kasbon otomatis dipotong saat generate payroll
      * - Additional expenses adalah pengeluaran PT untuk benefit karyawan
+     * - WAJIB: Semua absensi harus lengkap sebelum generate
      */
     public function generate(Request $request)
     {
@@ -242,8 +322,112 @@ class PayrollController extends Controller
         $startDate = $weekDates['start'];
         $endDate = $weekDates['end'];
 
-        // Ambil semua pekerja
+        // ========================================
+        // VALIDASI KELENGKAPAN ABSENSI
+        // ========================================
         $employees = Employee::all();
+        $incompleteEmployees = [];
+
+        foreach ($employees as $employee) {
+            // Skip karyawan yang sudah punya payroll untuk periode ini
+            $existingPayroll = Payroll::where('employee_id', $employee->employee_code)
+                ->where('period_month', $month)
+                ->where('period_year', $year)
+                ->where('week_number', $weekNumber)
+                ->first();
+
+            if ($existingPayroll) {
+                continue;
+            }
+
+            // Ambil tanggal join karyawan
+            $employeeJoinDate = Carbon::parse($employee->join_date);
+
+            // Skip karyawan yang belum join pada periode ini
+            if ($employeeJoinDate->greaterThan($endDate)) {
+                continue;
+            }
+
+            // Hitung hari kerja yang seharusnya diisi (Senin-Sabtu)
+            $employeeWorkingDates = [];
+            $employeeStartDate = $employeeJoinDate->greaterThan($startDate) ? $employeeJoinDate : $startDate;
+            $currentCheckDate = $employeeStartDate->copy();
+
+            while ($currentCheckDate->lte($endDate)) {
+                if ($currentCheckDate->dayOfWeek !== 0) { // Skip Minggu
+                    $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
+                }
+                $currentCheckDate->addDay();
+            }
+
+            // Ambil data absensi yang sudah terisi
+            $attendances = Attendance::where('employee_id', $employee->employee_code)
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->get();
+
+            $attendanceDates = $attendances->pluck('attendance_date')->map(function ($date) {
+                return Carbon::parse($date)->format('Y-m-d');
+            })->toArray();
+
+            // Cek tanggal yang belum diisi
+            $missingDates = array_diff($employeeWorkingDates, $attendanceDates);
+
+            // VALIDASI: Semua hari kerja harus terisi absensi
+            $requiredDays = count($employeeWorkingDates);
+            $filledDays = count($attendanceDates);
+
+            if ($filledDays < $requiredDays || count($missingDates) > 0) {
+                $incompleteEmployees[] = [
+                    'name' => $employee->name,
+                    'employee_code' => $employee->employee_code,
+                    'total_days' => $requiredDays,
+                    'filled_days' => $filledDays,
+                    'missing_days' => count($missingDates),
+                    'missing_dates' => $missingDates,
+                ];
+            }
+        }
+
+        // TOLAK jika ada absensi yang tidak lengkap atau kurang dari 6
+        if (count($incompleteEmployees) > 0) {
+            $monthNames = [
+                1 => 'Januari',
+                2 => 'Februari',
+                3 => 'Maret',
+                4 => 'April',
+                5 => 'Mei',
+                6 => 'Juni',
+                7 => 'Juli',
+                8 => 'Agustus',
+                9 => 'September',
+                10 => 'Oktober',
+                11 => 'November',
+                12 => 'Desember'
+            ];
+
+            $errorMessage = '<strong>Tidak dapat generate payroll!</strong><br>Data absensi belum lengkap untuk beberapa karyawan.<br><br>';
+
+            foreach ($incompleteEmployees as $emp) {
+                $errorMessage .= '❌ <strong>' . $emp['name'] . '</strong> (' . $emp['employee_code'] . '): ';
+                $errorMessage .= '<strong class="text-red-600">' . $emp['filled_days'] . '</strong> dari <strong>' . $emp['total_days'] . '</strong> hari kerja';
+
+                // Tampilkan tanggal yang kosong jika ada
+                if (!empty($emp['missing_dates'])) {
+                    $dates = array_map(function ($date) {
+                        return Carbon::parse($date)->format('d/m');
+                    }, $emp['missing_dates']);
+                    $errorMessage .= '<br>&nbsp;&nbsp;&nbsp;Tanggal kosong: ' . implode(', ', $dates);
+                }
+                $errorMessage .= '<br>';
+            }
+
+            $errorMessage .= '<br><strong>Catatan:</strong> Setiap karyawan harus memiliki absensi lengkap untuk semua hari kerjanya.<br>Silakan lengkapi data absensi di menu <strong>SDM → Absensi</strong> terlebih dahulu.';
+
+            return redirect()->back()->with('error', $errorMessage);
+        }
+        // ========================================
+        // END VALIDASI
+        // ========================================
 
         // Group employees by division untuk hitung kasbon team per divisi
         $divisionGroups = $employees->groupBy('division');
@@ -610,26 +794,50 @@ class PayrollController extends Controller
      * @param int $weekNumber Minggu ke berapa (1-4)
      * @return array ['start' => Carbon, 'end' => Carbon, 'working_days' => int]
      */
+    /**
+     * Mendapatkan range tanggal untuk minggu tertentu berdasarkan hari kerja (Senin-Sabtu)
+     * Sistem akan mencari hari Senin di minggu tersebut dan menghitung sampai Sabtu
+     * 
+     * Contoh Februari 2026:
+     * - 1 Feb = Minggu
+     * - Minggu 1: Senin 2 Feb - Sabtu 7 Feb (6 hari kerja)
+     * - Minggu 2: Senin 9 Feb - Sabtu 14 Feb (6 hari kerja)
+     * - Minggu 3: Senin 16 Feb - Sabtu 21 Feb (6 hari kerja)
+     * - Minggu 4: Senin 23 Feb - Sabtu 28 Feb (6 hari kerja)
+     */
     private function getWeekDateRange($year, $month, $weekNumber)
     {
-        // Tentukan tanggal awal dan akhir berdasarkan minggu
-        if ($weekNumber == 1) {
-            $startDay = 1;
-            $endDay = 7;
-        } elseif ($weekNumber == 2) {
-            $startDay = 8;
-            $endDay = 14;
-        } elseif ($weekNumber == 3) {
-            $startDay = 15;
-            $endDay = 21;
-        } else { // Minggu 4
-            $startDay = 22;
-            // Akhir bulan bisa 28, 29, 30, atau 31 tergantung bulannya
-            $endDay = Carbon::create($year, $month, 1)->endOfMonth()->day;
+        // Buat objek untuk tanggal 1 bulan tersebut
+        $firstDayOfMonth = Carbon::create($year, $month, 1);
+
+        // Cari hari Senin pertama di bulan ini
+        // dayOfWeek: 0=Minggu, 1=Senin, 2=Selasa, ..., 6=Sabtu
+        if ($firstDayOfMonth->dayOfWeek === 0) {
+            // Jika tanggal 1 adalah Minggu, Senin pertama adalah tanggal 2
+            $firstMonday = $firstDayOfMonth->copy()->addDay();
+        } elseif ($firstDayOfMonth->dayOfWeek === 1) {
+            // Jika tanggal 1 adalah Senin, langsung pakai tanggal 1
+            $firstMonday = $firstDayOfMonth->copy();
+        } else {
+            // Jika tanggal 1 adalah Selasa-Sabtu, cari Senin berikutnya
+            $firstMonday = $firstDayOfMonth->copy()->next(Carbon::MONDAY);
         }
 
-        $startDate = Carbon::create($year, $month, $startDay);
-        $endDate = Carbon::create($year, $month, $endDay);
+        // Hitung tanggal mulai berdasarkan minggu
+        // Minggu 1 = Senin pertama + 0 minggu
+        // Minggu 2 = Senin pertama + 1 minggu
+        // Minggu 3 = Senin pertama + 2 minggu
+        // Minggu 4 = Senin pertama + 3 minggu
+        $startDate = $firstMonday->copy()->addWeeks($weekNumber - 1);
+
+        // Tanggal akhir adalah Sabtu (5 hari setelah Senin)
+        $endDate = $startDate->copy()->addDays(5); // Senin + 5 = Sabtu
+
+        // Pastikan endDate tidak melebihi akhir bulan
+        $lastDayOfMonth = Carbon::create($year, $month, 1)->endOfMonth();
+        if ($endDate->greaterThan($lastDayOfMonth)) {
+            $endDate = $lastDayOfMonth;
+        }
 
         // Hitung hari kerja (Senin-Sabtu saja, skip Minggu)
         $workingDays = 0;
@@ -642,6 +850,16 @@ class PayrollController extends Controller
             }
             $currentDate->addDay();
         }
+
+        \Log::info('Week Date Range Calculated', [
+            'year' => $year,
+            'month' => $month,
+            'week_number' => $weekNumber,
+            'first_monday' => $firstMonday->format('Y-m-d (l)'),
+            'start_date' => $startDate->format('Y-m-d (l)'),
+            'end_date' => $endDate->format('Y-m-d (l)'),
+            'working_days' => $workingDays,
+        ]);
 
         return [
             'start' => $startDate,
