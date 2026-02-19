@@ -1,5 +1,5 @@
 {{-- Table Kasbon --}}
-<form id="deleteForm" method="POST" action="{{ route('kasbon.destroy', 'bulk') }}">
+<form id="deleteForm" method="POST" action="{{ route('kasbon.destroySelected') }}">
     @csrf
     @method('DELETE')
     <div class="overflow-x-auto">
@@ -41,7 +41,7 @@
                     @forelse($kasbons as $kasbon)
                         <tr class="hover:bg-surface-secondary transition-colors duration-150">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="checkbox" name="ids[]" value="{{ $kasbon->kasbon_code }}"
+                                <input type="checkbox" name="selected_kasbons[]" value="{{ $kasbon->kasbon_code }}"
                                     class="row-checkbox rounded border-border text-primary focus:ring-primary"
                                     {{ $kasbon->status === 'deducted' ? 'disabled' : '' }}>
                             </td>

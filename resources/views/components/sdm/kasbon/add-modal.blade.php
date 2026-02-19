@@ -15,6 +15,17 @@
         </div>
     </div>
 
+    {{-- Alert batas maksimal kasbon --}}
+    <div id="add_kasbon_limit_alert" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden">
+        <div class="flex gap-2">
+            <i class="fa-solid fa-exclamation-triangle text-yellow-600 mt-1"></i>
+            <div class="text-sm text-yellow-800">
+                <p class="font-semibold mb-1">Batas Maksimal Kasbon:</p>
+                <p id="add_kasbon_limit_message"></p>
+            </div>
+        </div>
+    </div>
+
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jenis Kasbon <span class="text-error">*</span></label>
         <select name="kasbon_type" id="add_kasbon_type" class="w-full border rounded p-2" required
@@ -28,7 +39,8 @@
 
     <div class="mb-3" id="add_employee_field">
         <label class="block text-text-primary mb-1">Karyawan <span class="text-error">*</span></label>
-        <select name="employee_id" id="add_employee_id" class="w-full border rounded p-2">
+        <select name="employee_id" id="add_employee_id" class="w-full border rounded p-2"
+            onchange="checkMaxKasbon('add')">
             <option value="">Pilih Karyawan</option>
             @foreach ($employees as $employee)
                 <option value="{{ $employee->employee_code }}">{{ $employee->name }} ({{ $employee->employee_code }})
@@ -49,22 +61,23 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
-        <input type="number" name="amount" class="w-full border rounded p-2" placeholder="Masukkan jumlah kasbon"
-            required min="1000" step="1000" oninvalid="this.setCustomValidity('Jumlah kasbon minimal Rp 1.000')"
-            oninput="this.setCustomValidity('')">
+        <input type="number" name="amount" id="add_amount" class="w-full border rounded p-2"
+            placeholder="Masukkan jumlah kasbon" required min="1000" step="1000"
+            oninput="validateKasbonAmount('add')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
-        <input type="date" name="kasbon_date" class="w-full border rounded p-2" value="{{ date('Y-m-d') }}" required
-            oninvalid="this.setCustomValidity('Tanggal kasbon tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="date" name="kasbon_date" id="add_kasbon_date" class="w-full border rounded p-2"
+            value="{{ date('Y-m-d') }}" required oninvalid="this.setCustomValidity('Tanggal kasbon tidak boleh kosong')"
+            oninput="this.setCustomValidity('')" onchange="checkMaxKasbon('add')">
     </div>
 
-    <div class="grid grid-cols-3 gap-3 mb-3">
+    <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
-            <select name="period_month" class="w-full border rounded p-2" required>
+            <select name="period_month" id="add_period_month" class="w-full border rounded p-2" required
+                onchange="checkMaxKasbon('add')">
                 <option value="">Pilih</option>
                 @for ($i = 1; $i <= 12; $i++)
                     <option value="{{ $i }}" {{ date('n') == $i ? 'selected' : '' }}>
@@ -76,21 +89,13 @@
 
         <div>
             <label class="block text-text-primary mb-1">Tahun <span class="text-error">*</span></label>
-            <input type="number" name="period_year" class="w-full border rounded p-2" value="{{ date('Y') }}"
-                required min="2020" max="2100">
-        </div>
-
-        <div>
-            <label class="block text-text-primary mb-1">Minggu</label>
-            <select name="week_number" class="w-full border rounded p-2">
-                <option value="">-</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-            </select>
+            <input type="number" name="period_year" id="add_period_year" class="w-full border rounded p-2"
+                value="{{ date('Y') }}" required min="2020" max="2100" onchange="checkMaxKasbon('add')">
         </div>
     </div>
+
+    {{-- Hidden field untuk week_number (auto-detected dari tanggal) --}}
+    <input type="hidden" name="week_number" id="add_week_number" value="">
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>

@@ -159,8 +159,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');
     Route::post('/kasbon', [KasbonController::class, 'store'])->name('kasbon.store');
     Route::put('/kasbon/{kasbonCode}', [KasbonController::class, 'update'])->name('kasbon.update');
-    Route::delete('/kasbon/{kasbonCode}', [KasbonController::class, 'destroy'])->name('kasbon.destroy');
+    Route::delete('/kasbon/destroy-selected', [KasbonController::class, 'destroySelected'])->name('kasbon.destroySelected');
     Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
+    Route::post('/kasbon/check-max', [KasbonController::class, 'checkMaxKasbon'])->name('kasbon.check-max');
 
     // Route Division
     Route::get('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'index'])->name('division.index');
