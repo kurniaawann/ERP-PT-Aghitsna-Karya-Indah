@@ -544,6 +544,23 @@ class PayrollController extends Controller
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->get();
 
+            \Log::info('Payroll Generate - Attendance Data', [
+                'employee_code' => $employee->employee_code,
+                'employee_name' => $employee->name,
+                'week' => $weekNumber,
+                'date_range' => $startDate->format('Y-m-d') . ' to ' . $endDate->format('Y-m-d'),
+                'total_attendance' => $attendances->count(),
+                'attendances' => $attendances->map(function ($att) {
+                    return [
+                        'date' => $att->attendance_date,
+                        'status' => $att->status,
+                        'overtime_hours' => $att->overtime_hours,
+                        'overtime_rate' => $att->overtime_rate,
+                        'overtime_total' => $att->overtime_total,
+                    ];
+                })->toArray(),
+            ]);
+
             // Hitung hari masuk (hadir + lembur)
             $presentDays = $attendances->whereIn('status', ['hadir', 'lembur'])->count();
             $permissionDays = $attendances->where('status', 'izin')->count();
@@ -561,6 +578,21 @@ class PayrollController extends Controller
 
             // Hitung bonus lembur jika ada
             $overtimeTotal = $attendances->where('status', 'lembur')->sum('overtime_total');
+
+            \Log::info('Payroll Generate - Overtime Calculation', [
+                'employee_code' => $employee->employee_code,
+                'employee_name' => $employee->name,
+                'overtime_days' => $overtimeDays,
+                'overtime_total' => $overtimeTotal,
+                'overtime_records' => $attendances->where('status', 'lembur')->map(function ($att) {
+                    return [
+                        'date' => $att->attendance_date,
+                        'hours' => $att->overtime_hours,
+                        'rate' => $att->overtime_rate,
+                        'total' => $att->overtime_total,
+                    ];
+                })->values()->toArray(),
+            ]);
 
             // Total upah kotor = upah harian × hari masuk + bonus lembur
             $grossWage = $totalWage + $overtimeTotal;

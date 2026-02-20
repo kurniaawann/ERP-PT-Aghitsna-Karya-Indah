@@ -3,117 +3,117 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    {{-- <div class="bg-white p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Selamat Datang, {{ auth()->user()->name }}</h1>
-        <p class="text-text-secondary">Anda login sebagai <strong>{{ auth()->user()->role }}</strong>.</p>
-    </div> --}}
-
     <!-- Reminder Cards Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <!-- Reminder Gaji Karyawan -->
         <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-            @if (!$isPayrollPeriod)
-                {{-- Belum periode penggajian (sebelum tanggal 26) --}}
-                <div class="bg-blue-50 px-6 py-4 border-b border-blue-100">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-blue-100 p-2 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-blue-900">Info Penggajian</h3>
-                            <p class="text-sm text-blue-700">Status periode penggajian bulan ini</p>
-                        </div>
+            {{-- Reminder Payroll Mingguan --}}
+            <div class="bg-amber-50 px-6 py-4 border-b border-amber-100">
+                <div class="flex items-center gap-3">
+                    <div class="bg-amber-100 p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-amber-900">Reminder Gaji Karyawan</h3>
+                        <p class="text-sm text-amber-700">Karyawan dengan gaji belum dibayar (Minggu 1 -
+                            {{ $currentWeek }})</p>
                     </div>
                 </div>
+            </div>
 
-                <div class="p-6">
-                    <div class="text-center py-8">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                        <p class="text-gray-800 font-medium text-lg">Menunggu Periode Penggajian</p>
-                        <p class="text-sm text-gray-500 mt-2">Periode penggajian dimulai setiap tanggal 26</p>
-                        <p class="text-xs text-gray-400 mt-1">Saat ini: {{ \Carbon\Carbon::now()->format('d F Y') }}</p>
+            <div class="p-6">
+                {{-- Info Periode Minggu Ini --}}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span class="font-semibold text-blue-900">Periode Payroll: Minggu {{ $currentWeek }}</span>
                     </div>
-                </div>
-            @else
-                {{-- Sudah periode penggajian (tanggal 26 atau lebih) --}}
-                <div class="bg-amber-50 px-6 py-4 border-b border-amber-100">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-amber-100 p-2 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-amber-900">Reminder Gaji Karyawan</h3>
-                            <p class="text-sm text-amber-700">Karyawan yang belum menerima gaji bulan ini</p>
-                        </div>
-                    </div>
+                    <p class="text-sm text-blue-700">
+                        {{ $weekRange['start']->format('d M Y') }} - {{ $weekRange['end']->format('d M Y') }}
+                    </p>
+                    <p class="text-xs text-blue-600 mt-1">
+                        Hari ini: {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
+                    </p>
                 </div>
 
-                <div class="p-6">
-                    @if ($employeesWithoutSalary->count() > 0)
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <span
-                                    class="text-2xl font-bold text-amber-600">{{ $employeesWithoutSalary->count() }}</span>
-                                <span class="text-sm text-gray-500">Total Karyawan</span>
-                            </div>
-                            <div class="w-full bg-amber-100 rounded-full h-2">
-                                <div class="bg-amber-500 h-2 rounded-full" style="width: 100%"></div>
-                            </div>
+                @if (count($employeesWithoutSalary) > 0)
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-2xl font-bold text-amber-600">{{ count($employeesWithoutSalary) }}</span>
+                            <span class="text-sm text-gray-500">Total Karyawan</span>
                         </div>
+                        <div class="w-full bg-amber-100 rounded-full h-2">
+                            <div class="bg-amber-500 h-2 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
 
-                        <div class="space-y-2 max-h-60 overflow-y-auto">
-                            @foreach ($employeesWithoutSalary as $employee)
-                                <div
-                                    class="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100 hover:bg-amber-100 transition-colors">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white p-2 rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p class="font-semibold text-gray-800">{{ $employee->name }}</p>
-                                            <p class="text-sm text-gray-500">{{ $employee->employee_code }} -
-                                                {{ $employee->position }}</p>
+                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                        @foreach ($employeesWithoutSalary as $item)
+                            <div
+                                class="flex items-start justify-between p-3 bg-amber-50 rounded-lg border border-amber-100 hover:bg-amber-100 transition-colors">
+                                <div class="flex items-start gap-3 flex-1">
+                                    <div class="bg-white p-2 rounded-full mt-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-gray-800">{{ $item['employee']->name }}</p>
+                                        <p class="text-sm text-gray-500">{{ $item['employee']->employee_code }} -
+                                            {{ $item['employee']->position }}</p>
+
+                                        {{-- Tampilkan minggu-minggu yang belum dibayar --}}
+                                        <div class="flex flex-wrap gap-1 mt-2">
+                                            @foreach ($item['unpaid_weeks'] as $unpaidWeek)
+                                                <span
+                                                    class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1"
+                                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Minggu {{ $unpaidWeek['week_number'] }}
+                                                    ({{ $unpaidWeek['start_date'] }}-{{ $unpaidWeek['end_date'] }})
+                                                </span>
+                                            @endforeach
                                         </div>
                                     </div>
-                                    <span class="text-sm font-medium text-amber-600">Rp
-                                        {{ number_format($employee->base_salary, 0, ',', '.') }}</span>
                                 </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-8">
-                            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <div class="text-right ml-3">
+                                    <span class="text-sm font-medium text-amber-600 whitespace-nowrap">Rp
+                                        {{ number_format($item['employee']->base_salary, 0, ',', '.') }}</span>
+                                </div>
                             </div>
-                            <p class="text-gray-800 font-medium text-lg">Semua Gaji Sudah Dibayarkan</p>
-                            <p class="text-sm text-gray-500 mt-2">Seluruh karyawan telah menerima gaji bulan ini</p>
-                            <p class="text-xs text-gray-400 mt-1">Periode: {{ \Carbon\Carbon::now()->format('F Y') }}</p>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                         </div>
-                    @endif
-                </div>
-            @endif
+                        <p class="text-gray-800 font-medium text-lg">Semua Gaji Sudah Dibayarkan</p>
+                        <p class="text-sm text-gray-500 mt-2">Seluruh karyawan telah menerima gaji minggu 1 -
+                            {{ $currentWeek }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Periode minggu {{ $currentWeek }}:
+                            {{ $weekRange['start']->format('d M') }} - {{ $weekRange['end']->format('d M Y') }}</p>
+                    </div>
+                @endif
+            </div>
         </div>
 
         <!-- Reminder Stok Menipis -->

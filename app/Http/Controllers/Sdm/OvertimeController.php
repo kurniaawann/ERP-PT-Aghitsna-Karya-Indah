@@ -71,24 +71,64 @@ class OvertimeController extends Controller
 
     public function store(Request $request)
     {
-        // Ambil semua input dari form dan simpan ke variable $data
-        // all() mengembalikan array associative dengan semua field dari form
-        // Field: employee_id, attendance_date, overtime_hours, overtime_rate, notes
-        $data = $request->all();
-
-        // Set status = 'lembur' untuk identifikasi di tabel attendances
-        // Ini penting karena tabel attendances shared untuk absensi regular dan lembur
-        $data['status'] = 'lembur';
+        // Validasi input
+        $validated = $request->validate([
+            'employee_id' => 'required|string',
+            'attendance_date' => 'required|date',
+            'overtime_hours' => 'required|numeric|min:0.5|max:24',
+            'overtime_rate' => 'required|integer|min:0',
+            'notes' => 'nullable|string',
+        ]);
 
         // Hitung total uang lembur: jam lembur × rate per jam
-        // overtime_hours dari input (misal: 4 jam)
-        // overtime_rate dari input (misal: Rp 50.000)
-        // overtime_total = 4 × 50000 = Rp 200.000
-        $data['overtime_total'] = $request->overtime_hours * $request->overtime_rate;
+        $overtimeTotal = (float) $request->overtime_hours * (int) $request->overtime_rate;
 
-        // Insert data lembur ke tabel attendances
-        // create() akan insert record baru dan return model instance
-        Attendance::create($data);
+        // Cek apakah karyawan sudah punya record di tanggal tersebut (misalnya status "hadir")
+        $existingAttendance = Attendance::where('employee_id', $request->employee_id)
+            ->where('attendance_date', $request->attendance_date)
+            ->first();
+
+        if ($existingAttendance) {
+            // Jika sudah ada record (biasanya status "hadir"), UPDATE dengan data lembur
+            // Ubah status menjadi "lembur" dan isi kolom overtime
+            $existingAttendance->update([
+                'status' => 'lembur',
+                'overtime_hours' => (float) $request->overtime_hours,
+                'overtime_rate' => (int) $request->overtime_rate,
+                'overtime_total' => (int) $overtimeTotal,
+                'notes' => $request->notes,
+            ]);
+
+            \Log::info('Overtime - Updated existing attendance', [
+                'employee_id' => $request->employee_id,
+                'date' => $request->attendance_date,
+                'overtime_hours' => $request->overtime_hours,
+                'overtime_rate' => $request->overtime_rate,
+                'overtime_total' => $overtimeTotal,
+                'old_status' => $existingAttendance->getOriginal('status'),
+                'record_id' => $existingAttendance->id,
+            ]);
+        } else {
+            // Jika belum ada record, CREATE record baru dengan status "lembur"
+            $created = Attendance::create([
+                'employee_id' => $request->employee_id,
+                'attendance_date' => $request->attendance_date,
+                'status' => 'lembur',
+                'overtime_hours' => (float) $request->overtime_hours,
+                'overtime_rate' => (int) $request->overtime_rate,
+                'overtime_total' => (int) $overtimeTotal,
+                'notes' => $request->notes,
+            ]);
+
+            \Log::info('Overtime - Created new attendance', [
+                'employee_id' => $request->employee_id,
+                'date' => $request->attendance_date,
+                'overtime_hours' => $request->overtime_hours,
+                'overtime_rate' => $request->overtime_rate,
+                'overtime_total' => $overtimeTotal,
+                'record_id' => $created->id,
+            ]);
+        }
 
         // Redirect ke halaman index overtime dengan flash message sukses
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil ditambahkan!');
