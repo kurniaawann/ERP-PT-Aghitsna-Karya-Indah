@@ -234,11 +234,21 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $category['count'] }} transaksi
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                                    Rp {{ number_format($category['income'], 0, ',', '.') }}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">
+                                    @if ($category['category_type'] === 'EXPENSE')
+                                        <span class="text-gray-400">-</span>
+                                    @else
+                                        <span class="text-green-600">Rp
+                                            {{ number_format($category['income'], 0, ',', '.') }}</span>
+                                    @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
-                                    Rp {{ number_format($category['expense'], 0, ',', '.') }}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">
+                                    @if ($category['category_type'] === 'INCOME')
+                                        <span class="text-gray-400">-</span>
+                                    @else
+                                        <span class="text-red-600">Rp
+                                            {{ number_format($category['expense'], 0, ',', '.') }}</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
                                     Rp {{ number_format($category['total'], 0, ',', '.') }}

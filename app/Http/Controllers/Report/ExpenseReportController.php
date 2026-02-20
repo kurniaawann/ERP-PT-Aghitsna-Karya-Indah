@@ -221,6 +221,7 @@ class ExpenseReportController extends Controller
             return [
                 'category_id' => $item->transaction_category_id,
                 'category_name' => $category ? $category->name : 'Tidak ada kategori',
+                'category_type' => $category ? $category->type : null,
                 'count' => $item->count,
                 'income' => $item->income,
                 'expense' => $item->expense,
