@@ -466,4 +466,112 @@
             }
         });
     });
+
+    // ==========================================
+    // DYNAMIC EXPENSE ITEMS
+    // ==========================================
+
+    let expenseItemCounter = 0;
+    const expenseItems = [];
+
+    function addExpenseItem() {
+        expenseItemCounter++;
+        const itemId = expenseItemCounter;
+
+        const container = document.getElementById('expense-items-container');
+        const noExpenseText = document.getElementById('no-expense-text');
+
+        if (noExpenseText) {
+            noExpenseText.style.display = 'none';
+        }
+
+        const itemHTML = `
+            <div class="expense-item border border-gray-300 rounded-lg p-3 bg-white" data-item-id="${itemId}">
+                <div class="flex gap-2 items-start">
+                    <div class="flex-1 grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Nama Pengeluaran</label>
+                            <input type="text" 
+                                class="expense-name w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="Contoh: Token Listrik"
+                                oninput="updateExpenseData()"
+                                required>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Jumlah (Rp)</label>
+                            <input type="number" 
+                                class="expense-amount w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="0"
+                                min="0"
+                                oninput="updateExpenseData()"
+                                required>
+                        </div>
+                    </div>
+                    <button type="button" 
+                        onclick="removeExpenseItem(${itemId})"
+                        class="mt-6 text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition-colors"
+                        title="Hapus item">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', itemHTML);
+        updateExpenseData();
+    }
+
+    function removeExpenseItem(itemId) {
+        const item = document.querySelector(`[data-item-id="${itemId}"]`);
+        if (item) {
+            item.remove();
+            updateExpenseData();
+
+            // Show "no expense" text if no items left
+            const container = document.getElementById('expense-items-container');
+            const items = container.querySelectorAll('.expense-item');
+            const noExpenseText = document.getElementById('no-expense-text');
+
+            if (items.length === 0 && noExpenseText) {
+                noExpenseText.style.display = 'block';
+            }
+        }
+    }
+
+    function updateExpenseData() {
+        const items = [];
+        let total = 0;
+
+        document.querySelectorAll('.expense-item').forEach(item => {
+            const name = item.querySelector('.expense-name').value.trim();
+            const amount = parseInt(item.querySelector('.expense-amount').value) || 0;
+
+            if (name && amount > 0) {
+                items.push({
+                    name,
+                    amount
+                });
+                total += amount;
+            }
+        });
+
+        // Update hidden inputs
+        document.getElementById('total_additional_expenses').value = total;
+        document.getElementById('additional_expenses_notes').value = JSON.stringify(items);
+
+        // Update display
+        document.getElementById('total-expense-display').textContent =
+            'Rp ' + total.toLocaleString('id-ID');
+    }
+
+    // Initialize: hide no-expense text if there are items
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('expense-items-container');
+        const items = container.querySelectorAll('.expense-item');
+        const noExpenseText = document.getElementById('no-expense-text');
+
+        if (items.length > 0 && noExpenseText) {
+            noExpenseText.style.display = 'none';
+        }
+    });
 </script>

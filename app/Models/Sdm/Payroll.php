@@ -15,6 +15,7 @@ class Payroll extends Model
         'period_year',
         'period_type',
         'week_number',
+        'project_name', // Nama proyek (opsional)
         'base_salary',
         'total_work_days',
         'present_days',

@@ -61,15 +61,40 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Pengeluaran Tambahan (Opsional)</label>
-        <input type="number" name="additional_expenses" class="w-full border rounded p-2"
-            placeholder="Token listrik, air, dll (Rp)" min="0" value="0">
+        <label class="block text-text-primary mb-1">Nama Proyek <span
+                class="text-gray-400 text-sm">(Opsional)</span></label>
+        <input type="text" name="project_name" id="project_name" class="w-full border rounded p-2"
+            placeholder="Contoh: Lampsr Tanap 3, Proyek ABC, dll" maxlength="255">
+        <p class="text-xs text-gray-500 mt-1">Kosongkan jika tidak ada proyek tertentu</p>
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Catatan Pengeluaran</label>
-        <textarea name="additional_expenses_notes" class="w-full border rounded p-2"
-            placeholder="Contoh: Token listrik Rp 30.000, Token air Rp 52.000" rows="2"></textarea>
+        <div class="flex justify-between items-center mb-2">
+            <label class="block text-text-primary font-semibold">Pengeluaran Tambahan (Opsional)</label>
+            <button type="button" onclick="addExpenseItem()"
+                class="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg flex items-center gap-1">
+                <i class="fa-solid fa-plus"></i> Tambah Item
+            </button>
+        </div>
+
+        <div id="expense-items-container" class="space-y-2">
+            <!-- Expense items will be added here dynamically -->
+            <p class="text-sm text-gray-500 text-center py-4" id="no-expense-text">
+                Belum ada pengeluaran tambahan. Klik "Tambah Item" untuk menambahkan.
+            </p>
+        </div>
+
+        <!-- Hidden inputs for form submission -->
+        <input type="hidden" name="additional_expenses" id="total_additional_expenses" value="0">
+        <input type="hidden" name="additional_expenses_notes" id="additional_expenses_notes" value="">
+
+        <!-- Total Display -->
+        <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="flex justify-between items-center">
+                <span class="font-semibold text-gray-700">Total Pengeluaran Tambahan:</span>
+                <span class="text-lg font-bold text-primary" id="total-expense-display">Rp 0</span>
+            </div>
+        </div>
     </div>
 
     {{-- Loading State --}}

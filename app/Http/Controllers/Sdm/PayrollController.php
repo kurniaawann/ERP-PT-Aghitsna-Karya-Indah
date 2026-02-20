@@ -324,23 +324,7 @@ class PayrollController extends Controller
         // 3. Tidak boleh ada kasbon yang melebihi gaji (kasbonIssues kosong)
         $canGenerate = count($newEmployees) > 0 && count($incompleteEmployees) === 0 && count($kasbonIssues) === 0;
 
-        // Debug log
-        \Log::info('Payroll Check Attendance RESULT', [
-            'month' => $month,
-            'year' => $year,
-            'week' => $weekNumber,
-            'period' => $startDate->format('Y-m-d') . ' to ' . $endDate->format('Y-m-d'),
-            'total_employees' => count($employees),
-            'new_employees_count' => count($newEmployees),
-            'new_employees_list' => array_column($newEmployees, 'name'),
-            'complete_count' => count($completeEmployees),
-            'complete_list' => array_column($completeEmployees, 'name'),
-            'incomplete_count' => count($incompleteEmployees),
-            'incomplete_list' => array_column($incompleteEmployees, 'name'),
-            'already_generated_count' => count($alreadyGenerated),
-            'already_generated_list' => array_column($alreadyGenerated, 'name'),
-            'can_generate' => $canGenerate,
-        ]);
+
 
         // Return response JSON untuk AJAX request dari frontend
         return response()->json([
@@ -387,8 +371,30 @@ class PayrollController extends Controller
         $month = $request->period_month;
         $year = $request->period_year;
         $weekNumber = $request->week_number; // 1, 2, 3, atau 4
-        $additionalExpenses = $request->additional_expenses ?? 0; // Token listrik/air, dll (opsional)
-        $additionalExpensesNotes = $request->additional_expenses_notes;
+
+        // Ambil pengeluaran tambahan (format baru: multiple items dalam JSON)
+        $additionalExpenses = $request->additional_expenses ?? 0; // Total sudah dihitung di frontend
+        $additionalExpensesNotes = $request->additional_expenses_notes; // JSON array of expense items
+
+        // Validasi format JSON expense items
+        if ($additionalExpensesNotes) {
+            $expenseItems = json_decode($additionalExpensesNotes, true);
+            if (!is_array($expenseItems)) {
+                // Jika bukan JSON valid, set ke empty array
+                $additionalExpensesNotes = '[]';
+                $additionalExpenses = 0;
+            } else {
+                // Recalculate total untuk keamanan (validasi server-side)
+                $calculatedTotal = array_sum(array_column($expenseItems, 'amount'));
+                if ($calculatedTotal != $additionalExpenses) {
+                    \Log::warning('Additional expenses mismatch', [
+                        'frontend_total' => $additionalExpenses,
+                        'calculated_total' => $calculatedTotal,
+                    ]);
+                    $additionalExpenses = $calculatedTotal; // Use server calculation
+                }
+            }
+        }
 
         // Hitung range tanggal untuk minggu yang dipilih
         $weekDates = $this->getWeekDateRange($year, $month, $weekNumber);
@@ -616,6 +622,7 @@ class PayrollController extends Controller
                 'period_year' => $year,
                 'period_type' => 'weekly',
                 'week_number' => $weekNumber,
+                'project_name' => $request->project_name, // Nama proyek (opsional)
                 'base_salary' => $dailyWage, // Simpan daily wage di base_salary
                 'total_work_days' => $totalWorkDays,
                 'present_days' => $presentDays,
@@ -814,19 +821,38 @@ class PayrollController extends Controller
         // Ambil parameter filter dari request
         $month = $request->input('month');
         $year = $request->input('year');
+        $weekNumber = $request->input('week_number');
+
+        // Array nama bulan
+        $monthNames = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
+        ];
 
         // Query data payroll dengan filter (jika ada)
         $payrolls = Payroll::with('employee')
             ->when($month, function ($query, $month) {
-                // Filter berdasarkan bulan jika dipilih
                 return $query->where('period_month', $month);
             })
             ->when($year, function ($query, $year) {
-                // Filter berdasarkan tahun jika dipilih
                 return $query->where('period_year', $year);
+            })
+            ->when($weekNumber, function ($query, $weekNumber) {
+                return $query->where('week_number', $weekNumber);
             })
             ->latest('period_year')
             ->latest('period_month')
+            ->latest('week_number')
             ->latest('created_at')
             ->get();
 
@@ -837,40 +863,58 @@ class PayrollController extends Controller
 
         // Format teks periode untuk ditampilkan di header PDF
         if ($month && $year) {
-            // Jika bulan & tahun dipilih: "Januari 2025"
-            $monthNames = [
-                1 => 'Januari',
-                2 => 'Februari',
-                3 => 'Maret',
-                4 => 'April',
-                5 => 'Mei',
-                6 => 'Juni',
-                7 => 'Juli',
-                8 => 'Agustus',
-                9 => 'September',
-                10 => 'Oktober',
-                11 => 'November',
-                12 => 'Desember'
-            ];
             $periodText = $monthNames[$month] . ' ' . $year;
+            if ($weekNumber) {
+                $periodText .= ' - Minggu ' . $weekNumber;
+            }
         } elseif ($year) {
-            // Jika hanya tahun: "Tahun 2025"
             $periodText = 'Tahun ' . $year;
         } else {
-            // Jika tidak ada filter: "Semua Periode"
             $periodText = 'Semua Periode';
         }
 
+        // Ambil nama proyek dari payroll pertama (jika ada)
+        $projectName = $payrolls->first()->project_name ?? null;
+
+        // Hitung date range dan load attendances hanya jika minggu dipilih
+        $dateRange = '';
+        $weekDays = [];
+        if ($month && $year && $weekNumber) {
+            $startDate = \Carbon\Carbon::create($year, $month, 1)->addWeeks($weekNumber - 1)->startOfWeek();
+            $endDate = $startDate->copy()->endOfWeek();
+            $dateRange = $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y');
+
+            // Generate array of dates for each day of the week
+            for ($i = 0; $i < 7; $i++) {
+                $weekDays[] = $startDate->copy()->addDays($i)->format('Y-m-d');
+            }
+
+            // Load attendances untuk setiap payroll
+            foreach ($payrolls as $payroll) {
+                $payroll->attendances = \App\Models\Sdm\Attendance::where('employee_id', $payroll->employee_id)
+                    ->whereBetween('attendance_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->get();
+            }
+        } else {
+            // Jika tidak ada minggu spesifik, set attendances kosong
+            foreach ($payrolls as $payroll) {
+                $payroll->attendances = collect();
+            }
+        }
+
         // Hitung total keseluruhan untuk ditampilkan di footer PDF
-        $totalBaseSalary = $payrolls->sum('base_salary'); // Total gaji pokok
-        $totalDeduction = $payrolls->sum('deduction_amount'); // Total potongan
-        $totalOvertime = $payrolls->sum('overtime_total'); // Total lembur
-        $totalNetSalary = $payrolls->sum('net_salary'); // Total gaji bersih
+        $totalBaseSalary = $payrolls->sum('base_salary');
+        $totalDeduction = $payrolls->sum('deduction_amount');
+        $totalOvertime = $payrolls->sum('overtime_total');
+        $totalNetSalary = $payrolls->sum('net_salary');
 
         // Siapkan data untuk dikirim ke view PDF
         $data = [
-            'payrolls' => $payrolls, // Data payroll semua karyawan
-            'periodText' => $periodText, // Teks periode untuk header
+            'payrolls' => $payrolls,
+            'periodText' => $periodText,
+            'projectName' => $projectName,
+            'dateRange' => $dateRange,
+            'weekDays' => $weekDays,
             'totalBaseSalary' => $totalBaseSalary,
             'totalDeduction' => $totalDeduction,
             'totalOvertime' => $totalOvertime,
@@ -879,10 +923,24 @@ class PayrollController extends Controller
 
         // Generate PDF dari view dengan orientasi landscape
         $pdf = Pdf::loadView('exports.sdm.payroll-pdf', $data);
-        $pdf->setPaper('a4', 'landscape'); // Kertas A4 landscape (karena banyak kolom)
+        $pdf->setPaper('a4', 'landscape');
 
-        // Generate nama file dengan format: Laporan_Payroll_{periode}_{timestamp}.pdf
-        $fileName = 'Laporan_Payroll_' . ($month ? $month . '_' : '') . ($year ? $year : 'Semua') . '_' . date('Ymd_His') . '.pdf';
+        // Generate nama file dengan format: Daftar_Absensi_Pekerja_{periode}_{timestamp}.pdf
+        $filenameParts = ['Daftar_Absensi_Pekerja'];
+        if ($month) {
+            $filenameParts[] = $monthNames[$month];
+        }
+        if ($year) {
+            $filenameParts[] = $year;
+        }
+        if ($weekNumber) {
+            $filenameParts[] = 'Minggu_' . $weekNumber;
+        }
+        if (!$month && !$year && !$weekNumber) {
+            $filenameParts[] = 'Semua_Periode';
+        }
+        $filenameParts[] = date('Ymd_His');
+        $fileName = implode('_', $filenameParts) . '.pdf';
 
         // Download file PDF
         return $pdf->download($fileName);

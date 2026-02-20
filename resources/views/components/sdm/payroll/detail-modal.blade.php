@@ -38,6 +38,12 @@
                                 @endif
                             </p>
                         </div>
+                        @if ($payroll->project_name)
+                            <div>
+                                <p class="text-text-label">Proyek:</p>
+                                <p class="font-semibold">{{ $payroll->project_name }}</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -114,24 +120,57 @@
                 @if ($payroll->additional_expenses)
                     <div class="bg-purple-50 p-4 rounded-lg">
                         <h3 class="font-semibold text-text-primary mb-3">Pengeluaran Tambahan PT</h3>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-text-label">Jumlah:</span>
-                                <span class="font-semibold">Rp
+
+                        @php
+                            $expenseItems = [];
+                            if ($payroll->additional_expenses_notes) {
+                                $decoded = json_decode($payroll->additional_expenses_notes, true);
+                                if (is_array($decoded)) {
+                                    $expenseItems = $decoded;
+                                }
+                            }
+                        @endphp
+
+                        @if (count($expenseItems) > 0)
+                            {{-- List of expense items --}}
+                            <div class="space-y-2 mb-3">
+                                @foreach ($expenseItems as $item)
+                                    <div
+                                        class="flex justify-between text-sm py-1.5 px-2 bg-white rounded border border-purple-200">
+                                        <span class="text-text-label">{{ $item['name'] ?? 'Item' }}</span>
+                                        <span class="font-semibold text-purple-700">Rp
+                                            {{ number_format($item['amount'] ?? 0, 0, ',', '.') }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <hr class="my-3 border-purple-200">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-text-label">Total Pengeluaran:</span>
+                                <span class="text-purple-700">Rp
                                     {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
                             </div>
-                            @if ($payroll->additional_expenses_notes)
-                                <div>
-                                    <p class="text-text-label">Keterangan:</p>
-                                    <p class="text-sm">{{ $payroll->additional_expenses_notes }}</p>
+                        @else
+                            {{-- Fallback: jika format lama (text biasa) --}}
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-text-label">Jumlah:</span>
+                                    <span class="font-semibold">Rp
+                                        {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
                                 </div>
-                            @endif
-                            <hr class="my-2">
-                            <div class="flex justify-between text-lg font-bold text-primary">
-                                <span>Total Yang Dibayarkan:</span>
-                                <span>Rp
-                                    {{ number_format($payroll->net_salary + $payroll->additional_expenses, 0, ',', '.') }}</span>
+                                @if ($payroll->additional_expenses_notes)
+                                    <div>
+                                        <p class="text-text-label">Keterangan:</p>
+                                        <p class="text-sm">{{ $payroll->additional_expenses_notes }}</p>
+                                    </div>
+                                @endif
                             </div>
+                        @endif
+
+                        <hr class="my-3 border-purple-200">
+                        <div class="flex justify-between text-lg font-bold text-primary">
+                            <span>Total Yang Dibayarkan:</span>
+                            <span>Rp
+                                {{ number_format($payroll->net_salary + $payroll->additional_expenses, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 @endif
