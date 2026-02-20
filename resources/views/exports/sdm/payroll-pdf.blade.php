@@ -4,324 +4,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Absensi Pekerja</title>
+    <title>Laporan Penggajian & Absensi</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @page {
+            margin: 0.5cm 1cm;
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: Arial, sans-serif;
             font-size: 10px;
-            padding: 20px;
+            color: #333;
+            line-height: 1.3;
         }
 
         .header {
             margin-bottom: 20px;
-        }
-
-        .header h1 {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 3px double #444;
             text-align: center;
         }
 
-        .header-info {
-            display: table;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .header-info .row {
-            display: table-row;
-        }
-
-        .header-info .label {
-            display: table-cell;
-            width: 100px;
+        .company-name {
+            font-size: 16px;
             font-weight: bold;
-            padding: 3px 0;
+            text-transform: uppercase;
+            margin-bottom: 5px;
         }
 
-        .header-info .value {
-            display: table-cell;
-            padding: 3px 0;
+        .doc-title {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #555;
         }
 
-        table {
+        .meta-info {
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 10px;
+        }
+
+        .meta-info td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+
+        .label {
+            font-weight: bold;
+            width: 100px;
+            color: #555;
+        }
+
+        .main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
-        th {
-            background-color: #e0e0e0;
+        .main-table th {
+            background-color: #f4f4f4;
+            color: #333;
             font-weight: bold;
             padding: 8px 4px;
+            border: 1px solid #ccc;
             text-align: center;
-            border: 1px solid #000;
-            font-size: 9px;
+            vertical-align: middle;
         }
 
-        td {
+        .main-table td {
             padding: 6px 4px;
-            border: 1px solid #000;
-            font-size: 9px;
-            text-align: center;
+            border: 1px solid #ccc;
         }
 
-        .text-left {
-            text-align: left;
-        }
-
-        .text-right {
-            text-align: right;
+        .main-table tr:nth-child(even) {
+            background-color: #fafafa;
         }
 
         .text-center {
             text-align: center;
         }
 
-        .day-col {
-            width: 8%;
+        .text-right {
+            text-align: right;
         }
 
-        .name-col {
-            width: 20%;
+        .text-left {
+            text-align: left;
         }
 
-        .footer-section {
-            margin-top: 15px;
-            page-break-inside: avoid;
-        }
-
-        .footer-section h3 {
-            font-size: 11px;
+        .font-bold {
             font-weight: bold;
-            margin-bottom: 8px;
         }
 
-        .expense-table,
-        .kasbon-table {
-            width: 60%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
+        .summary-container {
+            width: 100%;
+            display: table;
+            margin-top: 10px;
         }
 
-        .expense-table td,
-        .kasbon-table td {
-            padding: 5px;
-            border: 1px solid #000;
-            font-size: 9px;
-        }
-
-        .total-section {
-            margin-top: 15px;
+        .summary-col {
+            display: table-cell;
+            width: 48%;
+            vertical-align: top;
             padding: 10px;
-            border: 2px solid #000;
-            background-color: #f5f5f5;
+            border: 1px solid #eee;
+            background: #fff;
         }
 
-        .total-section h2 {
-            font-size: 14px;
+        .spacer-col {
+            width: 4%;
+        }
+
+        .summary-header {
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .summary-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 3px;
+        }
+
+        .s-label {
+            display: table-cell;
+            text-align: left;
+        }
+
+        .s-value {
+            display: table-cell;
+            text-align: right;
             font-weight: bold;
         }
 
-        .footer {
+        .grand-total {
             margin-top: 20px;
-            font-size: 8px;
-            color: #666;
+            background-color: #f0f0f0;
+            border: 2px solid #333;
+            padding: 10px;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        .sig-box {
+            display: table-cell;
+            width: 33%;
             text-align: center;
+            vertical-align: top;
+        }
+
+        .sig-line {
+            margin-top: 60px;
+            border-top: 1px solid #333;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .legend {
+            font-size: 9px;
+            color: #666;
+            margin-top: -10px;
+            margin-bottom: 20px;
+            font-style: italic;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>DAFTAR ABSENSI PEKERJA</h1>
-        <div class="header-info">
-            @if ($projectName)
-                <div class="row">
-                    <div class="label">PROYEK:</div>
-                    <div class="value">{{ $projectName }}</div>
-                </div>
-            @endif
-            @if ($dateRange)
-                <div class="row">
-                    <div class="label">TANGGAL:</div>
-                    <div class="value">{{ $dateRange }}</div>
-                </div>
-            @endif
-            <div class="row">
-                <div class="label">PERIODE:</div>
-                <div class="value">{{ $periodText }}</div>
-            </div>
-        </div>
+        <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
+        <div class="doc-title">DAFTAR ABSENSI & PENGGAJIAN PEKERJA</div>
     </div>
 
-    @if (count($weekDays) > 0)
-        {{-- Format dengan absensi harian (jika minggu dipilih) --}}
-        <table>
-            <thead>
-                <tr>
-                    <th rowspan="2" style="width: 3%;">NO</th>
-                    <th rowspan="2" class="name-col">NAMA PEKERJA</th>
-                    <th colspan="7">HARI KERJA</th>
-                    <th rowspan="2" style="width: 10%;">UPAH/HARI</th>
-                    <th rowspan="2" style="width: 12%;">TOTAL UPAH DIBAYAR</th>
-                </tr>
-                <tr>
-                    <th class="day-col">MING</th>
-                    <th class="day-col">SEN</th>
-                    <th class="day-col">SEL</th>
-                    <th class="day-col">RAB</th>
-                    <th class="day-col">KAM</th>
-                    <th class="day-col">JUM</th>
-                    <th class="day-col">SAB</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($payrolls as $index => $payroll)
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td class="text-left">{{ $payroll->employee->name ?? '-' }}</td>
-                        @foreach ($weekDays as $date)
-                            @php
-                                $attendance = $payroll->attendances->firstWhere('attendance_date', $date);
-                                $mark = '';
-                                if ($attendance) {
-                                    if ($attendance->status === 'hadir') {
-                                        $mark = '✓';
-                                    } elseif ($attendance->status === 'lembur') {
-                                        $mark = 'L';
-                                    } elseif ($attendance->status === 'izin') {
-                                        $mark = 'I';
-                                    } elseif ($attendance->status === 'sakit') {
-                                        $mark = 'S';
-                                    } elseif ($attendance->status === 'cuti') {
-                                        $mark = 'C';
-                                    }
-                                }
-                            @endphp
-                            <td>{{ $mark }}</td>
-                        @endforeach
-                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <table class="meta-info">
+        @if ($projectName)
+            <tr>
+                <td class="label">PROYEK</td>
+                <td>: {{ $projectName }}</td>
+            </tr>
+        @endif
+        <tr>
+            <td class="label">PERIODE</td>
+            <td>: {{ $periodText }}</td>
+        </tr>
+        @if ($dateRange)
+            <tr>
+                <td class="label">TANGGAL</td>
+                <td>: {{ $dateRange }}</td>
+            </tr>
+        @endif
+    </table>
 
-        <div style="margin-bottom: 15px; font-size: 8px; color: #666;">
-            <strong>Keterangan:</strong> ✓ = Hadir | L = Lembur | I = Izin | S = Sakit | C = Cuti
-        </div>
-    @else
-        {{-- Format ringkasan (tanpa absensi harian) --}}
-        <table>
+    @if (count($weekDays) > 0)
+        {{-- TABEL ABSENSI HARIAN --}}
+        <table class="main-table">
             <thead>
                 <tr>
-                    <th style="width: 3%;">NO</th>
-                    <th style="width: 15%;">NAMA PEKERJA</th>
-                    <th style="width: 10%;">PERIODE</th>
-                    <th style="width: 8%;">HADIR</th>
-                    <th style="width: 6%;">IZIN</th>
-                    <th style="width: 6%;">SAKIT</th>
-                    <th style="width: 6%;">CUTI</th>
-                    <th style="width: 6%;">LEMBUR</th>
-                    <th style="width: 10%;">UPAH/HARI</th>
-                    <th style="width: 10%;">BONUS LEMBUR</th>
-                    <th style="width: 10%;">POTONGAN KASBON</th>
-                    <th style="width: 10%;">TOTAL DIBAYAR</th>
+                    <th rowspan="2" style="width: 30px;">NO</th>
+                    <th rowspan="2">NAMA PEKERJA</th>
+                    <th colspan="7">KEHADIRAN ({{ count($weekDays) }} Hari)</th>
+                    <th rowspan="2" style="width: 80px;">UPAH HARIAN</th>
+                    <th rowspan="2" style="width: 90px;">TOTAL UPAH</th>
+                </tr>
+                <tr>
+                    @foreach (['MING', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'] as $d)
+                        <th style="font-size: 8px; width: 25px;">{{ $d }}</th>
+                    @endforeach
                 </tr>
             </thead>
             <tbody>
                 @foreach ($payrolls as $index => $payroll)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
-                        <td class="text-left">{{ $payroll->employee->name ?? '-' }}</td>
-                        <td class="text-center">{{ $payroll->formatted_period }}</td>
+                        <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
+                        @foreach ($weekDays as $date)
+                            @php
+                                $attendance = $payroll->attendances->firstWhere('attendance_date', $date);
+                                $status = $attendance ? $attendance->status : '';
+                                $symbol = '-';
+                                $bg = '';
+
+                                if ($status === 'hadir') {
+                                    $symbol = '✓';
+                                } elseif ($status === 'lembur') {
+                                    $symbol = 'L';
+                                    $bg = '#e3f2fd';
+                                } elseif ($status === 'izin') {
+                                    $symbol = 'I';
+                                    $bg = '#fff3e0';
+                                } elseif ($status === 'sakit') {
+                                    $symbol = 'S';
+                                    $bg = '#ffebee';
+                                } elseif ($status === 'cuti') {
+                                    $symbol = 'C';
+                                    $bg = '#f3e5f5';
+                                }
+                            @endphp
+                            <td class="text-center" style="background-color: {{ $bg }}">{{ $symbol }}
+                            </td>
+                        @endforeach
+                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
+                        <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        <div class="legend">
+            Keterangan: ✓=Hadir, L=Lembur, I=Izin, S=Sakit, C=Cuti
+        </div>
+    @else
+        {{-- TABEL RINGKASAN --}}
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width: 30px;">NO</th>
+                    <th rowspan="2">NAMA PEKERJA</th>
+                    <th colspan="5">REKAP KEHADIRAN</th>
+                    <th rowspan="2">UPAH HARIAN</th>
+                    <th rowspan="2">BONUS LEMBUR</th>
+                    <th rowspan="2">KASBON</th>
+                    <th rowspan="2">DITERIMA</th>
+                </tr>
+                <tr>
+                    <th style="font-size: 8px;">Hdr</th>
+                    <th style="font-size: 8px;">Lbr</th>
+                    <th style="font-size: 8px;">Izn</th>
+                    <th style="font-size: 8px;">Skt</th>
+                    <th style="font-size: 8px;">Cut</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($payrolls as $index => $payroll)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
                         <td class="text-center">{{ $payroll->present_days }}</td>
+                        <td class="text-center">{{ $payroll->overtime_days }}</td>
                         <td class="text-center">{{ $payroll->permission_days }}</td>
                         <td class="text-center">{{ $payroll->sick_days }}</td>
                         <td class="text-center">{{ $payroll->leave_days }}</td>
-                        <td class="text-center">{{ $payroll->overtime_days }}</td>
                         <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
                         <td class="text-right">{{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
+                        <td class="text-right text-red" style="color: #c0392b;">
+                            {{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
+                        <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     @endif
 
-    <div class="footer-section">
-        <h3>PENGELUARAN TAMBAHAN:</h3>
-        <table class="expense-table">
-            @php
-                $allExpenses = [];
-                foreach ($payrolls as $payroll) {
-                    if ($payroll->additional_expenses_notes) {
-                        $expenses = json_decode($payroll->additional_expenses_notes, true);
-                        if ($expenses && is_array($expenses)) {
-                            foreach ($expenses as $exp) {
-                                $name = $exp['name'] ?? 'Lain-lain';
-                                $amount = $exp['amount'] ?? 0;
-                                if (!isset($allExpenses[$name])) {
-                                    $allExpenses[$name] = 0;
-                                }
-                                $allExpenses[$name] += $amount;
-                            }
+    {{-- SUMMARY SECTION --}}
+    @php
+        $totalWages = $payrolls->sum('net_salary');
+        $totalKasbon = $payrolls->sum('kasbon_deduction');
+
+        $allExpenses = [];
+        foreach ($payrolls as $payroll) {
+            if ($payroll->additional_expenses_notes) {
+                $expenses = json_decode($payroll->additional_expenses_notes, true);
+                if ($expenses && is_array($expenses)) {
+                    foreach ($expenses as $exp) {
+                        $name = $exp['name'] ?? 'Lain-lain';
+                        $amount = $exp['amount'] ?? 0;
+                        if (!isset($allExpenses[$name])) {
+                            $allExpenses[$name] = 0;
                         }
+                        $allExpenses[$name] += $amount;
                     }
                 }
-            @endphp
+            }
+        }
+        $totalExpenses = array_sum($allExpenses);
+        $grandTotal = $totalWages + $totalExpenses - $totalKasbon;
+    @endphp
+
+    <div class="summary-container">
+        <!-- Pengeluaran Tambahan -->
+        <div class="summary-col">
+            <div class="summary-header">PENGELUARAN TAMBAHAN (OPERASIONAL)</div>
             @if (count($allExpenses) > 0)
                 @foreach ($allExpenses as $name => $amount)
-                    <tr>
-                        <td class="text-left" style="width: 60%;">{{ $name }}</td>
-                        <td class="text-right">Rp {{ number_format($amount, 0, ',', '.') }}</td>
-                    </tr>
+                    <div class="summary-row">
+                        <div class="s-label">{{ $name }}</div>
+                        <div class="s-value">{{ number_format($amount, 0, ',', '.') }}</div>
+                    </div>
                 @endforeach
+                <div class="summary-row" style="border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 5px;">
+                    <div class="s-label font-bold">Total Tambahan</div>
+                    <div class="s-value">{{ number_format($totalExpenses, 0, ',', '.') }}</div>
+                </div>
             @else
-                <tr>
-                    <td colspan="2" class="text-center">Tidak ada pengeluaran tambahan</td>
-                </tr>
+                <div class="text-center" style="padding: 10px; color: #999;">- Tidak ada pengeluaran tambahan -</div>
             @endif
-        </table>
+        </div>
 
-        <h3>POTONGAN KASBON:</h3>
-        <table class="kasbon-table">
-            @php
-                $totalKasbon = $payrolls->sum('kasbon_deduction');
-            @endphp
-            @if ($totalKasbon > 0)
-                <tr>
-                    <td class="text-left" style="width: 60%;">Total Potongan Kasbon</td>
-                    <td class="text-right">Rp {{ number_format($totalKasbon, 0, ',', '.') }}</td>
-                </tr>
-            @else
-                <tr>
-                    <td colspan="2" class="text-center">Tidak ada potongan kasbon</td>
-                </tr>
-            @endif
-        </table>
+        <div class="spacer-col"></div>
+
+        <!-- Potongan Kasbon -->
+        <div class="summary-col">
+            <div class="summary-header">REKAPITULASI DANA</div>
+            <div class="summary-row">
+                <div class="s-label">Total Upah Pekerja</div>
+                <div class="s-value">{{ number_format($totalWages, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row">
+                <div class="s-label">Total Pengeluaran Tambahan</div>
+                <div class="s-value">{{ number_format($totalExpenses, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row" style="color: #c0392b;">
+                <div class="s-label">Total Potongan Kasbon</div>
+                <div class="s-value">({{ number_format($totalKasbon, 0, ',', '.') }})</div>
+            </div>
+        </div>
     </div>
 
-    <div class="total-section">
-        @php
-            $totalWages = $payrolls->sum('net_salary');
-            $totalExpenses = array_sum($allExpenses);
-            $grandTotal = $totalWages + $totalExpenses - $totalKasbon;
-        @endphp
-        <h2>TOTAL: Rp {{ number_format($grandTotal, 0, ',', '.') }}</h2>
+    <div class="grand-total">
+        TOTAL DIBAYARKAN: <span style="font-size: 18px; font-weight: bold;">Rp
+            {{ number_format($grandTotal, 0, ',', '.') }}</span>
     </div>
 
-    <div class="footer">
-        <p>Dicetak pada: {{ date('d/m/Y H:i:s') }} | PT. Aghitsna Karya Indah - Sistem ERP</p>
+    <div style="text-align: center; margin-top: 30px; font-size: 8px; color: #aaa;">
+        Dicetak otomatis oleh Sistem ERP PT. Aghitsna Karya Indah pada {{ date('d/m/Y H:i') }}
     </div>
 </body>
 
