@@ -1,0 +1,111 @@
+{{-- Modal Tambah Penawaran Proyek --}}
+<x-modal id="addModal" title="Tambah Penawaran Proyek" action="{{ route('project-quotation.store') }}" method="POST"
+    buttonText="Simpan" formId="addQuotationForm" onsubmit="return prepareAddSubmit()">
+
+    {{-- Hidden JSON input --}}
+    <input type="hidden" name="groups_json" id="addGroupsJson">
+
+    <div class="space-y-5">
+
+        {{-- Nomor Penawaran (readonly, auto-generated) --}}
+        <div class="bg-blue-50 rounded-lg p-3 flex items-center gap-3">
+            <i class="fa-solid fa-hashtag text-blue-500"></i>
+            <div>
+                <p class="text-xs text-gray-500">Nomor Penawaran (auto)</p>
+                <p class="text-sm font-semibold text-primary" id="addQuotationNumberDisplay">
+                    Akan digenerate otomatis
+                </p>
+            </div>
+        </div>
+
+        {{-- Row: Tanggal & Perihal --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-text-primary mb-1 text-sm font-medium">Tanggal <span
+                        class="text-error">*</span></label>
+                <input type="date" name="date" class="w-full border rounded-lg p-2 text-sm" required
+                    value="{{ date('Y-m-d') }}">
+            </div>
+            <div>
+                <label class="block text-text-primary mb-1 text-sm font-medium">Perihal (Hal)</label>
+                <input type="text" name="subject" class="w-full border rounded-lg p-2 text-sm"
+                    value="Penawaran Harga" maxlength="255">
+            </div>
+        </div>
+
+        {{-- Kepada & Alamat --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-text-primary mb-1 text-sm font-medium">Kepada Yth <span
+                        class="text-error">*</span></label>
+                <input type="text" name="recipient" class="w-full border rounded-lg p-2 text-sm"
+                    placeholder="Nama penerima / perusahaan" required maxlength="255">
+            </div>
+            <div>
+                <label class="block text-text-primary mb-1 text-sm font-medium">Alamat</label>
+                <input type="text" name="recipient_address" class="w-full border rounded-lg p-2 text-sm"
+                    value="Ditempat" maxlength="255">
+            </div>
+        </div>
+
+        {{-- ═══ GROUPS SECTION ══════════════════════════════════════════════════════ --}}
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-text-primary uppercase tracking-wide">
+                    <i class="fa-solid fa-layer-group text-primary mr-1"></i>
+                    Kelompok Item
+                </h3>
+                <button type="button" onclick="addGroup('add')"
+                    class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-all duration-200">
+                    <i class="fa-solid fa-plus"></i> Tambah Kelompok
+                </button>
+            </div>
+
+            <div id="addGroupsContainer" class="space-y-4">
+                {{-- Groups rendered by JS --}}
+            </div>
+
+            {{-- Grand Total --}}
+            <div class="mt-4 flex justify-end">
+                <div class="bg-yellow-50 border border-yellow-300 rounded-lg px-5 py-3 text-right min-w-[220px]">
+                    <p class="text-xs text-gray-500 mb-1">Grand Total</p>
+                    <p class="text-lg font-bold text-gray-800" id="addGrandTotal">Rp 0</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Rekening Pembayaran --}}
+        <div>
+            <label class="block text-text-primary mb-2 text-sm font-medium">
+                Rekening Pembayaran <span class="text-error">*</span>
+            </label>
+            <div class="space-y-2">
+                @foreach ($paymentAccounts as $account)
+                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
+                            class="w-4 h-4 accent-primary">
+                        <span class="text-sm">
+                            <strong>{{ $account->bank_name }}</strong> /
+                            {{ $account->account_number }} a/n {{ $account->account_holder }}
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Penandatangan --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-text-primary mb-1 text-sm font-medium">Ditandatangani Oleh</label>
+                <input type="text" name="signed_by" class="w-full border rounded-lg p-2 text-sm"
+                    placeholder="Nama penandatangan" maxlength="255">
+            </div>
+            <div>
+                <label class="block text-text-primary mb-1 text-sm font-medium">Divisi</label>
+                <input type="text" name="division" class="w-full border rounded-lg p-2 text-sm"
+                    placeholder="Contoh: Divisi Alumunium" maxlength="255">
+            </div>
+        </div>
+
+    </div>{{-- end space-y-5 --}}
+</x-modal>

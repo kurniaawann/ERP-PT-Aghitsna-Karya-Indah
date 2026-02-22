@@ -21,6 +21,7 @@ use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
 use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\InvoiceController;
+use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -233,5 +234,14 @@ Route::middleware('auth')->group(function () {
     // Route Invoice Administrasi - Export PDF
     Route::get('/invoice-administrasi/export/pdf', [InvoiceController::class, 'exportPdfAll'])->name('invoice.administrasi.export.pdf');
     Route::post('/invoice-administrasi/export/pdf-selected', [InvoiceController::class, 'exportPdfSelected'])->name('invoice.administrasi.export.pdf.selected');
+
+    // ─── Penawaran Proyek (Project Quotation) ──────────────────────────────
+    Route::get('/project-quotation', [ProjectQuotationController::class, 'index'])->name('project-quotation.index');
+    Route::get('/project-quotation/next-number', [ProjectQuotationController::class, 'getNextQuotationNumber'])->name('project-quotation.getNextNumber');
+    Route::post('/project-quotation', [ProjectQuotationController::class, 'store'])->name('project-quotation.store');
+    Route::put('/project-quotation/{project_quotation}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('project_quotation', '.*');
+    Route::delete('/project-quotation/destroy-selected', [ProjectQuotationController::class, 'destroySelected'])->name('project-quotation.destroySelected');
+    Route::get('/project-quotation/{quotation_number}/print/pdf', [ProjectQuotationController::class, 'printPdf'])->name('project-quotation.print.pdf')->where('quotation_number', '.*');
+    Route::post('/project-quotation/export/pdf-selected', [ProjectQuotationController::class, 'exportPdfSelected'])->name('project-quotation.export.pdf.selected');
 
 });
