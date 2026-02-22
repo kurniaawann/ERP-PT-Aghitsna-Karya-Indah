@@ -30,7 +30,7 @@
                                 <td class="p-2">{{ $employee->name }}</td>
 
                                 {{-- Upah Per Hari --}}
-                                <td class="p-2 text-right">
+                                <td class="p-2 text-center">
                                     {{ 'Rp ' . number_format($employee->daily_wage ?? 0, 0, ',', '.') }}
                                 </td>
 
