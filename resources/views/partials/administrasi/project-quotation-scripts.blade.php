@@ -284,7 +284,7 @@
         document.getElementById('addGroupsJson').value = JSON.stringify(groups);
 
         // Show loading spinner
-        const submitBtn = document.querySelector('#addQuotationForm button[type="submit"]');
+        const submitBtn = document.getElementById('submit-btn-addModal');
         if (submitBtn) {
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
             submitBtn.disabled = true;
@@ -314,7 +314,7 @@
         document.getElementById('editGroupsJson-' + quotNum).value = JSON.stringify(groups);
 
         // Show loading spinner
-        const submitBtn = document.querySelector('#editQuotationForm-' + quotNum + ' button[type="submit"]');
+        const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);
         if (submitBtn) {
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
             submitBtn.disabled = true;

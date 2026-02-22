@@ -7,10 +7,23 @@
     'readonly' => false,
     'confirmDelete' => false,
     'onConfirm' => null,
+    'size' => 'lg',
+    'formId' => null,
+    'onsubmit' => null,
 ])
 
+@php
+    $maxWidthClass = match ($size) {
+        '4xl' => 'max-w-4xl',
+        '6xl' => 'max-w-6xl',
+        'xl' => 'max-w-xl',
+        'md' => 'max-w-md',
+        default => 'max-w-lg',
+    };
+@endphp
+
 <div id="{{ $id }}" class="hidden fixed inset-0 z-50 bg-gray-900/60 items-center justify-center px-4">
-    <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-lg w-full {{ $maxWidthClass }} p-6 relative max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-semibold text-text-primary mb-4">{{ $title }}</h2>
 
         @if ($confirmDelete || (strtoupper($method) === 'DELETE' && $onConfirm))
@@ -68,7 +81,9 @@
             </div>
         @else
             {{-- Normal form submission --}}
-            <form action="{{ $action }}" method="POST" class="space-y-4">
+            <form action="{{ $action }}" method="POST" class="space-y-4"
+                @if ($formId) id="{{ $formId }}" @endif
+                @if ($onsubmit) onsubmit="{{ $onsubmit }}" @endif>
                 @csrf
                 @if (in_array(strtoupper($method), ['PUT', 'PATCH', 'DELETE']))
                     @method($method)
