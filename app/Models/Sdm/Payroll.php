@@ -13,6 +13,9 @@ class Payroll extends Model
         'employee_id',
         'period_month',
         'period_year',
+        'period_type',
+        'week_number',
+        'project_name', // Nama proyek (opsional)
         'base_salary',
         'total_work_days',
         'present_days',
@@ -22,6 +25,9 @@ class Payroll extends Model
         'overtime_days', // Lembur
         'deduction_amount',
         'overtime_total',
+        'kasbon_deduction',
+        'additional_expenses',
+        'additional_expenses_notes',
         'net_salary',
         'payment_date',
         'status',
@@ -31,6 +37,7 @@ class Payroll extends Model
     protected $casts = [
         'period_month' => 'integer',
         'period_year' => 'integer',
+        'week_number' => 'integer',
         'base_salary' => 'integer',
         'total_work_days' => 'integer',
         'present_days' => 'integer',
@@ -40,6 +47,8 @@ class Payroll extends Model
         'overtime_days' => 'integer',
         'deduction_amount' => 'integer',
         'overtime_total' => 'integer',
+        'kasbon_deduction' => 'integer',
+        'additional_expenses' => 'integer',
         'net_salary' => 'integer',
         'payment_date' => 'date',
     ];
@@ -53,12 +62,34 @@ class Payroll extends Model
     }
 
     /**
+     * Relasi ke Kasbon yang dipotong di payroll ini
+     */
+    public function kasbons()
+    {
+        return $this->hasMany(Kasbon::class, 'deducted_in_payroll_id');
+    }
+
+    /**
      * Scope untuk filter berdasarkan periode
      */
-    public function scopeForPeriod($query, $month, $year)
+    public function scopeForPeriod($query, $month, $year, $weekNumber = null)
     {
-        return $query->where('period_month', $month)
+        $query->where('period_month', $month)
             ->where('period_year', $year);
+
+        if ($weekNumber !== null) {
+            $query->where('week_number', $weekNumber);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Scope untuk filter payroll mingguan
+     */
+    public function scopeWeekly($query)
+    {
+        return $query->where('period_type', 'weekly');
     }
 
     /**
@@ -89,6 +120,39 @@ class Payroll extends Model
             12 => 'Desember'
         ];
 
-        return $months[$this->period_month] . ' ' . $this->period_year;
+        $period = $months[$this->period_month] . ' ' . $this->period_year;
+
+        if ($this->period_type === 'weekly' && $this->week_number) {
+            $period .= ' - Minggu ' . $this->week_number;
+        }
+
+        return $period;
+    }
+
+    /**
+     * Calculate net salary dengan kasbon deduction
+     */
+    public function calculateNetSalary()
+    {
+        // Base calculation: upah kotor - potongan + lembur
+        $netSalary = $this->base_salary - $this->deduction_amount + $this->overtime_total;
+
+        // Kurangi kasbon jika ada
+        if ($this->kasbon_deduction) {
+            $netSalary -= $this->kasbon_deduction;
+        }
+
+        // Tambah additional expenses (token listrik/air, dll) - ini pengeluaran PT
+        // Tidak mengurangi net salary karena ini benefit untuk karyawan
+
+        return $netSalary;
+    }
+
+    /**
+     * Get total payment (net salary + additional expenses)
+     */
+    public function getTotalPaymentAttribute()
+    {
+        return $this->net_salary + ($this->additional_expenses ?? 0);
     }
 }

@@ -3,9 +3,11 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\PageController;
-use App\Http\Controllers\Invoice\AlumuniumInvoiceController;
-use App\Http\Controllers\Invoice\ProyekInvoiceController;
-use App\Http\Controllers\Invoice\PaymentAccountController;
+use App\Http\Controllers\Finance\AlumuniumInvoiceController;
+use App\Http\Controllers\Finance\ProyekInvoiceController;
+use App\Http\Controllers\Finance\PaymentAccountController;
+use App\Http\Controllers\Finance\RecapSalesController;
+use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
@@ -13,6 +15,7 @@ use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
+use App\Http\Controllers\Sdm\KasbonController;
 use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
@@ -82,26 +85,26 @@ Route::middleware('auth')->group(function () {
     Route::post('/payment-accounts/{paymentAccount}/toggle', [PaymentAccountController::class, 'toggleActive'])->name('payment-accounts.toggle');
     Route::delete('/payment-accounts/destroy-selected', [PaymentAccountController::class, 'destroySelected'])->name('payment-accounts.destroySelected');
 
-    // Route Sales Report
-    Route::get('/sales-report', [SalesReportController::class, 'index'])->name('sales-report.index');
-    Route::post('/sales-report', [SalesReportController::class, 'store'])->name('sales-report.store');
-    Route::put('/sales-report/{id_sales_report}', [SalesReportController::class, 'update'])->name('sales-report.update');
-    Route::patch('/sales-report/{id_sales_report}/status', [SalesReportController::class, 'updateStatus'])->name('sales-report.updateStatus');
-    Route::delete('/sales-report/destroy-selected', [SalesReportController::class, 'destroySelected'])->name('sales-report.destroySelected');
+    // Route Recap Sales
+    Route::get('/recap-sales', [RecapSalesController::class, 'index'])->name('recap-sales.index');
+    Route::post('/recap-sales', [RecapSalesController::class, 'store'])->name('recap-sales.store');
+    Route::put('/recap-sales/{id_sales_recap}', [RecapSalesController::class, 'update'])->name('recap-sales.update');
+    Route::patch('/recap-sales/{id_sales_recap}/status', [RecapSalesController::class, 'updateStatus'])->name('recap-sales.updateStatus');
+    Route::delete('/recap-sales/destroy-selected', [RecapSalesController::class, 'destroySelected'])->name('recap-sales.destroySelected');
 
     // Export routes
-    Route::get('/sales-report/export/excel', [SalesReportController::class, 'exportExcel'])->name('sales-report.export.excel');
-    Route::get('/sales-report/export/pdf', [SalesReportController::class, 'exportPdf'])->name('sales-report.export.pdf');
+    Route::get('/recap-sales/export/excel', [RecapSalesController::class, 'exportExcel'])->name('recap-sales.export.excel');
+    Route::get('/recap-sales/export/pdf', [RecapSalesController::class, 'exportPdf'])->name('recap-sales.export.pdf');
 
-    // Route Expense Report
-    Route::get('/expense-report', [ExpenseReportController::class, 'index'])->name('expense-report.index');
-    Route::post('/expense-report', [ExpenseReportController::class, 'store'])->name('expense-report.store');
-    Route::put('/expense-report/{id}', [ExpenseReportController::class, 'update'])->name('expense-report.update');
-    Route::delete('/expense-report/destroy-selected', [ExpenseReportController::class, 'destroySelected'])->name('expense-report.destroySelected');
+    // Route Recap Expense
+    Route::get('/recap-expense', [RecapExpenseController::class, 'index'])->name('recap-expense.index');
+    Route::post('/recap-expense', [RecapExpenseController::class, 'store'])->name('recap-expense.store');
+    Route::put('/recap-expense/{id}', [RecapExpenseController::class, 'update'])->name('recap-expense.update');
+    Route::delete('/recap-expense/destroy-selected', [RecapExpenseController::class, 'destroySelected'])->name('recap-expense.destroySelected');
 
-    // Expense Report Export routes
-    Route::get('/expense-report/export/excel', [ExpenseReportController::class, 'exportExcel'])->name('expense-report.export.excel');
-    Route::get('/expense-report/export/pdf', [ExpenseReportController::class, 'exportPdf'])->name('expense-report.export.pdf');
+    // Recap Expense Export routes
+    Route::get('/recap-expense/export/excel', [RecapExpenseController::class, 'exportExcel'])->name('recap-expense.export.excel');
+    Route::get('/recap-expense/export/pdf', [RecapExpenseController::class, 'exportPdf'])->name('recap-expense.export.pdf');
 
     // Route Transaction Category
     Route::get('/transaction-category', [TransactionCategoryController::class, 'index'])->name('transaction-category.index');
@@ -109,6 +112,16 @@ Route::middleware('auth')->group(function () {
     Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
     Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
     Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
+
+    // ============================================
+    // Laporan Routes
+    // ============================================
+
+    // Route Laporan Rekap Penjualan
+    Route::get('/report/sales', [SalesReportController::class, 'index'])->name('report.sales');
+
+    // Route Laporan Rekap Pengeluaran
+    Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
 
     // ============================================
     // SDM (Sumber Daya Manusia) Routes
@@ -141,6 +154,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
     Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
     Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+
+    // Route Kasbon (Cash Advance)
+    Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');
+    Route::post('/kasbon', [KasbonController::class, 'store'])->name('kasbon.store');
+    Route::put('/kasbon/{kasbonCode}', [KasbonController::class, 'update'])->name('kasbon.update');
+    Route::delete('/kasbon/destroy-selected', [KasbonController::class, 'destroySelected'])->name('kasbon.destroySelected');
+    Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
+    Route::post('/kasbon/check-max', [KasbonController::class, 'checkMaxKasbon'])->name('kasbon.check-max');
+
+    // Route Division
+    Route::get('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'index'])->name('division.index');
+    Route::post('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'store'])->name('division.store');
+    Route::put('/division/{division}', [\App\Http\Controllers\Sdm\DivisionController::class, 'update'])->name('division.update');
+    Route::delete('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'destroy'])->name('division.destroy');
 
     // ============================================
     // Finance (Keuangan) Routes

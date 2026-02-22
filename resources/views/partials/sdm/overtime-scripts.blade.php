@@ -48,6 +48,7 @@
         }
 
         // Cek apakah kombinasi employee + date sudah ada
+        // Karyawan hanya boleh lembur jika mereka hadir (status: hadir)
         if (existingAttendance[employeeId] && existingAttendance[employeeId][date]) {
             const existing = existingAttendance[employeeId][date];
             const employeeName = addEmployeeSelect.options[addEmployeeSelect.selectedIndex].text.split(' - ')[0];
@@ -57,15 +58,39 @@
                 year: 'numeric'
             });
 
-            addDuplicateWarningText.textContent =
-                `Karyawan ${employeeName} sudah memiliki data absensi/lembur pada tanggal ${formattedDate} (Status: ${existing.status}). Silakan pilih tanggal lain atau edit data yang sudah ada.`;
-            addDuplicateWarning.classList.remove('hidden');
+            // Cegah jika sudah ada data lembur (duplikat)
+            if (existing.status === 'lembur') {
+                addDuplicateWarningText.textContent =
+                    `Karyawan ${employeeName} sudah memiliki data lembur pada tanggal ${formattedDate}. Silakan pilih tanggal lain atau edit data yang sudah ada.`;
+                addDuplicateWarning.classList.remove('hidden');
 
-            if (addSubmitBtn) {
-                addSubmitBtn.disabled = true;
-                addSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                if (addSubmitBtn) {
+                    addSubmitBtn.disabled = true;
+                    addSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+                return false;
             }
-            return false;
+            // Cegah jika karyawan izin, sakit, atau cuti (tidak masuk akal ada lembur)
+            else if (existing.status === 'izin' || existing.status === 'sakit' || existing.status === 'cuti') {
+                addDuplicateWarningText.textContent =
+                    `Karyawan ${employeeName} memiliki status ${existing.status.toUpperCase()} pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan untuk karyawan yang hadir.`;
+                addDuplicateWarning.classList.remove('hidden');
+
+                if (addSubmitBtn) {
+                    addSubmitBtn.disabled = true;
+                    addSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+                return false;
+            }
+            // Izinkan jika status adalah "hadir" atau status lainnya
+            else {
+                addDuplicateWarning.classList.add('hidden');
+                if (addSubmitBtn) {
+                    addSubmitBtn.disabled = false;
+                    addSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+                return true;
+            }
         } else {
             addDuplicateWarning.classList.add('hidden');
             if (addSubmitBtn) {
@@ -116,7 +141,7 @@
             if (existingAttendance[employeeId] && existingAttendance[employeeId][date]) {
                 const existing = existingAttendance[employeeId][date];
 
-                // Jika ID sama, berarti ini record yang sama (seharusnya tidak terjadi karena sudah cek tanggal)
+                // Jika ID sama, berarti ini record yang sama (skip validasi)
                 if (existing.id != overtimeId) {
                     const employeeName = dateInput.closest('form').querySelector('input[type="text"]').value;
                     const formattedDate = new Date(date).toLocaleDateString('id-ID', {
@@ -125,15 +150,31 @@
                         year: 'numeric'
                     });
 
-                    duplicateWarningText.textContent =
-                        `Karyawan ${employeeName} sudah memiliki data absensi/lembur pada tanggal ${formattedDate} (Status: ${existing.status}). Silakan pilih tanggal lain atau hapus data yang sudah ada.`;
-                    duplicateWarning.classList.remove('hidden');
+                    // Cegah jika status adalah "lembur" (duplikat)
+                    if (existing.status === 'lembur') {
+                        duplicateWarningText.textContent =
+                            `Karyawan ${employeeName} sudah memiliki data lembur pada tanggal ${formattedDate}. Silakan pilih tanggal lain atau hapus data yang sudah ada.`;
+                        duplicateWarning.classList.remove('hidden');
 
-                    if (submitBtn) {
-                        submitBtn.disabled = true;
-                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+                        return false;
                     }
-                    return false;
+                    // Cegah jika status adalah izin, sakit, atau cuti
+                    else if (existing.status === 'izin' || existing.status === 'sakit' || existing.status ===
+                        'cuti') {
+                        duplicateWarningText.textContent =
+                            `Karyawan ${employeeName} memiliki status ${existing.status.toUpperCase()} pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan untuk karyawan yang hadir.`;
+                        duplicateWarning.classList.remove('hidden');
+
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+                        return false;
+                    }
                 }
             }
 

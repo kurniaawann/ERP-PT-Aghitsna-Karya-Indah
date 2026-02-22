@@ -347,7 +347,8 @@
                             <!-- Payment Installment Row -->
                             <tr style="background-color: #E9D5FF;">
                                 <td colspan="5" class="center">
-                                    <strong>{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</strong></td>
+                                    <strong>{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</strong>
+                                </td>
                                 <td class="right"><strong>Rp
                                         {{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}</strong></td>
                             </tr>
@@ -374,12 +375,12 @@
                     : $invoice->selected_payment_accounts ?? [];
 
                 if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
                         ->orderBy('id')
                         ->get();
                 } else {
                     // Fallback ke semua rekening aktif jika tidak ada yang dipilih
-                    $paymentAccounts = \App\Models\Invoice\PaymentAccount::active()->get();
+                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
                 }
             @endphp
             @foreach ($paymentAccounts as $account)

@@ -18,6 +18,16 @@
                 {{-- Filter Tahun --}}
                 <x-filters.year-filter :value="request('year')" />
 
+                {{-- Filter Minggu --}}
+                <select name="week_number"
+                    class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="">Semua Minggu</option>
+                    <option value="1" {{ request('week_number') == 1 ? 'selected' : '' }}>Minggu 1</option>
+                    <option value="2" {{ request('week_number') == 2 ? 'selected' : '' }}>Minggu 2</option>
+                    <option value="3" {{ request('week_number') == 3 ? 'selected' : '' }}>Minggu 3</option>
+                    <option value="4" {{ request('week_number') == 4 ? 'selected' : '' }}>Minggu 4</option>
+                </select>
+
                 {{-- Search Input --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari karyawan..." />
             </form>
@@ -25,7 +35,12 @@
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('payroll.export.excel')" :pdfRoute="route('payroll.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
+                    <x-buttons.print-dropdown :excelRoute="route('payroll.export.excel')" :pdfRoute="route('payroll.export.pdf')" :queryParams="[
+                        'search' => request('search'),
+                        'month' => request('month'),
+                        'year' => request('year'),
+                        'week_number' => request('week_number'),
+                    ]" />
 
                     <button type="button" id="bulk-pay-button" onclick="openModal('bulkPayModal')"
                         class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"

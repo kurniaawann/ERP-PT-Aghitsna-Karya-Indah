@@ -74,7 +74,7 @@
                     <div class="flex items-center">
                         <i class="fas fa-file-invoice w-5 text-text-tertiary group-hover:text-primary">
                         </i>
-                        <span class="ml-3 font-medium">Invoice</span>
+                        <span class="ml-3 font-medium">Keuangan</span>
                     </div>
 
                     <i id="invoiceDropdownIcon"
@@ -84,13 +84,13 @@
 
                 {{-- Submenu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('payment-accounts*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-expense*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/alumunium-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('alumunium-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-receipt w-4 
+                                class="fas fa-file-contract w-4 
                                 {{ request()->is('alumunium-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice Alumunium</span>
@@ -118,6 +118,28 @@
                             <span class="ml-3 text-sm font-medium">Rekening Pembayaran</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ url('/recap-sales') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('recap-sales*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-bar w-4 
+                                {{ request()->is('recap-sales*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Rekap Penjualan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/recap-expense') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('recap-expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-money-bill-wave w-4 
+                                {{ request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Rekap Pengeluaran</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
 
@@ -139,29 +161,7 @@
 
                 {{-- Submenu --}}
                 <ul id="laporanDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('sales-report*') || request()->is('expense-report*') || request()->is('transaction-category*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/sales-report') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('sales-report*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-chart-bar w-4 
-                                {{ request()->is('sales-report*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Penjualan</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/expense-report') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('expense-report*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-money-bill-wave w-4 
-                                {{ request()->is('expense-report*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
-                        </a>
-                    </li>
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/sales*') || request()->is('report/expense*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/transaction-category') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -171,6 +171,28 @@
                                 {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.sales') }}"
+                            class="flex items-center px-4 py-2 rounded-lg group
+                                {{ request()->is('report/sales*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-line w-4 
+                                {{ request()->is('report/sales*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Penjualan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.expense') }}"
+                            class="flex items-center px-4 py-2 rounded-lg group
+                                {{ request()->is('report/expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-pie w-4 
+                                {{ request()->is('report/expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
                         </a>
                     </li>
                 </ul>
@@ -194,7 +216,7 @@
 
                 {{-- Submenu --}}
                 <ul id="sdmDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/employee') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -229,6 +251,28 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ url('/kasbon') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-hand-holding-usd w-4 
+                                {{ request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Kasbon</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/division') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('division*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-sitemap w-4 
+                                {{ request()->is('division*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Divisi</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ url('/payroll') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
@@ -239,34 +283,12 @@
                             <span class="ml-3 text-sm font-medium">Payroll</span>
                         </a>
                     </li>
-                </ul>
-            </li>
-
-            {{-- Finance (Keuangan) Dropdown --}}
-            <li>
-                <button onclick="toggleDropdown('financeDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
-
-                    <div class="flex items-center">
-                        <i class="fas fa-wallet w-5 text-text-tertiary group-hover:text-primary">
-                        </i>
-                        <span class="ml-3 font-medium">Keuangan</span>
-                    </div>
-
-                    <i id="financeDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
-                    </i>
-                </button>
-
-                {{-- Submenu --}}
-                <ul id="financeDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/reimburse') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-hand-holding-usd w-4 
+                                class="fas fa-receipt w-4 
                                 {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Reimbursement</span>

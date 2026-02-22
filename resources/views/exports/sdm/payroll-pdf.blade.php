@@ -4,57 +4,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Payroll</title>
+    <title>Laporan Penggajian & Absensi</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @page {
+            margin: 0.5cm 1cm;
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 9px;
-            padding: 15px;
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            color: #333;
+            line-height: 1.3;
         }
 
         .header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px double #444;
             text-align: center;
-            margin-bottom: 15px;
         }
 
-        .header h1 {
+        .company-name {
             font-size: 16px;
             font-weight: bold;
+            text-transform: uppercase;
             margin-bottom: 5px;
         }
 
-        .header h2 {
-            font-size: 13px;
-            font-weight: normal;
+        .doc-title {
+            font-size: 14px;
             margin-bottom: 10px;
+            color: #555;
         }
 
-        table {
+        .meta-info {
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 10px;
+        }
+
+        .meta-info td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+
+        .label {
+            font-weight: bold;
+            width: 100px;
+            color: #555;
+        }
+
+        .main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-bottom: 20px;
         }
 
-        th {
-            background-color: #4472C4;
-            color: white;
+        .main-table th {
+            background-color: #f4f4f4;
+            color: #333;
             font-weight: bold;
             padding: 8px 4px;
+            border: 1px solid #ccc;
             text-align: center;
-            border: 1px solid #000;
-            font-size: 8px;
+            vertical-align: middle;
         }
 
-        td {
+        .main-table td {
             padding: 6px 4px;
-            border: 1px solid #000;
-            font-size: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .main-table tr:nth-child(even) {
+            background-color: #fafafa;
         }
 
         .text-center {
@@ -69,146 +91,284 @@
             text-align: left;
         }
 
-        tr.total-row {
-            background-color: #FFD966;
+        .font-bold {
             font-weight: bold;
         }
 
-        .status-paid {
-            background-color: #C6EFCE;
-            color: #006100;
-            font-weight: bold;
-            text-align: center;
+        .summary-container {
+            width: 100%;
+            display: table;
+            margin-top: 10px;
         }
 
-        .status-draft {
-            background-color: #FFC7CE;
-            color: #9C0006;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .footer {
-            margin-top: 15px;
-            font-size: 8px;
-            color: #666;
-        }
-
-        .summary-section {
-            margin-top: 20px;
+        .summary-col {
+            display: table-cell;
+            width: 48%;
+            vertical-align: top;
             padding: 10px;
-            border-top: 2px solid #333;
+            border: 1px solid #eee;
+            background: #fff;
         }
 
-        .summary-table {
-            width: 50%;
-            margin-left: auto;
-            border: none;
+        .spacer-col {
+            width: 4%;
         }
 
-        .summary-table td {
-            border: none;
-            padding: 5px;
-            font-size: 9px;
-        }
-
-        .summary-table .label {
+        .summary-header {
             font-weight: bold;
-            width: 60%;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            font-size: 11px;
         }
 
-        .summary-table .value {
+        .summary-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 3px;
+        }
+
+        .s-label {
+            display: table-cell;
+            text-align: left;
+        }
+
+        .s-value {
+            display: table-cell;
             text-align: right;
             font-weight: bold;
+        }
+
+        .grand-total {
+            margin-top: 20px;
+            background-color: #f0f0f0;
+            border: 2px solid #333;
+            padding: 10px;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        .sig-box {
+            display: table-cell;
+            width: 33%;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .sig-line {
+            margin-top: 60px;
+            border-top: 1px solid #333;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .legend {
+            font-size: 9px;
+            color: #666;
+            margin-top: -10px;
+            margin-bottom: 20px;
+            font-style: italic;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>LAPORAN PAYROLL (PENGGAJIAN KARYAWAN)</h1>
-        <h2>Periode: {{ $periodText }}</h2>
+        <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
+        <div class="doc-title">DAFTAR ABSENSI & PENGGAJIAN PEKERJA</div>
     </div>
 
-    <table>
-        <thead>
+    <table class="meta-info">
+        @if ($projectName)
             <tr>
-                <th style="width: 3%;">NO</th>
-                <th style="width: 8%;">KODE</th>
-                <th style="width: 15%;">NAMA KARYAWAN</th>
-                <th style="width: 12%;">JABATAN</th>
-                <th style="width: 8%;">PERIODE</th>
-                <th style="width: 10%;">GAJI POKOK</th>
-                <th style="width: 4%;">HADIR</th>
-                <th style="width: 4%;">IZIN</th>
-                <th style="width: 4%;">SAKIT</th>
-                <th style="width: 4%;">CUTI</th>
-                <th style="width: 4%;">LEMBUR</th>
-                <th style="width: 8%;">POTONGAN</th>
-                <th style="width: 8%;">TOTAL LEMBUR</th>
-                <th style="width: 10%;">GAJI BERSIH</th>
-                <th style="width: 6%;">STATUS</th>
+                <td class="label">PROYEK</td>
+                <td>: {{ $projectName }}</td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach ($payrolls as $index => $payroll)
-                <tr>
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">{{ $payroll->employee->employee_code ?? '-' }}</td>
-                    <td class="text-left">{{ $payroll->employee->name ?? '-' }}</td>
-                    <td class="text-left">{{ $payroll->employee->jabatan ?? '-' }}</td>
-                    <td class="text-center">{{ $payroll->formatted_period }}</td>
-                    <td class="text-right">Rp {{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
-                    <td class="text-center">{{ $payroll->present_days }}</td>
-                    <td class="text-center">{{ $payroll->permission_days }}</td>
-                    <td class="text-center">{{ $payroll->sick_days }}</td>
-                    <td class="text-center">{{ $payroll->leave_days }}</td>
-                    <td class="text-center">{{ $payroll->overtime_days }}</td>
-                    <td class="text-right">Rp {{ number_format($payroll->deduction_amount, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
-                    <td class="{{ $payroll->status === 'paid' ? 'status-paid' : 'status-draft' }}">
-                        {{ strtoupper($payroll->status) }}
-                    </td>
-                </tr>
-            @endforeach
-
-            <tr class="total-row">
-                <td colspan="5" class="text-center">TOTAL</td>
-                <td class="text-right">Rp {{ number_format($totalBaseSalary, 0, ',', '.') }}</td>
-                <td colspan="5"></td>
-                <td class="text-right">Rp {{ number_format($totalDeduction, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($totalOvertime, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($totalNetSalary, 0, ',', '.') }}</td>
-                <td></td>
+        @endif
+        <tr>
+            <td class="label">PERIODE</td>
+            <td>: {{ $periodText }}</td>
+        </tr>
+        @if ($dateRange)
+            <tr>
+                <td class="label">TANGGAL</td>
+                <td>: {{ $dateRange }}</td>
             </tr>
-        </tbody>
+        @endif
     </table>
 
-    <div class="summary-section">
-        <table class="summary-table">
-            <tr>
-                <td class="label">Total Gaji Pokok:</td>
-                <td class="value">Rp {{ number_format($totalBaseSalary, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td class="label">Total Potongan:</td>
-                <td class="value">Rp {{ number_format($totalDeduction, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td class="label">Total Lembur:</td>
-                <td class="value">Rp {{ number_format($totalOvertime, 0, ',', '.') }}</td>
-            </tr>
-            <tr style="border-top: 2px solid #333;">
-                <td class="label" style="font-size: 10px;">TOTAL GAJI BERSIH:</td>
-                <td class="value" style="font-size: 10px;">Rp {{ number_format($totalNetSalary, 0, ',', '.') }}</td>
-            </tr>
+    @if (count($weekDays) > 0)
+        {{-- TABEL ABSENSI HARIAN --}}
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width: 30px;">NO</th>
+                    <th rowspan="2">NAMA PEKERJA</th>
+                    <th colspan="7">KEHADIRAN ({{ count($weekDays) }} Hari)</th>
+                    <th rowspan="2" style="width: 80px;">UPAH HARIAN</th>
+                    <th rowspan="2" style="width: 90px;">TOTAL UPAH</th>
+                </tr>
+                <tr>
+                    @foreach (['MING', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'] as $d)
+                        <th style="font-size: 8px; width: 25px;">{{ $d }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($payrolls as $index => $payroll)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
+                        @foreach ($weekDays as $date)
+                            @php
+                                $attendance = $payroll->attendances->firstWhere('attendance_date', $date);
+                                $status = $attendance ? $attendance->status : '';
+                                $symbol = '-';
+                                $bg = '';
+
+                                if ($status === 'hadir') {
+                                    $symbol = '✓';
+                                } elseif ($status === 'lembur') {
+                                    $symbol = 'L';
+                                    $bg = '#e3f2fd';
+                                } elseif ($status === 'izin') {
+                                    $symbol = 'I';
+                                    $bg = '#fff3e0';
+                                } elseif ($status === 'sakit') {
+                                    $symbol = 'S';
+                                    $bg = '#ffebee';
+                                } elseif ($status === 'cuti') {
+                                    $symbol = 'C';
+                                    $bg = '#f3e5f5';
+                                }
+                            @endphp
+                            <td class="text-center" style="background-color: {{ $bg }}">{{ $symbol }}
+                            </td>
+                        @endforeach
+                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
+                        <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
         </table>
+        <div class="legend">
+            Keterangan: ✓=Hadir, L=Lembur, I=Izin, S=Sakit, C=Cuti
+        </div>
+    @else
+        {{-- TABEL RINGKASAN --}}
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width: 30px;">NO</th>
+                    <th rowspan="2">NAMA PEKERJA</th>
+                    <th colspan="5">REKAP KEHADIRAN</th>
+                    <th rowspan="2">UPAH HARIAN</th>
+                    <th rowspan="2">BONUS LEMBUR</th>
+                    <th rowspan="2">KASBON</th>
+                    <th rowspan="2">DITERIMA</th>
+                </tr>
+                <tr>
+                    <th style="font-size: 8px;">Hdr</th>
+                    <th style="font-size: 8px;">Lbr</th>
+                    <th style="font-size: 8px;">Izn</th>
+                    <th style="font-size: 8px;">Skt</th>
+                    <th style="font-size: 8px;">Cut</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($payrolls as $index => $payroll)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
+                        <td class="text-center">{{ $payroll->present_days }}</td>
+                        <td class="text-center">{{ $payroll->overtime_days }}</td>
+                        <td class="text-center">{{ $payroll->permission_days }}</td>
+                        <td class="text-center">{{ $payroll->sick_days }}</td>
+                        <td class="text-center">{{ $payroll->leave_days }}</td>
+                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
+                        <td class="text-right text-red" style="color: #c0392b;">
+                            {{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
+                        <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
+    {{-- SUMMARY SECTION --}}
+    @php
+        $totalWages = $payrolls->sum('net_salary');
+        $totalKasbon = $payrolls->sum('kasbon_deduction');
+
+        $allExpenses = [];
+        foreach ($payrolls as $payroll) {
+            if ($payroll->additional_expenses_notes) {
+                $expenses = json_decode($payroll->additional_expenses_notes, true);
+                if ($expenses && is_array($expenses)) {
+                    foreach ($expenses as $exp) {
+                        $name = $exp['name'] ?? 'Lain-lain';
+                        $amount = $exp['amount'] ?? 0;
+                        if (!isset($allExpenses[$name])) {
+                            $allExpenses[$name] = 0;
+                        }
+                        $allExpenses[$name] += $amount;
+                    }
+                }
+            }
+        }
+        $totalExpenses = array_sum($allExpenses);
+        $grandTotal = $totalWages + $totalExpenses - $totalKasbon;
+    @endphp
+
+    <div class="summary-container">
+        <!-- Pengeluaran Tambahan -->
+        <div class="summary-col">
+            <div class="summary-header">PENGELUARAN TAMBAHAN (OPERASIONAL)</div>
+            @if (count($allExpenses) > 0)
+                @foreach ($allExpenses as $name => $amount)
+                    <div class="summary-row">
+                        <div class="s-label">{{ $name }}</div>
+                        <div class="s-value">{{ number_format($amount, 0, ',', '.') }}</div>
+                    </div>
+                @endforeach
+                <div class="summary-row" style="border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 5px;">
+                    <div class="s-label font-bold">Total Tambahan</div>
+                    <div class="s-value">{{ number_format($totalExpenses, 0, ',', '.') }}</div>
+                </div>
+            @else
+                <div class="text-center" style="padding: 10px; color: #999;">- Tidak ada pengeluaran tambahan -</div>
+            @endif
+        </div>
+
+        <div class="spacer-col"></div>
+
+        <!-- Potongan Kasbon -->
+        <div class="summary-col">
+            <div class="summary-header">REKAPITULASI DANA</div>
+            <div class="summary-row">
+                <div class="s-label">Total Upah Pekerja</div>
+                <div class="s-value">{{ number_format($totalWages, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row">
+                <div class="s-label">Total Pengeluaran Tambahan</div>
+                <div class="s-value">{{ number_format($totalExpenses, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row" style="color: #c0392b;">
+                <div class="s-label">Total Potongan Kasbon</div>
+                <div class="s-value">({{ number_format($totalKasbon, 0, ',', '.') }})</div>
+            </div>
+        </div>
     </div>
 
-    <div class="footer">
-        <p>Dicetak pada: {{ date('d/m/Y H:i:s') }}</p>
-        <p>PT. Aghitsna Karya Indah - Sistem ERP</p>
+    <div class="grand-total">
+        TOTAL DIBAYARKAN: <span style="font-size: 18px; font-weight: bold;">Rp
+            {{ number_format($grandTotal, 0, ',', '.') }}</span>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; font-size: 8px; color: #aaa;">
+        Dicetak otomatis oleh Sistem ERP PT. Aghitsna Karya Indah pada {{ date('d/m/Y H:i') }}
     </div>
 </body>
 

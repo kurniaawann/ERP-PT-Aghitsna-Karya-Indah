@@ -33,8 +33,17 @@
                             <p class="text-text-label">Periode:</p>
                             <p class="font-semibold">
                                 {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('F Y') }}
+                                @if ($payroll->week_number)
+                                    - Minggu {{ $payroll->week_number }}
+                                @endif
                             </p>
                         </div>
+                        @if ($payroll->project_name)
+                            <div>
+                                <p class="text-text-label">Proyek:</p>
+                                <p class="font-semibold">{{ $payroll->project_name }}</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -42,6 +51,10 @@
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <h3 class="font-semibold text-text-primary mb-3">Rekapitulasi Kehadiran</h3>
                     <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-text-label">Total Hari Kerja:</span>
+                            <span class="font-semibold">{{ $payroll->total_work_days }} hari</span>
+                        </div>
                         <div class="flex justify-between">
                             <span class="text-text-label">Hadir:</span>
                             <span class="font-semibold">{{ $payroll->present_days }} hari</span>
@@ -67,32 +80,100 @@
 
                 {{-- Salary Calculation --}}
                 <div class="bg-green-50 p-4 rounded-lg">
-                    <h3 class="font-semibold text-text-primary mb-3">Perhitungan Gaji</h3>
+                    <h3 class="font-semibold text-text-primary mb-3">Perhitungan Upah</h3>
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
-                            <span class="text-text-label">Gaji Pokok:</span>
+                            <span class="text-text-label">Upah Per Hari:</span>
                             <span class="font-semibold">Rp
                                 {{ number_format($payroll->base_salary, 0, ',', '.') }}</span>
                         </div>
-                        <div class="flex justify-between text-red-600">
-                            <span>Potongan
-                                ({{ $payroll->permission_days + $payroll->sick_days + $payroll->leave_days }}
-                                hari × Rp 30.000):</span>
-                            <span class="font-semibold">- Rp
-                                {{ number_format($payroll->deduction_amount, 0, ',', '.') }}</span>
+                        <div class="flex justify-between">
+                            <span class="text-text-label">Hari Masuk:</span>
+                            <span class="font-semibold">{{ $payroll->present_days }} hari</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-label">Total Upah:</span>
+                            <span class="font-semibold">Rp
+                                {{ number_format($payroll->base_salary * $payroll->present_days, 0, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between text-green-600">
                             <span>Lembur:</span>
                             <span class="font-semibold">+ Rp
                                 {{ number_format($payroll->overtime_total, 0, ',', '.') }}</span>
                         </div>
+                        @if ($payroll->kasbon_deduction)
+                            <div class="flex justify-between text-red-600">
+                                <span>Kasbon Dipotong:</span>
+                                <span class="font-semibold">- Rp
+                                    {{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
                         <hr class="my-2">
                         <div class="flex justify-between text-lg font-bold text-primary">
-                            <span>Gaji Bersih:</span>
+                            <span>Upah Bersih:</span>
                             <span>Rp {{ number_format($payroll->net_salary, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 </div>
+
+                {{-- Additional Expenses --}}
+                @if ($payroll->additional_expenses)
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-text-primary mb-3">Pengeluaran Tambahan PT</h3>
+
+                        @php
+                            $expenseItems = [];
+                            if ($payroll->additional_expenses_notes) {
+                                $decoded = json_decode($payroll->additional_expenses_notes, true);
+                                if (is_array($decoded)) {
+                                    $expenseItems = $decoded;
+                                }
+                            }
+                        @endphp
+
+                        @if (count($expenseItems) > 0)
+                            {{-- List of expense items --}}
+                            <div class="space-y-2 mb-3">
+                                @foreach ($expenseItems as $item)
+                                    <div
+                                        class="flex justify-between text-sm py-1.5 px-2 bg-white rounded border border-purple-200">
+                                        <span class="text-text-label">{{ $item['name'] ?? 'Item' }}</span>
+                                        <span class="font-semibold text-purple-700">Rp
+                                            {{ number_format($item['amount'] ?? 0, 0, ',', '.') }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <hr class="my-3 border-purple-200">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-text-label">Total Pengeluaran:</span>
+                                <span class="text-purple-700">Rp
+                                    {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
+                            </div>
+                        @else
+                            {{-- Fallback: jika format lama (text biasa) --}}
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-text-label">Jumlah:</span>
+                                    <span class="font-semibold">Rp
+                                        {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
+                                </div>
+                                @if ($payroll->additional_expenses_notes)
+                                    <div>
+                                        <p class="text-text-label">Keterangan:</p>
+                                        <p class="text-sm">{{ $payroll->additional_expenses_notes }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
+                        <hr class="my-3 border-purple-200">
+                        <div class="flex justify-between text-lg font-bold text-primary">
+                            <span>Total Yang Dibayarkan:</span>
+                            <span>Rp
+                                {{ number_format($payroll->net_salary + $payroll->additional_expenses, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                @endif
 
                 {{-- Payment Info --}}
                 @if ($payroll->status === 'paid')

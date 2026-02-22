@@ -26,8 +26,11 @@ class EmployeeController extends Controller
             // Pagination 10 data per halaman
             ->paginate(10);
 
+        // Get all divisions for dropdown
+        $divisions = \App\Models\Sdm\Division::orderBy('name')->get();
+
         // Return view dengan data employees (karyawan + pagination) dan search (untuk maintain keyword)
-        return view('pages.sdm.employee', compact('employees', 'search'));
+        return view('pages.sdm.employee', compact('employees', 'search', 'divisions'));
     }
 
     public function store(Request $request)
@@ -41,6 +44,11 @@ class EmployeeController extends Controller
         // Method ini ada di Model Employee, berfungsi untuk generate kode otomatis berdasarkan data terakhir
         $data['employee_code'] = Employee::generateEmployeeCode();
 
+        // Convert daily_wage to null if empty
+        if (empty($data['daily_wage'])) {
+            $data['daily_wage'] = null;
+        }
+
         // Insert data karyawan ke database
         // create() akan insert record baru ke tabel employees dan return model instance
         Employee::create($data);
@@ -53,10 +61,17 @@ class EmployeeController extends Controller
     {
         // Parameter $employee sudah otomatis di-inject oleh Laravel Route Model Binding
         // Laravel otomatis mencari Employee by ID dari route parameter
+        $data = $request->all();
+
+        // Convert daily_wage to null if empty
+        if (empty($data['daily_wage'])) {
+            $data['daily_wage'] = null;
+        }
+
         // Update semua field dari request ke model employee
         // all() mengambil semua input dari form edit
         // Note: employee_code tidak akan berubah karena tidak ada di form edit (sebagai identifier unik)
-        $employee->update($request->all());
+        $employee->update($data);
 
         // Redirect ke halaman index employee dengan flash message sukses
         return redirect()->route('employee.index')->with('success', 'Data karyawan berhasil diperbarui!');

@@ -158,7 +158,7 @@
 
         <div class="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
             @php
-                $paymentAccounts = \App\Models\Invoice\PaymentAccount::where('is_active', true)->orderBy('id')->get();
+                $paymentAccounts = \App\Models\Finance\PaymentAccount::where('is_active', true)->orderBy('id')->get();
                 $selectedAccounts = $invoice->selected_payment_accounts ?? [];
             @endphp
 

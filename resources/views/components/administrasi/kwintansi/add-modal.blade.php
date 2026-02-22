@@ -42,7 +42,7 @@
         <select name="payment_account_id" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Bank tidak boleh kosong')" oninput="this.setCustomValidity('')">
             <option value="">Pilih Bank</option>
-            @foreach (\App\Models\Invoice\PaymentAccount::active()->get() as $account)
+            @foreach (\App\Models\Finance\PaymentAccount::active()->get() as $account)
                 <option value="{{ $account->id }}">
                     {{ $account->bank_name }} - {{ $account->account_number }} ({{ $account->account_holder }})
                 </option>
