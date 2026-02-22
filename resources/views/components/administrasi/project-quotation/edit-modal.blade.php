@@ -9,34 +9,34 @@
 
     <div class="space-y-5">
 
-        {{-- Row: Tanggal & Perihal --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-text-primary mb-1 text-sm font-medium">Tanggal <span
-                        class="text-error">*</span></label>
-                <input type="date" name="date" class="w-full border rounded-lg p-2 text-sm" required
-                    value="{{ $quotation->date->format('Y-m-d') }}">
-            </div>
-            <div>
-                <label class="block text-text-primary mb-1 text-sm font-medium">Perihal (Hal)</label>
-                <input type="text" name="subject" class="w-full border rounded-lg p-2 text-sm"
-                    value="{{ $quotation->subject }}" maxlength="255">
-            </div>
+        {{-- Tanggal --}}
+        <div>
+            <label class="block text-text-primary mb-1 text-sm font-medium">Tanggal <span
+                    class="text-error">*</span></label>
+            <input type="date" name="date" class="w-full border rounded-lg p-2 text-sm" required
+                value="{{ $quotation->date->format('Y-m-d') }}">
         </div>
 
-        {{-- Kepada & Alamat --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-text-primary mb-1 text-sm font-medium">Kepada Yth <span
-                        class="text-error">*</span></label>
-                <input type="text" name="recipient" class="w-full border rounded-lg p-2 text-sm"
-                    value="{{ $quotation->recipient }}" required maxlength="255">
-            </div>
-            <div>
-                <label class="block text-text-primary mb-1 text-sm font-medium">Alamat</label>
-                <input type="text" name="recipient_address" class="w-full border rounded-lg p-2 text-sm"
-                    value="{{ $quotation->recipient_address }}" maxlength="255">
-            </div>
+        {{-- Perihal --}}
+        <div>
+            <label class="block text-text-primary mb-1 text-sm font-medium">Perihal (Hal)</label>
+            <input type="text" name="subject" class="w-full border rounded-lg p-2 text-sm"
+                value="{{ $quotation->subject }}" maxlength="255">
+        </div>
+
+        {{-- Kepada --}}
+        <div>
+            <label class="block text-text-primary mb-1 text-sm font-medium">Kepada Yth <span
+                    class="text-error">*</span></label>
+            <input type="text" name="recipient" class="w-full border rounded-lg p-2 text-sm"
+                value="{{ $quotation->recipient }}" required maxlength="255">
+        </div>
+
+        {{-- Alamat --}}
+        <div>
+            <label class="block text-text-primary mb-1 text-sm font-medium">Alamat</label>
+            <input type="text" name="recipient_address" class="w-full border rounded-lg p-2 text-sm"
+                value="{{ $quotation->recipient_address }}" maxlength="255">
         </div>
 
         {{-- ═══ GROUPS SECTION ═════════════════════════════════════════════════════ --}}
@@ -101,18 +101,18 @@
             </div>
         </div>
 
-        {{-- Penandatangan --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-text-primary mb-1 text-sm font-medium">Ditandatangani Oleh</label>
-                <input type="text" name="signed_by" class="w-full border rounded-lg p-2 text-sm"
-                    value="{{ $quotation->signed_by }}" maxlength="255">
-            </div>
-            <div>
-                <label class="block text-text-primary mb-1 text-sm font-medium">Divisi</label>
-                <input type="text" name="division" class="w-full border rounded-lg p-2 text-sm"
-                    value="{{ $quotation->division }}" maxlength="255">
-            </div>
+        {{-- Ditandatangani Oleh --}}
+        <div>
+            <label class="block text-text-primary mb-1 text-sm font-medium">Ditandatangani Oleh</label>
+            <input type="text" name="signed_by" class="w-full border rounded-lg p-2 text-sm"
+                value="{{ $quotation->signed_by }}" maxlength="255">
+        </div>
+
+        {{-- Divisi --}}
+        <div>
+            <label class="block text-text-primary mb-1 text-sm font-medium">Divisi</label>
+            <input type="text" name="division" class="w-full border rounded-lg p-2 text-sm"
+                value="{{ $quotation->division }}" maxlength="255">
         </div>
 
     </div>{{-- end space-y-5 --}}

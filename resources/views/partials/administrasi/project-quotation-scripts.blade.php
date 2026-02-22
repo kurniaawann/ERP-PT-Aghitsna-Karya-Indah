@@ -93,47 +93,54 @@
         const itemEl = document.createElement('div');
         itemEl.className = 'item-row bg-white border border-gray-200 rounded-lg p-3 space-y-2';
         itemEl.innerHTML = `
-        <div class="grid grid-cols-12 gap-2">
+        <div class="space-y-2">
             {{-- Description --}}
-            <div class="col-span-12 md:col-span-5">
+            <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Keterangan <span class="text-red-500">*</span></label>
                 <input type="text" class="item-description w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                     placeholder="Contoh: 5 x 130 x 300" required
                     value="${escHtml(prefillData.description || '')}">
             </div>
-            {{-- Volume --}}
-            <div class="col-span-4 md:col-span-2">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Volume</label>
-                <input type="text" class="item-volume w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-center"
-                    placeholder="-"
-                    value="${escHtml(prefillData.volume || '')}">
+            
+            <div class="grid grid-cols-2 gap-2">
+                {{-- Volume --}}
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Volume</label>
+                    <input type="text" class="item-volume w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="-"
+                        value="${escHtml(prefillData.volume || '')}">
+                </div>
+                {{-- Unit --}}
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Satuan</label>
+                    <input type="text" class="item-unit w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="-"
+                        value="${escHtml(prefillData.unit || '')}">
+                </div>
             </div>
-            {{-- Unit --}}
-            <div class="col-span-4 md:col-span-1">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Satuan</label>
-                <input type="text" class="item-unit w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-center"
-                    placeholder="-"
-                    value="${escHtml(prefillData.unit || '')}">
-            </div>
+            
             {{-- Unit Price --}}
-            <div class="col-span-6 md:col-span-2">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Harga <span class="text-red-500">*</span></label>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Harga Satuan <span class="text-red-500">*</span></label>
                 <input type="text" class="item-unit-price w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right"
                     placeholder="0" required
                     value="${prefillData.unit_price ? parseInt(prefillData.unit_price).toLocaleString('id-ID') : ''}">
             </div>
+            
             {{-- Total --}}
-            <div class="col-span-6 md:col-span-1">
+            <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Jumlah</label>
-                <div class="item-total-display text-sm font-semibold text-green-700 border border-gray-200 rounded-lg px-2 py-2 bg-gray-50 text-right whitespace-nowrap">
+                <div class="item-total-display text-sm font-semibold text-green-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-right">
                     ${formatRp(prefillData.total_price || 0)}
                 </div>
             </div>
-            {{-- Delete --}}
-            <div class="col-span-12 md:col-span-1 flex items-end">
+            
+            {{-- Delete Button --}}
+            <div>
                 <button type="button" onclick="removeItem(this, '${prefix}')"
-                    class="w-full bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded-lg text-xs flex items-center justify-center gap-1 transition-colors">
+                    class="w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors">
                     <i class="fa-solid fa-trash"></i>
+                    <span>Hapus Item</span>
                 </button>
             </div>
         </div>`;
