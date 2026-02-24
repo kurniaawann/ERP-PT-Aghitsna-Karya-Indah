@@ -20,7 +20,7 @@
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <form method="GET" action="{{ route('project-quotation.index') }}"
+            <form method="GET" action="{{ route('aluminium-quotation.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
                 <x-filters.search-input :value="request('search')" placeholder="Cari nomor / penerima..." />
             </form>
@@ -36,19 +36,19 @@
         </div>
 
         {{-- Table --}}
-        @include('components.administrasi.project-quotation.table', ['quotations' => $quotations])
+        @include('components.administrasi.aluminium-quotation.table', ['quotations' => $quotations])
 
         {{-- Pagination --}}
         <x-pagination :paginator="$quotations" />
     </div>
 
     {{-- Add Modal --}}
-    @include('components.administrasi.project-quotation.add-modal')
+    @include('components.administrasi.aluminium-quotation.add-modal')
 
     {{-- Edit Modals & Detail Modals --}}
     @foreach ($quotations as $quotation)
-        @include('components.administrasi.project-quotation.detail-modal', ['quotation' => $quotation])
-        @include('components.administrasi.project-quotation.edit-modal', ['quotation' => $quotation])
+        @include('components.administrasi.aluminium-quotation.detail-modal', ['quotation' => $quotation])
+        @include('components.administrasi.aluminium-quotation.edit-modal', ['quotation' => $quotation])
     @endforeach
 
     {{-- Delete Confirm Modal --}}
@@ -58,6 +58,6 @@
     </x-modal>
 
     {{-- Scripts --}}
-    @include('partials.administrasi.project-quotation-scripts')
+    @include('partials.administrasi.aluminium-quotation-scripts')
     @include('partials.shared.print-dropdown-script')
 @endsection

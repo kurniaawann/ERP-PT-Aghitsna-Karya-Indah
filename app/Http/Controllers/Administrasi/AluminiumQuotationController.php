@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Administrasi;
 
 use App\Http\Controllers\Controller;
-use App\Models\Administrasi\ProjectQuotation;
-use App\Models\Administrasi\ProjectQuotationGroup;
-use App\Models\Administrasi\ProjectQuotationItem;
+use App\Models\Administrasi\AluminiumQuotation;
+use App\Models\Administrasi\AluminiumQuotationGroup;
+use App\Models\Administrasi\AluminiumQuotationItem;
 use App\Models\Finance\PaymentAccount;
-use App\Exports\Administrasi\ProjectQuotationExport;
+use App\Exports\Administrasi\AluminiumQuotationExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
-class ProjectQuotationController extends Controller
+class AluminiumQuotationController extends Controller
 {
     // ─── Index ────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ class ProjectQuotationController extends Controller
     {
         $search = $request->input('search');
 
-        $quotations = ProjectQuotation::with(['groups.items'])
+        $quotations = AluminiumQuotation::with(['groups.items'])
             ->when($search, function ($query, $search) {
                 return $query->where('quotation_number', 'like', "%{$search}%")
                     ->orWhere('recipient', 'like', "%{$search}%")
@@ -32,7 +32,7 @@ class ProjectQuotationController extends Controller
 
         $paymentAccounts = PaymentAccount::active()->get();
 
-        return view('pages.administrasi.project-quotation', compact('quotations', 'paymentAccounts', 'search'));
+        return view('pages.administrasi.aluminium-quotation', compact('quotations', 'paymentAccounts', 'search'));
     }
 
     // ─── Get Next Number (AJAX) ───────────────────────────────────────────────
@@ -40,7 +40,7 @@ class ProjectQuotationController extends Controller
     public function getNextQuotationNumber()
     {
         return response()->json([
-            'quotation_number' => ProjectQuotation::generateQuotationNumber(),
+            'quotation_number' => AluminiumQuotation::generateQuotationNumber(),
         ]);
     }
 
@@ -67,7 +67,7 @@ class ProjectQuotationController extends Controller
         }
 
         // Auto-generate quotation number
-        $seqNumber = ProjectQuotation::getNextSequenceNumber();
+        $seqNumber = AluminiumQuotation::getNextSequenceNumber();
         $year = date('y');
         $quotationNumber = "{$seqNumber}/{$seqNumber}/PT.AKI/{$year}";
 
@@ -83,7 +83,7 @@ class ProjectQuotationController extends Controller
 
         DB::transaction(function () use ($request, $quotationNumber, $seqNumber, $totalAmount, $groups) {
             // Create header
-            $quotation = ProjectQuotation::create([
+            $quotation = AluminiumQuotation::create([
                 'quotation_number' => $quotationNumber,
                 'sequence_number' => $seqNumber,
                 'date' => $request->input('date'),
@@ -104,7 +104,7 @@ class ProjectQuotationController extends Controller
                     $subtotal += (int) ($item['total_price'] ?? 0);
                 }
 
-                $group = ProjectQuotationGroup::create([
+                $group = AluminiumQuotationGroup::create([
                     'quotation_number' => $quotationNumber,
                     'order_number' => $groupIndex + 1,
                     'name' => $groupData['name'],
@@ -112,7 +112,7 @@ class ProjectQuotationController extends Controller
                 ]);
 
                 foreach ($groupData['items'] as $itemIndex => $itemData) {
-                    ProjectQuotationItem::create([
+                    AluminiumQuotationItem::create([
                         'group_id' => $group->id,
                         'order_number' => $itemIndex + 1,
                         'description' => $itemData['description'],
@@ -133,7 +133,7 @@ class ProjectQuotationController extends Controller
 
     public function update(Request $request, string $quotationNumber)
     {
-        $quotation = ProjectQuotation::findOrFail($quotationNumber);
+        $quotation = AluminiumQuotation::findOrFail($quotationNumber);
 
         $request->validate([
             'recipient' => 'required|string|max:255',
@@ -185,7 +185,7 @@ class ProjectQuotationController extends Controller
                     $subtotal += (int) ($item['total_price'] ?? 0);
                 }
 
-                $group = ProjectQuotationGroup::create([
+                $group = AluminiumQuotationGroup::create([
                     'quotation_number' => $quotation->quotation_number,
                     'order_number' => $groupIndex + 1,
                     'name' => $groupData['name'],
@@ -193,7 +193,7 @@ class ProjectQuotationController extends Controller
                 ]);
 
                 foreach ($groupData['items'] as $itemIndex => $itemData) {
-                    ProjectQuotationItem::create([
+                    AluminiumQuotationItem::create([
                         'group_id' => $group->id,
                         'order_number' => $itemIndex + 1,
                         'description' => $itemData['description'],
@@ -222,7 +222,7 @@ class ProjectQuotationController extends Controller
         }
 
         // Groups & items cascade deleted via DB constraint
-        ProjectQuotation::whereIn('quotation_number', $ids)->each(function ($q) {
+        AluminiumQuotation::whereIn('quotation_number', $ids)->each(function ($q) {
             $q->groups()->each(fn($g) => $g->items()->delete());
             $q->groups()->delete();
             $q->delete();
@@ -236,9 +236,9 @@ class ProjectQuotationController extends Controller
 
     public function printPdf(string $quotationNumber)
     {
-        $quotation = ProjectQuotation::with(['groups.items'])->findOrFail($quotationNumber);
+        $quotation = AluminiumQuotation::with(['groups.items'])->findOrFail($quotationNumber);
 
-        $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
+        $pdf = Pdf::loadView('exports.administrasi.aluminium-quotation-pdf', compact('quotation'))
             ->setPaper('a4', 'portrait');
 
         $safeNumber = str_replace(['/', '\\'], '-', $quotationNumber);
@@ -253,7 +253,7 @@ class ProjectQuotationController extends Controller
         $safeFileName = str_replace(['/', '\\'], '-', $quotationNumber);
 
         // Download Excel with parameter quotationNumber and safe filename
-        return Excel::download(new ProjectQuotationExport($quotationNumber), 'Penawaran-' . $safeFileName . '.xlsx');
+        return Excel::download(new AluminiumQuotationExport($quotationNumber), 'Penawaran-' . $safeFileName . '.xlsx');
     }
 
     // ─── Export selected PDF ─────────────────────────────────────────────────
@@ -267,12 +267,12 @@ class ProjectQuotationController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        $quotations = ProjectQuotation::with(['groups.items'])
+        $quotations = AluminiumQuotation::with(['groups.items'])
             ->whereIn('quotation_number', $ids)
             ->orderBy('sequence_number')
             ->get();
 
-        $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf-bulk', compact('quotations'))
+        $pdf = Pdf::loadView('exports.administrasi.aluminium-quotation-pdf-bulk', compact('quotations'))
             ->setPaper('a4', 'portrait');
 
         $filename = count($ids) === 1

@@ -5,32 +5,33 @@ namespace App\Models\Administrasi;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ProjectQuotationItem extends Model
+class AluminiumQuotationGroup extends Model
 {
     use HasFactory;
 
-    protected $table = 'project_quotation_items';
+    protected $table = 'aluminium_quotation_groups';
 
     protected $fillable = [
-        'group_id',
+        'quotation_number',
         'order_number',
-        'description',
-        'volume',
-        'unit',
-        'unit_price',
-        'total_price',
+        'name',
+        'subtotal',
     ];
 
     protected $casts = [
-        'unit_price' => 'integer',
-        'total_price' => 'integer',
+        'subtotal' => 'integer',
         'order_number' => 'integer',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
 
-    public function group()
+    public function quotation()
     {
-        return $this->belongsTo(ProjectQuotationGroup::class, 'group_id');
+        return $this->belongsTo(AluminiumQuotation::class, 'quotation_number', 'quotation_number');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(AluminiumQuotationItem::class, 'group_id')->orderBy('order_number');
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Exports\Administrasi;
 
-use App\Models\Administrasi\ProjectQuotation;
+use App\Models\Administrasi\AluminiumQuotation;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
@@ -13,13 +13,13 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
+class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
     protected $quotation;
 
     public function __construct($quotationNumber)
     {
-        $this->quotation = ProjectQuotation::with(['groups.items'])
+        $this->quotation = AluminiumQuotation::with(['groups.items'])
             ->where('quotation_number', $quotationNumber)
             ->firstOrFail();
     }

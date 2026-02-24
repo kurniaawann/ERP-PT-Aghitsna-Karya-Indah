@@ -1,45 +1,39 @@
-{{-- Modal Tambah Penawaran Proyek --}}
-<x-modal id="addModal" title="Tambah Penawaran Proyek" action="{{ route('project-quotation.store') }}" method="POST"
-    buttonText="Simpan" formId="addQuotationForm" onsubmit="return prepareAddSubmit()">
+{{-- Modal Edit Penawaran Proyek --}}
+<x-modal id="editModal-{{ $quotation->quotation_number }}" title="Edit Penawaran — {{ $quotation->quotation_number }}"
+    action="{{ route('aluminium-quotation.update', $quotation->quotation_number) }}" method="PUT" buttonText="Update"
+    formId="editQuotationForm-{{ $quotation->quotation_number }}"
+    onsubmit="return prepareEditSubmit('{{ $quotation->quotation_number }}')">
 
     {{-- Hidden JSON input --}}
-    <input type="hidden" name="groups_json" id="addGroupsJson">
+    <input type="hidden" name="groups_json" id="editGroupsJson-{{ $quotation->quotation_number }}">
 
     {{-- Error Message Area --}}
-    <div id="addModalError" class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+    <div id="editModal-{{ $quotation->quotation_number }}ModalError"
+        class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
         <div class="flex items-center gap-2">
             <i class="fa-solid fa-circle-exclamation"></i>
-            <span id="addModalErrorText"></span>
+            <span id="editModal-{{ $quotation->quotation_number }}ModalErrorText"></span>
         </div>
     </div>
 
     <div class="space-y-5">
-
-        {{-- Nomor Penawaran (readonly, auto-generated) --}}
-        <div class="bg-blue-50 rounded-lg p-3 flex items-center gap-3">
-            <i class="fa-solid fa-hashtag text-blue-500"></i>
-            <div>
-                <p class="text-xs text-gray-500">Nomor Penawaran (auto)</p>
-                <p class="text-sm font-semibold text-primary" id="addQuotationNumberDisplay">
-                    Akan digenerate otomatis
-                </p>
-            </div>
-        </div>
 
         {{-- Tanggal --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Tanggal <span
                     class="text-error">*</span></label>
             <input type="date" name="date" class="w-full border rounded-lg p-2 text-sm" required
-                value="{{ date('Y-m-d') }}" oninvalid="this.setCustomValidity('Tanggal penawaran harus diisi')"
+                value="{{ $quotation->date->format('Y-m-d') }}"
+                oninvalid="this.setCustomValidity('Tanggal penawaran harus diisi')"
                 oninput="this.setCustomValidity('')">
         </div>
 
         {{-- Perihal --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Perihal (Hal)</label>
-            <input type="text" name="subject" class="w-full border rounded-lg p-2 text-sm" value="Penawaran Harga"
-                maxlength="255" oninvalid="this.setCustomValidity('Perihal maksimal 255 karakter')"
+            <input type="text" name="subject" class="w-full border rounded-lg p-2 text-sm"
+                value="{{ $quotation->subject }}" maxlength="255"
+                oninvalid="this.setCustomValidity('Perihal maksimal 255 karakter')"
                 oninput="this.setCustomValidity('')">
         </div>
 
@@ -48,40 +42,56 @@
             <label class="block text-text-primary mb-1 text-sm font-medium">Kepada Yth <span
                     class="text-error">*</span></label>
             <input type="text" name="recipient" class="w-full border rounded-lg p-2 text-sm"
-                placeholder="Nama penerima / perusahaan" required maxlength="255"
+                value="{{ $quotation->recipient }}" required maxlength="255"
                 oninvalid="this.setCustomValidity('Nama penerima harus diisi')" oninput="this.setCustomValidity('')">
         </div>
 
         {{-- Alamat --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Alamat</label>
-            <input type="text" name="recipient_address" class="w-full border rounded-lg p-2 text-sm" value="Ditempat"
-                maxlength="255" oninvalid="this.setCustomValidity('Alamat maksimal 255 karakter')"
-                oninput="this.setCustomValidity('')">
+            <input type="text" name="recipient_address" class="w-full border rounded-lg p-2 text-sm"
+                value="{{ $quotation->recipient_address }}" maxlength="255"
+                oninvalid="this.setCustomValidity('Alamat maksimal 255 karakter')" oninput="this.setCustomValidity('')">
         </div>
 
-        {{-- ═══ GROUPS SECTION ══════════════════════════════════════════════════════ --}}
+        {{-- ═══ GROUPS SECTION ═════════════════════════════════════════════════════ --}}
         <div>
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-bold text-text-primary uppercase tracking-wide">
                     <i class="fa-solid fa-layer-group text-primary mr-1"></i>
                     Kelompok Item
                 </h3>
-                <button type="button" onclick="addGroup('add')"
+                <button type="button" onclick="addGroup('edit-{{ $quotation->quotation_number }}')"
                     class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-all duration-200">
                     <i class="fa-solid fa-plus"></i> Tambah Kelompok
                 </button>
             </div>
 
-            <div id="addGroupsContainer" class="space-y-4">
-                {{-- Groups rendered by JS --}}
+            <div id="editGroupsContainer-{{ $quotation->quotation_number }}" class="space-y-4"
+                data-existing-groups="{{ json_encode(
+                    $quotation->groups->map(function ($g) {
+                            return [
+                                'name' => $g->name,
+                                'items' => $g->items->map(function ($i) {
+                                        return [
+                                            'description' => $i->description,
+                                            'volume' => $i->volume,
+                                            'unit' => $i->unit,
+                                            'unit_price' => $i->unit_price,
+                                            'total_price' => $i->total_price,
+                                        ];
+                                    })->toArray(),
+                            ];
+                        })->toArray(),
+                ) }}">
             </div>
 
-            {{-- Grand Total --}}
             <div class="mt-4 flex justify-end">
                 <div class="bg-yellow-50 border border-yellow-300 rounded-lg px-5 py-3 text-right min-w-[220px]">
                     <p class="text-xs text-gray-500 mb-1">Grand Total</p>
-                    <p class="text-lg font-bold text-gray-800" id="addGrandTotal">Rp 0</p>
+                    <p class="text-lg font-bold text-gray-800" id="editGrandTotal-{{ $quotation->quotation_number }}">
+                        Rp {{ number_format($quotation->total_amount, 0, ',', '.') }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -91,11 +101,14 @@
             <label class="block text-text-primary mb-2 text-sm font-medium">
                 Rekening Pembayaran <span class="text-error">*</span>
             </label>
+            @php $selectedIds = $quotation->selected_payment_accounts ?? []; @endphp
             <div class="space-y-2">
                 @foreach ($paymentAccounts as $account)
                     <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
-                            class="w-4 h-4 accent-primary payment-account-checkbox" {{ $loop->first ? 'required' : '' }}
+                            class="w-4 h-4 accent-primary payment-account-checkbox"
+                            {{ $loop->first ? 'required' : '' }}
+                            {{ in_array($account->id, $selectedIds) ? 'checked' : '' }}
                             oninvalid="this.setCustomValidity('Minimal 1 rekening pembayaran harus dipilih')"
                             oninput="this.setCustomValidity('')"
                             onchange="document.querySelectorAll('.payment-account-checkbox').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox:checked'))">
@@ -112,7 +125,7 @@
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Ditandatangani Oleh</label>
             <input type="text" name="signed_by" class="w-full border rounded-lg p-2 text-sm"
-                placeholder="Nama penandatangan" maxlength="255"
+                value="{{ $quotation->signed_by }}" maxlength="255"
                 oninvalid="this.setCustomValidity('Nama penandatangan maksimal 255 karakter')"
                 oninput="this.setCustomValidity('')">
         </div>
@@ -121,10 +134,26 @@
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Divisi</label>
             <input type="text" name="division" class="w-full border rounded-lg p-2 text-sm"
-                placeholder="Contoh: Divisi Alumunium" maxlength="255"
+                value="{{ $quotation->division }}" maxlength="255"
                 oninvalid="this.setCustomValidity('Nama divisi maksimal 255 karakter')"
                 oninput="this.setCustomValidity('')">
         </div>
 
     </div>{{-- end space-y-5 --}}
+
 </x-modal>
+
+{{-- Pre-populate existing groups via inline script --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const containerId = 'editGroupsContainer-{{ $quotation->quotation_number }}';
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const existingGroups = JSON.parse(container.dataset.existingGroups || '[]');
+        const prefix = 'edit-{{ $quotation->quotation_number }}';
+        existingGroups.forEach(function(group) {
+            addGroup(prefix, group);
+        });
+        updateGrandTotal(prefix);
+    });
+</script>

@@ -421,7 +421,7 @@
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(m) {
                 if (m.target.id === 'addModal' && !m.target.classList.contains('hidden')) {
-                    fetch('{{ route('project-quotation.getNextNumber') }}')
+                    fetch('{{ route('aluminium-quotation.getNextNumber') }}')
                         .then(r => r.json())
                         .then(data => {
                             const el = document.getElementById('addQuotationNumberDisplay');

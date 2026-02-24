@@ -1,5 +1,5 @@
 {{-- Project Quotation Table Component --}}
-<form id="deleteForm" method="POST" action="{{ route('project-quotation.destroySelected') }}">
+<form id="deleteForm" method="POST" action="{{ route('aluminium-quotation.destroySelected') }}">
     @csrf
     @method('DELETE')
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -58,7 +58,7 @@
                                         </button>
 
                                         {{-- PDF --}}
-                                        <a href="{{ route('project-quotation.print.pdf', $quotation->quotation_number) }}"
+                                        <a href="{{ route('aluminium-quotation.print.pdf', $quotation->quotation_number) }}"
                                             class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Print PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>
@@ -66,7 +66,7 @@
                                         </a>
 
                                         {{-- Excel --}}
-                                        <a href="{{ route('project-quotation.print.excel', $quotation->quotation_number) }}"
+                                        <a href="{{ route('aluminium-quotation.print.excel', $quotation->quotation_number) }}"
                                             class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Print Excel">
                                             <i class="fa-solid fa-file-excel w-3 h-3"></i>

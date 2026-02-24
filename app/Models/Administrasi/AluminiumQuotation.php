@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Finance\PaymentAccount;
 
-class ProjectQuotation extends Model
+class AluminiumQuotation extends Model
 {
     use HasFactory;
 
-    protected $table = 'project_quotations';
+    protected $table = 'aluminium_quotations';
     protected $primaryKey = 'quotation_number';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -45,7 +45,7 @@ class ProjectQuotation extends Model
 
     public function groups()
     {
-        return $this->hasMany(ProjectQuotationGroup::class, 'quotation_number', 'quotation_number')
+        return $this->hasMany(AluminiumQuotationGroup::class, 'quotation_number', 'quotation_number')
             ->orderBy('order_number');
     }
 

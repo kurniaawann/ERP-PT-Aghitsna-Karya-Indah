@@ -21,7 +21,7 @@ use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
 use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\InvoiceController;
-use App\Http\Controllers\Administrasi\ProjectQuotationController;
+use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -235,14 +235,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice-administrasi/export/pdf', [InvoiceController::class, 'exportPdfAll'])->name('invoice.administrasi.export.pdf');
     Route::post('/invoice-administrasi/export/pdf-selected', [InvoiceController::class, 'exportPdfSelected'])->name('invoice.administrasi.export.pdf.selected');
 
-    // ─── Penawaran Proyek (Project Quotation) ──────────────────────────────
-    Route::get('/project-quotation', [ProjectQuotationController::class, 'index'])->name('project-quotation.index');
-    Route::get('/project-quotation/next-number', [ProjectQuotationController::class, 'getNextQuotationNumber'])->name('project-quotation.getNextNumber');
-    Route::post('/project-quotation', [ProjectQuotationController::class, 'store'])->name('project-quotation.store');
-    Route::put('/project-quotation/{project_quotation}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('project_quotation', '.*');
-    Route::delete('/project-quotation/destroy-selected', [ProjectQuotationController::class, 'destroySelected'])->name('project-quotation.destroySelected');
-    Route::get('/project-quotation/{quotation_number}/print/pdf', [ProjectQuotationController::class, 'printPdf'])->name('project-quotation.print.pdf')->where('quotation_number', '.*');
-    Route::get('/project-quotation/{quotation_number}/print/excel', [ProjectQuotationController::class, 'printExcel'])->name('project-quotation.print.excel')->where('quotation_number', '.*');
-    Route::post('/project-quotation/export/pdf-selected', [ProjectQuotationController::class, 'exportPdfSelected'])->name('project-quotation.export.pdf.selected');
+    // ─── Penawaran Aluminium (Aluminium Quotation) ──────────────────────────────
+    Route::get('/aluminium-quotation', [AluminiumQuotationController::class, 'index'])->name('aluminium-quotation.index');
+    Route::get('/aluminium-quotation/next-number', [AluminiumQuotationController::class, 'getNextQuotationNumber'])->name('aluminium-quotation.getNextNumber');
+    Route::post('/aluminium-quotation', [AluminiumQuotationController::class, 'store'])->name('aluminium-quotation.store');
+    Route::put('/aluminium-quotation/{aluminium_quotation}', [AluminiumQuotationController::class, 'update'])->name('aluminium-quotation.update')->where('aluminium_quotation', '.*');
+    Route::delete('/aluminium-quotation/destroy-selected', [AluminiumQuotationController::class, 'destroySelected'])->name('aluminium-quotation.destroySelected');
+    Route::get('/aluminium-quotation/{quotation_number}/print/pdf', [AluminiumQuotationController::class, 'printPdf'])->name('aluminium-quotation.print.pdf')->where('quotation_number', '.*');
+    Route::get('/aluminium-quotation/{quotation_number}/print/excel', [AluminiumQuotationController::class, 'printExcel'])->name('aluminium-quotation.print.excel')->where('quotation_number', '.*');
+    Route::post('/aluminium-quotation/export/pdf-selected', [AluminiumQuotationController::class, 'exportPdfSelected'])->name('aluminium-quotation.export.pdf.selected');
 
 });
