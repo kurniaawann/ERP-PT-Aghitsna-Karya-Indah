@@ -242,6 +242,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/project-quotation/{project_quotation}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('project_quotation', '.*');
     Route::delete('/project-quotation/destroy-selected', [ProjectQuotationController::class, 'destroySelected'])->name('project-quotation.destroySelected');
     Route::get('/project-quotation/{quotation_number}/print/pdf', [ProjectQuotationController::class, 'printPdf'])->name('project-quotation.print.pdf')->where('quotation_number', '.*');
+    Route::get('/project-quotation/{quotation_number}/print/excel', [ProjectQuotationController::class, 'printExcel'])->name('project-quotation.print.excel')->where('quotation_number', '.*');
     Route::post('/project-quotation/export/pdf-selected', [ProjectQuotationController::class, 'exportPdfSelected'])->name('project-quotation.export.pdf.selected');
 
 });

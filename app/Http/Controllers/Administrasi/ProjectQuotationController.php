@@ -7,9 +7,11 @@ use App\Models\Administrasi\ProjectQuotation;
 use App\Models\Administrasi\ProjectQuotationGroup;
 use App\Models\Administrasi\ProjectQuotationItem;
 use App\Models\Finance\PaymentAccount;
+use App\Exports\Administrasi\ProjectQuotationExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectQuotationController extends Controller
 {
@@ -241,6 +243,17 @@ class ProjectQuotationController extends Controller
 
         $safeNumber = str_replace(['/', '\\'], '-', $quotationNumber);
         return $pdf->download("penawaran-{$safeNumber}.pdf");
+    }
+
+    // ─── Print single Excel ──────────────────────────────────────────────────
+
+    public function printExcel(string $quotationNumber)
+    {
+        // Replace unsafe characters in filename
+        $safeFileName = str_replace(['/', '\\'], '-', $quotationNumber);
+
+        // Download Excel with parameter quotationNumber and safe filename
+        return Excel::download(new ProjectQuotationExport($quotationNumber), 'Penawaran-' . $safeFileName . '.xlsx');
     }
 
     // ─── Export selected PDF ─────────────────────────────────────────────────

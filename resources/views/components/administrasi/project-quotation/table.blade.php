@@ -38,7 +38,7 @@
                                 </td>
 
                                 <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-2">
+                                    <div class="flex justify-center gap-1 flex-wrap">
                                         {{-- Detail --}}
                                         <button type="button"
                                             onclick="openModal('detailModal-{{ $quotation->quotation_number }}')"
@@ -56,6 +56,22 @@
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
                                             Edit
                                         </button>
+
+                                        {{-- PDF --}}
+                                        <a href="{{ route('project-quotation.print.pdf', $quotation->quotation_number) }}"
+                                            class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Print PDF">
+                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
+                                            PDF
+                                        </a>
+
+                                        {{-- Excel --}}
+                                        <a href="{{ route('project-quotation.print.excel', $quotation->quotation_number) }}"
+                                            class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Print Excel">
+                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
+                                            Excel
+                                        </a>
                                     </div>
                                 </td>
                             </tr>

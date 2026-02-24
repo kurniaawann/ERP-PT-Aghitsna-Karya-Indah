@@ -7,7 +7,7 @@
     <style>
         @page {
             size: A4;
-            margin: 1cm 1.2cm 1cm 1.2cm;
+            margin: 0.4cm 0.4cm 0.4cm 0.4cm;
         }
 
         * {
@@ -21,15 +21,15 @@
             font-size: 10px;
             line-height: 1.4;
             color: #000;
+            padding: 15px;
         }
 
         /* ── Header ─────────────────────────────────────────── */
         .header {
             display: table;
             width: 100%;
-            border-bottom: 2px solid #000;
-            padding-bottom: 6px;
-            margin-bottom: 10px;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .header-left {
@@ -99,14 +99,28 @@
 
         /* ── Recipient ──────────────────────────────────────── */
         .recipient-section {
-            margin: 8px 0 6px 0;
+            margin: 10px 0 8px 0;
             font-size: 10px;
+        }
+
+        .recipient-inline {
+            margin-bottom: 3px;
+        }
+
+        .recipient-inline strong {
+            display: inline;
+        }
+
+        .recipient-name {
+            display: inline;
+            margin-left: 5px;
         }
 
         /* ── Opening text ───────────────────────────────────── */
         .opening {
             font-size: 10px;
             margin-bottom: 8px;
+            margin-top: 8px;
         }
 
         /* ── Items Table ────────────────────────────────────── */
@@ -164,28 +178,33 @@
         .terbilang {
             font-size: 9.5px;
             font-style: italic;
-            margin: 8px 0;
+            margin: 10px 0 8px 0;
         }
 
         .payment-info {
             font-size: 9.5px;
-            margin: 8px 0;
+            margin: 10px 0 8px 0;
             line-height: 1.7;
         }
 
         .closing {
             font-size: 9.5px;
-            margin: 8px 0;
+            margin: 10px 0 8px 0;
         }
 
         .signature {
-            margin-top: 20px;
+            margin-top: 15px;
             font-size: 10px;
         }
 
         .signature-line {
-            margin-top: 55px;
+            margin-top: 50px;
             font-weight: bold;
+        }
+
+        .signature-division {
+            font-size: 9.5px;
+            margin-top: 2px;
         }
     </style>
 </head>
@@ -247,10 +266,13 @@
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <strong>Kepada Yth :</strong><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;{{ $q->recipient }}<br>
-        <br>
-        <strong>{{ $q->recipient_address }}</strong>
+        <div class="recipient-inline">
+            <strong>Kepada Yth :</strong>
+            <span class="recipient-name">{{ $q->recipient }}</span>
+        </div>
+        <div>
+            <strong>{{ $q->recipient_address }}</strong>
+        </div>
     </div>
 
     <div class="opening">
@@ -324,9 +346,8 @@
     </div>
 
     <div class="signature">
-        <br><br><br>
         <div class="signature-line">{{ $q->signed_by ?? 'Akhmad Khaidir' }}</div>
-        <div style="font-size:9.5px;">{{ $q->division ?? 'Divisi Alumunium' }}</div>
+        <div class="signature-division">Divisi Alumunium</div>
     </div>
 
 </body>

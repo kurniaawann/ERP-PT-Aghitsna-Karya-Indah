@@ -6,6 +6,45 @@
     //   'edit-{quotNumber}'     → editGroupsContainer-{quotNumber}, etc.
     // ═══════════════════════════════════════════════════════════════════════════════
 
+    // ─── Show/Hide error in modal ────────────────────────────────────────────────
+    function showModalError(prefix, errorMessage) {
+        const errorDiv = document.getElementById(prefix + 'ModalError');
+        const errorText = document.getElementById(prefix + 'ModalErrorText');
+        if (errorDiv && errorText) {
+            errorText.textContent = errorMessage;
+            errorDiv.classList.remove('hidden');
+            // Scroll to top of modal to show error
+            errorDiv.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+    }
+
+    function hideModalError(prefix) {
+        const errorDiv = document.getElementById(prefix + 'ModalError');
+        if (errorDiv) {
+            errorDiv.classList.add('hidden');
+        }
+    }
+
+    // Override openModal for project quotation modals to hide errors
+    (function() {
+        const originalOpenModal = window.openModal;
+        window.openModal = function(id) {
+            // Call original function
+            originalOpenModal(id);
+
+            // Hide error messages when modal opens
+            if (id === 'addModal') {
+                hideModalError('add');
+            } else if (id.startsWith('editModal-')) {
+                const quotNum = id.replace('editModal-', '');
+                hideModalError('editModal-' + quotNum);
+            }
+        };
+    })();
+
     /**
      * Resolve container, grand-total display, and JSON hidden-input IDs from a prefix.
      */
@@ -98,7 +137,9 @@
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Keterangan <span class="text-red-500">*</span></label>
                 <input type="text" class="item-description w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    placeholder="Contoh: 5 x 130 x 300" required
+                    placeholder="Contoh: 5 x 130 x 300" required maxlength="255"
+                    oninvalid="this.setCustomValidity('Keterangan item harus diisi')"
+                    oninput="this.setCustomValidity('')"
                     value="${escHtml(prefillData.description || '')}">
             </div>
             
@@ -107,14 +148,18 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Volume</label>
                     <input type="text" class="item-volume w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                        placeholder="-"
+                        placeholder="-" maxlength="50"
+                        oninvalid="this.setCustomValidity('Volume maksimal 50 karakter')"
+                        oninput="this.setCustomValidity('')"
                         value="${escHtml(prefillData.volume || '')}">
                 </div>
                 {{-- Unit --}}
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Satuan</label>
                     <input type="text" class="item-unit w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                        placeholder="-"
+                        placeholder="-" maxlength="50"
+                        oninvalid="this.setCustomValidity('Satuan maksimal 50 karakter')"
+                        oninput="this.setCustomValidity('')"
                         value="${escHtml(prefillData.unit || '')}">
                 </div>
             </div>
@@ -124,6 +169,8 @@
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Harga Satuan <span class="text-red-500">*</span></label>
                 <input type="text" class="item-unit-price w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right"
                     placeholder="0" required
+                    oninvalid="this.setCustomValidity('Harga satuan harus diisi')"
+                    oninput="this.setCustomValidity('')"
                     value="${prefillData.unit_price ? parseInt(prefillData.unit_price).toLocaleString('id-ID') : ''}">
             </div>
             
@@ -183,7 +230,9 @@
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Kelompok <span class="text-red-500">*</span></label>
                 <input type="text" class="group-name w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    placeholder="Contoh: P.1 Kayu Kamper Samarinda Oven" required
+                    placeholder="Contoh: P.1 Kayu Kamper Samarinda Oven" required maxlength="255"
+                    oninvalid="this.setCustomValidity('Nama kelompok harus diisi')"
+                    oninput="this.setCustomValidity('')"
                     value="${escHtml(prefillData.name || '')}">
             </div>
             <div class="items-list space-y-2"></div>
@@ -266,23 +315,30 @@
 
     // ─── Prepare Add form submission ─────────────────────────────────────────────
     function prepareAddSubmit() {
+        // Hide previous errors
+        hideModalError('add');
+
         const groups = serializeGroups('add');
+        const jsonInput = document.getElementById('addGroupsJson');
+
+        // Validasi kelompok dan item
         if (groups.length === 0) {
-            alert('Minimal 1 kelompok harus ditambahkan.');
+            showModalError('add', 'Minimal 1 kelompok harus ditambahkan.');
             return false;
         }
+
         for (const g of groups) {
             if (!g.name) {
-                alert('Nama kelompok tidak boleh kosong.');
+                showModalError('add', 'Nama kelompok tidak boleh kosong.');
                 return false;
             }
             if (g.items.length === 0) {
-                alert(`Kelompok "${g.name}" harus memiliki minimal 1 item.`);
+                showModalError('add', `Kelompok "${g.name}" harus memiliki minimal 1 item.`);
                 return false;
             }
         }
-        document.getElementById('addGroupsJson').value = JSON.stringify(groups);
 
+        // Set JSON
         // Show loading spinner
         const submitBtn = document.getElementById('submit-btn-addModal');
         if (submitBtn) {
@@ -296,22 +352,32 @@
     // ─── Prepare Edit form submission ────────────────────────────────────────────
     function prepareEditSubmit(quotNum) {
         const prefix = 'edit-' + quotNum;
+
+        // Hide previous errors
+        hideModalError('editModal-' + quotNum);
+
         const groups = serializeGroups(prefix);
+        const jsonInput = document.getElementById('editGroupsJson-' + quotNum);
+
+        // Validasi kelompok dan item
         if (groups.length === 0) {
-            alert('Minimal 1 kelompok harus ditambahkan.');
+            showModalError('editModal-' + quotNum, 'Minimal 1 kelompok harus ditambahkan.');
             return false;
         }
+
         for (const g of groups) {
             if (!g.name) {
-                alert('Nama kelompok tidak boleh kosong.');
+                showModalError('editModal-' + quotNum, 'Nama kelompok tidak boleh kosong.');
                 return false;
             }
             if (g.items.length === 0) {
-                alert(`Kelompok "${g.name}" harus memiliki minimal 1 item.`);
+                showModalError('editModal-' + quotNum, `Kelompok "${g.name}" harus memiliki minimal 1 item.`);
                 return false;
             }
         }
-        document.getElementById('editGroupsJson-' + quotNum).value = JSON.stringify(groups);
+
+        // Set JSON
+        jsonInput.value = JSON.stringify(groups);
 
         // Show loading spinner
         const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);

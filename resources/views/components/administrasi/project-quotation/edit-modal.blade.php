@@ -1,11 +1,20 @@
 {{-- Modal Edit Penawaran Proyek --}}
 <x-modal id="editModal-{{ $quotation->quotation_number }}" title="Edit Penawaran — {{ $quotation->quotation_number }}"
     action="{{ route('project-quotation.update', $quotation->quotation_number) }}" method="PUT" buttonText="Update"
-    size="4xl" formId="editQuotationForm-{{ $quotation->quotation_number }}"
+    formId="editQuotationForm-{{ $quotation->quotation_number }}"
     onsubmit="return prepareEditSubmit('{{ $quotation->quotation_number }}')">
 
     {{-- Hidden JSON input --}}
     <input type="hidden" name="groups_json" id="editGroupsJson-{{ $quotation->quotation_number }}">
+
+    {{-- Error Message Area --}}
+    <div id="editModal-{{ $quotation->quotation_number }}ModalError"
+        class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="editModal-{{ $quotation->quotation_number }}ModalErrorText"></span>
+        </div>
+    </div>
 
     <div class="space-y-5">
 
@@ -14,14 +23,18 @@
             <label class="block text-text-primary mb-1 text-sm font-medium">Tanggal <span
                     class="text-error">*</span></label>
             <input type="date" name="date" class="w-full border rounded-lg p-2 text-sm" required
-                value="{{ $quotation->date->format('Y-m-d') }}">
+                value="{{ $quotation->date->format('Y-m-d') }}"
+                oninvalid="this.setCustomValidity('Tanggal penawaran harus diisi')"
+                oninput="this.setCustomValidity('')">
         </div>
 
         {{-- Perihal --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Perihal (Hal)</label>
             <input type="text" name="subject" class="w-full border rounded-lg p-2 text-sm"
-                value="{{ $quotation->subject }}" maxlength="255">
+                value="{{ $quotation->subject }}" maxlength="255"
+                oninvalid="this.setCustomValidity('Perihal maksimal 255 karakter')"
+                oninput="this.setCustomValidity('')">
         </div>
 
         {{-- Kepada --}}
@@ -29,14 +42,16 @@
             <label class="block text-text-primary mb-1 text-sm font-medium">Kepada Yth <span
                     class="text-error">*</span></label>
             <input type="text" name="recipient" class="w-full border rounded-lg p-2 text-sm"
-                value="{{ $quotation->recipient }}" required maxlength="255">
+                value="{{ $quotation->recipient }}" required maxlength="255"
+                oninvalid="this.setCustomValidity('Nama penerima harus diisi')" oninput="this.setCustomValidity('')">
         </div>
 
         {{-- Alamat --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Alamat</label>
             <input type="text" name="recipient_address" class="w-full border rounded-lg p-2 text-sm"
-                value="{{ $quotation->recipient_address }}" maxlength="255">
+                value="{{ $quotation->recipient_address }}" maxlength="255"
+                oninvalid="this.setCustomValidity('Alamat maksimal 255 karakter')" oninput="this.setCustomValidity('')">
         </div>
 
         {{-- ═══ GROUPS SECTION ═════════════════════════════════════════════════════ --}}
@@ -91,7 +106,12 @@
                 @foreach ($paymentAccounts as $account)
                     <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
-                            class="w-4 h-4 accent-primary" {{ in_array($account->id, $selectedIds) ? 'checked' : '' }}>
+                            class="w-4 h-4 accent-primary payment-account-checkbox"
+                            {{ $loop->first ? 'required' : '' }}
+                            {{ in_array($account->id, $selectedIds) ? 'checked' : '' }}
+                            oninvalid="this.setCustomValidity('Minimal 1 rekening pembayaran harus dipilih')"
+                            oninput="this.setCustomValidity('')"
+                            onchange="document.querySelectorAll('.payment-account-checkbox').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox:checked'))">
                         <span class="text-sm">
                             <strong>{{ $account->bank_name }}</strong> /
                             {{ $account->account_number }} a/n {{ $account->account_holder }}
@@ -105,14 +125,18 @@
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Ditandatangani Oleh</label>
             <input type="text" name="signed_by" class="w-full border rounded-lg p-2 text-sm"
-                value="{{ $quotation->signed_by }}" maxlength="255">
+                value="{{ $quotation->signed_by }}" maxlength="255"
+                oninvalid="this.setCustomValidity('Nama penandatangan maksimal 255 karakter')"
+                oninput="this.setCustomValidity('')">
         </div>
 
         {{-- Divisi --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Divisi</label>
             <input type="text" name="division" class="w-full border rounded-lg p-2 text-sm"
-                value="{{ $quotation->division }}" maxlength="255">
+                value="{{ $quotation->division }}" maxlength="255"
+                oninvalid="this.setCustomValidity('Nama divisi maksimal 255 karakter')"
+                oninput="this.setCustomValidity('')">
         </div>
 
     </div>{{-- end space-y-5 --}}
