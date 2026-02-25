@@ -50,7 +50,6 @@
 
                                         {{-- Print PDF --}}
                                         <a href="{{ route('project-quotation.print.pdf', $quotation->quotation_number) }}"
-                                            target="_blank"
                                             class="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Cetak PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>

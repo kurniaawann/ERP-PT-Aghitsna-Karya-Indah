@@ -229,29 +229,39 @@ class ProjectQuotationController extends Controller
 
     public function printPdfSingle(string $quotationNumber)
     {
-        $quotation = ProjectQuotation::with(['items'])
-            ->where('quotation_number', $quotationNumber)
-            ->firstOrFail();
+        try {
+            $quotation = ProjectQuotation::with(['items'])
+                ->where('quotation_number', $quotationNumber)
+                ->firstOrFail();
 
-        $selectedAccountIds = is_string($quotation->selected_payment_accounts)
-            ? json_decode($quotation->selected_payment_accounts, true)
-            : ($quotation->selected_payment_accounts ?? []);
+            $selectedAccountIds = is_string($quotation->selected_payment_accounts)
+                ? json_decode($quotation->selected_payment_accounts, true)
+                : ($quotation->selected_payment_accounts ?? []);
 
-        if (!empty($selectedAccountIds)) {
-            $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
-                ->orderBy('id')
-                ->get();
-        } else {
-            $paymentAccounts = \App\Models\Finance\PaymentAccount::where('is_active', true)->get();
+            if (!empty($selectedAccountIds)) {
+                $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    ->orderBy('id')
+                    ->get();
+            } else {
+                $paymentAccounts = \App\Models\Finance\PaymentAccount::where('is_active', true)->get();
+            }
+
+            $items = $quotation->items()->orderBy('order_number')->get();
+
+            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation', 'items', 'paymentAccounts'))
+                ->setPaper('a4', 'portrait');
+
+            $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
+
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, "penawaran-proyek-{$safeNumber}.pdf", [
+                'Content-Type' => 'application/pdf',
+            ]);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal generate PDF: ' . $e->getMessage());
         }
-
-        $items = $quotation->items()->orderBy('order_number')->get();
-
-        $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation', 'items', 'paymentAccounts'))
-            ->setPaper('a4', 'portrait');
-
-        $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
-        return $pdf->stream("penawaran-proyek-{$safeNumber}.pdf");
     }
 
     // ─── Print Excel (Single from GET route) ─────────────────────────────────
@@ -313,13 +323,22 @@ class ProjectQuotationController extends Controller
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
-            return $pdf->stream("penawaran-proyek-{$safeNumber}.pdf");
+
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, "penawaran-proyek-{$safeNumber}.pdf", [
+                'Content-Type' => 'application/pdf',
+            ]);
         } else {
             // Multiple quotations - create separate pages
             $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf-bulk', compact('quotations'))
                 ->setPaper('a4', 'portrait');
 
-            return $pdf->stream('penawaran-proyek-' . date('Ymd-His') . '.pdf');
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'penawaran-proyek-' . date('Ymd-His') . '.pdf', [
+                'Content-Type' => 'application/pdf',
+            ]);
         }
     }
 

@@ -7,7 +7,7 @@
     <style>
         @page {
             size: A4;
-            margin: 0.4cm 0.4cm 0.4cm 0.4cm;
+            margin: 0;
         }
 
         * {
@@ -18,68 +18,66 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 10px;
-            line-height: 1.4;
+            font-size: 11px;
+            line-height: 1.5;
             color: #000;
-            padding: 15px;
+            padding: 1cm 1cm 0.5cm 1cm;
         }
 
-        /* ── Header ─────────────────────────────────────────── */
+        /* ── Header (3 Column Layout) ───────────────────────── */
         .header {
             display: table;
             width: 100%;
-            padding-bottom: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
-        .header-left {
+        .header-row {
+            display: table-row;
+        }
+
+        .header-logo {
             display: table-cell;
-            width: 55%;
+            width: 25%;
             vertical-align: top;
         }
 
-        .header-right {
+        .header-logo img {
+            width: 90px;
+            height: auto;
+            display: block;
+        }
+
+        .header-title {
             display: table-cell;
-            width: 45%;
+            width: 40%;
+            vertical-align: top;
+            text-align: center;
+            padding-top: 10px;
+        }
+
+        .title-penawaran {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .header-docinfo {
+            display: table-cell;
+            width: 35%;
             vertical-align: top;
             text-align: right;
         }
 
-        .logo-wrap {
-            display: table;
-        }
-
-        .logo-wrap .logo-img {
-            display: table-cell;
-            vertical-align: top;
-        }
-
-        .logo-wrap .logo-img img {
-            width: 65px;
-            height: auto;
-        }
-
-        .logo-wrap .company-info {
-            display: table-cell;
-            vertical-align: middle;
-            padding-left: 8px;
+        .company-info {
+            margin-top: 8px;
+            font-size: 9px;
+            line-height: 1.6;
         }
 
         .company-name {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
-            color: #CC5500;
-        }
-
-        .company-addr {
-            font-size: 9px;
-            line-height: 1.5;
-        }
-
-        .title-penawaran {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 2px;
         }
 
         .doc-info-table {
@@ -89,7 +87,7 @@
         }
 
         .doc-info-table td {
-            padding: 1px 3px;
+            padding: 2px 5px;
             font-size: 10px;
         }
 
@@ -99,21 +97,26 @@
 
         /* ── Recipient ──────────────────────────────────────── */
         .recipient-section {
-            margin: 8px 0;
-            font-size: 10px;
+            margin: 10px 0 8px 0;
+            font-size: 11px;
         }
 
-        .recipient-inline {
-            margin-bottom: 3px;
+        .recipient-label {
+            margin-bottom: 5px;
         }
 
         .recipient-name {
-            margin-left: 30px;
+            margin-left: 80px;
+        }
+
+        .ditempat {
+            margin: 8px 0;
+            font-size: 11px;
         }
 
         .opening {
-            margin: 10px 0;
-            font-size: 10px;
+            margin: 8px 0 10px 0;
+            font-size: 11px;
         }
 
         /* ── Items Table ────────────────────────────────────── */
@@ -121,29 +124,41 @@
             width: 100%;
             border-collapse: collapse;
             margin: 10px 0;
-            font-size: 9px;
+            font-size: 10px;
         }
 
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 5px 4px;
+            padding: 6px 5px;
         }
 
         .items-table thead tr {
-            background-color: #e0e0e0;
+            background-color: #e8e8e8;
         }
 
         .items-table thead th {
             font-weight: bold;
             text-align: center;
-            font-size: 9.5px;
+            font-size: 11px;
         }
 
         .items-table tbody tr.row-grand-total {
-            background-color: #ffff00;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 11px;
+        }
+
+        .items-table tbody tr.row-grand-total td {
+            padding: 8px 5px;
+        }
+
+        .items-table tbody tr.row-grand-total td.empty-cell {
+            background-color: transparent;
+            border: none;
+        }
+
+        .items-table tbody tr.row-grand-total td.yellow-cell {
+            background-color: #FFFF00;
         }
 
         /* Cell alignments */
@@ -161,89 +176,93 @@
 
         /* ── Footer sections ────────────────────────────────── */
         .terbilang {
-            margin: 10px 0;
-            font-size: 9px;
+            margin: 12px 0;
+            font-size: 10px;
+            font-style: italic;
         }
 
         .payment-info {
-            margin: 10px 0;
-            font-size: 9px;
-            line-height: 1.6;
+            margin: 12px 0;
+            font-size: 10px;
+            line-height: 1.8;
         }
 
         .closing {
-            margin: 10px 0;
-            font-size: 10px;
-            line-height: 1.5;
+            margin: 15px 0 10px 0;
+            font-size: 11px;
+            line-height: 1.6;
         }
 
         .signature {
-            margin-top: 20px;
-            font-size: 10px;
+            margin-top: 40px;
+            font-size: 11px;
         }
 
         .signature-line {
             font-weight: bold;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .signature-division {
-            font-size: 9px;
+            font-size: 10px;
         }
     </style>
 </head>
 
 <body>
 
-    {{-- ═══ HEADER ═══════════════════════════════════════════════════════════════ --}}
+    {{-- ═══ HEADER (3 COLUMN LAYOUT) ═════════════════════════════════════════════ --}}
     <div class="header">
-        <div class="header-left">
-            <div class="logo-wrap">
-                <div class="logo-img">
-                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
-                </div>
-                <div class="company-info">
-                    <div class="company-name">PT.AGHITSNA KARYA INDAH</div>
-                    <div class="company-addr">
-                        JL. TANAH BARU RAYA PERTIWI RT.01/05<br>
-                        BEJI, DEPOK, JAWA BARAT<br>
-                        Telp. 021-29034923 - 0812,9596,552<br>
-                        Email : Design@aghitsna.id
-                    </div>
-                </div>
+        <div class="header-row">
+            <div class="header-logo">
+                <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
+            </div>
+            <div class="header-title">
+                <div class="title-penawaran">PENAWARAN</div>
+            </div>
+            <div class="header-docinfo">
+                <table class="doc-info-table">
+                    <tr>
+                        <td>No</td>
+                        <td>:</td>
+                        <td><strong>{{ $quotation->quotation_number }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Tanggal</td>
+                        <td>:</td>
+                        <td>{{ \Carbon\Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY') }}</td>
+                    </tr>
+                    <tr>
+                        <td>Hal</td>
+                        <td>:</td>
+                        <td>{{ $quotation->subject }}</td>
+                    </tr>
+                </table>
             </div>
         </div>
-        <div class="header-right">
-            <div class="title-penawaran">PENAWARAN</div>
-            <table class="doc-info-table">
-                <tr>
-                    <td>No</td>
-                    <td>:</td>
-                    <td><strong>{{ $quotation->quotation_number }}</strong></td>
-                </tr>
-                <tr>
-                    <td>Tanggal</td>
-                    <td>:</td>
-                    <td>{{ \Carbon\Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY') }}</td>
-                </tr>
-                <tr>
-                    <td>Hal</td>
-                    <td>:</td>
-                    <td>{{ $quotation->subject }}</td>
-                </tr>
-            </table>
-        </div>
+    </div>
+
+    {{-- ═══ COMPANY INFO ═══════════════════════════════════════════════════════════ --}}
+    <div class="company-info">
+        <div class="company-name">PT.AGHITSNA KARYA INDAH</div>
+        <div>JL. TANAH BARU RAYA PERTIWI RT.01/05</div>
+        <div>BEJI, DEPOK, JAWA BARAT</div>
+        <div>Telp. 021-29034923 - 0812.9596.552</div>
+        <div>Email : Design@aghitsna.id</div>
     </div>
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <div class="recipient-inline">
+        <div class="recipient-label">
             <strong>Kepada Yth :</strong>
-            <span class="recipient-name">{{ $quotation->recipient }}</span>
         </div>
-        <div>
-            <strong>{{ $quotation->recipient_address }}</strong>
+        <div class="recipient-name">
+            {{ $quotation->recipient }}
         </div>
+    </div>
+
+    <div class="ditempat">
+        <strong>Ditempat</strong>
     </div>
 
     <div class="opening">
@@ -276,8 +295,9 @@
 
             {{-- Grand Total --}}
             <tr class="row-grand-total">
-                <td colspan="5" class="c">Total</td>
-                <td class="r">Rp &nbsp;{{ number_format($quotation->total_amount, 0, ',', '.') }}</td>
+                <td colspan="3" class="empty-cell"></td>
+                <td colspan="2" class="c yellow-cell">Jumlah</td>
+                <td class="r yellow-cell">Rp &nbsp;{{ number_format($quotation->total_amount, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
@@ -289,7 +309,7 @@
     </div>
 
     <div class="payment-info">
-        Pembayaran dapat di transfer melalui rekening<br>
+        Pembayaran dapat di transfer melalui rekening<br><br>
         @foreach ($paymentAccounts as $acc)
             Bank <strong>{{ $acc->bank_name }}</strong> / No : <strong>{{ $acc->account_number }}</strong>
             a/n <strong>{{ $acc->account_holder }}</strong><br>
@@ -297,9 +317,9 @@
     </div>
 
     <div class="closing">
-        Demikian penawaran ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terimakasih<br>
+        Demikian penawaran ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terimakasih<br><br>
         Hormat Kami,<br>
-        PT.AGHITSNA KARYA INDAH
+        <strong>PT.AGHITSNA KARYA INDAH</strong>
     </div>
 
     <div class="signature">
