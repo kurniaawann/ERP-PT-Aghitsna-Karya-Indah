@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 11px;
             line-height: 1.4;
             padding: 20px;
@@ -347,7 +347,8 @@
                             <!-- Payment Installment Row -->
                             <tr style="background-color: #E9D5FF;">
                                 <td colspan="5" class="center">
-                                    <strong>{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</strong></td>
+                                    <strong>{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</strong>
+                                </td>
                                 <td class="right"><strong>Rp
                                         {{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}</strong></td>
                             </tr>

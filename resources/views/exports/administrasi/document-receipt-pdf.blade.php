@@ -17,7 +17,7 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 12pt;
             line-height: 1.6;
             padding: 0 30px;

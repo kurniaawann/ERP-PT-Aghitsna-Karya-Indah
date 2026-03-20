@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 9px;
             padding: 15px;
         }
@@ -328,4 +328,3 @@
 </body>
 
 </html>
-

@@ -17,7 +17,7 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 11px;
             line-height: 1.5;
             color: #000;

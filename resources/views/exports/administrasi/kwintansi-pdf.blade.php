@@ -18,7 +18,7 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             /* width: 210mm;
             height: 297mm;
             margin: 0 auto; */
