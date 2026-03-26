@@ -289,6 +289,10 @@
         // FORM SUBMISSION HANDLER
         // ==========================================
 
+        function editRAB(rabNumber) {
+            openModal('editRABModal' + rabNumber);
+        }
+
         const addRABForm = document.getElementById('addRABForm');
         if (addRABForm) {
             addRABForm.addEventListener('submit', function(e) {

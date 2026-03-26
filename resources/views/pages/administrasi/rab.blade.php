@@ -31,8 +31,12 @@
     {{-- Add Modal --}}
     @include('components.administrasi.rab.add-modal', ['paymentAccounts' => $paymentAccounts])
 
-    {{-- Edit Modals --}}
+    {{-- Detail & Edit Modals --}}
     @foreach ($rabs as $rab)
+        @include('components.administrasi.rab.detail-modal', [
+            'rab' => $rab,
+            'paymentAccounts' => $paymentAccounts,
+        ])
         @include('components.administrasi.rab.edit-modal', [
             'rab' => $rab,
             'paymentAccounts' => $paymentAccounts,

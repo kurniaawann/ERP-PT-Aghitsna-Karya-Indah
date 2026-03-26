@@ -33,13 +33,14 @@
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        {{-- View Detail --}}
-                                        <a href="{{ route('rab.show', $rab->rab_number) }}"
+                                        {{-- View Detail Modal --}}
+                                        <button type="button"
+                                            onclick="openModal('detailRABModal{{ $rab->rab_number }}')"
                                             class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
                                             title="Lihat Detail">
                                             <i class="fa-solid fa-eye w-3 h-3"></i>
                                             Lihat
-                                        </a>
+                                        </button>
                                         {{-- Edit --}}
                                         <button type="button" onclick="editRAB('{{ $rab->rab_number }}')"
                                             class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
