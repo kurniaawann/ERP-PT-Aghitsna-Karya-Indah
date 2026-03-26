@@ -56,38 +56,38 @@
 
                 <div class="subcategories-container space-y-3 mb-3">
                     ${(categoryData.subcategories || []).map(subcategory => `
-                            <div class="subcategory-block border rounded p-3 bg-gray-50">
-                                <div class="mb-3">
-                                    <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                                    <input type="text" class="w-full border rounded p-2 subcategory-name"
-                                        placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
-                                </div>
+                                <div class="subcategory-block border rounded p-3 bg-gray-50">
+                                    <div class="mb-3">
+                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
+                                        <input type="text" class="w-full border rounded p-2 subcategory-name"
+                                            placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
+                                    </div>
 
-                                <div class="space-y-3 mb-3">
-                                    <div>
-                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
-                                        <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
-                                            min="0" step="0.01" value="${subcategory.volume || 0}" required>
+                                    <div class="space-y-3 mb-3">
+                                        <div>
+                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
+                                            <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
+                                                min="0" step="0.01" value="${subcategory.volume || 0}" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
+                                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²"
+                                                value="${subcategory.unit || ''}" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
+                                            <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
+                                                min="0" step="0.01" value="${subcategory.unit_price || 0}" required>
+                                        </div>
+                                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
+                                            <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                                        <input type="text" class="w-full border rounded p-2 unit" placeholder="m²"
-                                            value="${subcategory.unit || ''}" required>
-                                    </div>
-                                    <div>
-                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
-                                        <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
-                                            min="0" step="0.01" value="${subcategory.unit_price || 0}" required>
-                                    </div>
-                                    <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                                        <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
-                                    </div>
-                                </div>
 
-                                <div class="mb-3">
-                                    <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
-                                    <div class="items-container space-y-2">
-                                        ${(subcategory.items || []).map(item => `
+                                    <div class="mb-3">
+                                        <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
+                                        <div class="items-container space-y-2">
+                                            ${(subcategory.items || []).map(item => `
                                         <div class="item-block bg-white rounded border p-2 flex gap-2">
                                             <input type="text" class="flex-1 w-full border-0 p-1 item-description"
                                                 placeholder="Masukkan item pekerjaan" value="${item.item_description || ''}" required>
@@ -96,17 +96,17 @@
                                             </button>
                                         </div>
                                     `).join('')}
+                                        </div>
+                                        <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
+                                            <i class="fa-solid fa-plus"></i> Tambah Item
+                                        </button>
                                     </div>
-                                    <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
-                                        <i class="fa-solid fa-plus"></i> Tambah Item
+
+                                    <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
+                                        <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
                                     </button>
                                 </div>
-
-                                <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
-                                    <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
-                                </button>
-                            </div>
-                        `).join('')}
+                            `).join('')}
                 </div>
 
                 <button type="button" onclick="addSubcategoryBlock(this)" class="btn btn-sm btn-outline-secondary w-full">
