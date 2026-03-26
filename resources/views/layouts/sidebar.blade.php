@@ -315,7 +315,7 @@
 
                 {{-- Submenu --}}
                 <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') || request()->is('cash-out-proof*') || request()->is('kwintansi*') || request()->is('invoice-administrasi*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') || request()->is('cash-out-proof*') || request()->is('kwintansi*') || request()->is('invoice-administrasi*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/document-receipt') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -363,7 +363,7 @@
                     <li>
                         <button onclick="toggleDropdown('penawaranHargaDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <div class="flex items-center">
                                 <i
                                     class="fas fa-file-contract w-4
@@ -374,12 +374,12 @@
 
                             <i id="penawaranHargaDropdownIcon"
                                 class="fas fa-chevron-down text-xs transition-transform duration-200
-                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                         </button>
 
                         <ul id="penawaranHargaDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? '' : 'hidden' }}">
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="{{ url('/aluminium-quotation') }}"
                                     class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -400,6 +400,17 @@
                                         {{ request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                     </i>
                                     <span class="ml-3 text-sm font-medium">Penawaran Proyek</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/rab') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-calculator w-4
+                                        {{ request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">RAB</span>
                                 </a>
                             </li>
                         </ul>

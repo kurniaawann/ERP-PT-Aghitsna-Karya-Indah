@@ -23,6 +23,7 @@ use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\InvoiceController;
 use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
+use App\Http\Controllers\Administrasi\RABController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -261,5 +262,14 @@ Route::middleware('auth')->group(function () {
     // Generic routes come last
     Route::get('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'show'])->name('project-quotation.show')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
     Route::put('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+
+    // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
+    Route::get('/rab', [RABController::class, 'index'])->name('rab.index');
+    Route::get('/rab/next-number', [RABController::class, 'getNextRABNumber'])->name('rab.getNextNumber');
+    Route::post('/rab', [RABController::class, 'store'])->name('rab.store');
+    Route::delete('/rab/destroy', [RABController::class, 'destroy'])->name('rab.destroy');
+    Route::get('/rab/{rab_number}', [RABController::class, 'show'])->name('rab.show')->where('rab_number', '.*');
+    Route::get('/rab/{rab_number}/edit', [RABController::class, 'edit'])->name('rab.edit')->where('rab_number', '.*');
+    Route::put('/rab/{rab_number}', [RABController::class, 'update'])->name('rab.update')->where('rab_number', '.*');
 
 });
