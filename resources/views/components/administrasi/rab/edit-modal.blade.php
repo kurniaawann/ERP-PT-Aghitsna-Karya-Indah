@@ -7,21 +7,24 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" class="w-full border rounded p-2" name="date" required
-            value="{{ $rab->date->format('Y-m-d') }}">
+            value="{{ $rab->date->format('Y-m-d') }}" oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Penerima <span class="text-error">*</span></label>
         <input type="text" class="w-full border rounded p-2" name="recipient" placeholder="Nama penerima RAB"
-            value="{{ $rab->recipient }}" required>
+            value="{{ $rab->recipient }}" required maxlength="255"
+            oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Alamat Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Alamat Penerima</label>
         <textarea class="w-full border rounded p-2" name="recipient_address" rows="2"
-            placeholder="Masukkan alamat lengkap penerima">{{ $rab->recipient_address }}</textarea>
+            placeholder="Masukkan alamat lengkap penerima" maxlength="500">{{ $rab->recipient_address }}</textarea>
+        <small class="text-gray-500 text-xs">Maksimal 500 karakter</small>
     </div>
 
     {{-- Teks Pengantar --}}
@@ -29,27 +32,30 @@
         <label class="block text-text-primary mb-1">Teks Pengantar <span class="text-error">*</span></label>
         <textarea class="w-full border rounded p-2" name="intro_text" rows="3"
             placeholder="Contoh: Bersama ini kami sampaikan perihal penawaran harga pekerjaan renovasi rumah tinggal 1 lantai, sebagai berikut:"
-            required>{{ $rab->intro_text }}</textarea>
+            required maxlength="1000" oninvalid="this.setCustomValidity('Teks pengantar tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">{{ $rab->intro_text }}</textarea>
+        <small class="text-gray-500 text-xs">Maksimal 1000 karakter</small>
     </div>
 
     {{-- Ditandatangani Oleh --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Ditandatangani Oleh</label>
         <input type="text" class="w-full border rounded p-2" name="signed_by" placeholder="Nama pejabat"
-            value="{{ $rab->signed_by ?? '' }}">
+            value="{{ $rab->signed_by ?? '' }}" maxlength="255">
     </div>
 
     {{-- Divisi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Divisi/Bagian</label>
         <input type="text" class="w-full border rounded p-2" name="division" placeholder="Nama divisi"
-            value="{{ $rab->division ?? '' }}">
+            value="{{ $rab->division ?? '' }}" maxlength="255">
     </div>
 
     {{-- Rekening Pembayaran --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
-        <div id="paymentAccountsList" class="space-y-2">
+        <div id="paymentAccountsList" class="space-y-2" required>
+            <small class="text-gray-500 text-xs">Pilih minimal 1 rekening pembayaran</small>
             @foreach ($paymentAccounts as $account)
                 <div class="flex items-center">
                     <input class="form-check-input" type="checkbox" name="selected_payment_accounts[]"

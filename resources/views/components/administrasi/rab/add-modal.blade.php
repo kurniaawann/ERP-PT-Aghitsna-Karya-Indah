@@ -6,21 +6,24 @@
     {{-- Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" class="w-full border rounded p-2" name="date" required value="{{ date('Y-m-d') }}">
+        <input type="date" class="w-full border rounded p-2" name="date" required value="{{ date('Y-m-d') }}"
+            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Penerima <span class="text-error">*</span></label>
         <input type="text" class="w-full border rounded p-2" name="recipient" placeholder="Nama penerima RAB"
-            required>
+            required maxlength="255" oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Alamat Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Alamat Penerima</label>
         <textarea class="w-full border rounded p-2" name="recipient_address" rows="2"
-            placeholder="Masukkan alamat lengkap penerima"></textarea>
+            placeholder="Masukkan alamat lengkap penerima" maxlength="500"></textarea>
+        <small class="text-gray-500 text-xs">Maksimal 500 karakter</small>
     </div>
 
     {{-- Teks Pengantar --}}
@@ -28,25 +31,30 @@
         <label class="block text-text-primary mb-1">Teks Pengantar <span class="text-error">*</span></label>
         <textarea class="w-full border rounded p-2" name="intro_text" rows="3"
             placeholder="Contoh: Bersama ini kami sampaikan perihal penawaran harga pekerjaan renovasi rumah tinggal 1 lantai, sebagai berikut:"
-            required></textarea>
+            required maxlength="1000" oninvalid="this.setCustomValidity('Teks pengantar tidak boleh kosong')"
+            oninput="this.setCustomValidity('')"></textarea>
+        <small class="text-gray-500 text-xs">Maksimal 1000 karakter</small>
     </div>
 
     {{-- Ditandatangani Oleh --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Ditandatangani Oleh</label>
-        <input type="text" class="w-full border rounded p-2" name="signed_by" placeholder="Nama pejabat">
+        <input type="text" class="w-full border rounded p-2" name="signed_by" placeholder="Nama pejabat"
+            maxlength="255">
     </div>
 
     {{-- Divisi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Divisi/Bagian</label>
-        <input type="text" class="w-full border rounded p-2" name="division" placeholder="Nama divisi">
+        <input type="text" class="w-full border rounded p-2" name="division" placeholder="Nama divisi"
+            maxlength="255">
     </div>
 
     {{-- Rekening Pembayaran --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
-        <div id="paymentAccountsList" class="space-y-2">
+        <div id="paymentAccountsList" class="space-y-2" required>
+            <small class="text-gray-500 text-xs">Pilih minimal 1 rekening pembayaran</small>
             @foreach ($paymentAccounts as $account)
                 <div class="flex items-center">
                     <input class="form-check-input" type="checkbox" name="selected_payment_accounts[]"
@@ -76,7 +84,9 @@
                 <label class="block text-text-primary mb-1 text-sm font-semibold">Kategori (Romawi)</label>
                 <div class="flex gap-2">
                     <input type="text" class="flex-1 w-full border rounded p-2 category-name"
-                        placeholder="Contoh: Pekerjaan Persiapan" required>
+                        placeholder="Contoh: Pekerjaan Persiapan" required maxlength="255"
+                        oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
                     <button type="button" class="btn btn-sm btn-danger" title="Hapus kategori"
                         onclick="removeCategoryBlock(this)">
                         <i class="fa-solid fa-trash"></i>
@@ -90,7 +100,9 @@
                     <div class="mb-3">
                         <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
                         <input type="text" class="w-full border rounded p-2 subcategory-name"
-                            placeholder="Contoh: Pembongkaran" required>
+                            placeholder="Contoh: Pembongkaran" required maxlength="255"
+                            oninvalid="this.setCustomValidity('Sub-kategori tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
                     </div>
 
                     {{-- Volume, Satuan, Harga --}}
@@ -98,16 +110,22 @@
                         <div>
                             <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
                             <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
-                                min="0" step="0.01" required>
+                                min="0" step="0.01" required
+                                oninvalid="this.setCustomValidity('Volume harus lebih dari 0')"
+                                oninput="this.setCustomValidity('')">
                         </div>
                         <div>
                             <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²" required>
+                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²" required
+                                maxlength="50" oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
+                                oninput="this.setCustomValidity('')">
                         </div>
                         <div>
                             <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
                             <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
-                                min="0" step="0.01" required>
+                                min="0" step="0.01" required
+                                oninvalid="this.setCustomValidity('Harga satuan harus lebih dari 0')"
+                                oninput="this.setCustomValidity('')">
                         </div>
                         <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
                             <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span
@@ -122,7 +140,9 @@
                         <div class="items-container space-y-2">
                             <div class="item-block bg-white rounded border p-2 flex gap-2">
                                 <input type="text" class="flex-1 w-full border-0 p-1 item-description"
-                                    placeholder="Masukkan item pekerjaan" required>
+                                    placeholder="Masukkan item pekerjaan" required maxlength="255"
+                                    oninvalid="this.setCustomValidity('Item pekerjaan tidak boleh kosong')"
+                                    oninput="this.setCustomValidity('')">
                                 <button type="button" class="btn btn-sm btn-danger" onclick="removeItemBlock(this)">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
