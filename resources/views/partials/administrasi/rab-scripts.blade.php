@@ -1,83 +1,82 @@
-@push('scripts')
-    <script>
-        // ==========================================
-        // PREVENT DOUBLE SUBMIT & LOADING STATE
-        // ==========================================
+<script>
+    // ==========================================
+    // PREVENT DOUBLE SUBMIT & LOADING STATE
+    // ==========================================
 
-        let isSubmitting = false;
+    let isSubmitting = false;
 
-        function handleFormSubmit(submitBtn, originalText) {
-            if (isSubmitting) return false;
+    function handleFormSubmit(submitBtn, originalText) {
+        if (isSubmitting) return false;
 
-            isSubmitting = true;
+        isSubmitting = true;
 
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sedang Memproses...';
-                submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-                submitBtn.dataset.originalText = submitBtn.textContent || 'Submit';
-            }
-
-            return true;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sedang Memproses...';
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            submitBtn.dataset.originalText = submitBtn.textContent || 'Submit';
         }
 
-        // Reset loading state function (untuk error handling)
-        function resetLoadingState(submitBtn) {
-            isSubmitting = false;
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = submitBtn.dataset.originalText || 'Submit';
-                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-            }
+        return true;
+    }
+
+    // Reset loading state function (untuk error handling)
+    function resetLoadingState(submitBtn) {
+        isSubmitting = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = submitBtn.dataset.originalText || 'Submit';
+            submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+    }
+
+    // ==========================================
+    // BULK DELETE FUNCTION
+    // ==========================================
+
+    function submitDeleteForm() {
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            deleteBtn.dataset.originalText = deleteBtn.textContent || 'Hapus';
         }
 
-        // ==========================================
-        // BULK DELETE FUNCTION
-        // ==========================================
+        const form = document.getElementById('deleteForm');
+        if (form) {
+            setTimeout(() => {
+                form.submit();
+            }, 100);
+        } else {
+            // If form not found, reset button
+            resetLoadingState(deleteBtn);
+        }
+    }
 
-        function submitDeleteForm() {
-            const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-            if (deleteBtn) {
-                deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-                deleteBtn.disabled = true;
-                deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-                deleteBtn.dataset.originalText = deleteBtn.textContent || 'Hapus';
-            }
+    // ==========================================
+    // CATEGORY, SUBCATEGORY, ITEM MANAGEMENT
+    // ==========================================
 
-            const form = document.getElementById('deleteForm');
-            if (form) {
-                setTimeout(() => {
-                    form.submit();
-                }, 100);
-            } else {
-                // If form not found, reset button
-                resetLoadingState(deleteBtn);
-            }
+    // Add Category - dengan optional prefix dan categoryData untuk edit modal
+    function addCategoryBlock(prefixOrContainerId, categoryData) {
+        let container, prefix;
+
+        // Jika categoryData ada, berarti ini untuk edit modal dengan prefix
+        if (categoryData) {
+            prefix = prefixOrContainerId;
+            container = document.getElementById('editRabCategoriesContainer' + prefix.replace('edit-', ''));
+        } else {
+            // Jika tidak ada categoryData, berarti ini untuk add modal dengan containerId
+            container = document.getElementById(prefixOrContainerId);
+            categoryData = {};
         }
 
-        // ==========================================
-        // CATEGORY, SUBCATEGORY, ITEM MANAGEMENT
-        // ==========================================
+        if (!container) return;
 
-        // Add Category - dengan optional prefix dan categoryData untuk edit modal
-        function addCategoryBlock(prefixOrContainerId, categoryData) {
-            let container, prefix;
-
-            // Jika categoryData ada, berarti ini untuk edit modal dengan prefix
-            if (categoryData) {
-                prefix = prefixOrContainerId;
-                container = document.getElementById('editRabCategoriesContainer' + prefix.replace('edit-', ''));
-            } else {
-                // Jika tidak ada categoryData, berarti ini untuk add modal dengan containerId
-                container = document.getElementById(prefixOrContainerId);
-                categoryData = {};
-            }
-
-            if (!container) return;
-
-            const categoryBlock = document.createElement('div');
-            categoryBlock.className = 'category-block border rounded p-3 mb-3';
-            categoryBlock.innerHTML = `
+        const categoryBlock = document.createElement('div');
+        categoryBlock.className = 'category-block border rounded p-3 mb-3';
+        categoryBlock.innerHTML = `
                 <div class="mb-3">
                     <label class="block text-text-primary mb-1 text-sm font-semibold">Kategori (Romawi)</label>
                     <div class="flex gap-2">
@@ -149,18 +148,18 @@
                 </button>
             `;
 
-            container.appendChild(categoryBlock);
-            attachPriceListeners();
-        }
+        container.appendChild(categoryBlock);
+        attachPriceListeners();
+    }
 
-        // Add Subcategory
-        function addSubcategoryBlock(button) {
-            const categoryBlock = button.closest('.category-block');
-            const container = categoryBlock.querySelector('.subcategories-container');
+    // Add Subcategory
+    function addSubcategoryBlock(button) {
+        const categoryBlock = button.closest('.category-block');
+        const container = categoryBlock.querySelector('.subcategories-container');
 
-            const subcategoryBlock = document.createElement('div');
-            subcategoryBlock.className = 'subcategory-block border rounded p-3 bg-gray-50';
-            subcategoryBlock.innerHTML = `
+        const subcategoryBlock = document.createElement('div');
+        subcategoryBlock.className = 'subcategory-block border rounded p-3 bg-gray-50';
+        subcategoryBlock.innerHTML = `
                 <div class="mb-3">
                     <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
                     <input type="text" class="w-full border rounded p-2 subcategory-name"
@@ -205,318 +204,318 @@
                 </button>
             `;
 
-            container.appendChild(subcategoryBlock);
-            attachPriceListeners();
-        }
+        container.appendChild(subcategoryBlock);
+        attachPriceListeners();
+    }
 
-        // Add Item
-        function addItemBlock(button) {
-            const subcategoryBlock = button.closest('.subcategory-block');
-            const container = subcategoryBlock.querySelector('.items-container');
+    // Add Item
+    function addItemBlock(button) {
+        const subcategoryBlock = button.closest('.subcategory-block');
+        const container = subcategoryBlock.querySelector('.items-container');
 
-            const itemBlock = document.createElement('div');
-            itemBlock.className = 'item-block bg-white rounded border p-2 flex gap-2';
-            itemBlock.innerHTML = `
+        const itemBlock = document.createElement('div');
+        itemBlock.className = 'item-block bg-white rounded border p-2 flex gap-2';
+        itemBlock.innerHTML = `
                 <input type="text" class="flex-1 w-full border-0 p-1 item-description" placeholder="Masukkan item pekerjaan" required>
                 <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm btn-danger">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             `;
 
-            container.appendChild(itemBlock);
-        }
+        container.appendChild(itemBlock);
+    }
 
-        // Remove Category
-        function removeCategoryBlock(button) {
-            button.closest('.category-block').remove();
-        }
+    // Remove Category
+    function removeCategoryBlock(button) {
+        button.closest('.category-block').remove();
+    }
 
-        // Remove Subcategory
-        function removeSubcategoryBlock(button) {
-            button.closest('.subcategory-block').remove();
-        }
+    // Remove Subcategory
+    function removeSubcategoryBlock(button) {
+        button.closest('.subcategory-block').remove();
+    }
 
-        // Remove Item
-        function removeItemBlock(button) {
-            button.closest('.item-block').remove();
-        }
+    // Remove Item
+    function removeItemBlock(button) {
+        button.closest('.item-block').remove();
+    }
 
-        // ==========================================
-        // PRICE CALCULATOR
-        // ==========================================
+    // ==========================================
+    // PRICE CALCULATOR
+    // ==========================================
 
-        function attachPriceListeners() {
-            const volumeInputs = document.querySelectorAll('.volume');
-            const priceInputs = document.querySelectorAll('.unit-price');
+    function attachPriceListeners() {
+        const volumeInputs = document.querySelectorAll('.volume');
+        const priceInputs = document.querySelectorAll('.unit-price');
 
-            volumeInputs.forEach(input => {
-                input.addEventListener('input', updatePrices);
-            });
+        volumeInputs.forEach(input => {
+            input.addEventListener('input', updatePrices);
+        });
 
-            priceInputs.forEach(input => {
-                input.addEventListener('input', updatePrices);
-            });
-        }
+        priceInputs.forEach(input => {
+            input.addEventListener('input', updatePrices);
+        });
+    }
 
-        function updatePrices() {
-            let grandTotal = 0;
-            const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+    function updatePrices() {
+        let grandTotal = 0;
+        const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
 
-            subcategoryBlocks.forEach(block => {
-                const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                const totalPrice = volume * unitPrice;
-                const priceDisplay = block.querySelector('.sub-total-price');
+        subcategoryBlocks.forEach(block => {
+            const volume = parseFloat(block.querySelector('.volume').value) || 0;
+            const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
+            const totalPrice = volume * unitPrice;
+            const priceDisplay = block.querySelector('.sub-total-price');
 
-                if (priceDisplay) {
-                    priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0
-                    }).format(totalPrice);
-                }
-
-                grandTotal += totalPrice;
-            });
-
-            // Update grand total if element exists
-            const grandTotalElement = document.getElementById('grandTotalPrice');
-            if (grandTotalElement) {
-                grandTotalElement.textContent = new Intl.NumberFormat('id-ID', {
+            if (priceDisplay) {
+                priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
                     style: 'currency',
                     currency: 'IDR',
                     minimumFractionDigits: 0
-                }).format(grandTotal);
+                }).format(totalPrice);
+            }
+
+            grandTotal += totalPrice;
+        });
+
+        // Update grand total if element exists
+        const grandTotalElement = document.getElementById('grandTotalPrice');
+        if (grandTotalElement) {
+            grandTotalElement.textContent = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(grandTotal);
+        }
+    }
+
+    // Initialize on document ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select all checkbox logic
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+        const deleteButton = document.querySelector('[data-delete-button]') || document.querySelector(
+            'button[onclick*="openModal"][onclick*="deleteModal"]');
+
+        // Function to update delete button state
+        function updateDeleteButtonState() {
+            const checkedCount = Array.from(itemCheckboxes).filter(cb => cb.checked).length;
+            if (deleteButton) {
+                if (checkedCount > 0) {
+                    deleteButton.disabled = false;
+                    deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    deleteButton.disabled = true;
+                    deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
             }
         }
 
-        // Initialize on document ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Select all checkbox logic
-            const selectAllCheckbox = document.getElementById('selectAll');
-            const itemCheckboxes = document.querySelectorAll('.item-checkbox');
-            const deleteButton = document.querySelector('[data-delete-button]') || document.querySelector(
-                'button[onclick*="openModal"][onclick*="deleteModal"]');
-
-            // Function to update delete button state
-            function updateDeleteButtonState() {
-                const checkedCount = Array.from(itemCheckboxes).filter(cb => cb.checked).length;
-                if (deleteButton) {
-                    if (checkedCount > 0) {
-                        deleteButton.disabled = false;
-                        deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                    } else {
-                        deleteButton.disabled = true;
-                        deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
-                    }
-                }
-            }
-
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function() {
-                    itemCheckboxes.forEach(checkbox => {
-                        checkbox.checked = this.checked;
-                    });
-                    updateDeleteButtonState();
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                itemCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
                 });
-            }
-
-            // Update selectAll state when individual checkboxes change
-            itemCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
-                    const someChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
-
-                    if (selectAllCheckbox) {
-                        selectAllCheckbox.checked = allChecked;
-                        selectAllCheckbox.indeterminate = someChecked && !allChecked;
-                    }
-                    updateDeleteButtonState();
-                });
+                updateDeleteButtonState();
             });
+        }
 
-            // Initialize price listeners
-            attachPriceListeners();
-            updatePrices();
+        // Update selectAll state when individual checkboxes change
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
 
-            // Set initial delete button state
-            updateDeleteButtonState();
-
-            // Attach event listeners untuk semua form edit RAB
-            // Form edit modal memiliki pattern: editRABForm{number}
-            document.querySelectorAll('form[id^="editRABForm"]').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const submitBtn = this.querySelector('[type="submit"]');
-                    if (submitBtn && !handleFormSubmit(submitBtn)) {
-                        e.preventDefault();
-                        return false;
-                    }
-                    // Extract rab number dari form ID (editRABForm123 -> 123)
-                    const rabNumber = this.id.replace('editRABForm', '');
-                    prepareEditRABSubmit(rabNumber);
-
-                    // Delay submission sedikit agar loading indicator terlihat
-                    e.preventDefault();
-                    setTimeout(() => {
-                        this.submit();
-                    }, 100);
-                });
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = someChecked && !allChecked;
+                }
+                updateDeleteButtonState();
             });
         });
 
-        // ==========================================
-        // PREPARE DATA FOR SUBMISSION
-        // ==========================================
+        // Initialize price listeners
+        attachPriceListeners();
+        updatePrices();
 
-        window.prepareRABSubmit = function() {
-            const categories = [];
+        // Set initial delete button state
+        updateDeleteButtonState();
 
-            document.querySelectorAll('#rabCategoriesContainer .category-block').forEach(function(categoryEl) {
-                const categoryData = {
-                    category_name: categoryEl.querySelector('.category-name').value,
-                    subcategories: []
-                };
-
-                categoryEl.querySelectorAll('.subcategory-block').forEach(function(subEl) {
-                    const volume = parseFloat(subEl.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(subEl.querySelector('.unit-price').value) || 0;
-                    const subHarga = volume * unitPrice;
-
-                    const subcategoryData = {
-                        subcategory_name: subEl.querySelector('.subcategory-name').value,
-                        volume: volume,
-                        unit: subEl.querySelector('.unit').value,
-                        unit_price: unitPrice,
-                        sub_harga: subHarga,
-                        items: []
-                    };
-
-                    subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
-                        const itemData = {
-                            item_description: itemEl.querySelector('.item-description')
-                                .value
-                        };
-                        subcategoryData.items.push(itemData);
-                    });
-
-                    categoryData.subcategories.push(subcategoryData);
-                });
-
-                categories.push(categoryData);
-            });
-
-            document.getElementById('rabDataInput').value = JSON.stringify(categories);
-            return true;
-        };
-
-        // ==========================================
-        // FORM SUBMISSION HANDLER
-        // ==========================================
-
-        function editRAB(rabNumber) {
-            openModal('editRABModal' + rabNumber);
-        }
-
-        const addRABForm = document.getElementById('addRABForm');
-        if (addRABForm) {
-            addRABForm.addEventListener('submit', function(e) {
+        // Attach event listeners untuk semua form edit RAB
+        // Form edit modal memiliki pattern: editRABForm{number}
+        document.querySelectorAll('form[id^="editRABForm"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
                 const submitBtn = this.querySelector('[type="submit"]');
                 if (submitBtn && !handleFormSubmit(submitBtn)) {
                     e.preventDefault();
                     return false;
                 }
-                prepareRABSubmit();
+                // Extract rab number dari form ID (editRABForm123 -> 123)
+                const rabNumber = this.id.replace('editRABForm', '');
+                prepareEditRABSubmit(rabNumber);
+
                 // Delay submission sedikit agar loading indicator terlihat
                 e.preventDefault();
                 setTimeout(() => {
                     this.submit();
                 }, 100);
             });
-        }
+        });
+    });
 
-        // ==========================================
-        // PREPARE EDIT RAB DATA FOR SUBMISSION
-        // ==========================================
+    // ==========================================
+    // PREPARE DATA FOR SUBMISSION
+    // ==========================================
 
-        window.prepareEditRABSubmit = function(rabNumber) {
-            const containerId = 'editRabCategoriesContainer' + rabNumber;
-            const inputId = 'editRabDataInput' + rabNumber;
+    window.prepareRABSubmit = function() {
+        const categories = [];
 
-            const categories = [];
-            const container = document.getElementById(containerId);
-            if (!container) return false;
+        document.querySelectorAll('#rabCategoriesContainer .category-block').forEach(function(categoryEl) {
+            const categoryData = {
+                category_name: categoryEl.querySelector('.category-name').value,
+                subcategories: []
+            };
 
-            container.querySelectorAll('.category-block').forEach(function(categoryEl) {
-                const categoryData = {
-                    category_name: categoryEl.querySelector('.category-name').value,
-                    subcategories: []
+            categoryEl.querySelectorAll('.subcategory-block').forEach(function(subEl) {
+                const volume = parseFloat(subEl.querySelector('.volume').value) || 0;
+                const unitPrice = parseFloat(subEl.querySelector('.unit-price').value) || 0;
+                const subHarga = volume * unitPrice;
+
+                const subcategoryData = {
+                    subcategory_name: subEl.querySelector('.subcategory-name').value,
+                    volume: volume,
+                    unit: subEl.querySelector('.unit').value,
+                    unit_price: unitPrice,
+                    sub_harga: subHarga,
+                    items: []
                 };
 
-                categoryEl.querySelectorAll('.subcategory-block').forEach(function(subEl) {
-                    const volume = parseFloat(subEl.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(subEl.querySelector('.unit-price').value) || 0;
-                    const subHarga = volume * unitPrice;
-
-                    const subcategoryData = {
-                        subcategory_name: subEl.querySelector('.subcategory-name').value,
-                        volume: volume,
-                        unit: subEl.querySelector('.unit').value,
-                        unit_price: unitPrice,
-                        sub_harga: subHarga,
-                        items: []
+                subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
+                    const itemData = {
+                        item_description: itemEl.querySelector('.item-description')
+                            .value
                     };
-
-                    subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
-                        const itemData = {
-                            item_description: itemEl.querySelector('.item-description')
-                                .value
-                        };
-                        subcategoryData.items.push(itemData);
-                    });
-
-                    categoryData.subcategories.push(subcategoryData);
+                    subcategoryData.items.push(itemData);
                 });
 
-                categories.push(categoryData);
+                categoryData.subcategories.push(subcategoryData);
             });
 
-            document.getElementById(inputId).value = JSON.stringify(categories);
-            return true;
-        };
+            categories.push(categoryData);
+        });
 
-        // ==========================================
-        // HELPER: UPDATE GRAND TOTAL FOR ALL MODALS
-        // ==========================================
+        document.getElementById('rabDataInput').value = JSON.stringify(categories);
+        return true;
+    };
 
-        window.updatePricesForEditModal = function(grandTotalElementId) {
-            let grandTotal = 0;
-            const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+    // ==========================================
+    // FORM SUBMISSION HANDLER
+    // ==========================================
 
-            subcategoryBlocks.forEach(block => {
-                const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                const totalPrice = volume * unitPrice;
-                const priceDisplay = block.querySelector('.sub-total-price');
+    function editRAB(rabNumber) {
+        openModal('editRABModal' + rabNumber);
+    }
 
-                if (priceDisplay) {
-                    priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0
-                    }).format(totalPrice);
-                }
+    const addRABForm = document.getElementById('addRABForm');
+    if (addRABForm) {
+        addRABForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('[type="submit"]');
+            if (submitBtn && !handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
+            prepareRABSubmit();
+            // Delay submission sedikit agar loading indicator terlihat
+            e.preventDefault();
+            setTimeout(() => {
+                this.submit();
+            }, 100);
+        });
+    }
 
-                grandTotal += totalPrice;
+    // ==========================================
+    // PREPARE EDIT RAB DATA FOR SUBMISSION
+    // ==========================================
+
+    window.prepareEditRABSubmit = function(rabNumber) {
+        const containerId = 'editRabCategoriesContainer' + rabNumber;
+        const inputId = 'editRabDataInput' + rabNumber;
+
+        const categories = [];
+        const container = document.getElementById(containerId);
+        if (!container) return false;
+
+        container.querySelectorAll('.category-block').forEach(function(categoryEl) {
+            const categoryData = {
+                category_name: categoryEl.querySelector('.category-name').value,
+                subcategories: []
+            };
+
+            categoryEl.querySelectorAll('.subcategory-block').forEach(function(subEl) {
+                const volume = parseFloat(subEl.querySelector('.volume').value) || 0;
+                const unitPrice = parseFloat(subEl.querySelector('.unit-price').value) || 0;
+                const subHarga = volume * unitPrice;
+
+                const subcategoryData = {
+                    subcategory_name: subEl.querySelector('.subcategory-name').value,
+                    volume: volume,
+                    unit: subEl.querySelector('.unit').value,
+                    unit_price: unitPrice,
+                    sub_harga: subHarga,
+                    items: []
+                };
+
+                subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
+                    const itemData = {
+                        item_description: itemEl.querySelector('.item-description')
+                            .value
+                    };
+                    subcategoryData.items.push(itemData);
+                });
+
+                categoryData.subcategories.push(subcategoryData);
             });
 
-            const grandTotalElement = document.getElementById(grandTotalElementId);
-            if (grandTotalElement) {
-                grandTotalElement.textContent = new Intl.NumberFormat('id-ID', {
+            categories.push(categoryData);
+        });
+
+        document.getElementById(inputId).value = JSON.stringify(categories);
+        return true;
+    };
+
+    // ==========================================
+    // HELPER: UPDATE GRAND TOTAL FOR ALL MODALS
+    // ==========================================
+
+    window.updatePricesForEditModal = function(grandTotalElementId) {
+        let grandTotal = 0;
+        const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+
+        subcategoryBlocks.forEach(block => {
+            const volume = parseFloat(block.querySelector('.volume').value) || 0;
+            const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
+            const totalPrice = volume * unitPrice;
+            const priceDisplay = block.querySelector('.sub-total-price');
+
+            if (priceDisplay) {
+                priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
                     style: 'currency',
                     currency: 'IDR',
                     minimumFractionDigits: 0
-                }).format(grandTotal);
+                }).format(totalPrice);
             }
-        };
-    </script>
-@endpush
+
+            grandTotal += totalPrice;
+        });
+
+        const grandTotalElement = document.getElementById(grandTotalElementId);
+        if (grandTotalElement) {
+            grandTotalElement.textContent = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(grandTotal);
+        }
+    };
+</script>
+{{-- @endpush --}}
