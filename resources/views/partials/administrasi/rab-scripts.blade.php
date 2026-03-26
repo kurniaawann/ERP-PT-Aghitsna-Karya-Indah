@@ -15,9 +15,44 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sedang Memproses...';
                 submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                submitBtn.dataset.originalText = submitBtn.textContent || 'Submit';
             }
 
             return true;
+        }
+
+        // Reset loading state function (untuk error handling)
+        function resetLoadingState(submitBtn) {
+            isSubmitting = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = submitBtn.dataset.originalText || 'Submit';
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        // ==========================================
+        // BULK DELETE FUNCTION
+        // ==========================================
+
+        function submitDeleteForm() {
+            const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+            if (deleteBtn) {
+                deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+                deleteBtn.disabled = true;
+                deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                deleteBtn.dataset.originalText = deleteBtn.textContent || 'Hapus';
+            }
+
+            const form = document.getElementById('deleteForm');
+            if (form) {
+                setTimeout(() => {
+                    form.submit();
+                }, 100);
+            } else {
+                // If form not found, reset button
+                resetLoadingState(deleteBtn);
+            }
         }
 
         // ==========================================
@@ -56,38 +91,38 @@
 
                 <div class="subcategories-container space-y-3 mb-3">
                     ${(categoryData.subcategories || []).map(subcategory => `
-                                <div class="subcategory-block border rounded p-3 bg-gray-50">
-                                    <div class="mb-3">
-                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                                        <input type="text" class="w-full border rounded p-2 subcategory-name"
-                                            placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
-                                    </div>
+                                        <div class="subcategory-block border rounded p-3 bg-gray-50">
+                                            <div class="mb-3">
+                                                <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
+                                                <input type="text" class="w-full border rounded p-2 subcategory-name"
+                                                    placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
+                                            </div>
 
-                                    <div class="space-y-3 mb-3">
-                                        <div>
-                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
-                                            <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
-                                                min="0" step="0.01" value="${subcategory.volume || 0}" required>
-                                        </div>
-                                        <div>
-                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²"
-                                                value="${subcategory.unit || ''}" required>
-                                        </div>
-                                        <div>
-                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
-                                            <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
-                                                min="0" step="0.01" value="${subcategory.unit_price || 0}" required>
-                                        </div>
-                                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                                            <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
-                                        </div>
-                                    </div>
+                                            <div class="space-y-3 mb-3">
+                                                <div>
+                                                    <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
+                                                    <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
+                                                        min="0" step="0.01" value="${subcategory.volume || 0}" required>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
+                                                    <input type="text" class="w-full border rounded p-2 unit" placeholder="m²"
+                                                        value="${subcategory.unit || ''}" required>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
+                                                    <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
+                                                        min="0" step="0.01" value="${subcategory.unit_price || 0}" required>
+                                                </div>
+                                                <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
+                                                    <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
+                                                </div>
+                                            </div>
 
-                                    <div class="mb-3">
-                                        <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
-                                        <div class="items-container space-y-2">
-                                            ${(subcategory.items || []).map(item => `
+                                            <div class="mb-3">
+                                                <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
+                                                <div class="items-container space-y-2">
+                                                    ${(subcategory.items || []).map(item => `
                                         <div class="item-block bg-white rounded border p-2 flex gap-2">
                                             <input type="text" class="flex-1 w-full border-0 p-1 item-description"
                                                 placeholder="Masukkan item pekerjaan" value="${item.item_description || ''}" required>
@@ -96,17 +131,17 @@
                                             </button>
                                         </div>
                                     `).join('')}
-                                        </div>
-                                        <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
-                                            <i class="fa-solid fa-plus"></i> Tambah Item
-                                        </button>
-                                    </div>
+                                                </div>
+                                                <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
+                                                    <i class="fa-solid fa-plus"></i> Tambah Item
+                                                </button>
+                                            </div>
 
-                                    <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
-                                        <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
-                                    </button>
-                                </div>
-                            `).join('')}
+                                            <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
+                                                <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
+                                            </button>
+                                        </div>
+                                    `).join('')}
                 </div>
 
                 <button type="button" onclick="addSubcategoryBlock(this)" class="btn btn-sm btn-outline-secondary w-full">
@@ -255,10 +290,78 @@
             }
         }
 
-        // Initialize price listeners on document ready
+        // Initialize on document ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Select all checkbox logic
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+            const deleteButton = document.querySelector('[data-delete-button]') || document.querySelector(
+                'button[onclick*="openModal"][onclick*="deleteModal"]');
+
+            // Function to update delete button state
+            function updateDeleteButtonState() {
+                const checkedCount = Array.from(itemCheckboxes).filter(cb => cb.checked).length;
+                if (deleteButton) {
+                    if (checkedCount > 0) {
+                        deleteButton.disabled = false;
+                        deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        deleteButton.disabled = true;
+                        deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            }
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    itemCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateDeleteButtonState();
+                });
+            }
+
+            // Update selectAll state when individual checkboxes change
+            itemCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
+                    const someChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
+
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = someChecked && !allChecked;
+                    }
+                    updateDeleteButtonState();
+                });
+            });
+
+            // Initialize price listeners
             attachPriceListeners();
             updatePrices();
+
+            // Set initial delete button state
+            updateDeleteButtonState();
+
+            // Attach event listeners untuk semua form edit RAB
+            // Form edit modal memiliki pattern: editRABForm{number}
+            document.querySelectorAll('form[id^="editRABForm"]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const submitBtn = this.querySelector('[type="submit"]');
+                    if (submitBtn && !handleFormSubmit(submitBtn)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    // Extract rab number dari form ID (editRABForm123 -> 123)
+                    const rabNumber = this.id.replace('editRABForm', '');
+                    prepareEditRABSubmit(rabNumber);
+
+                    // Delay submission sedikit agar loading indicator terlihat
+                    e.preventDefault();
+                    setTimeout(() => {
+                        this.submit();
+                    }, 100);
+                });
+            });
         });
 
         // ==========================================
@@ -318,10 +421,16 @@
         if (addRABForm) {
             addRABForm.addEventListener('submit', function(e) {
                 const submitBtn = this.querySelector('[type="submit"]');
-                if (submitBtn) {
-                    handleFormSubmit(submitBtn);
+                if (submitBtn && !handleFormSubmit(submitBtn)) {
+                    e.preventDefault();
+                    return false;
                 }
                 prepareRABSubmit();
+                // Delay submission sedikit agar loading indicator terlihat
+                e.preventDefault();
+                setTimeout(() => {
+                    this.submit();
+                }, 100);
             });
         }
 
