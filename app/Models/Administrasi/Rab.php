@@ -62,4 +62,32 @@ class RAB extends Model
         $latestSequence = self::max('sequence_number') ?? 0;
         return $latestSequence + 1;
     }
+
+    // ─── Instance Methods ──────────────────────────────────────────────────────
+
+    public function getRawRABData()
+    {
+        return $this->categories()
+            ->with(['subcategories.items'])
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'category_name' => $category->category_name,
+                    'subcategories' => $category->subcategories->map(function ($subcategory) {
+                        return [
+                            'subcategory_name' => $subcategory->subcategory_name,
+                            'volume' => $subcategory->volume,
+                            'unit' => $subcategory->unit,
+                            'unit_price' => $subcategory->unit_price,
+                            'items' => $subcategory->items->map(function ($item) {
+                                return [
+                                    'item_description' => $item->item_description,
+                                ];
+                            })->toArray(),
+                        ];
+                    })->toArray(),
+                ];
+            })
+            ->toArray();
+    }
 }
