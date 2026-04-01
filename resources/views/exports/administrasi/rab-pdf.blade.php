@@ -177,48 +177,38 @@
             border-collapse: collapse;
         }
 
-        .summary-section td {
+        .summary-row td {
             border: 0.75px solid #000;
             padding: 2px 3px;
+            font-size: 9px;
         }
 
-        .summary-section tr:first-child td {
-            border-top: none;
-        }
-
-        .summary-section .label {
+        .summary-row .label {
             font-weight: bold;
             padding-left: 25px;
-        }
-
-        .summary-section .value {
-            text-align: right;
-        }
-
-        .summary-section .total-row td {
-            background-color: #fff;
-            font-weight: bold;
-        }
-
-        .summary-section .total-amount-row td {
-            background-color: #ffff00;
-            font-weight: bold;
-        }
-
-        .terbilang-row td {
-            background-color: #fff;
-            font-weight: bold;
-            font-style: italic;
-        }
-
-        .terbilang-row .label {
             text-align: left;
             width: 70%;
         }
 
-        .terbilang-row .value {
+        .summary-row .value {
             text-align: right;
             width: 30%;
+        }
+
+        .summary-row.total-row td {
+            background-color: #fff;
+            font-weight: bold;
+        }
+
+        .summary-row.total-amount-row td {
+            background-color: #ffff00;
+            font-weight: bold;
+        }
+
+        .summary-row.terbilang-row td {
+            background-color: #fff;
+            font-weight: bold;
+            font-style: italic;
         }
 
         /* ──── Bank Info & Footer ──── */
@@ -438,39 +428,37 @@
                         </tr>
                     @endif
                 @endforeach
-            </tbody>
-        </table>
 
-        <!-- Summary & Footer -->
-        <table class="summary-section">
-            @php
-                $miscCostsTotal = $rab->miscellaneousCosts->sum('amount');
-                $totalAnggaranBiaya = $grandTotal + $miscCostsTotal;
-            @endphp
-            <tr class="total-row">
-                <td class="label" style="width: 70%;">I. Jumlah Anggaran Bangunan</td>
-                <td class="value" style="width: 30%;">Rp. {{ number_format($grandTotal, 0, ',', '.') }}</td>
-            </tr>
-            <tr class="total-row">
-                <td class="label" style="width: 70%;">II. Biaya Lain-Lain</td>
-                <td class="value" style="width: 30%;">Rp.
-                    {{ number_format($rab->miscellaneousCosts->sum('amount'), 0, ',', '.') }}</td>
-            </tr>
-            @foreach ($rab->miscellaneousCosts as $miscCost)
-                <tr class="total-row">
-                    <td class="label" style="padding-left: 40px;">{{ $miscCost->item_order }}.
-                        {{ $miscCost->item_name }}</td>
-                    <td class="value">Rp. {{ number_format($miscCost->amount, 0, ',', '.') }}</td>
+                {{-- Summary Section Rows --}}
+                @php
+                    $miscCostsTotal = $rab->miscellaneousCosts->sum('amount');
+                    $totalAnggaranBiaya = $grandTotal + $miscCostsTotal;
+                @endphp
+                <tr class="summary-row total-row">
+                    <td colspan="6" class="label" style="width: 70%;">I. Jumlah Anggaran Bangunan</td>
+                    <td class="value" style="width: 30%;">Rp. {{ number_format($grandTotal, 0, ',', '.') }}</td>
                 </tr>
-            @endforeach
-            <tr class="total-amount-row">
-                <td class="label">TOTAL ANGGARAN BIAYA</td>
-                <td class="value">Rp. {{ number_format($totalAnggaranBiaya, 0, ',', '.') }}</td>
-            </tr>
-            <tr class="terbilang-row">
-                <td class="label">TERBILANG</td>
-                <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
-            </tr>
+                <tr class="summary-row total-row">
+                    <td colspan="6" class="label" style="width: 70%;">II. Biaya Lain-Lain</td>
+                    <td class="value" style="width: 30%;">Rp.
+                        {{ number_format($rab->miscellaneousCosts->sum('amount'), 0, ',', '.') }}</td>
+                </tr>
+                @foreach ($rab->miscellaneousCosts as $miscCost)
+                    <tr class="summary-row total-row">
+                        <td colspan="6" class="label" style="padding-left: 40px;">{{ $miscCost->item_order }}.
+                            {{ $miscCost->item_name }}</td>
+                        <td class="value">Rp. {{ number_format($miscCost->amount, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+                <tr class="summary-row total-amount-row">
+                    <td colspan="6" class="label">TOTAL ANGGARAN BIAYA</td>
+                    <td class="value">Rp. {{ number_format($totalAnggaranBiaya, 0, ',', '.') }}</td>
+                </tr>
+                <tr class="summary-row terbilang-row">
+                    <td colspan="6" class="label">TERBILANG</td>
+                    <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
+                </tr>
+            </tbody>
         </table>
 
         <div class="footer-section">
