@@ -113,6 +113,29 @@
         <i class="fa-solid fa-plus"></i> Tambah Biaya Lain-Lain
     </button>
 
+    <hr class="my-4">
+
+    {{-- Total Keseluruhan --}}
+    <div class="flex justify-end mb-3">
+        <div class="bg-green-50 border-2 border-green-300 rounded p-4 w-full">
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm text-green-900 border-b border-green-300 pb-2">
+                    <span><strong>Total Kategori:</strong></span>
+                    <span id="editTotalCategoriesPrice{{ $rab->rab_number }}" class="font-semibold">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-sm text-green-900 border-b border-green-300 pb-2">
+                    <span><strong>Total Biaya Lain-Lain:</strong></span>
+                    <span id="editTotalMiscCostsPrice{{ $rab->rab_number }}" class="font-semibold">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-lg text-green-900">
+                    <span><strong>Total Keseluruhan:</strong></span>
+                    <p class="font-bold text-2xl text-green-600"><span
+                            id="editGrandTotalPrice{{ $rab->rab_number }}">Rp 0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <input type="hidden" id="editRabDataInput{{ $rab->rab_number }}" name="rab_data" required>
 
     {{-- Initialize edit modal --}}
