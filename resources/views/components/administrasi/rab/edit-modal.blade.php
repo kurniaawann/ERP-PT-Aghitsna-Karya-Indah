@@ -86,19 +86,32 @@
         {{-- Categories will be populated via JavaScript --}}
     </div>
 
-    <button type="button" onclick="addCategoryBlock('edit-{{ $rab->rab_number }}')"
+    <button type="button" onclick="addCategoryBlock('editRabCategoriesContainer{{ $rab->rab_number }}')"
         class="btn btn-outline-primary w-full">
         <i class="fa-solid fa-plus"></i> Tambah Kategori
     </button>
 
-    {{-- Total Keseluruhan --}}
-    <div class="flex justify-end mb-3">
-        <div class="bg-green-50 border-2 border-green-300 rounded p-4 w-full md:w-80">
-            <p class="text-sm text-green-900"><strong>Total Keseluruhan:</strong></p>
-            <p class="font-bold text-2xl text-green-600"><span id="editGrandTotalPrice{{ $rab->rab_number }}">Rp
-                    0</span></p>
+    <hr class="my-4">
+
+    {{-- Biaya Lain-Lain Section --}}
+    <div class="mb-3">
+        <h6 class="text-text-primary font-semibold mb-3">III. Biaya Lain-Lain (Optional)</h6>
+        <div class="text-xs text-gray-600 mb-3 p-2 bg-gray-50 rounded">
+            <p><strong>Contoh:</strong> Iuran RT, Perizinan Air, Wifi/CCTV/AC, Pekerjaan Listrik, dll</p>
         </div>
     </div>
+
+    <input type="hidden" id="editMiscCostsDataInput{{ $rab->rab_number }}" name="misc_costs_data" value="[]"
+        data-existing-misc-costs="{{ json_encode($rab->miscellaneousCosts->map(function ($m) {return ['item_order' => $m->item_order, 'item_name' => $m->item_name, 'amount' => $m->amount];})->values()->toArray()) }}">
+
+    <div id="editMiscCostsContainer{{ $rab->rab_number }}" class="space-y-2 mb-3">
+        <!-- Items akan ditambah di sini -->
+    </div>
+
+    <button type="button" class="btn btn-sm btn-outline-secondary w-full mb-4"
+        onclick="addMiscCostItem('editMiscCostsContainer{{ $rab->rab_number }}')">
+        <i class="fa-solid fa-plus"></i> Tambah Biaya Lain-Lain
+    </button>
 
     <input type="hidden" id="editRabDataInput{{ $rab->rab_number }}" name="rab_data" required>
 
@@ -115,6 +128,37 @@
             existingCategories.forEach(function(categoryData) {
                 addCategoryBlock(prefix, categoryData);
             });
+
+            // Populate miscellaneous costs
+            const miscInputId = 'editMiscCostsDataInput{{ $rab->rab_number }}';
+            const miscInput = document.getElementById(miscInputId);
+            if (miscInput && miscInput.dataset.existingMiscCosts) {
+                const existingMiscCosts = JSON.parse(miscInput.dataset.existingMiscCosts || '[]');
+                const miscContainerId = 'editMiscCostsContainer{{ $rab->rab_number }}';
+
+                existingMiscCosts.forEach(function(miscData) {
+                    // Create item element
+                    const miscContainer = document.getElementById(miscContainerId);
+                    const item = document.createElement('div');
+                    item.className = 'misc-cost-item bg-white border rounded p-3 flex gap-2';
+                    item.innerHTML = `
+                        <div class="flex-1">
+                            <input type="text" class="w-full border rounded p-2 mb-2 misc-item-name" 
+                                placeholder="Nama biaya" value="${miscData.item_name}" required maxlength="255"
+                                oninput="updateMiscCostsData('${miscContainerId}')">
+                        </div>
+                        <div class="w-32">
+                            <input type="number" class="w-full border rounded p-2 mb-2 misc-item-amount" 
+                                placeholder="Jumlah" value="${miscData.amount}" min="0" step="0.01" required
+                                oninput="updateMiscCostsData('${miscContainerId}')">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger h-full" onclick="removeMiscCostItem(this, '${miscContainerId}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    `;
+                    miscContainer.appendChild(item);
+                });
+            }
 
             attachPriceListeners();
             updatePricesForEditModal('editGrandTotalPrice{{ $rab->rab_number }}');

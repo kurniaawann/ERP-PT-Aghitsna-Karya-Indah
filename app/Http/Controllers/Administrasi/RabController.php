@@ -7,6 +7,7 @@ use App\Models\Administrasi\RAB;
 use App\Models\Administrasi\RABCategory;
 use App\Models\Administrasi\RABSubCategory;
 use App\Models\Administrasi\RABItem;
+use App\Models\Administrasi\RABMiscellaneousCost;
 use App\Models\Finance\PaymentAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +46,7 @@ class RABController extends Controller
 
     public function show(string $rabNumber)
     {
-        $rab = RAB::with(['categories.subcategories.items'])
+        $rab = RAB::with(['categories.subcategories.items', 'miscellaneousCosts'])
             ->where('rab_number', $rabNumber)
             ->firstOrFail();
 
@@ -56,7 +57,7 @@ class RABController extends Controller
 
     public function edit(string $rabNumber)
     {
-        $rab = RAB::with(['categories.subcategories.items'])
+        $rab = RAB::with(['categories.subcategories.items', 'miscellaneousCosts'])
             ->where('rab_number', $rabNumber)
             ->firstOrFail();
 
@@ -98,6 +99,14 @@ class RABController extends Controller
                     })->toArray(),
                 ];
             })->toArray(),
+            'miscellaneous_costs' => $rab->miscellaneousCosts->map(function ($misc) {
+                return [
+                    'id' => $misc->id,
+                    'item_order' => $misc->item_order,
+                    'item_name' => $misc->item_name,
+                    'amount' => $misc->amount,
+                ];
+            })->toArray(),
         ];
 
         return response()->json($data);
@@ -124,12 +133,18 @@ class RABController extends Controller
             return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')->withInput();
         }
 
+        // Parse miscellaneous costs JSON
+        $miscCostsData = [];
+        if ($request->input('misc_costs_data')) {
+            $miscCostsData = json_decode($request->input('misc_costs_data'), true) ?? [];
+        }
+
         // Auto-generate RAB number
         $seqNumber = RAB::getNextSequenceNumber();
         $year = date('y');
         $rabNumber = "{$seqNumber}/RAB/PT.AKI/{$year}";
 
-        // Calculate grand total
+        // Calculate grand total (main categories)
         $totalAmount = 0;
         foreach ($rabData as $category) {
             foreach ($category['subcategories'] ?? [] as $subcategory) {
@@ -137,7 +152,16 @@ class RABController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $rabNumber, $seqNumber, $totalAmount, $rabData) {
+        // Calculate misc costs total
+        $miscCostsTotal = 0;
+        foreach ($miscCostsData as $miscCost) {
+            $miscCostsTotal += (int) ($miscCost['amount'] ?? 0);
+        }
+
+        // Total anggaran biaya (tanpa PPN)
+        $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
+
+        DB::transaction(function () use ($request, $rabNumber, $seqNumber, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
             // Create RAB header
             $rab = RAB::create([
                 'rab_number' => $rabNumber,
@@ -147,7 +171,7 @@ class RABController extends Controller
                 'recipient_address' => $request->input('recipient_address', 'Ditempat'),
                 'intro_text' => $request->input('intro_text'),
                 'total_amount' => $totalAmount,
-                'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
+                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
                 'selected_payment_accounts' => $request->input('selected_payment_accounts', []),
                 'signed_by' => $request->input('signed_by'),
                 'division' => $request->input('division'),
@@ -186,6 +210,17 @@ class RABController extends Controller
                     }
                 }
             }
+
+            // Create miscellaneous costs
+            foreach ($miscCostsData as $itemIndex => $miscCost) {
+                RABMiscellaneousCost::create([
+                    'rab_number' => $rabNumber,
+                    'item_order' => $itemIndex + 1,
+                    'item_name' => $miscCost['item_name'],
+                    'amount' => (int) ($miscCost['amount'] ?? 0),
+                    'order' => $itemIndex,
+                ]);
+            }
         });
 
         return redirect()->route('rab.index')
@@ -215,6 +250,12 @@ class RABController extends Controller
             return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')->withInput();
         }
 
+        // Parse miscellaneous costs JSON
+        $miscCostsData = [];
+        if ($request->input('misc_costs_data')) {
+            $miscCostsData = json_decode($request->input('misc_costs_data'), true) ?? [];
+        }
+
         // Calculate grand total
         $totalAmount = 0;
         foreach ($rabData as $category) {
@@ -223,7 +264,16 @@ class RABController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $rab, $totalAmount, $rabData) {
+        // Calculate misc costs total
+        $miscCostsTotal = 0;
+        foreach ($miscCostsData as $miscCost) {
+            $miscCostsTotal += (int) ($miscCost['amount'] ?? 0);
+        }
+
+        // Total anggaran biaya (tanpa PPN)
+        $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
+
+        DB::transaction(function () use ($request, $rab, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
             // Update RAB header
             $rab->update([
                 'date' => $request->input('date'),
@@ -231,7 +281,7 @@ class RABController extends Controller
                 'recipient_address' => $request->input('recipient_address', 'Ditempat'),
                 'intro_text' => $request->input('intro_text'),
                 'total_amount' => $totalAmount,
-                'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
+                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
                 'selected_payment_accounts' => $request->input('selected_payment_accounts', []),
                 'signed_by' => $request->input('signed_by'),
                 'division' => $request->input('division'),
@@ -270,6 +320,19 @@ class RABController extends Controller
                     }
                 }
             }
+
+            // Delete existing miscellaneous costs and recreate them
+            $rab->miscellaneousCosts()->delete();
+
+            foreach ($miscCostsData as $itemIndex => $miscCost) {
+                RABMiscellaneousCost::create([
+                    'rab_number' => $rab->rab_number,
+                    'item_order' => $itemIndex + 1,
+                    'item_name' => $miscCost['item_name'],
+                    'amount' => (int) ($miscCost['amount'] ?? 0),
+                    'order' => $itemIndex,
+                ]);
+            }
         });
 
         return redirect()->route('rab.index')
@@ -293,5 +356,38 @@ class RABController extends Controller
         });
 
         return back()->with('success', count($rabNumbers) . ' RAB berhasil dihapus.');
+    }
+
+    // ─── Export PDF ───────────────────────────────────────────────────────────
+
+    public function exportPDF(string $rabNumber)
+    {
+        $rab = RAB::with(['categories.subcategories.items', 'miscellaneousCosts'])
+            ->where('rab_number', $rabNumber)
+            ->firstOrFail();
+
+        // Buat nama file yang aman (tanpa karakter /)
+        $safeFileName = str_replace('/', '-', $rabNumber);
+
+        $pdf = \PDF::loadView('exports.administrasi.rab-pdf', [
+            'rab' => $rab,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download("{$safeFileName}.pdf");
+    }
+
+    // ─── Helper: Convert Arabic to Roman ───────────────────────────────────────
+
+    private function arabicToRoman($num)
+    {
+        $romanMap = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+        return $romanMap[$num] ?? '';
+    }
+
+    // ─── Helper: Convert number to letter ──────────────────────────────────────
+
+    private function numberToLetter($num)
+    {
+        return chr(96 + $num);
     }
 }

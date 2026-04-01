@@ -268,6 +268,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/rab/next-number', [RABController::class, 'getNextRABNumber'])->name('rab.getNextNumber');
     Route::post('/rab', [RABController::class, 'store'])->name('rab.store');
     Route::delete('/rab/destroy', [RABController::class, 'destroy'])->name('rab.destroy');
+    Route::get('/rab/{rab_number}/export-pdf', [RABController::class, 'exportPDF'])->name('rab.export-pdf')->where('rab_number', '.*');
     Route::get('/rab/{rab_number}', [RABController::class, 'show'])->name('rab.show')->where('rab_number', '.*');
     Route::get('/rab/{rab_number}/edit', [RABController::class, 'edit'])->name('rab.edit')->where('rab_number', '.*');
     Route::put('/rab/{rab_number}', [RABController::class, 'update'])->name('rab.update')->where('rab_number', '.*');

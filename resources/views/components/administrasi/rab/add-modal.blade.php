@@ -176,8 +176,29 @@
         </div>
     </div>
 
-    <button type="button" onclick="addCategoryBlock()" class="btn btn-outline-primary w-full">
+    <button type="button" onclick="addCategoryBlock('rabCategoriesContainer')"
+        class="btn btn-outline-primary w-full">
         <i class="fa-solid fa-plus"></i> Tambah Kategori
+    </button>
+
+    <hr class="my-4">
+
+    {{-- Biaya Lain-Lain Section --}}
+    <div class="mb-3">
+        <h6 class="text-text-primary font-semibold mb-3">III. Biaya Lain-Lain (Optional)</h6>
+        <div class="text-xs text-gray-600 mb-3 p-2 bg-gray-50 rounded">
+            <p><strong>Contoh:</strong> Iuran RT, Perizinan Air, Wifi/CCTV/AC, Pekerjaan Listrik, dll</p>
+        </div>
+    </div>
+
+    <input type="hidden" id="miscCostsDataInput" name="misc_costs_data" value="[]">
+
+    <div id="miscCostsContainer" class="space-y-2 mb-3">
+        <!-- Items akan ditambah di sini -->
+    </div>
+
+    <button type="button" class="btn btn-sm btn-outline-secondary w-full mb-4" onclick="addMiscCostItem()">
+        <i class="fa-solid fa-plus"></i> Tambah Biaya Lain-Lain
     </button>
 
 </x-modal>

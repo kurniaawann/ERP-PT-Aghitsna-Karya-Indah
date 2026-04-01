@@ -48,6 +48,12 @@ class RAB extends Model
             ->orderBy('roman_order');
     }
 
+    public function miscellaneousCosts()
+    {
+        return $this->hasMany(RABMiscellaneousCost::class, 'rab_number', 'rab_number')
+            ->orderBy('item_order');
+    }
+
     // ─── Static Methods ────────────────────────────────────────────────────────
 
     public static function generateRABNumber()

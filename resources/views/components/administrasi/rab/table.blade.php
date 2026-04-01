@@ -41,6 +41,13 @@
                                             <i class="fa-solid fa-eye w-3 h-3"></i>
                                             Lihat
                                         </button>
+                                        {{-- Download PDF --}}
+                                        <a href="{{ route('rab.export-pdf', $rab->rab_number) }}"
+                                            class="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
+                                            title="Download PDF">
+                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
+                                            PDF
+                                        </a>
                                         {{-- Edit --}}
                                         <button type="button" onclick="editRAB('{{ $rab->rab_number }}')"
                                             class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
