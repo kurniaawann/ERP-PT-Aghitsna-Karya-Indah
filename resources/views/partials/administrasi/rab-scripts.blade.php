@@ -106,38 +106,38 @@
 
                 <div class="subcategories-container space-y-3 mb-3">
                     ${(categoryData.subcategories || []).map(subcategory => `
-                                                                <div class="subcategory-block border rounded p-3 bg-gray-50">
-                                                                    <div class="mb-3">
-                                                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                                                                        <input type="text" class="w-full border rounded p-2 subcategory-name"
-                                                                            placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
-                                                                    </div>
+                                                                                <div class="subcategory-block border rounded p-3 bg-gray-50">
+                                                                                    <div class="mb-3">
+                                                                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
+                                                                                        <input type="text" class="w-full border rounded p-2 subcategory-name"
+                                                                                            placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
+                                                                                    </div>
 
-                                                                    <div class="space-y-3 mb-3">
-                                                                        <div>
-                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
-                                                                            <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
-                                                                                min="0" step="0.01" value="${subcategory.volume || 0}" required>
-                                                                        </div>
-                                                                        <div>
-                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                                                                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²"
-                                                                                value="${subcategory.unit || ''}" required>
-                                                                        </div>
-                                                                        <div>
-                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
-                                                                            <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
-                                                                                min="0" step="0.01" value="${subcategory.unit_price || 0}" required>
-                                                                        </div>
-                                                                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                                                                            <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
-                                                                        </div>
-                                                                    </div>
+                                                                                    <div class="space-y-3 mb-3">
+                                                                                        <div>
+                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
+                                                                                            <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
+                                                                                                min="0" step="0.01" value="${subcategory.volume || 0}" required>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
+                                                                                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²"
+                                                                                                value="${subcategory.unit || ''}" required>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
+                                                                                            <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
+                                                                                                min="0" step="0.01" value="${subcategory.unit_price || 0}" required>
+                                                                                        </div>
+                                                                                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
+                                                                                            <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
+                                                                                        </div>
+                                                                                    </div>
 
-                                                                    <div class="mb-3">
-                                                                        <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
-                                                                        <div class="items-container space-y-2">
-                                                                            ${(subcategory.items || []).map(item => `
+                                                                                    <div class="mb-3">
+                                                                                        <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
+                                                                                        <div class="items-container space-y-2">
+                                                                                            ${(subcategory.items || []).map(item => `
                                         <div class="item-block bg-white rounded border p-2 flex gap-2">
                                             <input type="text" class="flex-1 w-full border-0 p-1 item-description"
                                                 placeholder="Masukkan item pekerjaan" value="${item.item_description || ''}" required>
@@ -146,17 +146,17 @@
                                             </button>
                                         </div>
                                     `).join('')}
-                                                                        </div>
-                                                                        <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
-                                                                            <i class="fa-solid fa-plus"></i> Tambah Item
-                                                                        </button>
-                                                                    </div>
+                                                                                        </div>
+                                                                                        <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
+                                                                                            <i class="fa-solid fa-plus"></i> Tambah Item
+                                                                                        </button>
+                                                                                    </div>
 
-                                                                    <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
-                                                                        <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
-                                                                    </button>
-                                                                </div>
-                                                            `).join('')}
+                                                                                    <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
+                                                                                        <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
+                                                                                    </button>
+                                                                                </div>
+                                                                            `).join('')}
                 </div>
 
                 <button type="button" onclick="addSubcategoryBlock(this)" class="btn btn-sm btn-outline-secondary w-full">
@@ -307,24 +307,29 @@
 
         function updatePricesForEditModalContext(rabNumber) {
             let grandTotal = 0;
-            const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+            // HANYA hitung dari Edit Modal tertentu (editRabCategoriesContainer{rabNumber})
+            const editModalContainer = document.getElementById('editRabCategoriesContainer' + rabNumber);
 
-            subcategoryBlocks.forEach(block => {
-                const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                const totalPrice = volume * unitPrice;
-                const priceDisplay = block.querySelector('.sub-total-price');
+            if (editModalContainer) {
+                const subcategoryBlocks = editModalContainer.querySelectorAll('.subcategory-block');
 
-                if (priceDisplay) {
-                    priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0
-                    }).format(totalPrice);
-                }
+                subcategoryBlocks.forEach(block => {
+                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
+                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
+                    const totalPrice = volume * unitPrice;
+                    const priceDisplay = block.querySelector('.sub-total-price');
 
-                grandTotal += totalPrice;
-            });
+                    if (priceDisplay) {
+                        priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0
+                        }).format(totalPrice);
+                    }
+
+                    grandTotal += totalPrice;
+                });
+            }
 
             // Update total kategori display
             const totalCategoriesElement = document.getElementById('editTotalCategoriesPrice' + rabNumber);
@@ -342,24 +347,29 @@
 
         function updatePrices() {
             let grandTotal = 0;
-            const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+            // HANYA hitung dari Add Modal (rabCategoriesContainer)
+            const addModalContainer = document.getElementById('rabCategoriesContainer');
 
-            subcategoryBlocks.forEach(block => {
-                const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                const totalPrice = volume * unitPrice;
-                const priceDisplay = block.querySelector('.sub-total-price');
+            if (addModalContainer) {
+                const subcategoryBlocks = addModalContainer.querySelectorAll('.subcategory-block');
 
-                if (priceDisplay) {
-                    priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0
-                    }).format(totalPrice);
-                }
+                subcategoryBlocks.forEach(block => {
+                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
+                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
+                    const totalPrice = volume * unitPrice;
+                    const priceDisplay = block.querySelector('.sub-total-price');
 
-                grandTotal += totalPrice;
-            });
+                    if (priceDisplay) {
+                        priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0
+                        }).format(totalPrice);
+                    }
+
+                    grandTotal += totalPrice;
+                });
+            }
 
             // Update grand total if element exists
             const grandTotalElement = document.getElementById('grandTotalPrice');
@@ -606,24 +616,31 @@
 
         window.updatePricesForEditModal = function(grandTotalElementId) {
             let grandTotal = 0;
-            const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+            // Extract RAB number dari element ID (editGrandTotalPrice123 -> 123)
+            const rabNumber = grandTotalElementId.replace('editGrandTotalPrice', '');
+            // HANYA hitung dari Edit Modal tertentu
+            const editModalContainer = document.getElementById('editRabCategoriesContainer' + rabNumber);
 
-            subcategoryBlocks.forEach(block => {
-                const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                const totalPrice = volume * unitPrice;
-                const priceDisplay = block.querySelector('.sub-total-price');
+            if (editModalContainer) {
+                const subcategoryBlocks = editModalContainer.querySelectorAll('.subcategory-block');
 
-                if (priceDisplay) {
-                    priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0
-                    }).format(totalPrice);
-                }
+                subcategoryBlocks.forEach(block => {
+                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
+                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
+                    const totalPrice = volume * unitPrice;
+                    const priceDisplay = block.querySelector('.sub-total-price');
 
-                grandTotal += totalPrice;
-            });
+                    if (priceDisplay) {
+                        priceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0
+                        }).format(totalPrice);
+                    }
+
+                    grandTotal += totalPrice;
+                });
+            }
 
             const grandTotalElement = document.getElementById(grandTotalElementId);
             if (grandTotalElement) {
@@ -634,7 +651,6 @@
                 }).format(grandTotal);
 
                 // Update total kategori display
-                const rabNumber = grandTotalElementId.replace('editGrandTotalPrice', '');
                 const totalCategoriesElement = document.getElementById('editTotalCategoriesPrice' + rabNumber);
                 if (totalCategoriesElement) {
                     totalCategoriesElement.textContent = new Intl.NumberFormat('id-ID', {
@@ -654,24 +670,32 @@
         // ==========================================
 
         window.calculateAndUpdateGrandTotal = function() {
-            // Hitung total kategori
+            // Hitung total kategori HANYA dari Add Modal (rabCategoriesContainer)
             let totalCategories = 0;
-            const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+            const addModalContainer = document.getElementById('rabCategoriesContainer');
 
-            subcategoryBlocks.forEach(block => {
-                const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                totalCategories += volume * unitPrice;
-            });
+            if (addModalContainer) {
+                const subcategoryBlocks = addModalContainer.querySelectorAll('.subcategory-block');
 
-            // Hitung total misc costs
+                subcategoryBlocks.forEach(block => {
+                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
+                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
+                    totalCategories += volume * unitPrice;
+                });
+            }
+
+            // Hitung total misc costs HANYA dari Add Modal
             let totalMiscCosts = 0;
-            const miscItems = document.querySelectorAll('#miscCostsContainer .misc-cost-item');
+            const miscContainer = document.getElementById('miscCostsContainer');
 
-            miscItems.forEach(function(item) {
-                const amount = parseInt(item.querySelector('.misc-item-amount').value) || 0;
-                totalMiscCosts += amount;
-            });
+            if (miscContainer) {
+                const miscItems = miscContainer.querySelectorAll('.misc-cost-item');
+
+                miscItems.forEach(function(item) {
+                    const amount = parseInt(item.querySelector('.misc-item-amount').value) || 0;
+                    totalMiscCosts += amount;
+                });
+            }
 
             // Update tampilan total kategori
             const totalCategoriesElement = document.getElementById('totalCategoriesPrice');
@@ -706,17 +730,21 @@
         };
 
         window.calculateAndUpdateGrandTotalForEditModal = function(rabNumber) {
-            // Hitung total kategori
+            // Hitung total kategori HANYA dari Edit Modal tertentu
             let totalCategories = 0;
-            const subcategoryBlocks = document.querySelectorAll('.subcategory-block');
+            const editModalContainer = document.getElementById('editRabCategoriesContainer' + rabNumber);
 
-            subcategoryBlocks.forEach(block => {
-                const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                totalCategories += volume * unitPrice;
-            });
+            if (editModalContainer) {
+                const subcategoryBlocks = editModalContainer.querySelectorAll('.subcategory-block');
 
-            // Hitung total misc costs
+                subcategoryBlocks.forEach(block => {
+                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
+                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
+                    totalCategories += volume * unitPrice;
+                });
+            }
+
+            // Hitung total misc costs HANYA dari Edit Modal tertentu
             let totalMiscCosts = 0;
             const miscContainerId = 'editMiscCostsContainer' + rabNumber;
             const miscContainer = document.getElementById(miscContainerId);
