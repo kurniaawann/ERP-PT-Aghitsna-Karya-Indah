@@ -28,7 +28,7 @@
 
                     <x-buttons.delete-button modalId="deleteModal" />
 
-                    <x-buttons.add-button modalId="addModal" text="Tambah Masuk" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Barang Masuk" />
                 </div>
             </div>
         </div>
@@ -44,7 +44,7 @@
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                                 <tr>
                                     <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
-                                    <th class="p-2 text-left">ID Masuk</th>
+                                    <th class="p-2 text-left">ID Barang Masuk</th>
                                     <th class="p-2 text-left">ID Barang</th>
                                     <th class="p-2 text-left">Nama Barang</th>
                                     <th class="p-2 text-center">Jumlah</th>

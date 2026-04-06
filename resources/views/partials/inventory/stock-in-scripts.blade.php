@@ -43,6 +43,26 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         // ==========================================
+        // AUTO SUBMIT FORM ON FILTER CHANGE
+        // ==========================================
+
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        const filterForm = document.querySelector('form[method="GET"][action*="stock-in"]');
+
+        if (monthSelect && filterForm) {
+            monthSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+
+        if (yearSelect && filterForm) {
+            yearSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+
+        // ==========================================
         // FORM SUBMISSION HANDLING FOR ADD MODAL
         // ==========================================
 
