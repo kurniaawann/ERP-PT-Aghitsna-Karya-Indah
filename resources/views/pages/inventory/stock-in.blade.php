@@ -105,7 +105,7 @@
 
     {{-- Modal Edit untuk setiap record --}}
     @foreach ($stockIns as $record)
-        @include('components.inventory.stock-in.edit-modal', ['record' => $record])
+        @include('components.inventory.stock-in.edit-modal', ['record' => $record, 'allItems' => $items])
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}

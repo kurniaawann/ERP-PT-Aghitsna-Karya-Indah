@@ -23,6 +23,23 @@ class ItemStockInController extends Controller
         return 'SIN-' . date('Ymd') . '-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
 
+    private function generateIdItem()
+    {
+        // Ambil item terakhir dari database
+        $lastItem = Items::orderBy('id_item', 'desc')->first();
+
+        // Jika belum ada data, mulai dari ITM-0001
+        if (!$lastItem) {
+            return 'ITM-0001';
+        }
+
+        // Extract nomor dari id_item terakhir
+        $lastNumber = (int) substr($lastItem->id_item, 4);
+
+        // Tambah 1 dan format dengan padding 0
+        return 'ITM-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -56,35 +73,71 @@ class ItemStockInController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_item' => 'required|exists:items,id_item',
-            'quantity' => 'required|integer|min:1',
-            'capital_price' => 'required|integer|min:0',
+            'items' => 'required|json',
             'tanggal' => 'required|date',
             'keterangan' => 'nullable|string|max:500',
         ]);
 
-        $item = Items::find($request->id_item);
+        $items = json_decode($request->items, true);
 
-        // Calculate Weighted Average Cost
-        $existingValue = $item->quantity * $item->capital_price;
-        $newValue = $request->quantity * $request->capital_price;
-        $totalQuantity = $item->quantity + $request->quantity;
-        $newAveragePrice = $totalQuantity > 0 ? (int) round(($existingValue + $newValue) / $totalQuantity) : $request->capital_price;
+        if (empty($items) || !is_array($items)) {
+            return redirect()->back()->with('error', 'Minimal harus ada satu item barang masuk!');
+        }
 
-        // Update quantity dan modal dengan weighted average
-        $item->quantity += $request->quantity;
-        $item->capital_price = $newAveragePrice;
-        $item->save();
+        foreach ($items as $itemData) {
+            // Validate each item
+            if (empty($itemData['name_item']) || empty($itemData['quantity']) || $itemData['quantity'] < 1) {
+                return redirect()->back()->with('error', 'Semua item harus memiliki nama dan quantity minimal 1!');
+            }
 
-        // Create stock in record
-        ItemStockIn::create([
-            'id_stock_in' => $this->generateIdStockIn(),
-            'id_item' => $request->id_item,
-            'quantity' => $request->quantity,
-            'capital_price' => $request->capital_price,
-            'keterangan' => $request->keterangan,
-            'tanggal' => $request->tanggal,
-        ]);
+            $idItem = $itemData['id_item'];
+            $quantity = (int) $itemData['quantity'];
+            $capitalPrice = (int) $itemData['capital_price'];
+            $fromStock = $itemData['from_stock'] ?? false;
+
+            // Handle "dari stok" - ambil dari data barang yang ada
+            if ($fromStock && $idItem) {
+                $item = Items::find($idItem);
+                if (!$item) {
+                    return redirect()->back()->with('error', 'Barang dengan ID ' . $idItem . ' tidak ditemukan!');
+                }
+            } else {
+                // Handle barang baru/manual input
+                $item = Items::find($idItem);
+
+                if (!$item) {
+                    // Create new item jika belum ada
+                    $item = Items::create([
+                        'id_item' => $this->generateIdItem(),
+                        'name_item' => $itemData['name_item'],
+                        'quantity' => 0,
+                        'capital_price' => $capitalPrice,
+                        'selling_price' => 0, // Will be set later
+                    ]);
+                }
+            }
+
+            // Calculate Weighted Average Cost
+            $existingValue = $item->quantity * $item->capital_price;
+            $newValue = $quantity * $capitalPrice;
+            $totalQuantity = $item->quantity + $quantity;
+            $newAveragePrice = $totalQuantity > 0 ? (int) round(($existingValue + $newValue) / $totalQuantity) : $capitalPrice;
+
+            // Update quantity dan modal dengan weighted average
+            $item->quantity += $quantity;
+            $item->capital_price = $newAveragePrice;
+            $item->save();
+
+            // Create stock in record
+            ItemStockIn::create([
+                'id_stock_in' => $this->generateIdStockIn(),
+                'id_item' => $item->id_item,
+                'quantity' => $quantity,
+                'capital_price' => $capitalPrice,
+                'keterangan' => $request->keterangan,
+                'tanggal' => $request->tanggal,
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Data barang masuk berhasil ditambahkan!');
     }
@@ -95,11 +148,27 @@ class ItemStockInController extends Controller
         $item = Items::find($stockIn->id_item);
 
         $validated = $request->validate([
-            'quantity' => 'required|integer|min:1',
-            'capital_price' => 'required|integer|min:0',
+            'items' => 'required|json',
             'tanggal' => 'required|date',
             'keterangan' => 'nullable|string|max:500',
         ]);
+
+        $newItems = json_decode($request->items, true);
+
+        if (empty($newItems) || !is_array($newItems)) {
+            return redirect()->back()->with('error', 'Minimal harus ada satu item barang masuk!');
+        }
+
+        // For now, handle single item update (first item in array)
+        // In the future, this can be extended to handle multiple items per transaction
+        $itemData = $newItems[0] ?? null;
+
+        if (!$itemData) {
+            return redirect()->back()->with('error', 'Data item tidak valid!');
+        }
+
+        $quantity = (int) $itemData['quantity'];
+        $capitalPrice = (int) $itemData['capital_price'];
 
         // Reverse the effect of previous stock-in
         $oldValue = $stockIn->quantity * $stockIn->capital_price;
@@ -107,19 +176,19 @@ class ItemStockInController extends Controller
         $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
 
         // Calculate new average with updated values
-        $newValue = $request->quantity * $request->capital_price;
-        $totalQuantity = ($item->quantity - $stockIn->quantity) + $request->quantity;
-        $newAveragePrice = $totalQuantity > 0 ? (int) round(($itemValueWithoutThisStockIn + $newValue) / $totalQuantity) : $request->capital_price;
+        $newValue = $quantity * $capitalPrice;
+        $totalQuantity = ($item->quantity - $stockIn->quantity) + $quantity;
+        $newAveragePrice = $totalQuantity > 0 ? (int) round(($itemValueWithoutThisStockIn + $newValue) / $totalQuantity) : $capitalPrice;
 
         // Update item quantity and price
-        $qtyDifference = $request->quantity - $stockIn->quantity;
+        $qtyDifference = $quantity - $stockIn->quantity;
         $item->quantity += $qtyDifference;
         $item->capital_price = $newAveragePrice;
         $item->save();
 
         $stockIn->update([
-            'quantity' => $request->quantity,
-            'capital_price' => $request->capital_price,
+            'quantity' => $quantity,
+            'capital_price' => $capitalPrice,
             'keterangan' => $request->keterangan,
             'tanggal' => $request->tanggal,
         ]);
