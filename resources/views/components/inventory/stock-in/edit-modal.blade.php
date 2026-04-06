@@ -1,8 +1,7 @@
 {{-- Modal Edit Barang Masuk --}}
 @foreach (isset($record) ? [$record] : [] as $item)
     <x-modal id="editModal-{{ $item->id_stock_in }}" title="Edit Barang Masuk"
-        action="{{ route('stock-in.update', $item->id_stock_in) }}" method="POST" buttonText="Update">
-        @method('PUT')
+        action="{{ route('stock-in.update', $item->id_stock_in) }}" method="PUT" buttonText="Update">
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Barang</label>

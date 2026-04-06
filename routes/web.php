@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/stock-in', [ItemStockInController::class, 'store'])->name('stock-in.store');
     Route::put('/stock-in/{id_stock_in}', [ItemStockInController::class, 'update'])->name('stock-in.update');
     Route::delete('/stock-in/{id_stock_in}', [ItemStockInController::class, 'destroy'])->name('stock-in.destroy');
+    Route::delete('/stock-ins', [ItemStockInController::class, 'destroySelected'])->name('stock-ins.destroySelected');
     Route::get('/stock-in/export/pdf', [ItemStockInController::class, 'exportPdf'])->name('stock-in.export.pdf');
     Route::get('/stock-in/export/excel', [ItemStockInController::class, 'exportExcel'])->name('stock-in.export.excel');
 
