@@ -69,7 +69,7 @@
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('stock-in*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-arrow-down w-4 
+                                class="fas fa-truck-loading w-4 
                                 {{ request()->is('stock-in*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Barang Masuk</span>
