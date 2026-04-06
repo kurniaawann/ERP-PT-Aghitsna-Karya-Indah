@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\Inventory\ItemStockInController;
+use App\Http\Controllers\Inventory\ItemStockOutController;
+use App\Http\Controllers\Inventory\ItemReturnController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
 use App\Http\Controllers\Finance\ProyekInvoiceController;
@@ -56,6 +59,30 @@ Route::middleware('auth')->group(function () {
     //Route Item Export
     Route::get('/item/export/pdf', [ItemController::class, 'exportPdf'])->name('item.export.pdf');
     Route::get('/item/export/excel', [ItemController::class, 'exportExcel'])->name('item.export.excel');
+
+    // Route Stock In (Barang Masuk)
+    Route::get('/stock-in', [ItemStockInController::class, 'index'])->name('stock-in.index');
+    Route::post('/stock-in', [ItemStockInController::class, 'store'])->name('stock-in.store');
+    Route::put('/stock-in/{id_stock_in}', [ItemStockInController::class, 'update'])->name('stock-in.update');
+    Route::delete('/stock-in/{id_stock_in}', [ItemStockInController::class, 'destroy'])->name('stock-in.destroy');
+    Route::get('/stock-in/export/pdf', [ItemStockInController::class, 'exportPdf'])->name('stock-in.export.pdf');
+    Route::get('/stock-in/export/excel', [ItemStockInController::class, 'exportExcel'])->name('stock-in.export.excel');
+
+    // Route Stock Out (Barang Keluar)
+    Route::get('/stock-out', [ItemStockOutController::class, 'index'])->name('stock-out.index');
+    Route::post('/stock-out', [ItemStockOutController::class, 'store'])->name('stock-out.store');
+    Route::put('/stock-out/{id_stock_out}', [ItemStockOutController::class, 'update'])->name('stock-out.update');
+    Route::delete('/stock-out/{id_stock_out}', [ItemStockOutController::class, 'destroy'])->name('stock-out.destroy');
+    Route::get('/stock-out/export/pdf', [ItemStockOutController::class, 'exportPdf'])->name('stock-out.export.pdf');
+    Route::get('/stock-out/export/excel', [ItemStockOutController::class, 'exportExcel'])->name('stock-out.export.excel');
+
+    // Route Item Return (Return Barang)
+    Route::get('/item-return', [ItemReturnController::class, 'index'])->name('item-return.index');
+    Route::post('/item-return', [ItemReturnController::class, 'store'])->name('item-return.store');
+    Route::put('/item-return/{id_return}', [ItemReturnController::class, 'update'])->name('item-return.update');
+    Route::delete('/item-return/{id_return}', [ItemReturnController::class, 'destroy'])->name('item-return.destroy');
+    Route::get('/item-return/export/pdf', [ItemReturnController::class, 'exportPdf'])->name('item-return.export.pdf');
+    Route::get('/item-return/export/excel', [ItemReturnController::class, 'exportExcel'])->name('item-return.export.excel');
 
     // Route Alumunium Invoice
     Route::get('/alumunium-invoice', [AlumuniumInvoiceController::class, 'index'])->name('alumunium-invoice.index');

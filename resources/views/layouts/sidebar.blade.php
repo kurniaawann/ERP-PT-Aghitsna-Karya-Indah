@@ -51,7 +51,8 @@
                 </button>
 
                 {{-- Submenu --}}
-                <ul id="inventoryDropdown" class="ml-8 mt-2 space-y-1 {{ request()->is('item*') ? '' : 'hidden' }}">
+                <ul id="inventoryDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -61,6 +62,39 @@
                                 {{ request()->is('item*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Data Barang</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('stock-in.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('stock-in*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-arrow-down w-4 
+                                {{ request()->is('stock-in*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Barang Masuk</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('stock-out.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('stock-out*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-arrow-up w-4 
+                                {{ request()->is('stock-out*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Barang Keluar</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('item-return.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('item-return*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-undo w-4 
+                                {{ request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Return Barang</span>
                         </a>
                     </li>
                 </ul>

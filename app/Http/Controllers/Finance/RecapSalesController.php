@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Models\Report\SalesRecap;
 use App\Models\Inventory\Items;
+use App\Models\Inventory\ItemStockOut;
 use App\Exports\Report\SalesRecapExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -165,6 +166,9 @@ class RecapSalesController extends Controller
 
             // Create sales report dengan data lengkap
             $salesRecap = SalesRecap::create($data);
+
+            // Create ItemStockOut records untuk items yang dari stock
+            $this->createItemStockOutFromSalesRecap($salesRecap, $items);
 
             DB::commit();
             return redirect()->route('recap-sales.index')
@@ -379,6 +383,9 @@ class RecapSalesController extends Controller
                     }
                 }
 
+                // Delete related ItemStockOut records
+                $this->deleteItemStockOutByRecap($salesRecap->id_sales_recap);
+
                 // Hapus sales report dari database
                 $salesRecap->delete();
                 $deletedCount++;
@@ -541,6 +548,51 @@ class RecapSalesController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         return $pdf->download('Rekap_Penjualan_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Generate unique ItemStockOut ID
+     */
+    private function generateItemStockOutId()
+    {
+        $lastRecord = ItemStockOut::orderBy('id_stock_out', 'desc')->first();
+
+        if (!$lastRecord) {
+            return 'SOUT-' . date('Ymd') . '-0001';
+        }
+
+        $lastNumber = (int) substr($lastRecord->id_stock_out, -4);
+        return 'SOUT-' . date('Ymd') . '-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Create ItemStockOut records untuk items that dari stock
+     * Called automatically saat store/update SalesRecap
+     */
+    private function createItemStockOutFromSalesRecap($salesRecap, $items)
+    {
+        foreach ($items as $item) {
+            // Cek apakah item dari stock dan adalah kategori Penjualan
+            if (!empty($item['from_stock']) && !empty($item['id_item'])) {
+                ItemStockOut::create([
+                    'id_stock_out' => $this->generateItemStockOutId(),
+                    'id_item' => $item['id_item'],
+                    'quantity' => $item['quantity'],
+                    'kategori' => 'Penjualan',
+                    'id_sales_recap' => $salesRecap->id_sales_recap,
+                    'tanggal' => $salesRecap->date,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Delete ItemStockOut records yang linked dengan SalesRecap
+     * Called saat delete SalesRecap
+     */
+    private function deleteItemStockOutByRecap($salesRecapId)
+    {
+        ItemStockOut::where('id_sales_recap', $salesRecapId)->delete();
     }
 }
 
