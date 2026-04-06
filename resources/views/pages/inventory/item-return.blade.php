@@ -54,8 +54,7 @@
                                     <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
                                     <td class="p-2 text-center">
                                         <div class="flex justify-center gap-2">
-                                            <button type="button"
-                                                onclick="openModal('editModal-{{ $record->id_return }}')"
+                                            <button type="button" onclick="openModal('editModal-{{ $record->id_return }}')"
                                                 class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors text-xs">
                                                 <i class="fa-solid fa-pen w-3 h-3"></i> Edit
                                             </button>
