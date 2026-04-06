@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 10px;
             padding: 15px;
         }
