@@ -16,11 +16,13 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class StockInExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
 {
+    protected $search;
     protected $month;
     protected $year;
 
-    public function __construct($month = null, $year = null)
+    public function __construct($search = null, $month = null, $year = null)
     {
+        $this->search = $search;
         $this->month = $month;
         $this->year = $year;
     }
@@ -29,6 +31,13 @@ class StockInExport implements FromCollection, WithHeadings, WithMapping, WithSt
     {
         return ItemStockIn::query()
             ->with('item')
+            ->when($this->search, function ($query, $search) {
+                $query->where('id_stock_in', 'like', "%{$search}%")
+                    ->orWhere('id_item', 'like', "%{$search}%")
+                    ->orWhereHas('item', function ($q) use ($search) {
+                        $q->where('name_item', 'like', "%{$search}%");
+                    });
+            })
             ->when($this->month, function ($query, $month) {
                 $query->whereMonth('tanggal', $month);
             })

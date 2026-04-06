@@ -27,11 +27,19 @@ class ItemReturnController extends Controller
 
     public function index(Request $request)
     {
+        $search = $request->input('search');
         $month = $request->input('month');
         $year = $request->input('year');
 
         $returns = ItemReturn::query()
             ->with(['item', 'stockOut'])
+            ->when($search, function ($query, $search) {
+                $query->where('id_return', 'like', "%{$search}%")
+                    ->orWhere('id_item', 'like', "%{$search}%")
+                    ->orWhereHas('item', function ($q) use ($search) {
+                        $q->where('name_item', 'like', "%{$search}%");
+                    });
+            })
             ->when($month, function ($query, $month) {
                 $query->whereMonth('tanggal', $month);
             })
@@ -147,11 +155,19 @@ class ItemReturnController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $search = $request->input('search');
         $month = $request->input('month');
         $year = $request->input('year');
 
         $returns = ItemReturn::query()
             ->with('item')
+            ->when($search, function ($query, $search) {
+                $query->where('id_return', 'like', "%{$search}%")
+                    ->orWhere('id_item', 'like', "%{$search}%")
+                    ->orWhereHas('item', function ($q) use ($search) {
+                        $q->where('name_item', 'like', "%{$search}%");
+                    });
+            })
             ->when($month, function ($query, $month) {
                 $query->whereMonth('tanggal', $month);
             })
@@ -168,11 +184,12 @@ class ItemReturnController extends Controller
 
     public function exportExcel(Request $request)
     {
+        $search = $request->input('search');
         $month = $request->input('month');
         $year = $request->input('year');
 
         return Excel::download(
-            new \App\Exports\Inventory\ItemReturnExport($month, $year),
+            new \App\Exports\Inventory\ItemReturnExport($search, $month, $year),
             'return-barang-' . date('Y-m-d-His') . '.xlsx'
         );
     }

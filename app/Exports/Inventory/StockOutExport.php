@@ -16,11 +16,13 @@ use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill};
 
 class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
 {
+    protected $search;
     protected $month;
     protected $year;
 
-    public function __construct($month = null, $year = null)
+    public function __construct($search = null, $month = null, $year = null)
     {
+        $this->search = $search;
         $this->month = $month;
         $this->year = $year;
     }
@@ -29,6 +31,13 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
     {
         return ItemStockOut::query()
             ->with('item')
+            ->when($this->search, function ($query, $search) {
+                $query->where('id_stock_out', 'like', "%{$search}%")
+                    ->orWhere('id_item', 'like', "%{$search}%")
+                    ->orWhereHas('item', function ($q) use ($search) {
+                        $q->where('name_item', 'like', "%{$search}%");
+                    });
+            })
             ->when($this->month, function ($query, $month) {
                 $query->whereMonth('tanggal', $month);
             })

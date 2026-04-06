@@ -16,12 +16,15 @@
 
                 {{-- Filter Tahun --}}
                 <x-filters.year-filter :value="request('year')" />
+
+                {{-- Search Input --}}
+                <x-filters.search-input :value="request('search')" placeholder="Cari barang masuk..." />
             </form>
 
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('stock-in.export.excel')" :pdfRoute="route('stock-in.export.pdf')" :queryParams="['month' => request('month'), 'year' => request('year')]" />
+                    <x-buttons.print-dropdown :excelRoute="route('stock-in.export.excel')" :pdfRoute="route('stock-in.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
                     <x-buttons.add-button modalId="addModal" text="Tambah Masuk" />
                 </div>
             </div>
