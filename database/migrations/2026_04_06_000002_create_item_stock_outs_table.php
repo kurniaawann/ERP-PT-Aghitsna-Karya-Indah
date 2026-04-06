@@ -11,15 +11,13 @@ return new class extends Migration {
             $table->string('id_stock_out')->primary();
             $table->string('id_item');
             $table->integer('quantity');
-            $table->enum('kategori', ['Penjualan', 'Proyek', 'Transfer', 'Lainnya'])->default('Penjualan');
-            $table->string('id_sales_recap')->nullable(); // Referensi ke sales recap jika dari penjualan
-            $table->text('keterangan')->nullable();
+            $table->string('id_sales_recap'); // Wajib referensi ke sales recap
             $table->date('tanggal');
             $table->timestamps();
 
             // Foreign keys
             $table->foreign('id_item')->references('id_item')->on('items')->onDelete('cascade');
-            $table->foreign('id_sales_recap')->references('id_sales_recap')->on('sales_recaps')->onDelete('set null');
+            $table->foreign('id_sales_recap')->references('id_sales_recap')->on('sales_recaps')->onDelete('cascade');
         });
     }
 

@@ -69,11 +69,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/stock-in/export/pdf', [ItemStockInController::class, 'exportPdf'])->name('stock-in.export.pdf');
     Route::get('/stock-in/export/excel', [ItemStockInController::class, 'exportExcel'])->name('stock-in.export.excel');
 
-    // Route Stock Out (Barang Keluar)
+    // Route Stock Out (Barang Keluar) - Read Only
     Route::get('/stock-out', [ItemStockOutController::class, 'index'])->name('stock-out.index');
-    Route::post('/stock-out', [ItemStockOutController::class, 'store'])->name('stock-out.store');
-    Route::put('/stock-out/{id_stock_out}', [ItemStockOutController::class, 'update'])->name('stock-out.update');
-    Route::delete('/stock-out/{id_stock_out}', [ItemStockOutController::class, 'destroy'])->name('stock-out.destroy');
     Route::get('/stock-out/export/pdf', [ItemStockOutController::class, 'exportPdf'])->name('stock-out.export.pdf');
     Route::get('/stock-out/export/excel', [ItemStockOutController::class, 'exportExcel'])->name('stock-out.export.excel');
 

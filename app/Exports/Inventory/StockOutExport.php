@@ -59,7 +59,7 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
     {
         return [
             ['BARANG KELUAR', '', '', '', '', ''],
-            ['ID Keluar', 'Barang', 'Jumlah', 'Kategori', 'Tanggal', '']
+            ['ID Keluar', 'Barang', 'Jumlah', 'Sisa Barang', 'Tanggal', '']
         ];
     }
 
@@ -69,7 +69,7 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
             $record->id_stock_out,
             $record->item->name_item ?? '-',
             $record->quantity,
-            $record->kategori,
+            $record->remaining_quantity ?? '-',
             $record->tanggal->format('d-m-Y'),
             '',
         ];

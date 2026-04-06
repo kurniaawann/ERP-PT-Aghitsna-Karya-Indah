@@ -19,9 +19,7 @@ class ItemStockOut extends Model
         'id_stock_out',
         'id_item',
         'quantity',
-        'kategori',
         'id_sales_recap',
-        'keterangan',
         'tanggal',
     ];
 

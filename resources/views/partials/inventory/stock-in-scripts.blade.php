@@ -94,15 +94,11 @@
                     if (this.checked) {
                         selectWrapper.style.display = 'block';
                         nameInput.readOnly = true;
-                        capitalInput.readOnly = true;
                         nameInput.classList.add('bg-gray-100');
-                        capitalInput.classList.add('bg-gray-100');
                     } else {
                         selectWrapper.style.display = 'none';
                         nameInput.readOnly = false;
-                        capitalInput.readOnly = false;
                         nameInput.classList.remove('bg-gray-100');
-                        capitalInput.classList.remove('bg-gray-100');
                         nameInput.value = '';
                         capitalInput.value = '';
                         row.querySelector('.item-select-hidden').value = '';

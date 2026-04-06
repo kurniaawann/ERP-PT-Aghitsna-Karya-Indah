@@ -23,10 +23,7 @@
 
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('stock-out.export.excel')" :pdfRoute="route('stock-out.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
-                    <x-buttons.add-button modalId="addModal" text="Tambah Keluar" />
-                </div>
+                <x-buttons.print-dropdown :excelRoute="route('stock-out.export.excel')" :pdfRoute="route('stock-out.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
             </div>
         </div>
 
@@ -41,9 +38,8 @@
                                 <th class="p-2 text-left">ID Barang</th>
                                 <th class="p-2 text-left">Nama Barang</th>
                                 <th class="p-2 text-center">Jumlah</th>
-                                <th class="p-2 text-center">Kategori</th>
+                                <th class="p-2 text-center">Sisa Barang</th>
                                 <th class="p-2 text-left">Tanggal</th>
-                                <th class="p-2 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -53,32 +49,12 @@
                                     <td class="p-2">{{ $record->id_item }}</td>
                                     <td class="p-2">{{ $record->item->name_item ?? '-' }}</td>
                                     <td class="p-2 text-center">{{ $record->quantity }}</td>
-                                    <td class="p-2 text-center">
-                                        <span
-                                            class="px-2 py-1 rounded text-xs font-semibold
-                                            kategori-{{ strtolower($record->kategori) }}">
-                                            {{ $record->kategori }}
-                                        </span>
-                                    </td>
+                                    <td class="p-2 text-center">{{ $record->remaining_quantity ?? '-' }}</td>
                                     <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
-                                    <td class="p-2 text-center">
-                                        <div class="flex justify-center gap-2">
-                                            <button type="button"
-                                                onclick="openModal('editModal-{{ $record->id_stock_out }}')"
-                                                class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors text-xs">
-                                                <i class="fa-solid fa-pen w-3 h-3"></i> Edit
-                                            </button>
-                                            <button type="button"
-                                                onclick="deleteRecord('{{ route('stock-out.destroy', $record->id_stock_out) }}')"
-                                                class="flex items-center gap-1 bg-btn-delete hover:bg-btn-delete-hover text-white px-2 py-1 rounded-lg transition-colors text-xs">
-                                                <i class="fa-solid fa-trash w-3 h-3"></i> Hapus
-                                            </button>
-                                        </div>
-                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center p-4 text-text-secondary">
+                                    <td colspan="6" class="text-center p-4 text-text-secondary">
                                         Data tidak ditemukan.
                                     </td>
                                 </tr>
@@ -92,15 +68,4 @@
         {{-- Pagination --}}
         <x-pagination :paginator="$stockOuts" />
     </div>
-
-    {{-- Modal Tambah --}}
-    @include('components.inventory.stock-out.add-modal', ['items' => $items])
-
-    {{-- Modal Edit untuk setiap record --}}
-    @foreach ($stockOuts as $record)
-        @include('components.inventory.stock-out.edit-modal', ['record' => $record])
-    @endforeach
-
-    {{-- Include Stock Out Scripts --}}
-    @include('partials.inventory.stock-out-scripts')
 @endsection

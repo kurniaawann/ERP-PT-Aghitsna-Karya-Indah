@@ -72,34 +72,6 @@
             margin-bottom: 10px;
             font-size: 11px;
         }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .badge-penjualan {
-            background-color: #E3F2FD;
-            color: #1565C0;
-        }
-
-        .badge-proyek {
-            background-color: #E8F5E9;
-            color: #2E7D32;
-        }
-
-        .badge-transfer {
-            background-color: #FFF3E0;
-            color: #E65100;
-        }
-
-        .badge-lainnya {
-            background-color: #F3E5F5;
-            color: #512DA8;
-        }
     </style>
 </head>
 
@@ -124,7 +96,7 @@
                 <th style="width: 10%;">Barang</th>
                 <th style="width: 20%;">Nama Barang</th>
                 <th style="width: 8%;">Jumlah</th>
-                <th style="width: 12%;">Kategori</th>
+                <th style="width: 12%;">Sisa Barang</th>
                 <th style="width: 12%;">Tanggal</th>
             </tr>
         </thead>
@@ -137,11 +109,7 @@
                     <td class="text-center">{{ $record->id_item }}</td>
                     <td>{{ $record->item->name_item ?? '-' }}</td>
                     <td class="text-center">{{ $record->quantity }}</td>
-                    <td class="text-center">
-                        <span class="badge badge-{{ strtolower($record->kategori) }}">
-                            {{ $record->kategori }}
-                        </span>
-                    </td>
+                    <td class="text-center">{{ $record->remaining_quantity ?? '-' }}</td>
                     <td class="text-center">{{ $record->tanggal->format('d M Y') }}</td>
                 </tr>
             @endforeach
