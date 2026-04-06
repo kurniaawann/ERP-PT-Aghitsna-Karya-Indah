@@ -42,36 +42,38 @@
                                             {{ $sale->id_sales_recap }}</td>
                                         <td class="p-2 text-sm {{ $verticalAlign }}" rowspan="{{ $itemCount }}">
                                             {{ $sale->date->format('d-m-Y') }}</td>
-                                        <td class="p-2 font-medium {{ $verticalAlign }}"
-                                            rowspan="{{ $itemCount }}">
+                                        <td class="p-2 font-medium max-w-xs truncate {{ $verticalAlign }}"
+                                            title="{{ $sale->name_proyek }}" rowspan="{{ $itemCount }}">
                                             {{ $sale->name_proyek }}</td>
                                     @endif
 
                                     {{-- Nama Barang --}}
-                                    <td class="p-2">
+                                    <td class="p-2 max-w-xs truncate" title="{{ $saleItem['name_item'] ?? '-' }}">
                                         {{ $saleItem['name_item'] ?? '-' }}
                                     </td>
 
                                     {{-- QTY --}}
-                                    <td class="p-2 text-center">
+                                    <td class="p-2 text-center whitespace-nowrap">
                                         {{ $saleItem['quantity'] ?? 0 }}</td>
 
                                     {{-- Harga Modal (satuan | total) --}}
-                                    <td class="p-2 text-center text-sm whitespace-nowrap">
-                                        Rp
-                                        {{ number_format($saleItem['capital_price'] ?? 0, 0, ',', '.') }}
-                                        |
-                                        <span class="font-semibold">Rp
-                                            {{ number_format(($saleItem['capital_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
+                                    <td class="p-2 text-center text-sm">
+                                        <div class="truncate"
+                                            title="Satuan: Rp {{ number_format($saleItem['capital_price'] ?? 0, 0, ',', '.') }} | Total: Rp {{ number_format(($saleItem['capital_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}">
+                                            Rp {{ number_format($saleItem['capital_price'] ?? 0, 0, ',', '.') }} |
+                                            <span class="font-semibold">Rp
+                                                {{ number_format(($saleItem['capital_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
+                                        </div>
                                     </td>
 
                                     {{-- Harga Jual (satuan | total) --}}
-                                    <td class="p-2 text-center text-sm whitespace-nowrap">
-                                        Rp
-                                        {{ number_format($saleItem['selling_price'] ?? 0, 0, ',', '.') }}
-                                        |
-                                        <span class="font-semibold">Rp
-                                            {{ number_format(($saleItem['selling_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
+                                    <td class="p-2 text-center text-sm">
+                                        <div class="truncate"
+                                            title="Satuan: Rp {{ number_format($saleItem['selling_price'] ?? 0, 0, ',', '.') }} | Total: Rp {{ number_format(($saleItem['selling_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}">
+                                            Rp {{ number_format($saleItem['selling_price'] ?? 0, 0, ',', '.') }} |
+                                            <span class="font-semibold">Rp
+                                                {{ number_format(($saleItem['selling_price'] ?? 0) * ($saleItem['quantity'] ?? 0), 0, ',', '.') }}</span>
+                                        </div>
                                     </td>
 
                                     @if ($itemIndex === 0)
@@ -159,4 +161,3 @@
         </div>
     </div>
 </form>
-
