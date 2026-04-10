@@ -85,7 +85,7 @@
         window.deleteRecord = function(url) {
             if (confirm(
                     'Apakah Anda yakin ingin menghapus data retur ini? Stock akan dikembalikan otomatis.'
-                    )) {
+                )) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = url;
@@ -173,6 +173,7 @@
                 const dateToInput = document.querySelector('input[name="date_to"]');
                 const monthInput = document.querySelector('select[name="month"]');
                 const yearInput = document.querySelector('select[name="year"]');
+                const returnTypeInput = document.querySelector('select[name="return_type"]');
 
                 let params = new URLSearchParams();
 
@@ -190,6 +191,9 @@
                 }
                 if (yearInput && yearInput.value) {
                     params.append('year', yearInput.value);
+                }
+                if (returnTypeInput && returnTypeInput.value) {
+                    params.append('return_type', returnTypeInput.value);
                 }
 
                 return params.toString();

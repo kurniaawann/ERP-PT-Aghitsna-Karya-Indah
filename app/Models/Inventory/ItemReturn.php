@@ -18,9 +18,11 @@ class ItemReturn extends Model
         'id_return',
         'id_item',
         'id_stock_out',
+        'id_stock_in',
         'quantity',
         'alasan',
         'keterangan',
+        'return_type',
         'tanggal',
     ];
 
@@ -38,5 +40,10 @@ class ItemReturn extends Model
     public function stockOut()
     {
         return $this->belongsTo(ItemStockOut::class, 'id_stock_out', 'id_stock_out');
+    }
+
+    public function stockIn()
+    {
+        return $this->belongsTo(ItemStockIn::class, 'id_stock_in', 'id_stock_in');
     }
 }

@@ -1,15 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Return Barang')
+@section('title', 'PT Aghitsna Karya Indah - Pengembalian Barang')
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Return Barang</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Pengembalian Barang</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian dan Filter --}}
             <form method="GET" action="{{ route('item-return.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+
+                {{-- Filter Return Type --}}
+                <select name="return_type"
+                    class="px-3 py-2 rounded-lg border-2 border-border text-sm font-medium text-text-primary bg-white hover:border-border-hover transition-colors duration-150">
+                    <option value="">Semua Tipe</option>
+                    <option value="masuk" @selected(request('return_type') === 'masuk')>Pengembalian Masuk</option>
+                    <option value="keluar" @selected(request('return_type') === 'keluar')>Pengembalian Keluar</option>
+                </select>
 
                 {{-- Filter Bulan --}}
                 <x-filters.month-filter :value="request('month')" />
@@ -24,8 +32,13 @@
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('item-return.export.excel')" :pdfRoute="route('item-return.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
-                    <x-buttons.add-button modalId="addModal" text="Tambah Return" />
+                    <x-buttons.print-dropdown :excelRoute="route('item-return.export.excel')" :pdfRoute="route('item-return.export.pdf')" :queryParams="[
+                        'search' => request('search'),
+                        'month' => request('month'),
+                        'year' => request('year'),
+                        'return_type' => request('return_type'),
+                    ]" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Pengembalian" />
                 </div>
             </div>
         </div>
@@ -42,6 +55,7 @@
                                 <th class="p-2 text-left">Nama Barang</th>
                                 <th class="p-2 text-center">Jumlah</th>
                                 <th class="p-2 text-left">Alasan</th>
+                                <th class="p-2 text-center">Tipe</th>
                                 <th class="p-2 text-left">Tanggal</th>
                                 <th class="p-2 text-center">Aksi</th>
                             </tr>
@@ -54,6 +68,15 @@
                                     <td class="p-2">{{ $record->item->name_item ?? '-' }}</td>
                                     <td class="p-2 text-center">{{ $record->quantity }}</td>
                                     <td class="p-2 text-sm">{{ $record->alasan ?? '-' }}</td>
+                                    <td class="p-2 text-center">
+                                        @if ($record->return_type === 'masuk')
+                                            <span
+                                                class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">Masuk</span>
+                                        @else
+                                            <span
+                                                class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">Keluar</span>
+                                        @endif
+                                    </td>
                                     <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
                                     <td class="p-2 text-center">
                                         <div class="flex justify-center gap-2">
@@ -71,7 +94,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center p-4 text-text-secondary">
+                                    <td colspan="8" class="text-center p-4 text-text-secondary">
                                         Data tidak ditemukan.
                                     </td>
                                 </tr>
@@ -87,11 +110,19 @@
     </div>
 
     {{-- Modal Tambah --}}
-    @include('components.inventory.item-return.add-modal', ['items' => $items, 'stockOuts' => $stockOuts])
+    @include('components.inventory.item-return.add-modal', [
+        'items' => $items,
+        'stockOuts' => $stockOuts,
+        'stockIns' => $stockIns,
+    ])
 
     {{-- Modal Edit untuk setiap record --}}
     @foreach ($returns as $record)
-        @include('components.inventory.item-return.edit-modal', ['record' => $record])
+        @include('components.inventory.item-return.edit-modal', [
+            'record' => $record,
+            'stockOuts' => $stockOuts,
+            'stockIns' => $stockIns,
+        ])
     @endforeach
 
     {{-- Include Item Return Scripts --}}

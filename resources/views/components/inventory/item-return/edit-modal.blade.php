@@ -5,8 +5,21 @@
         @method('PUT')
 
         <div class="mb-3">
+            <label class="block text-text-primary mb-1">Tipe Return</label>
+            <input type="text" value="{{ ucfirst($item->return_type) }}" class="w-full border rounded p-2 bg-gray-100"
+                disabled>
+        </div>
+
+        <div class="mb-3">
             <label class="block text-text-primary mb-1">Barang</label>
             <input type="text" value="{{ $item->id_item }} - {{ $item->item->name_item }}"
+                class="w-full border rounded p-2 bg-gray-100" disabled>
+        </div>
+
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Referensi Dokumen</label>
+            <input type="text"
+                value="@if ($item->return_type === 'masuk') {{ $item->stockIn->id_stock_in ?? '-' }}@else{{ $item->stockOut->id_stock_out ?? '-' }} @endif"
                 class="w-full border rounded p-2 bg-gray-100" disabled>
         </div>
 

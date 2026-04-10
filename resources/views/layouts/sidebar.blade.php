@@ -80,7 +80,7 @@
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('stock-out*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-arrow-up w-4 
+                                class="fas fa-sign-out-alt w-4 
                                 {{ request()->is('stock-out*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Barang Keluar</span>
@@ -91,10 +91,10 @@
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('item-return*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-undo w-4 
+                                class="fas fa-reply-all w-4 
                                 {{ request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                            <span class="ml-3 text-sm font-medium">Return Barang</span>
+                            <span class="ml-3 text-sm font-medium">Pengembalian Barang</span>
                         </a>
                     </li>
                 </ul>

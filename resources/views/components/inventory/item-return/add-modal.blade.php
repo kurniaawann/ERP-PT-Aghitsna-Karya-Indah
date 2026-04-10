@@ -2,6 +2,16 @@
 <x-modal id="addModal" title="Tambah Return Barang" action="{{ route('item-return.store') }}" method="POST"
     buttonText="Simpan">
     <div class="mb-3">
+        <label class="block text-text-primary mb-1">Tipe Return <span class="text-error">*</span></label>
+        <select name="return_type" id="addReturnType" class="w-full border rounded p-2" required
+            onchange="handleReturnTypeChange('add')">
+            <option value="">-- Pilih Tipe --</option>
+            <option value="masuk">Return Barang Masuk (dari Supplier)</option>
+            <option value="keluar">Return Barang Keluar (dari Proyek/Konsumen)</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
         <label class="block text-text-primary mb-1">Barang <span class="text-error">*</span></label>
         <select name="id_item" class="w-full border rounded p-2" required>
             <option value="">-- Pilih Barang --</option>
@@ -18,14 +28,16 @@
                 required>
         </div>
         <div>
-            <label class="block text-text-primary mb-1">Barang Keluar (Opsional)</label>
-            <select name="id_stock_out" class="w-full border rounded p-2">
-                <option value="">-- Pilih Referensi --</option>
-                @foreach ($stockOuts as $out)
-                    <option value="{{ $out->id_stock_out }}">{{ $out->id_stock_out }} - {{ $out->item->name_item }}
-                    </option>
-                @endforeach
-            </select>
+            <label class="block text-text-primary mb-1" id="refLabel">Referensi Dokumen (Opsional)</label>
+            <div id="addRefContainer">
+                <select name="id_stock_out" id="addStockOutSelect" class="w-full border rounded p-2">
+                    <option value="">-- Pilih Referensi --</option>
+                    @foreach ($stockOuts as $out)
+                        <option value="{{ $out->id_stock_out }}">{{ $out->id_stock_out }} - {{ $out->item->name_item }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
     </div>
 
@@ -44,3 +56,38 @@
         <textarea name="keterangan" class="w-full border rounded p-2" rows="3" placeholder="Masukkan keterangan..."></textarea>
     </div>
 </x-modal>
+
+<script>
+    function handleReturnTypeChange(type) {
+        const returnTypeSelect = document.getElementById(type + 'ReturnType');
+        const refContainer = document.getElementById(type + 'RefContainer');
+        const refLabel = document.getElementById('refLabel');
+
+        if (!returnTypeSelect || !refContainer) return;
+
+        let stockOutSelect = document.getElementById(type + 'StockOutSelect');
+        let stockInSelect = document.getElementById(type + 'StockInSelect');
+
+        if (returnTypeSelect.value === 'masuk') {
+            refLabel.textContent = 'Barang Masuk (Opsional)';
+            refContainer.innerHTML = `
+            <select name="id_stock_in" id="` + type + `StockInSelect" class="w-full border rounded p-2">
+                <option value="">-- Pilih Referensi --</option>
+                @foreach ($stockIns as $in)
+                    <option value="{{ $in->id_stock_in }}">{{ $in->id_stock_in }}</option>
+                @endforeach
+            </select>
+        `;
+        } else if (returnTypeSelect.value === 'keluar') {
+            refLabel.textContent = 'Barang Keluar (Opsional)';
+            refContainer.innerHTML = `
+            <select name="id_stock_out" id="` + type + `StockOutSelect" class="w-full border rounded p-2">
+                <option value="">-- Pilih Referensi --</option>
+                @foreach ($stockOuts as $out)
+                    <option value="{{ $out->id_stock_out }}">{{ $out->id_stock_out }}</option>
+                @endforeach
+            </select>
+        `;
+        }
+    }
+</script>
