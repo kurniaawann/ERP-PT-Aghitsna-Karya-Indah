@@ -3,22 +3,25 @@
 namespace App\Exports\Inventory;
 
 use App\Models\Inventory\ItemStockOut;
-use Maatwebsite\Excel\Concerns\{
-    FromCollection,
-    WithHeadings,
-    WithMapping,
-    WithStyles,
-    WithTitle,
-    WithColumnWidths
-};
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill};
 
-class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
+class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths, WithEvents
 {
     protected $search;
     protected $month;
     protected $year;
+    protected $totalQuantity = 0;
 
     public function __construct($search = null, $month = null, $year = null)
     {
@@ -29,7 +32,7 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
 
     public function collection()
     {
-        return ItemStockOut::query()
+        $stockOuts = ItemStockOut::query()
             ->with('item')
             ->when($this->search, function ($query, $search) {
                 $query->where('id_stock_out', 'like', "%{$search}%")
@@ -44,72 +47,99 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
             ->when($this->year, function ($query, $year) {
                 $query->whereYear('tanggal', $year);
             })
-            ->when($this->month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
-            })
-            ->when($this->year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
-            })
             ->orderBy('tanggal', 'desc')
             ->orderBy('id_stock_out', 'desc')
             ->get();
+
+        $this->totalQuantity = $stockOuts->sum('quantity');
+
+        return $stockOuts;
     }
 
     public function headings(): array
     {
+        $monthName = $this->month ? \DateTime::createFromFormat('!m', $this->month)->format('F') : '';
+        $yearName = $this->year ?? '';
+        $period = $monthName || $yearName ? "Periode: {$monthName} {$yearName}" : 'Semua Data';
+
         return [
-            ['BARANG KELUAR', '', '', '', '', '', ''],
-            ['ID Keluar', 'Barang', 'Jumlah', 'Sisa Barang', 'Tanggal', 'Proyek', '']
+            ['PT AGHITSNA KARYA INDAH'],
+            ['LAPORAN BARANG KELUAR'],
+            [$period],
+            [],
+            ['No', 'ID Keluar', 'Nama Barang', 'Jumlah', 'Sisa Barang', 'Tanggal', 'Proyek']
         ];
     }
 
     public function map($record): array
     {
+        static $number = 0;
+        $number++;
+
         return [
+            $number,
             $record->id_stock_out,
             $record->item->name_item ?? '-',
             $record->quantity,
             $record->remaining_quantity ?? '-',
             $record->tanggal->format('d-m-Y'),
             $record->project_name ?? '-',
-            '',
         ];
-    }
-
-    public function styles(Worksheet $sheet): array
-    {
-        $sheet->getStyle('A1:G1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 14],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFEBEE']],
-        ]);
-        $sheet->mergeCells('A1:G1');
-
-        $sheet->getStyle('A2:G2')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 11],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EF9A9A']],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-        ]);
-
-        $sheet->getStyle('A3:G1000')->applyFromArray([
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        return [];
     }
 
     public function columnWidths(): array
     {
         return [
-            'A' => 15,
-            'B' => 25,
-            'C' => 10,
-            'D' => 15,
+            'A' => 5,
+            'B' => 20,
+            'C' => 30,
+            'D' => 10,
             'E' => 15,
-            'F' => 20,
-            'G' => 12,
+            'F' => 15,
+            'G' => 20,
+        ];
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(12);
+
+        $sheet->getStyle('A1:G1')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A2:G2')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A3:G3')->getFont()->setItalic(true)->setSize(12);
+
+        $sheet->mergeCells('A1:G1');
+        $sheet->mergeCells('A2:G2');
+        $sheet->mergeCells('A3:G3');
+        $sheet->getStyle('A1:G3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->getStyle('A5:G5')->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EAEAEA']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ]);
+
+        $lastRow = $sheet->getHighestRow();
+        $sheet->getStyle('A6:G' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('D:G')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $lastRow = $sheet->getHighestRow();
+                $summaryStartRow = $lastRow + 2;
+
+                $sheet->setCellValue("D{$summaryStartRow}", 'Total Kuantitas:');
+                $sheet->setCellValue("E{$summaryStartRow}", $this->totalQuantity);
+
+                $sheet->getStyle("D{$summaryStartRow}:E{$summaryStartRow}")->getFont()->setBold(true);
+                $sheet->getStyle("D{$summaryStartRow}:D{$summaryStartRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            },
         ];
     }
 

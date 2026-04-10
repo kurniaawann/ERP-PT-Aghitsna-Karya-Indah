@@ -70,4 +70,7 @@
         {{-- Pagination --}}
         <x-pagination :paginator="$stockOuts" />
     </div>
+
+    {{-- Include Stock Out Scripts --}}
+    @include('partials.inventory.stock-out-scripts')
 @endsection
