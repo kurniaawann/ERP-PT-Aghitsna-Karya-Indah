@@ -4,22 +4,26 @@
         action="{{ route('item-return.update', $item->id_return) }}" method="POST" buttonText="Update">
         @method('PUT')
 
+        {{-- Error Alert - Show Laravel Validation Errors --}}
+        @if ($errors->any())
+            <div id="editErrorAlert-{{ $item->id_return }}" class="mb-4 p-3 bg-red-50 border border-red-300 rounded">
+                <div class="font-semibold mb-2 text-red-700"><i class="fa-solid fa-circle-exclamation"></i> Validasi Gagal
+                </div>
+                @foreach ($errors->all() as $error)
+                    <p class="text-sm text-red-600 mb-1">{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
+
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Tipe Return</label>
-            <input type="text" value="{{ ucfirst($item->return_type) }}" class="w-full border rounded p-2 bg-gray-100"
-                disabled>
+            <input type="text" value="{{ ucfirst($item->return_type) }}"
+                class="w-full border rounded p-2 bg-gray-100" disabled>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Barang</label>
             <input type="text" value="{{ $item->id_item }} - {{ $item->item->name_item }}"
-                class="w-full border rounded p-2 bg-gray-100" disabled>
-        </div>
-
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Referensi Dokumen</label>
-            <input type="text"
-                value="@if ($item->return_type === 'masuk') {{ $item->stockIn->id_stock_in ?? '-' }}@else{{ $item->stockOut->id_stock_out ?? '-' }} @endif"
                 class="w-full border rounded p-2 bg-gray-100" disabled>
         </div>
 

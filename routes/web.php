@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/item-return', [ItemReturnController::class, 'index'])->name('item-return.index');
     Route::post('/item-return', [ItemReturnController::class, 'store'])->name('item-return.store');
     Route::put('/item-return/{id_return}', [ItemReturnController::class, 'update'])->name('item-return.update');
+    Route::delete('/item-return/bulk-delete', [ItemReturnController::class, 'bulkDelete'])->name('item-return.bulk-delete');
     Route::delete('/item-return/{id_return}', [ItemReturnController::class, 'destroy'])->name('item-return.destroy');
     Route::get('/item-return/export/pdf', [ItemReturnController::class, 'exportPdf'])->name('item-return.export.pdf');
     Route::get('/item-return/export/excel', [ItemReturnController::class, 'exportExcel'])->name('item-return.export.excel');

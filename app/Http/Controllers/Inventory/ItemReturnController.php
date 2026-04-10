@@ -76,6 +76,18 @@ class ItemReturnController extends Controller
                 'tanggal' => 'required|date',
                 'keterangan' => 'nullable|string|max:500',
             ]);
+
+            // Validate quantity doesn't exceed available stock-in BEFORE transaction
+            $stockIn = ItemStockIn::find($request->id_stock_in);
+            $totalReturned = ItemReturn::where('id_stock_in', $request->id_stock_in)
+                ->where('return_type', 'masuk')
+                ->sum('quantity');
+
+            if ($totalReturned + $request->quantity > $stockIn->quantity) {
+                return back()->withErrors([
+                    'quantity' => "Jumlah return melebihi jumlah barang masuk! (Tersedia: " . ($stockIn->quantity - $totalReturned) . ")"
+                ])->withInput();
+            }
         } else {
             // Validasi untuk return barang keluar
             $validated = $request->validate([
@@ -86,6 +98,18 @@ class ItemReturnController extends Controller
                 'tanggal' => 'required|date',
                 'keterangan' => 'nullable|string|max:500',
             ]);
+
+            // Validate quantity doesn't exceed available stock-out BEFORE transaction
+            $stockOut = ItemStockOut::find($request->id_stock_out);
+            $totalReturned = ItemReturn::where('id_stock_out', $request->id_stock_out)
+                ->where('return_type', 'keluar')
+                ->sum('quantity');
+
+            if ($totalReturned + $request->quantity > $stockOut->quantity) {
+                return back()->withErrors([
+                    'quantity' => "Jumlah return melebihi jumlah barang keluar! (Tersedia: " . ($stockOut->quantity - $totalReturned) . ")"
+                ])->withInput();
+            }
         }
 
         DB::beginTransaction();
@@ -93,16 +117,6 @@ class ItemReturnController extends Controller
             $item = Items::lockForUpdate()->find($request->id_item);
 
             if ($returnType === 'masuk') {
-                $stockIn = ItemStockIn::find($request->id_stock_in);
-
-                // Validate return quantity doesn't exceed original stock-in quantity
-                $totalReturned = ItemReturn::where('id_stock_in', $request->id_stock_in)
-                    ->where('return_type', 'masuk')
-                    ->sum('quantity');
-                if ($totalReturned + $request->quantity > $stockIn->quantity) {
-                    return redirect()->back()->with('error', 'Jumlah return melebihi jumlah barang masuk original!')->withInput();
-                }
-
                 // Create return record for stock in
                 ItemReturn::create([
                     'id_return' => $this->generateIdReturn(),
@@ -122,6 +136,7 @@ class ItemReturnController extends Controller
                 }
 
                 // Recalculate weighted average cost
+                $stockIn = ItemStockIn::find($request->id_stock_in);
                 $currentItemValue = (($item->quantity + $request->quantity) * $item->capital_price);
                 $returnedValue = $request->quantity * $stockIn->capital_price;
                 $newValue = $currentItemValue - $returnedValue;
@@ -151,10 +166,12 @@ class ItemReturnController extends Controller
             $item->save();
 
             DB::commit();
-            return redirect()->back()->with('success', 'Data return barang berhasil ditambahkan!');
+            return redirect()->route('item-return.index')->with('success', 'Data return barang berhasil ditambahkan!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ])->withInput();
         }
     }
 
@@ -167,25 +184,43 @@ class ItemReturnController extends Controller
             'keterangan' => 'nullable|string|max:500',
         ]);
 
+        $return = ItemReturn::findOrFail($id_return);
+
+        // Validate quantity BEFORE transaction
+        if ($return->return_type === 'masuk') {
+            $stockIn = ItemStockIn::find($return->id_stock_in);
+            $otherReturns = ItemReturn::where('id_stock_in', $return->id_stock_in)
+                ->where('id_return', '!=', $id_return)
+                ->where('return_type', 'masuk')
+                ->sum('quantity');
+
+            if ($otherReturns + $request->quantity > $stockIn->quantity) {
+                return back()->withErrors([
+                    'quantity' => "Jumlah return melebihi jumlah barang masuk! (Tersedia: " . ($stockIn->quantity - $otherReturns) . ")"
+                ])->withInput();
+            }
+        } else {
+            $stockOut = ItemStockOut::find($return->id_stock_out);
+            $otherReturns = ItemReturn::where('id_stock_out', $return->id_stock_out)
+                ->where('id_return', '!=', $id_return)
+                ->where('return_type', 'keluar')
+                ->sum('quantity');
+
+            if ($otherReturns + $request->quantity > $stockOut->quantity) {
+                return back()->withErrors([
+                    'quantity' => "Jumlah return melebihi jumlah barang keluar! (Tersedia: " . ($stockOut->quantity - $otherReturns) . ")"
+                ])->withInput();
+            }
+        }
+
         DB::beginTransaction();
         try {
-            $return = ItemReturn::findOrFail($id_return);
             $item = Items::lockForUpdate()->find($return->id_item);
-
             $qtyDifference = $request->quantity - $return->quantity;
 
             if ($return->return_type === 'masuk') {
                 // Handle return barang masuk
                 $stockIn = ItemStockIn::find($return->id_stock_in);
-
-                // Validate new return quantity
-                $otherReturns = ItemReturn::where('id_stock_in', $return->id_stock_in)
-                    ->where('id_return', '!=', $id_return)
-                    ->where('return_type', 'masuk')
-                    ->sum('quantity');
-                if ($otherReturns + $request->quantity > $stockIn->quantity) {
-                    return redirect()->back()->with('error', 'Jumlah return melebihi jumlah barang masuk original!')->withInput();
-                }
 
                 // Update item quantity
                 $item->quantity -= $qtyDifference;
@@ -218,10 +253,12 @@ class ItemReturnController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->back()->with('success', 'Data return barang berhasil diupdate!');
+            return redirect()->route('item-return.index')->with('success', 'Data return barang berhasil diupdate!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ])->withInput();
         }
     }
 
@@ -263,6 +300,58 @@ class ItemReturnController extends Controller
 
             DB::commit();
             return redirect()->back()->with('success', 'Data return barang berhasil dihapus!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('selected_returns', []);
+
+        if (empty($ids)) {
+            return redirect()->back()->with('error', 'Pilih minimal satu data untuk dihapus');
+        }
+
+        DB::beginTransaction();
+        try {
+            $returns = ItemReturn::whereIn('id_return', $ids)->get();
+
+            foreach ($returns as $return) {
+                $item = Items::lockForUpdate()->find($return->id_item);
+
+                if ($return->return_type === 'masuk') {
+                    // Handle delete return barang masuk - restore item quantity
+                    $stockIn = ItemStockIn::find($return->id_stock_in);
+
+                    $item->quantity += $return->quantity;
+
+                    // Recalculate weighted average cost
+                    $currentItemValue = (($item->quantity - $return->quantity) * $item->capital_price);
+                    $restoredValue = $return->quantity * $stockIn->capital_price;
+                    $newValue = $currentItemValue + $restoredValue;
+                    $newQuantity = $item->quantity;
+
+                    if ($newQuantity > 0) {
+                        $item->capital_price = (int) round($newValue / $newQuantity);
+                    } else {
+                        $item->capital_price = 0;
+                    }
+                } else {
+                    // Handle delete return barang keluar - reduce item quantity
+                    $item->quantity -= $return->quantity;
+                    if ($item->quantity < 0) {
+                        $item->quantity = 0;
+                    }
+                }
+
+                $item->save();
+                $return->delete();
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Berhasil menghapus ' . count($returns) . ' data return barang!');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());

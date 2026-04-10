@@ -56,10 +56,10 @@
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('item*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                {{ (request()->is('item') || request()->is('item/*')) && !request()->is('item-return*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
                                 class="fas fa-boxes w-4 
-                                {{ request()->is('item*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ (request()->is('item') || request()->is('item/*')) && !request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Data Barang</span>
                         </a>
