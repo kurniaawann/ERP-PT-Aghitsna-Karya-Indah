@@ -98,6 +98,7 @@
                 <th style="width: 8%;">Jumlah</th>
                 <th style="width: 12%;">Sisa Barang</th>
                 <th style="width: 12%;">Tanggal</th>
+                <th style="width: 15%;">Proyek</th>
             </tr>
         </thead>
         <tbody>
@@ -111,12 +112,13 @@
                     <td class="text-center">{{ $record->quantity }}</td>
                     <td class="text-center">{{ $record->remaining_quantity ?? '-' }}</td>
                     <td class="text-center">{{ $record->tanggal->format('d M Y') }}</td>
+                    <td>{{ $record->project_name ?? '-' }}</td>
                 </tr>
             @endforeach
             <tr style="background-color: #FFEBEE; font-weight: bold;">
                 <td colspan="3" class="text-right">TOTAL:</td>
                 <td class="text-center">{{ $totalQty }}</td>
-                <td colspan="2"></td>
+                <td colspan="3"></td>
             </tr>
         </tbody>
     </table>

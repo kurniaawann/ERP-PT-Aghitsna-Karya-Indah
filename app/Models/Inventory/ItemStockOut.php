@@ -21,6 +21,7 @@ class ItemStockOut extends Model
         'quantity',
         'id_sales_recap',
         'tanggal',
+        'project_name',
     ];
 
     protected $casts = [

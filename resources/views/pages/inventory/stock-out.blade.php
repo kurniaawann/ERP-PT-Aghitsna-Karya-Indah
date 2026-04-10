@@ -40,6 +40,7 @@
                                 <th class="p-2 text-center">Jumlah</th>
                                 <th class="p-2 text-center">Sisa Barang</th>
                                 <th class="p-2 text-left">Tanggal</th>
+                                <th class="p-2 text-left">Proyek</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -51,10 +52,11 @@
                                     <td class="p-2 text-center">{{ $record->quantity }}</td>
                                     <td class="p-2 text-center">{{ $record->remaining_quantity ?? '-' }}</td>
                                     <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
+                                    <td class="p-2">{{ $record->project_name ?? '-' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center p-4 text-text-secondary">
+                                    <td colspan="7" class="text-center p-4 text-text-secondary">
                                         Data tidak ditemukan.
                                     </td>
                                 </tr>

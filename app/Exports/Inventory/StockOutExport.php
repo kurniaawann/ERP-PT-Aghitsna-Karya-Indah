@@ -58,8 +58,8 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
     public function headings(): array
     {
         return [
-            ['BARANG KELUAR', '', '', '', '', ''],
-            ['ID Keluar', 'Barang', 'Jumlah', 'Sisa Barang', 'Tanggal', '']
+            ['BARANG KELUAR', '', '', '', '', '', ''],
+            ['ID Keluar', 'Barang', 'Jumlah', 'Sisa Barang', 'Tanggal', 'Proyek', '']
         ];
     }
 
@@ -71,27 +71,28 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
             $record->quantity,
             $record->remaining_quantity ?? '-',
             $record->tanggal->format('d-m-Y'),
+            $record->project_name ?? '-',
             '',
         ];
     }
 
     public function styles(Worksheet $sheet): array
     {
-        $sheet->getStyle('A1:F1')->applyFromArray([
+        $sheet->getStyle('A1:G1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFEBEE']],
         ]);
-        $sheet->mergeCells('A1:F1');
+        $sheet->mergeCells('A1:G1');
 
-        $sheet->getStyle('A2:F2')->applyFromArray([
+        $sheet->getStyle('A2:G2')->applyFromArray([
             'font' => ['bold' => true, 'size' => 11],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EF9A9A']],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
 
-        $sheet->getStyle('A3:F1000')->applyFromArray([
+        $sheet->getStyle('A3:G1000')->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
@@ -107,7 +108,8 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
             'C' => 10,
             'D' => 15,
             'E' => 15,
-            'F' => 12,
+            'F' => 20,
+            'G' => 12,
         ];
     }
 
