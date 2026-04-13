@@ -1,0 +1,59 @@
+@extends('layouts.app')
+
+@section('title', 'PT Aghitsna Karya Indah - Barang Masuk')
+
+@section('content')
+    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Barang Masuk</h1>
+
+        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
+            {{-- Form Pencarian dan Filter --}}
+            <form method="GET" action="{{ route('stock-in.index') }}"
+                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+
+                {{-- Filter Bulan --}}
+                <x-filters.month-filter :value="request('month')" />
+
+                {{-- Filter Tahun --}}
+                <x-filters.year-filter :value="request('year')" />
+
+                {{-- Search Input --}}
+                <x-filters.search-input :value="request('search')" placeholder="Cari barang masuk..." />
+            </form>
+
+            {{-- Aksi di Kanan --}}
+            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
+                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                    <x-buttons.print-dropdown :excelRoute="route('stock-in.export.excel')" :pdfRoute="route('stock-in.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
+
+                    <x-buttons.delete-button modalId="deleteModal" />
+
+                    <x-buttons.add-button modalId="addModal" text="Tambah Barang Masuk" />
+                </div>
+            </div>
+        </div>
+
+        {{-- Table --}}
+        @include('components.inventory.stock-in.table', ['stockIns' => $stockIns])
+
+        {{-- Pagination --}}
+        <x-pagination :paginator="$stockIns" />
+    </div>
+
+    {{-- Modal Tambah --}}
+    @include('components.inventory.stock-in.add-modal', ['items' => $items])
+
+    {{-- Modal Edit untuk setiap record --}}
+    @foreach ($stockIns as $record)
+        @include('components.inventory.stock-in.edit-modal', ['record' => $record, 'allItems' => $items])
+    @endforeach
+
+    {{-- Modal Konfirmasi Bulk Delete --}}
+    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
+        buttonText="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus data yang dipilih?
+    </x-modal>
+
+    {{-- Include Stock In Scripts --}}
+    @include('partials.inventory.stock-in-scripts')
+@endsection

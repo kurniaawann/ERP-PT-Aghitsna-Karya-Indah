@@ -16,53 +16,48 @@ class EmployeeSeeder extends Seeder
         // Hapus data lama terlebih dahulu (gunakan delete karena ada foreign key)
         DB::table('employees')->delete();
 
-        $employees = [
-            // Karyawan 1: Join Januari (sebelum 2 Feb) - Harus ada 6 absensi (2-7 Feb)
-            [
-                'employee_code' => 'EMP001',
-                'name' => 'Ahmad Kurniawan',
-                'phone' => '081234567890',
-                'address' => 'Jl. Merdeka No. 123, Jakarta',
-                'division' => 'Produksi',
-                'daily_wage' => 150000,
-                'position' => null,
-                'email' => null,
-                'base_salary' => null,
-                'join_date' => '2026-01-15', // Join sebelum 2 Feb
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            // Karyawan 2: Join 5 Februari - Harus ada 3 absensi (5,6,7 Feb)
-            [
-                'employee_code' => 'EMP002',
-                'name' => 'Siti Nurhaliza',
-                'phone' => '081234567891',
-                'address' => 'Jl. Sudirman No. 45, Jakarta',
-                'division' => 'Produksi',
-                'daily_wage' => 140000,
-                'position' => null,
-                'email' => null,
-                'base_salary' => null,
-                'join_date' => '2026-02-05', // Join tanggal 5 Feb
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            // Karyawan 3: Join Januari (sebelum 2 Feb) - Harus ada 6 absensi (2-7 Feb)
-            [
-                'employee_code' => 'EMP003',
-                'name' => 'Budi Santoso',
-                'phone' => '081234567892',
-                'address' => 'Jl. Gatot Subroto No. 78, Jakarta',
-                'division' => 'Produksi',
-                'daily_wage' => 130000,
-                'position' => null,
-                'email' => null,
-                'base_salary' => null,
-                'join_date' => '2026-01-20', // Join sebelum 2 Feb
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        $employees = [];
+        $names = [
+            'Ahmad Kurniawan',
+            'Siti Nurhaliza',
+            'Budi Santoso',
+            'Hendra Wijaya',
+            'Rini Pratiwi',
+            'Denny Hermawan',
+            'Eka Putri',
+            'Fajar Ramadhan',
+            'Ghina Salsa',
+            'Hartono Sulistyo',
+            'Indra Kusuma',
+            'Joko Wahono',
+            'Karina Sephira',
+            'Luthfi Rahman'
         ];
+
+        $divisions = ['Produksi', 'Keuangan', 'SDM', 'Operasional', 'Marketing'];
+
+        // Generate 14 employees (EMP001-EMP014) untuk kebutuhan AttendanceSeeder
+        for ($i = 1; $i <= 14; $i++) {
+            $empCode = 'EMP' . str_pad($i, 3, '0', STR_PAD_LEFT);
+            $name = $names[$i - 1] ?? "Karyawan $i";
+            $phone = '0812345678' . str_pad($i, 2, '0', STR_PAD_LEFT);
+            $division = $divisions[($i - 1) % count($divisions)];
+
+            $employees[] = [
+                'employee_code' => $empCode,
+                'name' => $name,
+                'phone' => $phone,
+                'address' => "Jl. Merdeka No. $i, Jakarta",
+                'division' => $division,
+                'daily_wage' => 100000 + ($i * 10000),
+                'position' => null,
+                'email' => null,
+                'base_salary' => null,
+                'join_date' => '2025-09-01',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
 
         DB::table('employees')->insert($employees);
     }

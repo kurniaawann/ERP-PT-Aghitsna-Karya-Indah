@@ -5,29 +5,40 @@ namespace App\Observers;
 use App\Models\Report\SalesRecap;
 use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
+use App\Models\Inventory\ItemStockOut;
 
 class SalesRecapObserver
 {
     /**
+     * Handle the SalesRecap "created" event.
+     * Auto-create stock out records
+     */
+    public function created(SalesRecap $salesRecap): void
+    {
+        $this->createStockOuts($salesRecap);
+    }
+
+    /**
      * Handle the SalesRecap "updated" event.
-     * Auto-create expense recap when status becomes LUNAS
+     * Update stock out records and auto-create expense recap when status becomes LUNAS.
+     * Only create stock out records if checkbox is checked.
      */
     public function updated(SalesRecap $salesRecap): void
     {
-        // Cek apakah status berubah menjadi LUNAS
-        if ($salesRecap->isDirty('status') && $salesRecap->status === 'Lunas') {
-            // Get primary key value
+        // Check if checkbox is checked before creating stock outs
+        if ($salesRecap->wasChanged('items')) {
+            $this->createStockOuts($salesRecap);
+        }
+
+        if ($salesRecap->wasChanged('status') && $salesRecap->status === 'Lunas') {
             $salesRecapId = $salesRecap->getKey();
 
-            // Cek apakah sudah ada expense recap untuk sales recap ini
             $existingExpenseRecap = ExpenseRecap::where('sales_recap_id', $salesRecapId)->first();
 
             if (!$existingExpenseRecap) {
-                // Get kategori "UANG MASUK PENJUALAN"
                 $incomeCategory = TransactionCategory::where('code', 'UANG_MASUK')->first();
 
                 if ($incomeCategory) {
-                    // Auto-create expense recap
                     ExpenseRecap::create([
                         'transaction_category_id' => $incomeCategory->id,
                         'invoice_number' => $salesRecapId,
@@ -43,4 +54,62 @@ class SalesRecapObserver
             }
         }
     }
+
+    /**
+     * Handle the SalesRecap "deleted" event.
+     * Auto-delete stock out records
+     */
+    public function deleted(SalesRecap $salesRecap): void
+    {
+        ItemStockOut::where('id_sales_recap', $salesRecap->getKey())->delete();
+    }
+
+    /**
+     * Create stock out records from sales recap items
+     */
+    private function createStockOuts(SalesRecap $salesRecap): void
+    {
+        $salesRecapId = $salesRecap->getKey();
+        $items = is_string($salesRecap->items) ? json_decode($salesRecap->items, true) : $salesRecap->items;
+
+        ItemStockOut::where('id_sales_recap', $salesRecapId)->delete();
+
+        if ($items && is_array($items)) {
+            foreach ($items as $item) {
+                if ($this->isFromStock($item['from_stock'] ?? null) && !empty($item['id_item'])) {
+                    ItemStockOut::create([
+                        'id_stock_out' => $this->generateStockOutId(),
+                        'id_item' => $item['id_item'],
+                        'quantity' => $item['quantity'] ?? 0,
+                        'id_sales_recap' => $salesRecapId,
+                        'tanggal' => $salesRecap->date ?? now(),
+                        'project_name' => $salesRecap->name_proyek,
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Generate unique stock out ID
+     */
+    private function generateStockOutId(): string
+    {
+        $date = date('Ymd');
+        $count = ItemStockOut::whereDate('created_at', date('Y-m-d'))->count() + 1;
+        $sequence = str_pad($count, 4, '0', STR_PAD_LEFT);
+
+        do {
+            $id = 'SOUT-' . $date . '-' . $sequence;
+            $sequence = str_pad((int) $sequence + 1, 4, '0', STR_PAD_LEFT);
+        } while (ItemStockOut::where('id_stock_out', $id)->exists());
+
+        return $id;
+    }
+
+    private function isFromStock($value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
 }

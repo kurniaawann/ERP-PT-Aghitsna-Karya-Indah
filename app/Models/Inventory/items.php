@@ -20,4 +20,20 @@ class Items extends Model
         'capital_price',
         'selling_price',
     ];
+
+    // Relationships
+    public function stockIns()
+    {
+        return $this->hasMany(ItemStockIn::class, 'id_item', 'id_item');
+    }
+
+    public function stockOuts()
+    {
+        return $this->hasMany(ItemStockOut::class, 'id_item', 'id_item');
+    }
+
+    public function returns()
+    {
+        return $this->hasMany(ItemReturn::class, 'id_item', 'id_item');
+    }
 }

@@ -379,7 +379,7 @@ class RecapSalesController extends Controller
                     }
                 }
 
-                // Hapus sales report dari database
+                // Hapus sales report dari database (ItemStockOut otomatis dihapus via Observer)
                 $salesRecap->delete();
                 $deletedCount++;
             }
@@ -540,7 +540,6 @@ class RecapSalesController extends Controller
 
         $pdf->setPaper('a4', 'landscape');
 
-        return $pdf->download('Rekap_Penjualan_' . date('Y-m-d') . '.pdf');
     }
 }
 
