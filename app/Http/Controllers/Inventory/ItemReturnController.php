@@ -135,8 +135,15 @@ class ItemReturnController extends Controller
                     $item->quantity = 0;
                 }
 
+                // Reduce stock in quantity
+                $stockIn = ItemStockIn::lockForUpdate()->find($request->id_stock_in);
+                $stockIn->quantity -= $request->quantity;
+                if ($stockIn->quantity < 0) {
+                    $stockIn->quantity = 0;
+                }
+                $stockIn->save();
+
                 // Recalculate weighted average cost
-                $stockIn = ItemStockIn::find($request->id_stock_in);
                 $currentItemValue = (($item->quantity + $request->quantity) * $item->capital_price);
                 $returnedValue = $request->quantity * $stockIn->capital_price;
                 $newValue = $currentItemValue - $returnedValue;
@@ -161,6 +168,14 @@ class ItemReturnController extends Controller
 
                 // Restore item quantity (barang kembali ke stock)
                 $item->quantity += $request->quantity;
+
+                // Reduce stock out quantity
+                $stockOut = ItemStockOut::lockForUpdate()->find($request->input('id_stock_out'));
+                $stockOut->quantity -= $request->quantity;
+                if ($stockOut->quantity < 0) {
+                    $stockOut->quantity = 0;
+                }
+                $stockOut->save();
             }
 
             $item->save();
@@ -220,13 +235,20 @@ class ItemReturnController extends Controller
 
             if ($return->return_type === 'masuk') {
                 // Handle return barang masuk
-                $stockIn = ItemStockIn::find($return->id_stock_in);
+                $stockIn = ItemStockIn::lockForUpdate()->find($return->id_stock_in);
 
                 // Update item quantity
                 $item->quantity -= $qtyDifference;
                 if ($item->quantity < 0) {
                     $item->quantity = 0;
                 }
+
+                // Update stock in quantity
+                $stockIn->quantity -= $qtyDifference;
+                if ($stockIn->quantity < 0) {
+                    $stockIn->quantity = 0;
+                }
+                $stockIn->save();
 
                 // Recalculate weighted average cost
                 $currentItemValue = (($item->quantity + $qtyDifference) * $item->capital_price);
@@ -241,6 +263,14 @@ class ItemReturnController extends Controller
             } else {
                 // Handle return barang keluar
                 $item->quantity += $qtyDifference;
+
+                // Update stock out quantity
+                $stockOut = ItemStockOut::lockForUpdate()->find($return->id_stock_out);
+                $stockOut->quantity -= $qtyDifference;
+                if ($stockOut->quantity < 0) {
+                    $stockOut->quantity = 0;
+                }
+                $stockOut->save();
             }
 
             $item->save();
@@ -271,9 +301,10 @@ class ItemReturnController extends Controller
 
             if ($return->return_type === 'masuk') {
                 // Handle delete return barang masuk - restore item quantity
-                $stockIn = ItemStockIn::find($return->id_stock_in);
+                $stockIn = ItemStockIn::lockForUpdate()->find($return->id_stock_in);
 
                 $item->quantity += $return->quantity;
+                $stockIn->quantity += $return->quantity;
 
                 // Recalculate weighted average cost
                 $currentItemValue = (($item->quantity - $return->quantity) * $item->capital_price);
@@ -286,12 +317,18 @@ class ItemReturnController extends Controller
                 } else {
                     $item->capital_price = 0;
                 }
+
+                $stockIn->save();
             } else {
-                // Handle delete return barang keluar - reduce item quantity
+                // Handle delete return barang keluar - reduce item quantity and restore stock out
                 $item->quantity -= $return->quantity;
                 if ($item->quantity < 0) {
                     $item->quantity = 0;
                 }
+
+                $stockOut = ItemStockOut::lockForUpdate()->find($return->id_stock_out);
+                $stockOut->quantity += $return->quantity;
+                $stockOut->save();
             }
 
             $item->save();
@@ -323,9 +360,10 @@ class ItemReturnController extends Controller
 
                 if ($return->return_type === 'masuk') {
                     // Handle delete return barang masuk - restore item quantity
-                    $stockIn = ItemStockIn::find($return->id_stock_in);
+                    $stockIn = ItemStockIn::lockForUpdate()->find($return->id_stock_in);
 
                     $item->quantity += $return->quantity;
+                    $stockIn->quantity += $return->quantity;
 
                     // Recalculate weighted average cost
                     $currentItemValue = (($item->quantity - $return->quantity) * $item->capital_price);
@@ -338,12 +376,18 @@ class ItemReturnController extends Controller
                     } else {
                         $item->capital_price = 0;
                     }
+
+                    $stockIn->save();
                 } else {
-                    // Handle delete return barang keluar - reduce item quantity
+                    // Handle delete return barang keluar - reduce item quantity and restore stock out
                     $item->quantity -= $return->quantity;
                     if ($item->quantity < 0) {
                         $item->quantity = 0;
                     }
+
+                    $stockOut = ItemStockOut::lockForUpdate()->find($return->id_stock_out);
+                    $stockOut->quantity += $return->quantity;
+                    $stockOut->save();
                 }
 
                 $item->save();
