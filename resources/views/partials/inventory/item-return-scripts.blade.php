@@ -1,5 +1,81 @@
 {{-- Return Scripts --}}
 <script>
+    // ==========================================
+    // PREVENT DOUBLE SUBMIT & LOADING STATE
+    // ==========================================
+
+    let isSubmitting = false;
+
+    function handleFormSubmit(submitBtn, originalText) {
+        if (isSubmitting) return false;
+
+        isSubmitting = true;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        return true;
+    }
+
+    // ==========================================
+    // BULK DELETE FUNCTION
+    // ==========================================
+
+    function submitDeleteForm() {
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        const form = document.getElementById('deleteForm');
+        if (form) {
+            form.submit();
+        }
+    }
+
+    // ==========================================
+    // INDIVIDUAL DELETE FUNCTION
+    // ==========================================
+
+    // function deleteRecord(deleteUrl) {
+    //     if (confirm('Apakah kamu yakin ingin menghapus data ini?')) {
+    //         // Create a hidden form to make DELETE request
+    //         const form = document.createElement('form');
+    //         form.method = 'POST';
+    //         form.action = deleteUrl;
+    //         form.style.display = 'none';
+
+    //         // Add CSRF token
+    //         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    //         if (csrfToken) {
+    //             const input = document.createElement('input');
+    //             input.type = 'hidden';
+    //             input.name = '_token';
+    //             input.value = csrfToken;
+    //             form.appendChild(input);
+    //         }
+
+    //         // Add method override
+    //         const methodInput = document.createElement('input');
+    //         methodInput.type = 'hidden';
+    //         methodInput.name = '_method';
+    //         methodInput.value = 'DELETE';
+    //         form.appendChild(methodInput);
+
+    //         document.body.appendChild(form);
+    //         form.submit();
+    //     }
+    // }
+
+    // ==========================================
+    // ITEM RETURN DATA & CONFIG
+    // ==========================================
+
     // Data dari server (Stock Ins dan Stock Outs)
     const stockInsData = @json($stockIns);
     const stockOutsData = @json($stockOuts);
@@ -208,7 +284,7 @@
         // Bulk Delete Handling
         const selectAllCheckbox = document.getElementById('selectAll');
         const itemCheckboxes = document.querySelectorAll('input[name="selected_returns[]"]');
-        const bulkDeleteButton = document.getElementById('bulk-delete-button');
+        const bulkDeleteButton = document.getElementById('delete-button');
 
         function updateBulkDeleteButtonState() {
             const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
