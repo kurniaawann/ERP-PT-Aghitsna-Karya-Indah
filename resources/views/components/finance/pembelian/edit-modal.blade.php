@@ -12,29 +12,28 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="date" value="{{ $invoice->date->format('Y-m-d') }}"
-            class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
+            class="w-full border rounded p-2" required oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Material <span class="text-error">*</span></label>
-        <input type="text" name="material_name" value="{{ $invoice->material_name }}" class="w-full border rounded p-2"
-            required oninvalid="this.setCustomValidity('Nama material tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="text" name="material_name" value="{{ $invoice->material_name }}"
+            class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Nama material tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">NPWP <span class="text-error">*</span></label>
-        <input type="text" name="npwp" value="{{ $invoice->npwp }}" class="w-full border rounded p-2"
-            required oninvalid="this.setCustomValidity('NPWP tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="text" name="npwp" value="{{ $invoice->npwp }}" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('NPWP tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Kode Nomor Seri Pajak <span class="text-error">*</span></label>
-        <input type="text" name="tax_number_code" value="{{ $invoice->tax_number_code }}" class="w-full border rounded p-2"
-            required oninvalid="this.setCustomValidity('Kode nomor seri pajak tidak boleh kosong')"
+        <input type="text" name="tax_number_code" value="{{ $invoice->tax_number_code }}"
+            class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Kode nomor seri pajak tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
@@ -47,22 +46,30 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Harga Jual (Rp) <span class="text-error">*</span></label>
-        <input type="number" name="selling_price" value="{{ $invoice->selling_price }}" class="w-full border rounded p-2"
-            min="0" required oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
+        <input type="number" id="editSellingPrice-{{ $invoice->id }}" name="selling_price"
+            value="{{ $invoice->selling_price }}" class="w-full border rounded p-2" min="0" required
+            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Persentase PPN (%) <span class="text-error">*</span></label>
+        <input type="number" id="editPpnPercentage-{{ $invoice->id }}" name="ppn_percentage"
+            value="{{ $invoice->ppn_percentage }}" class="w-full border rounded p-2" min="0" max="100"
+            required oninvalid="this.setCustomValidity('Persentase PPN tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
+        <p class="text-xs text-text-secondary mt-1">Persentase PPN yang digunakan</p>
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">PPN Pengenaan Pajak (Rp) <span class="text-error">*</span></label>
-        <input type="number" name="ppn_tax" value="{{ $invoice->ppn_tax }}" class="w-full border rounded p-2"
-            min="0" required oninvalid="this.setCustomValidity('PPN pajak tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="number" id="editPpnTax-{{ $invoice->id }}" name="ppn_tax" value="{{ $invoice->ppn_tax }}"
+            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" min="0" readonly>
+        <p class="text-xs text-text-secondary mt-1">Dihitung otomatis dari harga jual × persentase PPN</p>
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="notes" class="w-full border rounded p-2" rows="2"
-            placeholder="Keterangan tambahan (opsional)">{{ $invoice->notes }}</textarea>
+        <textarea name="notes" class="w-full border rounded p-2" rows="2" placeholder="Keterangan tambahan (opsional)">{{ $invoice->notes }}</textarea>
     </div>
 
 </x-modal>

@@ -18,6 +18,7 @@ class PurchaseInvoice extends Model
         'tax_number_code',
         'item_name',
         'selling_price',
+        'ppn_percentage',
         'ppn_tax',
         'notes',
     ];
@@ -25,6 +26,7 @@ class PurchaseInvoice extends Model
     protected $casts = [
         'date' => 'date',
         'selling_price' => 'integer',
+        'ppn_percentage' => 'integer',
         'ppn_tax' => 'integer',
     ];
 

@@ -50,9 +50,12 @@ class PurchaseInvoiceController extends Controller
             'tax_number_code' => 'required|string|max:50',
             'item_name' => 'required|string|max:255',
             'selling_price' => 'required|integer|min:0',
-            'ppn_tax' => 'required|integer|min:0',
+            'ppn_percentage' => 'required|integer|min:0',
             'notes' => 'nullable|string',
         ]);
+
+        // Calculate PPN tax based on percentage
+        $validated['ppn_tax'] = (int) ($validated['selling_price'] * $validated['ppn_percentage'] / 100);
 
         PurchaseInvoice::create($validated);
 
@@ -79,9 +82,12 @@ class PurchaseInvoiceController extends Controller
             'tax_number_code' => 'required|string|max:50',
             'item_name' => 'required|string|max:255',
             'selling_price' => 'required|integer|min:0',
-            'ppn_tax' => 'required|integer|min:0',
+            'ppn_percentage' => 'required|integer|min:0',
             'notes' => 'nullable|string',
         ]);
+
+        // Calculate PPN tax based on percentage
+        $validated['ppn_tax'] = (int) ($validated['selling_price'] * $validated['ppn_percentage'] / 100);
 
         $purchase_invoice->update($validated);
 

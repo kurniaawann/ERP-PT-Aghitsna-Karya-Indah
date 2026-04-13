@@ -11,6 +11,60 @@
         }
     }
 
+    // ==========================================
+    // AUTO-CALCULATE PPN TAX FROM PERCENTAGE
+    // ==========================================
+
+    function calculatePpnTax(sellingPriceId, ppnPercentageId, ppnTaxId) {
+        const sellingPriceInput = document.getElementById(sellingPriceId);
+        const ppnPercentageInput = document.getElementById(ppnPercentageId);
+        const ppnTaxInput = document.getElementById(ppnTaxId);
+
+        if (!sellingPriceInput || !ppnPercentageInput || !ppnTaxInput) return;
+
+        const sellingPrice = parseInt(sellingPriceInput.value) || 0;
+        const ppnPercentage = parseInt(ppnPercentageInput.value) || 0;
+        const ppnTax = Math.round((sellingPrice * ppnPercentage) / 100);
+
+        ppnTaxInput.value = ppnTax;
+    }
+
+    function initPpnCalculation() {
+        // Add modal
+        const addSellingPrice = document.getElementById('addSellingPrice');
+        const addPpnPercentage = document.getElementById('addPpnPercentage');
+
+        if (addSellingPrice && addPpnPercentage) {
+            addSellingPrice.addEventListener('input', () => {
+                calculatePpnTax('addSellingPrice', 'addPpnPercentage', 'addPpnTax');
+            });
+            addPpnPercentage.addEventListener('input', () => {
+                calculatePpnTax('addSellingPrice', 'addPpnPercentage', 'addPpnTax');
+            });
+            // Calculate initial value
+            calculatePpnTax('addSellingPrice', 'addPpnPercentage', 'addPpnTax');
+        }
+
+        // Edit modals
+        document.querySelectorAll('[id^="editSellingPrice-"]').forEach(sellingPriceInput => {
+            const invoiceId = sellingPriceInput.id.replace('editSellingPrice-', '');
+            const ppnPercentageInput = document.getElementById(`editPpnPercentage-${invoiceId}`);
+
+            if (ppnPercentageInput) {
+                sellingPriceInput.addEventListener('input', () => {
+                    calculatePpnTax(`editSellingPrice-${invoiceId}`, `editPpnPercentage-${invoiceId}`,
+                        `editPpnTax-${invoiceId}`);
+                });
+                ppnPercentageInput.addEventListener('input', () => {
+                    calculatePpnTax(`editSellingPrice-${invoiceId}`, `editPpnPercentage-${invoiceId}`,
+                        `editPpnTax-${invoiceId}`);
+                });
+                // Calculate initial value
+                calculatePpnTax(`editSellingPrice-${invoiceId}`, `editPpnPercentage-${invoiceId}`,
+                    `editPpnTax-${invoiceId}`);
+            }
+        });
+    }
 
     // ==========================================
     // PRINT DROPDOWN FUNCTIONALITY
@@ -55,6 +109,11 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // ==========================================
+        // INITIALIZE PPN CALCULATION
+        // ==========================================
+        initPpnCalculation();
+
         // ==========================================
         // INITIALIZE PRINT DROPDOWN
         // ==========================================
