@@ -8,6 +8,7 @@ use App\Http\Controllers\Inventory\ItemReturnController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
 use App\Http\Controllers\Finance\ProyekInvoiceController;
+use App\Http\Controllers\Finance\PurchaseInvoiceController;
 use App\Http\Controllers\Finance\PaymentAccountController;
 use App\Http\Controllers\Finance\RecapSalesController;
 use App\Http\Controllers\Finance\RecapExpenseController;
@@ -106,6 +107,17 @@ Route::middleware('auth')->group(function () {
     // Proyek Invoice Print Routes
     Route::get('/proyek-invoice/{invoice_number}/print/pdf', [ProyekInvoiceController::class, 'printPdf'])->name('proyek-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/proyek-invoice/{invoice_number}/print/excel', [ProyekInvoiceController::class, 'printExcel'])->name('proyek-invoice.print.excel')->where('invoice_number', '.*');
+
+    // Route Purchase Invoice
+    Route::get('/purchase-invoice', [PurchaseInvoiceController::class, 'index'])->name('purchase-invoice.index');
+    Route::post('/purchase-invoice', [PurchaseInvoiceController::class, 'store'])->name('purchase-invoice.store');
+    Route::delete('/purchase-invoice/destroy-selected', [PurchaseInvoiceController::class, 'destroySelected'])->name('purchase-invoice.destroy-selected');
+    Route::get('/purchase-invoice/export/excel', [PurchaseInvoiceController::class, 'exportExcel'])->name('purchase-invoice.export-excel');
+    Route::get('/purchase-invoice/export/pdf', [PurchaseInvoiceController::class, 'exportPdf'])->name('purchase-invoice.export-pdf');
+    Route::get('/purchase-invoice/{id}/print/pdf', [PurchaseInvoiceController::class, 'printPdf'])->name('purchase-invoice.pdf');
+    Route::get('/purchase-invoice/{purchase_invoice}/edit', [PurchaseInvoiceController::class, 'edit'])->name('purchase-invoice.edit');
+    Route::put('/purchase-invoice/{purchase_invoice}', [PurchaseInvoiceController::class, 'update'])->name('purchase-invoice.update');
+    Route::delete('/purchase-invoice/{purchase_invoice}', [PurchaseInvoiceController::class, 'destroy'])->name('purchase-invoice.destroy');
 
     // Route Payment Accounts
     Route::get('/payment-accounts', [PaymentAccountController::class, 'index'])->name('payment-accounts.index');
