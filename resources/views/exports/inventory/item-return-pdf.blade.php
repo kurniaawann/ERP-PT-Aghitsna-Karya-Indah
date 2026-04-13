@@ -198,14 +198,6 @@
 
     </div>
 
-    <div class="signature">
-        <p>Diketahui oleh,</p>
-        <br>
-        <br>
-        <div class="signature-line"></div>
-        <p>(Kepala Gudang)</p>
-    </div>
-
     <div class="footer">
         Laporan ini dibuat secara otomatis oleh sistem ERP PT Aghitsna Karya Indah.
     </div>
