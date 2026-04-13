@@ -28,11 +28,24 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
         $query = PurchaseInvoice::query();
 
         // Filter pencarian
-        if ($this->request && $this->request->has('search') && $this->request->search != '') {
-            $search = $this->request->search;
-            $query->where('material_name', 'like', "%{$search}%")
-                ->orWhere('item_name', 'like', "%{$search}%")
-                ->orWhere('npwp', 'like', "%{$search}%");
+        if ($this->request) {
+            $search = $this->request->input('search');
+            $month = $this->request->input('month');
+            $year = $this->request->input('year');
+
+            $query->when($search, function ($q, $search) {
+                $q->where('material_name', 'like', "%{$search}%")
+                    ->orWhere('item_name', 'like', "%{$search}%")
+                    ->orWhere('npwp', 'like', "%{$search}%");
+            });
+
+            $query->when($month, function ($q, $month) {
+                $q->whereMonth('date', $month);
+            });
+
+            $query->when($year, function ($q, $year) {
+                $q->whereYear('date', $year);
+            });
         }
 
         return $query->orderBy('date', 'desc')

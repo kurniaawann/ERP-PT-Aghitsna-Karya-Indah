@@ -13,23 +13,28 @@ class PurchaseInvoiceController extends Controller
 {
     public function index(Request $request)
     {
+        $search = $request->input('search');
+        $month = $request->input('month');
+        $year = $request->input('year');
+
         $query = PurchaseInvoice::query();
 
         // Filter pencarian
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where('material_name', 'like', "%{$search}%")
+        $query->when($search, function ($q, $search) {
+            $q->where('material_name', 'like', "%{$search}%")
                 ->orWhere('item_name', 'like', "%{$search}%")
                 ->orWhere('npwp', 'like', "%{$search}%");
-        }
+        });
 
-        // Filter tanggal
-        if ($request->has('date_from') && $request->date_from != '') {
-            $query->where('date', '>=', $request->date_from);
-        }
-        if ($request->has('date_to') && $request->date_to != '') {
-            $query->where('date', '<=', $request->date_to);
-        }
+        // Filter bulan
+        $query->when($month, function ($q, $month) {
+            $q->whereMonth('date', $month);
+        });
+
+        // Filter tahun
+        $query->when($year, function ($q, $year) {
+            $q->whereYear('date', $year);
+        });
 
         $invoices = $query->orderBy('date', 'desc')->paginate(10);
 
@@ -134,15 +139,28 @@ class PurchaseInvoiceController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        $search = $request->input('search');
+        $month = $request->input('month');
+        $year = $request->input('year');
+
         $query = PurchaseInvoice::query();
 
         // Filter pencarian
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where('material_name', 'like', "%{$search}%")
+        $query->when($search, function ($q, $search) {
+            $q->where('material_name', 'like', "%{$search}%")
                 ->orWhere('item_name', 'like', "%{$search}%")
                 ->orWhere('npwp', 'like', "%{$search}%");
-        }
+        });
+
+        // Filter bulan
+        $query->when($month, function ($q, $month) {
+            $q->whereMonth('date', $month);
+        });
+
+        // Filter tahun
+        $query->when($year, function ($q, $year) {
+            $q->whereYear('date', $year);
+        });
 
         $invoices = $query->orderBy('date', 'desc')->get();
 

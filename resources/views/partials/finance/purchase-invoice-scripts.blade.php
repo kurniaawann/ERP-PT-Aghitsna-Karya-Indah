@@ -171,5 +171,25 @@
 
         // Initialize button state on page load
         updateDeleteButtonState();
+
+        // ==========================================
+        // FILTER BY MONTH, YEAR
+        // ==========================================
+        const monthFilter = document.querySelector('select[name="month"]') || document.getElementById(
+            'month-select');
+        const yearFilter = document.querySelector('select[name="year"]') || document.getElementById(
+            'year-select');
+
+        [monthFilter, yearFilter].forEach(filter => {
+            if (filter) {
+                filter.addEventListener('change', function() {
+                    // Get the form parent - traverse up DOM tree
+                    let form = this.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
+                });
+            }
+        });
     });
 </script>
