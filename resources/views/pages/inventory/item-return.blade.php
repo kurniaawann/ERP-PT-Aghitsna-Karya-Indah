@@ -12,7 +12,7 @@
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
                 {{-- Filter Return Type --}}
-                <select name="return_type"
+                <select name="return_type" id="return_type"
                     class="px-3 py-2 rounded-lg border-2 border-border text-sm font-medium text-text-primary bg-white hover:border-border-hover transition-colors duration-150">
                     <option value="">Semua Tipe</option>
                     <option value="masuk" @selected(request('return_type') === 'masuk')>Pengembalian Masuk</option>

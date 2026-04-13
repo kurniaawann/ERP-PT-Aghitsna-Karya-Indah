@@ -38,39 +38,6 @@
         }
     }
 
-    // ==========================================
-    // INDIVIDUAL DELETE FUNCTION
-    // ==========================================
-
-    // function deleteRecord(deleteUrl) {
-    //     if (confirm('Apakah kamu yakin ingin menghapus data ini?')) {
-    //         // Create a hidden form to make DELETE request
-    //         const form = document.createElement('form');
-    //         form.method = 'POST';
-    //         form.action = deleteUrl;
-    //         form.style.display = 'none';
-
-    //         // Add CSRF token
-    //         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    //         if (csrfToken) {
-    //             const input = document.createElement('input');
-    //             input.type = 'hidden';
-    //             input.name = '_token';
-    //             input.value = csrfToken;
-    //             form.appendChild(input);
-    //         }
-
-    //         // Add method override
-    //         const methodInput = document.createElement('input');
-    //         methodInput.type = 'hidden';
-    //         methodInput.name = '_method';
-    //         methodInput.value = 'DELETE';
-    //         form.appendChild(methodInput);
-
-    //         document.body.appendChild(form);
-    //         form.submit();
-    //     }
-    // }
 
     // ==========================================
     // ITEM RETURN DATA & CONFIG
@@ -269,14 +236,18 @@
         }
 
         // Filter by Month, Year, and Type
-        const monthFilter = document.getElementById('month');
-        const yearFilter = document.getElementById('year');
+        const monthFilter = document.getElementById('month-select');
+        const yearFilter = document.getElementById('year-select');
         const typeFilter = document.getElementById('return_type');
 
         [monthFilter, yearFilter, typeFilter].forEach(filter => {
             if (filter) {
                 filter.addEventListener('change', function() {
-                    this.form.submit();
+                    // Get the form parent - traverse up DOM tree
+                    let form = this.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
                 });
             }
         });
