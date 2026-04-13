@@ -145,7 +145,7 @@ class ItemStockInController extends Controller
     public function update(Request $request, $id_stock_in)
     {
         $stockIn = ItemStockIn::findOrFail($id_stock_in);
-        $item = Items::find($stockIn->id_item);
+        $oldItem = Items::find($stockIn->id_item);
 
         $validated = $request->validate([
             'items' => 'required|json',
@@ -160,35 +160,103 @@ class ItemStockInController extends Controller
         }
 
         // For now, handle single item update (first item in array)
-        // In the future, this can be extended to handle multiple items per transaction
         $itemData = $newItems[0] ?? null;
 
         if (!$itemData) {
             return redirect()->back()->with('error', 'Data item tidak valid!');
         }
 
-        $quantity = (int) $itemData['quantity'];
-        $capitalPrice = (int) $itemData['capital_price'];
+        $newQuantity = (int) $itemData['quantity'];
+        $newCapitalPrice = (int) $itemData['capital_price'];
+        $newItemId = $itemData['id_item'] ?? null;
+        $newItemName = $itemData['name_item'] ?? null;
 
-        // Reverse the effect of previous stock-in
-        $oldValue = $stockIn->quantity * $stockIn->capital_price;
-        $currentItemValue = $item->quantity * $item->capital_price;
-        $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
+        // ===== CASE 1: Item ID tidak berubah (update pada item yang sama) =====
+        if ($newItemId && $newItemId === $stockIn->id_item) {
+            // Item tetap sama, hanya update quantity dan price
+            $qtyDifference = $newQuantity - $stockIn->quantity;
 
-        // Calculate new average with updated values
-        $newValue = $quantity * $capitalPrice;
-        $totalQuantity = ($item->quantity - $stockIn->quantity) + $quantity;
-        $newAveragePrice = $totalQuantity > 0 ? (int) round(($itemValueWithoutThisStockIn + $newValue) / $totalQuantity) : $capitalPrice;
+            // Reverse the effect of previous stock-in
+            $oldValue = $stockIn->quantity * $stockIn->capital_price;
+            $currentItemValue = $oldItem->quantity * $oldItem->capital_price;
+            $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
 
-        // Update item quantity and price
-        $qtyDifference = $quantity - $stockIn->quantity;
-        $item->quantity += $qtyDifference;
-        $item->capital_price = $newAveragePrice;
-        $item->save();
+            // Calculate new average with updated values
+            $newValue = $newQuantity * $newCapitalPrice;
+            $totalQuantity = ($oldItem->quantity - $stockIn->quantity) + $newQuantity;
+            $newAveragePrice = $totalQuantity > 0 ? (int) round(($itemValueWithoutThisStockIn + $newValue) / $totalQuantity) : $newCapitalPrice;
+
+            // Update item quantity and price
+            $oldItem->quantity += $qtyDifference;
+            $oldItem->capital_price = $newAveragePrice;
+            $oldItem->save();
+        }
+        // ===== CASE 2: Item ID berubah atau mode berubah dari "dari stock" =====
+        else {
+            // Step 1: Kembalikan stock/cost dari item lama
+            $oldValue = $stockIn->quantity * $stockIn->capital_price;
+            $currentItemValue = $oldItem->quantity * $oldItem->capital_price;
+            $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
+
+            $oldItem->quantity -= $stockIn->quantity;
+            if ($oldItem->quantity < 0) {
+                $oldItem->quantity = 0;
+            }
+
+            // Recalculate average price for old item
+            if ($oldItem->quantity > 0) {
+                $oldItem->capital_price = (int) round($itemValueWithoutThisStockIn / $oldItem->quantity);
+            } else {
+                $oldItem->capital_price = 0;
+            }
+            $oldItem->save();
+
+            // Step 2: Tentukan item baru
+            $newItem = null;
+
+            if ($newItemId) {
+                // User pilih dari stock
+                $newItem = Items::find($newItemId);
+                if (!$newItem) {
+                    return redirect()->back()->with('error', 'Barang dengan ID ' . $newItemId . ' tidak ditemukan!');
+                }
+            } else if ($newItemName) {
+                // User input manual - cari atau buat item baru
+                $newItem = Items::where('name_item', $newItemName)->first();
+
+                if (!$newItem) {
+                    // Create new item
+                    $newItem = Items::create([
+                        'id_item' => $this->generateIdItem(),
+                        'name_item' => $newItemName,
+                        'quantity' => 0,
+                        'capital_price' => $newCapitalPrice,
+                        'selling_price' => 0,
+                    ]);
+                }
+            }
+
+            if (!$newItem) {
+                return redirect()->back()->with('error', 'Gagal menentukan item untuk diupdate!');
+            }
+
+            // Step 3: Update stock/cost untuk item baru
+            $existingValue = $newItem->quantity * $newItem->capital_price;
+            $newValue = $newQuantity * $newCapitalPrice;
+            $totalQuantity = $newItem->quantity + $newQuantity;
+            $newAveragePrice = $totalQuantity > 0 ? (int) round(($existingValue + $newValue) / $totalQuantity) : $newCapitalPrice;
+
+            $newItem->quantity += $newQuantity;
+            $newItem->capital_price = $newAveragePrice;
+            $newItem->save();
+
+            // Step 4: Update stock in record dengan item baru
+            $stockIn->id_item = $newItem->id_item;
+        }
 
         $stockIn->update([
-            'quantity' => $quantity,
-            'capital_price' => $capitalPrice,
+            'quantity' => $newQuantity,
+            'capital_price' => $newCapitalPrice,
             'keterangan' => $request->keterangan,
             'tanggal' => $request->tanggal,
         ]);
