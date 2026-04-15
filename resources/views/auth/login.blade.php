@@ -38,6 +38,11 @@
                 @error('password')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
+                <div class="text-right mt-2">
+                    <a href="{{ route('password.request') }}" class="text-primary text-sm hover:underline">
+                        Lupa kata sandi?
+                    </a>
+                </div>
             </div>
 
             {{-- TOMBOL LOGIN --}}

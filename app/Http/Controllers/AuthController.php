@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Str;
+use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -66,5 +71,86 @@ class AuthController extends Controller
 
         // Redirect ke halaman login
         return redirect('/login');
+    }
+
+    // ===== FORGOT PASSWORD METHODS =====
+
+    /**
+     * Tampilkan form forgot password
+     */
+    public function showForgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    /**
+     * Kirim link reset password ke email
+     */
+    public function sendResetLink(Request $request)
+    {
+        // Validasi email
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        // Kirim password reset link
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        // Jika berhasil
+        if ($status === Password::RESET_LINK_SENT) {
+            return back()->with('status', 'Link reset password telah dikirim ke email Anda!');
+        }
+
+        // Jika email tidak terdaftar
+        return back()->withErrors([
+            'email' => 'Email tidak terdaftar dalam sistem kami.',
+        ]);
+    }
+
+    /**
+     * Tampilkan form reset password
+     */
+    public function showResetForm($token)
+    {
+        return view('auth.reset-password', ['token' => $token]);
+    }
+
+    /**
+     * Handle reset password
+     */
+    public function resetPassword(Request $request)
+    {
+        // Validasi input
+        $request->validate([
+            'token' => ['required'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
+
+        // Reset password
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                // Update password
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->save();
+
+                // Trigger event untuk logging atau activity lainnya
+                event(new PasswordReset($user));
+            }
+        );
+
+        // Jika berhasil
+        if ($status === Password::PASSWORD_RESET) {
+            return redirect('/login')->with('status', 'Password berhasil direset! Silakan login dengan password baru Anda.');
+        }
+
+        // Jika gagal
+        return back()->withErrors([
+            'email' => 'Gagal mereset password. Token mungkin sudah kadaluarsa.',
+        ]);
     }
 }
