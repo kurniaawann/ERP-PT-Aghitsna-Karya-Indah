@@ -8,14 +8,14 @@
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian dan Filter --}}
-            <form method="GET" action="{{ route('stock-out.index') }}"
+            <form method="GET" action="{{ route('stock-out.index') }}" id="filterForm"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" />
+                <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" />
+                <x-filters.year-filter :value="request('year')" onchange="document.getElementById('filterForm').submit()" />
 
                 {{-- Search Input --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari barang keluar..." />
