@@ -113,6 +113,13 @@
                             oninput="this.setCustomValidity('')">
                     </div>
 
+                    {{-- Stock Warning --}}
+                    <p class="stock-warning-edit text-error text-sm mt-2 hidden">
+                        <span class="font-semibold">⚠️ Peringatan Stok:</span> <span
+                            class="stock-warning-text-edit">Stok Barang Tidak Cukup! Silahkan Sesuaikan Dengan Stok
+                            Yang Tersedia.</span>
+                    </p>
+
                     {{-- Price Warning --}}
                     <p class="price-warning-edit text-error text-sm mt-2 hidden">
                         <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
@@ -138,4 +145,3 @@
         </button>
     </div>
 </x-modal>
-

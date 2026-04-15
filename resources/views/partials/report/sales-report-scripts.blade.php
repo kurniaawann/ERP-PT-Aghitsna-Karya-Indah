@@ -181,6 +181,10 @@
                             oninput="this.setCustomValidity('')">
                     </div>
                     
+                    <p class="stock-warning text-error text-sm mt-2 hidden">
+                        <span class="font-semibold">⚠️ Peringatan Stok:</span> <span class="stock-warning-text">Stok Barang Tidak Cukup! Silahkan Sesuaikan Dengan Stok Yang Tersedia.</span>
+                    </p>
+                    
                     <p class="price-warning text-error text-sm mt-2 hidden">
                         <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama dengan harga jual!
                     </p>
@@ -192,6 +196,7 @@
                 itemsContainer.appendChild(newItem);
                 attachItemListeners();
                 initPriceValidation(newItem); // Add price validation for new item
+                initStockValidation(newItem); // Add stock validation for new item
             });
         }
 
@@ -300,9 +305,11 @@
                     const name = this.dataset.name;
                     const capital = this.dataset.capital;
                     const selling = this.dataset.selling;
+                    const stock = this.dataset.stock || 0;
 
                     searchInput.value = name || '';
                     hiddenInput.value = value || '';
+                    row.dataset.stock = stock; // Store stock in row dataset
 
                     if (value) {
                         nameInput.value = name;
@@ -343,6 +350,7 @@
         document.querySelectorAll('.item-row').forEach(row => {
             initSearchableDropdown(row);
             initPriceValidation(row); // Add price validation
+            initStockValidation(row); // Add stock validation
         });
 
         // ==========================================
@@ -385,6 +393,129 @@
 
             capitalInput.addEventListener('input', validatePrices);
             sellingInput.addEventListener('input', validatePrices);
+        }
+
+        // ==========================================
+        // STOCK VALIDATION FUNCTION (EDIT MODAL)
+        // ==========================================
+        function initStockValidationEdit(row, saleId) {
+            const qtyInput = row.querySelector('.item-qty-edit');
+            const fromStockCheckbox = row.querySelector('.item-from-stock-edit');
+            const stockWarning = row.querySelector('.stock-warning-edit');
+            const submitBtn = document.getElementById('submit-btn-editModal-' + saleId);
+
+            if (!qtyInput || !fromStockCheckbox || !stockWarning) return;
+
+            function validateStock() {
+                const isFromStock = fromStockCheckbox.checked;
+                const qty = parseInt(qtyInput.value) || 0;
+                const availableStock = parseInt(row.dataset.stock) || 0;
+
+                // Only validate if item is from stock AND stock is set
+                if (isFromStock && availableStock > 0 && qty > availableStock) {
+                    stockWarning.classList.remove('hidden');
+                    const warningText = stockWarning.querySelector('.stock-warning-text-edit');
+                    if (warningText) {
+                        warningText.textContent =
+                            `Stok tersedia: ${availableStock} unit. Qty (${qty}) melebihi stok yang tersedia!`;
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    return false;
+                } else {
+                    stockWarning.classList.add('hidden');
+                    // Check all rows in this edit modal before enabling submit
+                    const modalContainer = document.getElementById('items-list-edit-' + saleId);
+                    if (modalContainer) {
+                        const allStockValid = Array.from(modalContainer.querySelectorAll('.item-row-edit'))
+                            .every(
+                                r => {
+                                    const check = r.querySelector('.item-from-stock-edit')?.checked;
+                                    const q = parseInt(r.querySelector('.item-qty-edit')?.value) || 0;
+                                    const s = parseInt(r.dataset.stock) || 0;
+                                    return !check || s === 0 || q <= s;
+                                });
+
+                        // Also check prices
+                        const allPricesValid = Array.from(modalContainer.querySelectorAll('.item-row-edit'))
+                            .every(
+                                r => {
+                                    const cap = parseFloat(r.querySelector('.item-capital-edit')?.value) || 0;
+                                    const sel = parseFloat(r.querySelector('.item-selling-edit')?.value) || 0;
+                                    return sel === 0 || cap < sel;
+                                });
+
+                        if (submitBtn && allStockValid && allPricesValid) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                    return true;
+                }
+            }
+
+            qtyInput.addEventListener('input', validateStock);
+            fromStockCheckbox.addEventListener('change', validateStock);
+        }
+
+        // ==========================================
+        // STOCK VALIDATION FUNCTION (ADD MODAL)
+        // ==========================================
+        function initStockValidation(row) {
+            const qtyInput = row.querySelector('.item-qty');
+            const fromStockCheckbox = row.querySelector('.item-from-stock');
+            const stockWarning = row.querySelector('.stock-warning');
+            const submitBtn = document.getElementById('submit-btn-addModal');
+
+            if (!qtyInput || !fromStockCheckbox || !stockWarning) return;
+
+            function validateStock() {
+                const isFromStock = fromStockCheckbox.checked;
+                const qty = parseInt(qtyInput.value) || 0;
+                const availableStock = parseInt(row.dataset.stock) || 0;
+
+                // Only validate if item is from stock AND stock is set
+                if (isFromStock && availableStock > 0 && qty > availableStock) {
+                    stockWarning.classList.remove('hidden');
+                    const warningText = stockWarning.querySelector('.stock-warning-text');
+                    if (warningText) {
+                        warningText.textContent =
+                            `Stok tersedia: ${availableStock} unit. Qty (${qty}) melebihi stok yang tersedia!`;
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    return false;
+                } else {
+                    stockWarning.classList.add('hidden');
+                    // Check all rows before enabling submit
+                    const allStockValid = Array.from(document.querySelectorAll('.item-row')).every(r => {
+                        const check = r.querySelector('.item-from-stock')?.checked;
+                        const q = parseInt(r.querySelector('.item-qty')?.value) || 0;
+                        const s = parseInt(r.dataset.stock) || 0;
+                        return !check || s === 0 || q <= s;
+                    });
+
+                    // Also check prices
+                    const allPricesValid = Array.from(document.querySelectorAll('.item-row')).every(r => {
+                        const cap = parseFloat(r.querySelector('.item-capital')?.value) || 0;
+                        const sel = parseFloat(r.querySelector('.item-selling')?.value) || 0;
+                        return sel === 0 || cap < sel;
+                    });
+
+                    if (submitBtn && allStockValid && allPricesValid) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                    return true;
+                }
+            }
+
+            qtyInput.addEventListener('input', validateStock);
+            fromStockCheckbox.addEventListener('change', validateStock);
         }
 
         // ==========================================
@@ -438,6 +569,7 @@
             const saleId = container.id.replace('items-list-edit-', '');
             container.querySelectorAll('.item-row-edit').forEach(row => {
                 initPriceValidationEdit(row, saleId);
+                initStockValidationEdit(row, saleId);
             });
         });
 
@@ -582,6 +714,10 @@
                         <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama dengan harga jual!
                     </p>
 
+                    <p class="stock-warning-edit text-error text-sm mt-2 hidden">
+                        <span class="font-semibold">⚠️ Peringatan Stok:</span> <span class="stock-warning-text-edit">Stok Barang Tidak Cukup! Silahkan Sesuaikan Dengan Stok Yang Tersedia.</span>
+                    </p>
+
                     <input type="hidden" name="items[${newIndex}][from_stock]" class="from-stock-hidden" value="false">
                     <input type="hidden" name="items[${newIndex}][id_item]" class="id-item-hidden" value="">
 
@@ -596,6 +732,8 @@
                 initSearchableDropdownEdit(newItem);
                 initPriceValidationEdit(newItem,
                     saleId); // Add price validation for new item in edit modal
+                initStockValidationEdit(newItem,
+                saleId); // Add stock validation for new item in edit modal
             });
         });
 
@@ -687,6 +825,7 @@
                     const name = this.dataset.name;
                     const capital = this.dataset.capital;
                     const selling = this.dataset.selling;
+                    const stock = this.dataset.stock || 0;
 
                     searchInput.value = name || '';
                     hiddenInput.value = value || '';
@@ -696,6 +835,7 @@
                         capitalInput.value = capital;
                         sellingInput.value = selling;
                         idItemHidden.value = value;
+                        row.dataset.stock = stock; // Store stock in row for validation
                     }
 
                     dropdown.classList.add('hidden');
