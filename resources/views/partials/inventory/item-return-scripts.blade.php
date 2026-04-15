@@ -75,33 +75,6 @@
     const stockOutsData = @json($stockOuts);
     const itemsData = @json($items);
 
-    // Langsung check error tanpa menunggu event (sebelum DOMContentLoaded)
-    // Ini untuk mencegah race condition
-    (function() {
-        // Check add error
-        const addErrorAlert = document.getElementById('addErrorAlert');
-        if (addErrorAlert) {
-            const addModal = document.getElementById('addModal');
-            if (addModal) {
-                addModal.classList.remove('hidden');
-                addModal.classList.add('flex');
-            }
-        }
-
-        // Check edit errors
-        const editErrorAlerts = document.querySelectorAll('[id$="ErrorAlert"]');
-        editErrorAlerts.forEach(alert => {
-            if (alert.id !== 'addErrorAlert') {
-                const modalId = alert.id.replace('ErrorAlert', 'Modal');
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                }
-            }
-        });
-    })();
-
     // Fungsi untuk handle dynamic item selection berdasarkan return type
     function handleReturnTypeChange(modalPrefix) {
         const returnTypeSelect = document.getElementById(modalPrefix + 'ReturnType');
@@ -191,31 +164,7 @@
             button.classList.add('opacity-70', 'cursor-not-allowed');
         }
 
-        // Auto-open modal jika ada error pada page load
-        const addErrorAlert = document.getElementById('addErrorAlert');
-        if (addErrorAlert) {
-            openModal('addModal');
-            setTimeout(() => {
-                addErrorAlert.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }, 100);
-        }
 
-        const editErrorAlerts = document.querySelectorAll('[id$="ErrorAlert"]');
-        editErrorAlerts.forEach(alert => {
-            if (alert.id !== 'addErrorAlert') {
-                const modalId = alert.id.replace('ErrorAlert', 'Modal');
-                openModal(modalId);
-                setTimeout(() => {
-                    alert.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }, 100);
-            }
-        });
 
         // ==========================================
         // INITIALIZE PRINT DROPDOWN
@@ -228,6 +177,9 @@
         const addButton = addFormElement ? addFormElement.querySelector('button[type="submit"]') : null;
         const addReturnType = addModal ? addModal.querySelector('#addReturnType') : null;
         const addItemSelect = addModal ? addModal.querySelector('#addItemSelect') : null;
+        const addQuantityInput = addModal ? addModal.querySelector('#addQuantity') : null;
+        const addQuantityWarning = addModal ? addModal.querySelector('#addQuantityWarning') : null;
+        const addAvailableStock = addModal ? addModal.querySelector('#addAvailableStock') : null;
 
         // Setup return type change handler
         if (addReturnType) {
@@ -240,21 +192,101 @@
         if (addItemSelect) {
             addItemSelect.addEventListener('change', function() {
                 handleItemChange('add');
+                validateAddQuantity(); // Validate quantity when item changes
             });
         }
 
+        // Real-time quantity validation for ADD modal
+        function validateAddQuantity() {
+            if (!addQuantityInput || !addItemSelect) return;
+
+            const selectedOption = addItemSelect.options[addItemSelect.selectedIndex];
+            const maxQuantity = parseInt(selectedOption.dataset.quantity) || 0;
+            const inputQuantity = parseInt(addQuantityInput.value) || 0;
+
+            if (inputQuantity > maxQuantity && maxQuantity > 0) {
+                addQuantityWarning.classList.remove('hidden');
+                if (addButton) {
+                    addButton.disabled = true;
+                    addButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                addQuantityWarning.classList.add('hidden');
+                if (addButton) {
+                    addButton.disabled = false;
+                    addButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            // Update available stock text
+            if (addAvailableStock && maxQuantity > 0) {
+                addAvailableStock.textContent = `Stok tersedia: ${maxQuantity}`;
+            }
+        }
+
+        if (addQuantityInput) {
+            addQuantityInput.addEventListener('input', validateAddQuantity);
+        }
+
         if (addFormElement && addButton) {
-            addFormElement.addEventListener('submit', function() {
+            addFormElement.addEventListener('submit', function(e) {
+                validateAddQuantity();
+                if (addButton.disabled) {
+                    e.preventDefault();
+                    addQuantityWarning.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                    return false;
+                }
                 showSpinner(addButton);
             });
         }
 
-        // Edit Form Submission
+        // Edit Form Submission with Real-time Quantity Validation
         document.querySelectorAll('[id^="editModal-"]').forEach(editModal => {
             const editForm = editModal.querySelector('form');
             const editButton = editModal.querySelector('form button[type="submit"]');
-            if (editForm && editButton) {
-                editForm.addEventListener('submit', function() {
+            const returnId = editModal.id.replace('editModal-', '');
+            const quantityInput = document.getElementById(`editQuantity-${returnId}`);
+            const quantityWarning = document.getElementById(`editQuantityWarning-${returnId}`);
+            const availableStock = document.getElementById(`editAvailableStock-${returnId}`);
+
+            if (editForm && editButton && quantityInput) {
+                const maxQuantity = parseInt(quantityInput.dataset.maxQuantity) || 0;
+
+                // Real-time validation function
+                function validateEditQuantity() {
+                    const inputQuantity = parseInt(quantityInput.value) || 0;
+
+                    if (inputQuantity > maxQuantity && maxQuantity > 0) {
+                        quantityWarning.classList.remove('hidden');
+                        editButton.disabled = true;
+                        editButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        quantityWarning.classList.add('hidden');
+                        editButton.disabled = false;
+                        editButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+
+                // Listen to input changes
+                quantityInput.addEventListener('input', validateEditQuantity);
+
+                // Initial validation
+                validateEditQuantity();
+
+                // On form submit
+                editForm.addEventListener('submit', function(e) {
+                    validateEditQuantity();
+                    if (editButton.disabled) {
+                        e.preventDefault();
+                        quantityWarning.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        return false;
+                    }
                     showSpinner(editButton);
                 });
             }
@@ -322,20 +354,5 @@
 
         // Initial button state
         updateBulkDeleteButtonState();
-
-        // Error Message Handling
-        const errorAlert = document.getElementById('errorAlert');
-        const successAlert = document.getElementById('successAlert');
-
-        function autoDismissAlert(alert) {
-            if (alert) {
-                setTimeout(() => {
-                    alert.classList.add('hidden');
-                }, 5000); // Hide after 5 seconds
-            }
-        }
-
-        autoDismissAlert(errorAlert);
-        autoDismissAlert(successAlert);
     });
 </script>

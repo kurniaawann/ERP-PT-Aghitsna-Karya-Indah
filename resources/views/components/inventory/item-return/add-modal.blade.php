@@ -2,17 +2,6 @@
 <x-modal id="addModal" title="Tambah Return Barang" action="{{ route('item-return.store') }}" method="POST"
     buttonText="Simpan">
 
-    {{-- Error Alert - Show Laravel Validation Errors --}}
-    @if ($errors->any())
-        <div id="addErrorAlert" class="mb-4 p-3 bg-red-50 border border-red-300 rounded">
-            <div class="font-semibold mb-2 text-red-700"><i class="fa-solid fa-circle-exclamation"></i> Validasi Gagal
-            </div>
-            @foreach ($errors->all() as $error)
-                <p class="text-sm text-red-600 mb-1">{{ $error }}</p>
-            @endforeach
-        </div>
-    @endif
-
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tipe Return <span class="text-error">*</span></label>
         <select name="return_type" id="addReturnType" class="w-full border rounded p-2" required>
@@ -34,8 +23,12 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah <span class="text-error">*</span></label>
-        <input type="number" name="quantity" value="{{ old('quantity', 0) }}" class="w-full border rounded p-2"
-            min="1" required>
+        <input type="number" id="addQuantity" name="quantity" value="{{ old('quantity', 0) }}"
+            class="w-full border rounded p-2" min="1" required>
+        <p id="addQuantityWarning" class="text-red-500 text-sm mt-1 hidden">
+            <i class="fa-solid fa-circle-exclamation"></i> Jumlah return tidak boleh melebihi stok yang tersedia
+        </p>
+        <p id="addAvailableStock" class="text-blue-500 text-sm mt-1 text-xs"></p>
     </div>
 
     <div class="mb-3">
