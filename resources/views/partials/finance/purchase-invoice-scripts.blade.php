@@ -1,0 +1,254 @@
+<script>
+    // ==========================================
+    // SHOW SPINNER LOADING INDICATOR
+    // ==========================================
+
+    function showSpinner(button, text = 'Memproses...') {
+        if (button) {
+            button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${text}`;
+            button.disabled = true;
+            button.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+    }
+
+    // ==========================================
+    // AUTO-CALCULATE PPN TAX FROM PERCENTAGE
+    // ==========================================
+
+    function calculatePpnTax(sellingPriceId, ppnPercentageId, ppnTaxId) {
+        const sellingPriceInput = document.getElementById(sellingPriceId);
+        const ppnPercentageInput = document.getElementById(ppnPercentageId);
+        const ppnTaxInput = document.getElementById(ppnTaxId);
+
+        if (!sellingPriceInput || !ppnPercentageInput || !ppnTaxInput) return;
+
+        const sellingPrice = parseInt(sellingPriceInput.value) || 0;
+        const ppnPercentage = parseInt(ppnPercentageInput.value) || 0;
+        const ppnTax = Math.round((sellingPrice * ppnPercentage) / 100);
+
+        ppnTaxInput.value = ppnTax;
+    }
+
+    function initPpnCalculation() {
+        // Add modal
+        const addSellingPrice = document.getElementById('addSellingPrice');
+        const addPpnPercentage = document.getElementById('addPpnPercentage');
+
+        if (addSellingPrice && addPpnPercentage) {
+            addSellingPrice.addEventListener('input', () => {
+                calculatePpnTax('addSellingPrice', 'addPpnPercentage', 'addPpnTax');
+            });
+            addPpnPercentage.addEventListener('input', () => {
+                calculatePpnTax('addSellingPrice', 'addPpnPercentage', 'addPpnTax');
+            });
+            // Calculate initial value
+            calculatePpnTax('addSellingPrice', 'addPpnPercentage', 'addPpnTax');
+        }
+
+        // Edit modals
+        document.querySelectorAll('[id^="editSellingPrice-"]').forEach(sellingPriceInput => {
+            const invoiceId = sellingPriceInput.id.replace('editSellingPrice-', '');
+            const ppnPercentageInput = document.getElementById(`editPpnPercentage-${invoiceId}`);
+
+            if (ppnPercentageInput) {
+                sellingPriceInput.addEventListener('input', () => {
+                    calculatePpnTax(`editSellingPrice-${invoiceId}`, `editPpnPercentage-${invoiceId}`,
+                        `editPpnTax-${invoiceId}`);
+                });
+                ppnPercentageInput.addEventListener('input', () => {
+                    calculatePpnTax(`editSellingPrice-${invoiceId}`, `editPpnPercentage-${invoiceId}`,
+                        `editPpnTax-${invoiceId}`);
+                });
+                // Calculate initial value
+                calculatePpnTax(`editSellingPrice-${invoiceId}`, `editPpnPercentage-${invoiceId}`,
+                    `editPpnTax-${invoiceId}`);
+            }
+        });
+    }
+
+    // ==========================================
+    // PRINT DROPDOWN FUNCTIONALITY
+    // ==========================================
+
+    function initPrintDropdown() {
+        const printDropdownButton = document.getElementById('printDropdownButton');
+        const printDropdownMenu = document.getElementById('printDropdownMenu');
+
+        if (printDropdownButton && printDropdownMenu) {
+            printDropdownButton.addEventListener('click', function(event) {
+                event.stopPropagation();
+                printDropdownMenu.classList.toggle('hidden');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!printDropdownButton.contains(event.target) && !printDropdownMenu.contains(event.target)) {
+                    printDropdownMenu.classList.add('hidden');
+                }
+            });
+
+            // Prevent dropdown from closing when clicking inside
+            printDropdownMenu.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        }
+    }
+
+    // ==========================================
+    // BULK DELETE FUNCTION
+    // ==========================================
+
+    function submitDeleteForm() {
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        showSpinner(deleteBtn, 'Menghapus...');
+
+        const form = document.getElementById('deleteForm');
+        if (form) {
+            form.submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // ==========================================
+        // INITIALIZE PPN CALCULATION
+        // ==========================================
+        initPpnCalculation();
+
+        // ==========================================
+        // INITIALIZE PRINT DROPDOWN
+        // ==========================================
+        initPrintDropdown();
+
+        // ==========================================
+        // ADD FORM HANDLING
+        // ==========================================
+        const addModal = document.getElementById('addModal');
+        const addFormElement = addModal ? addModal.querySelector('form') : null;
+        const addButton = addFormElement ? addFormElement.querySelector('button[type="submit"]') : null;
+
+        if (addFormElement && addButton) {
+            addFormElement.addEventListener('submit', function() {
+                showSpinner(addButton, 'Menyimpan...');
+            });
+        }
+
+        // ==========================================
+        // EDIT FORM HANDLING
+        // ==========================================
+        document.querySelectorAll('[id^="editModal-"]').forEach(editModal => {
+            const editForm = editModal.querySelector('form');
+            const editButton = editModal.querySelector('form button[type="submit"]');
+            if (editForm && editButton) {
+                editForm.addEventListener('submit', function() {
+                    showSpinner(editButton, 'Menyimpan...');
+                });
+            }
+        });
+
+        // ==========================================
+        // AUTO-OPEN ERROR MODALS & SCROLL
+        // ==========================================
+        const addErrorAlert = document.getElementById('addErrorAlert');
+        if (addErrorAlert) {
+            setTimeout(() => {
+                addErrorAlert.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+
+        const editErrorAlerts = document.querySelectorAll('[id$="ErrorAlert"]');
+        editErrorAlerts.forEach(alert => {
+            if (alert.id !== 'addErrorAlert') {
+                setTimeout(() => {
+                    alert.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 100);
+            }
+        });
+
+        // ==========================================
+        // AUTO-DISMISS ALERT MESSAGES
+        // ==========================================
+        const errorAlert = document.getElementById('errorAlert');
+        const successAlert = document.getElementById('successAlert');
+
+        function autoDismissAlert(alert) {
+            if (alert) {
+                setTimeout(() => {
+                    alert.classList.add('hidden');
+                }, 5000); // Hide after 5 seconds
+            }
+        }
+
+        autoDismissAlert(errorAlert);
+        autoDismissAlert(successAlert);
+
+        // ==========================================
+        // SELECT ALL CHECKBOX FUNCTIONALITY
+        // ==========================================
+
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const invoiceCheckboxes = document.querySelectorAll('input[name="selected_invoices[]"]');
+        const deleteButton = document.getElementById('delete-button');
+
+        // Function to update delete button state
+        function updateDeleteButtonState() {
+            const anyChecked = Array.from(invoiceCheckboxes).some(cb => cb.checked);
+            if (deleteButton) {
+                deleteButton.disabled = !anyChecked;
+                deleteButton.classList.toggle('opacity-50', !anyChecked);
+                deleteButton.classList.toggle('cursor-not-allowed', !anyChecked);
+            }
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                invoiceCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateDeleteButtonState();
+            });
+        }
+
+        // Uncheck "Select All" if any individual checkbox is unchecked
+        invoiceCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateDeleteButtonState();
+                // Update selectAll checkbox state
+                const allChecked = Array.from(invoiceCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(invoiceCheckboxes).some(cb => cb.checked);
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = someChecked && !allChecked;
+                }
+            });
+        });
+
+        // Initialize button state on page load
+        updateDeleteButtonState();
+
+        // ==========================================
+        // FILTER BY MONTH, YEAR
+        // ==========================================
+        const monthFilter = document.querySelector('select[name="month"]') || document.getElementById(
+            'month-select');
+        const yearFilter = document.querySelector('select[name="year"]') || document.getElementById(
+            'year-select');
+
+        [monthFilter, yearFilter].forEach(filter => {
+            if (filter) {
+                filter.addEventListener('change', function() {
+                    // Get the form parent - traverse up DOM tree
+                    let form = this.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
+                });
+            }
+        });
+    });
+</script>
