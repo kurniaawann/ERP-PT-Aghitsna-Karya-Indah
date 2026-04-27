@@ -12,7 +12,7 @@
                     {{-- Filter Bulan --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-                        <select name="month"
+                        <select id="month-select" name="month"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Semua Bulan</option>
                             @for ($i = 1; $i <= 12; $i++)
@@ -26,7 +26,7 @@
                     {{-- Filter Tahun --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                        <select name="year"
+                        <select id="year-select" name="year"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             @for ($i = date('Y'); $i >= date('Y') - 5; $i--)
                                 <option value="{{ $i }}"
@@ -40,7 +40,7 @@
                     {{-- Filter Status --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                        <select name="status"
+                        <select id="status-select" name="status"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Semua Status</option>
                             <option value="Lunas" {{ request('status') == 'Lunas' ? 'selected' : '' }}>Lunas</option>

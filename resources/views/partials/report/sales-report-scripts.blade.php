@@ -733,7 +733,7 @@
                 initPriceValidationEdit(newItem,
                     saleId); // Add price validation for new item in edit modal
                 initStockValidationEdit(newItem,
-                saleId); // Add stock validation for new item in edit modal
+                    saleId); // Add stock validation for new item in edit modal
             });
         });
 
@@ -904,14 +904,34 @@
         }
 
         attachEditRemoveListeners();
-    });
 
-    // Auto-submit form when filter changes
-    document.getElementById('month-select').addEventListener('change', function() {
-        this.form.submit();
-    });
+        // ==========================================
+        // AUTO-SUBMIT FILTER FORM
+        // ==========================================
 
-    document.getElementById('year-select').addEventListener('change', function() {
-        this.form.submit();
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        const statusSelect = document.getElementById('status-select');
+
+        // Find the filter form
+        const filterForm = monthSelect ? monthSelect.closest('form') : null;
+
+        if (monthSelect && filterForm) {
+            monthSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+
+        if (yearSelect && filterForm) {
+            yearSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+
+        if (statusSelect && filterForm) {
+            statusSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
     });
 </script>
