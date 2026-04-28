@@ -5,6 +5,7 @@ use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ItemStockInController;
 use App\Http\Controllers\Inventory\ItemStockOutController;
 use App\Http\Controllers\Inventory\ItemReturnController;
+use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
 use App\Http\Controllers\Finance\ProyekInvoiceController;
@@ -96,6 +97,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/item-return/{id_return}', [ItemReturnController::class, 'destroy'])->name('item-return.destroy');
     Route::get('/item-return/export/pdf', [ItemReturnController::class, 'exportPdf'])->name('item-return.export.pdf');
     Route::get('/item-return/export/excel', [ItemReturnController::class, 'exportExcel'])->name('item-return.export.excel');
+
+    // Route Stock Report (Laporan Stok)
+    Route::get('/stock-report', [StockReportController::class, 'index'])->name('stock-report.index');
 
     // Route Alumunium Invoice
     Route::get('/alumunium-invoice', [AlumuniumInvoiceController::class, 'index'])->name('alumunium-invoice.index');

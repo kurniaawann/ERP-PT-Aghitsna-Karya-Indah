@@ -52,7 +52,7 @@
 
                 {{-- Submenu --}}
                 <ul id="inventoryDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') || request()->is('stock-report*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -95,6 +95,17 @@
                                 {{ request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Pengembalian Barang</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('stock-report.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('stock-report*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-bar w-4 
+                                {{ request()->is('stock-report*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Stok</span>
                         </a>
                     </li>
                 </ul>
