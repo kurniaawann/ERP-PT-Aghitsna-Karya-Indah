@@ -92,11 +92,12 @@
             return;
         }
 
-        const deleteButton = document.getElementById('delete-button');
-        if (deleteButton) {
-            deleteButton.disabled = true;
-            deleteButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteButton.classList.add('opacity-70', 'cursor-not-allowed');
+        // Update confirm button in modal
+        const confirmBtn = document.getElementById('confirm-btn-deleteModal');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            confirmBtn.classList.add('opacity-70', 'cursor-not-allowed');
         }
 
         const form = document.getElementById('deleteForm');
@@ -298,6 +299,17 @@
             handleFormSubmit(submitBtn);
         });
     });
+
+    // Delete form - prevent double submission
+    const deleteForm = document.getElementById('deleteForm');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
 
     // Reset isSubmitting when modal is closed
     document.addEventListener('click', function(e) {
