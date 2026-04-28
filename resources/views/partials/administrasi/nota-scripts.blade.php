@@ -92,6 +92,13 @@
             return;
         }
 
+        const deleteButton = document.getElementById('delete-button');
+        if (deleteButton) {
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteButton.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
         const form = document.getElementById('deleteForm');
         form.submit();
     }
@@ -111,7 +118,7 @@
         // Create a temporary form
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ route('invoice.administrasi.export.pdf.selected') }}';
+        form.action = '{{ route('nota.administrasi.export.pdf.selected') }}';
         form.style.display = 'none';
 
         // Add CSRF token
@@ -170,27 +177,21 @@
                 <div class="grid grid-cols-12 gap-3">
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Qty <span class="text-red-500">*</span></label>
-                        <input type="number" name="item_banyaknya[]" 
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                            placeholder="0" min="1" required>
+                        <input type="number" name="item_banyaknya[]" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="0" min="1" required>
                     </div>
                     <div class="col-span-10">
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Barang <span class="text-red-500">*</span></label>
-                        <input type="text" name="item_nama_barang[]" 
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                            placeholder="Masukkan nama barang..." required>
+                        <input type="text" name="item_nama_barang[]" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Masukkan nama barang..." required>
                     </div>
                 </div>
+
                 <div class="grid grid-cols-12 gap-3">
                     <div class="col-span-9">
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Harga Satuan <span class="text-red-500">*</span></label>
-                        <input type="text" name="item_harga_satuan[]"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-right price-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                            placeholder="0" required>
+                        <input type="text" name="item_harga_satuan[]" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-right price-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="0" required>
                     </div>
                     <div class="col-span-3 flex items-end">
-                        <button type="button" onclick="removeItemRow(this)"
-                            class="delete-btn w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+                        <button type="button" onclick="removeItemRow(this)" class="delete-btn w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-trash"></i>
                             <span>Hapus</span>
                         </button>
@@ -286,9 +287,7 @@
     if (addForm) {
         addForm.addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');
-            if (!handleFormSubmit(submitBtn, submitBtn.innerHTML)) {
-                e.preventDefault();
-            }
+            handleFormSubmit(submitBtn);
         });
     }
 
@@ -296,9 +295,7 @@
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
         form.addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');
-            if (!handleFormSubmit(submitBtn, submitBtn.innerHTML)) {
-                e.preventDefault();
-            }
+            handleFormSubmit(submitBtn);
         });
     });
 

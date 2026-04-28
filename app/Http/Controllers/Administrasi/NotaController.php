@@ -3,20 +3,20 @@
 namespace App\Http\Controllers\Administrasi;
 
 use App\Http\Controllers\Controller;
-use App\Models\Administrasi\Invoice;
+use App\Models\Administrasi\Nota;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class InvoiceController extends Controller
+class NotaController extends Controller
 {
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
         $search = $request->input('search');
 
-        // Query data invoice dengan filter pencarian
-        $invoices = Invoice::when($search, function ($query, $search) {
-            return $query->where('id_invoice', 'like', "%{$search}%")
+        // Query data nota dengan filter pencarian
+        $notas = Nota::when($search, function ($query, $search) {
+            return $query->where('id_nota', 'like', "%{$search}%")
                 ->orWhere('kepada', 'like', "%{$search}%")
                 ->orWhere('faktur_no', 'like', "%{$search}%")
                 ->orWhere('sj_no', 'like', "%{$search}%");
@@ -24,7 +24,7 @@ class InvoiceController extends Controller
             ->latest('created_at')
             ->paginate(10);
 
-        return view('pages.administrasi.invoice', compact('invoices', 'search'));
+        return view('pages.administrasi.nota', compact('notas', 'search'));
     }
 
     public function store(Request $request)
@@ -34,11 +34,11 @@ class InvoiceController extends Controller
             'kepada' => 'required',
             'faktur_no' => 'required',
             'sj_no' => 'required',
-            'invoice_date' => 'required|date',
+            'nota_date' => 'required|date',
         ]);
 
-        // Auto-generate kode invoice
-        $invoiceCode = Invoice::generateInvoiceCode();
+        // Auto-generate kode nota
+        $notaCode = Nota::generateNotaCode();
 
         // Set default lokasi jika kosong
         $location = $request->input('location', 'Jakarta');
@@ -86,11 +86,11 @@ class InvoiceController extends Controller
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
 
-        // Create invoice
-        Invoice::create([
-            'id_invoice' => $invoiceCode,
+        // Create nota
+        Nota::create([
+            'id_nota' => $notaCode,
             'location' => $location,
-            'invoice_date' => $request->input('invoice_date'),
+            'nota_date' => $request->input('nota_date'),
             'kepada' => $request->input('kepada'),
             'faktur_no' => $request->input('faktur_no'),
             'sj_no' => $request->input('sj_no'),
@@ -108,19 +108,19 @@ class InvoiceController extends Controller
             'total_with_ppn' => $totalWithPpn,
         ]);
 
-        return redirect()->route('invoice.administrasi.index')->with('success', 'Invoice berhasil ditambahkan!');
+        return redirect()->route('nota.administrasi.index')->with('success', 'Nota berhasil ditambahkan!');
     }
 
     public function update(Request $request, $id)
     {
-        $invoice = Invoice::findOrFail($id);
+        $nota = Nota::findOrFail($id);
 
         // Validasi input dasar
         $request->validate([
             'kepada' => 'required',
             'faktur_no' => 'required',
             'sj_no' => 'required',
-            'invoice_date' => 'required|date',
+            'nota_date' => 'required|date',
         ]);
 
         // Set default lokasi jika kosong
@@ -169,10 +169,10 @@ class InvoiceController extends Controller
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
 
-        // Update invoice
-        $invoice->update([
+        // Update nota
+        $nota->update([
             'location' => $location,
-            'invoice_date' => $request->input('invoice_date'),
+            'nota_date' => $request->input('nota_date'),
             'kepada' => $request->input('kepada'),
             'faktur_no' => $request->input('faktur_no'),
             'sj_no' => $request->input('sj_no'),
@@ -190,36 +190,36 @@ class InvoiceController extends Controller
             'total_with_ppn' => $totalWithPpn,
         ]);
 
-        return redirect()->route('invoice.administrasi.index')->with('success', 'Invoice berhasil diperbarui!');
+        return redirect()->route('nota.administrasi.index')->with('success', 'Nota berhasil diperbarui!');
     }
 
     public function destroySelected(Request $request)
     {
-        // Ambil array id_invoice dari checkbox selection
+        // Ambil array id_nota dari checkbox selection
         $ids = $request->input('ids');
 
         // Validasi
         if (empty($ids)) {
-            return redirect()->route('invoice.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
+            return redirect()->route('nota.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus invoice berdasarkan id_invoice
-        Invoice::whereIn('id_invoice', $ids)->delete();
+        // Hapus nota berdasarkan id_nota
+        Nota::whereIn('id_nota', $ids)->delete();
 
-        return redirect()->route('invoice.administrasi.index')->with('success', 'Invoice berhasil dihapus!');
+        return redirect()->route('nota.administrasi.index')->with('success', 'Nota berhasil dihapus!');
     }
 
     /**
-     * Export invoices to PDF (dinamis untuk all atau selected)
+     * Export notas to PDF (dinamis untuk all atau selected)
      */
     public function exportPdfAll(Request $request)
     {
         // Ambil filter dari request
         $search = $request->input('search');
 
-        // Query invoice dengan filter yang sama seperti di index
-        $invoices = Invoice::when($search, function ($query, $search) {
-            return $query->where('id_invoice', 'like', "%{$search}%")
+        // Query nota dengan filter yang sama seperti di index
+        $notas = Nota::when($search, function ($query, $search) {
+            return $query->where('id_nota', 'like', "%{$search}%")
                 ->orWhere('kepada', 'like', "%{$search}%")
                 ->orWhere('faktur_no', 'like', "%{$search}%");
         })
@@ -227,14 +227,14 @@ class InvoiceController extends Controller
             ->get();
 
         // Generate PDF dengan 1 file template yang sama
-        $pdf = Pdf::loadView('exports.administrasi.invoice-pdf', compact('invoices'));
+        $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 
-        $filename = 'invoice-administrasi-' . date('Y-m-d') . '.pdf';
+        $filename = 'nota-administrasi-' . date('Y-m-d') . '.pdf';
         return $pdf->download($filename);
     }
 
     /**
-     * Export selected invoices to PDF (dinamis untuk 1 atau banyak)
+     * Export selected notas to PDF (dinamis untuk 1 atau banyak)
      */
     public function exportPdfSelected(Request $request)
     {
@@ -242,26 +242,26 @@ class InvoiceController extends Controller
         $ids = $request->input('ids');
 
         if (empty($ids)) {
-            return redirect()->route('invoice.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
+            return redirect()->route('nota.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Query invoice berdasarkan id yang dipilih
-        $invoices = Invoice::whereIn('id_invoice', $ids)
+        // Query nota berdasarkan id yang dipilih
+        $notas = Nota::whereIn('id_nota', $ids)
             ->latest('created_at')
             ->get();
 
         // Generate PDF dengan 1 file template yang sama
-        // Otomatis handle 1 invoice atau multiple invoices
-        $pdf = Pdf::loadView('exports.administrasi.invoice-pdf', compact('invoices'));
+        // Otomatis handle 1 nota atau multiple notas
+        $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 
         // Generate filename yang aman (tanpa karakter "/" atau "\")
         if (count($ids) == 1) {
-            // Untuk 1 invoice, gunakan ID yang sudah di-sanitize
+            // Untuk 1 nota, gunakan ID yang sudah di-sanitize
             $safeId = str_replace(['/', '\\'], '-', $ids[0]);
-            $filename = 'invoice-' . $safeId . '.pdf';
+            $filename = 'nota-' . $safeId . '.pdf';
         } else {
-            // Untuk multiple invoices, gunakan timestamp
-            $filename = 'invoice-selected-' . date('Y-m-d') . '.pdf';
+            // Untuk multiple notas, gunakan timestamp
+            $filename = 'nota-selected-' . date('Y-m-d') . '.pdf';
         }
 
         return $pdf->download($filename);

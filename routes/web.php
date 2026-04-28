@@ -24,7 +24,7 @@ use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
 use App\Http\Controllers\Administrasi\KwintansiController;
-use App\Http\Controllers\Administrasi\InvoiceController;
+use App\Http\Controllers\Administrasi\NotaController;
 use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use App\Http\Controllers\Administrasi\RABController;
@@ -278,15 +278,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/kwintansi/export/pdf', [KwintansiController::class, 'exportPdfAll'])->name('kwintansi.export.pdf');
     Route::post('/kwintansi/export/pdf-selected', [KwintansiController::class, 'exportPdfSelected'])->name('kwintansi.export.pdf.selected');
 
-    // Route Invoice Administrasi
-    Route::get('/invoice-administrasi', [InvoiceController::class, 'index'])->name('invoice.administrasi.index');
-    Route::post('/invoice-administrasi', [InvoiceController::class, 'store'])->name('invoice.administrasi.store');
-    Route::put('/invoice-administrasi/{invoice}', [InvoiceController::class, 'update'])->name('invoice.administrasi.update')->where('invoice', '.*');
-    Route::delete('/invoice-administrasi/destroy-selected', [InvoiceController::class, 'destroySelected'])->name('invoice.administrasi.destroySelected');
+    // Route Nota Administrasi
+    Route::get('/nota-administrasi', [NotaController::class, 'index'])->name('nota.administrasi.index');
+    Route::post('/nota-administrasi', [NotaController::class, 'store'])->name('nota.administrasi.store');
+    Route::put('/nota-administrasi/{nota}', [NotaController::class, 'update'])->name('nota.administrasi.update')->where('nota', '.*');
+    Route::delete('/nota-administrasi/destroy-selected', [NotaController::class, 'destroySelected'])->name('nota.administrasi.destroySelected');
 
-    // Route Invoice Administrasi - Export PDF
-    Route::get('/invoice-administrasi/export/pdf', [InvoiceController::class, 'exportPdfAll'])->name('invoice.administrasi.export.pdf');
-    Route::post('/invoice-administrasi/export/pdf-selected', [InvoiceController::class, 'exportPdfSelected'])->name('invoice.administrasi.export.pdf.selected');
+    // Route Nota Administrasi - Export PDF
+    Route::get('/nota-administrasi/export/pdf', [NotaController::class, 'exportPdfAll'])->name('nota.administrasi.export.pdf');
+    Route::post('/nota-administrasi/export/pdf-selected', [NotaController::class, 'exportPdfSelected'])->name('nota.administrasi.export.pdf.selected');
 
     // ─── Penawaran Aluminium (Aluminium Quotation) ──────────────────────────────
     Route::get('/aluminium-quotation', [AluminiumQuotationController::class, 'index'])->name('aluminium-quotation.index');

@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('invoices_administrasi', function (Blueprint $table) {
+        Schema::table('notas_administrasi', function (Blueprint $table) {
             // Field untuk menyimpan ID bank accounts yang dipilih
             $table->json('selected_payment_accounts')->nullable()->after('jumlah_total');
 
@@ -30,7 +30,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('invoices_administrasi', function (Blueprint $table) {
+        Schema::table('notas_administrasi', function (Blueprint $table) {
             $table->dropColumn([
                 'selected_payment_accounts',
                 'ppn_percentage',

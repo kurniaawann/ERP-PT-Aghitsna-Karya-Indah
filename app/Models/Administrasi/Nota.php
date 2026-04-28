@@ -6,19 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Finance\PaymentAccount;
 
-class Invoice extends Model
+class Nota extends Model
 {
     use HasFactory;
 
-    protected $table = 'invoices_administrasi';
-    protected $primaryKey = 'id_invoice';
+    protected $table = 'notas_administrasi';
+    protected $primaryKey = 'id_nota';
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id_invoice',
+        'id_nota',
         'location',
-        'invoice_date',
+        'nota_date',
         'kepada',
         'faktur_no',
         'sj_no',
@@ -37,7 +37,7 @@ class Invoice extends Model
     ];
 
     protected $casts = [
-        'invoice_date' => 'date',
+        'nota_date' => 'date',
         'items' => 'array',
         'sewa_jual' => 'integer',
         'ongkos_kirim' => 'integer',
@@ -52,29 +52,29 @@ class Invoice extends Model
     ];
 
     /**
-     * Generate kode invoice berikutnya (INV-001/AKI/26, INV-002/AKI/26, dst)
+     * Generate kode nota berikutnya (NTA-001/AKI/26, NTA-002/AKI/26, dst)
      */
-    public static function generateInvoiceCode()
+    public static function generateNotaCode()
     {
         $year = date('y'); // 26 untuk 2026
 
-        // Ambil invoice terakhir dengan pola INV-xxx/AKI/[year]
-        $lastInvoice = self::where('id_invoice', 'like', "INV-%/AKI/{$year}")
-            ->orderBy('id_invoice', 'desc')
+        // Ambil nota terakhir dengan pola NTA-xxx/AKI/[year]
+        $lastNota = self::where('id_nota', 'like', "NTA-%/AKI/{$year}")
+            ->orderBy('id_nota', 'desc')
             ->first();
 
-        if ($lastInvoice) {
-            // Extract nomor urut dari id_invoice (INV-001/AKI/26 -> 001)
-            $parts = explode('/', $lastInvoice->id_invoice);
-            $numberPart = explode('-', $parts[0])[1]; // Ambil bagian setelah "INV-"
+        if ($lastNota) {
+            // Extract nomor urut dari id_nota (NTA-001/AKI/26 -> 001)
+            $parts = explode('/', $lastNota->id_nota);
+            $numberPart = explode('-', $parts[0])[1]; // Ambil bagian setelah "NTA-"
             $nextNumber = intval($numberPart) + 1;
         } else {
-            // Jika belum ada invoice tahun ini, mulai dari 1
+            // Jika belum ada nota tahun ini, mulai dari 1
             $nextNumber = 1;
         }
 
-        // Format: INV-001/AKI/26
-        return sprintf('INV-%03d/AKI/%s', $nextNumber, $year);
+        // Format: NTA-001/AKI/26
+        return sprintf('NTA-%03d/AKI/%s', $nextNumber, $year);
     }
 
     /**
