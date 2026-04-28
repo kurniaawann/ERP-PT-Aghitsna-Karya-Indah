@@ -283,7 +283,7 @@
 
                 {{-- Submenu --}}
                 <ul id="sdmDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('reimburse*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('reimburse*') || request()->is('tunjangan*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/employee') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -307,28 +307,6 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url('/overtime') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-clock w-4 
-                                {{ request()->is('overtime*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Lembur</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/kasbon') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-hand-holding-usd w-4 
-                                {{ request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Kasbon</span>
-                        </a>
-                    </li>
-                    <li>
                         <a href="{{ url('/division') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('division*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
@@ -349,6 +327,46 @@
                             </i>
                             <span class="ml-3 text-sm font-medium">Payroll</span>
                         </a>
+                    </li>
+
+                    <!-- Tunjangan dan Potongan Dropdown -->
+                    <li>
+                        <button onclick="toggleDropdown('tunjanganDropdown')"
+                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group text-text-label hover:bg-primary-light hover:text-primary">
+                            <div class="flex items-center">
+                                <i class="fas fa-money-bill-wave w-4 text-text-tertiary group-hover:text-primary"></i>
+                                <span class="ml-3 text-sm font-medium">Tunjangan & Potongan</span>
+                            </div>
+                            <i id="tunjanganDropdownIcon"
+                                class="fas fa-chevron-down text-xs transition-transform duration-200 text-text-tertiary group-hover:text-primary"></i>
+                        </button>
+
+                        <!-- Tunjangan & Potongan Submenu -->
+                        <ul id="tunjanganDropdown"
+                            class="ml-8 mt-2 space-y-1 {{ request()->is('overtime*') || request()->is('kasbon*') ? '' : 'hidden' }}">
+                            <li>
+                                <a href="{{ url('/overtime') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-clock w-4 
+                                        {{ request()->is('overtime*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Lembur</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/kasbon') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-hand-holding-usd w-4 
+                                        {{ request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Kasbon</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </li>
