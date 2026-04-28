@@ -402,7 +402,7 @@
                                 class="fas fa-file-invoice w-4 
                                 {{ request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                            <span class="ml-3 text-sm font-medium">Surat Jalan</span>
+                            <span class="ml-3 text-sm font-medium">Nota</span>
                         </a>
                     </li>
                     <li>
