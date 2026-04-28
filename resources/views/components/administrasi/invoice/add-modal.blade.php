@@ -1,5 +1,5 @@
-{{-- Modal Tambah Invoice --}}
-<x-modal id="addModal" title="Tambah Invoice" action="{{ route('invoice.administrasi.store') }}" method="POST"
+{{-- Modal Tambah Surat Jalan --}}
+<x-modal id="addModal" title="Tambah Surat Jalan" action="{{ route('invoice.administrasi.store') }}" method="POST"
     buttonText="Simpan">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">

@@ -9,7 +9,7 @@
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
-                            <th class="p-2 text-left">No. Invoice</th>
+                            <th class="p-2 text-left">No. Surat Jalan</th>
                             <th class="p-2 text-left">Kepada</th>
                             <th class="p-2 text-left">Faktur No</th>
                             <th class="p-2 text-left">SJ No</th>

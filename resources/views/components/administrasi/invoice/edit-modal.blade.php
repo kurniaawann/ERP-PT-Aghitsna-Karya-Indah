@@ -1,5 +1,5 @@
-{{-- Modal Edit Invoice --}}
-<x-modal id="editModal-{{ $invoice->id_invoice }}" title="Edit Invoice"
+{{-- Modal Edit Surat Jalan --}}
+<x-modal id="editModal-{{ $invoice->id_invoice }}" title="Edit Surat Jalan"
     action="{{ route('invoice.administrasi.update', $invoice->id_invoice) }}" method="PUT" buttonText="Update">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
