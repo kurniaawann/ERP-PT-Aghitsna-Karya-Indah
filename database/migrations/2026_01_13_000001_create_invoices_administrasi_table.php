@@ -10,10 +10,10 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('invoices_administrasi', function (Blueprint $table) {
-            $table->string('id_invoice')->primary();
+        Schema::create('notas_administrasi', function (Blueprint $table) {
+            $table->string('id_nota')->primary();
             $table->string('location')->default('Jakarta'); // Jakarta/Depok/etc
-            $table->date('invoice_date'); // 24 September 2025
+            $table->date('nota_date'); // 24 September 2025
             $table->string('kepada'); // Kepada Yang Terhormat
             $table->string('faktur_no'); // Faktur No
             $table->string('sj_no'); // SJ.NO
@@ -42,6 +42,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('invoices_administrasi');
+        Schema::dropIfExists('notas_administrasi');
     }
 };

@@ -11,7 +11,7 @@
                     {{-- Filter Bulan --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-                        <select name="month"
+                        <select id="month-select" name="month"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                             <option value="">Semua Bulan</option>
                             @for ($i = 1; $i <= 12; $i++)
@@ -25,7 +25,7 @@
                     {{-- Filter Tahun --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                        <select name="year"
+                        <select id="year-select" name="year"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                             @for ($i = date('Y'); $i >= date('Y') - 5; $i--)
                                 <option value="{{ $i }}"
@@ -39,7 +39,7 @@
                     {{-- Filter Kategori --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-                        <select name="category"
+                        <select id="category-select" name="category"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                             <option value="">Semua Kategori</option>
                             @foreach ($categories as $category)
@@ -54,7 +54,7 @@
                     {{-- Filter Tipe --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tipe</label>
-                        <select name="type"
+                        <select id="type-select" name="type"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                             <option value="">Semua Tipe</option>
                             <option value="income" {{ request('type') == 'income' ? 'selected' : '' }}>Pemasukan</option>

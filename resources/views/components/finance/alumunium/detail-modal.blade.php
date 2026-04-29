@@ -133,10 +133,143 @@
         </div>
     </div>
 
+    <!-- Discount Section -->
     @php
-        $terbilangAmount = $totalAfterDiscount;
-        if ($invoice->dp_value && $invoice->dp_value > 0) {
-            $terbilangAmount = $totalAfterDiscount;
+        if (!isset($totalAfterDiscount)) {
+            $totalAfterDiscount = $invoice->total_amount;
+            $discountAmount = 0;
+        }
+    @endphp
+
+    @if ($invoice->discount_value && $invoice->discount_value > 0)
+        <div class="mb-4 p-3 border rounded bg-yellow-50">
+            <label class="block text-sm font-semibold text-text-primary mb-2">Discount (Opsional)</label>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Tipe Discount</label>
+                    <p class="text-sm font-medium text-gray-900">
+                        @if ($invoice->discount_type === 'percentage')
+                            Persentase (%)
+                        @else
+                            Nominal (Rp)
+                        @endif
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Nilai Discount</label>
+                    <p class="text-sm font-medium text-gray-900">
+                        @if ($invoice->discount_type === 'percentage')
+                            {{ number_format($invoice->discount_value, 0) }}%
+                        @else
+                            Rp {{ number_format($invoice->discount_value, 0, ',', '.') }}
+                        @endif
+                    </p>
+                </div>
+            </div>
+            <div class="space-y-2 p-2 bg-white rounded">
+                <div class="flex justify-between text-sm">
+                    <span class="text-text-label">Discount:</span>
+                    <span class="font-semibold text-red-600">Rp
+                        {{ number_format($discountAmount, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between text-sm font-bold">
+                    <span class="text-text-primary">Total Setelah Discount:</span>
+                    <span class="text-green-600">Rp {{ number_format($totalAfterDiscount, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+    @else
+        <div class="mb-4 p-3 border rounded bg-yellow-50">
+            <label class="block text-sm font-semibold text-text-primary mb-2">Discount (Opsional)</label>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Tipe Discount</label>
+                    <p class="text-sm font-medium text-gray-900">Tidak Ada Discount</p>
+                </div>
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Nilai Discount</label>
+                    <p class="text-sm font-medium text-gray-900">0</p>
+                </div>
+            </div>
+            <div class="space-y-2 p-2 bg-white rounded">
+                <div class="flex justify-between text-sm">
+                    <span class="text-text-label">Discount:</span>
+                    <span class="font-semibold text-red-600">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-sm font-bold">
+                    <span class="text-text-primary">Total Setelah Discount:</span>
+                    <span class="text-green-600">Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- DP Section -->
+    @if ($invoice->dp_value && $invoice->dp_value > 0)
+        @php
+            $baseForDP = $totalAfterDiscount;
+            if ($invoice->dp_type === 'percentage') {
+                $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
+            } else {
+                $dpAmount = $invoice->dp_value;
+            }
+        @endphp
+        <div class="mb-4 p-3 border rounded bg-blue-50">
+            <label class="block text-sm font-semibold text-text-primary mb-2">DP / Uang Muka (Opsional)</label>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Tipe DP</label>
+                    <p class="text-sm font-medium text-gray-900">
+                        @if ($invoice->dp_type === 'percentage')
+                            Persentase (%)
+                        @else
+                            Nominal (Rp)
+                        @endif
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Nilai DP</label>
+                    <p class="text-sm font-medium text-gray-900">
+                        @if ($invoice->dp_type === 'percentage')
+                            {{ number_format($invoice->dp_value, 0) }}%
+                        @else
+                            Rp {{ number_format($invoice->dp_value, 0, ',', '.') }}
+                        @endif
+                    </p>
+                </div>
+            </div>
+            <div class="space-y-2 p-2 bg-white rounded">
+                <div class="flex justify-between text-sm font-bold">
+                    <span class="text-text-primary">Nilai DP:</span>
+                    <span class="text-blue-600">Rp {{ number_format($dpAmount, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+    @else
+        <div class="mb-4 p-3 border rounded bg-blue-50">
+            <label class="block text-sm font-semibold text-text-primary mb-2">DP / Uang Muka (Opsional)</label>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Tipe DP</label>
+                    <p class="text-sm font-medium text-gray-900">Tidak Ada DP</p>
+                </div>
+                <div>
+                    <label class="block text-xs text-text-label mb-1">Nilai DP</label>
+                    <p class="text-sm font-medium text-gray-900">0</p>
+                </div>
+            </div>
+            <div class="space-y-2 p-2 bg-white rounded">
+                <div class="flex justify-between text-sm font-bold">
+                    <span class="text-text-primary">Nilai DP:</span>
+                    <span class="text-blue-600">Rp 0</span>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @php
+        if (!isset($terbilangAmount)) {
+            $terbilangAmount = $totalAfterDiscount ?? $invoice->total_amount;
         }
     @endphp
     <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">

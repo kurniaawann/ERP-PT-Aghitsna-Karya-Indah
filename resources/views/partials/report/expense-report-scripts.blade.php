@@ -96,6 +96,7 @@
         const categorySelect = document.getElementById('category-select');
         const monthSelect = document.getElementById('month-select');
         const yearSelect = document.getElementById('year-select');
+        const typeSelect = document.getElementById('type-select');
 
         // Find the filter form
         const filterForm = categorySelect ? categorySelect.closest('form') : null;
@@ -114,6 +115,12 @@
 
         if (yearSelect && filterForm) {
             yearSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+
+        if (typeSelect && filterForm) {
+            typeSelect.addEventListener('change', function() {
                 filterForm.submit();
             });
         }

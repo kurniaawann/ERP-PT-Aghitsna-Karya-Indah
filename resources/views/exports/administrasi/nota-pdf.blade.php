@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice - PT. Aghitsna Karya Indah</title>
+    <title>Nota - PT. Aghitsna Karya Indah</title>
     <style>
         @page {
             size: A4;
@@ -23,7 +23,7 @@
             line-height: 1.3;
         }
 
-        .invoice-container {
+        .nota-container {
             width: 100%;
             max-width: 19cm;
             /* border: 2px solid #000; */
@@ -85,24 +85,24 @@
             padding-bottom: 1px;
         }
 
-        /* Invoice Number Section */
-        .invoice-numbers {
+        /* Nota Number Section */
+        .nota-numbers {
             margin-bottom: 8px;
         }
 
-        .invoice-numbers table {
+        .nota-numbers table {
             width: 300px;
             border-collapse: collapse;
         }
 
-        .invoice-numbers td {
+        .nota-numbers td {
             border: 1px solid #000;
             padding: 3px 6px;
             font-size: 10px;
             font-weight: bold;
         }
 
-        .invoice-numbers td:first-child {
+        .nota-numbers td:first-child {
             width: 90px;
             background-color: #f5f5f5;
         }
@@ -224,8 +224,8 @@
 </head>
 
 <body>
-    @foreach ($invoices as $index => $invoice)
-        <div class="invoice-container">
+    @foreach ($notas as $index => $nota)
+        <div class="nota-container">
             {{-- Header --}}
             <div class="header">
                 <div class="header-left">
@@ -234,25 +234,24 @@
                 <div class="header-right">
                     <div class="header-info">
                         <div class="location-date">
-                            <strong>{{ $invoice->location }}</strong>,
-                            <em>{{ \Carbon\Carbon::parse($invoice->invoice_date)->translatedFormat('d F Y') }}</em>
+                            {{ $nota->location }}, {{ \Carbon\Carbon::parse($nota->nota_date)->format('d F Y') }}
                         </div>
                         <div class="kepada-label">Kepada Yth,</div>
-                        <div class="kepada-name">{{ $invoice->kepada }}</div>
+                        <div class="kepada-name">{{ $nota->kepada }}</div>
                     </div>
                 </div>
             </div>
 
-            {{-- Invoice Numbers --}}
-            <div class="invoice-numbers">
+            {{-- Nota Numbers --}}
+            <div class="nota-numbers">
                 <table>
                     <tr>
                         <td>FAKTUR No.</td>
-                        <td>{{ $invoice->faktur_no }}</td>
+                        <td>{{ $nota->faktur_no }}</td>
                     </tr>
                     <tr>
                         <td>SJ No.</td>
-                        <td>{{ $invoice->sj_no }}</td>
+                        <td>{{ $nota->sj_no }}</td>
                     </tr>
                 </table>
             </div>
@@ -268,27 +267,29 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($invoice->items as $item)
+                    @foreach ($nota->items as $item)
                         <tr>
                             <td class="center">{{ $item['banyaknya'] }}</td>
                             <td>{{ $item['nama_barang'] }}</td>
-                            <td class="right">{{ number_format($item['harga_satuan'], 0, ',', '.') }}</td>
-                            <td class="right">{{ number_format($item['jumlah'], 0, ',', '.') }}</td>
+                            <td class="right">Rp {{ number_format($item['harga_satuan'], 0, ',', '.') }}</td>
+                            <td class="right">Rp {{ number_format($item['jumlah'], 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
 
                     {{-- Bank Information Rows --}}
                     @php
-                        $banks = $invoice->paymentAccounts();
+                        $banks = $nota->paymentAccounts();
                     @endphp
 
                     @if ($banks->count() > 0)
                         @foreach ($banks as $bank)
                             <tr class="bank-row">
-                                <td colspan="4">
-                                    <strong>{{ $bank->bank_name }}:</strong> {{ $bank->account_number }} a/n
-                                    <strong>{{ $bank->account_holder }}</strong>
+                                <td colspan="2">
+                                    <strong>Rekening: {{ $bank->bank_name }} -
+                                        {{ $bank->account_number }}</strong><br>
+                                    Atas Nama: {{ $bank->account_holder }}
                                 </td>
+                                <td colspan="2"></td>
                             </tr>
                         @endforeach
                     @endif
@@ -298,73 +299,77 @@
             {{-- Bottom Section --}}
             <div class="bottom-section">
                 <div class="bottom-left">
-                    @if ($invoice->period)
+                    @if ($nota->period)
                         <div class="period-section">
-                            <strong>Periode :</strong> {{ $invoice->period }}
+                            Periode: {{ $nota->period }}
                         </div>
                     @endif
                 </div>
                 <div class="bottom-right">
                     <table class="totals-table">
                         @php
-                            $subtotal = 0;
-                            foreach ($invoice->items as $item) {
-                                $subtotal += $item['jumlah'];
+                            $itemsTotal = 0;
+                            foreach ($nota->items as $item) {
+                                $itemsTotal += $item['jumlah'];
                             }
                         @endphp
 
+                        <tr>
+                            <td>Jumlah Barang</td>
+                            <td>Rp {{ number_format($itemsTotal, 0, ',', '.') }}</td>
+                        </tr>
+
                         {{-- PPN Row --}}
-                        @if ($invoice->ppn_percentage > 0)
+                        @if ($nota->ppn_percentage > 0)
                             <tr>
-                                <td>PPN {{ number_format($invoice->ppn_percentage, 0) }}%</td>
-                                <td>{{ number_format($invoice->ppn_amount, 0, ',', '.') }}</td>
+                                <td>PPN ({{ $nota->ppn_percentage }}%)</td>
+                                <td>Rp {{ number_format($nota->ppn_amount, 0, ',', '.') }}</td>
                             </tr>
                         @endif
 
                         {{-- Sewa/Jual --}}
-                        @if ($invoice->sewa_jual)
+                        @if ($nota->sewa_jual)
                             <tr>
                                 <td>Sewa / Jual</td>
-                                <td>{{ number_format($invoice->sewa_jual, 0, ',', '.') }}</td>
+                                <td>Rp {{ number_format($nota->sewa_jual, 0, ',', '.') }}</td>
                             </tr>
                         @endif
 
                         {{-- Ongkos Kirim --}}
-                        @if ($invoice->ongkos_kirim)
+                        @if ($nota->ongkos_kirim)
                             <tr>
                                 <td>Ongkos Kirim PP / 1x</td>
-                                <td>{{ number_format($invoice->ongkos_kirim, 0, ',', '.') }}</td>
+                                <td>Rp {{ number_format($nota->ongkos_kirim, 0, ',', '.') }}</td>
                             </tr>
                         @endif
 
                         {{-- Bongkar Pasang --}}
-                        @if ($invoice->bongkar_pasang)
+                        @if ($nota->bongkar_pasang)
                             <tr>
                                 <td>Bongkar / Pasang</td>
-                                <td>{{ number_format($invoice->bongkar_pasang, 0, ',', '.') }}</td>
+                                <td>Rp {{ number_format($nota->bongkar_pasang, 0, ',', '.') }}</td>
                             </tr>
                         @endif
 
                         {{-- Lembur --}}
-                        @if ($invoice->lembur)
+                        @if ($nota->lembur)
                             <tr>
                                 <td>Lembur Antar / Ambil</td>
-                                <td>{{ number_format($invoice->lembur, 0, ',', '.') }}</td>
+                                <td>Rp {{ number_format($nota->lembur, 0, ',', '.') }}</td>
                             </tr>
                         @endif
 
                         {{-- Uang Jaminan --}}
-                        @if ($invoice->uang_jaminan)
+                        @if ($nota->uang_jaminan)
                             <tr>
                                 <td>Uang Jaminan</td>
-                                <td>{{ number_format($invoice->uang_jaminan, 0, ',', '.') }}</td>
+                                <td>Rp {{ number_format($nota->uang_jaminan, 0, ',', '.') }}</td>
                             </tr>
                         @endif
 
-                        {{-- Grand Total --}}
                         <tr class="total-row">
-                            <td>Jumlah *)</td>
-                            <td>{{ number_format($invoice->total_with_ppn, 0, ',', '.') }}</td>
+                            <td>TOTAL</td>
+                            <td>Rp {{ number_format($nota->total_with_ppn, 0, ',', '.') }}</td>
                         </tr>
                     </table>
                 </div>

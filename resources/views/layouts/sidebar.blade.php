@@ -52,7 +52,7 @@
 
                 {{-- Submenu --}}
                 <ul id="inventoryDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') || request()->is('stock-report*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -97,6 +97,17 @@
                             <span class="ml-3 text-sm font-medium">Pengembalian Barang</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('stock-report.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('stock-report*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-bar w-4 
+                                {{ request()->is('stock-report*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Stok</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
 
@@ -118,7 +129,7 @@
 
                 {{-- Submenu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-expense*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/alumunium-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -183,6 +194,17 @@
                                 {{ request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Rekap Pengeluaran</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/reimburse') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-receipt w-4 
+                                {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Reimbursement</span>
                         </a>
                     </li>
                 </ul>
@@ -261,7 +283,7 @@
 
                 {{-- Submenu --}}
                 <ul id="sdmDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('reimburse*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('reimburse*') || request()->is('tunjangan*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/employee') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -282,28 +304,6 @@
                                 {{ request()->is('attendance*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Absensi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/overtime') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-clock w-4 
-                                {{ request()->is('overtime*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Lembur</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/kasbon') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-hand-holding-usd w-4 
-                                {{ request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Kasbon</span>
                         </a>
                     </li>
                     <li>
@@ -328,16 +328,45 @@
                             <span class="ml-3 text-sm font-medium">Payroll</span>
                         </a>
                     </li>
+
+                    <!-- Tunjangan dan Potongan Dropdown -->
                     <li>
-                        <a href="{{ url('/reimburse') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-receipt w-4 
-                                {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Reimbursement</span>
-                        </a>
+                        <button onclick="toggleDropdown('tunjanganDropdown')"
+                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group text-text-label hover:bg-primary-light hover:text-primary">
+                            <div class="flex items-center">
+                                <i class="fas fa-money-bill-wave w-4 text-text-tertiary group-hover:text-primary"></i>
+                                <span class="ml-3 text-sm font-medium">Tunjangan & Potongan</span>
+                            </div>
+                            <i id="tunjanganDropdownIcon"
+                                class="fas fa-chevron-down text-xs transition-transform duration-200 text-text-tertiary group-hover:text-primary"></i>
+                        </button>
+
+                        <!-- Tunjangan & Potongan Submenu -->
+                        <ul id="tunjanganDropdown"
+                            class="ml-8 mt-2 space-y-1 {{ request()->is('overtime*') || request()->is('kasbon*') ? '' : 'hidden' }}">
+                            <li>
+                                <a href="{{ url('/overtime') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-clock w-4 
+                                        {{ request()->is('overtime*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Lembur</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/kasbon') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-hand-holding-usd w-4 
+                                        {{ request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Kasbon</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </li>
@@ -360,18 +389,7 @@
 
                 {{-- Submenu --}}
                 <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('document-receipt*') || request()->is('cash-out-proof*') || request()->is('kwintansi*') || request()->is('invoice-administrasi*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/document-receipt') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('document-receipt*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-signature w-4 
-                                {{ request()->is('document-receipt*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Tanda Terima Dokumen</span>
-                        </a>
-                    </li>
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('rab*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/cash-out-proof') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -384,31 +402,64 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url('/kwintansi') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('kwintansi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-receipt w-4 
-                                {{ request()->is('kwintansi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                        <button onclick="toggleDropdown('suratMenyuratDropdown')"
+                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <div class="flex items-center">
+                                <i
+                                    class="fas fa-envelope w-4
+                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                </i>
+                                <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
+                            </div>
+
+                            <i id="suratMenyuratDropdownIcon"
+                                class="fas fa-chevron-down text-xs transition-transform duration-200
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                            <span class="ml-3 text-sm font-medium">Kwintansi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/invoice-administrasi') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('invoice-administrasi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-invoice w-4 
-                                {{ request()->is('invoice-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Invoice</span>
-                        </a>
+                        </button>
+
+                        <ul id="suratMenyuratDropdown"
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? '' : 'hidden' }}">
+                            <li>
+                                <a href="{{ url('/document-receipt') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('document-receipt*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-file-signature w-4 
+                                        {{ request()->is('document-receipt*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Tanda Terima Dokumen</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/kwintansi') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('kwintansi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-receipt w-4 
+                                        {{ request()->is('kwintansi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Kwintansi</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/nota-administrasi') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('nota-administrasi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-file-invoice w-4 
+                                        {{ request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Nota</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <li>
                         <button onclick="toggleDropdown('penawaranHargaDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <div class="flex items-center">
                                 <i
                                     class="fas fa-file-contract w-4
@@ -419,12 +470,12 @@
 
                             <i id="penawaranHargaDropdownIcon"
                                 class="fas fa-chevron-down text-xs transition-transform duration-200
-                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                         </button>
 
                         <ul id="penawaranHargaDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('rab*') ? '' : 'hidden' }}">
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="{{ url('/aluminium-quotation') }}"
                                     class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -447,19 +498,18 @@
                                     <span class="ml-3 text-sm font-medium">Penawaran Proyek</span>
                                 </a>
                             </li>
-                            <li>
-                                <a href="{{ url('/rab') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-calculator w-4
-                                        {{ request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">RAB</span>
-                                </a>
-                            </li>
                         </ul>
                     </li>
+                    <li>
+                        <a href="{{ url('/rab') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-calculator w-4
+                                {{ request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">RAB</span>
+                        </a>
                 </ul>
             </li>
 
