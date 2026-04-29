@@ -16,6 +16,7 @@ use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
+use App\Http\Controllers\Notification\SalaryReminderController;
 use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
@@ -180,6 +181,13 @@ Route::middleware('auth')->group(function () {
 
     // Route Laporan Rekap Pengeluaran
     Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
+
+    // ============================================
+    // Notification Routes (Notifikasi & Reminder)
+    // ============================================
+
+    // Route Reminder Gaji Karyawan
+    Route::get('/notification/salary-reminder', [SalaryReminderController::class, 'index'])->name('notification.salary-reminder');
 
     // ============================================
     // SDM (Sumber Daya Manusia) Routes
