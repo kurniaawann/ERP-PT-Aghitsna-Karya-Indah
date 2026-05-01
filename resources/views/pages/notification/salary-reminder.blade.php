@@ -7,13 +7,14 @@
 
         {{-- Filter Section --}}
         <div class="bg-white p-6 rounded-xl shadow">
-            <form method="GET" action="{{ route('notification.salary-reminder') }}" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <form id="filterForm" method="GET" action="{{ route('notification.salary-reminder') }}" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {{-- Filter Bulan --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
                         <select id="month-select" name="month"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            onchange="document.getElementById('filterForm').submit()">
                             <option value="">Semua Bulan</option>
                             @for ($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" {{ request('month') == $i ? 'selected' : '' }}>
@@ -27,7 +28,8 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
                         <select id="year-select" name="year"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            onchange="document.getElementById('filterForm').submit()">
                             @for ($i = date('Y'); $i >= date('Y') - 5; $i--)
                                 <option value="{{ $i }}"
                                     {{ request('year', date('Y')) == $i ? 'selected' : '' }}>
@@ -41,7 +43,8 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                         <select id="status-select" name="status"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            onchange="document.getElementById('filterForm').submit()">
                             <option value="">Semua Status</option>
                             <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
@@ -53,37 +56,12 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Cari Karyawan</label>
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="ID atau Nama Karyawan"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                    </div>
-
-                    {{-- Sort By Salary --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Urutkan Gaji</label>
-                        <select id="sort-select" name="sort_by"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                            <option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>
-                                Terbaru
-                            </option>
-                            <option value="salary" {{ request('sort_by') == 'salary' ? 'selected' : '' }}>Gaji</option>
-                        </select>
-                    </div>
-
-                    {{-- Sort Order --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Urutan</label>
-                        <select id="order-select" name="sort_order"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                            <option value="desc" {{ request('sort_order') == 'desc' ? 'selected' : '' }}>Turun</option>
-                            <option value="asc" {{ request('sort_order') == 'asc' ? 'selected' : '' }}>Naik</option>
-                        </select>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            onkeyup="this.form.submit()">
                     </div>
                 </div>
 
                 <div class="flex gap-2">
-                    <button type="submit"
-                        class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition">
-                        Cari
-                    </button>
                     <a href="{{ route('notification.salary-reminder') }}"
                         class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
                         Reset

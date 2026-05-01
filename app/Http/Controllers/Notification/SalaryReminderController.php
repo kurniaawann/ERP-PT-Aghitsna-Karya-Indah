@@ -47,18 +47,8 @@ class SalaryReminderController extends Controller
             });
         }
 
-        // Sorting berdasarkan gaji (base_salary dari employee)
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        if ($sortBy === 'salary') {
-            // Join dengan employee table untuk sort berdasarkan salary
-            $query->join('employees', 'salary_reminders.employee_id', '=', 'employees.employee_code')
-                ->select('salary_reminders.*')
-                ->orderBy('employees.base_salary', $sortOrder);
-        } else {
-            $query->orderBy($sortBy, $sortOrder);
-        }
+        // Sorting selalu by created_at DESC (data terbaru dulu)
+        $query->orderBy('created_at', 'desc');
 
         $reminders = $query->paginate(10)->appends($request->all());
 
