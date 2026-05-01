@@ -131,7 +131,7 @@
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Gaji (Rp)</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tanggal Reminder</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Notifikasi Dikirim</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tanggal Perubahan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
