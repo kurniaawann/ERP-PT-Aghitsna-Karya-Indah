@@ -31,6 +31,7 @@ use App\Http\Controllers\Administrasi\NotaController;
 use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use App\Http\Controllers\Administrasi\RABController;
+use App\Http\Controllers\UserManagement\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -331,6 +332,17 @@ Route::middleware('auth')->group(function () {
     // Generic routes come last
     Route::get('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'show'])->name('project-quotation.show')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
     Route::put('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+
+    // ============================================
+    // User Management Routes (Super Admin only)
+    // ============================================
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/user-management', [UserController::class, 'index'])->name('user-management.index');
+        Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
+        Route::delete('/user-management/destroy-selected', [UserController::class, 'destroy'])->name('user-management.destroy');
+        Route::put('/user-management/{user}', [UserController::class, 'update'])->name('user-management.update');
+        Route::post('/user-management/{user}/toggle', [UserController::class, 'toggleActive'])->name('user-management.toggle');
+    });
 
     // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
     Route::get('/rab', [RABController::class, 'index'])->name('rab.index');

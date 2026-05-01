@@ -513,6 +513,21 @@
                 </ul>
             </li>
 
+            {{-- Manajemen User (Super Admin only) --}}
+            @if (auth()->user()?->isSuperAdmin())
+                <li>
+                    <a href="{{ route('user-management.index') }}"
+                        class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
+                            {{ request()->is('user-management*') ? 'bg-primary-light text-primary' : 'text-text-primary hover:bg-primary-light hover:text-primary' }}">
+                        <i
+                            class="fas fa-user-shield w-5
+                            {{ request()->is('user-management*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                        </i>
+                        <span class="ml-3 font-medium">Manajemen User</span>
+                    </a>
+                </li>
+            @endif
+
             {{-- Notification & Reminders Dropdown --}}
             <li>
                 <button onclick="toggleDropdown('notificationDropdown')"
