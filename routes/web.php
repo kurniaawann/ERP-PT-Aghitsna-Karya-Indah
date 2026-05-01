@@ -28,6 +28,7 @@ use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
 use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\NotaController;
+use App\Http\Controllers\Administrasi\DeliveryNoteController;
 use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use App\Http\Controllers\Administrasi\RABController;
@@ -306,6 +307,17 @@ Route::middleware('auth')->group(function () {
     // Route Nota Administrasi - Export PDF
     Route::get('/nota-administrasi/export/pdf', [NotaController::class, 'exportPdfAll'])->name('nota.administrasi.export.pdf');
     Route::post('/nota-administrasi/export/pdf-selected', [NotaController::class, 'exportPdfSelected'])->name('nota.administrasi.export.pdf.selected');
+
+    // Route Delivery Note (Surat Jalan)
+    Route::get('/delivery-note', [DeliveryNoteController::class, 'index'])->name('delivery-note.administrasi.index');
+    Route::post('/delivery-note', [DeliveryNoteController::class, 'store'])->name('delivery-note.administrasi.store');
+    Route::put('/delivery-note/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('delivery-note.administrasi.update')->where('deliveryNote', '.*');
+    Route::delete('/delivery-note/destroy-selected', [DeliveryNoteController::class, 'destroySelected'])->name('delivery-note.administrasi.destroySelected');
+    Route::patch('/delivery-note/{deliveryNote}/status', [DeliveryNoteController::class, 'updateStatus'])->name('delivery-note.administrasi.updateStatus')->where('deliveryNote', '.*');
+
+    // Route Delivery Note - Export PDF
+    Route::get('/delivery-note/export/pdf', [DeliveryNoteController::class, 'exportPdfAll'])->name('delivery-note.administrasi.export.pdf');
+    Route::post('/delivery-note/export/pdf-selected', [DeliveryNoteController::class, 'exportPdfSelected'])->name('delivery-note.administrasi.export.pdf.selected');
 
     // ─── Penawaran Aluminium (Aluminium Quotation) ──────────────────────────────
     Route::get('/aluminium-quotation', [AluminiumQuotationController::class, 'index'])->name('aluminium-quotation.index');
