@@ -66,6 +66,17 @@
         let discountValue = parseFloat(discountValueInput?.value) || 0;
         const discountError = document.getElementById('discount-error');
 
+        // Enable/disable based on type
+        if (discountValueInput) {
+            if (!discountType) {
+                discountValueInput.disabled = true;
+                discountValueInput.value = '';
+                discountValue = 0;
+            } else {
+                discountValueInput.disabled = false;
+            }
+        }
+
         // Validasi: jika percentage, batasi maksimal 100
         if (discountType === 'percentage' && discountValue > 100) {
             discountValue = 100;
@@ -126,6 +137,17 @@
         let dpValue = parseFloat(dpValueInput?.value) || 0;
         const dpError = document.getElementById('dp-error');
 
+        // Enable/disable based on type
+        if (dpValueInput) {
+            if (!dpType) {
+                dpValueInput.disabled = true;
+                dpValueInput.value = '';
+                dpValue = 0;
+            } else {
+                dpValueInput.disabled = false;
+            }
+        }
+
         // Validasi: jika percentage, batasi maksimal 100
         if (dpType === 'percentage' && dpValue > 100) {
             dpValue = 100;
@@ -183,6 +205,119 @@
         if (dpAmountEl) {
             dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
         }
+    }
+
+    // Calculate Discount for EDIT modal (alumunium)
+    function calculateDiscountEdit(invoiceNumber) {
+        const typeEl = document.getElementById('discount-type-edit-' + invoiceNumber);
+        const valueEl = document.getElementById('discount-value-edit-' + invoiceNumber);
+        const discountType = typeEl?.value;
+        let discountValue = parseFloat(valueEl?.value) || 0;
+
+        // Enable/disable value input based on type selection
+        if (valueEl) {
+            if (!discountType) {
+                valueEl.disabled = true;
+                valueEl.value = 0;
+                discountValue = 0;
+            } else {
+                valueEl.disabled = false;
+            }
+        }
+
+        if (discountType === 'percentage' && discountValue > 100) {
+            discountValue = 100;
+            if (valueEl) valueEl.value = 100;
+        }
+
+        const modal = document.getElementById('editModal-' + invoiceNumber);
+        let baseTotal = 0;
+        if (modal) {
+            modal.querySelectorAll('.item-row-edit').forEach(row => {
+                const volume = parseFloat(row.querySelector('.item-volume-edit')?.value) || 0;
+                const harga = parseFloat(row.querySelector('.item-harga-edit')?.value) || 0;
+                baseTotal += (volume * harga);
+            });
+        }
+
+        let discountAmount = 0;
+        if (discountType && discountValue > 0) {
+            if (discountType === 'percentage') {
+                discountAmount = (baseTotal * discountValue) / 100;
+            } else {
+                discountAmount = discountValue;
+            }
+        }
+
+        const totalAfterDiscount = baseTotal - discountAmount;
+
+        const discountAmountEl = document.getElementById('discount-amount-edit-' + invoiceNumber);
+        const totalAfterDiscountEl = document.getElementById('total-after-discount-edit-' + invoiceNumber);
+        if (discountAmountEl) discountAmountEl.textContent = 'Rp ' + discountAmount.toLocaleString('id-ID');
+        if (totalAfterDiscountEl) totalAfterDiscountEl.textContent = 'Rp ' + totalAfterDiscount.toLocaleString('id-ID');
+
+        calculateDPEdit(invoiceNumber);
+    }
+
+    // Calculate DP for EDIT modal (alumunium)
+    function calculateDPEdit(invoiceNumber) {
+        const typeEl = document.getElementById('dp-type-edit-' + invoiceNumber);
+        const valueEl = document.getElementById('dp-value-edit-' + invoiceNumber);
+        const dpType = typeEl?.value;
+        let dpValue = parseFloat(valueEl?.value) || 0;
+
+        // Enable/disable value input based on type selection
+        if (valueEl) {
+            if (!dpType) {
+                valueEl.disabled = true;
+                valueEl.value = 0;
+                dpValue = 0;
+            } else {
+                valueEl.disabled = false;
+            }
+        }
+
+        if (dpType === 'percentage' && dpValue > 100) {
+            dpValue = 100;
+            if (valueEl) valueEl.value = 100;
+        }
+
+        const modal = document.getElementById('editModal-' + invoiceNumber);
+        let baseTotal = 0;
+        if (modal) {
+            modal.querySelectorAll('.item-row-edit').forEach(row => {
+                const volume = parseFloat(row.querySelector('.item-volume-edit')?.value) || 0;
+                const harga = parseFloat(row.querySelector('.item-harga-edit')?.value) || 0;
+                baseTotal += (volume * harga);
+            });
+        }
+
+        const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
+        const discountValue = parseFloat(document.getElementById('discount-value-edit-' + invoiceNumber)?.value) || 0;
+
+        let discountAmount = 0;
+        if (discountType && discountValue > 0) {
+            if (discountType === 'percentage') {
+                discountAmount = (baseTotal * discountValue) / 100;
+            } else {
+                discountAmount = discountValue;
+            }
+        }
+
+        const totalAfterDiscount = baseTotal - discountAmount;
+        const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
+
+        let dpAmount = 0;
+        if (dpType && dpValue > 0) {
+            if (dpType === 'percentage') {
+                dpAmount = (calculationBase * dpValue) / 100;
+            } else {
+                dpAmount = dpValue;
+            }
+        }
+
+        const dpAmountEl = document.getElementById('dp-amount-edit-' + invoiceNumber);
+        if (dpAmountEl) dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
     }
 
     // Calculate edit modal total
@@ -629,5 +764,11 @@
         // ==========================================
 
         updateInvoiceTotal();
+
+        // Initialize edit modals: calculate discount & DP display
+        document.querySelectorAll('[id^="discount-type-edit-"]').forEach(el => {
+            const invoiceNumber = el.id.replace('discount-type-edit-', '');
+            calculateDiscountEdit(invoiceNumber);
+        });
     });
 </script>

@@ -71,6 +71,17 @@
         let discountValue = parseFloat(discountValueInput?.value) || 0;
         const discountError = document.getElementById('discount-error');
 
+        // Enable/disable based on type
+        if (discountValueInput) {
+            if (!discountType) {
+                discountValueInput.disabled = true;
+                discountValueInput.value = '';
+                discountValue = 0;
+            } else {
+                discountValueInput.disabled = false;
+            }
+        }
+
         // Validasi: jika percentage, batasi maksimal 100
         if (discountType === 'percentage' && discountValue > 100) {
             discountValue = 100;
@@ -130,6 +141,17 @@
         const dpValueInput = document.getElementById('dp-value');
         let dpValue = parseFloat(dpValueInput?.value) || 0;
         const dpError = document.getElementById('dp-error');
+
+        // Enable/disable based on type
+        if (dpValueInput) {
+            if (!dpType) {
+                dpValueInput.disabled = true;
+                dpValueInput.value = '';
+                dpValue = 0;
+            } else {
+                dpValueInput.disabled = false;
+            }
+        }
 
         // Validasi: jika percentage, batasi maksimal 100
         if (dpType === 'percentage' && dpValue > 100) {
@@ -196,6 +218,17 @@
         const discountValueInput = document.getElementById('discount-value-edit-' + invoiceNumber);
         let discountValue = parseFloat(discountValueInput?.value) || 0;
 
+        // Enable/disable based on type
+        if (discountValueInput) {
+            if (!discountType) {
+                discountValueInput.disabled = true;
+                discountValueInput.value = 0;
+                discountValue = 0;
+            } else {
+                discountValueInput.disabled = false;
+            }
+        }
+
         if (discountType === 'percentage' && discountValue > 100) {
             discountValue = 100;
             if (discountValueInput) discountValueInput.value = 100;
@@ -240,6 +273,17 @@
         const dpType = document.getElementById('dp-type-edit-' + invoiceNumber)?.value;
         const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
         let dpValue = parseFloat(dpValueInput?.value) || 0;
+
+        // Enable/disable based on type
+        if (dpValueInput) {
+            if (!dpType) {
+                dpValueInput.disabled = true;
+                dpValueInput.value = 0;
+                dpValue = 0;
+            } else {
+                dpValueInput.disabled = false;
+            }
+        }
 
         if (dpType === 'percentage' && dpValue > 100) {
             dpValue = 100;
