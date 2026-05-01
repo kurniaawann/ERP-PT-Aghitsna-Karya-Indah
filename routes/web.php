@@ -17,6 +17,7 @@ use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
 use App\Http\Controllers\Notification\SalaryReminderController;
+use App\Http\Controllers\Notification\InvoiceProyekReminderController;
 use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
@@ -188,6 +189,11 @@ Route::middleware('auth')->group(function () {
 
     // Route Reminder Gaji Karyawan
     Route::get('/notification/salary-reminder', [SalaryReminderController::class, 'index'])->name('notification.salary-reminder');
+
+    // Route Reminder Jatuh Tempo Invoice Proyek
+    Route::get('/notification/invoice-proyek-reminder', [InvoiceProyekReminderController::class, 'index'])->name('notification.invoice-proyek-reminder');
+    Route::put('/notification/invoice-proyek-reminder/{id}/status', [InvoiceProyekReminderController::class, 'updateStatus'])->name('notification.invoice-proyek-reminder.update-status');
+    Route::post('/notification/invoice-proyek-reminder/bulk-update-status', [InvoiceProyekReminderController::class, 'bulkUpdateStatus'])->name('notification.invoice-proyek-reminder.bulk-update-status');
 
     // ============================================
     // SDM (Sumber Daya Manusia) Routes
