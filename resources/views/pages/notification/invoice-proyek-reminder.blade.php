@@ -9,7 +9,6 @@
         <div class="bg-white p-6 rounded-xl shadow">
             <form id="filterForm" method="GET" action="{{ route('notification.invoice-proyek-reminder') }}" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {{-- Filter Bulan --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
                         <select id="month-select" name="month"
@@ -24,7 +23,6 @@
                         </select>
                     </div>
 
-                    {{-- Filter Tahun --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
                         <select id="year-select" name="year"
@@ -39,7 +37,6 @@
                         </select>
                     </div>
 
-                    {{-- Filter Status --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                         <select id="status-select" name="status"
@@ -47,13 +44,12 @@
                             onchange="document.getElementById('filterForm').submit()">
                             <option value="">Semua Status</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="notified" {{ request('status') == 'notified' ? 'selected' : '' }}>Sudah
-                                Dinotifikasi</option>
+                            <option value="notified" {{ request('status') == 'notified' ? 'selected' : '' }}>Kadaluarsa
+                            </option>
                             <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
                         </select>
                     </div>
 
-                    {{-- Filter Search --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Cari Invoice/Penerima</label>
                         <input type="text" name="search" value="{{ request('search') }}"
@@ -108,14 +104,13 @@
             <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-orange-600 font-medium">Sudah Dinotifikasi</p>
-                        <p class="text-3xl font-bold text-orange-900">{{ $totalNotified }}</p>
+                        <p class="text-sm text-orange-600 font-medium">Kadaluarsa</p>
+                        <p class="text-3xl font-bold text-orange-900">{{ $totalExpired }}</p>
                     </div>
                     <div class="bg-orange-200 p-3 rounded-lg">
                         <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
-                            </path>
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
@@ -138,7 +133,7 @@
         </div>
 
         {{-- Alert untuk invoice yang sudah jatuh tempo --}}
-        @if ($overdueReminders > 0)
+        @if ($totalExpired > 0)
             <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow">
                 <div class="flex items-start">
                     <div class="flex-shrink-0">
@@ -150,8 +145,8 @@
                     </div>
                     <div class="ml-3">
                         <p class="text-sm text-red-700">
-                            <strong>⚠️ Ada {{ $overdueReminders }} invoice yang sudah jatuh tempo!</strong> Segera lakukan
-                            pembayaran.
+                            <strong>⚠️ Ada {{ $totalExpired }} invoice yang sudah kadaluarsa!</strong> Segera lakukan
+                            pelunasan.
                         </p>
                     </div>
                 </div>
@@ -168,7 +163,9 @@
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Penerima</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tgl Invoice</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tgl Jatuh Tempo</th>
-                            <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">Total (Rp)</th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">Total Invoice (Rp)</th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">Terbayar (Rp)</th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">Sisa Pembayaran (Rp)</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tgl Perubahan</th>
                         </tr>
@@ -176,39 +173,36 @@
                     <tbody class="divide-y divide-gray-200">
                         @forelse($reminders as $reminder)
                             <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-3 text-sm font-medium text-gray-900">
-                                    {{ $reminder->invoice_number }}
+                                <td class="px-6 py-3 text-sm font-medium text-gray-900">{{ $reminder->invoice_number }}
+                                </td>
+                                <td class="px-6 py-3 text-sm text-gray-600">{{ $reminder->recipient ?? '-' }}</td>
+                                <td class="px-6 py-3 text-sm text-gray-600">{{ $reminder->invoice_date->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-3 text-sm text-gray-600">
-                                    {{ $reminder->recipient ?? '-' }}
-                                </td>
-                                <td class="px-6 py-3 text-sm text-gray-600">
-                                    {{ $reminder->invoice_date->format('d/m/Y') }}
-                                </td>
-                                <td class="px-6 py-3 text-sm text-gray-600">
-                                    <span class="@if (\Carbon\Carbon::parse($reminder->reminder_date)->isPast() && $reminder->status !== 'paid') font-bold text-red-600 @endif">
+                                    <span class="{{ $reminder->is_overdue ? 'font-bold text-red-600' : '' }}">
                                         {{ $reminder->reminder_date->format('d/m/Y') }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-sm text-right text-gray-600">
-                                    Rp {{ number_format($reminder->total_amount, 0, ',', '.') }}
+                                    Rp {{ number_format($reminder->net_amount, 0, ',', '.') }}
+                                </td>
+                                <td class="px-6 py-3 text-sm text-right text-gray-600">
+                                    Rp {{ number_format($reminder->paid_amount, 0, ',', '.') }}
+                                </td>
+                                <td
+                                    class="px-6 py-3 text-sm text-right font-semibold {{ $reminder->remaining_amount > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                    Rp {{ number_format($reminder->remaining_amount, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-3 text-sm">
-                                    @if ($reminder->status === 'pending')
+                                    @if ($reminder->display_status === 'paid')
                                         <span
-                                            class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                            Pending
-                                        </span>
-                                    @elseif($reminder->status === 'notified')
+                                            class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Paid</span>
+                                    @elseif($reminder->display_status === 'expired')
                                         <span
-                                            class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
-                                            Notified
-                                        </span>
+                                            class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">Kadaluarsa</span>
                                     @else
                                         <span
-                                            class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                                            Paid
-                                        </span>
+                                            class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Pending</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-3 text-sm text-gray-600">
@@ -221,7 +215,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="9" class="px-6 py-8 text-center text-gray-500">
                                     <div class="flex flex-col items-center gap-2">
                                         <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
@@ -229,7 +223,7 @@
                                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                             </path>
                                         </svg>
-                                        <p>Tidak ada data reminder invoice</p>
+                                        <p>Tidak ada data reminder invoice proyek</p>
                                     </div>
                                 </td>
                             </tr>
@@ -238,7 +232,6 @@
                 </table>
             </div>
 
-            {{-- Pagination --}}
             <div class="bg-white px-6 py-4 border-t border-gray-200">
                 {{ $reminders->links() }}
             </div>
