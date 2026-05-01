@@ -190,6 +190,102 @@
         }
     }
 
+    // Calculate Discount for EDIT modal
+    function calculateDiscountEdit(invoiceNumber) {
+        const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
+        const discountValueInput = document.getElementById('discount-value-edit-' + invoiceNumber);
+        let discountValue = parseFloat(discountValueInput?.value) || 0;
+
+        if (discountType === 'percentage' && discountValue > 100) {
+            discountValue = 100;
+            if (discountValueInput) discountValueInput.value = 100;
+        }
+
+        const modal = document.getElementById('editModal-' + invoiceNumber);
+        let baseTotal = 0;
+        if (modal) {
+            modal.querySelectorAll('.item-row-edit').forEach(row => {
+                const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+                const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+                baseTotal += (volume * harga);
+            });
+        }
+
+        let discountAmount = 0;
+        if (discountType && discountValue > 0) {
+            if (discountType === 'percentage') {
+                discountAmount = (baseTotal * discountValue) / 100;
+            } else {
+                discountAmount = discountValue;
+            }
+        }
+
+        const totalAfterDiscount = baseTotal - discountAmount;
+
+        const discountAmountEl = document.getElementById('discount-amount-edit-' + invoiceNumber);
+        const totalAfterDiscountEl = document.getElementById('total-after-discount-edit-' + invoiceNumber);
+
+        if (discountAmountEl) {
+            discountAmountEl.textContent = 'Rp ' + discountAmount.toLocaleString('id-ID');
+        }
+        if (totalAfterDiscountEl) {
+            totalAfterDiscountEl.textContent = 'Rp ' + totalAfterDiscount.toLocaleString('id-ID');
+        }
+
+        calculateDPEdit(invoiceNumber);
+    }
+
+    // Calculate DP for EDIT modal
+    function calculateDPEdit(invoiceNumber) {
+        const dpType = document.getElementById('dp-type-edit-' + invoiceNumber)?.value;
+        const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
+        let dpValue = parseFloat(dpValueInput?.value) || 0;
+
+        if (dpType === 'percentage' && dpValue > 100) {
+            dpValue = 100;
+            if (dpValueInput) dpValueInput.value = 100;
+        }
+
+        const modal = document.getElementById('editModal-' + invoiceNumber);
+        let baseTotal = 0;
+        if (modal) {
+            modal.querySelectorAll('.item-row-edit').forEach(row => {
+                const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+                const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+                baseTotal += (volume * harga);
+            });
+        }
+
+        const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
+        const discountValue = parseFloat(document.getElementById('discount-value-edit-' + invoiceNumber)?.value) || 0;
+
+        let discountAmount = 0;
+        if (discountType && discountValue > 0) {
+            if (discountType === 'percentage') {
+                discountAmount = (baseTotal * discountValue) / 100;
+            } else {
+                discountAmount = discountValue;
+            }
+        }
+
+        const totalAfterDiscount = baseTotal - discountAmount;
+        const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
+
+        let dpAmount = 0;
+        if (dpType && dpValue > 0) {
+            if (dpType === 'percentage') {
+                dpAmount = (calculationBase * dpValue) / 100;
+            } else {
+                dpAmount = dpValue;
+            }
+        }
+
+        const dpAmountEl = document.getElementById('dp-amount-edit-' + invoiceNumber);
+        if (dpAmountEl) {
+            dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
+        }
+    }
+
     // Calculate edit modal total
     function updateEditInvoiceTotal(invoiceNumber) {
         if (!invoiceNumber) return;
@@ -812,5 +908,11 @@
         // ==========================================
 
         updateInvoiceTotal();
+
+        // Initialize discount & DP display for all edit modals
+        document.querySelectorAll('[id^="discount-type-edit-"]').forEach(el => {
+            const invoiceNumber = el.id.replace('discount-type-edit-', '');
+            calculateDiscountEdit(invoiceNumber);
+        });
     });
 </script>
