@@ -190,6 +190,7 @@
                     <label class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox-edit"
+                            onchange="validatePaymentSelectionEdit('{{ $invoice->invoice_number }}')"
                             {{ in_array((string)$account->id, array_map('strval', $selectedAccounts ?? [])) ? 'checked' : '' }}>
                         <div class="flex-1">
                             <div class="font-semibold text-text-heading">{{ $account->bank_name }}</div>
