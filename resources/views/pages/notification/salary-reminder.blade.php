@@ -43,9 +43,7 @@
                         <select id="status-select" name="status"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                             <option value="">Semua Status</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="notified" {{ request('status') == 'notified' ? 'selected' : '' }}>Notified
-                            </option>
+                            <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
                         </select>
                     </div>
@@ -103,8 +101,9 @@
                         <p class="text-3xl font-bold text-blue-900">{{ $totalReminders }}</p>
                     </div>
                     <div class="bg-blue-200 p-3 rounded-lg">
-                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 2a6 6 0 100 12A6 6 0 0010 2zM9 9a1 1 0 112 0 1 1 0 01-2 0z">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
                             </path>
                         </svg>
                     </div>
@@ -114,13 +113,13 @@
             <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-xl shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-yellow-600 font-medium">Notified</p>
-                        <p class="text-3xl font-bold text-yellow-900">{{ $totalNotified }}</p>
+                        <p class="text-sm text-yellow-600 font-medium">Draft (Belum Dibayar)</p>
+                        <p class="text-3xl font-bold text-yellow-900">{{ $totalDraft }}</p>
                     </div>
                     <div class="bg-yellow-200 p-3 rounded-lg">
-                        <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 9a1 1 0 112 0 1 1 0 01-2 0z">
-                            </path>
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
@@ -133,10 +132,9 @@
                         <p class="text-3xl font-bold text-green-900">{{ $totalPaid }}</p>
                     </div>
                     <div class="bg-green-200 p-3 rounded-lg">
-                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.707 9.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L9 13.586l3.293-3.293a1 1 0 011.414 0z">
-                            </path>
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
@@ -169,8 +167,11 @@
                                     {{ date('F Y', mktime(0, 0, 0, $reminder->period_month, 1, $reminder->period_year)) }}
                                 </td>
                                 <td class="px-6 py-3 text-sm text-gray-600">
-                                    @if ($reminder->employee)
-                                        Rp {{ number_format($reminder->employee->base_salary, 0, ',', '.') }}
+                                    @if ($reminder->payroll)
+                                        Rp {{ number_format($reminder->payroll->base_salary, 0, ',', '.') }}
+                                    @elseif ($reminder->employee)
+                                        Rp
+                                        {{ number_format($reminder->employee->daily_wage ?? ($reminder->employee->base_salary ?? 0), 0, ',', '.') }}
                                     @else
                                         N/A
                                     @endif
@@ -179,15 +180,10 @@
                                     {{ $reminder->reminder_date->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-3 text-sm">
-                                    @if ($reminder->status === 'pending')
+                                    @if ($reminder->status === 'draft')
                                         <span
                                             class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                            Pending
-                                        </span>
-                                    @elseif ($reminder->status === 'notified')
-                                        <span
-                                            class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                                            Notified
+                                            Draft
                                         </span>
                                     @else
                                         <span
@@ -228,6 +224,75 @@
                 {{ $reminders->links() }}
             </div>
         </div>
+
+        {{-- Attendance Reminder Section --}}
+        @if (count($attendanceReminders) > 0)
+            <div class="space-y-4 mt-6">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4v2m0-11a9 9 0 110 18 9 9 0 010-18z"></path>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-gray-900">Pengingat Payroll Belum Dibuat</h3>
+                </div>
+
+                <p class="text-sm text-gray-600">Karyawan berikut sudah memiliki absensi minggu 1-4 namun payroll belum
+                    dibuatkan:</p>
+
+                <div class="bg-white rounded-xl shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-orange-100 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">ID Karyawan</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nama Karyawan</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Periode</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Minggu Ke-</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tanggal Absensi
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                @forelse($attendanceReminders as $reminder)
+                                    <tr class="hover:bg-orange-50 transition">
+                                        <td class="px-6 py-3 text-sm text-gray-600">{{ $reminder->employee_id }}</td>
+                                        <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                                            {{ $reminder->employee_name }}
+                                        </td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">
+                                            {{ date('F Y', mktime(0, 0, 0, $reminder->period_month, 1, $reminder->period_year)) }}
+                                        </td>
+                                        <td class="px-6 py-3 text-sm">
+                                            <span
+                                                class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
+                                                Minggu {{ $reminder->week_number }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">
+                                            {{ $reminder->first_attendance_date->format('d/m/Y') }} -
+                                            {{ $reminder->last_attendance_date->format('d/m/Y') }}
+                                        </td>
+                                        <td class="px-6 py-3 text-sm">
+                                            <span
+                                                class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
+                                                Payroll Belum Dibuat
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                            <p>Semua payroll untuk absensi sudah dibuat</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
 
     </div>
 @endsection

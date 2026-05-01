@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Models\Report\SalesRecap;
+use App\Models\Sdm\Payroll;
 use App\Observers\SalesRecapObserver;
+use App\Observers\PayrollObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,5 +25,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register observer untuk auto-create expense recap when sales recap LUNAS
         SalesRecap::observe(SalesRecapObserver::class);
+
+        // Register observer untuk auto-sync SalaryReminder ketika Payroll status berubah
+        Payroll::observe(PayrollObserver::class);
     }
 }

@@ -62,11 +62,11 @@ class SalaryReminder extends Model
     }
 
     /**
-     * Check apakah reminder sudah dikirim notifikasi
+     * Check apakah gaji dalam status draft (belum dibayar)
      */
-    public function isNotified()
+    public function isDraft()
     {
-        return $this->status === 'notified';
+        return $this->status === 'draft';
     }
 
     /**
@@ -75,6 +75,14 @@ class SalaryReminder extends Model
     public function isPaid()
     {
         return $this->status === 'paid';
+    }
+
+    /**
+     * Check apakah notifikasi sudah dikirim
+     */
+    public function isNotified()
+    {
+        return $this->notification_sent_at !== null;
     }
 }
 
