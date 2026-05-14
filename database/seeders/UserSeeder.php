@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
             ['email' => 'superadmin@example.com'],
             [
                 'id' => Str::uuid(),
-                'name' => 'Super Admin',
+                'name' => 'superadmin',
                 'password' => Hash::make('password123'),
                 'role' => 'superadmin',
             ],
@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
             ['email' => 'admin@example.com'],
             [
                 'id' => Str::uuid(),
-                'name' => 'Admin Keuangan',
+                'name' => 'admin',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
             ],

@@ -14,10 +14,10 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, HasUuids;
 
     const ROLES = [
-        'super_admin'  => 'Super Admin',
-        'admin'        => 'Admin',
-        'keuangan'     => 'Keuangan',
-        'sdm'          => 'SDM',
+        'superadmin' => 'Super Admin',
+        'admin' => 'Admin',
+        'keuangan' => 'Keuangan',
+        'sdm' => 'SDM',
         'administrasi' => 'Administrasi',
     ];
 
@@ -36,12 +36,12 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'is_active'         => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->role === 'superadmin';
     }
 
     public function hasRole(string|array $roles): bool

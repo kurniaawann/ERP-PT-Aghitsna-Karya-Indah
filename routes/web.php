@@ -348,7 +348,7 @@ Route::middleware('auth')->group(function () {
     // ============================================
     // User Management Routes (Super Admin only)
     // ============================================
-    Route::middleware('role:super_admin')->group(function () {
+    Route::middleware('role:superadmin')->group(function () {
         Route::get('/user-management', [UserController::class, 'index'])->name('user-management.index');
         Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
         Route::delete('/user-management/destroy-selected', [UserController::class, 'destroy'])->name('user-management.destroy');

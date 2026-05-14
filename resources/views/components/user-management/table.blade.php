@@ -6,8 +6,7 @@
 
 {{-- Toggle forms standalone per user --}}
 @foreach ($users as $user)
-    <form id="toggleForm-{{ $user->id }}" method="POST"
-        action="{{ route('user-management.toggle', $user->id) }}">
+    <form id="toggleForm-{{ $user->id }}" method="POST" action="{{ route('user-management.toggle', $user->id) }}">
         @csrf
     </form>
 @endforeach
@@ -33,8 +32,7 @@
                             <td class="p-2 text-center">
                                 @if ($user->id !== auth()->id())
                                     {{-- form="deleteForm" mengaitkan checkbox ke deleteForm meski berada di luar form --}}
-                                    <input type="checkbox" name="ids[]" value="{{ $user->id }}"
-                                        form="deleteForm"
+                                    <input type="checkbox" name="ids[]" value="{{ $user->id }}" form="deleteForm"
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 @endif
                             </td>
@@ -48,10 +46,10 @@
                             <td class="p-2 text-center">
                                 @php
                                     $roleColors = [
-                                        'super_admin'  => 'bg-purple-100 text-purple-800',
-                                        'admin'        => 'bg-blue-100 text-blue-800',
-                                        'keuangan'     => 'bg-green-100 text-green-800',
-                                        'sdm'          => 'bg-yellow-100 text-yellow-800',
+                                        'superadmin' => 'bg-purple-100 text-purple-800',
+                                        'admin' => 'bg-blue-100 text-blue-800',
+                                        'keuangan' => 'bg-green-100 text-green-800',
+                                        'sdm' => 'bg-yellow-100 text-yellow-800',
                                         'administrasi' => 'bg-orange-100 text-orange-800',
                                     ];
                                     $color = $roleColors[$user->role] ?? 'bg-gray-100 text-gray-800';
@@ -78,8 +76,7 @@
                                 @endif
                             </td>
                             <td class="p-2 text-center">
-                                <button type="button"
-                                    onclick="openModal('editModal-{{ $user->id }}')"
+                                <button type="button" onclick="openModal('editModal-{{ $user->id }}')"
                                     class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs mx-auto"
                                     title="Edit User">
                                     <i class="fa-solid fa-pen w-3 h-3"></i>
