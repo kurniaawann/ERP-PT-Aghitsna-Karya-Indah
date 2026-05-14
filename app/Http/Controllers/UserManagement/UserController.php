@@ -15,7 +15,7 @@ class UserController extends Controller
 
         $users = User::when($search, function ($q, $search) {
             $q->where('name', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%");
         })
             ->latest()
             ->paginate(10);
@@ -26,18 +26,17 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
-            'role'     => 'required|in:' . implode(',', array_keys(User::ROLES)),
+            'role' => 'required|in:' . implode(',', array_keys(User::ROLES)),
         ]);
 
         User::create([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'password'  => Hash::make($request->password),
-            'role'      => $request->role,
-            'is_active' => $request->input('is_active', 0) == 1,
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
         ]);
 
         return redirect()->route('user-management.index')->with('success', 'User berhasil ditambahkan!');
@@ -46,21 +45,16 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name'  => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role'  => 'required|in:' . implode(',', array_keys(User::ROLES)),
+            'role' => 'required|in:' . implode(',', array_keys(User::ROLES)),
         ]);
 
         $data = [
-            'name'  => $request->name,
+            'name' => $request->name,
             'email' => $request->email,
-            'role'  => $request->role,
+            'role' => $request->role,
         ];
-
-        // Prevent deactivating own account via form
-        if ($user->id !== auth()->id()) {
-            $data['is_active'] = $request->input('is_active', 0) == 1;
-        }
 
         $user->update($data);
 
@@ -75,24 +69,9 @@ class UserController extends Controller
             return redirect()->route('user-management.index')->with('error', 'Tidak ada user yang dipilih!');
         }
 
-        $ids = array_values(array_filter($ids, fn($id) => $id !== auth()->id()));
-
-        if (!empty($ids)) {
-            User::whereIn('id', $ids)->delete();
-        }
+        User::whereIn('id', $ids)->delete();
 
         return redirect()->route('user-management.index')->with('success', 'User berhasil dihapus!');
     }
 
-    public function toggleActive(User $user)
-    {
-        if ($user->id === auth()->id()) {
-            return redirect()->route('user-management.index')->with('error', 'Tidak dapat mengubah status akun sendiri!');
-        }
-
-        $user->update(['is_active' => !$user->is_active]);
-        $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
-
-        return redirect()->route('user-management.index')->with('success', "User berhasil {$status}!");
-    }
 }

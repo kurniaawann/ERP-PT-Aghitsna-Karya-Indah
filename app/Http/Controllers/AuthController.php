@@ -34,15 +34,6 @@ class AuthController extends Controller
         // Auth::attempt() akan return true jika credentials cocok dengan data di database
         // Secara otomatis akan hash password dan compare dengan yang tersimpan
         if (Auth::attempt($credentials)) {
-            if (!Auth::user()->is_active) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-                return back()->withErrors([
-                    'email' => 'Akun Anda tidak aktif. Hubungi administrator.',
-                ])->withInput($request->only('email'));
-            }
-
             $request->session()->regenerate();
 
             return redirect()->intended('/dashboard');

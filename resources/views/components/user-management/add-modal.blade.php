@@ -1,5 +1,4 @@
-<x-modal id="addModal" title="Tambah User" action="{{ route('user-management.store') }}" method="POST"
-    buttonText="Simpan">
+<x-modal id="addModal" title="Tambah User" action="{{ route('user-management.store') }}" method="POST" buttonText="Simpan">
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Lengkap <span class="text-error">*</span></label>
@@ -10,8 +9,8 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Email <span class="text-error">*</span></label>
-        <input type="email" name="email" class="w-full border rounded p-2" placeholder="Masukkan email"
-            required maxlength="255" oninvalid="this.setCustomValidity('Email tidak boleh kosong')"
+        <input type="email" name="email" class="w-full border rounded p-2" placeholder="Masukkan email" required
+            maxlength="255" oninvalid="this.setCustomValidity('Email tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 
@@ -31,13 +30,5 @@
                 <option value="{{ $value }}">{{ $label }}</option>
             @endforeach
         </select>
-    </div>
-
-    <div class="mb-3">
-        <label class="flex items-center gap-2 cursor-pointer">
-            <input type="hidden" name="is_active" value="0">
-            <input type="checkbox" name="is_active" value="1" checked class="w-4 h-4 accent-primary">
-            <span class="text-text-primary">Aktif</span>
-        </label>
     </div>
 </x-modal>

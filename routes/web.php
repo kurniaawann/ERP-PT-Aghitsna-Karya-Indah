@@ -353,7 +353,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
         Route::delete('/user-management/destroy-selected', [UserController::class, 'destroy'])->name('user-management.destroy');
         Route::put('/user-management/{user}', [UserController::class, 'update'])->name('user-management.update');
-        Route::post('/user-management/{user}/toggle', [UserController::class, 'toggleActive'])->name('user-management.toggle');
     });
 
     // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
