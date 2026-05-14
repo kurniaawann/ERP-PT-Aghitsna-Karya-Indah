@@ -68,11 +68,11 @@ class RecapExpenseController extends Controller
                 });
             })
 
-            // Urutkan hasil berdasarkan transaction_date descending (terbaru di atas)
-            ->orderBy('transaction_date', 'desc')
+            // Urutkan hasil berdasarkan transaction_date ascending (tanggal paling lama di atas)
+            ->orderBy('transaction_date', 'asc')
 
-            // Jika tanggal sama, urutkan berdasarkan created_at descending (yang dibuat terakhir di atas)
-            ->orderBy('created_at', 'desc')
+            // Jika tanggal sama, urutkan berdasarkan created_at ascending (data lama dulu)
+            ->orderBy('created_at', 'asc')
 
             // Pagination 10 data per halaman dengan append query parameters agar filter tetap ada saat pindah halaman
             ->paginate(10)->appends($request->all());
@@ -234,11 +234,11 @@ class RecapExpenseController extends Controller
                 return $query->whereYear('transaction_date', $year);
             })
 
-            // Urutkan berdasarkan tanggal transaksi descending (terbaru di atas)
-            ->orderBy('transaction_date', 'desc')
+            // Urutkan berdasarkan tanggal transaksi ascending (tanggal paling lama di atas)
+            ->orderBy('transaction_date', 'asc')
 
-            // Jika tanggal sama, urutkan berdasarkan created_at descending
-            ->orderBy('created_at', 'desc')
+            // Jika tanggal sama, urutkan berdasarkan created_at ascending
+            ->orderBy('created_at', 'asc')
 
             // Ambil semua data (tanpa pagination) untuk export
             ->get();
@@ -295,11 +295,11 @@ class RecapExpenseController extends Controller
                 return $query->whereYear('transaction_date', $year);
             })
 
-            // Urutkan berdasarkan tanggal transaksi descending (terbaru di atas)
-            ->orderBy('transaction_date', 'desc')
+            // Urutkan berdasarkan tanggal transaksi ascending (tanggal paling lama di atas)
+            ->orderBy('transaction_date', 'asc')
 
-            // Jika tanggal sama, urutkan berdasarkan created_at descending
-            ->orderBy('created_at', 'desc')
+            // Jika tanggal sama, urutkan berdasarkan created_at ascending
+            ->orderBy('created_at', 'asc')
 
             // Ambil semua data (tanpa pagination) untuk export PDF
             ->get();
