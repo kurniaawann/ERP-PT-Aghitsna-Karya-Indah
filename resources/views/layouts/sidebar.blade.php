@@ -462,7 +462,7 @@
                                         class="fas fa-truck w-4 
                                         {{ request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                     </i>
-                                    <span class="ml-3 text-sm font-medium">Delivery Note</span>
+                                    <span class="ml-3 text-sm font-medium">Surat Jalan</span>
                                 </a>
                             </li>
                         </ul>
