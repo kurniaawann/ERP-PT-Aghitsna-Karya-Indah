@@ -34,14 +34,8 @@ class AuthController extends Controller
         // Auth::attempt() akan return true jika credentials cocok dengan data di database
         // Secara otomatis akan hash password dan compare dengan yang tersimpan
         if (Auth::attempt($credentials)) {
-            // Jika login berhasil:
-            // Regenerate session ID untuk keamanan (mencegah session fixation attack)
-            // Session fixation attack = attacker mencoba memakai session ID lama untuk hijack session
             $request->session()->regenerate();
 
-            // Redirect ke intended URL (URL yang user coba akses sebelum diredirect ke login)
-            // Jika tidak ada intended URL, default redirect ke '/dashboard'
-            // intended() sangat berguna untuk UX, misal user coba akses /employee, akan redirect balik ke /employee setelah login
             return redirect()->intended('/dashboard');
         }
 

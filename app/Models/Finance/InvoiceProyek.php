@@ -4,6 +4,7 @@ namespace App\Models\Finance;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class InvoiceProyek extends Model
 {
@@ -87,5 +88,58 @@ class InvoiceProyek extends Model
         }
 
         return round(floatval($this->dp_value));
+    }
+
+    /**
+     * Total invoice setelah diskon.
+     */
+    public function getNetAmount(): int
+    {
+        return (int) max(0, $this->total_after_discount ?? $this->total_amount ?? 0);
+    }
+
+    /**
+     * Total pembayaran yang sudah masuk (DP + cicilan).
+     */
+    public function getTotalPaidAmount(): int
+    {
+        $totalPaid = (int) ($this->dp_amount ?? 0);
+        $paymentInstallments = $this->payment_installments;
+
+        if (is_string($paymentInstallments)) {
+            $paymentInstallments = json_decode($paymentInstallments, true);
+        }
+
+        if (is_array($paymentInstallments)) {
+            foreach ($paymentInstallments as $installment) {
+                $totalPaid += (int) ($installment['amount'] ?? 0);
+            }
+        }
+
+        return (int) max(0, $totalPaid);
+    }
+
+    /**
+     * Sisa pembayaran yang harus dilunasi.
+     */
+    public function getRemainingAmount(): int
+    {
+        return (int) max(0, $this->getNetAmount() - $this->getTotalPaidAmount());
+    }
+
+    /**
+     * Tanggal jatuh tempo invoice proyek.
+     */
+    public function getDueDate(): Carbon
+    {
+        return Carbon::parse($this->invoice_date)->addMonthNoOverflow();
+    }
+
+    /**
+     * Cek apakah invoice sudah lunas.
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->getTotalPaidAmount() >= $this->getNetAmount();
     }
 }

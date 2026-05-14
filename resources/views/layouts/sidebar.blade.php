@@ -404,23 +404,23 @@
                     <li>
                         <button onclick="toggleDropdown('suratMenyuratDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <div class="flex items-center">
                                 <i
                                     class="fas fa-envelope w-4
-                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                 </i>
                                 <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
                             </div>
 
                             <i id="suratMenyuratDropdownIcon"
                                 class="fas fa-chevron-down text-xs transition-transform duration-200
-                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                         </button>
 
                         <ul id="suratMenyuratDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') ? '' : 'hidden' }}">
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="{{ url('/document-receipt') }}"
                                     class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -452,6 +452,17 @@
                                         {{ request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                     </i>
                                     <span class="ml-3 text-sm font-medium">Nota</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/delivery-note') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('delivery-note*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-truck w-4 
+                                        {{ request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Delivery Note</span>
                                 </a>
                             </li>
                         </ul>
@@ -510,6 +521,65 @@
                             </i>
                             <span class="ml-3 text-sm font-medium">RAB</span>
                         </a>
+                </ul>
+            </li>
+
+            {{-- Manajemen User (Super Admin only) --}}
+            @if (auth()->user()?->isSuperAdmin())
+                <li>
+                    <a href="{{ route('user-management.index') }}"
+                        class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
+                            {{ request()->is('user-management*') ? 'bg-primary-light text-primary' : 'text-text-primary hover:bg-primary-light hover:text-primary' }}">
+                        <i
+                            class="fas fa-user-shield w-5
+                            {{ request()->is('user-management*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                        </i>
+                        <span class="ml-3 font-medium">Manajemen User</span>
+                    </a>
+                </li>
+            @endif
+
+            {{-- Notification & Reminders Dropdown --}}
+            <li>
+                <button onclick="toggleDropdown('notificationDropdown')"
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
+
+                    <div class="flex items-center">
+                        <i class="fas fa-bell w-5 text-text-tertiary group-hover:text-primary">
+                        </i>
+                        <span class="ml-3 font-medium">Notifikasi & Reminder</span>
+                    </div>
+
+                    <i id="notificationDropdownIcon"
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
+                    </i>
+                </button>
+
+                {{-- Submenu --}}
+                <ul id="notificationDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('notification*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ route('notification.salary-reminder') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('notification/salary-reminder*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-file-invoice-dollar w-4 
+                                {{ request()->is('notification/salary-reminder*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Reminder Gaji Karyawan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('notification.invoice-proyek-reminder') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('notification/invoice-proyek-reminder*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-clock w-4 
+                                {{ request()->is('notification/invoice-proyek-reminder*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Reminder Jatuh Tempo Invoice</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
 

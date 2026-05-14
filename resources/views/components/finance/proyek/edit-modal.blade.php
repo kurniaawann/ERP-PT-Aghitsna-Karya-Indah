@@ -120,7 +120,10 @@
                 <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
                 <input type="number" step="0.01" min="0" name="discount_value"
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
-                    value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
+                    value="{{ $invoice->discount_value ?? 0 }}"
+                    class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="{{ $invoice->discount_type ? '0' : 'Pilih tipe dulu' }}"
+                    {{ !$invoice->discount_type ? 'disabled' : '' }}
                     oninput="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
             </div>
         </div>
@@ -157,7 +160,9 @@
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
                 <input type="number" step="0.01" min="0" name="dp_value"
                     id="dp-value-edit-{{ $invoice->invoice_number }}" value="{{ $invoice->dp_value ?? 0 }}"
-                    class="w-full border rounded p-2" placeholder="0"
+                    class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="{{ $invoice->dp_type ? '0' : 'Pilih tipe dulu' }}"
+                    {{ !$invoice->dp_type ? 'disabled' : '' }}
                     oninput="calculateDPEdit('{{ $invoice->invoice_number }}')">
             </div>
         </div>
@@ -228,6 +233,7 @@
                     <label class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox"
+                            onchange="validatePaymentSelectionEdit('{{ $invoice->invoice_number }}')"
                             {{ in_array($account->id, $selectedAccounts ?? []) ? 'checked' : '' }}>
                         <div class="flex-1">
                             <div class="font-semibold text-text-heading">{{ $account->bank_name }}</div>

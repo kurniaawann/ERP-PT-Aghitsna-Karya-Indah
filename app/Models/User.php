@@ -13,6 +13,14 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasUuids;
 
+    const ROLES = [
+        'superadmin' => 'Super Admin',
+        'admin' => 'Admin',
+        'keuangan' => 'Keuangan',
+        'sdm' => 'SDM',
+        'administrasi' => 'Administrasi',
+    ];
+
     protected $fillable = [
         'name',
         'email',
@@ -29,22 +37,26 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    /**
-     * Send the password reset notification.
-     *
-     * @param  string  $token
-     * @return void
-     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        return in_array($this->role, (array) $roles);
+    }
+
+    public function getRoleLabelAttribute(): string
+    {
+        return self::ROLES[$this->role] ?? $this->role;
+    }
+
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));
     }
 
-    /**
-     * Get the email address to be used for password reset.
-     *
-     * @return string
-     */
     public function getEmailForPasswordReset()
     {
         return $this->email;

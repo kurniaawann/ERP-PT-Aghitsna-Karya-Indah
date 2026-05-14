@@ -7,6 +7,7 @@ use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Kasbon;
+use App\Models\Notification\SalaryReminder;
 use App\Exports\Sdm\PayrollExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -719,7 +720,14 @@ class PayrollController extends Controller
                 'status' => 'paid',
             ]);
 
+        // Sync SalaryReminder status menjadi 'paid' untuk payroll yang sudah dibayar
         if ($updated > 0) {
+            // Update SalaryReminder yang terkait dengan payroll yang baru dibayar
+            SalaryReminder::whereIn('payroll_id', $ids)->update([
+                'status' => 'paid',
+                'notification_sent_at' => now(), // Update notification sent juga
+            ]);
+
             return redirect()->route('payroll.index')->with('success', "Berhasil membayar {$updated} payroll!");
         }
 

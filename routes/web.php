@@ -16,6 +16,8 @@ use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
+use App\Http\Controllers\Notification\SalaryReminderController;
+use App\Http\Controllers\Notification\InvoiceProyekReminderController;
 use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
@@ -26,9 +28,11 @@ use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
 use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\NotaController;
+use App\Http\Controllers\Administrasi\DeliveryNoteController;
 use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use App\Http\Controllers\Administrasi\RABController;
+use App\Http\Controllers\UserManagement\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -182,6 +186,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
 
     // ============================================
+    // Notification Routes (Notifikasi & Reminder)
+    // ============================================
+
+    // Route Reminder Gaji Karyawan
+    Route::get('/notification/salary-reminder', [SalaryReminderController::class, 'index'])->name('notification.salary-reminder');
+
+    // Route Reminder Jatuh Tempo Invoice Proyek
+    Route::get('/notification/invoice-proyek-reminder', [InvoiceProyekReminderController::class, 'index'])->name('notification.invoice-proyek-reminder');
+    Route::put('/notification/invoice-proyek-reminder/{id}/status', [InvoiceProyekReminderController::class, 'updateStatus'])->name('notification.invoice-proyek-reminder.update-status');
+    Route::post('/notification/invoice-proyek-reminder/bulk-update-status', [InvoiceProyekReminderController::class, 'bulkUpdateStatus'])->name('notification.invoice-proyek-reminder.bulk-update-status');
+
+    // ============================================
     // SDM (Sumber Daya Manusia) Routes
     // ============================================
 
@@ -292,6 +308,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/nota-administrasi/export/pdf', [NotaController::class, 'exportPdfAll'])->name('nota.administrasi.export.pdf');
     Route::post('/nota-administrasi/export/pdf-selected', [NotaController::class, 'exportPdfSelected'])->name('nota.administrasi.export.pdf.selected');
 
+    // Route Delivery Note (Surat Jalan)
+    Route::get('/delivery-note', [DeliveryNoteController::class, 'index'])->name('delivery-note.administrasi.index');
+    Route::post('/delivery-note', [DeliveryNoteController::class, 'store'])->name('delivery-note.administrasi.store');
+    Route::put('/delivery-note/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('delivery-note.administrasi.update')->where('deliveryNote', '.*');
+    Route::delete('/delivery-note/destroy-selected', [DeliveryNoteController::class, 'destroySelected'])->name('delivery-note.administrasi.destroySelected');
+    Route::patch('/delivery-note/{deliveryNote}/status', [DeliveryNoteController::class, 'updateStatus'])->name('delivery-note.administrasi.updateStatus')->where('deliveryNote', '.*');
+
+    // Route Delivery Note - Export PDF
+    Route::get('/delivery-note/export/pdf', [DeliveryNoteController::class, 'exportPdfAll'])->name('delivery-note.administrasi.export.pdf');
+    Route::post('/delivery-note/export/pdf-selected', [DeliveryNoteController::class, 'exportPdfSelected'])->name('delivery-note.administrasi.export.pdf.selected');
+
     // ─── Penawaran Aluminium (Aluminium Quotation) ──────────────────────────────
     Route::get('/aluminium-quotation', [AluminiumQuotationController::class, 'index'])->name('aluminium-quotation.index');
     Route::get('/aluminium-quotation/next-number', [AluminiumQuotationController::class, 'getNextQuotationNumber'])->name('aluminium-quotation.getNextNumber');
@@ -317,6 +344,16 @@ Route::middleware('auth')->group(function () {
     // Generic routes come last
     Route::get('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'show'])->name('project-quotation.show')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
     Route::put('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+
+    // ============================================
+    // User Management Routes (Super Admin only)
+    // ============================================
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/user-management', [UserController::class, 'index'])->name('user-management.index');
+        Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
+        Route::delete('/user-management/destroy-selected', [UserController::class, 'destroy'])->name('user-management.destroy');
+        Route::put('/user-management/{user}', [UserController::class, 'update'])->name('user-management.update');
+    });
 
     // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
     Route::get('/rab', [RABController::class, 'index'])->name('rab.index');
