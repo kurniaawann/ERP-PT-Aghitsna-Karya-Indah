@@ -134,6 +134,25 @@
             </div>
         </div>
 
+        {{-- Charts Section --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {{-- Monthly Trend Chart --}}
+            <div class="bg-white p-6 rounded-xl shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">📈 Trend Penjualan Bulanan</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="monthlySalesChart"></canvas>
+                </div>
+            </div>
+
+            {{-- Status Distribution Chart --}}
+            <div class="bg-white p-6 rounded-xl shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">💳 Status Pembayaran</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="statusDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         {{-- Status Pembayaran Cards --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-xl shadow">
@@ -340,4 +359,113 @@
             </div>
         </div>
     </div>
+
+    {{-- Script untuk Chart --}}
+    @push('scripts')
+        <script>
+            // Data dari server
+            const monthlyTrendData = @json($monthlyTrend);
+            const statusDistributionData = @json($statusDistribution);
+
+            // Monthly Sales Chart
+            const monthlySalesCtx = document.getElementById('monthlySalesChart').getContext('2d');
+            new Chart(monthlySalesCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyTrendData.map(item => item.month_name),
+                    datasets: [{
+                            label: 'Penjualan (Rp)',
+                            data: monthlyTrendData.map(item => item.selling),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                        },
+                        {
+                            label: 'Profit (Rp)',
+                            data: monthlyTrendData.map(item => item.profit),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp ' + (value / 1000000).toFixed(1) + 'jt';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Status Distribution Chart
+            const statusLabels = statusDistributionData.map(item => item.status);
+            const statusCounts = statusDistributionData.map(item => item.count);
+
+            const statusDistributionCtx = document.getElementById('statusDistributionChart').getContext('2d');
+            new Chart(statusDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusCounts,
+                        backgroundColor: [
+                            '#10b981',
+                            '#ef4444'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    @endpush
 @endsection

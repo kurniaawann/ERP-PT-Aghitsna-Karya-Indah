@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Administrasi\ProjectQuotation;
-use App\Models\Administrasi\ProjectQuotationGroup;
-use App\Models\Administrasi\ProjectQuotationItem;
+use App\Models\Administrasi\AluminiumQuotation as ProjectQuotation;
+use App\Models\Administrasi\AluminiumQuotationGroup as ProjectQuotationGroup;
+use App\Models\Administrasi\AluminiumQuotationItem as ProjectQuotationItem;
 use App\Models\Finance\PaymentAccount;
 
 class ProjectQuotationSeeder extends Seeder

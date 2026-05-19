@@ -153,9 +153,36 @@
             </div>
         </div>
 
+        {{-- Charts Section --}}
+        <div class="grid grid-cols-1 gap-6">
+            {{-- Monthly Trend Chart --}}
+            <div class="bg-white p-6 rounded-xl shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">📈 Trend Pemasukan & Pengeluaran Bulanan</h3>
+                <div style="position: relative; height: 350px;">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+
+            {{-- Category Expense Chart --}}
+            <div class="bg-white p-6 rounded-xl shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Total Pengeluaran Per Kategori</h3>
+                <div style="position: relative; height: 400px;">
+                    <canvas id="categoryExpenseChart"></canvas>
+                </div>
+            </div>
+
+            {{-- Income vs Expense Comparison --}}
+            <div class="bg-white p-6 rounded-xl shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">💰 Perbandingan Pemasukan vs Pengeluaran</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="incomeVsExpenseChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         {{-- Cash Flow Analysis --}}
         <div class="bg-white p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Analisis Cash Flow</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Rincian Cash Flow</h3>
             <div class="space-y-4">
                 <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <span class="text-gray-700 font-medium">Saldo Awal Periode</span>
@@ -349,4 +376,168 @@
             </div>
         </div>
     </div>
+
+    {{-- Script untuk Chart --}}
+    @push('scripts')
+        <script>
+            // Data dari server
+            const monthlyTrendData = @json($monthlyTrend);
+            const categoryDistributionData = @json($categoryDistribution);
+
+            // Monthly Trend Chart (Income vs Expense)
+            const monthlyTrendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+            new Chart(monthlyTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyTrendData.map(item => item.month_name),
+                    datasets: [{
+                            label: 'Pemasukan (Rp)',
+                            data: monthlyTrendData.map(item => item.income),
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#22c55e',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                        },
+                        {
+                            label: 'Pengeluaran (Rp)',
+                            data: monthlyTrendData.map(item => item.expense),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ef4444',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp ' + (value / 1000000).toFixed(1) + 'jt';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Warna yang lebih terang dan berbeda untuk setiap kategori
+            const categoryColors = {
+                'UANG MASUK PENJUALAN': '#22c55e',
+                'UPAH KERJA / KASBON': '#ff6b6b',
+                'ATK / OPERASIONAL & ALAT': '#3b82f6',
+                'PENGELUARAN MATERIAL': '#8b5cf6',
+                'PENGELUARAN PEMBELIAN COIL': '#f59e0b',
+                'TRANSPORT': '#14b8a6',
+                'TOKEN LISTRIK': '#06b6d4',
+                'LAIN - LAIN': '#ec4899'
+            };
+
+            // Category Expense Chart (Bar Chart - Horizontal)
+            const categoryNames = categoryDistributionData.map(item => item.category_name);
+            const categoryExpenses = categoryDistributionData.map(item => item.expense);
+            const categoryChartColors = categoryNames.map(name => categoryColors[name] || '#9ca3af');
+
+            const categoryExpenseCtx = document.getElementById('categoryExpenseChart').getContext('2d');
+            new Chart(categoryExpenseCtx, {
+                type: 'bar',
+                data: {
+                    labels: categoryNames,
+                    datasets: [{
+                        label: 'Total Pengeluaran (Rp)',
+                        data: categoryExpenses,
+                        backgroundColor: categoryChartColors,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp ' + (value / 1000000).toFixed(1) + 'jt';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Income vs Expense Comparison (Doughnut Chart)
+            const incomeVsExpenseCtx = document.getElementById('incomeVsExpenseChart').getContext('2d');
+            new Chart(incomeVsExpenseCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Total Pemasukan', 'Total Pengeluaran'],
+                    datasets: [{
+                        data: [
+                            @json($summary['total_income']),
+                            @json($summary['total_expense'])
+                        ],
+                        backgroundColor: ['#22c55e', '#ef4444'],
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    @endpush
 @endsection
