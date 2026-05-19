@@ -74,7 +74,8 @@
         <h6 class="text-text-primary font-semibold mb-3">Detail Pekerjaan (Struktur Hierarki)</h6>
         <div class="text-xs text-gray-600 mb-4 p-2 bg-gray-50 rounded">
             <p class="mb-1"><strong>Struktur:</strong> Kategori (Romawi) → Sub-Kategori (Angka) → Item (Huruf)</p>
-            <p><strong>Contoh:</strong> I. Pekerjaan Persiapan → 1. Pembongkaran → a. Pembongkaran atap</p>
+            <p><strong>Catatan:</strong> Volume, satuan, harga satuan, dan sub-harga diisi pada item huruf a, b, c...
+            </p>
         </div>
     </div>
 
@@ -105,44 +106,26 @@
                             oninput="this.setCustomValidity('')">
                     </div>
 
-                    {{-- Volume, Satuan, Harga --}}
-                    <div class="space-y-3 mb-3">
-                        <div>
-                            <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
-                            <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
-                                min="0" step="0.01" required
-                                oninvalid="this.setCustomValidity('Volume harus lebih dari 0')"
-                                oninput="this.setCustomValidity('')">
-                        </div>
-                        <div>
-                            <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²" required
-                                maxlength="50" oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                                oninput="this.setCustomValidity('')">
-                        </div>
-                        <div>
-                            <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
-                            <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
-                                min="0" step="0.01" required
-                                oninvalid="this.setCustomValidity('Harga satuan harus lebih dari 0')"
-                                oninput="this.setCustomValidity('')">
-                        </div>
-                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                            <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span
-                                    class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
-                        </div>
-                    </div>
-
                     {{-- Item Details --}}
                     <div class="mb-3">
                         <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b,
                             c...)</label>
                         <div class="items-container space-y-2">
-                            <div class="item-block bg-white rounded border p-2 flex gap-2">
-                                <input type="text" class="flex-1 w-full border-0 p-1 item-description"
+                            <div class="item-block bg-white rounded border p-3 flex flex-col gap-2">
+                                <input type="text" class="w-full border rounded p-2 item-description"
                                     placeholder="Masukkan item pekerjaan" required maxlength="255"
                                     oninvalid="this.setCustomValidity('Item pekerjaan tidak boleh kosong')"
                                     oninput="this.setCustomValidity('')">
+                                <input type="number" class="w-full border rounded p-2 item-volume" placeholder="Vol"
+                                    min="0" step="0.01" required oninput="updatePrices()">
+                                <input type="text" class="w-full border rounded p-2 item-unit"
+                                    placeholder="Satuan" maxlength="50" required oninput="updatePrices()">
+                                <input type="number" class="w-full border rounded p-2 item-unit-price"
+                                    placeholder="Harga" min="0" step="0.01" required
+                                    oninput="updatePrices()">
+                                <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-right">
+                                    <span class="item-sub-total-price text-sm font-semibold text-blue-700">Rp 0</span>
+                                </div>
                                 <button type="button" class="btn btn-sm btn-danger" onclick="removeItemBlock(this)">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
@@ -152,6 +135,11 @@
                             onclick="addItemBlock(this)">
                             <i class="fa-solid fa-plus"></i> Tambah Item
                         </button>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
+                        <p class="text-sm text-blue-900"><strong>Total Sub-Kategori:</strong> <span
+                                class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
                     </div>
 
                     <button type="button" class="btn btn-sm btn-outline-danger w-full"

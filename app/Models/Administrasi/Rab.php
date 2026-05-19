@@ -80,14 +80,30 @@ class RAB extends Model
                 return [
                     'category_name' => $category->category_name,
                     'subcategories' => $category->subcategories->map(function ($subcategory) {
+                        $legacySubtotal = (int) ($subcategory->sub_harga ?? 0);
+                        $legacyVolume = $subcategory->volume;
+                        $legacyUnit = $subcategory->unit;
+                        $legacyUnitPrice = $subcategory->unit_price;
+
                         return [
                             'subcategory_name' => $subcategory->subcategory_name,
-                            'volume' => $subcategory->volume,
-                            'unit' => $subcategory->unit,
-                            'unit_price' => $subcategory->unit_price,
-                            'items' => $subcategory->items->map(function ($item) {
+                            'sub_harga' => $subcategory->items->sum(function ($item) {
+                                return (int) ($item->sub_harga ?? 0);
+                            }) ?: $legacySubtotal,
+                            'items' => $subcategory->items->values()->map(function ($item, $index) use ($legacyVolume, $legacyUnit, $legacyUnitPrice, $legacySubtotal) {
+                                $hasItemPricing = $item->volume !== null
+                                    || $item->unit !== null
+                                    || $item->unit_price !== null
+                                    || $item->sub_harga !== null;
+
+                                $useLegacyPricing = !$hasItemPricing && $index === 0;
+
                                 return [
                                     'item_description' => $item->item_description,
+                                    'volume' => $hasItemPricing ? $item->volume : ($useLegacyPricing ? $legacyVolume : null),
+                                    'unit' => $hasItemPricing ? $item->unit : ($useLegacyPricing ? $legacyUnit : null),
+                                    'unit_price' => $hasItemPricing ? $item->unit_price : ($useLegacyPricing ? $legacyUnitPrice : null),
+                                    'sub_harga' => $hasItemPricing ? $item->sub_harga : ($useLegacyPricing ? $legacySubtotal : 0),
                                 ];
                             })->toArray(),
                         ];

@@ -54,45 +54,56 @@
                         </tr>
 
                         @foreach ($category->subcategories()->orderBy('number_order')->get() as $subcategory)
-                            <tr>
-                                <td class="border border-gray-400 px-3 py-2">{{ $subcategory->number_order }}</td>
-                                <td class="border border-gray-400 px-3 py-2">
-                                    <strong>{{ $subcategory->subcategory_name }}</strong>
-
-                                    <!-- Items (letters) -->
-                                    @foreach ($subcategory->items()->orderBy('letter_order')->get() as $item)
-                                        <div class="ml-4 text-gray-700">
-                                            {{ $item->getLetter() }}. {{ $item->item_description }}
-                                        </div>
-                                    @endforeach
+                            <tr class="bg-blue-50">
+                                <td colspan="6" class="border border-gray-400 px-3 py-2 font-semibold">
+                                    {{ $subcategory->number_order }}. {{ $subcategory->subcategory_name }}
                                 </td>
-                                <td class="border border-gray-400 px-3 py-2 text-center">{{ $subcategory->volume }}</td>
-                                <td class="border border-gray-400 px-3 py-2 text-center">{{ $subcategory->unit }}</td>
-                                <td class="border border-gray-400 px-3 py-2 text-right">
-                                    Rp. {{ number_format($subcategory->unit_price, 0, ',', '.') }}
+                            </tr>
+
+                            @php
+                                $subTotal = 0;
+                            @endphp
+
+                            @foreach ($subcategory->items()->orderBy('letter_order')->get() as $item)
+                                @php
+                                    $itemVolume = $item->volume ?? ($subcategory->volume ?? 0);
+                                    $itemUnit = $item->unit ?? ($subcategory->unit ?? '-');
+                                    $itemPrice = $item->unit_price ?? ($subcategory->unit_price ?? 0);
+                                    $itemSubtotal = $item->sub_harga ?? ($subcategory->sub_harga ?? 0);
+                                    $subTotal += $itemSubtotal;
+                                @endphp
+                                <tr>
+                                    <td class="border border-gray-400 px-3 py-2 text-center">{{ $item->getLetter() }}</td>
+                                    <td class="border border-gray-400 px-3 py-2">{{ $item->item_description }}</td>
+                                    <td class="border border-gray-400 px-3 py-2 text-center">{{ $itemVolume }}</td>
+                                    <td class="border border-gray-400 px-3 py-2 text-center">{{ $itemUnit }}</td>
+                                    <td class="border border-gray-400 px-3 py-2 text-right">
+                                        Rp. {{ number_format($itemPrice, 0, ',', '.') }}
+                                    </td>
+                                    <td class="border border-gray-400 px-3 py-2 text-right font-bold">
+                                        Rp. {{ number_format($itemSubtotal, 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            @if ($subTotal === 0)
+                                @php
+                                    $subTotal = (int) ($subcategory->sub_harga ?? 0);
+                                @endphp
+                            @endif
+
+                            <tr class="bg-yellow-100">
+                                <td colspan="5" class="border border-gray-400 px-3 py-2 text-right font-bold">
+                                    Subtotal {{ $subcategory->number_order }}
                                 </td>
                                 <td class="border border-gray-400 px-3 py-2 text-right font-bold">
-                                    @php
-                                        $subTotal = $subcategory->sub_harga;
-                                        $grandTotal += $subTotal;
-                                    @endphp
                                     Rp. {{ number_format($subTotal, 0, ',', '.') }}
                                 </td>
                             </tr>
+                            @php
+                                $grandTotal += $subTotal;
+                            @endphp
                         @endforeach
-
-                        <!-- Category Subtotal -->
-                        @php
-                            $categorySubtotal = $category->subcategories()->pluck('sub_harga')->sum();
-                        @endphp
-                        <tr class="bg-yellow-100">
-                            <td colspan="5" class="border border-gray-400 px-3 py-2 text-right font-bold">
-                                Subtotal {{ $category->getRomanNumeral() }}
-                            </td>
-                            <td class="border border-gray-400 px-3 py-2 text-right font-bold">
-                                Rp. {{ number_format($categorySubtotal, 0, ',', '.') }}
-                            </td>
-                        </tr>
                     @endforeach
 
                     <!-- Grand Total -->

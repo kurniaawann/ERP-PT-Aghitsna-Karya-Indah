@@ -42,43 +42,65 @@
                 <div class="space-y-1">
                     @foreach ($category->subcategories()->orderBy('number_order')->get() as $subcategory)
                         <div class="border-l-3 border-blue-300 pl-2 py-1 bg-blue-50 rounded text-xs">
-                            {{-- Subcategory Name --}}
                             <p class="font-medium text-gray-800 text-xs">
                                 {{ $subcategory->number_order }}. {{ $subcategory->subcategory_name }}
                             </p>
 
-                            {{-- Volume, Unit, Price --}}
-                            <div class="grid grid-cols-3 gap-1 text-xs mt-1 text-gray-600">
-                                <div><span class="font-semibold">Vol:</span> {{ $subcategory->volume }}</div>
-                                <div><span class="font-semibold">Satuan:</span> {{ $subcategory->unit }}</div>
-                                <div><span class="font-semibold">Harga:</span> Rp
-                                    {{ number_format($subcategory->unit_price, 0, ',', '.') }}</div>
-                            </div>
-
-                            {{-- Total Harga --}}
-                            <div class="mt-1 p-1 bg-blue-100 rounded text-xs">
-                                <p class="text-blue-900">
-                                    <strong>Rp {{ number_format($subcategory->sub_harga, 0, ',', '.') }}</strong>
-                                </p>
-                            </div>
-
-                            {{-- Items (Pekerjaan) --}}
                             @if ($subcategory->items->count() > 0)
-                                <div class="mt-1 ml-1 space-y-0.5 text-xs">
+                                <div class="mt-1 space-y-1 text-xs">
                                     @foreach ($subcategory->items()->orderBy('letter_order')->get() as $item)
-                                        <div class="text-gray-700 text-xs">
-                                            <strong>{{ $item->getLetter() }}.</strong> {{ $item->item_description }}
+                                        @php
+                                            $itemVolume = $item->volume ?? ($subcategory->volume ?? 0);
+                                            $itemUnit = $item->unit ?? ($subcategory->unit ?? '-');
+                                            $itemPrice = $item->unit_price ?? ($subcategory->unit_price ?? 0);
+                                            $itemSubtotal = $item->sub_harga ?? ($subcategory->sub_harga ?? 0);
+                                        @endphp
+                                        <div class="rounded bg-white border border-blue-100 p-2 text-xs">
+                                            <div class="font-semibold text-gray-800">
+                                                {{ $item->getLetter() }}. {{ $item->item_description }}
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-1 mt-1 text-gray-600">
+                                                <div><span class="font-semibold">Vol:</span> {{ $itemVolume }}</div>
+                                                <div><span class="font-semibold">Satuan:</span> {{ $itemUnit }}
+                                                </div>
+                                                <div><span class="font-semibold">Harga:</span> Rp
+                                                    {{ number_format($itemPrice, 0, ',', '.') }}</div>
+                                                <div><span class="font-semibold">Jumlah:</span> Rp
+                                                    {{ number_format($itemSubtotal, 0, ',', '.') }}</div>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
                             @endif
+
+                            @php
+                                $subcategoryTotal =
+                                    $subcategory->items->sum(function ($item) {
+                                        return (int) ($item->sub_harga ?? 0);
+                                    }) ?:
+                                    (int) ($subcategory->sub_harga ?? 0);
+                            @endphp
+
+                            <div class="mt-1 p-1 bg-blue-100 rounded text-xs">
+                                <p class="text-blue-900">
+                                    <strong>Subtotal: Rp {{ number_format($subcategoryTotal, 0, ',', '.') }}</strong>
+                                </p>
+                            </div>
                         </div>
                     @endforeach
                 </div>
 
                 {{-- Category Subtotal --}}
                 @php
-                    $categoryTotal = $category->subcategories()->pluck('sub_harga')->sum();
+                    $categoryTotal = $category
+                        ->subcategories()
+                        ->get()
+                        ->sum(function ($subcategory) {
+                            return $subcategory->items->sum(function ($item) {
+                                return (int) ($item->sub_harga ?? 0);
+                            }) ?:
+                                (int) ($subcategory->sub_harga ?? 0);
+                        });
                 @endphp
                 <div class="mt-1 p-1 bg-yellow-100 rounded border border-yellow-200 text-xs">
                     <p class="font-semibold text-gray-800">
@@ -98,10 +120,15 @@
     @php
         $grandTotal = $rab
             ->categories()
-            ->with('subcategories')
+            ->with('subcategories.items')
             ->get()
             ->flatMap(fn($cat) => $cat->subcategories)
-            ->sum('sub_harga');
+            ->sum(function ($subcategory) {
+                return $subcategory->items->sum(function ($item) {
+                    return (int) ($item->sub_harga ?? 0);
+                }) ?:
+                    (int) ($subcategory->sub_harga ?? 0);
+            });
     @endphp
     <div class="flex justify-end mb-2">
         <div class="bg-green-50 border-2 border-green-300 rounded p-2 w-full text-xs">

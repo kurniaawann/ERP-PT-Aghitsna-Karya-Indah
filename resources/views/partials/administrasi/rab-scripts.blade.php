@@ -106,57 +106,49 @@
 
                 <div class="subcategories-container space-y-3 mb-3">
                     ${(categoryData.subcategories || []).map(subcategory => `
-                                                                                <div class="subcategory-block border rounded p-3 bg-gray-50">
-                                                                                    <div class="mb-3">
-                                                                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                                                                                        <input type="text" class="w-full border rounded p-2 subcategory-name"
-                                                                                            placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
-                                                                                    </div>
+                                                                                    <div class="subcategory-block border rounded p-3 bg-gray-50">
+                                                                                        <div class="mb-3">
+                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
+                                                                                            <input type="text" class="w-full border rounded p-2 subcategory-name"
+                                                                                                placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
+                                                                                        </div>
 
-                                                                                    <div class="space-y-3 mb-3">
-                                                                                        <div>
-                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
-                                                                                            <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
-                                                                                                min="0" step="0.01" value="${subcategory.volume || 0}" required>
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                                                                                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²"
-                                                                                                value="${subcategory.unit || ''}" required>
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
-                                                                                            <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
-                                                                                                min="0" step="0.01" value="${subcategory.unit_price || 0}" required>
-                                                                                        </div>
-                                                                                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                                                                                            <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    <div class="mb-3">
-                                                                                        <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
-                                                                                        <div class="items-container space-y-2">
-                                                                                            ${(subcategory.items || []).map(item => `
-                                        <div class="item-block bg-white rounded border p-2 flex gap-2">
-                                            <input type="text" class="flex-1 w-full border-0 p-1 item-description"
+                                                                                        <div class="mb-3">
+                                                                                            <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
+                                                                                            <div class="items-container space-y-2">
+                                                                                                ${(subcategory.items || []).map(item => `
+                                        <div class="item-block bg-white rounded border p-3 flex flex-col gap-2">
+                                            <input type="text" class="w-full border rounded p-2 item-description"
                                                 placeholder="Masukkan item pekerjaan" value="${item.item_description || ''}" required>
+                                            <input type="number" class="w-full border rounded p-2 item-volume" placeholder="Vol"
+                                                min="0" step="0.01" value="${item.volume ?? 0}" required>
+                                            <input type="text" class="w-full border rounded p-2 item-unit" placeholder="Satuan"
+                                                value="${item.unit || ''}" maxlength="50" required>
+                                            <input type="number" class="w-full border rounded p-2 item-unit-price" placeholder="Harga"
+                                                min="0" step="0.01" value="${item.unit_price ?? 0}" required>
+                                            <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-right">
+                                                <span class="item-sub-total-price text-sm font-semibold text-blue-700">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.sub_harga || 0).replace('Rp ', 'Rp ')}</span>
+                                            </div>
                                             <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm btn-danger">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </div>
                                     `).join('')}
+                                                                                            </div>
+                                                                                            <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
+                                                                                                <i class="fa-solid fa-plus"></i> Tambah Item
+                                                                                            </button>
                                                                                         </div>
-                                                                                        <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
-                                                                                            <i class="fa-solid fa-plus"></i> Tambah Item
+
+                                                                                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
+                                                                                            <p class="text-sm text-blue-900"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subcategory.sub_harga || 0).replace('Rp ', 'Rp ')}</span></p>
+                                                                                        </div>
+
+                                                                                        <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
+                                                                                            <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
                                                                                         </button>
                                                                                     </div>
-
-                                                                                    <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
-                                                                                        <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
-                                                                                    </button>
-                                                                                </div>
-                                                                            `).join('')}
+                                                                                `).join('')}
                 </div>
 
                 <button type="button" onclick="addSubcategoryBlock(this)" class="btn btn-sm btn-outline-secondary w-full">
@@ -182,29 +174,17 @@
                         placeholder="Contoh: Pembongkaran" required>
                 </div>
 
-                <div class="space-y-3 mb-3">
-                    <div>
-                        <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
-                        <input type="number" class="w-full border rounded p-2 volume" placeholder="0" min="0" step="0.01" required>
-                    </div>
-                    <div>
-                        <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                        <input type="text" class="w-full border rounded p-2 unit" placeholder="m²" required>
-                    </div>
-                    <div>
-                        <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
-                        <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0" min="0" step="0.01" required>
-                    </div>
-                    <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                        <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
-                    </div>
-                </div>
-
                 <div class="mb-3">
                     <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
                     <div class="items-container space-y-2">
-                        <div class="item-block bg-white rounded border p-2 flex gap-2">
-                            <input type="text" class="flex-1 w-full border-0 p-1 item-description" placeholder="Masukkan item pekerjaan" required>
+                        <div class="item-block bg-white rounded border p-3 flex flex-col gap-2">
+                            <input type="text" class="w-full border rounded p-2 item-description" placeholder="Masukkan item pekerjaan" required>
+                            <input type="number" class="w-full border rounded p-2 item-volume" placeholder="Vol" min="0" step="0.01" required>
+                            <input type="text" class="w-full border rounded p-2 item-unit" placeholder="Satuan" maxlength="50" required>
+                            <input type="number" class="w-full border rounded p-2 item-unit-price" placeholder="Harga" min="0" step="0.01" required>
+                            <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-right">
+                                <span class="item-sub-total-price text-sm font-semibold text-blue-700">Rp 0</span>
+                            </div>
                             <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm btn-danger">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -213,6 +193,10 @@
                     <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
                         <i class="fa-solid fa-plus"></i> Tambah Item
                     </button>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
+                    <p class="text-sm text-blue-900"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
                 </div>
 
                 <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
@@ -230,9 +214,15 @@
             const container = subcategoryBlock.querySelector('.items-container');
 
             const itemBlock = document.createElement('div');
-            itemBlock.className = 'item-block bg-white rounded border p-2 flex gap-2';
+            itemBlock.className = 'item-block bg-white rounded border p-3 flex flex-col gap-2';
             itemBlock.innerHTML = `
-                <input type="text" class="flex-1 w-full border-0 p-1 item-description" placeholder="Masukkan item pekerjaan" required>
+                <input type="text" class="w-full border rounded p-2 item-description" placeholder="Masukkan item pekerjaan" required>
+                <input type="number" class="w-full border rounded p-2 item-volume" placeholder="Vol" min="0" step="0.01" required>
+                <input type="text" class="w-full border rounded p-2 item-unit" placeholder="Satuan" maxlength="50" required>
+                <input type="number" class="w-full border rounded p-2 item-unit-price" placeholder="Harga" min="0" step="0.01" required>
+                <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-right">
+                    <span class="item-sub-total-price text-sm font-semibold text-blue-700">Rp 0</span>
+                </div>
                 <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm btn-danger">
                     <i class="fa-solid fa-trash"></i>
                 </button>
@@ -261,8 +251,8 @@
         // ==========================================
 
         function attachPriceListeners() {
-            const volumeInputs = document.querySelectorAll('.volume');
-            const priceInputs = document.querySelectorAll('.unit-price');
+            const volumeInputs = document.querySelectorAll('.item-volume');
+            const priceInputs = document.querySelectorAll('.item-unit-price');
 
             volumeInputs.forEach(input => {
                 input.addEventListener('input', function() {
@@ -314,9 +304,26 @@
                 const subcategoryBlocks = editModalContainer.querySelectorAll('.subcategory-block');
 
                 subcategoryBlocks.forEach(block => {
-                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                    const totalPrice = volume * unitPrice;
+                    let totalPrice = 0;
+
+                    block.querySelectorAll('.item-block').forEach(itemBlock => {
+                        const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
+                        const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')?.value) ||
+                            0;
+                        const itemTotal = volume * unitPrice;
+                        const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
+
+                        if (itemPriceDisplay) {
+                            itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0
+                            }).format(itemTotal);
+                        }
+
+                        totalPrice += itemTotal;
+                    });
+
                     const priceDisplay = block.querySelector('.sub-total-price');
 
                     if (priceDisplay) {
@@ -354,9 +361,26 @@
                 const subcategoryBlocks = addModalContainer.querySelectorAll('.subcategory-block');
 
                 subcategoryBlocks.forEach(block => {
-                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                    const totalPrice = volume * unitPrice;
+                    let totalPrice = 0;
+
+                    block.querySelectorAll('.item-block').forEach(itemBlock => {
+                        const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
+                        const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')?.value) ||
+                            0;
+                        const itemTotal = volume * unitPrice;
+                        const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
+
+                        if (itemPriceDisplay) {
+                            itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0
+                            }).format(itemTotal);
+                        }
+
+                        totalPrice += itemTotal;
+                    });
+
                     const priceDisplay = block.querySelector('.sub-total-price');
 
                     if (priceDisplay) {
@@ -484,26 +508,33 @@
                 };
 
                 categoryEl.querySelectorAll('.subcategory-block').forEach(function(subEl) {
-                    const volume = parseFloat(subEl.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(subEl.querySelector('.unit-price').value) || 0;
-                    const subHarga = volume * unitPrice;
+                    let subHarga = 0;
 
                     const subcategoryData = {
                         subcategory_name: subEl.querySelector('.subcategory-name').value,
-                        volume: volume,
-                        unit: subEl.querySelector('.unit').value,
-                        unit_price: unitPrice,
-                        sub_harga: subHarga,
                         items: []
                     };
 
                     subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
+                        const volume = parseFloat(itemEl.querySelector('.item-volume')
+                            ?.value) || 0;
+                        const unitPrice = parseFloat(itemEl.querySelector('.item-unit-price')
+                            ?.value) || 0;
+                        const itemSubHarga = volume * unitPrice;
+
                         const itemData = {
                             item_description: itemEl.querySelector('.item-description')
-                                .value
+                                .value,
+                            volume: volume,
+                            unit: itemEl.querySelector('.item-unit').value,
+                            unit_price: unitPrice,
+                            sub_harga: itemSubHarga
                         };
+                        subHarga += itemSubHarga;
                         subcategoryData.items.push(itemData);
                     });
+
+                    subcategoryData.sub_harga = subHarga;
 
                     categoryData.subcategories.push(subcategoryData);
                 });
@@ -561,26 +592,33 @@
                 };
 
                 categoryEl.querySelectorAll('.subcategory-block').forEach(function(subEl) {
-                    const volume = parseFloat(subEl.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(subEl.querySelector('.unit-price').value) || 0;
-                    const subHarga = volume * unitPrice;
+                    let subHarga = 0;
 
                     const subcategoryData = {
                         subcategory_name: subEl.querySelector('.subcategory-name').value,
-                        volume: volume,
-                        unit: subEl.querySelector('.unit').value,
-                        unit_price: unitPrice,
-                        sub_harga: subHarga,
                         items: []
                     };
 
                     subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
+                        const volume = parseFloat(itemEl.querySelector('.item-volume')
+                            ?.value) || 0;
+                        const unitPrice = parseFloat(itemEl.querySelector('.item-unit-price')
+                            ?.value) || 0;
+                        const itemSubHarga = volume * unitPrice;
+
                         const itemData = {
                             item_description: itemEl.querySelector('.item-description')
-                                .value
+                                .value,
+                            volume: volume,
+                            unit: itemEl.querySelector('.item-unit').value,
+                            unit_price: unitPrice,
+                            sub_harga: itemSubHarga
                         };
+                        subHarga += itemSubHarga;
                         subcategoryData.items.push(itemData);
                     });
+
+                    subcategoryData.sub_harga = subHarga;
 
                     categoryData.subcategories.push(subcategoryData);
                 });
@@ -625,9 +663,26 @@
                 const subcategoryBlocks = editModalContainer.querySelectorAll('.subcategory-block');
 
                 subcategoryBlocks.forEach(block => {
-                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                    const totalPrice = volume * unitPrice;
+                    let totalPrice = 0;
+
+                    block.querySelectorAll('.item-block').forEach(itemBlock => {
+                        const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
+                        const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')
+                            ?.value) || 0;
+                        const itemTotal = volume * unitPrice;
+                        const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
+
+                        if (itemPriceDisplay) {
+                            itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0
+                            }).format(itemTotal);
+                        }
+
+                        totalPrice += itemTotal;
+                    });
+
                     const priceDisplay = block.querySelector('.sub-total-price');
 
                     if (priceDisplay) {
@@ -678,9 +733,36 @@
                 const subcategoryBlocks = addModalContainer.querySelectorAll('.subcategory-block');
 
                 subcategoryBlocks.forEach(block => {
-                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                    totalCategories += volume * unitPrice;
+                    let subTotal = 0;
+
+                    block.querySelectorAll('.item-block').forEach(itemBlock => {
+                        const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
+                        const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')
+                            ?.value) || 0;
+                        const itemTotal = volume * unitPrice;
+                        const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
+
+                        if (itemPriceDisplay) {
+                            itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0
+                            }).format(itemTotal);
+                        }
+
+                        subTotal += itemTotal;
+                    });
+
+                    totalCategories += subTotal;
+
+                    const blockTotalDisplay = block.querySelector('.sub-total-price');
+                    if (blockTotalDisplay) {
+                        blockTotalDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0
+                        }).format(subTotal);
+                    }
                 });
             }
 
@@ -738,9 +820,36 @@
                 const subcategoryBlocks = editModalContainer.querySelectorAll('.subcategory-block');
 
                 subcategoryBlocks.forEach(block => {
-                    const volume = parseFloat(block.querySelector('.volume').value) || 0;
-                    const unitPrice = parseFloat(block.querySelector('.unit-price').value) || 0;
-                    totalCategories += volume * unitPrice;
+                    let subTotal = 0;
+
+                    block.querySelectorAll('.item-block').forEach(itemBlock => {
+                        const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
+                        const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')
+                            ?.value) || 0;
+                        const itemTotal = volume * unitPrice;
+                        const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
+
+                        if (itemPriceDisplay) {
+                            itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0
+                            }).format(itemTotal);
+                        }
+
+                        subTotal += itemTotal;
+                    });
+
+                    totalCategories += subTotal;
+
+                    const blockTotalDisplay = block.querySelector('.sub-total-price');
+                    if (blockTotalDisplay) {
+                        blockTotalDisplay.textContent = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0
+                        }).format(subTotal);
+                    }
                 });
             }
 
