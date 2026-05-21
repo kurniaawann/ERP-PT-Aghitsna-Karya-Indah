@@ -74,8 +74,8 @@
 
     // ─── Format number as Rp ────────────────────────────────────────────────────────
     function formatRp(value) {
-        if (!value || isNaN(value)) return 'Rp 0';
-        return 'Rp ' + parseInt(value).toLocaleString('id-ID');
+        const n = parseAmount(value);
+        return 'Rp ' + n.toLocaleString('id-ID');
     }
 
     // ─── Parse raw input (remove dots/commas) ─────────────────────────────────────
@@ -146,7 +146,7 @@
             description: '',
             volume: '',
             unit: '',
-            unit_price: 0,
+            unit_price: '',
             total_price: 0
         };
 
@@ -170,7 +170,7 @@
     }
 
     // ─── UPDATE ITEM FIELD ─────────────────────────────────────────────────────────
-    window.updateItemField = function(prefix, itemId, field, value) {
+    window.updateItemField = function(prefix, itemId, field, value, render = true) {
         const items = getItemsStore(prefix);
         const item = items.find(i => i.id === itemId);
         if (!item) return;
@@ -183,7 +183,24 @@
         item.total_price = Math.round(vol * price);
 
         setItemsStore(prefix, items);
-        renderItems(prefix);
+
+        if (render) {
+            renderItems(prefix);
+            return;
+        }
+
+        // Update only the relevant DOM nodes to avoid losing focus/caret
+        const ids = resolveIds(prefix);
+        const container = document.getElementById(ids.container);
+        if (!container) return;
+        const itemEl = container.querySelector(`[data-item-id="${itemId}"]`);
+        if (itemEl) {
+            const totalEl = itemEl.querySelector('.item-total-display');
+            if (totalEl) totalEl.textContent = formatRp(item.total_price);
+        }
+
+        // Update grand total
+        updateGrandTotal(prefix);
     }
 
     // ─── RENDER ALL ITEMS ──────────────────────────────────────────────────────────
@@ -209,6 +226,7 @@
         items.forEach((item, idx) => {
             const itemCard = document.createElement('div');
             itemCard.className = 'bg-gray-50 rounded-lg p-4';
+            itemCard.setAttribute('data-item-id', item.id);
             itemCard.innerHTML = `
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="font-semibold text-sm text-gray-700">
@@ -222,9 +240,10 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-3">
-                    <div>
+                        <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Keterangan</label>
                         <input type="text" value="${escHtml(item.description || '')}"
+                            oninput="updateItemField('${prefix}', ${item.id}, 'description', this.value, false)"
                             onchange="updateItemField('${prefix}', ${item.id}, 'description', this.value)"
                             class="w-full border rounded-md p-2 text-sm"
                             placeholder="Deskripsi item">
@@ -234,6 +253,7 @@
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Volume</label>
                             <input type="text" value="${escHtml(item.volume || '')}"
+                                oninput="updateItemField('${prefix}', ${item.id}, 'volume', this.value, false)"
                                 onchange="updateItemField('${prefix}', ${item.id}, 'volume', this.value)"
                                 class="w-full border rounded-md p-2 text-sm item-volume"
                                 placeholder="1">
@@ -241,17 +261,18 @@
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Satuan</label>
                             <input type="text" value="${escHtml(item.unit || '')}"
+                                oninput="updateItemField('${prefix}', ${item.id}, 'unit', this.value, false)"
                                 onchange="updateItemField('${prefix}', ${item.id}, 'unit', this.value)"
                                 class="w-full border rounded-md p-2 text-sm"
                                 placeholder="unit">
                         </div>
-                        <div>
+                            <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Harga Satuan</label>
-                            <input type="text" value="${item.unit_price ? parseInt(item.unit_price).toLocaleString('id-ID') : ''}"
-                                onchange="updateItemField('${prefix}', ${item.id}, 'unit_price', this.value)"
-                                oninput="formatPriceInput(this)"
-                                class="w-full border rounded-md p-2 text-sm item-unit-price"
-                                placeholder="0">
+                                <input type="text" value="${item.unit_price ? parseAmount(item.unit_price).toLocaleString('id-ID') : ''}"
+                                    oninput="formatPriceInput(this); updateItemField('${prefix}', ${item.id}, 'unit_price', this.value, false)"
+                                    onchange="updateItemField('${prefix}', ${item.id}, 'unit_price', this.value)"
+                                    class="w-full border rounded-md p-2 text-sm item-unit-price"
+                                    placeholder="0">
                         </div>
                     </div>
 

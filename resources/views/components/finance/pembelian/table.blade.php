@@ -53,12 +53,7 @@
                                             Edit
                                         </button>
 
-                                        <a href="{{ route('purchase-invoice.pdf', $invoice->id) }}"
-                                            class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Print PDF">
-                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
-                                            PDF
-                                        </a>
+                                        {{-- PDF action removed as requested --}}
                                     </div>
                                 </td>
                             </tr>

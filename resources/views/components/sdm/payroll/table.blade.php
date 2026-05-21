@@ -86,6 +86,15 @@
                             {{-- Aksi --}}
                             <td class="p-2 text-center">
                                 <div class="flex justify-center gap-2">
+                                    @if ($payroll->status === 'draft')
+                                        <button type="button" onclick="openModal('editModal-{{ $payroll->id }}')"
+                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Edit Payroll Draft">
+                                            <i class="fa-solid fa-pen w-3 h-3"></i>
+                                            Edit
+                                        </button>
+                                    @endif
+
                                     <button type="button" onclick="openModal('detailModal-{{ $payroll->id }}')"
                                         class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                         title="Detail Payroll">

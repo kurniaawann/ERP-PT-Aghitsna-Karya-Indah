@@ -224,6 +224,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/payroll/export/excel', [PayrollController::class, 'exportExcel'])->name('payroll.export.excel');
     Route::get('/payroll/export/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export.pdf');
     Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+    Route::put('/payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
     Route::post('/payroll/check-attendance', [PayrollController::class, 'checkAttendanceCompleteness'])->name('payroll.check-attendance');
     Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
     Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');

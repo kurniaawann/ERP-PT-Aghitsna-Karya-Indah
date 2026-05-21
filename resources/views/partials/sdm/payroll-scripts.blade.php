@@ -459,6 +459,14 @@
     // Handle Edit Modal Submits
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
         form.addEventListener('submit', function(e) {
+            const modal = this.closest('[id^="editModal-"]');
+            const payrollId = modal ? modal.id.replace('editModal-', '') : null;
+
+            if (payrollId && !validatePayrollEditNotes(payrollId)) {
+                e.preventDefault();
+                return false;
+            }
+
             const submitBtn = this.querySelector('button[type="submit"]');
             if (!handleFormSubmit(submitBtn)) {
                 e.preventDefault();
@@ -466,6 +474,29 @@
             }
         });
     });
+
+    function validatePayrollEditNotes(payrollId) {
+        const amountInput = document.getElementById(`additional_expenses_${payrollId}`);
+        const notesInput = document.getElementById(`additional_expenses_notes_${payrollId}`);
+
+        if (!amountInput || !notesInput) {
+            return true;
+        }
+
+        const amount = parseInt(amountInput.value, 10) || 0;
+        const notes = notesInput.value.trim();
+
+        if (amount > 0 && !notes) {
+            notesInput.setCustomValidity('Keterangan pengeluaran tambahan wajib diisi jika nominal lebih dari 0.');
+            notesInput.reportValidity();
+            return false;
+        }
+
+        notesInput.setCustomValidity('');
+        return true;
+    }
+
+    window.validatePayrollEditNotes = validatePayrollEditNotes;
 
     // ==========================================
     // DYNAMIC EXPENSE ITEMS

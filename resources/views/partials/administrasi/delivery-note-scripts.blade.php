@@ -42,23 +42,28 @@
     // SELECT ALL CHECKBOX
     // ==========================================
 
+
     // Select All Checkbox
-    document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
+    const selectAllEl = document.getElementById('selectAll');
+    if (selectAllEl) {
+        selectAllEl.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.disabled) checkbox.checked = this.checked;
+            });
+            updateButtonStates();
         });
-        updateButtonStates();
-    });
+    }
 
     // Individual Checkbox
-    document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
+    document.querySelectorAll('.row-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+            const checkboxes = Array.from(document.querySelectorAll('.row-checkbox')).filter(cb => !cb
+                .disabled);
+            const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
 
-            selectAll.checked = checkboxes.length === checkedCheckboxes.length;
+            if (selectAll) selectAll.checked = checkboxes.length === checkedCheckboxes.length;
             updateButtonStates();
         });
     });
@@ -68,7 +73,8 @@
         const deleteButton = document.getElementById('delete-button');
         const printButton = document.getElementById('printDropdownButton');
         const selectedCountText = document.getElementById('selectedCountText');
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
+            .disabled);
         const count = checkedCheckboxes.length;
 
         // Update selected count text
@@ -105,7 +111,8 @@
     // ==========================================
 
     function submitDeleteForm() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
+            .disabled);
         if (checkedCheckboxes.length === 0) {
             alert('Tidak ada data yang dipilih!');
             return;
@@ -128,7 +135,8 @@
     // ==========================================
 
     function printSelected() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
+            .disabled);
 
         if (checkedCheckboxes.length === 0) {
             alert('Tidak ada data yang dipilih!');

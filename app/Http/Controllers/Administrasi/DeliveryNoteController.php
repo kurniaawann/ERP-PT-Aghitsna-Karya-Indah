@@ -87,7 +87,7 @@ class DeliveryNoteController extends Controller
             'status' => $request->input('status', 'draft'),
         ]);
 
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Delivery Note berhasil ditambahkan!');
+        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil ditambahkan!');
     }
 
     public function update(Request $request, $id)
@@ -148,7 +148,7 @@ class DeliveryNoteController extends Controller
             'status' => $request->input('status', 'draft'),
         ]);
 
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Delivery Note berhasil diperbarui!');
+        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil diperbarui!');
     }
 
     public function destroySelected(Request $request)
@@ -164,7 +164,7 @@ class DeliveryNoteController extends Controller
         // Hapus delivery notes berdasarkan id
         DeliveryNote::whereIn('id_delivery_note', $ids)->delete();
 
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Delivery Note berhasil dihapus!');
+        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil dihapus!');
     }
 
     /**
@@ -182,7 +182,7 @@ class DeliveryNoteController extends Controller
             'status' => $request->input('status'),
         ]);
 
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Status Delivery Note berhasil diperbarui!');
+        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Status Surat Jalan berhasil diperbarui!');
     }
 
     /**
@@ -202,7 +202,7 @@ class DeliveryNoteController extends Controller
 
         $pdf = Pdf::loadView('exports.administrasi.delivery-note-pdf', compact('deliveryNotes'));
 
-        $filename = 'delivery-note-' . date('Y-m-d') . '.pdf';
+        $filename = 'surat-jalan-' . date('Y-m-d') . '.pdf';
         return $pdf->download($filename);
     }
 
@@ -225,9 +225,9 @@ class DeliveryNoteController extends Controller
 
         if (count($ids) == 1) {
             $safeId = str_replace(['/', '\\'], '-', $ids[0]);
-            $filename = 'delivery-note-' . $safeId . '.pdf';
+            $filename = 'surat-jalan-' . $safeId . '.pdf';
         } else {
-            $filename = 'delivery-note-selected-' . date('Y-m-d') . '.pdf';
+            $filename = 'surat-jalan-selected-' . date('Y-m-d') . '.pdf';
         }
 
         return $pdf->download($filename);

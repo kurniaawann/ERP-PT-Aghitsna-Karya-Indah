@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             ItemStockOutSeeder::class,
             ItemReturnSeeder::class,
             ReimburseSeeder::class,
+            ReimburseDataSeeder::class,
             PayrollSeeder::class,
             KasbonSeeder::class,
             PurchaseInvoiceSeeder::class,

@@ -283,7 +283,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const selectAll = document.getElementById('select-all');
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-        const deleteButton = document.querySelector('[onclick*="deleteModal"]');
+        const deleteButton = document.getElementById('delete-button') || document.querySelector(
+            '[onclick*="deleteModal"]') || document.querySelector('[data-delete-button]');
 
         if (selectAll) {
             selectAll.addEventListener('change', function() {

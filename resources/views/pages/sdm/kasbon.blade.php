@@ -12,9 +12,6 @@
             <form method="GET" action="{{ route('kasbon.index') }}" id="filterForm"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
-                {{-- Hidden inputs untuk mempertahankan parameter --}}
-                <input type="hidden" name="search" value="{{ request('search') }}">
-
                 {{-- Filter Bulan --}}
                 <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" />
 
@@ -37,14 +34,8 @@
                     <option value="team" {{ request('type') == 'team' ? 'selected' : '' }}>Per Tim</option>
                 </select>
 
-                {{-- Search Input --}}
-                <div class="relative w-full lg:w-64">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kasbon..."
-                        class="w-full border border-border rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        <i class="fa-solid fa-search"></i>
-                    </span>
-                </div>
+                {{-- Search Input (expanded like Lembur) --}}
+                <x-filters.search-input :value="request('search')" placeholder="Cari kasbon..." />
 
                 {{-- Tombol Reset Filter --}}
                 @if (request()->hasAny(['search', 'month', 'year', 'status', 'type']))

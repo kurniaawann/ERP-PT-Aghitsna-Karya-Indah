@@ -74,6 +74,9 @@
 
     {{-- Modal Detail untuk setiap payroll --}}
     @foreach ($payrolls as $payroll)
+        @if ($payroll->status === 'draft')
+            @include('components.sdm.payroll.edit-modal', ['payroll' => $payroll])
+        @endif
         @include('components.sdm.payroll.detail-modal', ['payroll' => $payroll])
     @endforeach
 
