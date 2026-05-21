@@ -6,8 +6,10 @@
     <!-- Header Sidebar -->
     <div class="p-4 border-b border-border flex items-center justify-between">
         <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <span class="text-white font-bold text-lg">AGI</span>
+            <div
+                class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden border border-border">
+                <img src="{{ asset('images/logo.jpeg') }}" alt="PT Aghitsna Karya Indah"
+                    class="w-full h-full object-cover">
             </div>
             <span class="font-semibold text-text-heading">PT Aghitsna Karya Indah</span>
         </div>
