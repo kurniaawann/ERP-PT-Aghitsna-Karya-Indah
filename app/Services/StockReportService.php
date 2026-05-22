@@ -47,11 +47,9 @@ class StockReportService
                 ->whereBetween('tanggal', [$start, $end])
                 ->sum('quantity');
 
-            // Calculate returns during period
-            $returns = ItemReturn::whereHas('stockOut', function ($query) use ($start, $end, $item) {
-                $query->where('id_item', $item->id_item)
-                    ->whereBetween('tanggal', [$start, $end]);
-            })
+            // Calculate returns during period (by return date, not by stock out/in date)
+            $returns = ItemReturn::where('id_item', $item->id_item)
+                ->whereBetween('tanggal', [$start, $end])
                 ->sum('quantity');
 
             // Calculate ending stock
@@ -100,11 +98,9 @@ class StockReportService
             ->where('tanggal', '<', $beforeDate)
             ->sum('quantity');
 
-        // Returns sebelum periode
-        $returnsBefore = ItemReturn::whereHas('stockOut', function ($query) use ($itemId, $beforeDate) {
-            $query->where('item_stock_outs.id_item', $itemId)
-                ->where('item_stock_outs.tanggal', '<', $beforeDate);
-        })
+        // Returns sebelum periode (by return date, not stock out/in date)
+        $returnsBefore = ItemReturn::where('id_item', $itemId)
+            ->where('tanggal', '<', $beforeDate)
             ->sum('quantity');
 
         return max(0, $stockInBefore - $stockOutBefore - $returnsBefore);

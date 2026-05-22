@@ -11,48 +11,62 @@ class ReimburseDataSeeder extends Seeder
     public function run(): void
     {
         $now = Carbon::now();
+        $data = [];
 
-        $data = [
-            [
-                'reimburse_code' => 'RMB101',
-                'date' => $now->copy()->subDays(1)->toDateString(),
-                'project_name' => 'Proyek Contoh A',
-                'expense_description' => 'Biaya transport dan konsumsi',
-                'total_amount' => 450000,
-                'due_date' => $now->copy()->addDays(7)->toDateString(),
-                'status' => 'approved',
-                'notes' => 'Telah diverifikasi',
-                'status_changed_at' => $now->toDateTimeString(),
-                'created_at' => $now->toDateTimeString(),
-                'updated_at' => $now->toDateTimeString(),
-            ],
-            [
-                'reimburse_code' => 'RMB102',
-                'date' => $now->copy()->subDays(3)->toDateString(),
-                'project_name' => 'Proyek Contoh B',
-                'expense_description' => 'Pembelian alat kerja',
-                'total_amount' => 1250000,
-                'due_date' => $now->copy()->addDays(5)->toDateString(),
-                'status' => 'draft',
-                'notes' => null,
-                'status_changed_at' => null,
-                'created_at' => $now->toDateTimeString(),
-                'updated_at' => $now->toDateTimeString(),
-            ],
-            [
-                'reimburse_code' => 'RMB103',
-                'date' => $now->copy()->subDays(6)->toDateString(),
-                'project_name' => 'Proyek Contoh C',
-                'expense_description' => 'Biaya penginapan',
-                'total_amount' => 800000,
-                'due_date' => $now->copy()->addDays(2)->toDateString(),
-                'status' => 'rejected',
-                'notes' => 'Dokumen tidak lengkap',
-                'status_changed_at' => $now->copy()->subDays(1)->toDateTimeString(),
-                'created_at' => $now->toDateTimeString(),
-                'updated_at' => $now->toDateTimeString(),
-            ],
+        $projects = [
+            'Proyek Gedung A',
+            'Proyek Pabrik B',
+            'Proyek Renovasi C',
+            'Proyek Kantor D',
+            'Proyek Gedung E',
+            'Proyek Mall F',
+            'Proyek Hotel G',
+            'Proyek RS H',
+            'Proyek Sekolah I',
+            'Proyek Café J',
+            'Proyek Showroom K',
+            'Proyek Gudang L',
+            'Proyek Kantor Cabang M',
+            'Proyek Apartemen N',
+            'Proyek Perumahan O'
         ];
+
+        $expenses = [
+            'Biaya transport dan konsumsi',
+            'Pembelian alat kerja',
+            'Biaya penginapan',
+            'Biaya makan dan minum',
+            'Biaya survey lapangan',
+            'Biaya konsultasi',
+            'Biaya sewa alat',
+            'Biaya dokumentasi',
+            'Biaya material',
+            'Biaya upah kerja',
+            'Biaya bensin',
+            'Biaya tiket pesawat',
+            'Biaya hotel',
+            'Biaya tansportasi',
+            'Biaya asuransi'
+        ];
+
+        for ($i = 1; $i <= 15; $i++) {
+            $statusOptions = ['approved', 'draft', 'rejected'];
+            $status = $statusOptions[$i % 3];
+
+            $data[] = [
+                'reimburse_code' => 'RMB' . str_pad(100 + $i, 3, '0', STR_PAD_LEFT),
+                'date' => $now->copy()->subDays($i)->toDateString(),
+                'project_name' => $projects[$i - 1],
+                'expense_description' => $expenses[$i - 1],
+                'total_amount' => rand(300000, 3000000),
+                'due_date' => $now->copy()->addDays(rand(1, 10))->toDateString(),
+                'status' => $status,
+                'notes' => $status === 'rejected' ? 'Dokumen tidak lengkap' : ($status === 'draft' ? 'Menunggu verifikasi' : 'Telah diverifikasi'),
+                'status_changed_at' => $status !== 'draft' ? $now->copy()->subDays(max(1, $i - 5))->toDateTimeString() : null,
+                'created_at' => $now->toDateTimeString(),
+                'updated_at' => $now->toDateTimeString(),
+            ];
+        }
 
         DB::table('reimburses')->upsert(
             $data,
