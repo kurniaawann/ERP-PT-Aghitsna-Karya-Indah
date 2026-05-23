@@ -11,6 +11,8 @@
             {{-- Form Pencarian --}}
             <form method="GET" action="{{ route('alumunium-invoice.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" />
+                <x-filters.year-filter :value="request('year')" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari no invoice atau kepada..." />
             </form>
 

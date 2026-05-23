@@ -1005,5 +1005,35 @@
                 cb.addEventListener('change', () => validatePaymentSelectionEdit(invoiceNumber));
             });
         });
+
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+
+        function updateInvoiceFilterUrl() {
+            const url = new URL(window.location.href);
+
+            if (monthSelect && monthSelect.value) {
+                url.searchParams.set('month', monthSelect.value);
+            } else {
+                url.searchParams.delete('month');
+            }
+
+            if (yearSelect && yearSelect.value) {
+                url.searchParams.set('year', yearSelect.value);
+            } else {
+                url.searchParams.delete('year');
+            }
+
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        }
+
+        if (monthSelect) {
+            monthSelect.addEventListener('change', updateInvoiceFilterUrl);
+        }
+
+        if (yearSelect) {
+            yearSelect.addEventListener('change', updateInvoiceFilterUrl);
+        }
     });
 </script>

@@ -47,11 +47,21 @@ class ProyekInvoiceController extends Controller
         $query = InvoiceProyek::query();
 
         // Fitur pencarian: cari di nomor invoice, penerima, atau deskripsi proyek
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('invoice_number', 'like', "%{$search}%")
-                ->orWhere('recipient', 'like', "%{$search}%")
-                ->orWhere('project_description', 'like', "%{$search}%");
+            $query->where(function ($searchQuery) use ($search) {
+                $searchQuery->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('recipient', 'like', "%{$search}%")
+                    ->orWhere('project_description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('invoice_date', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('invoice_date', $request->year);
         }
 
         // Urutkan berdasarkan tanggal invoice terbaru, lalu pagination
