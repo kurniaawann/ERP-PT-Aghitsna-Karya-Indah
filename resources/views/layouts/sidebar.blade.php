@@ -391,7 +391,7 @@
 
                 {{-- Submenu --}}
                 <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('rab*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('rab*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/cash-out-proof') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -523,6 +523,7 @@
                             </i>
                             <span class="ml-3 text-sm font-medium">RAB</span>
                         </a>
+                    </li>
                 </ul>
             </li>
 

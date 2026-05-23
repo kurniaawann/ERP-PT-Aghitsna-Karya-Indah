@@ -307,7 +307,7 @@
                     @forelse ($deliveryNote->items as $item)
                         <tr>
                             <td>{{ $item['no'] }}</td>
-                            <td>{{ $item['item_name'] }}</td>
+                            <td>{{ data_get($item, 'item_name', data_get($item, 'name', '-')) }}</td>
                             <td>{{ $item['quantity'] }}</td>
                             <td>{{ $item['unit'] ?? 'pcs' }}</td>
                             <td>{{ $item['notes'] ?? '-' }}</td>

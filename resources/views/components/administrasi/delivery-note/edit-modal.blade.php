@@ -81,33 +81,35 @@
                             <label class="block text-xs font-semibold text-gray-700 mb-1.5">No</label>
                             <input type="number" name="item_no[]"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="1" min="1" value="{{ $item['no'] }}" required readonly>
+                                placeholder="1" min="1" value="{{ data_get($item, 'no', $key + 1) }}" required
+                                readonly>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Barang <span
                                     class="text-red-500">*</span></label>
                             <input type="text" name="item_name[]"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="Masukkan nama barang..." value="{{ $item['item_name'] }}" required>
+                                placeholder="Masukkan nama barang..."
+                                value="{{ data_get($item, 'item_name', data_get($item, 'name', '')) }}" required>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-700 mb-1.5">Jumlah <span
                                     class="text-red-500">*</span></label>
                             <input type="number" name="quantity[]"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="0" min="1" value="{{ $item['quantity'] }}" required>
+                                placeholder="0" min="1" value="{{ data_get($item, 'quantity', 1) }}" required>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-700 mb-1.5">Satuan</label>
                             <input type="text" name="unit[]"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="pcs" value="{{ $item['unit'] ?? 'pcs' }}">
+                                placeholder="pcs" value="{{ data_get($item, 'unit', 'pcs') }}">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-700 mb-1.5">Catatan</label>
                             <input type="text" name="item_notes[]"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="Masukkan catatan..." value="{{ $item['notes'] ?? '' }}">
+                                placeholder="Masukkan catatan..." value="{{ data_get($item, 'notes', '') }}">
                         </div>
                         <button type="button" onclick="removeItemRow(this)"
                             class="delete-btn w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
