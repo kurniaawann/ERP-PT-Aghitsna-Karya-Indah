@@ -104,6 +104,7 @@ Route::middleware('auth')->group(function () {
 
     // Route Stock Report (Laporan Stok)
     Route::get('/stock-report', [StockReportController::class, 'index'])->name('stock-report.index');
+    Route::get('/stock-report/items-dropdown', [StockReportController::class, 'itemsDropdown'])->name('stock-report.items-dropdown');
 
     // Route Alumunium Invoice
     Route::get('/alumunium-invoice', [AlumuniumInvoiceController::class, 'index'])->name('alumunium-invoice.index');

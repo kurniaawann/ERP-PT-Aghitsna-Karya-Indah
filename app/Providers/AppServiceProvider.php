@@ -6,9 +6,11 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\Report\SalesRecap;
 use App\Models\Sdm\Payroll;
 use App\Models\Finance\InvoiceProyek;
+use App\Models\Inventory\Items;
 use App\Observers\SalesRecapObserver;
 use App\Observers\PayrollObserver;
 use App\Observers\InvoiceProyekObserver;
+use App\Observers\ItemsObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,5 +35,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Register observer untuk auto-generate InvoiceProyekReminder ketika invoice dibuat
         InvoiceProyek::observe(InvoiceProyekObserver::class);
+
+        // Register observer untuk auto-create opening stock saat item dibuat
+        Items::observe(ItemsObserver::class);
     }
 }

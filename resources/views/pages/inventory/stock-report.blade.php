@@ -14,7 +14,7 @@
 
         <!-- Filter Card -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label for="start_date" class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Mulai</label>
                     <input type="date"
@@ -30,26 +30,39 @@
                 </div>
 
                 <div>
-                    <label for="item_id" class="block text-sm font-semibold text-gray-700 mb-2">Pilih Barang
-                        (Opsional)</label>
-                    <select
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        id="item_id" name="item_id">
-                        <option value="">- Semua Barang -</option>
-                        @foreach ($items as $item)
-                            <option value="{{ $item->id_item }}" {{ $selectedItemId === $item->id_item ? 'selected' : '' }}>
-                                {{ $item->id_item }} - {{ $item->name_item }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Barang (Opsional)</label>
+
+                    {{-- Hidden input used for form submission --}}
+                    <input type="hidden" name="item_id" id="item_id" value="{{ $selectedItemId ?? '' }}">
+
+                    {{-- Custom dropdown with infinite scroll --}}
+                    <div class="relative">
+                        <button type="button" id="itemDropdownBtn"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span id="itemDropdownLabel" class="text-sm text-gray-800">
+                                {{ $selectedItemId ? $items[0]['id_item'] ?? $selectedItemId : '- Semua Barang -' }}
+                            </span>
+                            <span class="text-gray-400">▼</span>
+                        </button>
+
+                        <div id="itemDropdownMenu"
+                            class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-sm hidden">
+                            <div id="itemDropdownList" class="max-h-60 overflow-y-auto">
+                                <div class="p-2 text-sm text-gray-500" id="dropdownLoadingPlaceholder">
+                                    Silakan klik scroll untuk memuat data...
+                                </div>
+                            </div>
+
+                            <div class="p-2 border-t border-gray-200">
+                                <button type="button" id="clearItemBtn" class="text-sm text-red-600 hover:text-red-700">
+                                    Reset (- Semua Barang -)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="flex items-end">
-                    <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200">
-                        <i class="fas fa-search mr-2"></i>Filter
-                    </button>
-                </div>
+                <!-- Submit button dihapus karena filter auto via JS saat item/tanggal berubah -->
             </form>
         </div>
 
@@ -132,69 +145,84 @@
             <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
                 <h6 class="text-sm font-semibold text-gray-800 mb-0">📋 Detail Laporan Stok</h6>
             </div>
+
+            <!-- Scroll area for long tables -->
             <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 w-12">No</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">ID Barang</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Nama Barang</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Stok Awal</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Masuk</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Keluar</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Retur</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Stok Akhir</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Harga Satuan</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Nilai Stok</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @forelse($reportData as $index => $item)
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 text-center text-sm text-gray-700">{{ $index + 1 }}</td>
-                                <td class="px-6 py-4 text-sm">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-gray-300 text-gray-800 rounded text-xs font-semibold">{{ $item['id_item'] }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-800">{{ $item['name_item'] }}</td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">{{ number_format($item['beginning_stock']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">{{ number_format($item['stock_in']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">{{ number_format($item['stock_out']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">{{ number_format($item['returns']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">{{ number_format($item['ending_stock']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right text-gray-700">Rp
-                                    {{ number_format($item['capital_price']) }}</td>
-                                <td class="px-6 py-4 text-sm text-right font-bold text-gray-900">Rp
-                                    {{ number_format($item['stock_value']) }}</td>
-                            </tr>
-                        @empty
+                <div class="max-h-[520px] overflow-y-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                             <tr>
-                                <td colspan="10" class="px-6 py-12 text-center">
-                                    <p class="text-gray-500 mb-0">
-                                        <i class="fas fa-inbox mr-2"></i>Tidak ada data stok untuk periode ini
-                                    </p>
-                                </td>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 w-12">No</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">ID Barang</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Nama Barang</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Stok Awal</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Masuk</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Keluar</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Retur</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Stok Akhir</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Harga Satuan</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Nilai Stok</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+
+                        <tbody class="divide-y divide-gray-200">
+                            @forelse($reportData as $index => $item)
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 text-center text-sm text-gray-700">
+                                        {{ ($reportData->currentPage() - 1) * $perPage + $index + 1 }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span
+                                            class="inline-block px-2 py-1 bg-gray-300 text-gray-800 rounded text-xs font-semibold">{{ $item['id_item'] }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-800">{{ $item['name_item'] }}</td>
+                                    <td class="px-6 py-4 text-sm text-right">
+                                        <span
+                                            class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">{{ number_format($item['beginning_stock']) }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-right">
+                                        <span
+                                            class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">{{ number_format($item['stock_in']) }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-right">
+                                        <span
+                                            class="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">{{ number_format($item['stock_out']) }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-right">
+                                        <span
+                                            class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">{{ number_format($item['returns']) }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-right">
+                                        <span
+                                            class="inline-block px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">{{ number_format($item['ending_stock']) }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-right text-gray-700">Rp
+                                        {{ number_format($item['capital_price']) }}</td>
+                                    <td class="px-6 py-4 text-sm text-right font-bold text-gray-900">Rp
+                                        {{ number_format($item['stock_value']) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="px-6 py-12 text-center">
+                                        <p class="text-gray-500 mb-0">
+                                            <i class="fas fa-inbox mr-2"></i>Tidak ada data stok untuk periode ini
+                                        </p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="px-6 py-4 border-t border-gray-200">
+                {{ $reportData->appends(request()->query())->links() }}
             </div>
         </div>
 
+    </div>
+
+    @include('partials.inventory.stock-report-scripts')
     </div>
 @endsection
