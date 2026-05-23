@@ -1002,7 +1002,8 @@
             validatePaymentSelectionEdit(invoiceNumber);
 
             modal.querySelectorAll('.payment-account-checkbox').forEach(cb => {
-                cb.addEventListener('change', () => validatePaymentSelectionEdit(invoiceNumber));
+                cb.addEventListener('change', () => validatePaymentSelectionEdit(
+                invoiceNumber));
             });
         });
 
