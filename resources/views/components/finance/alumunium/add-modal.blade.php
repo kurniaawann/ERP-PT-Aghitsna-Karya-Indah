@@ -92,10 +92,11 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
-                <input type="number" step="0.01" min="0" name="discount_value" id="discount-value"
+                <input type="text" inputmode="decimal" name="discount_value" id="discount-value"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="Pilih tipe dulu" disabled oninput="calculateDiscount()">
-                <small class="text-xs text-text-secondary" id="discount-helper">Maksimal 100% untuk persentase</small>
+                <small class="text-xs text-text-secondary" id="discount-helper">Maksimal 100% untuk persentase. Boleh
+                    pakai koma, contoh 1,5</small>
                 <div id="discount-error"
                     class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
@@ -129,10 +130,11 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
-                <input type="number" step="0.01" min="0" name="dp_value" id="dp-value"
+                <input type="text" inputmode="decimal" name="dp_value" id="dp-value"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="Pilih tipe dulu" disabled oninput="calculateDP()">
-                <small class="text-xs text-text-secondary" id="dp-helper">Maksimal 100% untuk persentase</small>
+                <small class="text-xs text-text-secondary" id="dp-helper">Maksimal 100% untuk persentase. Boleh pakai
+                    koma, contoh 1,5</small>
                 <div id="dp-error"
                     class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
@@ -157,7 +159,8 @@
         <div class="space-y-2">
             @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)
-                    <label class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
+                    <label
+                        class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox" onchange="validatePaymentSelection()">
                         <div class="flex-1">

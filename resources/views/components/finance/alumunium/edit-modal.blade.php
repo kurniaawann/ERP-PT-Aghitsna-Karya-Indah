@@ -117,7 +117,7 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
-                <input type="number" step="0.01" min="0" name="discount_value"
+                <input type="text" inputmode="decimal" name="discount_value"
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
                     {{ !$invoice->discount_type ? 'disabled' : '' }}
@@ -145,8 +145,7 @@
             <div>
                 <label class="block text-text-label text-sm mb-1">Tipe DP</label>
                 <select name="dp_type" id="dp-type-edit-{{ $invoice->invoice_number }}"
-                    class="w-full border rounded p-2"
-                    onchange="calculateDPEdit('{{ $invoice->invoice_number }}')">
+                    class="w-full border rounded p-2" onchange="calculateDPEdit('{{ $invoice->invoice_number }}')">
                     <option value="">Tidak Ada DP</option>
                     <option value="percentage" {{ $invoice->dp_type === 'percentage' ? 'selected' : '' }}>Persentase
                         (%)</option>
@@ -156,18 +155,17 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
-                <input type="number" step="0.01" min="0" name="dp_value"
-                    id="dp-value-edit-{{ $invoice->invoice_number }}"
-                    value="{{ $invoice->dp_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
-                    {{ !$invoice->dp_type ? 'disabled' : '' }}
+                <input type="text" inputmode="decimal" name="dp_value"
+                    id="dp-value-edit-{{ $invoice->invoice_number }}" value="{{ $invoice->dp_value ?? 0 }}"
+                    class="w-full border rounded p-2" placeholder="0" {{ !$invoice->dp_type ? 'disabled' : '' }}
                     oninput="calculateDPEdit('{{ $invoice->invoice_number }}')">
             </div>
         </div>
         <div class="mt-2 p-2 bg-white rounded">
             <div class="flex justify-between">
                 <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
-                <span id="dp-amount-edit-{{ $invoice->invoice_number }}"
-                    class="text-sm font-bold text-blue-600">Rp 0</span>
+                <span id="dp-amount-edit-{{ $invoice->invoice_number }}" class="text-sm font-bold text-blue-600">Rp
+                    0</span>
             </div>
         </div>
     </div>
@@ -187,11 +185,12 @@
             @endphp
             @if ($paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)
-                    <label class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
+                    <label
+                        class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox-edit"
                             onchange="validatePaymentSelectionEdit('{{ $invoice->invoice_number }}')"
-                            {{ in_array((string)$account->id, array_map('strval', $selectedAccounts ?? [])) ? 'checked' : '' }}>
+                            {{ in_array((string) $account->id, array_map('strval', $selectedAccounts ?? [])) ? 'checked' : '' }}>
                         <div class="flex-1">
                             <div class="font-semibold text-text-heading">{{ $account->bank_name }}</div>
                             <div class="text-sm text-text-label">

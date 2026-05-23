@@ -76,6 +76,11 @@ class ProyekInvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'discount_value' => $this->normalizeDecimalInput($request->discount_value),
+            'dp_value' => $this->normalizeDecimalInput($request->dp_value),
+        ]);
+
         // Validasi awal: pastikan items ada dan tidak kosong
         if (!$request->has('items') || empty($request->items)) {
             return back()->with('error', 'Data items tidak ditemukan atau kosong')->withInput();
@@ -161,6 +166,11 @@ class ProyekInvoiceController extends Controller
     public function update(Request $request, InvoiceProyek $proyek_invoice)
     {
         try {
+            $request->merge([
+                'discount_value' => $this->normalizeDecimalInput($request->discount_value),
+                'dp_value' => $this->normalizeDecimalInput($request->dp_value),
+            ]);
+
             // Validasi discount percentage
             if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
                 return back()->with('error', 'Persentase diskon tidak boleh lebih dari 100%')->withInput();
@@ -310,5 +320,18 @@ class ProyekInvoiceController extends Controller
             'totalAfterDiscount' => $totalAfterDiscount,
             'dpAmount' => $dpAmount,
         ];
+    }
+
+    private function normalizeDecimalInput($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_string($value)) {
+            $value = str_replace(',', '.', $value);
+        }
+
+        return (float) $value;
     }
 }

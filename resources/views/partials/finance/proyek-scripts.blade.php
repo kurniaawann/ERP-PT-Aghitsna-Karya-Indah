@@ -68,7 +68,7 @@
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
         const discountValueInput = document.getElementById('discount-value');
-        let discountValue = parseFloat(discountValueInput?.value) || 0;
+        let discountValue = parseDecimalInput(discountValueInput);
         const discountError = document.getElementById('discount-error');
 
         // Enable/disable based on type
@@ -218,7 +218,7 @@
     function calculateDiscountEdit(invoiceNumber) {
         const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
         const discountValueInput = document.getElementById('discount-value-edit-' + invoiceNumber);
-        let discountValue = parseFloat(discountValueInput?.value) || 0;
+        let discountValue = parseDecimalInput(discountValueInput);
 
         // Enable/disable based on type
         if (discountValueInput) {
@@ -269,6 +269,16 @@
         }
 
         calculateDPEdit(invoiceNumber);
+    }
+
+    function parseDecimalInput(inputElement) {
+        const rawValue = String(inputElement?.value ?? '').trim();
+
+        if (!rawValue) {
+            return 0;
+        }
+
+        return parseFloat(rawValue.replace(',', '.')) || 0;
     }
 
     // Calculate DP for EDIT modal
@@ -1003,7 +1013,7 @@
 
             modal.querySelectorAll('.payment-account-checkbox').forEach(cb => {
                 cb.addEventListener('change', () => validatePaymentSelectionEdit(
-                invoiceNumber));
+                    invoiceNumber));
             });
         });
 

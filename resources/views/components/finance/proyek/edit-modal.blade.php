@@ -118,7 +118,7 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
-                <input type="number" step="0.01" min="0" name="discount_value"
+                <input type="text" inputmode="decimal" name="discount_value"
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -158,7 +158,7 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
-                <input type="number" step="0.01" min="0" name="dp_value"
+                <input type="text" inputmode="decimal" name="dp_value"
                     id="dp-value-edit-{{ $invoice->invoice_number }}" value="{{ $invoice->dp_value ?? 0 }}"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="{{ $invoice->dp_type ? '0' : 'Pilih tipe dulu' }}"
@@ -230,7 +230,8 @@
             @endphp
             @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)
-                    <label class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
+                    <label
+                        class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox"
                             onchange="validatePaymentSelectionEdit('{{ $invoice->invoice_number }}')"

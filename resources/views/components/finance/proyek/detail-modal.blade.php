@@ -72,6 +72,14 @@
                         $totalAfterDiscount = $invoice->total_amount;
                         $discountAmount = 0;
                         $dpAmount = 0;
+                        $discountValueDisplay = rtrim(
+                            rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'),
+                            ',',
+                        );
+                        $dpValueDisplay = rtrim(
+                            rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'),
+                            ',',
+                        );
                     @endphp
 
                     @if ($invoice->discount_value && $invoice->discount_value > 0)
@@ -87,7 +95,7 @@
                             <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
                                 DISCOUNT
                                 @if ($invoice->discount_type === 'percentage')
-                                    ({{ number_format($invoice->discount_value, 0) }}%)
+                                    ({{ $discountValueDisplay }}%)
                                 @else
                                     (Nominal)
                                 @endif
@@ -118,7 +126,7 @@
                             <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
                                 DP
                                 @if ($invoice->dp_type === 'percentage')
-                                    ({{ number_format($invoice->dp_value, 0) }}%)
+                                    ({{ $dpValueDisplay }}%)
                                 @else
                                     (Nominal)
                                 @endif
