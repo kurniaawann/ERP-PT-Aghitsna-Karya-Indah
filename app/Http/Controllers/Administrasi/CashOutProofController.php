@@ -9,6 +9,15 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CashOutProofController extends Controller
 {
+    private function normalizeCurrencyInput($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) str_replace(['.', ','], '', (string) $value);
+    }
+
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -32,7 +41,7 @@ class CashOutProofController extends Controller
         // Validasi input
         $request->validate([
             'paid_to' => 'required|string|max:255',
-            'amount' => 'required|integer|min:0',
+            'amount' => 'required|min:0',
             'date' => 'required|date',
             'description' => 'nullable|string',
             'director' => 'nullable|string|max:255',
@@ -42,6 +51,7 @@ class CashOutProofController extends Controller
 
         // Ambil semua input dari form
         $data = $request->all();
+        $data['amount'] = $this->normalizeCurrencyInput($data['amount'] ?? null);
 
         // Auto-generate nomor BKK dan CEK
         $data['bkk_no'] = CashOutProof::generateBkkNo();
@@ -66,7 +76,7 @@ class CashOutProofController extends Controller
         // Validasi input
         $request->validate([
             'paid_to' => 'required|string|max:255',
-            'amount' => 'required|integer|min:0',
+            'amount' => 'required|min:0',
             'date' => 'required|date',
             'description' => 'nullable|string',
             'director' => 'nullable|string|max:255',
@@ -76,6 +86,7 @@ class CashOutProofController extends Controller
 
         // Ambil semua input dari form
         $data = $request->all();
+        $data['amount'] = $this->normalizeCurrencyInput($data['amount'] ?? null);
 
         // Set default untuk director dan finance_head jika kosong
         if (empty($data['director'])) {

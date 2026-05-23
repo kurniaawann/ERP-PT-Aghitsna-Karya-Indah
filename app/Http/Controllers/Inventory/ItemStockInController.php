@@ -92,7 +92,7 @@ class ItemStockInController extends Controller
 
             $idItem = $itemData['id_item'];
             $quantity = (int) $itemData['quantity'];
-            $capitalPrice = (int) $itemData['capital_price'];
+            $capitalPrice = $this->normalizeCurrencyInput($itemData['capital_price'] ?? 0);
             $fromStock = $itemData['from_stock'] ?? false;
 
             // Handle "dari stok" - ambil dari data barang yang ada
@@ -167,7 +167,7 @@ class ItemStockInController extends Controller
         }
 
         $newQuantity = (int) $itemData['quantity'];
-        $newCapitalPrice = (int) $itemData['capital_price'];
+        $newCapitalPrice = $this->normalizeCurrencyInput($itemData['capital_price'] ?? 0);
         $newItemId = $itemData['id_item'] ?? null;
         $newItemName = $itemData['name_item'] ?? null;
 
@@ -371,5 +371,10 @@ class ItemStockInController extends Controller
             new \App\Exports\Inventory\StockInExport($search, $month, $year),
             'barang-masuk-' . date('Y-m-d-His') . '.xlsx'
         );
+    }
+
+    private function normalizeCurrencyInput($value): int
+    {
+        return (int) preg_replace('/[^0-9]/', '', (string) $value);
     }
 }

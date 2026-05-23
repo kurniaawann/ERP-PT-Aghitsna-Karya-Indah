@@ -46,24 +46,27 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Harga Jual (Rp) <span class="text-error">*</span></label>
-        <input type="number" id="editSellingPrice-{{ $invoice->id }}" name="selling_price"
-            value="{{ $invoice->selling_price }}" class="w-full border rounded p-2" min="0" required
-            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        <input type="text" id="editSellingPrice-{{ $invoice->id }}" name="selling_price" inputmode="numeric"
+            value="Rp {{ number_format($invoice->selling_price, 0, ',', '.') }}" class="w-full border rounded p-2"
+            required oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Persentase PPN (%) <span class="text-error">*</span></label>
-        <input type="number" id="editPpnPercentage-{{ $invoice->id }}" name="ppn_percentage"
-            value="{{ $invoice->ppn_percentage }}" class="w-full border rounded p-2" min="0" max="100"
-            required oninvalid="this.setCustomValidity('Persentase PPN tidak boleh kosong')"
+        <input type="text" id="editPpnPercentage-{{ $invoice->id }}" name="ppn_percentage" inputmode="decimal"
+            value="{{ rtrim(rtrim(number_format((float) $invoice->ppn_percentage, 2, ',', '.'), '0'), ',') }}"
+            class="w-full border rounded p-2" placeholder="10,5" required required
+            oninvalid="this.setCustomValidity('Persentase PPN tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Persentase PPN yang digunakan</p>
+        <p class="text-xs text-text-secondary mt-1">Persentase PPN yang digunakan. Boleh pakai koma, contoh 10,5</p>
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">PPN Pengenaan Pajak (Rp) <span class="text-error">*</span></label>
-        <input type="number" id="editPpnTax-{{ $invoice->id }}" name="ppn_tax" value="{{ $invoice->ppn_tax }}"
-            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" min="0" readonly>
+        <input type="text" id="editPpnTax-{{ $invoice->id }}" name="ppn_tax"
+            value="Rp {{ number_format($invoice->ppn_tax, 0, ',', '.') }}"
+            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" readonly>
         <p class="text-xs text-text-secondary mt-1">Dihitung otomatis dari harga jual × persentase PPN</p>
     </div>
 

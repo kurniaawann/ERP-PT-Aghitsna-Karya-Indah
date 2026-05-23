@@ -19,6 +19,16 @@
         return true;
     }
 
+    function parseCurrencyInput(value) {
+        const rawValue = String(value ?? '').replace(/[^0-9]/g, '');
+        return rawValue ? parseInt(rawValue, 10) || 0 : 0;
+    }
+
+    function formatCurrencyInput(input) {
+        const rawValue = String(input.value ?? '').replace(/[^0-9]/g, '');
+        input.value = rawValue ? parseInt(rawValue, 10).toLocaleString('id-ID') : '';
+    }
+
     // ==========================================
     // BULK DELETE FUNCTION
     // ==========================================
@@ -57,7 +67,7 @@
                     id_item: hiddenInput ? hiddenInput.value : null,
                     name_item: nameInput.value || '',
                     quantity: parseInt(qtyInput?.value) || 0,
-                    capital_price: parseInt(capitalInput?.value) || 0,
+                    capital_price: parseCurrencyInput(capitalInput?.value),
                     from_stock: fromStock ? fromStock.checked : false
                 });
             }
@@ -72,6 +82,7 @@
         itemRows.forEach(row => {
             const removeBtn = row.querySelector('.remove-item');
             const fromStockCheckbox = row.querySelector('.item-from-stock, .item-from-stock-edit');
+            const capitalInput = row.querySelector('.item-capital, .item-capital-edit');
 
             if (removeBtn) {
                 removeBtn.addEventListener('click', function(e) {
@@ -103,6 +114,15 @@
                         capitalInput.value = '';
                         row.querySelector('.item-select-hidden').value = '';
                     }
+                });
+            }
+
+            if (capitalInput) {
+                if (capitalInput.value) {
+                    formatCurrencyInput(capitalInput);
+                }
+                capitalInput.addEventListener('input', function() {
+                    formatCurrencyInput(this);
                 });
             }
 
@@ -165,6 +185,7 @@
                 if (value) {
                     nameInput.value = name;
                     capitalInput.value = capital;
+                    formatCurrencyInput(capitalInput);
                 }
 
                 dropdown.classList.add('hidden');

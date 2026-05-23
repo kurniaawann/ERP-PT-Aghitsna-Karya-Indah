@@ -18,8 +18,8 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Upah Per Hari <span class="text-error">*</span></label>
-        <input type="number" name="daily_wage" class="w-full border rounded p-2" placeholder="Masukkan upah per hari"
-            value="{{ $employee->daily_wage }}" required min="0"
+        <input type="text" inputmode="numeric" name="daily_wage" class="w-full border rounded p-2 daily-wage-input"
+            placeholder="Masukkan upah per hari" value="{{ $employee->daily_wage }}" required min="0"
             oninvalid="this.setCustomValidity('Upah per hari tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 

@@ -2,6 +2,17 @@
     // Store maksimal kasbon untuk setiap form
     let maxKasbonData = {};
 
+    function parseCurrencyInput(value) {
+        return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
+    }
+
+    function formatCurrencyInput(input) {
+        if (!input) return;
+
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+    }
+
     // Toggle employee select based on kasbon type
     function toggleEmployeeSelect(prefix) {
         const kasbonTypeSelect = document.getElementById(prefix + '_kasbon_type');
@@ -203,7 +214,7 @@
             return;
         }
 
-        const amount = parseInt(amountInput.value) || 0;
+        const amount = parseCurrencyInput(amountInput.value);
         const maxKasbon = maxKasbonData[prefix].max_kasbon;
 
         if (amount > maxKasbon) {
@@ -332,5 +343,18 @@
 
         // Initialize employee field visibility for add modal
         toggleEmployeeSelect('add');
+
+        document.querySelectorAll('.kasbon-amount-input').forEach(input => {
+            if (input.value) {
+                formatCurrencyInput(input);
+            }
+
+            input.addEventListener('input', function() {
+                formatCurrencyInput(this);
+                const prefix = this.id === 'add_amount' ? 'add' :
+                    `edit_${this.closest('[id^="editModal"]')?.id.replace('editModal', '') || ''}`;
+                validateKasbonAmount(prefix);
+            });
+        });
     });
 </script>

@@ -8,6 +8,15 @@ use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
+    private function normalizeCurrencyInput($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) str_replace(['.', ','], '', (string) $value);
+    }
+
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request (untuk filter nama atau kode karyawan)
@@ -45,9 +54,7 @@ class EmployeeController extends Controller
         $data['employee_code'] = Employee::generateEmployeeCode();
 
         // Convert daily_wage to null if empty
-        if (empty($data['daily_wage'])) {
-            $data['daily_wage'] = null;
-        }
+        $data['daily_wage'] = $this->normalizeCurrencyInput($data['daily_wage'] ?? null);
 
         // Insert data karyawan ke database
         // create() akan insert record baru ke tabel employees dan return model instance
@@ -64,9 +71,7 @@ class EmployeeController extends Controller
         $data = $request->all();
 
         // Convert daily_wage to null if empty
-        if (empty($data['daily_wage'])) {
-            $data['daily_wage'] = null;
-        }
+        $data['daily_wage'] = $this->normalizeCurrencyInput($data['daily_wage'] ?? null);
 
         // Update semua field dari request ke model employee
         // all() mengambil semua input dari form edit

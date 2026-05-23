@@ -61,9 +61,9 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
-        <input type="number" name="amount" id="add_amount" class="w-full border rounded p-2"
-            placeholder="Masukkan jumlah kasbon" required min="1000" step="1000"
-            oninput="validateKasbonAmount('add')">
+        <input type="text" inputmode="numeric" name="amount" id="add_amount"
+            class="w-full border rounded p-2 kasbon-amount-input" placeholder="Masukkan jumlah kasbon" required
+            min="1000" step="1000" oninput="validateKasbonAmount('add')">
     </div>
 
     <div class="mb-3">

@@ -3,6 +3,13 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
+    function formatCurrencyInput(input) {
+        if (!input) return;
+
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+    }
+
     let isSubmitting = false;
 
     function handleFormSubmit(submitBtn, originalText) {
@@ -73,6 +80,16 @@
 
     // Initialize delete button state on page load
     updateDeleteButtonState();
+
+    document.querySelectorAll('.daily-wage-input').forEach(input => {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+
+        input.addEventListener('input', function() {
+            formatCurrencyInput(this);
+        });
+    });
 
     // ==========================================
     // ADD/EDIT FORM SUBMIT HANDLERS

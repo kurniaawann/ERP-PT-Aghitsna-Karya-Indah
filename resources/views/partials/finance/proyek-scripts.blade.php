@@ -3,11 +3,22 @@
     // LIVE CALCULATION FUNCTIONS
     // ==========================================
 
+    function parseCurrencyInput(value) {
+        return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
+    }
+
+    function formatCurrencyInput(input) {
+        if (!input) return;
+
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+    }
+
     // Calculate individual row total for ADD modal
     function calculateRowTotal(input) {
         const row = input.closest('.item-row');
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
         const total = volume * harga;
 
         const totalSpan = row.querySelector('.item-total');
@@ -22,7 +33,7 @@
     function calculateRowTotalEdit(input, invoiceNumber) {
         const row = input.closest('.item-row-edit');
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
         const total = volume * harga;
 
         const totalSpan = row.querySelector('.item-total');
@@ -43,7 +54,7 @@
         let grandTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             grandTotal += (volume * harga);
         });
 
@@ -105,7 +116,7 @@
         let baseTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             baseTotal += (volume * harga);
         });
         baseTotal = Math.round(baseTotal);
@@ -140,7 +151,7 @@
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
         const dpValueInput = document.getElementById('dp-value');
-        let dpValue = parseFloat(dpValueInput?.value) || 0;
+        let dpValue = parseCurrencyInput(dpValueInput?.value);
         const dpError = document.getElementById('dp-error');
 
         // Enable/disable based on type
@@ -177,14 +188,14 @@
         let baseTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             baseTotal += (volume * harga);
         });
         baseTotal = Math.round(baseTotal);
 
         // Check if there's discount
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValue = parseCurrencyInput(document.getElementById('discount-value')?.value);
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -241,7 +252,7 @@
         if (modal) {
             modal.querySelectorAll('.item-row-edit').forEach(row => {
                 const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-                const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+                const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
                 baseTotal += (volume * harga);
             });
         }
@@ -285,7 +296,7 @@
     function calculateDPEdit(invoiceNumber) {
         const dpType = document.getElementById('dp-type-edit-' + invoiceNumber)?.value;
         const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
-        let dpValue = parseFloat(dpValueInput?.value) || 0;
+        let dpValue = parseCurrencyInput(dpValueInput?.value);
 
         // Enable/disable based on type
         if (dpValueInput) {
@@ -308,14 +319,15 @@
         if (modal) {
             modal.querySelectorAll('.item-row-edit').forEach(row => {
                 const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-                const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+                const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
                 baseTotal += (volume * harga);
             });
         }
         baseTotal = Math.round(baseTotal);
 
         const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value-edit-' + invoiceNumber)?.value) || 0;
+        const discountValue = parseCurrencyInput(document.getElementById('discount-value-edit-' + invoiceNumber)
+        ?.value);
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -355,7 +367,7 @@
 
         modal.querySelectorAll('.item-row-edit').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             grandTotal += (volume * harga);
         });
 

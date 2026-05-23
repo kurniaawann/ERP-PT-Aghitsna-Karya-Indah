@@ -3,6 +3,13 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
+    function formatCurrencyInput(input) {
+        if (!input) return;
+
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+    }
+
     let isSubmitting = false;
 
     function handleFormSubmit(submitBtn, originalText) {
@@ -93,6 +100,16 @@
 
     // Initialize button states on page load
     updateButtonStates();
+
+    document.querySelectorAll('.cash-out-amount-input').forEach(input => {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+
+        input.addEventListener('input', function() {
+            formatCurrencyInput(this);
+        });
+    });
 
     // ==========================================
     // PRINT SELECTED HANDLER

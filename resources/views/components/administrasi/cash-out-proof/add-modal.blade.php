@@ -27,9 +27,9 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah (Rp) <span class="text-error">*</span></label>
-        <input type="number" name="amount" class="w-full border rounded p-2" placeholder="Masukkan jumlah nominal"
-            required min="0" oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="text" inputmode="numeric" name="amount" class="w-full border rounded p-2 cash-out-amount-input"
+            placeholder="Masukkan jumlah nominal" required min="0"
+            oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
         <small class="text-gray-500 text-xs">Masukkan nominal dalam Rupiah (tanpa desimal)</small>
     </div>
 

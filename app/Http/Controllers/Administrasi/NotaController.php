@@ -9,6 +9,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class NotaController extends Controller
 {
+    private function normalizeDecimalInput($value): float
+    {
+        $normalized = str_replace([' ', '.'], '', (string) $value);
+        $normalized = str_replace(',', '.', $normalized);
+
+        return (float) $normalized;
+    }
+
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -82,7 +90,7 @@ class NotaController extends Controller
         $selectedPaymentAccounts = $request->input('selected_payment_accounts', []);
 
         // Process PPN
-        $ppnPercentage = $request->input('ppn_percentage', 12);
+        $ppnPercentage = $this->normalizeDecimalInput($request->input('ppn_percentage', 12));
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
 
@@ -165,7 +173,7 @@ class NotaController extends Controller
         $selectedPaymentAccounts = $request->input('selected_payment_accounts', []);
 
         // Process PPN
-        $ppnPercentage = $request->input('ppn_percentage', 12);
+        $ppnPercentage = $this->normalizeDecimalInput($request->input('ppn_percentage', 12));
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
 

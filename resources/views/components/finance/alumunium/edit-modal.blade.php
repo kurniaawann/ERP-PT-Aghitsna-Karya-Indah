@@ -64,11 +64,13 @@
                             placeholder="Satuan" required
                             oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" step="0.01" min="0" name="items[{{ $index }}][harga]"
-                            value="{{ $item['harga'] ?? 0 }}" class="item-harga-edit border rounded p-2 w-full"
-                            placeholder="Harga" required oninput="calculateEditRowTotal(this)"
+                        <input type="text" inputmode="numeric" min="0"
+                            name="items[{{ $index }}][harga]"
+                            value="{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
+                            class="item-harga-edit border rounded p-2 w-full" placeholder="Harga" required
+                            oninput="formatCurrencyInput(this); calculateEditRowTotal(this, '{{ $invoice->invoice_number }}')"
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                            oninput="calculateEditRowTotal(this); this.setCustomValidity('')">
+                            oninput="formatCurrencyInput(this); calculateEditRowTotal(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')">
                         <div class="flex items-center">
                             <span class="item-total-edit text-sm font-semibold text-primary">
                                 Rp {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}

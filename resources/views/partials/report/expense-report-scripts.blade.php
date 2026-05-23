@@ -3,6 +3,13 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
+    function formatCurrencyInput(input) {
+        if (!input) return;
+
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+    }
+
     let isSubmitting = false;
 
     function handleFormSubmit(submitBtn, originalText) {
@@ -88,6 +95,16 @@
 
         // Initialize button state on page load
         updateDeleteButtonState();
+
+        document.querySelectorAll('.expense-amount-input').forEach(input => {
+            if (input.value) {
+                formatCurrencyInput(input);
+            }
+
+            input.addEventListener('input', function() {
+                formatCurrencyInput(this);
+            });
+        });
 
         // ==========================================
         // AUTO-SUBMIT FILTER FORM

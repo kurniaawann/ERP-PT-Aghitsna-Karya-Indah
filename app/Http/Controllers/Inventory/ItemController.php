@@ -60,6 +60,11 @@ class ItemController extends Controller
     }
     public function store(Request $request)
     {
+        $request->merge([
+            'capital_price' => $this->normalizeCurrencyInput($request->capital_price),
+            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
+        ]);
+
         // Insert data item baru ke database
         // create() menerima array associative dan akan insert record baru
         Items::create([
@@ -82,6 +87,11 @@ class ItemController extends Controller
 
     public function update(Request $request, $id_item)
     {
+        $request->merge([
+            'capital_price' => $this->normalizeCurrencyInput($request->capital_price),
+            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
+        ]);
+
         // Update data item berdasarkan id_item
         // where('id_item', $id_item) mencari record dengan id_item yang sesuai
         // update() akan mengubah field yang ada di array
@@ -148,6 +158,19 @@ class ItemController extends Controller
         // Excel::download() akan generate file .xlsx dan trigger browser download
         // Nama file: stock-hollow-YYYY-MM-DD.xlsx (dengan timestamp)
         return Excel::download(new ItemsExport, 'stock-hollow-' . date('Y-m-d') . '.xlsx');
+    }
+
+    private function normalizeCurrencyInput($value): int
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        if (is_string($value)) {
+            $value = preg_replace('/[^0-9-]/', '', $value);
+        }
+
+        return (int) $value;
     }
 
 }

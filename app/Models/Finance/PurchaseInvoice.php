@@ -26,7 +26,7 @@ class PurchaseInvoice extends Model
     protected $casts = [
         'date' => 'date',
         'selling_price' => 'integer',
-        'ppn_percentage' => 'integer',
+        'ppn_percentage' => 'decimal:2',
         'ppn_tax' => 'integer',
     ];
 

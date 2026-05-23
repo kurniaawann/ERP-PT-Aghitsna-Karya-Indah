@@ -65,9 +65,10 @@
                     <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required
                         min="1" value="1" oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
-                    <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *" required
-                        min="0" oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
+                    <input type="text" inputmode="numeric" class="item-capital border rounded p-2"
+                        placeholder="Harga Modal *" required min="0"
+                        oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
+                        oninput="formatCurrencyInput(this); this.setCustomValidity('')">
                 </div>
 
                 <button type="button"

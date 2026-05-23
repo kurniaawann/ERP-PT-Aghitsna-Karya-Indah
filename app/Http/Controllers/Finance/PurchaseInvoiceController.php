@@ -43,14 +43,19 @@ class PurchaseInvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
+            'ppn_percentage' => $this->normalizeDecimalInput($request->ppn_percentage),
+        ]);
+
         $validated = $request->validate([
             'date' => 'required|date',
             'material_name' => 'required|string|max:255',
             'npwp' => 'required|string|max:50',
             'tax_number_code' => 'required|string|max:50',
             'item_name' => 'required|string|max:255',
-            'selling_price' => 'required|integer|min:0',
-            'ppn_percentage' => 'required|integer|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'ppn_percentage' => 'required|numeric|min:0|max:100',
             'notes' => 'nullable|string',
         ]);
 
@@ -75,14 +80,19 @@ class PurchaseInvoiceController extends Controller
 
     public function update(Request $request, PurchaseInvoice $purchase_invoice)
     {
+        $request->merge([
+            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
+            'ppn_percentage' => $this->normalizeDecimalInput($request->ppn_percentage),
+        ]);
+
         $validated = $request->validate([
             'date' => 'required|date',
             'material_name' => 'required|string|max:255',
             'npwp' => 'required|string|max:50',
             'tax_number_code' => 'required|string|max:50',
             'item_name' => 'required|string|max:255',
-            'selling_price' => 'required|integer|min:0',
-            'ppn_percentage' => 'required|integer|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'ppn_percentage' => 'required|numeric|min:0|max:100',
             'notes' => 'nullable|string',
         ]);
 
@@ -174,5 +184,32 @@ class PurchaseInvoiceController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download('Faktur-Pembelian-' . now()->format('d-m-Y') . '.pdf');
+    }
+
+    private function normalizeDecimalInput($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_string($value)) {
+            $value = str_replace(',', '.', $value);
+        }
+
+        return (float) $value;
+    }
+
+    private function normalizeCurrencyInput($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_string($value)) {
+            $value = preg_replace('/[^0-9,.-]/', '', $value);
+            $value = str_replace(['.', ','], ['', '.'], $value);
+        }
+
+        return (float) $value;
     }
 }

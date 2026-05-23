@@ -151,8 +151,9 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
                 <label class="block text-text-primary mb-1 text-sm">Persentase PPN (%)</label>
-                <input type="number" name="ppn_percentage" class="w-full border rounded p-2" placeholder="12"
-                    min="0" max="100" value="12" step="0.01">
+                <input type="text" inputmode="decimal" name="ppn_percentage" class="w-full border rounded p-2"
+                    placeholder="12,5" min="0" max="100" value="12"
+                    oninput="this.setCustomValidity('')">
             </div>
         </div>
     </div>

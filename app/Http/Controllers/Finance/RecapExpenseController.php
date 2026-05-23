@@ -15,6 +15,15 @@ use Carbon\Carbon;
 
 class RecapExpenseController extends Controller
 {
+    private function normalizeCurrencyInput($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) str_replace(['.', ','], '', (string) $value);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -136,6 +145,7 @@ class RecapExpenseController extends Controller
 
         // Set income_amount ke null (karena ini expense, bukan income)
         $data['income_amount'] = null;
+        $data['expense_amount'] = $this->normalizeCurrencyInput($data['expense_amount'] ?? null);
 
         try {
             // Simpan data expense report ke database
@@ -168,6 +178,7 @@ class RecapExpenseController extends Controller
 
         // Ambil semua data dari form (validasi sudah dilakukan di HTML)
         $data = $request->all();
+        $data['expense_amount'] = $this->normalizeCurrencyInput($data['expense_amount'] ?? null);
 
         try {
             // Update data expense report dengan data dari form
