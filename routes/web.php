@@ -9,6 +9,7 @@ use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
 use App\Http\Controllers\Finance\RecapAlumuniumController;
+use App\Http\Controllers\Finance\RecapProyekController;
 use App\Http\Controllers\Finance\ProyekInvoiceController;
 use App\Http\Controllers\Finance\PaymentProofController;
 use App\Http\Controllers\Finance\PurchaseInvoiceController;
@@ -171,6 +172,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/recap-alumunium', [RecapAlumuniumController::class, 'index'])->name('recap-alumunium.index');
     Route::get('/recap-alumunium/export/excel', [RecapAlumuniumController::class, 'exportExcel'])->name('recap-alumunium.export.excel');
     Route::get('/recap-alumunium/export/pdf', [RecapAlumuniumController::class, 'exportPdf'])->name('recap-alumunium.export.pdf');
+
+    // Route Recap Proyek
+    Route::get('/recap-proyek', [RecapProyekController::class, 'index'])->name('recap-proyek.index');
+    Route::get('/recap-proyek/export/excel', [RecapProyekController::class, 'exportExcel'])->name('recap-proyek.export.excel');
+    Route::get('/recap-proyek/export/pdf', [RecapProyekController::class, 'exportPdf'])->name('recap-proyek.export.pdf');
 
     // Route Recap Expense
     Route::get('/recap-expense', [RecapExpenseController::class, 'index'])->name('recap-expense.index');

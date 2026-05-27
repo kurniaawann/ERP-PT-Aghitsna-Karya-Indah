@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Alumunium</title>
+    <title>Rekap Proyek</title>
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
@@ -73,7 +75,7 @@
         }
 
         .total-row {
-            background-color: #E2F0D9;
+            background-color: #E7E6E6;
             font-weight: bold;
         }
 
@@ -107,12 +109,21 @@
             font-size: 10px;
             margin: 3px 0;
         }
+
+        .payment-list span {
+            display: inline-block;
+            margin: 0 3px 3px 0;
+            padding: 2px 6px;
+            background: #EEE1FF;
+            border: 1px solid #C6A7FF;
+            border-radius: 999px;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>LAPORAN REKAP INVOICE ALUMUNIUM</h1>
+        <h1>LAPORAN REKAP INVOICE PROYEK</h1>
         <h2>PT AGHITSNA KARYA INDAH</h2>
         <p>Periode: <strong>{{ strtoupper($periodTitle) }}</strong></p>
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
@@ -125,15 +136,23 @@
                 <th style="width: 12%;">No Invoice</th>
                 <th style="width: 9%;">Tanggal</th>
                 <th style="width: 16%;">Kepada</th>
-                <th style="width: 25%;">Proyek</th>
+                <th style="width: 20%;">Proyek</th>
                 <th style="width: 11%;">Total</th>
                 <th style="width: 11%;">Dibayar</th>
                 <th style="width: 11%;">Sisa</th>
-                <th style="width: 11%;">Status</th>
+                <th style="width: 12%;">Pembayaran Ke</th>
+                <th style="width: 10%;">Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($invoices as $index => $invoice)
+                @php
+                    $paymentInstallments = $invoice->payment_installments ?? [];
+                    $paymentLabels = collect($paymentInstallments)
+                        ->map(fn($payment) => $payment['label'] ?? null)
+                        ->filter()
+                        ->values();
+                @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td class="text-center">{{ $invoice->invoice_number }}</td>
@@ -141,12 +160,23 @@
                     <td class="text-left">{{ $invoice->recipient }}</td>
                     <td class="text-left">{{ $invoice->project_description ?? '-' }}</td>
                     <td class="text-right">Rp {{ number_format($invoice->getNetAmount(), 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($invoice->getTotalPaidAmount(), 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($invoice->getRemainingAmount(), 0, ',', '.') }}</td>
+                    <td class="text-left payment-list">
+                        @if ($paymentLabels->isNotEmpty())
+                            @foreach ($paymentLabels as $label)
+                                <span>{{ $label }}</span>
+                            @endforeach
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td class="status-{{ $invoice->isFullyPaid() ? 'paid' : 'unpaid' }}">
                         {{ $invoice->payment_status_label }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">Tidak ada data rekap alumunium</td>
+                    <td colspan="10" class="text-center">Tidak ada data rekap proyek</td>
                 </tr>
             @endforelse
 
@@ -154,6 +184,9 @@
                 <tr class="total-row">
                     <td colspan="5" class="text-center">TOTAL</td>
                     <td class="text-right">Rp {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($totals->total_paid ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($totals->total_remaining ?? 0, 0, ',', '.') }}</td>
+                    <td></td>
                     <td></td>
                 </tr>
             @endif
@@ -164,7 +197,9 @@
         <h3>Ringkasan:</h3>
         <p>Total Data: {{ $totals->invoice_count ?? 0 }} invoice</p>
         <p>Total Invoice: Rp {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</p>
-        <p>Lunas: {{ $totals->paid_count ?? 0 }}</p>
+        <p>Total Dibayar: Rp {{ number_format($totals->total_paid ?? 0, 0, ',', '.') }}</p>
+        <p>Total Sisa: Rp {{ number_format($totals->total_remaining ?? 0, 0, ',', '.') }}</p>
+        <p>Lunas: {{ $totals->paid_count ?? 0 }} | Belum Lunas: {{ $totals->unpaid_count ?? 0 }}</p>
     </div>
 </body>
 

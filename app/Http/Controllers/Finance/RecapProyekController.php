@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Finance;
 
-use App\Exports\Finance\AlumuniumRecapExport;
+use App\Exports\Finance\ProyekRecapExport;
 use App\Http\Controllers\Controller;
-use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Finance\InvoiceProyek;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
-class RecapAlumuniumController extends Controller
+class RecapProyekController extends Controller
 {
     public function index(Request $request)
     {
@@ -30,7 +30,7 @@ class RecapAlumuniumController extends Controller
         $totals = $this->buildTotals($summaryInvoices);
         $periodTitle = $this->buildPeriodTitle($request);
 
-        return view('pages.finance.recap-alumunium', compact('invoices', 'totals', 'periodTitle'));
+        return view('pages.finance.recap-proyek', compact('invoices', 'totals', 'periodTitle'));
     }
 
     public function exportExcel(Request $request)
@@ -44,9 +44,9 @@ class RecapAlumuniumController extends Controller
 
         $totals = $this->buildTotals($invoices);
         $periodTitle = $this->buildPeriodTitle($request);
-        $filename = 'rekap-alumunium-' . date('Y-m-d-His') . '.xlsx';
+        $filename = 'rekap-proyek-' . date('Y-m-d-His') . '.xlsx';
 
-        return Excel::download(new AlumuniumRecapExport($invoices, $totals, $periodTitle), $filename);
+        return Excel::download(new ProyekRecapExport($invoices, $totals, $periodTitle), $filename);
     }
 
     public function exportPdf(Request $request)
@@ -61,20 +61,20 @@ class RecapAlumuniumController extends Controller
         $totals = $this->buildTotals($invoices);
         $periodTitle = $this->buildPeriodTitle($request);
 
-        $pdf = Pdf::loadView('exports.finance.recap-alumunium-pdf', [
+        $pdf = Pdf::loadView('exports.finance.recap-proyek-pdf', [
             'invoices' => $invoices,
             'totals' => $totals,
             'periodTitle' => $periodTitle,
         ])->setPaper('a4', 'landscape');
 
-        $filename = 'rekap-alumunium-' . date('Y-m-d-His') . '.pdf';
+        $filename = 'rekap-proyek-' . date('Y-m-d-His') . '.pdf';
 
         return $pdf->download($filename);
     }
 
     private function baseQuery(Request $request)
     {
-        return InvoiceAlumunium::query()
+        return InvoiceProyek::query()
             ->with('paymentProofs')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;
@@ -97,9 +97,12 @@ class RecapAlumuniumController extends Controller
     private function buildTotals($invoices): object
     {
         return (object) [
-            'total_invoice' => $invoices->sum(fn($invoice) => (int) $invoice->getNetAmount()),
             'invoice_count' => $invoices->count(),
+            'total_invoice' => $invoices->sum(fn($invoice) => (int) $invoice->getNetAmount()),
+            'total_paid' => $invoices->sum(fn($invoice) => (int) $invoice->getTotalPaidAmount()),
+            'total_remaining' => $invoices->sum(fn($invoice) => (int) $invoice->getRemainingAmount()),
             'paid_count' => $invoices->filter(fn($invoice) => $invoice->isFullyPaid())->count(),
+            'unpaid_count' => $invoices->filter(fn($invoice) => !$invoice->isFullyPaid())->count(),
         ];
     }
 
