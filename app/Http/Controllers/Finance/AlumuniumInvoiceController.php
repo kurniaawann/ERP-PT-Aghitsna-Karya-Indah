@@ -126,8 +126,8 @@ class AlumuniumInvoiceController extends Controller
             $request->merge(['invoice_number' => "{$nextNumber}/{$nextNumber}/ALU/{$year}"]);
         }
 
-        // Parse items JSON dari request dan hitung total amount
-        $items = json_decode($request->items, true);
+        // Parse items JSON dari request dan normalisasi harga sebelum dihitung/simpan
+        $items = $this->normalizeInvoiceItems(json_decode($request->items, true));
         $totalAmount = 0;
 
         // Loop setiap item untuk hitung total: volume × harga
@@ -156,9 +156,11 @@ class AlumuniumInvoiceController extends Controller
     }
 
 
-    public function update(Request $request, InvoiceAlumunium $aluminium_invoice)
+    public function update(Request $request, string $invoiceNumber)
     {
         try {
+            $aluminium_invoice = InvoiceAlumunium::where('invoice_number', $invoiceNumber)->firstOrFail();
+
             $request->merge([
                 'discount_value' => $this->normalizeDecimalInput($request->discount_value),
                 'dp_value' => $this->normalizeDecimalInput($request->dp_value),
@@ -174,26 +176,26 @@ class AlumuniumInvoiceController extends Controller
                 return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
             }
 
-            // Ambil items dari request (validasi sudah dilakukan di HTML)
-            $items = $request->items;
+            // Ambil items langsung dari form edit seperti invoice proyek
+            $items = $this->normalizeInvoiceItems($request->items);
             $totalAmount = 0;
 
             // Hitung ulang total_amount dari items baru: volume × harga
             foreach ($items as $item) {
-                $jumlah = $item['volume'] * $item['harga'];
+                $jumlah = ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
                 $totalAmount += $jumlah;
             }
 
             // Hitung discount dan DP menggunakan method helper
             $calculations = $this->calculateInvoiceTotals($request, $totalAmount);
 
-            // Update data invoice (invoice_number tidak diupdate karena sebagai primary key)
+            // Update data invoice menggunakan model yang sudah ditemukan secara eksplisit.
             $aluminium_invoice->update([
                 'invoice_date' => $request->invoice_date,
                 'recipient' => $request->recipient,
                 'regarding' => $request->regarding ?? null,
                 'project_description' => $request->project_description,
-                'items' => $items, // Laravel akan auto-encode ke JSON karena cast di Model
+                'items' => $items,
                 'total_amount' => $totalAmount,
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
@@ -213,8 +215,10 @@ class AlumuniumInvoiceController extends Controller
 
 
 
-    public function edit(InvoiceAlumunium $aluminium_invoice)
+    public function edit(string $invoiceNumber)
     {
+        $aluminium_invoice = InvoiceAlumunium::where('invoice_number', $invoiceNumber)->firstOrFail();
+
         // Return data invoice dengan items yang sudah di-decode
         return response()->json([
             'invoice' => $aluminium_invoice,
@@ -313,6 +317,57 @@ class AlumuniumInvoiceController extends Controller
 
         if (is_string($value)) {
             $value = str_replace(',', '.', $value);
+        }
+
+        return (float) $value;
+    }
+
+    /**
+     * Normalisasi data items invoice agar harga format ribuan tetap tersimpan sebagai angka utuh.
+     */
+    private function normalizeInvoiceItems($items): array
+    {
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return array_map(function ($item) {
+            $item['volume'] = $this->normalizeDecimalInput($item['volume'] ?? 0);
+            $item['harga'] = $this->normalizeCurrencyInput($item['harga'] ?? 0);
+
+            return $item;
+        }, $items);
+    }
+
+    /**
+     * Ubah input harga berformat lokal seperti 1.000 atau Rp 1.000 menjadi angka.
+     */
+    private function normalizeCurrencyInput($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = (string) $value;
+        $value = preg_replace('/[^0-9,\.\-]/', '', $value);
+
+        if ($value === '' || $value === null) {
+            return 0.0;
+        }
+
+        if (str_contains($value, ',')) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } else {
+            $value = str_replace('.', '', $value);
         }
 
         return (float) $value;

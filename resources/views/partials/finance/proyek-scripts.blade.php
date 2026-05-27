@@ -14,6 +14,28 @@
         input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
     }
 
+    function bindEditCurrencyInput(input) {
+        if (!input || input.dataset.currencyBound === '1') return;
+
+        input.dataset.currencyBound = '1';
+
+        input.addEventListener('focus', function() {
+            this.value = String(parseCurrencyInput(this.value) || '');
+            requestAnimationFrame(() => this.select());
+        });
+
+        input.addEventListener('blur', function() {
+            formatCurrencyInput(this);
+        });
+    }
+
+    function normalizeInvoicePriceFields(form) {
+        form.querySelectorAll('input[name*="[harga]"]').forEach(input => {
+            const numeric = parseCurrencyInput(input.value);
+            input.value = numeric ? String(numeric) : '0';
+        });
+    }
+
     // Calculate individual row total for ADD modal
     function calculateRowTotal(input) {
         const row = input.closest('.item-row');
@@ -557,7 +579,9 @@
 
             const volume = volumeInput ? parseFloat(volumeInput.value) : 0;
             const satuan = satuanInput ? satuanInput.value : '';
-            const harga = hargaInput ? parseFloat(hargaInput.value) : 0;
+            // IMPORTANT: harga bisa sudah terformat "1.000" (titik ribuan)
+            // parse harus pakai parseCurrencyInput supaya tersimpan benar.
+            const harga = hargaInput ? parseCurrencyInput(hargaInput.value) : 0;
 
             if (keterangan && !isNaN(volume) && volume > 0 && satuan && !isNaN(harga) && harga > 0) {
                 items.push({
@@ -993,14 +1017,28 @@
                         return false;
                     }
 
+                    normalizeInvoicePriceFields(this);
+
                     // Set loading state
                     handleFormSubmit(submitBtn);
                 });
             }
         });
 
+        document.querySelectorAll('[id^="editModal-"] .item-harga').forEach(input => {
+            if (input.value) {
+                formatCurrencyInput(input);
+            }
+            bindEditCurrencyInput(input);
+        });
+
         // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
+
+        const newHargaInput = newItem.querySelector('.item-harga');
+        if (newHargaInput) {
+            bindEditCurrencyInput(newHargaInput);
+        }
         // ==========================================
 
         updateInvoiceTotal();

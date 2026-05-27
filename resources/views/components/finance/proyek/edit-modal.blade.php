@@ -67,7 +67,7 @@
                         <input type="text" inputmode="numeric" name="items[{{ $index }}][harga]"
                             value="Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
                             class="item-harga border rounded p-2 w-full" placeholder="Rp 0" required
-                            oninput="formatCurrencyInput(this); calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp

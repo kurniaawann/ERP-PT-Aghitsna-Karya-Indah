@@ -126,9 +126,13 @@ class ProyekInvoiceController extends Controller
             $request->merge(['invoice_number' => "{$nextNumber}/{$nextNumber}/PT.AKI/{$year}"]);
         }
 
-        // Parse items JSON dari request dan hitung total amount
-        $items = json_decode($request->items, true);
+        // Parse items JSON dari request dan normalisasi harga sebelum dihitung/simpan
+        $items = $this->normalizeInvoiceItems(json_decode($request->items, true));
         $totalAmount = 0;
+
+        if (!is_array($items)) {
+            return back()->with('error', 'Data items tidak valid')->withInput();
+        }
 
         // Loop setiap item untuk hitung total: volume × harga
         foreach ($items as $item) {
@@ -181,13 +185,13 @@ class ProyekInvoiceController extends Controller
                 return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
             }
 
-            // Ambil items dari request (validasi sudah dilakukan di HTML)
-            $items = $request->items;
+            // Ambil items dari request dan normalisasi harga sebelum dihitung/simpan
+            $items = $this->normalizeInvoiceItems($request->items);
             $totalAmount = 0;
 
             // Hitung ulang total_amount dari items baru: volume × harga
             foreach ($items as $item) {
-                $jumlah = $item['volume'] * $item['harga'];
+                $jumlah = ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
                 $totalAmount += $jumlah;
             }
 
@@ -202,13 +206,13 @@ class ProyekInvoiceController extends Controller
                     : json_decode($request->payment_installments, true);
             }
 
-            // Update data invoice (invoice_number tidak diupdate karena sebagai primary key)
-            $proyek_invoice->update([
+            // Update data invoice secara eksplisit berdasarkan primary key string.
+            InvoiceProyek::where('invoice_number', $proyek_invoice->invoice_number)->update([
                 'invoice_date' => $request->invoice_date,
                 'recipient' => $request->recipient,
                 'regarding' => $request->regarding ?? null,
                 'project_description' => $request->project_description,
-                'items' => $items, // Laravel akan auto-encode ke JSON karena cast di Model
+                'items' => json_encode($items),
                 'total_amount' => $totalAmount,
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
@@ -216,8 +220,8 @@ class ProyekInvoiceController extends Controller
                 'dp_type' => $request->dp_type,
                 'dp_value' => $request->dp_value,
                 'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
-                'payment_installments' => $paymentInstallments,
-                'selected_payment_accounts' => $request->selected_payment_accounts,
+                'payment_installments' => json_encode($paymentInstallments ?? []),
+                'selected_payment_accounts' => json_encode($request->selected_payment_accounts ?? []),
             ]);
 
             return redirect()->route('proyek-invoice.index')
@@ -330,6 +334,57 @@ class ProyekInvoiceController extends Controller
 
         if (is_string($value)) {
             $value = str_replace(',', '.', $value);
+        }
+
+        return (float) $value;
+    }
+
+    /**
+     * Normalisasi data items invoice agar harga format ribuan tetap tersimpan sebagai angka utuh.
+     */
+    private function normalizeInvoiceItems($items): array
+    {
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return array_map(function ($item) {
+            $item['volume'] = $this->normalizeDecimalInput($item['volume'] ?? 0);
+            $item['harga'] = $this->normalizeCurrencyInput($item['harga'] ?? 0);
+
+            return $item;
+        }, $items);
+    }
+
+    /**
+     * Ubah input harga berformat lokal seperti 1.000 atau Rp 1.000 menjadi angka.
+     */
+    private function normalizeCurrencyInput($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = (string) $value;
+        $value = preg_replace('/[^0-9,\.\-]/', '', $value);
+
+        if ($value === '' || $value === null) {
+            return 0.0;
+        }
+
+        if (str_contains($value, ',')) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } else {
+            $value = str_replace('.', '', $value);
         }
 
         return (float) $value;
