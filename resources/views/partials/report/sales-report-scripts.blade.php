@@ -853,6 +853,9 @@
                         sellingInput.value = selling;
                         idItemHidden.value = value;
                         row.dataset.stock = stock; // Store stock in row for validation
+
+                        formatCurrencyInput(capitalInput);
+                        formatCurrencyInput(sellingInput);
                     }
 
                     dropdown.classList.add('hidden');
