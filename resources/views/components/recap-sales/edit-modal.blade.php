@@ -99,18 +99,18 @@
                             placeholder="Qty *" required min="1"
                             oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" name="items[{{ $index }}][capital_price]"
-                            value="{{ $item['capital_price'] ?? 0 }}" class="item-capital-edit border rounded p-2"
-                            placeholder="Harga Modal *"
+                        <input type="text" inputmode="numeric" name="items[{{ $index }}][capital_price]"
+                            value="Rp {{ number_format($item['capital_price'] ?? 0, 0, ',', '.') }}"
+                            class="item-capital-edit border rounded p-2" placeholder="Rp 0"
                             {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                            required min="0" oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
-                        <input type="number" name="items[{{ $index }}][selling_price]"
-                            value="{{ $item['selling_price'] ?? 0 }}" class="item-selling-edit border rounded p-2"
-                            placeholder="Harga Jual *"
+                            required oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
+                            oninput="formatCurrencyInput(this); this.setCustomValidity('')">
+                        <input type="text" inputmode="numeric" name="items[{{ $index }}][selling_price]"
+                            value="Rp {{ number_format($item['selling_price'] ?? 0, 0, ',', '.') }}"
+                            class="item-selling-edit border rounded p-2" placeholder="Rp 0"
                             {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
-                            required min="0" oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
+                            required oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
+                            oninput="formatCurrencyInput(this); this.setCustomValidity('')">
                     </div>
 
                     {{-- Stock Warning --}}

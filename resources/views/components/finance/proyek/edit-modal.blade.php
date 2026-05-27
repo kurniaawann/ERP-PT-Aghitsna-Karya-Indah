@@ -55,9 +55,8 @@
                         <input type="number" step="0.01" min="0" name="items[{{ $index }}][volume]"
                             value="{{ $item['volume'] ?? 0 }}" class="item-volume border rounded p-2 w-full"
                             placeholder="Volume *" required
-                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}')"
-                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
-                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')">
+                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <input type="text" name="items[{{ $index }}][satuan]"
@@ -65,12 +64,11 @@
                             placeholder="Satuan *" required
                             oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" step="0.01" min="0" name="items[{{ $index }}][harga]"
-                            value="{{ $item['harga'] ?? 0 }}" class="item-harga border rounded p-2 w-full"
-                            placeholder="Harga *" required
-                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}')"
-                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')">
+                        <input type="text" inputmode="numeric" name="items[{{ $index }}][harga]"
+                            value="Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
+                            class="item-harga border rounded p-2 w-full" placeholder="Rp 0" required
+                            oninput="formatCurrencyInput(this); calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp
                                 {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</span>

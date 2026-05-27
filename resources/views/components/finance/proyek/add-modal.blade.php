@@ -49,10 +49,10 @@
                         placeholder="Satuan (m3, unit) *" required
                         oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
-                    <input type="number" step="0.01" min="0" class="item-harga border rounded p-2 w-full"
-                        placeholder="Harga *" required oninput="calculateRowTotal(this)"
+                    <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
+                        placeholder="Rp 0" required oninput="formatCurrencyInput(this); calculateRowTotal(this)"
                         oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                        oninput="calculateRowTotal(this); this.setCustomValidity('')">
+                        oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')">
                     <div class="flex items-center">
                         <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                     </div>
