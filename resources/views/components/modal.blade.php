@@ -10,6 +10,7 @@
     'size' => 'lg',
     'formId' => null,
     'onsubmit' => null,
+    'enctype' => null,
 ])
 
 @php
@@ -83,7 +84,8 @@
             {{-- Normal form submission --}}
             <form action="{{ $action }}" method="POST" class="space-y-4"
                 @if ($formId) id="{{ $formId }}" @endif
-                @if ($onsubmit) onsubmit="{{ $onsubmit }}" @endif>
+                @if ($onsubmit) onsubmit="{{ $onsubmit }}" @endif
+                @if ($enctype) enctype="{{ $enctype }}" @endif>
                 @csrf
                 @if (in_array(strtoupper($method), ['PUT', 'PATCH', 'DELETE']))
                     @method($method)

@@ -183,7 +183,7 @@
         </label>
         <p class="text-xs text-text-label mb-3">
             <i class="fa-solid fa-info-circle"></i>
-            Tambahkan detail pembayaran jika invoice ini dibayar secara bertahap
+            Tahap pembayaran akan terisi otomatis dari bukti pembayaran dan ikut terhapus saat bukti dihapus.
         </p>
         <div id="payment-installments-list-edit-{{ $invoice->invoice_number }}" class="space-y-2">
             @php

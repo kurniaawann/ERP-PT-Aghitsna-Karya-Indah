@@ -44,7 +44,7 @@ class ProyekInvoiceController extends Controller
     public function index(Request $request)
     {
         // Query builder untuk InvoiceProyek
-        $query = InvoiceProyek::query();
+        $query = InvoiceProyek::with('paymentProofs');
 
         // Fitur pencarian: cari di nomor invoice, penerima, atau deskripsi proyek
         if ($request->filled('search')) {

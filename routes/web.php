@@ -9,6 +9,7 @@ use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
 use App\Http\Controllers\Finance\ProyekInvoiceController;
+use App\Http\Controllers\Finance\PaymentProofController;
 use App\Http\Controllers\Finance\PurchaseInvoiceController;
 use App\Http\Controllers\Finance\PaymentAccountController;
 use App\Http\Controllers\Finance\RecapSalesController;
@@ -129,6 +130,12 @@ Route::middleware('auth')->group(function () {
     // Proyek Invoice Print Routes
     Route::get('/proyek-invoice/{invoice_number}/print/pdf', [ProyekInvoiceController::class, 'printPdf'])->name('proyek-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/proyek-invoice/{invoice_number}/print/excel', [ProyekInvoiceController::class, 'printExcel'])->name('proyek-invoice.print.excel')->where('invoice_number', '.*');
+
+    // Route Bukti Pembayaran Invoice
+    Route::get('/payment-proofs', [PaymentProofController::class, 'index'])->name('payment-proofs.index');
+    Route::post('/payment-proofs', [PaymentProofController::class, 'store'])->name('payment-proofs.store');
+    Route::put('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'update'])->name('payment-proofs.update');
+    Route::delete('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'destroy'])->name('payment-proofs.destroy');
 
     // Route Purchase Invoice
     Route::get('/purchase-invoice', [PurchaseInvoiceController::class, 'index'])->name('purchase-invoice.index');

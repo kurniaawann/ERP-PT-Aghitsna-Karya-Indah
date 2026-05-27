@@ -104,8 +104,8 @@
                                         {{-- Aksi --}}
                                         <td class="p-2 text-center {{ $verticalAlign }}"
                                             rowspan="{{ $itemCount }}">
-                                            @if (!$sale->isLunas())
-                                                <div class="flex flex-col gap-2">
+                                            <div class="flex flex-col gap-2">
+                                                @if (!$sale->isLunas())
                                                     <button type="button"
                                                         onclick="openModal('editModal-{{ $sale->id_sales_recap }}')"
                                                         class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200">
@@ -118,10 +118,8 @@
                                                         <i class="fa-solid fa-check-circle w-4 h-4"></i>
                                                         Status
                                                     </button>
-                                                </div>
-                                            @else
-                                                <span class="text-text-tertiary text-sm">-</span>
-                                            @endif
+                                                @endif
+                                            </div>
                                         </td>
                                     @endif
                                 </tr>
