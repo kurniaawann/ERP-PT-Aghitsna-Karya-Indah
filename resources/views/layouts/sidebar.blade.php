@@ -131,7 +131,7 @@
 
                 {{-- Submenu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('payment-proofs*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('payment-proofs*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/alumunium-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -196,6 +196,17 @@
                                 {{ request()->is('recap-sales*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Rekap Penjualan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/recap-alumunium') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('recap-alumunium*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-file-invoice-dollar w-4 
+                                {{ request()->is('recap-alumunium*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Rekap Alumunium</span>
                         </a>
                     </li>
                     <li>
