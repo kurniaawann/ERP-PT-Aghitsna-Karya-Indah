@@ -88,7 +88,7 @@ class RecapSalesController extends Controller
         $itemsJson = $request->input('items');
 
         // Decode JSON items menjadi array
-        $items = json_decode($itemsJson, true);
+        $items = $this->normalizeRecapItems(json_decode($itemsJson, true));
 
         // Validasi sederhana: minimal harus ada 1 item
         if (empty($items)) {
@@ -189,7 +189,7 @@ class RecapSalesController extends Controller
         }
 
         // Ambil items dari request (validasi sudah dilakukan di HTML)
-        $newItems = $request->items;
+        $newItems = $this->normalizeRecapItems($request->items);
 
         // Mulai database transaction untuk ensure consistency
         DB::beginTransaction();
@@ -542,6 +542,58 @@ class RecapSalesController extends Controller
 
         return $pdf->download('recap-sales-' . date('Y-m-d-His') . '.pdf');
 
+    }
+
+    /**
+     * Normalisasi item rekap penjualan agar harga rupiah yang tampil di form tetap dihitung sebagai angka.
+     */
+    private function normalizeRecapItems($items): array
+    {
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return array_map(function ($item) {
+            $item['quantity'] = (int) ($item['quantity'] ?? 0);
+            $item['capital_price'] = $this->normalizeCurrencyInput($item['capital_price'] ?? 0);
+            $item['selling_price'] = $this->normalizeCurrencyInput($item['selling_price'] ?? 0);
+
+            return $item;
+        }, $items);
+    }
+
+    /**
+     * Convert input harga seperti "Rp 1.000" atau "1.000" menjadi angka.
+     */
+    private function normalizeCurrencyInput($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = (string) $value;
+        $value = preg_replace('/[^0-9,\.\-]/', '', $value);
+
+        if ($value === '' || $value === null) {
+            return 0.0;
+        }
+
+        if (str_contains($value, ',')) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } else {
+            $value = str_replace('.', '', $value);
+        }
+
+        return (float) $value;
     }
 }
 

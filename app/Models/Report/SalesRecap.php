@@ -60,12 +60,42 @@ class SalesRecap extends Model
         $totalSelling = 0;
 
         foreach ($items as $item) {
-            $totalCapital += ($item['capital_price'] ?? 0) * ($item['quantity'] ?? 0);
-            $totalSelling += ($item['selling_price'] ?? 0) * ($item['quantity'] ?? 0);
+            $totalCapital += $this->normalizeCurrencyInput($item['capital_price'] ?? 0) * (int) ($item['quantity'] ?? 0);
+            $totalSelling += $this->normalizeCurrencyInput($item['selling_price'] ?? 0) * (int) ($item['quantity'] ?? 0);
         }
 
         $this->total_capital = $totalCapital;
         $this->total_selling = $totalSelling;
         $this->total_profit = $totalSelling - $totalCapital;
+    }
+
+    /**
+     * Normalisasi harga agar string rupiah tidak memutus perhitungan.
+     */
+    private function normalizeCurrencyInput($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = (string) $value;
+        $value = preg_replace('/[^0-9,\.\-]/', '', $value);
+
+        if ($value === '' || $value === null) {
+            return 0.0;
+        }
+
+        if (str_contains($value, ',')) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } else {
+            $value = str_replace('.', '', $value);
+        }
+
+        return (float) $value;
     }
 }
