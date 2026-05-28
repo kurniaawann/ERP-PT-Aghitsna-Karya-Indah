@@ -57,7 +57,7 @@
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="ID atau Nama Karyawan"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            onkeyup="this.form.submit()">
+                            oninput="this.form.requestSubmit()">
                     </div>
                 </div>
 

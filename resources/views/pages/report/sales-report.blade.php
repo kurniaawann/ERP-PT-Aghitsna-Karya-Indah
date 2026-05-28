@@ -13,7 +13,8 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
                         <select id="month-select" name="month"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            onchange="this.form.requestSubmit()">
                             <option value="">Semua Bulan</option>
                             @for ($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" {{ request('month') == $i ? 'selected' : '' }}>
@@ -27,7 +28,8 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
                         <select id="year-select" name="year"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            onchange="this.form.requestSubmit()">
                             @for ($i = date('Y'); $i >= date('Y') - 5; $i--)
                                 <option value="{{ $i }}"
                                     {{ request('year', date('Y')) == $i ? 'selected' : '' }}>
@@ -41,7 +43,8 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                         <select id="status-select" name="status"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            onchange="this.form.requestSubmit()">
                             <option value="">Semua Status</option>
                             <option value="Lunas" {{ request('status') == 'Lunas' ? 'selected' : '' }}>Lunas</option>
                             <option value="Belum Lunas" {{ request('status') == 'Belum Lunas' ? 'selected' : '' }}>Belum
@@ -53,15 +56,8 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Cari</label>
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari proyek..."
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-
-                    {{-- Button --}}
-                    <div class="flex items-end">
-                        <button type="submit"
-                            class="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium">
-                            <i class="fas fa-filter mr-2"></i>Filter
-                        </button>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            oninput="this.form.requestSubmit()">
                     </div>
                 </div>
             </form>

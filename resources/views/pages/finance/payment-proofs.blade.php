@@ -45,16 +45,18 @@
             <form method="GET" action="{{ route('payment-proofs.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <input type="text" name="search" value="{{ request('search') }}"
                     class="w-full rounded-lg border border-border-strong px-3 py-2 text-sm"
-                    placeholder="Cari invoice atau file...">
+                    placeholder="Cari invoice atau file..." oninput="this.form.requestSubmit()">
 
-                <select name="module_type" class="w-full rounded-lg border border-border-strong px-3 py-2 text-sm">
+                <select name="module_type" class="w-full rounded-lg border border-border-strong px-3 py-2 text-sm"
+                    onchange="this.form.requestSubmit()">
                     <option value="">Semua Modul</option>
                     @foreach ($moduleOptions as $module)
                         <option value="{{ $module['value'] }}" @selected(request('module_type') === $module['value'])>{{ $module['label'] }}</option>
                     @endforeach
                 </select>
 
-                <select name="invoice_type" class="w-full rounded-lg border border-border-strong px-3 py-2 text-sm">
+                <select name="invoice_type" class="w-full rounded-lg border border-border-strong px-3 py-2 text-sm"
+                    onchange="this.form.requestSubmit()">
                     <option value="">Semua Jenis Invoice</option>
                     @foreach ($invoiceTypeOptions as $invoiceType)
                         <option value="{{ $invoiceType['value'] }}" @selected(request('invoice_type') === $invoiceType['value'])>{{ $invoiceType['label'] }}
@@ -63,8 +65,6 @@
                 </select>
 
                 <div class="flex gap-2">
-                    <button type="submit"
-                        class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-hover">Filter</button>
                     <a href="{{ route('payment-proofs.index') }}"
                         class="rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700">Reset</a>
                 </div>
