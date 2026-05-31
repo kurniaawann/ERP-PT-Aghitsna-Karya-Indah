@@ -27,21 +27,21 @@
         </div>
 
         <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
+            <div class="rounded-xl border border-border-strong bg-surface-base p-4 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-wide text-text-label">Total Bukti</p>
                 <p class="mt-2 text-3xl font-bold text-text-primary">{{ number_format($totalProofs) }}</p>
             </div>
-            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Invoice Proyek</p>
-                <p class="mt-2 text-3xl font-bold text-blue-800">{{ number_format($projectProofs) }}</p>
+            <div class="rounded-xl border border-border-strong bg-primary-light p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-primary">Invoice Proyek</p>
+                <p class="mt-2 text-3xl font-bold text-primary">{{ number_format($projectProofs) }}</p>
             </div>
-            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Invoice Alumunium</p>
-                <p class="mt-2 text-3xl font-bold text-amber-800">{{ number_format($alumuniumProofs) }}</p>
+            <div class="rounded-xl border border-border-strong bg-warning-light p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-warning">Invoice Alumunium</p>
+                <p class="mt-2 text-3xl font-bold text-warning">{{ number_format($alumuniumProofs) }}</p>
             </div>
         </div>
 
-        <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
+        <div class="rounded-xl border border-border-strong bg-surface-base p-4 shadow-sm">
             <form method="GET" action="{{ route('payment-proofs.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <input type="text" name="search" value="{{ request('search') }}"
                     class="w-full rounded-lg border border-border-strong px-3 py-2 text-sm"
@@ -66,7 +66,7 @@
 
                 <div class="flex gap-2">
                     <a href="{{ route('payment-proofs.index') }}"
-                        class="rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700">Reset</a>
+                        class="rounded-lg bg-btn-delete px-4 py-2 text-sm font-medium text-white transition hover:bg-btn-delete-hover">Reset</a>
                 </div>
             </form>
         </div>

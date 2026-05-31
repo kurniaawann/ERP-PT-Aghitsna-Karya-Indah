@@ -73,7 +73,7 @@
                                 <td class="p-2 text-center">
                                     <button type="button" onclick="toggleStatus({{ $category->id }})"
                                         class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-lg gap-1 transition-colors duration-200
-                                    {{ $category->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-button-cancel text-text-label hover:bg-gray-400 hover:text-white' }}">
+                                    {{ $category->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-button-cancel text-button-inactive hover:bg-button-cancel-hover hover:text-text-heading' }}">
                                         <i
                                             class="fa-solid {{ $category->is_active ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
                                         {{ $category->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -91,7 +91,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center p-4 text-text-secondary">Data tidak ditemukan.</td>
+                                <td colspan="8" class="text-center p-4 text-text-secondary">Data tidak ditemukan.
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

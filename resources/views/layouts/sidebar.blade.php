@@ -1,13 +1,13 @@
 <!-- Sidebar -->
 <aside id="sidebar"
-    class="bg-white shadow-lg w-64 fixed lg:static inset-y-0 left-0 z-50 transform 
+    class="bg-surface-base shadow-lg w-64 fixed lg:static inset-y-0 left-0 z-50 transform 
            -translate-x-full lg:translate-x-0 flex flex-col transition-transform duration-300 ease-in-out">
 
     <!-- Header Sidebar -->
     <div class="p-4 border-b border-border flex items-center justify-between">
         <div class="flex items-center space-x-3">
             <div
-                class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden border border-border">
+                class="w-10 h-10 bg-surface-base rounded-full flex items-center justify-center overflow-hidden border border-border">
                 <img src="{{ asset('images/logo.jpeg') }}" alt="PT Aghitsna Karya Indah"
                     class="w-full h-full object-cover">
             </div>

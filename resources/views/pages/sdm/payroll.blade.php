@@ -3,7 +3,7 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Payroll')
 
 @section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Payroll</h1>
 
         {{-- Search & Action Buttons --}}
@@ -20,7 +20,7 @@
 
                 {{-- Filter Minggu --}}
                 <select name="week_number"
-                    class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    class="border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="">Semua Minggu</option>
                     <option value="1" {{ request('week_number') == 1 ? 'selected' : '' }}>Minggu 1</option>
                     <option value="2" {{ request('week_number') == 2 ? 'selected' : '' }}>Minggu 2</option>
@@ -43,7 +43,7 @@
                     ]" />
 
                     <button type="button" id="bulk-pay-button" onclick="openModal('bulkPayModal')"
-                        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
+                        class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
                         disabled>
                         <i class="fa-solid fa-money-check-alt"></i>
                         Bayar Terpilih
@@ -52,7 +52,7 @@
                     <x-buttons.delete-button modalId="deleteModal" />
 
                     <button type="button" onclick="openModal('generateModal')"
-                        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium">
+                        class="flex items-center gap-2 bg-success hover:bg-success-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium">
                         <i class="fa-solid fa-calculator"></i>
                         Generate Payroll
                     </button>

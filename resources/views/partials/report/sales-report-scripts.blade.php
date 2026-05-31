@@ -149,7 +149,7 @@
                             autocomplete="off">
                         <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options">
                                 <div class="p-2 text-sm text-text-secondary hover:bg-gray-50 cursor-pointer border-b" data-value="">
                                     -- Pilih Barang --
@@ -678,7 +678,7 @@
                             autocomplete="off">
                         <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown-edit absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown-edit absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options-edit">
                                 <div class="p-2 text-sm text-text-secondary hover:bg-gray-50 cursor-pointer border-b" data-value="">
                                     -- Pilih Barang --

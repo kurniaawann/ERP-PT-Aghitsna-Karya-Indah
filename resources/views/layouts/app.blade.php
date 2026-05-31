@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
-<body class="min-h-screen">
+<body class="min-h-screen bg-surface-secondary text-text-primary">
 
     <div class="flex h-screen">
         {{-- Sidebar dipisah sebagai partial --}}
@@ -25,16 +25,16 @@
         {{-- Main Content --}}
         <div class="flex-1 flex flex-col overflow-hidden">
             {{-- Topbar --}}
-            <header class="bg-white shadow-sm z-10">
+            <header class="bg-surface-base shadow-sm z-10 border-b border-border-light">
                 <div class="flex items-center justify-between p-4">
                     {{-- Toggle Sidebar untuk Mobile --}}
                     <button id="toggleSidebar" type="button"
-                        class="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2">
+                        class="lg:hidden text-text-secondary hover:text-text-heading focus:outline-none focus:ring-2 focus:ring-primary rounded-lg p-2">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
 
                     {{-- Judul Halaman --}}
-                    <h1 class="hidden md:block text-xl font-semibold text-gray-800" id="pageTitle">
+                    <h1 class="hidden md:block text-xl font-semibold text-text-heading" id="pageTitle">
                         @yield('title', 'Dashboard')
                     </h1>
 
@@ -47,7 +47,7 @@
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit"
-                                class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2">
+                                class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors duration-200 flex items-center space-x-2">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
                             </button>
@@ -57,7 +57,7 @@
             </header>
 
             {{-- Konten Utama --}}
-            <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <main class="flex-1 overflow-y-auto p-6 bg-surface-secondary">
                 @yield('content')
             </main>
         </div>

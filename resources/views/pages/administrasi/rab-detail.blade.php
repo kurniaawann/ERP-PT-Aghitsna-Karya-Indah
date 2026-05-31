@@ -3,13 +3,13 @@
 @section('title', 'Detail RAB - PT Aghitsna Karya Indah')
 
 @section('content')
-    <div class="bg-white p-6 rounded-xl shadow">
+    <div class="bg-surface-base p-6 rounded-xl shadow">
         <!-- Header -->
         <div class="mb-6 flex justify-between items-start">
             <div>
                 <h1 class="text-3xl font-bold text-text-primary mb-2">RANCANGAN ANGGARAN BIAYA</h1>
-                <p class="text-gray-600">No: <strong>{{ $rab->rab_number }}</strong></p>
-                <p class="text-gray-600">Tanggal: <strong>{{ $rab->date->format('d F Y') }}</strong></p>
+                <p class="text-text-secondary">No: <strong>{{ $rab->rab_number }}</strong></p>
+                <p class="text-text-secondary">Tanggal: <strong>{{ $rab->date->format('d F Y') }}</strong></p>
             </div>
             <div class="text-right">
                 <a href="{{ route('rab.index') }}" class="btn btn-secondary mb-2">Kembali</a>
@@ -19,13 +19,13 @@
         <!-- Penerima -->
         <div class="mb-6 p-4 border border-gray-300 rounded">
             <p class="mb-2"><strong>Kepada:</strong></p>
-            <p class="text-gray-700">{{ $rab->recipient }}</p>
-            <p class="text-gray-700">{{ $rab->recipient_address }}</p>
+            <p class="text-text-primary">{{ $rab->recipient }}</p>
+            <p class="text-text-primary">{{ $rab->recipient_address }}</p>
         </div>
 
         <!-- Intro Text -->
         <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
-            <p class="text-gray-700 whitespace-pre-wrap">{{ $rab->intro_text }}</p>
+            <p class="text-text-primary whitespace-pre-wrap">{{ $rab->intro_text }}</p>
         </div>
 
         <!-- RAB Details Table -->
@@ -121,8 +121,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Left Column - Additional Info -->
             <div>
-                <div class="mb-4 p-3 bg-gray-50 border border-gray-300 rounded">
-                    <p class="text-gray-700">
+                <div class="mb-4 p-3 bg-surface-secondary border border-border rounded">
+                    <p class="text-text-primary">
                         <strong>Terbilang:</strong><br>
                         {{ $rab->amount_in_words }}
                     </p>
@@ -132,14 +132,14 @@
             <!-- Right Column - Payment Methods -->
             <div>
                 @if ($rab->selected_payment_accounts && count($rab->selected_payment_accounts) > 0)
-                    <div class="p-3 bg-gray-50 border border-gray-300 rounded">
+                    <div class="p-3 bg-surface-secondary border border-border rounded">
                         <p class="font-bold mb-2">Rekening Pembayaran:</p>
                         @php
                             $accounts = is_array($rab->selected_payment_accounts)
                                 ? $rab->selected_payment_accounts
                                 : json_decode($rab->selected_payment_accounts, true);
                         @endphp
-                        <ul class="list-disc list-inside text-sm text-gray-700">
+                        <ul class="list-disc list-inside text-sm text-text-primary">
                             @foreach ($accounts as $accountId)
                                 @php
                                     $account = \App\Models\Finance\PaymentAccount::find($accountId);
@@ -158,21 +158,21 @@
         <div class="mt-8 pt-6 border-t border-gray-300">
             <div class="grid grid-cols-2 gap-8 text-center">
                 <div>
-                    <p class="text-sm text-gray-600 mb-12">Hormat kami,</p>
-                    <p class="text-sm text-gray-600">PT. AGHITSNA KARYA INDAH</p>
+                    <p class="text-sm text-text-secondary mb-12">Hormat kami,</p>
+                    <p class="text-sm text-text-secondary">PT. AGHITSNA KARYA INDAH</p>
                     @if ($rab->signed_by)
                         <p class="font-bold mt-2">
                             <u>{{ $rab->signed_by }}</u>
                         </p>
                         @if ($rab->division)
-                            <p class="text-sm text-gray-600">{{ $rab->division }}</p>
+                            <p class="text-sm text-text-secondary">{{ $rab->division }}</p>
                         @endif
                     @else
                         <div style="height: 40px;"></div>
                     @endif
                 </div>
                 <div>
-                    <p class="text-sm text-gray-600 mb-12">Diketahui,</p>
+                    <p class="text-sm text-text-secondary mb-12">Diketahui,</p>
                     <div style="height: 60px;"></div>
                 </div>
             </div>

@@ -66,9 +66,9 @@
                 if (!append) {
                     list.innerHTML = '';
                     const loadingEl = document.createElement('div');
-                    loadingEl.className = 'p-2 flex items-center gap-2 text-sm text-gray-600';
+                    loadingEl.className = 'p-2 flex items-center gap-2 text-sm text-text-secondary';
                     loadingEl.innerHTML = `
-                        <span class="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                        <span class="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
                         <span>Loading...</span>
                     `;
                     list.appendChild(loadingEl);
@@ -90,7 +90,7 @@
 
                         if (data.length === 0 && !append) {
                             const el = document.createElement('div');
-                            el.className = 'p-2 text-sm text-gray-500';
+                            el.className = 'p-2 text-sm text-text-secondary';
                             el.textContent = 'Tidak ada data barang';
                             list.appendChild(el);
                         } else {
@@ -98,7 +98,7 @@
                                 const row = document.createElement('button');
                                 row.type = 'button';
                                 row.className =
-                                    'w-full text-left px-3 py-2 hover:bg-gray-50 text-sm text-gray-800';
+                                    'w-full text-left px-3 py-2 hover:bg-surface-secondary text-sm text-text-primary';
                                 row.textContent = `${item.id_item} - ${item.name_item}`;
                                 row.dataset.id = item.id_item;
 

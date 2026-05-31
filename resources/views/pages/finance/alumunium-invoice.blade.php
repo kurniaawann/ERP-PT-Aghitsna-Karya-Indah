@@ -3,7 +3,7 @@
 @section('title', 'PT Aghitsna Karya Indah - Invoice Alumunium')
 
 @section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Alumunium</h1>
 
         {{-- Search & Action Buttons --}}

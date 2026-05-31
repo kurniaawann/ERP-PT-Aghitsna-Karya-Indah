@@ -46,7 +46,7 @@
     function showWarningModal(usedCategories) {
         const modal = document.getElementById('warningUsedModal');
         const list = document.getElementById('usedCategoriesList');
-        const modalContent = modal.querySelector('.bg-white');
+        const modalContent = modal.querySelector('.bg-surface-base');
 
         // Clear previous list
         list.innerHTML = '';
@@ -71,7 +71,7 @@
 
     function closeWarningModal() {
         const modal = document.getElementById('warningUsedModal');
-        const modalContent = modal.querySelector('.bg-white');
+        const modalContent = modal.querySelector('.bg-surface-base');
 
         modalContent.classList.remove('scale-100', 'opacity-100');
         modalContent.classList.add('scale-95', 'opacity-0');

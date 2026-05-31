@@ -225,59 +225,59 @@
 
         items.forEach((item, idx) => {
             const itemCard = document.createElement('div');
-            itemCard.className = 'bg-gray-50 rounded-lg p-4';
+            itemCard.className = 'bg-surface-secondary rounded-lg p-4';
             itemCard.setAttribute('data-item-id', item.id);
             itemCard.innerHTML = `
                 <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-semibold text-sm text-gray-700">
+                    <h4 class="font-semibold text-sm text-text-heading">
                         <i class="fa-solid fa-circle-dot text-primary mr-1"></i>
                         Item ${idx + 1}
                     </h4>
                     <button type="button" onclick="removeItem('${prefix}', ${item.id})"
-                        class="text-error hover:bg-red-100 px-2 py-1 rounded-md transition-colors duration-200">
+                        class="text-error hover:bg-error-light px-2 py-1 rounded-md transition-colors duration-200">
                         <i class="fa-solid fa-trash-can"></i> Hapus
                     </button>
                 </div>
 
                 <div class="grid grid-cols-1 gap-3">
                         <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Keterangan</label>
+                        <label class="block text-xs font-medium text-text-label mb-1">Keterangan</label>
                         <input type="text" value="${escHtml(item.description || '')}"
                             oninput="updateItemField('${prefix}', ${item.id}, 'description', this.value, false)"
                             onchange="updateItemField('${prefix}', ${item.id}, 'description', this.value)"
-                            class="w-full border rounded-md p-2 text-sm"
+                            class="w-full border border-border-strong rounded-md p-2 text-sm text-text-input bg-surface-base"
                             placeholder="Deskripsi item">
                     </div>
 
                     <div class="grid grid-cols-3 gap-2">
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Volume</label>
+                            <label class="block text-xs font-medium text-text-label mb-1">Volume</label>
                             <input type="text" value="${escHtml(item.volume || '')}"
                                 oninput="updateItemField('${prefix}', ${item.id}, 'volume', this.value, false)"
                                 onchange="updateItemField('${prefix}', ${item.id}, 'volume', this.value)"
-                                class="w-full border rounded-md p-2 text-sm item-volume"
+                                class="w-full border border-border-strong rounded-md p-2 text-sm text-text-input bg-surface-base item-volume"
                                 placeholder="1">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Satuan</label>
+                            <label class="block text-xs font-medium text-text-label mb-1">Satuan</label>
                             <input type="text" value="${escHtml(item.unit || '')}"
                                 oninput="updateItemField('${prefix}', ${item.id}, 'unit', this.value, false)"
                                 onchange="updateItemField('${prefix}', ${item.id}, 'unit', this.value)"
-                                class="w-full border rounded-md p-2 text-sm"
+                                class="w-full border border-border-strong rounded-md p-2 text-sm text-text-input bg-surface-base"
                                 placeholder="unit">
                         </div>
                             <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Harga Satuan</label>
+                            <label class="block text-xs font-medium text-text-label mb-1">Harga Satuan</label>
                                 <input type="text" value="${item.unit_price ? parseAmount(item.unit_price).toLocaleString('id-ID') : ''}"
                                     oninput="formatPriceInput(this); updateItemField('${prefix}', ${item.id}, 'unit_price', this.value, false)"
                                     onchange="updateItemField('${prefix}', ${item.id}, 'unit_price', this.value)"
-                                    class="w-full border rounded-md p-2 text-sm item-unit-price"
+                                    class="w-full border border-border-strong rounded-md p-2 text-sm text-text-input bg-surface-base item-unit-price"
                                     placeholder="0">
                         </div>
                     </div>
 
-                    <div class="bg-blue-50 rounded-md p-2 flex justify-between items-center">
-                        <span class="text-xs font-medium text-gray-600">Total Harga:</span>
+                    <div class="bg-info-light rounded-md p-2 flex justify-between items-center">
+                        <span class="text-xs font-medium text-text-label">Total Harga:</span>
                         <span class="font-bold text-primary item-total-display">${formatRp(item.total_price)}</span>
                     </div>
                 </div>

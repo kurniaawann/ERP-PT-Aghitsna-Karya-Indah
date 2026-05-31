@@ -106,49 +106,49 @@
 
                 <div class="subcategories-container space-y-3 mb-3">
                     ${(categoryData.subcategories || []).map(subcategory => `
-                                                                                    <div class="subcategory-block border rounded p-3 bg-gray-50">
-                                                                                        <div class="mb-3">
-                                                                                            <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                                                                                            <input type="text" class="w-full border rounded p-2 subcategory-name"
-                                                                                                placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
-                                                                                        </div>
+                                                                                            <div class="subcategory-block border rounded p-3 bg-gray-50">
+                                                                                                <div class="mb-3">
+                                                                                                    <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
+                                                                                                    <input type="text" class="w-full border rounded p-2 subcategory-name"
+                                                                                                        placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
+                                                                                                </div>
 
-                                                                                        <div class="mb-3">
-                                                                                            <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
-                                                                                            <div class="items-container space-y-2">
-                                                                                                ${(subcategory.items || []).map(item => `
-                                        <div class="item-block bg-white rounded border p-3 flex flex-col gap-2">
-                                            <input type="text" class="w-full border rounded p-2 item-description"
+                                                                                                <div class="mb-3">
+                                                                                                    <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
+                                                                                                    <div class="items-container space-y-2">
+                                                                                                        ${(subcategory.items || []).map(item => `
+                                        <div class="item-block bg-surface-base rounded border border-border-strong p-3 flex flex-col gap-2">
+                                            <input type="text" class="w-full border border-border-strong rounded p-2 item-description bg-surface-base text-text-input"
                                                 placeholder="Masukkan item pekerjaan" value="${item.item_description || ''}" required>
-                                            <input type="number" class="w-full border rounded p-2 item-volume" placeholder="Vol"
+                                            <input type="number" class="w-full border border-border-strong rounded p-2 item-volume bg-surface-base text-text-input" placeholder="Vol"
                                                 min="0" step="0.01" value="${item.volume ?? 0}" required>
-                                            <input type="text" class="w-full border rounded p-2 item-unit" placeholder="Satuan"
+                                            <input type="text" class="w-full border border-border-strong rounded p-2 item-unit bg-surface-base text-text-input" placeholder="Satuan"
                                                 value="${item.unit || ''}" maxlength="50" required>
-                                            <input type="number" class="w-full border rounded p-2 item-unit-price" placeholder="Harga"
+                                            <input type="number" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga"
                                                 min="0" step="0.01" value="${item.unit_price ?? 0}" required>
-                                            <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-right">
-                                                <span class="item-sub-total-price text-sm font-semibold text-blue-700">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.sub_harga || 0).replace('Rp ', 'Rp ')}</span>
+                                            <div class="w-full px-3 py-2 bg-info-light border border-info-light rounded text-right">
+                                                <span class="item-sub-total-price text-sm font-semibold text-info">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.sub_harga || 0).replace('Rp ', 'Rp ')}</span>
                                             </div>
-                                            <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm btn-danger">
+                                            <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm bg-btn-delete hover:bg-btn-delete-hover text-white">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </div>
                                     `).join('')}
+                                                                                                    </div>
+                                                                                                    <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
+                                                                                                        <i class="fa-solid fa-plus"></i> Tambah Item
+                                                                                                    </button>
+                                                                                                </div>
+
+                                                                                                <div class="bg-info-light border border-info-light rounded p-3 mb-3">
+                                                                                                    <p class="text-sm text-text-heading"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-info">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subcategory.sub_harga || 0).replace('Rp ', 'Rp ')}</span></p>
+                                                                                                </div>
+
+                                                                                                <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
+                                                                                                    <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
+                                                                                                </button>
                                                                                             </div>
-                                                                                            <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
-                                                                                                <i class="fa-solid fa-plus"></i> Tambah Item
-                                                                                            </button>
-                                                                                        </div>
-
-                                                                                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                                                                                            <p class="text-sm text-blue-900"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subcategory.sub_harga || 0).replace('Rp ', 'Rp ')}</span></p>
-                                                                                        </div>
-
-                                                                                        <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
-                                                                                            <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
-                                                                                        </button>
-                                                                                    </div>
-                                                                                `).join('')}
+                                                                                        `).join('')}
                 </div>
 
                 <button type="button" onclick="addSubcategoryBlock(this)" class="btn btn-sm btn-outline-secondary w-full">
@@ -166,26 +166,26 @@
             const container = categoryBlock.querySelector('.subcategories-container');
 
             const subcategoryBlock = document.createElement('div');
-            subcategoryBlock.className = 'subcategory-block border rounded p-3 bg-gray-50';
+            subcategoryBlock.className = 'subcategory-block border border-border-strong rounded p-3 bg-surface-secondary';
             subcategoryBlock.innerHTML = `
                 <div class="mb-3">
                     <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                    <input type="text" class="w-full border rounded p-2 subcategory-name"
+                    <input type="text" class="w-full border border-border-strong rounded p-2 subcategory-name bg-surface-base text-text-input"
                         placeholder="Contoh: Pembongkaran" required>
                 </div>
 
                 <div class="mb-3">
                     <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
                     <div class="items-container space-y-2">
-                        <div class="item-block bg-white rounded border p-3 flex flex-col gap-2">
-                            <input type="text" class="w-full border rounded p-2 item-description" placeholder="Masukkan item pekerjaan" required>
-                            <input type="number" class="w-full border rounded p-2 item-volume" placeholder="Vol" min="0" step="0.01" required>
-                            <input type="text" class="w-full border rounded p-2 item-unit" placeholder="Satuan" maxlength="50" required>
-                            <input type="number" class="w-full border rounded p-2 item-unit-price" placeholder="Harga" min="0" step="0.01" required>
-                            <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-right">
-                                <span class="item-sub-total-price text-sm font-semibold text-blue-700">Rp 0</span>
+                        <div class="item-block bg-surface-base rounded border border-border-strong p-3 flex flex-col gap-2">
+                            <input type="text" class="w-full border border-border-strong rounded p-2 item-description bg-surface-base text-text-input" placeholder="Masukkan item pekerjaan" required>
+                            <input type="number" class="w-full border border-border-strong rounded p-2 item-volume bg-surface-base text-text-input" placeholder="Vol" min="0" step="0.01" required>
+                            <input type="text" class="w-full border border-border-strong rounded p-2 item-unit bg-surface-base text-text-input" placeholder="Satuan" maxlength="50" required>
+                            <input type="number" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga" min="0" step="0.01" required>
+                            <div class="w-full px-3 py-2 bg-info-light border border-info-light rounded text-right">
+                                <span class="item-sub-total-price text-sm font-semibold text-info">Rp 0</span>
                             </div>
-                            <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm btn-danger">
+                            <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm bg-btn-delete hover:bg-btn-delete-hover text-white">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -195,11 +195,11 @@
                     </button>
                 </div>
 
-                <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                    <p class="text-sm text-blue-900"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
+                <div class="bg-info-light border border-info-light rounded p-3 mb-3">
+                    <p class="text-sm text-text-heading"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-info">Rp 0</span></p>
                 </div>
 
-                <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
+                <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm bg-btn-delete hover:bg-btn-delete-hover text-white w-full">
                     <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
                 </button>
             `;
@@ -214,16 +214,16 @@
             const container = subcategoryBlock.querySelector('.items-container');
 
             const itemBlock = document.createElement('div');
-            itemBlock.className = 'item-block bg-white rounded border p-3 flex flex-col gap-2';
+            itemBlock.className = 'item-block bg-surface-base rounded border border-border-strong p-3 flex flex-col gap-2';
             itemBlock.innerHTML = `
-                <input type="text" class="w-full border rounded p-2 item-description" placeholder="Masukkan item pekerjaan" required>
-                <input type="number" class="w-full border rounded p-2 item-volume" placeholder="Vol" min="0" step="0.01" required>
-                <input type="text" class="w-full border rounded p-2 item-unit" placeholder="Satuan" maxlength="50" required>
-                <input type="number" class="w-full border rounded p-2 item-unit-price" placeholder="Harga" min="0" step="0.01" required>
-                <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-right">
-                    <span class="item-sub-total-price text-sm font-semibold text-blue-700">Rp 0</span>
+                <input type="text" class="w-full border border-border-strong rounded p-2 item-description bg-surface-base text-text-input" placeholder="Masukkan item pekerjaan" required>
+                <input type="number" class="w-full border border-border-strong rounded p-2 item-volume bg-surface-base text-text-input" placeholder="Vol" min="0" step="0.01" required>
+                <input type="text" class="w-full border border-border-strong rounded p-2 item-unit bg-surface-base text-text-input" placeholder="Satuan" maxlength="50" required>
+                <input type="number" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga" min="0" step="0.01" required>
+                <div class="w-full px-3 py-2 bg-info-light border border-info-light rounded text-right">
+                    <span class="item-sub-total-price text-sm font-semibold text-info">Rp 0</span>
                 </div>
-                <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm btn-danger">
+                <button type="button" onclick="removeItemBlock(this)" class="btn btn-sm bg-btn-delete hover:bg-btn-delete-hover text-white">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             `;
@@ -912,19 +912,19 @@
 
             const itemCount = container.querySelectorAll('.misc-cost-item').length + 1;
             const item = document.createElement('div');
-            item.className = 'misc-cost-item bg-white border rounded p-3 flex gap-2';
+            item.className = 'misc-cost-item bg-surface-base border border-border-strong rounded p-3 flex gap-2';
             item.innerHTML = `
                 <div class="flex-1">
-                    <input type="text" class="w-full border rounded p-2 mb-2 misc-item-name" 
+                    <input type="text" class="w-full border border-border-strong rounded p-2 mb-2 misc-item-name bg-surface-base text-text-input" 
                         placeholder="Nama biaya" value="" required maxlength="255"
                         oninput="updateMiscCostsData('${containerId}')">
                 </div>
                 <div class="w-32">
-                    <input type="number" class="w-full border rounded p-2 mb-2 misc-item-amount" 
+                    <input type="number" class="w-full border border-border-strong rounded p-2 mb-2 misc-item-amount bg-surface-base text-text-input" 
                         placeholder="Jumlah" value="0" min="0" step="0.01" required
                         oninput="updateMiscCostsData('${containerId}')">
                 </div>
-                <button type="button" class="btn btn-sm btn-danger h-full" onclick="removeMiscCostItem(this, '${containerId}')">
+                <button type="button" class="btn btn-sm bg-btn-delete hover:bg-btn-delete-hover text-white h-full" onclick="removeMiscCostItem(this, '${containerId}')">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             `;

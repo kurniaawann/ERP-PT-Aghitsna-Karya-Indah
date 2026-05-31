@@ -456,12 +456,13 @@
         const autoLabel = `Pembayaran ke ${nextNumber}`;
 
         const newInstallment = document.createElement('div');
-        newInstallment.className = 'payment-installment-row mb-2 p-3 border rounded bg-white';
+        newInstallment.className =
+            'payment-installment-row mb-2 p-3 border border-border-strong rounded-lg bg-surface-base';
         newInstallment.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input type="text" class="payment-label border rounded p-2" 
+                <input type="text" class="payment-label border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Label (Pembayaran Ke 1)" value="${autoLabel}">
-                <input type="number" step="0.01" min="0" class="payment-amount border rounded p-2" 
+                <input type="number" step="0.01" min="0" class="payment-amount border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Jumlah (Rp)">
                 <button type="button" onclick="removePaymentInstallment(this)" 
                     class="bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
@@ -483,15 +484,16 @@
         const autoLabel = `Pembayaran ke ${nextNumber}`;
 
         const newInstallment = document.createElement('div');
-        newInstallment.className = 'payment-installment-row mb-2 p-3 border rounded bg-white';
+        newInstallment.className =
+            'payment-installment-row mb-2 p-3 border border-border-strong rounded-lg bg-surface-base';
         newInstallment.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <input type="text" name="payment_installments[${nextIndex}][label]"
-                    value="${autoLabel}" class="payment-label border rounded p-2" 
+                    value="${autoLabel}" class="payment-label border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Label (Pembayaran Ke 1)">
                 <input type="number" step="0.01" min="0" 
                     name="payment_installments[${nextIndex}][amount]"
-                    class="payment-amount border rounded p-2" 
+                    class="payment-amount border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Jumlah (Rp)">
                 <button type="button" onclick="removePaymentInstallmentEdit(this, '${invoiceNumber}')" 
                     class="bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">

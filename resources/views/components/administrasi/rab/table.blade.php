@@ -4,8 +4,8 @@
         @method('DELETE')
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-3 text-center"><input type="checkbox" id="selectAll"
                                     class="w-4 h-4 accent-primary cursor-pointer"></th>
@@ -25,10 +25,10 @@
                                 </td>
                                 <td class="p-3 font-medium text-primary">{{ $rab->rab_number }}</td>
                                 <td class="p-3">{{ $rab->recipient }}</td>
-                                <td class="p-3 text-sm text-gray-600">
+                                <td class="p-3 text-sm text-text-secondary">
                                     {{ \Carbon\Carbon::parse($rab->date)->isoFormat('DD MMM YYYY') }}
                                 </td>
-                                <td class="p-3 text-right font-semibold text-green-600">
+                                <td class="p-3 text-right font-semibold text-success">
                                     Rp {{ number_format($rab->total_amount, 0, ',', '.') }}
                                 </td>
                                 <td class="p-3 text-center">
@@ -36,21 +36,21 @@
                                         {{-- View Detail Modal --}}
                                         <button type="button"
                                             onclick="openModal('detailRABModal{{ $rab->rab_number }}')"
-                                            class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
+                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
                                             title="Lihat Detail">
                                             <i class="fa-solid fa-eye w-3 h-3"></i>
                                             Lihat
                                         </button>
                                         {{-- Export Excel --}}
                                         <a href="{{ route('rab.export-excel', $rab->rab_number) }}"
-                                            class="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
+                                            class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
                                             title="Download Excel">
                                             <i class="fa-solid fa-file-excel w-3 h-3"></i>
                                             Excel
                                         </a>
                                         {{-- Download PDF --}}
                                         <a href="{{ route('rab.export-pdf', $rab->rab_number) }}"
-                                            class="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
+                                            class="flex items-center gap-1 bg-error hover:bg-error-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
                                             title="Download PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                             PDF
@@ -67,7 +67,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="p-4 text-center text-gray-500">Tidak ada RAB.</td>
+                                <td colspan="6" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
                             </tr>
                         @endforelse
                     </tbody>

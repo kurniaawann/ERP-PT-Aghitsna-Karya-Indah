@@ -10,7 +10,7 @@
 
     <!-- Dropdown Menu -->
     <div id="printDropdownMenu"
-        class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+        class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-56 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
         <div class="py-1" role="menu">
             @if ($pdfRoute)
                 {{-- Export All --}}

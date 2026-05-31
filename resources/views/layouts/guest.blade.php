@@ -15,10 +15,10 @@
 
 </head>
 
-<body class="min-h-screen flex items-center justify-center">
+<body class="min-h-screen flex items-center justify-center bg-surface-secondary text-text-primary">
 
     {{-- Wrapper halaman --}}
-    <main class="w-full flex flex-col items-center justify-center px-4">
+    <main class="w-full flex flex-col items-center justify-center px-4 py-8">
         @yield('content')
     </main>
 

@@ -12,7 +12,7 @@
 
         <input type="text" name="search" value="{{ $value }}" placeholder="{{ $placeholder }}"
             oninput="this.form.requestSubmit()"
-            class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 pl-10 text-sm text-gray-900 
+            class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 pl-10 text-sm text-text-input 
                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
     </div>
 </div>

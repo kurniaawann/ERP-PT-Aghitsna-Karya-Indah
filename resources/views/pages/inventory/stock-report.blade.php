@@ -7,30 +7,30 @@
         <!-- Header -->
         <div class="mb-6">
             <div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-1">📊 Laporan Stok Barang</h2>
-                <p class="text-gray-500 mb-0">Pantau pergerakan dan nilai persediaan barang Anda</p>
+                <h2 class="text-2xl font-bold text-text-primary mb-1">📊 Laporan Stok Barang</h2>
+                <p class="text-text-secondary mb-0">Pantau pergerakan dan nilai persediaan barang Anda</p>
             </div>
         </div>
 
         <!-- Filter Card -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="bg-surface-base rounded-lg shadow-sm p-6 mb-6">
             <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label for="start_date" class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Mulai</label>
+                    <label for="start_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Mulai</label>
                     <input type="date"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
                         id="start_date" name="start_date" value="{{ $startDate }}" required>
                 </div>
 
                 <div>
-                    <label for="end_date" class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Akhir</label>
+                    <label for="end_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Akhir</label>
                     <input type="date"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
                         id="end_date" name="end_date" value="{{ $endDate }}" required>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Barang (Opsional)</label>
+                    <label class="block text-sm font-semibold text-text-primary mb-2">Pilih Barang (Opsional)</label>
 
                     {{-- Hidden input used for form submission --}}
                     <input type="hidden" name="item_id" id="item_id" value="{{ $selectedItemId ?? '' }}">
@@ -38,23 +38,23 @@
                     {{-- Custom dropdown with infinite scroll --}}
                     <div class="relative">
                         <button type="button" id="itemDropdownBtn"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <span id="itemDropdownLabel" class="text-sm text-gray-800">
+                            class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary">
+                            <span id="itemDropdownLabel" class="text-sm text-text-primary">
                                 {{ $selectedItemId ? $items[0]['id_item'] ?? $selectedItemId : '- Semua Barang -' }}
                             </span>
-                            <span class="text-gray-400">▼</span>
+                            <span class="text-text-secondary">▼</span>
                         </button>
 
                         <div id="itemDropdownMenu"
-                            class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-sm hidden">
+                            class="absolute z-20 mt-1 w-full bg-surface-base border border-border-light rounded-lg shadow-sm hidden">
                             <div id="itemDropdownList" class="max-h-60 overflow-y-auto">
-                                <div class="p-2 text-sm text-gray-500" id="dropdownLoadingPlaceholder">
+                                <div class="p-2 text-sm text-text-secondary" id="dropdownLoadingPlaceholder">
                                     Silakan klik scroll untuk memuat data...
                                 </div>
                             </div>
 
-                            <div class="p-2 border-t border-gray-200">
-                                <button type="button" id="clearItemBtn" class="text-sm text-red-600 hover:text-red-700">
+                            <div class="p-2 border-t border-border-light">
+                                <button type="button" id="clearItemBtn" class="text-sm text-error hover:text-error">
                                     Reset (- Semua Barang -)
                                 </button>
                             </div>
@@ -69,70 +69,71 @@
         <!-- Summary Card -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <!-- Card 1: Total Jumlah Barang -->
-            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+            <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-primary">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-gray-500 text-sm mb-1">Total Jumlah Barang</p>
-                        <h5 class="text-2xl font-bold text-gray-800">{{ number_format($summary['total_items']) }} item</h5>
+                        <p class="text-text-secondary text-sm mb-1">Total Jumlah Barang</p>
+                        <h5 class="text-2xl font-bold text-text-primary">{{ number_format($summary['total_items']) }} item
+                        </h5>
                     </div>
-                    <i class="fas fa-box-open text-blue-500 text-3xl opacity-20"></i>
+                    <i class="fas fa-box-open text-primary text-3xl opacity-20"></i>
                 </div>
             </div>
 
             <!-- Card 2: Stok Akhir Total -->
-            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+            <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-success">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-gray-500 text-sm mb-1">Stok Akhir Total</p>
-                        <h5 class="text-2xl font-bold text-gray-800">{{ number_format($summary['total_ending_stock']) }}
+                        <p class="text-text-secondary text-sm mb-1">Stok Akhir Total</p>
+                        <h5 class="text-2xl font-bold text-text-primary">{{ number_format($summary['total_ending_stock']) }}
                             unit</h5>
                     </div>
-                    <i class="fas fa-check-circle text-green-500 text-3xl opacity-20"></i>
+                    <i class="fas fa-check-circle text-success text-3xl opacity-20"></i>
                 </div>
             </div>
 
             <!-- Card 3: Nilai Stok Total -->
-            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500">
+            <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-warning">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-gray-500 text-sm mb-1">Nilai Stok Total</p>
-                        <h5 class="text-xl font-bold text-gray-800 truncate">Rp
+                        <p class="text-text-secondary text-sm mb-1">Nilai Stok Total</p>
+                        <h5 class="text-xl font-bold text-text-primary truncate">Rp
                             {{ number_format($summary['total_stock_value']) }}</h5>
                     </div>
-                    <i class="fas fa-coins text-yellow-500 text-3xl opacity-20"></i>
+                    <i class="fas fa-coins text-warning text-3xl opacity-20"></i>
                 </div>
             </div>
         </div>
 
         <!-- Detail Summary -->
-        <div class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
-            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
-                <h6 class="text-sm font-semibold text-gray-800 mb-0">📈 Ringkasan Pergerakan Stok Periode
+        <div class="bg-surface-base rounded-lg shadow-sm mb-6 overflow-hidden">
+            <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
+                <h6 class="text-sm font-semibold text-text-primary mb-0">📈 Ringkasan Pergerakan Stok Periode
                     {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} -
                     {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</h6>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                     <div>
-                        <h6 class="text-gray-500 text-sm mb-2">Stok Awal</h6>
-                        <h5 class="text-xl font-bold text-blue-600">{{ number_format($summary['total_beginning_stock']) }}
+                        <h6 class="text-text-secondary text-sm mb-2">Stok Awal</h6>
+                        <h5 class="text-xl font-bold text-primary">{{ number_format($summary['total_beginning_stock']) }}
                         </h5>
                     </div>
                     <div>
-                        <h6 class="text-gray-500 text-sm mb-2">Stok Masuk</h6>
-                        <h5 class="text-xl font-bold text-green-600">{{ number_format($summary['total_stock_in']) }}</h5>
+                        <h6 class="text-text-secondary text-sm mb-2">Stok Masuk</h6>
+                        <h5 class="text-xl font-bold text-success">{{ number_format($summary['total_stock_in']) }}</h5>
                     </div>
                     <div>
-                        <h6 class="text-gray-500 text-sm mb-2">Stok Keluar</h6>
-                        <h5 class="text-xl font-bold text-red-600">{{ number_format($summary['total_stock_out']) }}</h5>
+                        <h6 class="text-text-secondary text-sm mb-2">Stok Keluar</h6>
+                        <h5 class="text-xl font-bold text-error">{{ number_format($summary['total_stock_out']) }}</h5>
                     </div>
                     <div>
-                        <h6 class="text-gray-500 text-sm mb-2">Retur Barang</h6>
-                        <h5 class="text-xl font-bold text-yellow-600">{{ number_format($summary['total_returns']) }}</h5>
+                        <h6 class="text-text-secondary text-sm mb-2">Retur Barang</h6>
+                        <h5 class="text-xl font-bold text-warning">{{ number_format($summary['total_returns']) }}</h5>
                     </div>
                     <div>
-                        <h6 class="text-gray-500 text-sm mb-2">Stok Akhir</h6>
-                        <h5 class="text-xl font-bold text-purple-600">
+                        <h6 class="text-text-secondary text-sm mb-2">Stok Akhir</h6>
+                        <h5 class="text-xl font-bold text-primary">
                             {{ number_format($summary['total_beginning_stock'] + $summary['total_stock_in'] - $summary['total_stock_out'] - $summary['total_returns']) }}
                         </h5>
                     </div>
@@ -141,70 +142,70 @@
         </div>
 
         <!-- Report Table -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
-                <h6 class="text-sm font-semibold text-gray-800 mb-0">📋 Detail Laporan Stok</h6>
+        <div class="bg-surface-base rounded-lg shadow-sm overflow-hidden">
+            <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
+                <h6 class="text-sm font-semibold text-text-primary mb-0">📋 Detail Laporan Stok</h6>
             </div>
 
             <!-- Scroll area for long tables -->
             <div class="overflow-x-auto">
                 <div class="max-h-[520px] overflow-y-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                        <thead class="bg-surface-secondary border-b border-border-light sticky top-0 z-10">
                             <tr>
-                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 w-12">No</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">ID Barang</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Nama Barang</th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Stok Awal</th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Masuk</th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Keluar</th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Retur</th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Stok Akhir</th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Harga Satuan</th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700">Nilai Stok</th>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-text-secondary w-12">No</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">ID Barang</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Nama Barang</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Stok Awal</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Masuk</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Keluar</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Retur</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Stok Akhir</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Harga Satuan</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Nilai Stok</th>
                             </tr>
                         </thead>
 
                         <tbody class="divide-y divide-gray-200">
                             @forelse($reportData as $index => $item)
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4 text-center text-sm text-gray-700">
+                                <tr class="hover:bg-surface-secondary transition-colors">
+                                    <td class="px-6 py-4 text-center text-sm text-text-secondary">
                                         {{ ($reportData->currentPage() - 1) * $perPage + $index + 1 }}
                                     </td>
                                     <td class="px-6 py-4 text-sm">
                                         <span
-                                            class="inline-block px-2 py-1 bg-gray-300 text-gray-800 rounded text-xs font-semibold">{{ $item['id_item'] }}</span>
+                                            class="inline-block px-2 py-1 bg-surface-secondary text-text-primary rounded text-xs font-semibold">{{ $item['id_item'] }}</span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-800">{{ $item['name_item'] }}</td>
+                                    <td class="px-6 py-4 text-sm text-text-primary">{{ $item['name_item'] }}</td>
                                     <td class="px-6 py-4 text-sm text-right">
                                         <span
-                                            class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">{{ number_format($item['beginning_stock']) }}</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-right">
-                                        <span
-                                            class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">{{ number_format($item['stock_in']) }}</span>
+                                            class="inline-block px-2 py-1 bg-primary-light text-primary rounded text-xs font-semibold">{{ number_format($item['beginning_stock']) }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-right">
                                         <span
-                                            class="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">{{ number_format($item['stock_out']) }}</span>
+                                            class="inline-block px-2 py-1 bg-success-light text-success rounded text-xs font-semibold">{{ number_format($item['stock_in']) }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-right">
                                         <span
-                                            class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">{{ number_format($item['returns']) }}</span>
+                                            class="inline-block px-2 py-1 bg-error-light text-error rounded text-xs font-semibold">{{ number_format($item['stock_out']) }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-right">
                                         <span
-                                            class="inline-block px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">{{ number_format($item['ending_stock']) }}</span>
+                                            class="inline-block px-2 py-1 bg-warning-light text-warning rounded text-xs font-semibold">{{ number_format($item['returns']) }}</span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-right text-gray-700">Rp
+                                    <td class="px-6 py-4 text-sm text-right">
+                                        <span
+                                            class="inline-block px-2 py-1 bg-surface-secondary text-text-primary rounded text-xs font-semibold">{{ number_format($item['ending_stock']) }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-right text-text-secondary">Rp
                                         {{ number_format($item['capital_price']) }}</td>
-                                    <td class="px-6 py-4 text-sm text-right font-bold text-gray-900">Rp
+                                    <td class="px-6 py-4 text-sm text-right font-bold text-text-primary">Rp
                                         {{ number_format($item['stock_value']) }}</td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="10" class="px-6 py-12 text-center">
-                                        <p class="text-gray-500 mb-0">
+                                        <p class="text-text-secondary mb-0">
                                             <i class="fas fa-inbox mr-2"></i>Tidak ada data stok untuk periode ini
                                         </p>
                                     </td>
@@ -216,7 +217,7 @@
             </div>
 
             <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-gray-200">
+            <div class="px-6 py-4 border-t border-border-light">
                 {{ $reportData->appends(request()->query())->links() }}
             </div>
         </div>

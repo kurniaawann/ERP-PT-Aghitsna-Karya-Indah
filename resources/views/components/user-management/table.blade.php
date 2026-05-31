@@ -38,13 +38,13 @@
                             <td class="p-2 text-center">
                                 @php
                                     $roleColors = [
-                                        'superadmin' => 'bg-purple-100 text-purple-800',
-                                        'admin' => 'bg-blue-100 text-blue-800',
-                                        'keuangan' => 'bg-green-100 text-green-800',
-                                        'sdm' => 'bg-yellow-100 text-yellow-800',
-                                        'administrasi' => 'bg-orange-100 text-orange-800',
+                                        'superadmin' => 'bg-secondary-light text-secondary',
+                                        'admin' => 'bg-primary-light text-primary',
+                                        'keuangan' => 'bg-success-light text-success',
+                                        'sdm' => 'bg-warning-light text-warning',
+                                        'administrasi' => 'bg-info-light text-info',
                                     ];
-                                    $color = $roleColors[$user->role] ?? 'bg-gray-100 text-gray-800';
+                                    $color = $roleColors[$user->role] ?? 'bg-button-cancel text-button-inactive';
                                 @endphp
                                 <span class="px-2 py-1 {{ $color }} text-xs rounded-full font-medium">
                                     {{ $user->role_label }}

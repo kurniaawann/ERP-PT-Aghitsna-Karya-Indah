@@ -5,8 +5,8 @@
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                             <th class="p-2 text-left">No. Penawaran</th>
@@ -27,9 +27,9 @@
 
                                 <td class="p-2 font-medium text-primary">{{ $quotation->quotation_number }}</td>
                                 <td class="p-2">{{ $quotation->recipient }}</td>
-                                <td class="p-2 text-gray-600 text-sm">{{ $quotation->subject }}</td>
+                                <td class="p-2 text-text-secondary text-sm">{{ $quotation->subject }}</td>
 
-                                <td class="p-2 text-right font-semibold text-green-600">
+                                <td class="p-2 text-right font-semibold text-success">
                                     Rp {{ number_format($quotation->total_amount, 0, ',', '.') }}
                                 </td>
 
@@ -50,7 +50,7 @@
 
                                         {{-- Print PDF --}}
                                         <a href="{{ route('project-quotation.print.pdf', $quotation->quotation_number) }}"
-                                            class="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            class="flex items-center gap-1 bg-warning hover:bg-warning-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Cetak PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                             PDF
@@ -58,7 +58,7 @@
 
                                         {{-- Print Excel --}}
                                         <a href="{{ route('project-quotation.print.excel', $quotation->quotation_number) }}"
-                                            class="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Export Excel">
                                             <i class="fa-solid fa-file-excel w-3 h-3"></i>
                                             Excel
@@ -68,7 +68,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="p-4 text-center text-gray-500">Tidak ada penawaran.</td>
+                                <td colspan="7" class="p-4 text-center text-text-secondary">Tidak ada penawaran.</td>
                             </tr>
                         @endforelse
                     </tbody>

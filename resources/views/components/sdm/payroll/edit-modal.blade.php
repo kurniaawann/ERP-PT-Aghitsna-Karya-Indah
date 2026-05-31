@@ -2,10 +2,10 @@
 <x-modal id="editModal-{{ $payroll->id }}" title="Edit Payroll Draft" action="{{ route('payroll.update', $payroll->id) }}"
     method="PUT" buttonText="Update" size="xl">
 
-    <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+    <div class="mb-4 p-4 bg-warning-light border border-warning rounded-lg">
         <div class="flex gap-2">
-            <i class="fa-solid fa-triangle-exclamation text-yellow-600 mt-1"></i>
-            <div class="text-sm text-yellow-800">
+            <i class="fa-solid fa-triangle-exclamation text-warning mt-1"></i>
+            <div class="text-sm text-warning">
                 <p class="font-semibold mb-1">Payroll draft hanya bisa diubah sebelum dibayar.</p>
                 <p>Data absensi, upah pokok, dan perhitungan inti tetap terkunci. Yang dapat diubah hanya data
                     administratif dan pengeluaran tambahan.</p>
@@ -16,42 +16,47 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Nama Karyawan</label>
-            <input type="text" class="w-full border rounded p-2 bg-gray-100" value="{{ $payroll->employee->name }}"
-                disabled>
+            <input type="text"
+                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
+                value="{{ $payroll->employee->name }}" disabled>
         </div>
 
         <div>
             <label class="block text-text-primary mb-1">Periode</label>
-            <input type="text" class="w-full border rounded p-2 bg-gray-100" value="{{ $payroll->formatted_period }}"
-                disabled>
+            <input type="text"
+                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
+                value="{{ $payroll->formatted_period }}" disabled>
         </div>
 
         <div>
             <label class="block text-text-primary mb-1">Upah Per Hari</label>
-            <input type="text" class="w-full border rounded p-2 bg-gray-100"
+            <input type="text"
+                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
                 value="Rp {{ number_format($payroll->base_salary, 0, ',', '.') }}" disabled>
         </div>
 
         <div>
             <label class="block text-text-primary mb-1">Upah Bersih</label>
-            <input type="text" class="w-full border rounded p-2 bg-gray-100"
+            <input type="text"
+                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
                 value="Rp {{ number_format($payroll->net_salary, 0, ',', '.') }}" disabled>
         </div>
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Proyek <span class="text-red-600">*</span></label>
-        <input type="text" name="project_name" class="w-full border rounded p-2" placeholder="Masukkan nama proyek"
-            maxlength="255" required value="{{ old('project_name', $payroll->project_name) }}"
+        <label class="block text-text-primary mb-1">Nama Proyek <span class="text-error">*</span></label>
+        <input type="text" name="project_name"
+            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            placeholder="Masukkan nama proyek" maxlength="255" required
+            value="{{ old('project_name', $payroll->project_name) }}"
             oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Pengeluaran Tambahan (Rp) <span
-                class="text-red-600">*</span></label>
+        <label class="block text-text-primary mb-1">Pengeluaran Tambahan (Rp) <span class="text-error">*</span></label>
         <input type="number" name="additional_expenses" id="additional_expenses_{{ $payroll->id }}"
-            class="w-full border rounded p-2" placeholder="0" min="0" required
-            value="{{ old('additional_expenses', $payroll->additional_expenses ?? 0) }}"
+            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" placeholder="0"
+            min="0" required value="{{ old('additional_expenses', $payroll->additional_expenses ?? 0) }}"
             oninvalid="this.setCustomValidity('Pengeluaran tambahan tidak boleh kosong')"
             oninput="this.setCustomValidity(''); validatePayrollEditNotes({{ $payroll->id }})">
         <p class="text-xs text-text-secondary mt-1">Jika nominal lebih dari 0, keterangan wajib diisi.</p>
@@ -60,13 +65,14 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan Pengeluaran Tambahan</label>
         <textarea name="additional_expenses_notes" id="additional_expenses_notes_{{ $payroll->id }}"
-            class="w-full border rounded p-2" rows="3" placeholder="Contoh: Token listrik, air, ATK"
-            oninput="validatePayrollEditNotes({{ $payroll->id }})">{{ old('additional_expenses_notes', $payroll->additional_expenses_notes) }}</textarea>
+            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" rows="3"
+            placeholder="Contoh: Token listrik, air, ATK" oninput="validatePayrollEditNotes({{ $payroll->id }})">{{ old('additional_expenses_notes', $payroll->additional_expenses_notes) }}</textarea>
         <p class="text-xs text-text-secondary mt-1">Contoh: token listrik, air, ATK, dll.</p>
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
-        <textarea name="notes" class="w-full border rounded p-2" rows="2" placeholder="Catatan tambahan (opsional)">{{ old('notes', $payroll->notes) }}</textarea>
+        <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            rows="2" placeholder="Catatan tambahan (opsional)">{{ old('notes', $payroll->notes) }}</textarea>
     </div>
 </x-modal>

@@ -5,8 +5,8 @@
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                             <th class="p-2 text-left">Nama Karyawan</th>
@@ -35,22 +35,22 @@
                                 <td class="p-2 text-center">
                                     @if ($attendance->status === 'hadir')
                                         <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
                                             Hadir
                                         </span>
                                     @elseif ($attendance->status === 'izin')
                                         <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">
                                             Izin
                                         </span>
                                     @elseif ($attendance->status === 'sakit')
                                         <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
                                             Sakit
                                         </span>
                                     @elseif ($attendance->status === 'cuti')
                                         <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-light text-text-primary">
                                             Cuti
                                         </span>
                                     @endif

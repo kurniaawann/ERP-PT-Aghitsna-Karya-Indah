@@ -5,8 +5,8 @@
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center">
                                 <input type="checkbox" id="select-all"
@@ -30,7 +30,7 @@
                                 Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white">
+                    <tbody class="bg-surface-base">
                         @forelse($kasbons as $kasbon)
                             <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
@@ -49,7 +49,7 @@
                                         </div>
                                     @elseif ($kasbon->kasbon_type === 'team' && $kasbon->division)
                                         <div>
-                                            <div class="font-medium text-purple-600">Divisi {{ $kasbon->division }}
+                                            <div class="font-medium text-secondary">Divisi {{ $kasbon->division }}
                                             </div>
                                             <div class="text-xs text-text-label">Kasbon Tim</div>
                                         </div>
@@ -59,7 +59,7 @@
                                 </td>
                                 <td class="p-2 text-center">
                                     <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->kasbon_type === 'personal' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">{{ $kasbon->kasbon_type_label }}</span>
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->kasbon_type === 'personal' ? 'bg-primary-light text-primary' : 'bg-secondary-light text-secondary' }}">{{ $kasbon->kasbon_type_label }}</span>
                                 </td>
                                 <td class="p-2 text-right text-sm font-medium text-text-primary">
                                     {{ $kasbon->formatted_amount }}</td>
@@ -73,7 +73,7 @@
                                 </td>
                                 <td class="p-2 text-center">
                                     <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800' }}">{{ $kasbon->status_label }}</span>
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status === 'pending' ? 'bg-warning-light text-warning' : 'bg-success-light text-success' }}">{{ $kasbon->status_label }}</span>
                                 </td>
                                 <td class="p-2 text-center text-sm">
                                     @if ($kasbon->status === 'pending')

@@ -5,8 +5,8 @@
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                             <th class="p-2 text-center">ID</th>
@@ -21,7 +21,7 @@
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-surface-base divide-y divide-border-light">
                         @forelse($expenseRecaps as $expense)
                             <tr class="hover:bg-surface-secondary transition-colors duration-150">
                                 <td class="p-2 text-center">
@@ -36,7 +36,7 @@
                                 <td class="p-2">
                                     <span
                                         class="inline-block px-2 py-1 text-xs font-semibold rounded-lg text-center whitespace-normal break-words max-w-[150px] sm:max-w-none
-                                        {{ $expense->category->type == 'INCOME' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ $expense->category->type == 'INCOME' ? 'bg-success-light text-success' : 'bg-error-light text-error' }}">
                                         {{ $expense->category->name }}
                                     </span>
                                 </td>
@@ -69,7 +69,7 @@
                                         </span>
                                     @else
                                         <span
-                                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 gap-1">
+                                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-primary-light text-primary gap-1">
                                             <i class="fa-solid fa-user"></i>
                                             Manual
                                         </span>
@@ -128,4 +128,3 @@
         </div>
     </div>
 </form>
-

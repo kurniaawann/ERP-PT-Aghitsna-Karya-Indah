@@ -245,14 +245,14 @@
 
                     <div class="relative mb-2 item-select-wrapper" style="display: none;">
                         <input type="text" 
-                            class="item-search-input w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" 
+                            class="item-search-input w-full border border-border-strong rounded-lg p-2 pr-10 bg-surface-base text-text-input focus:border-primary focus:ring-2 focus:ring-primary-light" 
                             placeholder="Cari barang..." 
                             autocomplete="off">
                         <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options">
-                                <div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b" data-value="">
+                                <div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b border-border-light" data-value="">
                                     -- Pilih Barang --
                                 </div>
                                 @foreach ($items as $item)
@@ -278,15 +278,15 @@
                     
                     <input type="hidden" class="item-select-hidden">
 
-                    <input type="text" class="item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required
+                    <input type="text" class="item-name w-full border border-border-strong rounded p-2 mb-2 bg-surface-base text-text-input" placeholder="Nama Barang *" required
                         oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
                     
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required min="1" value="1"
+                        <input type="number" class="item-qty border border-border-strong rounded p-2 bg-surface-base text-text-input" placeholder="Qty *" required min="1" value="1"
                             oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *" required min="0"
+                        <input type="number" class="item-capital border border-border-strong rounded p-2 bg-surface-base text-text-input" placeholder="Harga Modal *" required min="0"
                             oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
                     </div>

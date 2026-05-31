@@ -83,12 +83,12 @@
             if (limitAlert && limitMessage) {
                 limitMessage.textContent =
                     'Silakan lengkapi Bulan, Tahun, dan Tanggal Kasbon terlebih dahulu';
-                limitAlert.classList.remove('hidden', 'bg-yellow-50', 'border-yellow-200');
-                limitAlert.classList.add('bg-red-50', 'border-red-200');
+                limitAlert.classList.remove('hidden', 'bg-warning-light', 'border-border-strong');
+                limitAlert.classList.add('bg-error-light', 'border-error');
                 const icon = limitAlert.querySelector('i');
                 if (icon) {
-                    icon.classList.remove('text-yellow-600');
-                    icon.classList.add('text-red-600');
+                    icon.classList.remove('text-warning');
+                    icon.classList.add('text-error');
                 }
             }
             maxKasbonData[prefix] = null;
@@ -123,19 +123,19 @@
 
                 if (limitAlert && limitMessage) {
                     limitMessage.textContent = data.message;
-                    limitAlert.classList.remove('hidden', 'bg-red-50', 'border-red-200');
-                    limitAlert.classList.add('bg-yellow-50', 'border-yellow-200');
+                    limitAlert.classList.remove('hidden', 'bg-error-light', 'border-error');
+                    limitAlert.classList.add('bg-warning-light', 'border-border-strong');
 
                     const icon = limitAlert.querySelector('i');
                     if (icon) {
-                        icon.classList.remove('text-red-600');
-                        icon.classList.add('text-yellow-600');
+                        icon.classList.remove('text-error');
+                        icon.classList.add('text-warning');
                     }
 
                     const textDiv = limitAlert.querySelector('.text-sm');
                     if (textDiv) {
-                        textDiv.classList.remove('text-red-800');
-                        textDiv.classList.add('text-yellow-800');
+                        textDiv.classList.remove('text-error');
+                        textDiv.classList.add('text-warning');
                     }
                 }
 
@@ -154,19 +154,19 @@
 
                 if (limitAlert && limitMessage) {
                     limitMessage.textContent = data.message || 'Gagal mengecek maksimal kasbon';
-                    limitAlert.classList.remove('hidden', 'bg-yellow-50', 'border-yellow-200');
-                    limitAlert.classList.add('bg-red-50', 'border-red-200');
+                    limitAlert.classList.remove('hidden', 'bg-warning-light', 'border-border-strong');
+                    limitAlert.classList.add('bg-error-light', 'border-error');
 
                     const icon = limitAlert.querySelector('i');
                     if (icon) {
-                        icon.classList.remove('text-yellow-600');
-                        icon.classList.add('text-red-600');
+                        icon.classList.remove('text-warning');
+                        icon.classList.add('text-error');
                     }
 
                     const textDiv = limitAlert.querySelector('.text-sm');
                     if (textDiv) {
-                        textDiv.classList.remove('text-yellow-800');
-                        textDiv.classList.add('text-red-800');
+                        textDiv.classList.remove('text-warning');
+                        textDiv.classList.add('text-error');
                     }
                 }
 
@@ -228,19 +228,19 @@
             if (limitAlert && limitMessage) {
                 limitMessage.textContent =
                     `Jumlah kasbon melebihi batas maksimal ${maxKasbonData[prefix].max_kasbon_formatted}`;
-                limitAlert.classList.remove('bg-yellow-50', 'border-yellow-200');
-                limitAlert.classList.add('bg-red-50', 'border-red-200');
+                limitAlert.classList.remove('bg-warning-light', 'border-border-strong');
+                limitAlert.classList.add('bg-error-light', 'border-error');
 
                 const icon = limitAlert.querySelector('i');
                 if (icon) {
-                    icon.classList.remove('text-yellow-600');
-                    icon.classList.add('text-red-600');
+                    icon.classList.remove('text-warning');
+                    icon.classList.add('text-error');
                 }
 
                 const textDiv = limitAlert.querySelector('.text-sm');
                 if (textDiv) {
-                    textDiv.classList.remove('text-yellow-800');
-                    textDiv.classList.add('text-red-800');
+                    textDiv.classList.remove('text-warning');
+                    textDiv.classList.add('text-error');
                 }
             }
         } else if (amount >= 1000) {
@@ -252,19 +252,19 @@
 
             if (limitAlert && limitMessage) {
                 limitMessage.textContent = maxKasbonData[prefix].message;
-                limitAlert.classList.add('bg-yellow-50', 'border-yellow-200');
-                limitAlert.classList.remove('bg-red-50', 'border-red-200');
+                limitAlert.classList.add('bg-warning-light', 'border-border-strong');
+                limitAlert.classList.remove('bg-error-light', 'border-error');
 
                 const icon = limitAlert.querySelector('i');
                 if (icon) {
-                    icon.classList.add('text-yellow-600');
-                    icon.classList.remove('text-red-600');
+                    icon.classList.add('text-warning');
+                    icon.classList.remove('text-error');
                 }
 
                 const textDiv = limitAlert.querySelector('.text-sm');
                 if (textDiv) {
-                    textDiv.classList.add('text-yellow-800');
-                    textDiv.classList.remove('text-red-800');
+                    textDiv.classList.add('text-warning');
+                    textDiv.classList.remove('text-error');
                 }
             }
         } else {

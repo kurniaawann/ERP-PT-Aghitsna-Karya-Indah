@@ -4,8 +4,8 @@
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-3 text-left text-xs font-semibold uppercase tracking-wide text-text-label">
                                 Tanggal</th>
@@ -44,7 +44,7 @@
                                 <td class="p-3 text-sm">
                                     <div class="flex flex-col gap-1">
                                         <span
-                                            class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-blue-100 text-blue-700' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700') }}">
+                                            class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-primary-light text-primary' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-warning-light text-warning' : 'bg-secondary-light text-secondary') }}">
                                             {{ $paymentProof->invoice_type === 'proyek' ? 'Invoice Proyek' : ($paymentProof->invoice_type === 'alumunium' ? 'Invoice Alumunium' : 'Rekap Penjualan') }}
                                         </span>
                                         <span class="text-xs text-text-label">
@@ -55,7 +55,7 @@
                                 <td class="p-3 text-sm">
                                     @if ($paymentProof->invoice_type === 'proyek')
                                         <span
-                                            class="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                                            class="inline-flex rounded-full bg-success-light px-2.5 py-1 text-xs font-semibold text-success">
                                             Pembayaran ke {{ $paymentProof->payment_stage ?? '-' }}
                                         </span>
                                     @else
@@ -67,7 +67,7 @@
                                 </td>
                                 <td class="p-3 text-sm">
                                     <a href="{{ asset($paymentProof->file_path) }}" target="_blank"
-                                        class="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                                        class="inline-flex items-center gap-1 text-primary hover:underline">
                                         <i class="fa-solid fa-image text-xs"></i>
                                         {{ $paymentProof->file_name }}
                                     </a>
@@ -81,7 +81,7 @@
                                         </button>
                                         <button type="button"
                                             onclick="openModal('deleteModal-{{ $paymentProof->id }}')"
-                                            class="flex items-center gap-1 rounded-lg bg-error px-2.5 py-1.5 text-xs text-white transition hover:bg-error/90">
+                                            class="flex items-center gap-1 rounded-lg bg-error px-2.5 py-1.5 text-xs text-white transition hover:bg-error-hover">
                                             <i class="fa-solid fa-trash w-3 h-3"></i>
                                             Hapus
                                         </button>

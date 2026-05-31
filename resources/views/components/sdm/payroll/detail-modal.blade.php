@@ -1,7 +1,7 @@
 {{-- Modal Detail Payroll --}}
 <div id="detailModal-{{ $payroll->id }}" class="modal-overlay hidden">
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-surface-base rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {{-- Header --}}
             <div class="flex justify-between items-center p-6 border-b">
                 <h2 class="text-xl font-semibold text-text-heading">Detail Payroll</h2>
@@ -48,7 +48,7 @@
                 </div>
 
                 {{-- Attendance Summary --}}
-                <div class="bg-blue-50 p-4 rounded-lg">
+                <div class="bg-primary-light p-4 rounded-lg">
                     <h3 class="font-semibold text-text-primary mb-3">Rekapitulasi Kehadiran</h3>
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between">
@@ -79,7 +79,7 @@
                 </div>
 
                 {{-- Salary Calculation --}}
-                <div class="bg-green-50 p-4 rounded-lg">
+                <div class="bg-success-light p-4 rounded-lg">
                     <h3 class="font-semibold text-text-primary mb-3">Perhitungan Upah</h3>
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
@@ -96,13 +96,13 @@
                             <span class="font-semibold">Rp
                                 {{ number_format($payroll->base_salary * $payroll->present_days, 0, ',', '.') }}</span>
                         </div>
-                        <div class="flex justify-between text-green-600">
+                        <div class="flex justify-between text-success">
                             <span>Lembur:</span>
                             <span class="font-semibold">+ Rp
                                 {{ number_format($payroll->overtime_total, 0, ',', '.') }}</span>
                         </div>
                         @if ($payroll->kasbon_deduction)
-                            <div class="flex justify-between text-red-600">
+                            <div class="flex justify-between text-error">
                                 <span>Kasbon Dipotong:</span>
                                 <span class="font-semibold">- Rp
                                     {{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</span>
@@ -118,7 +118,7 @@
 
                 {{-- Additional Expenses --}}
                 @if ($payroll->additional_expenses)
-                    <div class="bg-purple-50 p-4 rounded-lg">
+                    <div class="bg-secondary-light p-4 rounded-lg">
                         <h3 class="font-semibold text-text-primary mb-3">Pengeluaran Tambahan PT</h3>
 
                         @php
@@ -136,17 +136,17 @@
                             <div class="space-y-2 mb-3">
                                 @foreach ($expenseItems as $item)
                                     <div
-                                        class="flex justify-between text-sm py-1.5 px-2 bg-white rounded border border-purple-200">
+                                        class="flex justify-between text-sm py-1.5 px-2 bg-surface-base rounded border border-border-strong">
                                         <span class="text-text-label">{{ $item['name'] ?? 'Item' }}</span>
-                                        <span class="font-semibold text-purple-700">Rp
+                                        <span class="font-semibold text-primary">Rp
                                             {{ number_format($item['amount'] ?? 0, 0, ',', '.') }}</span>
                                     </div>
                                 @endforeach
                             </div>
-                            <hr class="my-3 border-purple-200">
+                            <hr class="my-3 border-border-strong">
                             <div class="flex justify-between font-semibold">
                                 <span class="text-text-label">Total Pengeluaran:</span>
-                                <span class="text-purple-700">Rp
+                                <span class="text-primary">Rp
                                     {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
                             </div>
                         @else
@@ -166,7 +166,7 @@
                             </div>
                         @endif
 
-                        <hr class="my-3 border-purple-200">
+                        <hr class="my-3 border-border-strong">
                         <div class="flex justify-between text-lg font-bold text-primary">
                             <span>Total Yang Dibayarkan:</span>
                             <span>Rp
@@ -177,7 +177,7 @@
 
                 {{-- Payment Info --}}
                 @if ($payroll->status === 'paid')
-                    <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="bg-success-light p-4 rounded-lg">
                         <h3 class="font-semibold text-text-primary mb-3">Informasi Pembayaran</h3>
                         <div class="text-sm">
                             <div class="flex justify-between">
@@ -189,7 +189,7 @@
                             <div class="flex justify-between mt-2">
                                 <span class="text-text-label">Status:</span>
                                 <span
-                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
                                     Paid
                                 </span>
                             </div>
