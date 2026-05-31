@@ -95,7 +95,7 @@ class SalaryReminderController extends Controller
 
                 if ($employee) {
                     // Hitung minggu berdasarkan tanggal
-                    $dayOfMonth = $attendance->first_date->day;
+                    $dayOfMonth = Carbon::parse($attendance->first_date)->day;
                     $week = ceil($dayOfMonth / 7);
 
                     $attendanceReminders[] = (object) [
@@ -104,8 +104,8 @@ class SalaryReminderController extends Controller
                         'period_month' => $attendance->month,
                         'period_year' => $attendance->year,
                         'week_number' => $week,
-                        'first_attendance_date' => $attendance->first_date,
-                        'last_attendance_date' => $attendance->last_date,
+                        'first_attendance_date' => Carbon::parse($attendance->first_date),
+                        'last_attendance_date' => Carbon::parse($attendance->last_date),
                         'employee' => $employee,
                     ];
                 }

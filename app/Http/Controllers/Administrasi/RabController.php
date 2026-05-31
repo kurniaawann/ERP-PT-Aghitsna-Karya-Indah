@@ -9,8 +9,11 @@ use App\Models\Administrasi\RABSubCategory;
 use App\Models\Administrasi\RABItem;
 use App\Models\Administrasi\RABMiscellaneousCost;
 use App\Models\Finance\PaymentAccount;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\Administrasi\RABExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RABController extends Controller
 {
@@ -446,11 +449,21 @@ class RABController extends Controller
         // Buat nama file yang aman (tanpa karakter /)
         $safeFileName = str_replace('/', '-', $rabNumber);
 
-        $pdf = \PDF::loadView('exports.administrasi.rab-pdf', [
+        $pdf = Pdf::loadView('exports.administrasi.rab-pdf', [
             'rab' => $rab,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download("{$safeFileName}.pdf");
+    }
+
+    // ─── Export Excel ─────────────────────────────────────────────────────────
+
+    public function exportExcel(string $rabNumber)
+    {
+        $rab = RAB::where('rab_number', $rabNumber)->firstOrFail();
+        $safeFileName = str_replace('/', '-', $rabNumber);
+
+        return Excel::download(new RABExport($rab->rab_number), "{$safeFileName}.xlsx");
     }
 
     // ─── Helper: Convert Arabic to Roman ───────────────────────────────────────

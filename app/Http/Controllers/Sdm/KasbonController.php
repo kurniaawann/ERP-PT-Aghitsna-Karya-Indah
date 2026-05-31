@@ -69,11 +69,15 @@ class KasbonController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge([
+            'amount' => $this->normalizeCurrencyInput($request->input('amount')),
+        ]);
+
         $validated = $request->validate([
             'kasbon_type' => 'required|in:personal,team',
             'employee_id' => 'required_if:kasbon_type,personal|nullable|exists:employees,employee_code',
             'division' => 'required_if:kasbon_type,team|nullable|string|max:100',
-            'amount' => 'required|min:1000',
+            'amount' => 'required|integer|min:1000',
             'kasbon_date' => 'required|date',
             'week_number' => 'nullable|integer|min:1|max:4',
             'period_month' => 'required|integer|min:1|max:12',
@@ -93,7 +97,6 @@ class KasbonController extends Controller
         // Auto-detect minggu dari tanggal kasbon
         $weekNumber = Employee::detectWeekNumber($validated['kasbon_date']);
         $validated['week_number'] = $weekNumber;
-        $validated['amount'] = $this->normalizeCurrencyInput($validated['amount']);
 
         // Validasi kasbon personal berdasarkan kehadiran dan status payroll
         if ($validated['kasbon_type'] === 'personal') {
@@ -177,11 +180,15 @@ class KasbonController extends Controller
             return redirect()->back()->with('error', 'Kasbon yang sudah dipotong tidak bisa diubah');
         }
 
+        $request->merge([
+            'amount' => $this->normalizeCurrencyInput($request->input('amount')),
+        ]);
+
         $validated = $request->validate([
             'kasbon_type' => 'required|in:personal,team',
             'employee_id' => 'required_if:kasbon_type,personal|nullable|exists:employees,employee_code',
             'division' => 'required_if:kasbon_type,team|nullable|string|max:100',
-            'amount' => 'required|min:1000',
+            'amount' => 'required|integer|min:1000',
             'kasbon_date' => 'required|date',
             'week_number' => 'nullable|integer|min:1|max:4',
             'period_month' => 'required|integer|min:1|max:12',
@@ -190,8 +197,6 @@ class KasbonController extends Controller
         ]);
 
         // Validasi kasbon personal berdasarkan kehadiran
-        $validated['amount'] = $this->normalizeCurrencyInput($validated['amount']);
-
         if ($validated['kasbon_type'] === 'personal' && $validated['week_number']) {
             $employee = Employee::findOrFail($validated['employee_id']);
             $month = $validated['period_month'];

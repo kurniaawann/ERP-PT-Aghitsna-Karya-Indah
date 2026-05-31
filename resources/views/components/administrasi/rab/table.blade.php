@@ -41,6 +41,13 @@
                                             <i class="fa-solid fa-eye w-3 h-3"></i>
                                             Lihat
                                         </button>
+                                        {{-- Export Excel --}}
+                                        <a href="{{ route('rab.export-excel', $rab->rab_number) }}"
+                                            class="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
+                                            title="Download Excel">
+                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
+                                            Excel
+                                        </a>
                                         {{-- Download PDF --}}
                                         <a href="{{ route('rab.export-pdf', $rab->rab_number) }}"
                                             class="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"

@@ -207,7 +207,8 @@
 
         if (!amountInput || !maxKasbonData[prefix]) {
             // Jika belum ada data max kasbon, enable button jika amount >= 1000
-            if (submitButton && amountInput.value >= 1000) {
+            const amountValue = parseCurrencyInput(amountInput ? amountInput.value : '');
+            if (submitButton && amountValue >= 1000) {
                 submitButton.disabled = false;
                 submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
             }
