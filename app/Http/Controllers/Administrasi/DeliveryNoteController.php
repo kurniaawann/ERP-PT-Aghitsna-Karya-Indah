@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Administrasi\DeliveryNote;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HasBulkActions;
 
 class DeliveryNoteController extends Controller
 {
+    use HasBulkActions;
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -161,10 +163,7 @@ class DeliveryNoteController extends Controller
             return redirect()->route('delivery-note.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus delivery notes berdasarkan id
-        DeliveryNote::whereIn('id_delivery_note', $ids)->delete();
-
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil dihapus!');
+        return $this->destroySelectedBy($request, DeliveryNote::class, 'ids', 'id_delivery_note', 'delivery-note.administrasi.index');
     }
 
     /**

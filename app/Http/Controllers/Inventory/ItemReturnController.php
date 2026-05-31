@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\StockService;
 
 class ItemReturnController extends Controller
 {
@@ -297,43 +298,8 @@ class ItemReturnController extends Controller
         DB::beginTransaction();
         try {
             $return = ItemReturn::findOrFail($id_return);
-            $item = Items::lockForUpdate()->find($return->id_item);
 
-            if ($return->return_type === 'masuk') {
-                // Handle delete return barang masuk - restore item quantity
-                $stockIn = ItemStockIn::lockForUpdate()->find($return->id_stock_in);
-
-                $item->quantity += $return->quantity;
-                $stockIn->quantity += $return->quantity;
-
-                // Recalculate weighted average cost
-                $currentItemValue = (($item->quantity - $return->quantity) * $item->capital_price);
-                $restoredValue = $return->quantity * $stockIn->capital_price;
-                $newValue = $currentItemValue + $restoredValue;
-                $newQuantity = $item->quantity;
-
-                if ($newQuantity > 0) {
-                    $item->capital_price = (int) round($newValue / $newQuantity);
-                } else {
-                    $item->capital_price = 0;
-                }
-
-                $stockIn->save();
-            } else {
-                // Handle delete return barang keluar - reduce item quantity and restore stock out
-                $item->quantity -= $return->quantity;
-                if ($item->quantity < 0) {
-                    $item->quantity = 0;
-                }
-
-                $stockOut = ItemStockOut::lockForUpdate()->find($return->id_stock_out);
-                $stockOut->quantity += $return->quantity;
-                $stockOut->save();
-            }
-
-            $item->save();
-
-            $return->delete();
+            (new StockService())->processReturnDeletion($return);
 
             DB::commit();
             return redirect()->back()->with('success', 'Data return barang berhasil dihapus!');
@@ -356,42 +322,7 @@ class ItemReturnController extends Controller
             $returns = ItemReturn::whereIn('id_return', $ids)->get();
 
             foreach ($returns as $return) {
-                $item = Items::lockForUpdate()->find($return->id_item);
-
-                if ($return->return_type === 'masuk') {
-                    // Handle delete return barang masuk - restore item quantity
-                    $stockIn = ItemStockIn::lockForUpdate()->find($return->id_stock_in);
-
-                    $item->quantity += $return->quantity;
-                    $stockIn->quantity += $return->quantity;
-
-                    // Recalculate weighted average cost
-                    $currentItemValue = (($item->quantity - $return->quantity) * $item->capital_price);
-                    $restoredValue = $return->quantity * $stockIn->capital_price;
-                    $newValue = $currentItemValue + $restoredValue;
-                    $newQuantity = $item->quantity;
-
-                    if ($newQuantity > 0) {
-                        $item->capital_price = (int) round($newValue / $newQuantity);
-                    } else {
-                        $item->capital_price = 0;
-                    }
-
-                    $stockIn->save();
-                } else {
-                    // Handle delete return barang keluar - reduce item quantity and restore stock out
-                    $item->quantity -= $return->quantity;
-                    if ($item->quantity < 0) {
-                        $item->quantity = 0;
-                    }
-
-                    $stockOut = ItemStockOut::lockForUpdate()->find($return->id_stock_out);
-                    $stockOut->quantity += $return->quantity;
-                    $stockOut->save();
-                }
-
-                $item->save();
-                $return->delete();
+                (new StockService())->processReturnDeletion($return);
             }
 
             DB::commit();

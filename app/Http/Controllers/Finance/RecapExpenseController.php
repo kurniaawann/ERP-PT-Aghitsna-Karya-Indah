@@ -12,17 +12,12 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 class RecapExpenseController extends Controller
 {
-    private function normalizeCurrencyInput($value): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return (int) str_replace(['.', ','], '', (string) $value);
-    }
+    use HasBulkActions;
 
     /**
      * Display a listing of the resource.
@@ -145,7 +140,7 @@ class RecapExpenseController extends Controller
 
         // Set income_amount ke null (karena ini expense, bukan income)
         $data['income_amount'] = null;
-        $data['expense_amount'] = $this->normalizeCurrencyInput($data['expense_amount'] ?? null);
+        $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
 
         try {
             // Simpan data expense report ke database
@@ -178,7 +173,7 @@ class RecapExpenseController extends Controller
 
         // Ambil semua data dari form (validasi sudah dilakukan di HTML)
         $data = $request->all();
-        $data['expense_amount'] = $this->normalizeCurrencyInput($data['expense_amount'] ?? null);
+        $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
 
         try {
             // Update data expense report dengan data dari form
@@ -210,11 +205,7 @@ class RecapExpenseController extends Controller
         // Hapus semua expense report yang ID-nya ada dalam array $selectedIds
         // whereIn() akan match semua record dengan id di dalam array
         // delete() akan menghapus record tersebut dan return jumlah row yang terhapus
-        $deletedCount = ExpenseRecap::whereIn('id', $selectedIds)->delete();
-
-        // Redirect ke halaman index dengan pesan sukses dan jumlah data yang terhapus
-        return redirect()->route('recap-expense.index')
-            ->with('success', "Berhasil menghapus {$deletedCount} data pengeluaran.");
+        return $this->destroySelectedBy($request, ExpenseRecap::class, 'selected_expenses', 'id', 'recap-expense.index');
     }
 
     /**

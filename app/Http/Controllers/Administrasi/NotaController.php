@@ -6,16 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Administrasi\Nota;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 class NotaController extends Controller
 {
-    private function normalizeDecimalInput($value): float
-    {
-        $normalized = str_replace([' ', '.'], '', (string) $value);
-        $normalized = str_replace(',', '.', $normalized);
-
-        return (float) $normalized;
-    }
+    use HasBulkActions;
 
     public function index(Request $request)
     {
@@ -62,7 +58,7 @@ class NotaController extends Controller
 
             foreach ($banyaknya as $index => $qty) {
                 if (!empty($qty) && !empty($namaBarang[$index])) {
-                    $harga = (int) str_replace(['.', ','], '', $hargaSatuan[$index] ?? 0);
+                    $harga = InputNormalizer::normalizeCurrency($hargaSatuan[$index] ?? 0);
                     $jumlah = (int) $qty * $harga;
                     $itemsTotal += $jumlah;
 
@@ -77,11 +73,11 @@ class NotaController extends Controller
         }
 
         // Process optional fields
-        $sewaJual = $request->input('sewa_jual') ? (int) str_replace(['.', ','], '', $request->input('sewa_jual')) : null;
-        $ongkosKirim = $request->input('ongkos_kirim') ? (int) str_replace(['.', ','], '', $request->input('ongkos_kirim')) : null;
-        $bongkarPasang = $request->input('bongkar_pasang') ? (int) str_replace(['.', ','], '', $request->input('bongkar_pasang')) : null;
-        $lembur = $request->input('lembur') ? (int) str_replace(['.', ','], '', $request->input('lembur')) : null;
-        $uangJaminan = $request->input('uang_jaminan') ? (int) str_replace(['.', ','], '', $request->input('uang_jaminan')) : null;
+        $sewaJual = $request->input('sewa_jual') ? InputNormalizer::normalizeCurrency($request->input('sewa_jual')) : null;
+        $ongkosKirim = $request->input('ongkos_kirim') ? InputNormalizer::normalizeCurrency($request->input('ongkos_kirim')) : null;
+        $bongkarPasang = $request->input('bongkar_pasang') ? InputNormalizer::normalizeCurrency($request->input('bongkar_pasang')) : null;
+        $lembur = $request->input('lembur') ? InputNormalizer::normalizeCurrency($request->input('lembur')) : null;
+        $uangJaminan = $request->input('uang_jaminan') ? InputNormalizer::normalizeCurrency($request->input('uang_jaminan')) : null;
 
         // Calculate total
         $jumlahTotal = $itemsTotal + ($sewaJual ?? 0) + ($ongkosKirim ?? 0) + ($bongkarPasang ?? 0) + ($lembur ?? 0) + ($uangJaminan ?? 0);
@@ -90,7 +86,7 @@ class NotaController extends Controller
         $selectedPaymentAccounts = $request->input('selected_payment_accounts', []);
 
         // Process PPN
-        $ppnPercentage = $this->normalizeDecimalInput($request->input('ppn_percentage', 12));
+        $ppnPercentage = InputNormalizer::normalizeDecimal($request->input('ppn_percentage', 12));
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
 
@@ -145,7 +141,7 @@ class NotaController extends Controller
 
             foreach ($banyaknya as $index => $qty) {
                 if (!empty($qty) && !empty($namaBarang[$index])) {
-                    $harga = (int) str_replace(['.', ','], '', $hargaSatuan[$index] ?? 0);
+                    $harga = InputNormalizer::normalizeCurrency($hargaSatuan[$index] ?? 0);
                     $jumlah = (int) $qty * $harga;
                     $itemsTotal += $jumlah;
 
@@ -160,11 +156,11 @@ class NotaController extends Controller
         }
 
         // Process optional fields
-        $sewaJual = $request->input('sewa_jual') ? (int) str_replace(['.', ','], '', $request->input('sewa_jual')) : null;
-        $ongkosKirim = $request->input('ongkos_kirim') ? (int) str_replace(['.', ','], '', $request->input('ongkos_kirim')) : null;
-        $bongkarPasang = $request->input('bongkar_pasang') ? (int) str_replace(['.', ','], '', $request->input('bongkar_pasang')) : null;
-        $lembur = $request->input('lembur') ? (int) str_replace(['.', ','], '', $request->input('lembur')) : null;
-        $uangJaminan = $request->input('uang_jaminan') ? (int) str_replace(['.', ','], '', $request->input('uang_jaminan')) : null;
+        $sewaJual = $request->input('sewa_jual') ? InputNormalizer::normalizeCurrency($request->input('sewa_jual')) : null;
+        $ongkosKirim = $request->input('ongkos_kirim') ? InputNormalizer::normalizeCurrency($request->input('ongkos_kirim')) : null;
+        $bongkarPasang = $request->input('bongkar_pasang') ? InputNormalizer::normalizeCurrency($request->input('bongkar_pasang')) : null;
+        $lembur = $request->input('lembur') ? InputNormalizer::normalizeCurrency($request->input('lembur')) : null;
+        $uangJaminan = $request->input('uang_jaminan') ? InputNormalizer::normalizeCurrency($request->input('uang_jaminan')) : null;
 
         // Calculate total
         $jumlahTotal = $itemsTotal + ($sewaJual ?? 0) + ($ongkosKirim ?? 0) + ($bongkarPasang ?? 0) + ($lembur ?? 0) + ($uangJaminan ?? 0);
@@ -173,7 +169,7 @@ class NotaController extends Controller
         $selectedPaymentAccounts = $request->input('selected_payment_accounts', []);
 
         // Process PPN
-        $ppnPercentage = $this->normalizeDecimalInput($request->input('ppn_percentage', 12));
+        $ppnPercentage = InputNormalizer::normalizeDecimal($request->input('ppn_percentage', 12));
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
 
@@ -211,10 +207,7 @@ class NotaController extends Controller
             return redirect()->route('nota.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus nota berdasarkan id_nota
-        Nota::whereIn('id_nota', $ids)->delete();
-
-        return redirect()->route('nota.administrasi.index')->with('success', 'Nota berhasil dihapus!');
+        return $this->destroySelectedBy($request, Nota::class, 'ids', 'id_nota', 'nota.administrasi.index');
     }
 
     /**

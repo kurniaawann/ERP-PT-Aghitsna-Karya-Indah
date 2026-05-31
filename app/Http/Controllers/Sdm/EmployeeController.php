@@ -5,17 +5,11 @@ namespace App\Http\Controllers\Sdm;
 use App\Http\Controllers\Controller;
 use App\Models\Sdm\Employee;
 use Illuminate\Http\Request;
+use App\Services\InputNormalizer;
 
 class EmployeeController extends Controller
 {
-    private function normalizeCurrencyInput($value): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
 
-        return (int) str_replace(['.', ','], '', (string) $value);
-    }
 
     public function index(Request $request)
     {
@@ -54,7 +48,7 @@ class EmployeeController extends Controller
         $data['employee_code'] = Employee::generateEmployeeCode();
 
         // Convert daily_wage to null if empty
-        $data['daily_wage'] = $this->normalizeCurrencyInput($data['daily_wage'] ?? null);
+        $data['daily_wage'] = InputNormalizer::normalizeCurrency($data['daily_wage'] ?? null);
 
         // Insert data karyawan ke database
         // create() akan insert record baru ke tabel employees dan return model instance
@@ -71,7 +65,7 @@ class EmployeeController extends Controller
         $data = $request->all();
 
         // Convert daily_wage to null if empty
-        $data['daily_wage'] = $this->normalizeCurrencyInput($data['daily_wage'] ?? null);
+        $data['daily_wage'] = InputNormalizer::normalizeCurrency($data['daily_wage'] ?? null);
 
         // Update semua field dari request ke model employee
         // all() mengambil semua input dari form edit

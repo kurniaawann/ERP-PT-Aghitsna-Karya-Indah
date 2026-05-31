@@ -4,36 +4,16 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inventory\Items;
+use App\Services\InputNormalizer;
 use App\Exports\Inventory\ItemsExport;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Traits\HasBulkActions;
 
 class ItemController extends Controller
 {
-    private function generateIdItem()
-    {
-        // Ambil item terakhir dari database, urutkan berdasarkan id_item descending (terbesar di atas)
-        // first() akan return model instance atau null jika tabel kosong
-        $lastItem = Items::orderBy('id_item', 'desc')->first();
-
-        // Jika belum ada data (tabel kosong), mulai dari ITM-0001
-        if (!$lastItem) {
-            return 'ITM-0001';
-        }
-
-        // Extract nomor dari id_item terakhir
-        // substr($lastItem->id_item, 4) mengambil substring mulai dari index 4 sampai akhir
-        // Contoh: 'ITM-0005' → substring dari index 4 = '0005'
-        // (int) untuk convert string '0005' menjadi integer 5
-        $lastNumber = (int) substr($lastItem->id_item, 4);
-
-        // Tambah 1 untuk nomor berikutnya, lalu format dengan padding 0 di depan
-        // str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT) akan format angka dengan 4 digit, padding 0 di kiri
-        // Contoh: 5 + 1 = 6 → str_pad(6, 4, '0', STR_PAD_LEFT) → '0006'
-        // 'ITM-' . '0006' → 'ITM-0006'
-        return 'ITM-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-    }
+    use HasBulkActions;
 
     public function index(Request $request)
     {
@@ -61,8 +41,8 @@ class ItemController extends Controller
     public function store(Request $request)
     {
         $request->merge([
-            'capital_price' => $this->normalizeCurrencyInput($request->capital_price),
-            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
+            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
         ]);
 
         // Insert data item baru ke database
@@ -70,7 +50,7 @@ class ItemController extends Controller
         Items::create([
             // Generate id_item otomatis menggunakan private method generateIdItem()
             // Format: ITM-0001, ITM-0002, ITM-0003, dst
-            'id_item' => $this->generateIdItem(),
+            'id_item' => Items::generateNextId(),
             // Nama item dari input form
             'name_item' => $request->name_item,
             // Quantity/jumlah stok dari input form (integer)
@@ -88,8 +68,8 @@ class ItemController extends Controller
     public function update(Request $request, $id_item)
     {
         $request->merge([
-            'capital_price' => $this->normalizeCurrencyInput($request->capital_price),
-            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
+            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
         ]);
 
         // Update data item berdasarkan id_item
@@ -115,21 +95,7 @@ class ItemController extends Controller
     {
         // Ambil array id_item dari input dengan nama 'selected_items'
         // Default empty array jika input tidak ada (untuk handle jika user tidak centang checkbox)
-        $selectedIds = $request->input('selected_items', []);
-
-        // Validasi: cek apakah $selectedIds kosong (empty() return true jika null, [], atau '')
-        if (empty($selectedIds)) {
-            // Redirect kembali dengan flash message error
-            return redirect()->back()->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
-        }
-
-        // Hapus semua item yang ID-nya ada dalam array $selectedIds
-        // whereIn('id_item', $selectedIds) akan match semua record dengan id_item di dalam array
-        // delete() akan menghapus record tersebut dari database
-        Items::whereIn('id_item', $selectedIds)->delete();
-
-        // Redirect kembali dengan flash message sukses
-        return redirect()->back()->with('success', 'Data terpilih berhasil dihapus.');
+        return $this->destroySelectedBy($request, Items::class, 'selected_items', 'id_item');
     }
 
     public function exportPdf()
@@ -160,17 +126,6 @@ class ItemController extends Controller
         return Excel::download(new ItemsExport, 'stock-hollow-' . date('Y-m-d') . '.xlsx');
     }
 
-    private function normalizeCurrencyInput($value): int
-    {
-        if ($value === null || $value === '') {
-            return 0;
-        }
 
-        if (is_string($value)) {
-            $value = preg_replace('/[^0-9-]/', '', $value);
-        }
-
-        return (int) $value;
-    }
 
 }

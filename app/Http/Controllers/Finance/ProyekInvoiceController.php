@@ -9,11 +9,13 @@ use App\Exports\Finance\ProyekInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 
 class ProyekInvoiceController extends Controller
 {
-
+    use HasBulkActions;
     public function getNextInvoiceNumber()
     {
         // Ambil tahun 2 digit (contoh: 25 untuk tahun 2025)
@@ -77,8 +79,8 @@ class ProyekInvoiceController extends Controller
     public function store(Request $request)
     {
         $request->merge([
-            'discount_value' => $this->normalizeDecimalInput($request->discount_value),
-            'dp_value' => $this->normalizeDecimalInput($request->dp_value),
+            'discount_value' => InputNormalizer::normalizeDecimal($request->discount_value),
+            'dp_value' => InputNormalizer::normalizeDecimal($request->dp_value),
         ]);
 
         // Validasi awal: pastikan items ada dan tidak kosong
@@ -171,8 +173,8 @@ class ProyekInvoiceController extends Controller
     {
         try {
             $request->merge([
-                'discount_value' => $this->normalizeDecimalInput($request->discount_value),
-                'dp_value' => $this->normalizeDecimalInput($request->dp_value),
+                'discount_value' => InputNormalizer::normalizeDecimal($request->discount_value),
+                'dp_value' => InputNormalizer::normalizeDecimal($request->dp_value),
             ]);
 
             // Validasi discount percentage
@@ -247,20 +249,7 @@ class ProyekInvoiceController extends Controller
 
     public function destroySelected(Request $request)
     {
-        // Ambil array invoice_number dari checkbox
-        $selectedInvoiceNumbers = $request->input('selected_invoices', []);
-
-        // Validasi: pastikan ada data yang dipilih
-        if (empty($selectedInvoiceNumbers)) {
-            return redirect()->back()->with('error', 'Tidak ada invoice yang dipilih untuk dihapus.');
-        }
-
-        // Hapus invoice berdasarkan invoice_number
-        InvoiceProyek::whereIn('invoice_number', $selectedInvoiceNumbers)->delete();
-
-        // Redirect dengan info jumlah yang dihapus
-        return redirect()->route('proyek-invoice.index')
-            ->with('success', count($selectedInvoiceNumbers) . ' invoice proyek berhasil dihapus!');
+        return $this->destroySelectedBy($request, InvoiceProyek::class, 'selected_invoices', 'invoice_number', 'proyek-invoice.index');
     }
 
 
@@ -326,18 +315,7 @@ class ProyekInvoiceController extends Controller
         ];
     }
 
-    private function normalizeDecimalInput($value): float
-    {
-        if ($value === null || $value === '') {
-            return 0.0;
-        }
 
-        if (is_string($value)) {
-            $value = str_replace(',', '.', $value);
-        }
-
-        return (float) $value;
-    }
 
     /**
      * Normalisasi data items invoice agar harga format ribuan tetap tersimpan sebagai angka utuh.
@@ -353,8 +331,8 @@ class ProyekInvoiceController extends Controller
         }
 
         return array_map(function ($item) {
-            $item['volume'] = $this->normalizeDecimalInput($item['volume'] ?? 0);
-            $item['harga'] = $this->normalizeCurrencyInput($item['harga'] ?? 0);
+            $item['volume'] = InputNormalizer::normalizeDecimal($item['volume'] ?? 0);
+            $item['harga'] = InputNormalizer::normalizeCurrency($item['harga'] ?? 0);
 
             return $item;
         }, $items);
@@ -363,30 +341,5 @@ class ProyekInvoiceController extends Controller
     /**
      * Ubah input harga berformat lokal seperti 1.000 atau Rp 1.000 menjadi angka.
      */
-    private function normalizeCurrencyInput($value): float
-    {
-        if ($value === null || $value === '') {
-            return 0.0;
-        }
 
-        if (is_int($value) || is_float($value)) {
-            return (float) $value;
-        }
-
-        $value = (string) $value;
-        $value = preg_replace('/[^0-9,\.\-]/', '', $value);
-
-        if ($value === '' || $value === null) {
-            return 0.0;
-        }
-
-        if (str_contains($value, ',')) {
-            $value = str_replace('.', '', $value);
-            $value = str_replace(',', '.', $value);
-        } else {
-            $value = str_replace('.', '', $value);
-        }
-
-        return (float) $value;
-    }
 }

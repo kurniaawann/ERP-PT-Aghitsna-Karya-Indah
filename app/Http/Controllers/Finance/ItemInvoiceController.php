@@ -12,6 +12,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\InputNormalizer;
+use App\Services\StockService;
 
 class ItemInvoiceController extends Controller
 {
@@ -364,8 +366,8 @@ class ItemInvoiceController extends Controller
             $normalized[] = [
                 'name_item' => trim((string) ($item['name_item'] ?? '')),
                 'quantity' => (int) ($item['quantity'] ?? 0),
-                'capital_price' => $this->normalizeCurrencyInput($item['capital_price'] ?? 0),
-                'selling_price' => $this->normalizeCurrencyInput($item['selling_price'] ?? 0),
+                'capital_price' => InputNormalizer::normalizeCurrency($item['capital_price'] ?? 0),
+                'selling_price' => InputNormalizer::normalizeCurrency($item['selling_price'] ?? 0),
                 'from_stock' => filter_var($item['from_stock'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'id_item' => $item['id_item'] ?? null,
             ];
@@ -440,21 +442,7 @@ class ItemInvoiceController extends Controller
 
     private function restoreStockFromItems(array $items): void
     {
-        foreach ($items as $item) {
-            $fromStock = filter_var($item['from_stock'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $idItem = !empty($item['id_item']) ? (string) $item['id_item'] : null;
-
-            if (!$fromStock || empty($idItem)) {
-                continue;
-            }
-
-            $stockItem = Items::lockForUpdate()->where('id_item', $idItem)->first();
-
-            if ($stockItem) {
-                $stockItem->quantity += (int) ($item['quantity'] ?? 0);
-                $stockItem->save();
-            }
-        }
+        (new StockService())->increaseStockFromItems($items ?? []);
     }
 
     private function calculateTotals(array $items): array
@@ -478,32 +466,6 @@ class ItemInvoiceController extends Controller
         ];
     }
 
-    private function normalizeCurrencyInput($value): int
-    {
-        if ($value === null || $value === '') {
-            return 0;
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return (int) round($value);
-        }
-
-        $value = (string) $value;
-        $value = preg_replace('/[^0-9,\.\-]/', '', $value);
-
-        if ($value === '' || $value === null) {
-            return 0;
-        }
-
-        if (str_contains($value, ',')) {
-            $value = str_replace('.', '', $value);
-            $value = str_replace(',', '.', $value);
-        } else {
-            $value = str_replace('.', '', $value);
-        }
-
-        return (int) round((float) $value);
-    }
 
     private function generateSalesRecapId(): string
     {

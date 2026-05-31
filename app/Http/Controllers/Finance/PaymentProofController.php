@@ -11,6 +11,7 @@ use App\Services\Finance\PaymentProofService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Services\InputNormalizer;
 
 class PaymentProofController extends Controller
 {
@@ -127,7 +128,7 @@ class PaymentProofController extends Controller
         }
 
         if ($validated['invoice_type'] === 'proyek') {
-            $amount = $this->normalizeMoneyInput($request->input('amount'));
+            $amount = InputNormalizer::normalizeCurrency($request->input('amount'));
 
             if ($amount <= 0) {
                 return back()->with('error', 'Nominal pembayaran harus lebih dari 0.')->withInput();
@@ -204,7 +205,7 @@ class PaymentProofController extends Controller
         }
 
         if ($validated['invoice_type'] === 'proyek') {
-            $amount = $this->normalizeMoneyInput($request->input('amount'));
+            $amount = InputNormalizer::normalizeCurrency($request->input('amount'));
 
             if ($amount <= 0) {
                 return back()->with('error', 'Nominal pembayaran harus lebih dari 0.')->withInput();
@@ -447,20 +448,6 @@ class PaymentProofController extends Controller
             'status' => $invoice->isFullyPaid() ? 'Lunas' : 'Belum Lunas',
         ]);
     }
-
-    private function normalizeMoneyInput($value): int
-    {
-        if ($value === null) {
-            return 0;
-        }
-
-        if (is_string($value)) {
-            $value = preg_replace('/[^0-9]/', '', $value);
-        }
-
-        return (int) $value;
-    }
-
     private function buildInvoiceOptions($invoices, string $moduleType, string $invoiceType, $proofStageMap, array &$invoiceLookup): array
     {
         $options = [];

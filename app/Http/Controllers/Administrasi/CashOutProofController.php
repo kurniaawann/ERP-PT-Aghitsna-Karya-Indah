@@ -6,17 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Administrasi\CashOutProof;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 class CashOutProofController extends Controller
 {
-    private function normalizeCurrencyInput($value): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return (int) str_replace(['.', ','], '', (string) $value);
-    }
+    use HasBulkActions;
 
     public function index(Request $request)
     {
@@ -51,7 +46,7 @@ class CashOutProofController extends Controller
 
         // Ambil semua input dari form
         $data = $request->all();
-        $data['amount'] = $this->normalizeCurrencyInput($data['amount'] ?? null);
+        $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? null);
 
         // Auto-generate nomor BKK dan CEK
         $data['bkk_no'] = CashOutProof::generateBkkNo();
@@ -86,7 +81,7 @@ class CashOutProofController extends Controller
 
         // Ambil semua input dari form
         $data = $request->all();
-        $data['amount'] = $this->normalizeCurrencyInput($data['amount'] ?? null);
+        $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? null);
 
         // Set default untuk director dan finance_head jika kosong
         if (empty($data['director'])) {
@@ -112,10 +107,7 @@ class CashOutProofController extends Controller
             return redirect()->route('cash-out-proof.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus data berdasarkan bkk_no
-        CashOutProof::whereIn('bkk_no', $ids)->delete();
-
-        return redirect()->route('cash-out-proof.index')->with('success', 'Bukti kas keluar berhasil dihapus!');
+        return $this->destroySelectedBy($request, CashOutProof::class, 'ids', 'bkk_no', 'cash-out-proof.index');
     }
 
     /**

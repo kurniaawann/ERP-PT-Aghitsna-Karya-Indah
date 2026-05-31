@@ -7,17 +7,11 @@ use App\Models\Sdm\Kasbon;
 use App\Models\Sdm\Employee;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Services\InputNormalizer;
 
 class KasbonController extends Controller
 {
-    private function normalizeCurrencyInput($value): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
 
-        return (int) str_replace(['.', ','], '', (string) $value);
-    }
 
     /**
      * Menampilkan halaman daftar kasbon dengan fitur filter dan pencarian.
@@ -70,7 +64,7 @@ class KasbonController extends Controller
     public function store(Request $request)
     {
         $request->merge([
-            'amount' => $this->normalizeCurrencyInput($request->input('amount')),
+            'amount' => InputNormalizer::normalizeCurrency($request->input('amount')),
         ]);
 
         $validated = $request->validate([
@@ -181,7 +175,7 @@ class KasbonController extends Controller
         }
 
         $request->merge([
-            'amount' => $this->normalizeCurrencyInput($request->input('amount')),
+            'amount' => InputNormalizer::normalizeCurrency($request->input('amount')),
         ]);
 
         $validated = $request->validate([

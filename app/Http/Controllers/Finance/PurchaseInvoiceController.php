@@ -8,9 +8,12 @@ use App\Exports\Finance\PurchaseInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 class PurchaseInvoiceController extends Controller
 {
+    use HasBulkActions;
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -44,8 +47,8 @@ class PurchaseInvoiceController extends Controller
     public function store(Request $request)
     {
         $request->merge([
-            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
-            'ppn_percentage' => $this->normalizeDecimalInput($request->ppn_percentage),
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
+            'ppn_percentage' => InputNormalizer::normalizeDecimal($request->ppn_percentage),
         ]);
 
         $validated = $request->validate([
@@ -81,8 +84,8 @@ class PurchaseInvoiceController extends Controller
     public function update(Request $request, PurchaseInvoice $purchase_invoice)
     {
         $request->merge([
-            'selling_price' => $this->normalizeCurrencyInput($request->selling_price),
-            'ppn_percentage' => $this->normalizeDecimalInput($request->ppn_percentage),
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
+            'ppn_percentage' => InputNormalizer::normalizeDecimal($request->ppn_percentage),
         ]);
 
         $validated = $request->validate([
@@ -115,16 +118,7 @@ class PurchaseInvoiceController extends Controller
 
     public function destroySelected(Request $request)
     {
-        $selectedIds = $request->input('selected_invoices', []);
-
-        if (empty($selectedIds)) {
-            return redirect()->back()->with('error', 'Tidak ada faktur yang dipilih untuk dihapus.');
-        }
-
-        PurchaseInvoice::whereIn('id', $selectedIds)->delete();
-
-        return redirect()->route('purchase-invoice.index')
-            ->with('success', count($selectedIds) . ' faktur pembelian berhasil dihapus!');
+        return $this->destroySelectedBy($request, PurchaseInvoice::class, 'selected_invoices', 'id', 'purchase-invoice.index');
     }
 
     public function printPdf($id)
@@ -186,30 +180,5 @@ class PurchaseInvoiceController extends Controller
         return $pdf->download('Faktur-Pembelian-' . now()->format('d-m-Y') . '.pdf');
     }
 
-    private function normalizeDecimalInput($value): float
-    {
-        if ($value === null || $value === '') {
-            return 0.0;
-        }
 
-        if (is_string($value)) {
-            $value = str_replace(',', '.', $value);
-        }
-
-        return (float) $value;
-    }
-
-    private function normalizeCurrencyInput($value): float
-    {
-        if ($value === null || $value === '') {
-            return 0.0;
-        }
-
-        if (is_string($value)) {
-            $value = preg_replace('/[^0-9,.-]/', '', $value);
-            $value = str_replace(['.', ','], ['', '.'], $value);
-        }
-
-        return (float) $value;
-    }
 }

@@ -7,9 +7,11 @@ use App\Models\Administrasi\Kwintansi;
 use App\Models\Finance\PaymentAccount;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HasBulkActions;
 
 class KwintansiController extends Controller
 {
+    use HasBulkActions;
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -73,18 +75,7 @@ class KwintansiController extends Controller
 
     public function destroySelected(Request $request)
     {
-        // Ambil array id_kwintansi dari checkbox selection
-        $ids = $request->input('ids');
-
-        // Validasi
-        if (empty($ids)) {
-            return redirect()->route('kwintansi.index')->with('error', 'Tidak ada data yang dipilih!');
-        }
-
-        // Hapus kwintansi berdasarkan id_kwintansi
-        Kwintansi::whereIn('id_kwintansi', $ids)->delete();
-
-        return redirect()->route('kwintansi.index')->with('success', 'Kwintansi berhasil dihapus!');
+        return $this->destroySelectedBy($request, Kwintansi::class, 'ids', 'id_kwintansi', 'kwintansi.index');
     }
 
     /**
