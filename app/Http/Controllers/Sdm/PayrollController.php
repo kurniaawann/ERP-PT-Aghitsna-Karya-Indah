@@ -53,7 +53,7 @@ class PayrollController extends Controller
             ->latest('period_month')
             ->latest('week_number')
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber'));
     }

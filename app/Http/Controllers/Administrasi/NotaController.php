@@ -26,7 +26,7 @@ class NotaController extends Controller
                 ->orWhere('sj_no', 'like', "%{$search}%");
         })
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.administrasi.nota', compact('notas', 'search'));
     }

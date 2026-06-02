@@ -19,6 +19,9 @@
         return true;
     }
 
+    @include('partials.shared.delete-form-script')
+    @include('partials.shared.print-selected-script')
+
     // ==========================================
     // SELECT ALL CHECKBOX
     // ==========================================
@@ -45,53 +48,12 @@
     });
 
     // Update Delete Button and Print Button State
-    function updateButtonStates() {
-        const deleteButton = document.getElementById('delete-button');
-        const printButton = document.getElementById('printDropdownButton');
-        const selectedCountText = document.getElementById('selectedCountText');
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-        const count = checkedCheckboxes.length;
-
-        // Update delete button
-        if (count > 0) {
-            deleteButton.disabled = false;
             deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
             deleteButton.classList.add('hover:bg-btn-delete-hover');
         } else {
             deleteButton.disabled = true;
             deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
-            deleteButton.classList.remove('hover:bg-btn-delete-hover');
-        }
-
-        // Update print button
-        if (count > 0) {
-            printButton.disabled = false;
-            printButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            printButton.classList.add('hover:bg-primary-hover');
-        } else {
-            printButton.disabled = true;
-            printButton.classList.add('opacity-50', 'cursor-not-allowed');
-            printButton.classList.remove('hover:bg-primary-hover');
-        }
-
-        // Update selected count text
-        if (selectedCountText) {
-            selectedCountText.textContent = count;
-        }
-    }
-
-    // Submit Delete Form
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-        document.getElementById('deleteForm').submit();
-    }
-
-    // Initialize button states on page load
+        return sharedPrintSelected('{{ route('kwintansi.export.pdf.selected') }}', 'input[name="ids[]"]:checked', 'Silakan pilih data terlebih dahulu!');
     updateButtonStates();
 
     // ==========================================

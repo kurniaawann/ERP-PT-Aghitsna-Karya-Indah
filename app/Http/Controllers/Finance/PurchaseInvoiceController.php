@@ -39,7 +39,7 @@ class PurchaseInvoiceController extends Controller
             $q->whereYear('date', $year);
         });
 
-        $invoices = $query->orderBy('date', 'desc')->paginate(10);
+        $invoices = $query->orderBy('date', 'desc')->paginate(15);
 
         return view('pages.finance.purchase-invoice', compact('invoices'));
     }

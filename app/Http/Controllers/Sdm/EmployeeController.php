@@ -27,7 +27,7 @@ class EmployeeController extends Controller
             // Urutkan berdasarkan created_at descending (data terbaru di atas)
             ->latest('created_at')
             // Pagination 10 data per halaman
-            ->paginate(10);
+            ->paginate(15);
 
         // Get all divisions for dropdown
         $divisions = \App\Models\Sdm\Division::orderBy('name')->get();

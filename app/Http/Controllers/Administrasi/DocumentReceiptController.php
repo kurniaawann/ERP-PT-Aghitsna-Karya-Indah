@@ -23,7 +23,7 @@ class DocumentReceiptController extends Controller
                 ->orWhere('regarding', 'like', "%{$search}%");
         })
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.administrasi.document-receipt', compact('documents', 'search'));
     }

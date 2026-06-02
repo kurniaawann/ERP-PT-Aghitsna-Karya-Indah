@@ -24,7 +24,7 @@ class DeliveryNoteController extends Controller
                 ->orWhere('shipper_name', 'like', "%{$search}%");
         })
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.administrasi.delivery-note', compact('deliveryNotes', 'search'));
     }

@@ -34,7 +34,7 @@ class OvertimeController extends Controller
             // Jika tanggal sama, urutkan berdasarkan created_at descending (yang dibuat terakhir di atas)
             ->latest('created_at')
             // Pagination 10 data per halaman
-            ->paginate(10);
+            ->paginate(15);
 
         // Ambil semua karyawan dari database untuk dropdown form
         // all() mengambil semua record tanpa filter

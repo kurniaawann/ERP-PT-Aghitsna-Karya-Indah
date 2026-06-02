@@ -67,7 +67,7 @@ class ProyekInvoiceController extends Controller
         }
 
         // Urutkan berdasarkan tanggal invoice terbaru, lalu pagination
-        $invoices = $query->orderBy('invoice_date', 'desc')->paginate(10);
+        $invoices = $query->orderBy('invoice_date', 'desc')->paginate(15);
 
         // Get active payment accounts
         $paymentAccounts = PaymentAccount::active()->get();

@@ -97,11 +97,6 @@
                                                     class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors text-xs">
                                                     <i class="fa-solid fa-pen w-3 h-3"></i> Edit
                                                 </button>
-                                                <button type="button"
-                                                    onclick="deleteRecord('{{ route('item-return.destroy', $record->id_return) }}')"
-                                                    class="flex items-center gap-1 bg-btn-delete hover:bg-btn-delete-hover text-white px-2 py-1 rounded-lg transition-colors text-xs">
-                                                    <i class="fa-solid fa-trash w-3 h-3"></i> Hapus
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>

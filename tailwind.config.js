@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       fontSize: {
-        xs: ['12px', '16px'],
+        xs: ['14px', '16px'],
         sm: ['14px', '20px'],
         base: ['16px', '24px'],
         lg: ['18px', '28px'],

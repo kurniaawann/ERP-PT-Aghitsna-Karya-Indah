@@ -19,6 +19,9 @@
         return true;
     }
 
+    @include('partials.shared.delete-form-script')
+    @include('partials.shared.print-selected-script')
+
     // ==========================================
     // AUTO-GENERATE DOCUMENT NUMBER
     // ==========================================
@@ -174,7 +177,7 @@
         if (dropdownMenu) {
             dropdownMenu.classList.add('hidden');
         }
-    }
+    return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}', '.row-checkbox:checked:not([disabled])', 'Tidak ada data yang dipilih!');
 
     // ==========================================
     // ADD ITEM ROW

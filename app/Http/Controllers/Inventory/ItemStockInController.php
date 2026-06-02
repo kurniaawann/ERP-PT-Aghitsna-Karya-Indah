@@ -65,7 +65,7 @@ class ItemStockInController extends Controller
             })
             ->orderBy('tanggal', 'desc')
             ->orderBy('id_stock_in', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         $items = Items::orderBy('id_item', 'asc')->get();
 

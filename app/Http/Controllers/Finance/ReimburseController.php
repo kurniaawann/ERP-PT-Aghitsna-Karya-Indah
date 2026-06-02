@@ -37,7 +37,7 @@ class ReimburseController extends Controller
             })
             // Urutkan berdasarkan tanggal terbaru
             ->latest('date')
-            ->paginate(10);
+            ->paginate(15);
 
         // Return view dengan data reimburses
         return view('pages.finance.reimburse', compact('reimburses', 'search', 'status'));

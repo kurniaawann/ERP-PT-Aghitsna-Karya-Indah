@@ -26,7 +26,7 @@ class CashOutProofController extends Controller
                 ->orWhere('description', 'like', "%{$search}%");
         })
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.administrasi.cash-out-proof', compact('cashOuts', 'search'));
     }

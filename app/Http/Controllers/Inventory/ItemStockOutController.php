@@ -33,7 +33,7 @@ class ItemStockOutController extends Controller
             })
             ->orderBy('tanggal', 'desc')
             ->orderBy('id_stock_out', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.inventory.stock-out', compact('stockOuts'));
     }

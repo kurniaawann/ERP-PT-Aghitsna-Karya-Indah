@@ -3,12 +3,7 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    function formatCurrencyInput(input) {
-        if (!input) return;
-
-        const numeric = input.value.replace(/[^\d]/g, '');
-        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
-    }
+    @include('partials.shared.currency-utils-script')
 
     let isSubmitting = false;
 

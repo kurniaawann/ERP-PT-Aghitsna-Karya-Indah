@@ -54,6 +54,9 @@
 
         // Update selected count text
         if (selectedCountText) {
+
+            @include('partials.shared.delete-form-script')
+            @include('partials.shared.print-selected-script')
             selectedCountText.textContent = count;
         }
 
@@ -122,37 +125,7 @@
         form.action = '{{ route('nota.administrasi.export.pdf.selected') }}';
         form.style.display = 'none';
 
-        // Add CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        form.appendChild(csrfInput);
-
-        // Add all checked IDs
-        checkedCheckboxes.forEach(checkbox => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'ids[]';
-            input.value = checkbox.value;
-            form.appendChild(input);
-        });
-
-        // Submit form
-        document.body.appendChild(form);
-        form.submit();
-
-        // Close dropdown after submit
-        const dropdownMenu = document.getElementById('printDropdownMenu');
-        if (dropdownMenu) {
-            dropdownMenu.classList.add('hidden');
-        }
-    }
-
-    // ==========================================
-    // DYNAMIC ITEM ROWS
-    // ==========================================
-
+                return sharedPrintSelected('{{ route('nota.administrasi.export.pdf.selected') }}');
     function updateDeleteButtons(modalId) {
         const container = document.getElementById('itemsContainer-' + modalId);
         const items = container.querySelectorAll('.item-row');

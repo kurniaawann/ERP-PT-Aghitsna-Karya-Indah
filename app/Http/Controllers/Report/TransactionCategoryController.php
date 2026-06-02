@@ -38,7 +38,7 @@ class TransactionCategoryController extends Controller
             // Jika sort_order sama, urutkan berdasarkan name ascending (alphabetical)
             ->orderBy('name')
             // Pagination 10 data per halaman
-            ->paginate(10);
+            ->paginate(15);
 
         // Ambil semua kode kategori yang sudah ada untuk validasi duplikat di frontend
         // pluck('code', 'id') menghasilkan array: [id => code]

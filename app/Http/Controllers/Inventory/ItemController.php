@@ -33,7 +33,7 @@ class ItemController extends Controller
             // Urutkan berdasarkan id_item descending (ID terbaru di atas)
             ->orderBy('id_item', 'desc')
             // Pagination 10 data per halaman
-            ->paginate(10);
+            ->paginate(15);
 
         // Return view dengan data items (barang inventory + pagination)
         return view('pages.inventory.item', compact('items'));

@@ -1,29 +1,6 @@
 {{-- Sales Report Scripts --}}
 <script>
-    function parseCurrencyInput(value) {
-        return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
-    }
-
-    function formatCurrencyInput(input) {
-        if (!input) return;
-
-        const numeric = String(input.value || '').replace(/[^\d]/g, '');
-        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
-    }
-
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
-        }
-    }
+    @include('partials.shared.currency-utils-script')
 
     document.addEventListener('DOMContentLoaded', function() {
         // Toggle Print Dropdown

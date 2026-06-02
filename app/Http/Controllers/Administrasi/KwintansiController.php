@@ -25,7 +25,7 @@ class KwintansiController extends Controller
                     ->orWhere('payment_for', 'like', "%{$search}%");
             })
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.administrasi.kwintansi', compact('kwintansis', 'search'));
     }

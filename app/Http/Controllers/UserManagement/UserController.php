@@ -20,7 +20,7 @@ class UserController extends Controller
                 ->orWhere('email', 'like', "%{$search}%");
         })
             ->latest()
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.user-management.index', compact('users', 'search'));
     }

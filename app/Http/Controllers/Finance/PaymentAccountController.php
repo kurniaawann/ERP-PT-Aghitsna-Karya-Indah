@@ -22,7 +22,7 @@ class PaymentAccountController extends Controller
             });
         }
 
-        $accounts = $query->orderBy('id')->paginate(10);
+        $accounts = $query->orderBy('id')->paginate(15);
         return view('pages.finance.payment-accounts', compact('accounts'));
     }
 

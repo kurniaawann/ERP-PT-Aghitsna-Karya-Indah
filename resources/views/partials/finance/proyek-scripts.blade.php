@@ -3,16 +3,7 @@
     // LIVE CALCULATION FUNCTIONS
     // ==========================================
 
-    function parseCurrencyInput(value) {
-        return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
-    }
-
-    function formatCurrencyInput(input) {
-        if (!input) return;
-
-        const numeric = input.value.replace(/[^\d]/g, '');
-        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
-    }
+    @include('partials.shared.currency-utils-script')
 
     function bindEditCurrencyInput(input) {
         if (!input || input.dataset.currencyBound === '1') return;
@@ -634,20 +625,6 @@
     // ==========================================
     // BULK DELETE FUNCTION
     // ==========================================
-
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
-        }
-    }
 
     // ==========================================
     // DELETE INDIVIDUAL INVOICE

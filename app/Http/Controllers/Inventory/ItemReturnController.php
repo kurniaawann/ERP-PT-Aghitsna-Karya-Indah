@@ -54,7 +54,7 @@ class ItemReturnController extends Controller
             })
             ->orderBy('tanggal', 'desc')
             ->orderBy('id_return', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         $items = Items::orderBy('id_item', 'asc')->get();
         $stockOuts = ItemStockOut::orderBy('id_stock_out', 'desc')->get();

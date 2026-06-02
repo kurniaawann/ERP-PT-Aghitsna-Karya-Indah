@@ -29,7 +29,7 @@ class RABController extends Controller
                     ->orWhere('recipient', 'like', "%{$search}%");
             })
             ->orderBy('sequence_number', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         $paymentAccounts = PaymentAccount::active()->get();
 

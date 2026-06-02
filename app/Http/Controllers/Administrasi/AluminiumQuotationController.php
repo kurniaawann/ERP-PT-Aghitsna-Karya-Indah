@@ -28,7 +28,7 @@ class AluminiumQuotationController extends Controller
                     ->orWhere('subject', 'like', "%{$search}%");
             })
             ->orderBy('sequence_number', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         $paymentAccounts = PaymentAccount::active()->get();
 
