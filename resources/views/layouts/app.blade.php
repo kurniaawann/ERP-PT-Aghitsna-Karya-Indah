@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
-<body class="min-h-screen bg-surface-secondary text-text-primary">
+<body class="min-h-screen bg-surface-secondary text-text-primary text-base">
 
     <div class="flex h-screen">
         {{-- Sidebar dipisah sebagai partial --}}

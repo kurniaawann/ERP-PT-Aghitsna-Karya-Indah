@@ -27,16 +27,16 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
                                 <td class="p-2 font-medium text-primary">{{ $invoice->invoice_number }}</td>
-                                <td class="p-2 text-sm">{{ $invoice->invoice_date->format('d-m-Y') }}</td>
+                                <td class="p-2">{{ $invoice->invoice_date->format('d-m-Y') }}</td>
                                 <td class="p-2">{{ $invoice->recipient }}</td>
-                                <td class="p-2 text-sm text-text-label">
+                                <td class="p-2 text-text-label">
                                     {{ $invoice->project_description ? \Illuminate\Support\Str::limit($invoice->project_description, 35) : '-' }}
                                 </td>
                                 <td class="p-2 text-right font-medium">Rp
                                     {{ number_format($invoice->getNetAmount(), 0, ',', '.') }}</td>
                                 <td class="p-2 text-center">
                                     <span
-                                        class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $invoice->status_badge_class }}">
+                                        class="inline-flex items-center rounded-full px-3 py-1 font-semibold {{ $invoice->status_badge_class }}">
                                         {{ $invoice->status_label }}
                                     </span>
                                 </td>
