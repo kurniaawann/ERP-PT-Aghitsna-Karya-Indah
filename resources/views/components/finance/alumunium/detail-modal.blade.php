@@ -47,13 +47,8 @@
                         <tr>
                             <td class="border border-border-strong px-2 py-2 text-sm">{{ $index + 1 }}</td>
                             <td class="border border-border-strong px-2 py-2 text-sm">
-
-                                @include('components.finance.payment-proof-section', [
-                                    'invoice' => $invoice,
-                                    'invoiceType' => 'alumunium',
-                                    'paymentProofs' => $invoice->paymentProofs ?? collect(),
-                                ])
-                                {{ $item['keterangan'] ?? '-' }}</td>
+                                {{ $item['keterangan'] ?? '-' }}
+                            </td>
                             <td class="border border-border-strong px-2 py-2 text-right text-sm">
                                 {{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
                             <td class="border border-border-strong px-2 py-2 text-sm">
