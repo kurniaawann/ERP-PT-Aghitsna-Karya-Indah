@@ -23,7 +23,8 @@
     };
 @endphp
 
-<div id="{{ $id }}" class="hidden fixed inset-0 z-50 bg-surface-overlay items-center justify-center px-4">
+<div id="{{ $id }}"
+    class="hidden fixed inset-0 z-50 bg-surface-overlay items-center justify-center px-4 text-base">
     <div
         class="bg-surface-base rounded-xl shadow-lg w-full {{ $maxWidthClass }} p-6 relative max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-semibold text-text-primary mb-4">{{ $title }}</h2>
