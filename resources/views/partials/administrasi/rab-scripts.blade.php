@@ -1,29 +1,13 @@
 @push('scripts')
     <script>
-        // ==========================================
-        // PREVENT DOUBLE SUBMIT & LOADING STATE
-        // ==========================================
-
-        let isSubmitting = false;
-
-        function handleFormSubmit(submitBtn, originalText) {
-            if (isSubmitting) return false;
-
-            isSubmitting = true;
-
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sedang Memproses...';
-                submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-                submitBtn.dataset.originalText = submitBtn.textContent || 'Submit';
-            }
-
-            return true;
-        }
+        // Shared helper is loaded from resources/js/shared/form-submit.js
 
         // Reset loading state function (untuk error handling)
         function resetLoadingState(submitBtn) {
-            isSubmitting = false;
+            if (window.resetFormSubmitState) {
+                window.resetFormSubmitState();
+            }
+
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = submitBtn.dataset.originalText || 'Submit';
@@ -106,17 +90,17 @@
 
                 <div class="subcategories-container space-y-3 mb-3">
                     ${(categoryData.subcategories || []).map(subcategory => `
-                                                                                            <div class="subcategory-block border rounded p-3 bg-gray-50">
-                                                                                                <div class="mb-3">
-                                                                                                    <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                                                                                                    <input type="text" class="w-full border rounded p-2 subcategory-name"
-                                                                                                        placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
-                                                                                                </div>
+                                                                                                <div class="subcategory-block border rounded p-3 bg-gray-50">
+                                                                                                    <div class="mb-3">
+                                                                                                        <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
+                                                                                                        <input type="text" class="w-full border rounded p-2 subcategory-name"
+                                                                                                            placeholder="Contoh: Pembongkaran" value="${subcategory.subcategory_name || ''}" required>
+                                                                                                    </div>
 
-                                                                                                <div class="mb-3">
-                                                                                                    <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
-                                                                                                    <div class="items-container space-y-2">
-                                                                                                        ${(subcategory.items || []).map(item => `
+                                                                                                    <div class="mb-3">
+                                                                                                        <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
+                                                                                                        <div class="items-container space-y-2">
+                                                                                                            ${(subcategory.items || []).map(item => `
                                         <div class="item-block bg-surface-base rounded border border-border-strong p-3 flex flex-col gap-2">
                                             <input type="text" class="w-full border border-border-strong rounded p-2 item-description bg-surface-base text-text-input"
                                                 placeholder="Masukkan item pekerjaan" value="${item.item_description || ''}" required>
@@ -134,21 +118,21 @@
                                             </button>
                                         </div>
                                     `).join('')}
+                                                                                                        </div>
+                                                                                                        <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
+                                                                                                            <i class="fa-solid fa-plus"></i> Tambah Item
+                                                                                                        </button>
                                                                                                     </div>
-                                                                                                    <button type="button" onclick="addItemBlock(this)" class="btn btn-sm btn-outline-secondary w-full mt-2">
-                                                                                                        <i class="fa-solid fa-plus"></i> Tambah Item
+
+                                                                                                    <div class="bg-info-light border border-info-light rounded p-3 mb-3">
+                                                                                                        <p class="text-sm text-text-heading"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-info">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subcategory.sub_harga || 0).replace('Rp ', 'Rp ')}</span></p>
+                                                                                                    </div>
+
+                                                                                                    <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
+                                                                                                        <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
                                                                                                     </button>
                                                                                                 </div>
-
-                                                                                                <div class="bg-info-light border border-info-light rounded p-3 mb-3">
-                                                                                                    <p class="text-sm text-text-heading"><strong>Total Sub-Kategori:</strong> <span class="sub-total-price font-bold text-lg text-info">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subcategory.sub_harga || 0).replace('Rp ', 'Rp ')}</span></p>
-                                                                                                </div>
-
-                                                                                                <button type="button" onclick="removeSubcategoryBlock(this)" class="btn btn-sm btn-outline-danger w-full">
-                                                                                                    <i class="fa-solid fa-trash"></i> Hapus Sub-Kategori
-                                                                                                </button>
-                                                                                            </div>
-                                                                                        `).join('')}
+                                                                                            `).join('')}
                 </div>
 
                 <button type="button" onclick="addSubcategoryBlock(this)" class="btn btn-sm btn-outline-secondary w-full">

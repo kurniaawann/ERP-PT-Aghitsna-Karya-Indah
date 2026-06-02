@@ -3,21 +3,7 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
-
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     @include('partials.shared.delete-form-script')
     @include('partials.shared.print-selected-script')
@@ -177,23 +163,24 @@
         if (dropdownMenu) {
             dropdownMenu.classList.add('hidden');
         }
-    return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}', '.row-checkbox:checked:not([disabled])', 'Tidak ada data yang dipilih!');
+        return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}',
+            '.row-checkbox:checked:not([disabled])', 'Tidak ada data yang dipilih!');
 
-    // ==========================================
-    // ADD ITEM ROW
-    // ==========================================
+        // ==========================================
+        // ADD ITEM ROW
+        // ==========================================
 
-    function addItemRow(modalId) {
-        const container = document.getElementById(`itemsContainer-${modalId}`);
+        function addItemRow(modalId) {
+            const container = document.getElementById(`itemsContainer-${modalId}`);
 
-        // Get current number of items
-        const itemRows = container.querySelectorAll('.item-row');
-        const newNo = itemRows.length + 1;
+            // Get current number of items
+            const itemRows = container.querySelectorAll('.item-row');
+            const newNo = itemRows.length + 1;
 
-        const newRow = document.createElement('div');
-        newRow.className =
-            'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
-        newRow.innerHTML = `
+            const newRow = document.createElement('div');
+            newRow.className =
+                'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+            newRow.innerHTML = `
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-text-label mb-1.5">No</label>
@@ -235,50 +222,50 @@
             </div>
         `;
 
-        container.appendChild(newRow);
+            container.appendChild(newRow);
 
-        // Update delete button visibility
-        updateDeleteButtonVisibility(modalId);
-    }
+            // Update delete button visibility
+            updateDeleteButtonVisibility(modalId);
+        }
 
-    // ==========================================
-    // REMOVE ITEM ROW
-    // ==========================================
+        // ==========================================
+        // REMOVE ITEM ROW
+        // ==========================================
 
-    function removeItemRow(button) {
-        const row = button.closest('.item-row');
-        if (row) {
-            row.remove();
-            // Update the modal ID to ensure delete buttons are properly toggled
-            const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
-            if (modal) {
-                updateDeleteButtonVisibility(modal.id);
+        function removeItemRow(button) {
+            const row = button.closest('.item-row');
+            if (row) {
+                row.remove();
+                // Update the modal ID to ensure delete buttons are properly toggled
+                const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
+                if (modal) {
+                    updateDeleteButtonVisibility(modal.id);
+                }
             }
         }
-    }
 
-    // ==========================================
-    // UPDATE DELETE BUTTON VISIBILITY
-    // ==========================================
+        // ==========================================
+        // UPDATE DELETE BUTTON VISIBILITY
+        // ==========================================
 
-    function updateDeleteButtonVisibility(modalId) {
-        const container = document.getElementById(`itemsContainer-${modalId}`);
-        const itemRows = container.querySelectorAll('.item-row');
+        function updateDeleteButtonVisibility(modalId) {
+            const container = document.getElementById(`itemsContainer-${modalId}`);
+            const itemRows = container.querySelectorAll('.item-row');
 
-        itemRows.forEach((row, index) => {
-            const deleteBtn = row.querySelector('.delete-btn');
-            // Show delete button only if there are more than 1 item rows
-            if (deleteBtn) {
-                deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
-            }
+            itemRows.forEach((row, index) => {
+                const deleteBtn = row.querySelector('.delete-btn');
+                // Show delete button only if there are more than 1 item rows
+                if (deleteBtn) {
+                    deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
+                }
+            });
+        }
+
+        // Initialize delete button visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
+                const modalId = container.id.replace('itemsContainer-', '');
+                updateDeleteButtonVisibility(modalId);
+            });
         });
-    }
-
-    // Initialize delete button visibility on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
-            const modalId = container.id.replace('itemsContainer-', '');
-            updateDeleteButtonVisibility(modalId);
-        });
-    });
 </script>

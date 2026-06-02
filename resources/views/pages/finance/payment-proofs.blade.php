@@ -26,18 +26,65 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div class="rounded-xl border border-border-strong bg-surface-base p-4 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-text-label">Total Bukti</p>
-                <p class="mt-2 text-3xl font-bold text-text-primary">{{ number_format($totalProofs) }}</p>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div
+                class="group rounded-2xl border border-border-strong bg-surface-base p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-label">Total Bukti</p>
+                        <p class="mt-2 text-3xl font-bold tracking-tight text-text-primary">
+                            {{ number_format($totalProofs) }}</p>
+                    </div>
+                    <div
+                        class="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-secondary text-text-label ring-1 ring-border-light transition-colors group-hover:bg-primary-light group-hover:text-primary">
+                        <i class="fa-solid fa-file-signature text-base"></i>
+                    </div>
+                </div>
             </div>
-            <div class="rounded-xl border border-border-strong bg-primary-light p-4 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-primary">Invoice Proyek</p>
-                <p class="mt-2 text-3xl font-bold text-primary">{{ number_format($projectProofs) }}</p>
+
+            <div
+                class="group rounded-2xl border border-primary/20 bg-gradient-to-br from-primary-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Invoice Proyek</p>
+                        <p class="mt-2 text-3xl font-bold tracking-tight text-primary">{{ number_format($projectProofs) }}
+                        </p>
+                    </div>
+                    <div
+                        class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-primary ring-1 ring-primary/10 transition-colors group-hover:bg-primary group-hover:text-white">
+                        <i class="fa-solid fa-diagram-project text-base"></i>
+                    </div>
+                </div>
             </div>
-            <div class="rounded-xl border border-border-strong bg-warning-light p-4 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-warning">Invoice Alumunium</p>
-                <p class="mt-2 text-3xl font-bold text-warning">{{ number_format($alumuniumProofs) }}</p>
+
+            <div
+                class="group rounded-2xl border border-warning/20 bg-gradient-to-br from-warning-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-warning">Invoice Alumunium</p>
+                        <p class="mt-2 text-3xl font-bold tracking-tight text-warning">{{ number_format($alumuniumProofs) }}
+                        </p>
+                    </div>
+                    <div
+                        class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-warning ring-1 ring-warning/10 transition-colors group-hover:bg-warning group-hover:text-white">
+                        <i class="fa-solid fa-boxes-stacked text-base"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="group rounded-2xl border border-secondary/20 bg-gradient-to-br from-secondary-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">Rekap Penjualan</p>
+                        <p class="mt-2 text-3xl font-bold tracking-tight text-secondary">
+                            {{ number_format($salesRecapProofs) }}</p>
+                    </div>
+                    <div
+                        class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-secondary ring-1 ring-secondary/10 transition-colors group-hover:bg-secondary group-hover:text-white">
+                        <i class="fa-solid fa-chart-line text-base"></i>
+                    </div>
+                </div>
             </div>
         </div>
 

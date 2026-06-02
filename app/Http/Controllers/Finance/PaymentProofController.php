@@ -57,6 +57,7 @@ class PaymentProofController extends Controller
         $totalProofs = (clone $query)->count();
         $projectProofs = (clone $query)->where('invoice_type', 'proyek')->count();
         $alumuniumProofs = (clone $query)->where('invoice_type', 'alumunium')->count();
+        $salesRecapProofs = (clone $query)->where('invoice_type', 'rekap_penjualan')->count();
 
         $proofStageMap = PaymentProof::query()
             ->select('module_type', 'invoice_type', 'invoice_number', DB::raw('MAX(COALESCE(payment_stage, 0)) as max_stage'), DB::raw('COUNT(*) as proof_count'))
@@ -103,6 +104,7 @@ class PaymentProofController extends Controller
             'totalProofs',
             'projectProofs',
             'alumuniumProofs',
+            'salesRecapProofs',
             'moduleOptions',
             'invoiceTypeOptions',
             'salesRecapOptions',
