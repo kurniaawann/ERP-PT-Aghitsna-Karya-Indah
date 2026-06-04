@@ -16,7 +16,7 @@
         </div>
 
         {{-- FORM RESET PASSWORD --}}
-        <form action="{{ route('password.update') }}" method="POST" class="space-y-5">
+        <form action="{{ route('password.update') }}" method="POST" class="space-y-5" id="resetPasswordForm">
             @csrf
 
             {{-- TOKEN --}}
@@ -57,12 +57,16 @@
                 @enderror
             </div>
 
-
-            {{-- TOMBOL RESET --}}
-            <button type="submit"
-                class="w-full bg-primary text-white font-medium py-2 rounded-lg hover:bg-primary-hover transition-all">
-                Reset Kata Sandi
-            </button>
+            {{-- TOMBOL RESET (loading reusable) --}}
+            @include('partials.loading-submit-button', [
+                'id' => 'resetPasswordBtn',
+                'textId' => 'resetPasswordBtnText',
+                'spinnerId' => 'resetPasswordBtnSpinner',
+                'buttonText' => 'Reset Kata Sandi',
+                'buttonType' => 'submit',
+                'buttonClass' =>
+                    'w-full bg-primary text-white font-medium py-2 rounded-lg hover:bg-primary-hover transition-all inline-flex items-center justify-center gap-2',
+            ])
 
             {{-- BACK TO LOGIN --}}
             <div class="text-center">

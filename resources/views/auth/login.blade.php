@@ -47,12 +47,16 @@
                 </div>
             </div>
 
-
-            {{-- TOMBOL LOGIN --}}
-            <button type="submit" id="loginBtn"
-                class="w-full bg-primary text-white font-medium py-2 rounded-lg hover:bg-primary-hover transition-all">
-                Masuk
-            </button>
+            {{-- TOMBOL LOGIN (loading reusable) --}}
+            @include('partials.loading-submit-button', [
+                'id' => 'loginBtn',
+                'textId' => 'loginBtnText',
+                'spinnerId' => 'loginBtnSpinner',
+                'buttonText' => 'Masuk',
+                'buttonType' => 'submit',
+                'buttonClass' =>
+                    'w-full bg-primary text-white font-medium py-2 rounded-lg hover:bg-primary-hover transition-all inline-flex items-center justify-center gap-2',
+            ])
         </form>
     </div>
 @endsection

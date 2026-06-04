@@ -87,6 +87,16 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
         ]);
 
+        // Tambahkan validasi: email harus ada di tabel users
+        $email = $request->input('email');
+        $userExists = \App\Models\User::where('email', $email)->exists();
+
+        if (!$userExists) {
+            return back()->withErrors([
+                'email' => 'Email tidak terdaftar dalam sistem kami.',
+            ])->withInput();
+        }
+
         // Kirim password reset link
         $status = Password::sendResetLink(
             $request->only('email')
@@ -97,10 +107,9 @@ class AuthController extends Controller
             return back()->with('status', 'Link reset password telah dikirim ke email Anda!');
         }
 
-        // Jika email tidak terdaftar
         return back()->withErrors([
-            'email' => 'Email tidak terdaftar dalam sistem kami.',
-        ]);
+            'email' => 'Gagal mengirim link reset password. Silakan coba lagi.',
+        ])->withInput();
     }
 
     /**
