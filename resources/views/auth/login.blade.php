@@ -31,11 +31,12 @@
             </div>
 
             {{-- PASSWORD --}}
-            <div>
+            <div class="relative">
                 <label class="block text-text-label text-sm mb-1">Kata Sandi</label>
                 <input type="password" name="password" id="password" required autocomplete="current-password"
                     value="{{ old('password', 'password123') }}" placeholder="Masukkan kata sandi anda"
-                    class="w-full px-4 py-2 rounded-lg border border-border-strong bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
+                    class="w-full px-4 py-2 pr-12 rounded-lg border border-border-strong bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
+                @include('partials.password-visibility-toggle', ['targetId' => 'password'])
                 @error('password')
                     <p class="text-error text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -45,6 +46,7 @@
                     </a>
                 </div>
             </div>
+
 
             {{-- TOMBOL LOGIN --}}
             <button type="submit" id="loginBtn"
