@@ -25,42 +25,45 @@
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Tipe Return</label>
-            <input type="text" value="{{ ucfirst($item->return_type) }}" class="w-full border rounded p-2 bg-gray-100"
-                disabled>
+            <input type="text" value="{{ ucfirst($item->return_type) }}"
+                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary" disabled>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Barang</label>
             <input type="text" value="{{ $item->id_item }} - {{ $item->item->name_item }}"
-                class="w-full border rounded p-2 bg-gray-100" disabled>
+                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary" disabled>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Jumlah <span class="text-error">*</span></label>
             <input type="number" id="editQuantity-{{ $item->id_return }}" name="quantity" value="{{ $item->quantity }}"
-                class="w-full border rounded p-2" data-max-quantity="{{ $maxQuantity }}" min="1" required>
-            <p id="editQuantityWarning-{{ $item->id_return }}" class="text-red-500 text-sm mt-1 hidden">
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                data-max-quantity="{{ $maxQuantity }}" min="1" required>
+            <p id="editQuantityWarning-{{ $item->id_return }}" class="text-error text-sm mt-1 hidden">
                 <i class="fa-solid fa-circle-exclamation"></i> Jumlah return tidak boleh melebihi stok yang tersedia
             </p>
-            <p id="editAvailableStock-{{ $item->id_return }}" class="text-blue-500 text-sm mt-1 text-xs">Stok tersedia:
+            <p id="editAvailableStock-{{ $item->id_return }}" class="text-primary text-sm mt-1 text-xs">Stok tersedia:
                 {{ $maxQuantity }}</p>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Alasan Return</label>
-            <input type="text" name="alasan" value="{{ $item->alasan }}" class="w-full border rounded p-2"
+            <input type="text" name="alasan" value="{{ $item->alasan }}"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
                 placeholder="Rusak, Tidak sesuai, dll">
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
             <input type="date" name="tanggal" value="{{ $item->tanggal->format('Y-m-d') }}"
-                class="w-full border rounded p-2" required>
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Keterangan</label>
-            <textarea name="keterangan" class="w-full border rounded p-2" rows="3">{{ $item->keterangan }}</textarea>
+            <textarea name="keterangan" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                rows="3">{{ $item->keterangan }}</textarea>
         </div>
     </x-modal>
 @endforeach

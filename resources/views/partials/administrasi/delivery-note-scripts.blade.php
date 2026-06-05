@@ -3,21 +3,10 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    @include('partials.shared.delete-form-script')
+    @include('partials.shared.print-selected-script')
 
     // ==========================================
     // AUTO-GENERATE DOCUMENT NUMBER
@@ -42,23 +31,28 @@
     // SELECT ALL CHECKBOX
     // ==========================================
 
+
     // Select All Checkbox
-    document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
+    const selectAllEl = document.getElementById('selectAll');
+    if (selectAllEl) {
+        selectAllEl.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.disabled) checkbox.checked = this.checked;
+            });
+            updateButtonStates();
         });
-        updateButtonStates();
-    });
+    }
 
     // Individual Checkbox
-    document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
+    document.querySelectorAll('.row-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+            const checkboxes = Array.from(document.querySelectorAll('.row-checkbox')).filter(cb => !cb
+                .disabled);
+            const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
 
-            selectAll.checked = checkboxes.length === checkedCheckboxes.length;
+            if (selectAll) selectAll.checked = checkboxes.length === checkedCheckboxes.length;
             updateButtonStates();
         });
     });
@@ -68,7 +62,8 @@
         const deleteButton = document.getElementById('delete-button');
         const printButton = document.getElementById('printDropdownButton');
         const selectedCountText = document.getElementById('selectedCountText');
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
+            .disabled);
         const count = checkedCheckboxes.length;
 
         // Update selected count text
@@ -105,7 +100,8 @@
     // ==========================================
 
     function submitDeleteForm() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
+            .disabled);
         if (checkedCheckboxes.length === 0) {
             alert('Tidak ada data yang dipilih!');
             return;
@@ -128,7 +124,8 @@
     // ==========================================
 
     function printSelected() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
+            .disabled);
 
         if (checkedCheckboxes.length === 0) {
             alert('Tidak ada data yang dipilih!');
@@ -166,108 +163,109 @@
         if (dropdownMenu) {
             dropdownMenu.classList.add('hidden');
         }
-    }
+        return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}',
+            '.row-checkbox:checked:not([disabled])', 'Tidak ada data yang dipilih!');
 
-    // ==========================================
-    // ADD ITEM ROW
-    // ==========================================
+        // ==========================================
+        // ADD ITEM ROW
+        // ==========================================
 
-    function addItemRow(modalId) {
-        const container = document.getElementById(`itemsContainer-${modalId}`);
+        function addItemRow(modalId) {
+            const container = document.getElementById(`itemsContainer-${modalId}`);
 
-        // Get current number of items
-        const itemRows = container.querySelectorAll('.item-row');
-        const newNo = itemRows.length + 1;
+            // Get current number of items
+            const itemRows = container.querySelectorAll('.item-row');
+            const newNo = itemRows.length + 1;
 
-        const newRow = document.createElement('div');
-        newRow.className =
-            'item-row bg-white border-2 border-gray-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
-        newRow.innerHTML = `
+            const newRow = document.createElement('div');
+            newRow.className =
+                'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+            newRow.innerHTML = `
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">No</label>
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">No</label>
                     <input type="number" name="item_no[]"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                         placeholder="1" min="1" value="${newNo}" required readonly>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Barang <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Nama Barang <span
+                            class="text-error">*</span></label>
                     <input type="text" name="item_name[]"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                         placeholder="Masukkan nama barang..." required>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Jumlah <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Jumlah <span
+                            class="text-error">*</span></label>
                     <input type="number" name="quantity[]"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                         placeholder="0" min="1" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Satuan</label>
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Satuan</label>
                     <input type="text" name="unit[]"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                         placeholder="pcs" value="pcs">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Catatan</label>
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Catatan</label>
                     <input type="text" name="item_notes[]"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                         placeholder="Masukkan catatan...">
                 </div>
                 <button type="button" onclick="removeItemRow(this)"
-                    class="delete-btn w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+                    class="delete-btn w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-trash"></i>
                     <span>Hapus</span>
                 </button>
             </div>
         `;
 
-        container.appendChild(newRow);
+            container.appendChild(newRow);
 
-        // Update delete button visibility
-        updateDeleteButtonVisibility(modalId);
-    }
+            // Update delete button visibility
+            updateDeleteButtonVisibility(modalId);
+        }
 
-    // ==========================================
-    // REMOVE ITEM ROW
-    // ==========================================
+        // ==========================================
+        // REMOVE ITEM ROW
+        // ==========================================
 
-    function removeItemRow(button) {
-        const row = button.closest('.item-row');
-        if (row) {
-            row.remove();
-            // Update the modal ID to ensure delete buttons are properly toggled
-            const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
-            if (modal) {
-                updateDeleteButtonVisibility(modal.id);
+        function removeItemRow(button) {
+            const row = button.closest('.item-row');
+            if (row) {
+                row.remove();
+                // Update the modal ID to ensure delete buttons are properly toggled
+                const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
+                if (modal) {
+                    updateDeleteButtonVisibility(modal.id);
+                }
             }
         }
-    }
 
-    // ==========================================
-    // UPDATE DELETE BUTTON VISIBILITY
-    // ==========================================
+        // ==========================================
+        // UPDATE DELETE BUTTON VISIBILITY
+        // ==========================================
 
-    function updateDeleteButtonVisibility(modalId) {
-        const container = document.getElementById(`itemsContainer-${modalId}`);
-        const itemRows = container.querySelectorAll('.item-row');
+        function updateDeleteButtonVisibility(modalId) {
+            const container = document.getElementById(`itemsContainer-${modalId}`);
+            const itemRows = container.querySelectorAll('.item-row');
 
-        itemRows.forEach((row, index) => {
-            const deleteBtn = row.querySelector('.delete-btn');
-            // Show delete button only if there are more than 1 item rows
-            if (deleteBtn) {
-                deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
-            }
+            itemRows.forEach((row, index) => {
+                const deleteBtn = row.querySelector('.delete-btn');
+                // Show delete button only if there are more than 1 item rows
+                if (deleteBtn) {
+                    deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
+                }
+            });
+        }
+
+        // Initialize delete button visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
+                const modalId = container.id.replace('itemsContainer-', '');
+                updateDeleteButtonVisibility(modalId);
+            });
         });
-    }
-
-    // Initialize delete button visibility on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
-            const modalId = container.id.replace('itemsContainer-', '');
-            updateDeleteButtonVisibility(modalId);
-        });
-    });
 </script>

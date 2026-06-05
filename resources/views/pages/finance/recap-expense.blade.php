@@ -3,7 +3,7 @@
 @section('title', 'PT Aghitsna Karya Indah - Rekap Pengeluaran')
 
 @section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Rekap Pengeluaran</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">

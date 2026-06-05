@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Sdm;
 use App\Http\Controllers\Controller;
 use App\Models\Sdm\Employee;
 use Illuminate\Http\Request;
+use App\Services\InputNormalizer;
 
 class EmployeeController extends Controller
 {
+
+
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request (untuk filter nama atau kode karyawan)
@@ -24,7 +27,7 @@ class EmployeeController extends Controller
             // Urutkan berdasarkan created_at descending (data terbaru di atas)
             ->latest('created_at')
             // Pagination 10 data per halaman
-            ->paginate(10);
+            ->paginate(15);
 
         // Get all divisions for dropdown
         $divisions = \App\Models\Sdm\Division::orderBy('name')->get();
@@ -45,9 +48,7 @@ class EmployeeController extends Controller
         $data['employee_code'] = Employee::generateEmployeeCode();
 
         // Convert daily_wage to null if empty
-        if (empty($data['daily_wage'])) {
-            $data['daily_wage'] = null;
-        }
+        $data['daily_wage'] = InputNormalizer::normalizeCurrency($data['daily_wage'] ?? null);
 
         // Insert data karyawan ke database
         // create() akan insert record baru ke tabel employees dan return model instance
@@ -64,9 +65,7 @@ class EmployeeController extends Controller
         $data = $request->all();
 
         // Convert daily_wage to null if empty
-        if (empty($data['daily_wage'])) {
-            $data['daily_wage'] = null;
-        }
+        $data['daily_wage'] = InputNormalizer::normalizeCurrency($data['daily_wage'] ?? null);
 
         // Update semua field dari request ke model employee
         // all() mengambil semua input dari form edit

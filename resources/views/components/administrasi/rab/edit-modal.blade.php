@@ -6,56 +6,57 @@
     {{-- Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" class="w-full border rounded p-2" name="date" required
-            value="{{ $rab->date->format('Y-m-d') }}" oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="date" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="date" required value="{{ $rab->date->format('Y-m-d') }}"
+            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Penerima <span class="text-error">*</span></label>
-        <input type="text" class="w-full border rounded p-2" name="recipient" placeholder="Nama penerima RAB"
-            value="{{ $rab->recipient }}" required maxlength="255"
+        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="recipient" placeholder="Nama penerima RAB" value="{{ $rab->recipient }}" required maxlength="255"
             oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Alamat Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Alamat Penerima</label>
-        <textarea class="w-full border rounded p-2" name="recipient_address" rows="2"
-            placeholder="Masukkan alamat lengkap penerima" maxlength="500">{{ $rab->recipient_address }}</textarea>
-        <small class="text-gray-500 text-xs">Maksimal 500 karakter</small>
+        <textarea class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="recipient_address" rows="2" placeholder="Masukkan alamat lengkap penerima" maxlength="500">{{ $rab->recipient_address }}</textarea>
+        <small class="text-text-secondary text-xs">Maksimal 500 karakter</small>
     </div>
 
     {{-- Teks Pengantar --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Teks Pengantar <span class="text-error">*</span></label>
-        <textarea class="w-full border rounded p-2" name="intro_text" rows="3"
+        <textarea class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" name="intro_text"
+            rows="3"
             placeholder="Contoh: Bersama ini kami sampaikan perihal penawaran harga pekerjaan renovasi rumah tinggal 1 lantai, sebagai berikut:"
             required maxlength="1000" oninvalid="this.setCustomValidity('Teks pengantar tidak boleh kosong')"
             oninput="this.setCustomValidity('')">{{ $rab->intro_text }}</textarea>
-        <small class="text-gray-500 text-xs">Maksimal 1000 karakter</small>
+        <small class="text-text-secondary text-xs">Maksimal 1000 karakter</small>
     </div>
 
     {{-- Ditandatangani Oleh --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Ditandatangani Oleh</label>
-        <input type="text" class="w-full border rounded p-2" name="signed_by" placeholder="Nama pejabat"
-            value="{{ $rab->signed_by ?? '' }}" maxlength="255">
+        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="signed_by" placeholder="Nama pejabat" value="{{ $rab->signed_by ?? '' }}" maxlength="255">
     </div>
 
     {{-- Divisi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Divisi/Bagian</label>
-        <input type="text" class="w-full border rounded p-2" name="division" placeholder="Nama divisi"
-            value="{{ $rab->division ?? '' }}" maxlength="255">
+        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="division" placeholder="Nama divisi" value="{{ $rab->division ?? '' }}" maxlength="255">
     </div>
 
     {{-- Rekening Pembayaran --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
         <div id="paymentAccountsList" class="space-y-2" required>
-            <small class="text-gray-500 text-xs">Pilih minimal 1 rekening pembayaran</small>
+            <small class="text-text-secondary text-xs">Pilih minimal 1 rekening pembayaran</small>
             @foreach ($paymentAccounts as $account)
                 <div class="flex items-center">
                     <input class="form-check-input" type="checkbox" name="selected_payment_accounts[]"
@@ -75,9 +76,10 @@
     {{-- Detail Pekerjaan --}}
     <div class="mb-3">
         <h6 class="text-text-primary font-semibold mb-3">Detail Pekerjaan (Struktur Hierarki)</h6>
-        <div class="text-xs text-gray-600 mb-4 p-2 bg-gray-50 rounded">
+        <div class="text-xs text-text-secondary mb-4 p-2 bg-surface-secondary rounded">
             <p class="mb-1"><strong>Struktur:</strong> Kategori (Romawi) → Sub-Kategori (Angka) → Item (Huruf)</p>
-            <p><strong>Contoh:</strong> I. Pekerjaan Persiapan → 1. Pembongkaran → a. Pembongkaran atap</p>
+            <p><strong>Catatan:</strong> Volume, satuan, harga satuan, dan sub-harga diisi pada item huruf a, b, c...
+            </p>
         </div>
     </div>
 
@@ -96,7 +98,7 @@
     {{-- Biaya Lain-Lain Section --}}
     <div class="mb-3">
         <h6 class="text-text-primary font-semibold mb-3">III. Biaya Lain-Lain (Optional)</h6>
-        <div class="text-xs text-gray-600 mb-3 p-2 bg-gray-50 rounded">
+        <div class="text-xs text-text-secondary mb-3 p-2 bg-surface-secondary rounded">
             <p><strong>Contoh:</strong> Iuran RT, Perizinan Air, Wifi/CCTV/AC, Pekerjaan Listrik, dll</p>
         </div>
     </div>
@@ -117,19 +119,19 @@
 
     {{-- Total Keseluruhan --}}
     <div class="flex justify-end mb-3">
-        <div class="bg-green-50 border-2 border-green-300 rounded p-4 w-full">
+        <div class="bg-success-light border-2 border-success rounded p-4 w-full">
             <div class="space-y-2">
-                <div class="flex justify-between text-sm text-green-900 border-b border-green-300 pb-2">
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
                     <span><strong>Total Kategori:</strong></span>
                     <span id="editTotalCategoriesPrice{{ $rab->rab_number }}" class="font-semibold">Rp 0</span>
                 </div>
-                <div class="flex justify-between text-sm text-green-900 border-b border-green-300 pb-2">
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
                     <span><strong>Total Biaya Lain-Lain:</strong></span>
                     <span id="editTotalMiscCostsPrice{{ $rab->rab_number }}" class="font-semibold">Rp 0</span>
                 </div>
-                <div class="flex justify-between text-lg text-green-900">
+                <div class="flex justify-between text-lg text-success">
                     <span><strong>Total Keseluruhan:</strong></span>
-                    <p class="font-bold text-2xl text-green-600"><span
+                    <p class="font-bold text-2xl text-success"><span
                             id="editGrandTotalPrice{{ $rab->rab_number }}">Rp 0</span></p>
                 </div>
             </div>
@@ -163,15 +165,16 @@
                     // Create item element
                     const miscContainer = document.getElementById(miscContainerId);
                     const item = document.createElement('div');
-                    item.className = 'misc-cost-item bg-white border rounded p-3 flex gap-2';
+                    item.className =
+                        'misc-cost-item bg-surface-base border border-border-strong rounded p-3 flex gap-2';
                     item.innerHTML = `
                         <div class="flex-1">
-                            <input type="text" class="w-full border rounded p-2 mb-2 misc-item-name" 
+                            <input type="text" class="w-full border border-border-strong rounded p-2 mb-2 bg-surface-base text-text-input misc-item-name" 
                                 placeholder="Nama biaya" value="${miscData.item_name}" required maxlength="255"
                                 oninput="updateMiscCostsData('${miscContainerId}')">
                         </div>
                         <div class="w-32">
-                            <input type="number" class="w-full border rounded p-2 mb-2 misc-item-amount" 
+                            <input type="number" class="w-full border border-border-strong rounded p-2 mb-2 bg-surface-base text-text-input misc-item-amount" 
                                 placeholder="Jumlah" value="${miscData.amount}" min="0" step="0.01" required
                                 oninput="updateMiscCostsData('${miscContainerId}')">
                         </div>

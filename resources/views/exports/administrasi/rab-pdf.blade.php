@@ -58,8 +58,6 @@
             margin: 0;
         }
 
-
-        /* ──── Recipient Info ──── */
         .info-section {
             width: 100%;
             margin-bottom: 15px;
@@ -371,8 +369,8 @@
                 @foreach ($rab->categories as $category)
                     @php
                         $categoryRoman = $arabicToRoman($category->roman_order);
-                        $categoryTotal = $category->subcategories->sum('sub_harga');
-                        $grandTotal += $categoryTotal;
+                        $categoryTotal = 0;
+                        $subcategoryTotal = 0;
                     @endphp
                     <tr class="category-row">
                         <td class="text-left"><strong style="font-size: 12px;">{{ $categoryRoman }}</strong></td>
@@ -385,47 +383,69 @@
                     </tr>
 
                     @foreach ($category->subcategories as $subcategory)
+                        @php
+                            $subcategoryTotal = 0;
+                        @endphp
+
                         <tr class="subcategory-row">
-                            <td></td>
+                            <td>{{ $subcategory->number_order }}</td>
                             <td class="text-left" style="padding-left: 20px;">
-                                <strong style="color: #333;">{{ $subcategory->number_order }}.
-                                    {{ $subcategory->subcategory_name }}</strong>
+                                <strong style="color: #333;">{{ $subcategory->subcategory_name }}</strong>
                             </td>
-                            <td class="text-center">{{ $subcategory->volume }}</td>
-                            <td class="text-center">{{ $subcategory->unit }}</td>
-                            <td class="text-right">
-                                {{ $subcategory->unit_price > 0 ? number_format($subcategory->unit_price, 0, ',', '.') : '' }}
-                            </td>
-                            <td class="text-right">
-                                {{ $subcategory->sub_harga > 0 ? number_format($subcategory->sub_harga, 0, ',', '.') : '' }}
-                            </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                             <td></td>
                         </tr>
+
                         @foreach ($subcategory->items as $item)
+                            @php
+                                $itemVolume = $item->volume ?? null;
+                                $itemUnit = $item->unit ?? null;
+                                $itemPrice = (int) ($item->unit_price ?? 0);
+                                $itemSubtotal =
+                                    (int) ($item->sub_harga ??
+                                        ($itemVolume && $itemPrice ? $itemVolume * $itemPrice : 0));
+                                $subcategoryTotal += $itemSubtotal;
+                            @endphp
                             <tr class="item-row">
                                 <td></td>
                                 <td class="text-left" style="padding-left: 50px;">
                                     <em style="color: #555;">{{ chr(96 + $item->letter_order) }}.
                                         {{ $item->item_description }}</em>
                                 </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td class="text-center">{{ $itemVolume !== null ? $itemVolume : '' }}</td>
+                                <td class="text-center">{{ $itemUnit ?: '' }}</td>
+                                <td class="text-right">
+                                    {{ $itemPrice > 0 ? number_format($itemPrice, 0, ',', '.') : '' }}
+                                </td>
+                                <td class="text-right">
+                                    {{ $itemSubtotal > 0 ? number_format($itemSubtotal, 0, ',', '.') : '' }}
+                                </td>
                                 <td></td>
                             </tr>
                         @endforeach
+
+                        @if ($subcategoryTotal === 0)
+                            @php
+                                $subcategoryTotal = (int) ($subcategory->sub_harga ?? 0);
+                            @endphp
+                        @endif
+
+                        @php
+                            $categoryTotal += $subcategoryTotal;
+                        @endphp
                     @endforeach
+
                     @if ($category->subcategories->count() > 0)
                         <tr class="subtotal-row">
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td colspan="6" class="text-right"></td>
                             <td class="text-right">{{ number_format($categoryTotal, 0, ',', '.') }}</td>
                         </tr>
+                        @php
+                            $grandTotal += $categoryTotal;
+                        @endphp
                     @endif
                 @endforeach
 

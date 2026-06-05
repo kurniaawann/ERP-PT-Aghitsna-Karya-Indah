@@ -39,25 +39,24 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Harga Jual (Rp) <span class="text-error">*</span></label>
-        <input type="number" id="addSellingPrice" name="selling_price" class="w-full border rounded p-2"
-            placeholder="0" min="0" required oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="text" id="addSellingPrice" name="selling_price" inputmode="numeric"
+            class="w-full border rounded p-2" placeholder="Rp 0" required
+            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Persentase PPN (%) <span class="text-error">*</span></label>
-        <input type="number" id="addPpnPercentage" name="ppn_percentage" class="w-full border rounded p-2"
-            placeholder="10" min="0" max="100" value="10" required
+        <input type="text" id="addPpnPercentage" name="ppn_percentage" inputmode="decimal"
+            class="w-full border rounded p-2" placeholder="10,5" value="10" required
             oninvalid="this.setCustomValidity('Persentase PPN tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Default: 10%</p>
+        <p class="text-xs text-text-secondary mt-1">Default: 10%. Boleh pakai koma, contoh 10,5</p>
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">PPN Pengenaan Pajak (Rp) <span class="text-error">*</span></label>
-        <input type="number" id="addPpnTax" name="ppn_tax"
-            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" placeholder="0" min="0"
-            readonly>
+        <input type="text" id="addPpnTax" name="ppn_tax"
+            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" placeholder="Rp 0" readonly>
         <p class="text-xs text-text-secondary mt-1">Dihitung otomatis dari harga jual × persentase PPN</p>
     </div>
 

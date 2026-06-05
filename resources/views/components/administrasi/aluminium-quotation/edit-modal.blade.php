@@ -9,7 +9,7 @@
 
     {{-- Error Message Area --}}
     <div id="editModal-{{ $quotation->quotation_number }}ModalError"
-        class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        class="hidden mb-4 p-3 bg-error-light border border-error text-error rounded-lg">
         <div class="flex items-center gap-2">
             <i class="fa-solid fa-circle-exclamation"></i>
             <span id="editModal-{{ $quotation->quotation_number }}ModalErrorText"></span>
@@ -22,8 +22,9 @@
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Tanggal <span
                     class="text-error">*</span></label>
-            <input type="date" name="date" class="w-full border rounded-lg p-2 text-sm" required
-                value="{{ $quotation->date->format('Y-m-d') }}"
+            <input type="date" name="date"
+                class="w-full border border-border-strong rounded-lg p-2 text-sm bg-surface-base text-text-input"
+                required value="{{ $quotation->date->format('Y-m-d') }}"
                 oninvalid="this.setCustomValidity('Tanggal penawaran harus diisi')"
                 oninput="this.setCustomValidity('')">
         </div>
@@ -31,7 +32,8 @@
         {{-- Perihal --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Perihal (Hal)</label>
-            <input type="text" name="subject" class="w-full border rounded-lg p-2 text-sm"
+            <input type="text" name="subject"
+                class="w-full border border-border-strong rounded-lg p-2 text-sm bg-surface-base text-text-input"
                 value="{{ $quotation->subject }}" maxlength="255"
                 oninvalid="this.setCustomValidity('Perihal maksimal 255 karakter')"
                 oninput="this.setCustomValidity('')">
@@ -41,7 +43,8 @@
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Kepada Yth <span
                     class="text-error">*</span></label>
-            <input type="text" name="recipient" class="w-full border rounded-lg p-2 text-sm"
+            <input type="text" name="recipient"
+                class="w-full border border-border-strong rounded-lg p-2 text-sm bg-surface-base text-text-input"
                 value="{{ $quotation->recipient }}" required maxlength="255"
                 oninvalid="this.setCustomValidity('Nama penerima harus diisi')" oninput="this.setCustomValidity('')">
         </div>
@@ -49,7 +52,8 @@
         {{-- Alamat --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Alamat</label>
-            <input type="text" name="recipient_address" class="w-full border rounded-lg p-2 text-sm"
+            <input type="text" name="recipient_address"
+                class="w-full border border-border-strong rounded-lg p-2 text-sm bg-surface-base text-text-input"
                 value="{{ $quotation->recipient_address }}" maxlength="255"
                 oninvalid="this.setCustomValidity('Alamat maksimal 255 karakter')" oninput="this.setCustomValidity('')">
         </div>
@@ -62,7 +66,7 @@
                     Kelompok Item
                 </h3>
                 <button type="button" onclick="addGroup('edit-{{ $quotation->quotation_number }}')"
-                    class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-all duration-200">
+                    class="flex items-center gap-2 bg-btn-add hover:bg-btn-add-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-all duration-200">
                     <i class="fa-solid fa-plus"></i> Tambah Kelompok
                 </button>
             </div>
@@ -87,9 +91,10 @@
             </div>
 
             <div class="mt-4 flex justify-end">
-                <div class="bg-yellow-50 border border-yellow-300 rounded-lg px-5 py-3 text-right min-w-[220px]">
-                    <p class="text-xs text-gray-500 mb-1">Grand Total</p>
-                    <p class="text-lg font-bold text-gray-800" id="editGrandTotal-{{ $quotation->quotation_number }}">
+                <div class="bg-warning-light border border-warning-light rounded-lg px-5 py-3 text-right min-w-[220px]">
+                    <p class="text-xs text-text-secondary mb-1">Grand Total</p>
+                    <p class="text-lg font-bold text-text-heading"
+                        id="editGrandTotal-{{ $quotation->quotation_number }}">
                         Rp {{ number_format($quotation->total_amount, 0, ',', '.') }}
                     </p>
                 </div>
@@ -104,7 +109,8 @@
             @php $selectedIds = $quotation->selected_payment_accounts ?? []; @endphp
             <div class="space-y-2">
                 @foreach ($paymentAccounts as $account)
-                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <label
+                        class="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-surface-hover">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="w-4 h-4 accent-primary payment-account-checkbox"
                             {{ $loop->first ? 'required' : '' }}
@@ -124,7 +130,8 @@
         {{-- Ditandatangani Oleh --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Ditandatangani Oleh</label>
-            <input type="text" name="signed_by" class="w-full border rounded-lg p-2 text-sm"
+            <input type="text" name="signed_by"
+                class="w-full border border-border-strong rounded-lg p-2 text-sm bg-surface-base text-text-input"
                 value="{{ $quotation->signed_by }}" maxlength="255"
                 oninvalid="this.setCustomValidity('Nama penandatangan maksimal 255 karakter')"
                 oninput="this.setCustomValidity('')">
@@ -133,7 +140,8 @@
         {{-- Divisi --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Divisi</label>
-            <input type="text" name="division" class="w-full border rounded-lg p-2 text-sm"
+            <input type="text" name="division"
+                class="w-full border border-border-strong rounded-lg p-2 text-sm bg-surface-base text-text-input"
                 value="{{ $quotation->division }}" maxlength="255"
                 oninvalid="this.setCustomValidity('Nama divisi maksimal 255 karakter')"
                 oninput="this.setCustomValidity('')">

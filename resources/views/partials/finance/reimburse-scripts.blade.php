@@ -3,21 +3,7 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
-
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // SELECT ALL CHECKBOX
@@ -80,19 +66,15 @@
             if (checkedCheckboxes.length > 0) {
                 approveButton.disabled = false;
                 approveButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                approveButton.classList.add('hover:bg-green-700');
 
                 rejectButton.disabled = false;
                 rejectButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                rejectButton.classList.add('hover:bg-red-700');
             } else {
                 approveButton.disabled = true;
                 approveButton.classList.add('opacity-50', 'cursor-not-allowed');
-                approveButton.classList.remove('hover:bg-green-700');
 
                 rejectButton.disabled = true;
                 rejectButton.classList.add('opacity-50', 'cursor-not-allowed');
-                rejectButton.classList.remove('hover:bg-red-700');
             }
         }
     }

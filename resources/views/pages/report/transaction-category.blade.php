@@ -3,7 +3,7 @@
 @section('title', 'PT Aghitsna Karya Indah - Kategori Transaksi')
 
 @section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Kategori Transaksi</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -61,13 +61,13 @@
 
     {{-- Modal Peringatan Kategori Digunakan --}}
     <div id="warningUsedModal"
-        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
+        class="fixed inset-0 bg-surface-hover bg-opacity-50 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
         <div
-            class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0">
+            class="bg-surface-base rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0">
             {{-- Header --}}
-            <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-2xl">
+            <div class="bg-error p-6 rounded-t-2xl">
                 <div class="flex items-center gap-3">
-                    <div class="bg-white bg-opacity-20 p-3 rounded-full">
+                    <div class="bg-surface-base bg-opacity-20 p-3 rounded-full">
                         <i class="fa-solid fa-exclamation-circle text-white text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-white">Kategori Sedang Digunakan</h3>
@@ -80,20 +80,20 @@
                     Kategori berikut sedang digunakan dalam transaksi dan <strong>tidak dapat dihapus</strong>:
                 </p>
 
-                <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
-                    <ul id="usedCategoriesList" class="list-disc list-inside space-y-1 text-sm text-red-800">
+                <div class="bg-error-light border-2 border-error rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+                    <ul id="usedCategoriesList" class="list-disc list-inside space-y-1 text-sm text-error">
                         {{-- Will be populated by JavaScript --}}
                     </ul>
                 </div>
 
                 <p class="text-sm text-text-label">
-                    <i class="fa-solid fa-info-circle text-blue-500"></i> Untuk menghapus kategori ini, pastikan tidak
+                    <i class="fa-solid fa-info-circle text-primary"></i> Untuk menghapus kategori ini, pastikan tidak
                     ada transaksi yang menggunakannya.
                 </p>
             </div>
 
             {{-- Footer --}}
-            <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end">
+            <div class="bg-surface-secondary px-6 py-4 rounded-b-2xl flex justify-end">
                 <button type="button" onclick="closeWarningModal()"
                     class="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary-light">
                     <i class="fa-solid fa-check mr-2"></i> Mengerti

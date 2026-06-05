@@ -3,21 +3,14 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
+    function formatCurrencyInput(input) {
+        if (!input) return;
 
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
     }
+
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // SELECT ALL CHECKBOX
@@ -73,6 +66,16 @@
 
     // Initialize delete button state on page load
     updateDeleteButtonState();
+
+    document.querySelectorAll('.daily-wage-input').forEach(input => {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+
+        input.addEventListener('input', function() {
+            formatCurrencyInput(this);
+        });
+    });
 
     // ==========================================
     // ADD/EDIT FORM SUBMIT HANDLERS

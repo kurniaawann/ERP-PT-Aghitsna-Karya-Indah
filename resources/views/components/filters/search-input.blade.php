@@ -11,13 +11,8 @@
         </span>
 
         <input type="text" name="search" value="{{ $value }}" placeholder="{{ $placeholder }}"
-            class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 pl-10 text-sm text-gray-900 
+            oninput="this.form.requestSubmit()"
+            class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 pl-10 text-sm text-text-input 
                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
     </div>
-
-    <button type="submit"
-        class="w-full sm:w-auto rounded-lg bg-btn-search hover:bg-btn-search-hover px-4 lg:px-6 py-3.5 text-sm font-medium text-white 
-               focus:outline-none focus:ring-4 focus:ring-primary-light whitespace-nowrap transition-colors duration-200">
-        Cari
-    </button>
 </div>

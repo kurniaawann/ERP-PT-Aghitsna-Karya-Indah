@@ -6,55 +6,57 @@
     {{-- Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" class="w-full border rounded p-2" name="date" required value="{{ date('Y-m-d') }}"
+        <input type="date" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="date" required value="{{ date('Y-m-d') }}"
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Penerima <span class="text-error">*</span></label>
-        <input type="text" class="w-full border rounded p-2" name="recipient" placeholder="Nama penerima RAB"
-            required maxlength="255" oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="recipient" placeholder="Nama penerima RAB" required maxlength="255"
+            oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Alamat Penerima --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Alamat Penerima</label>
-        <textarea class="w-full border rounded p-2" name="recipient_address" rows="2"
-            placeholder="Masukkan alamat lengkap penerima" maxlength="500"></textarea>
-        <small class="text-gray-500 text-xs">Maksimal 500 karakter</small>
+        <textarea class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="recipient_address" rows="2" placeholder="Masukkan alamat lengkap penerima" maxlength="500"></textarea>
+        <small class="text-text-secondary text-xs">Maksimal 500 karakter</small>
     </div>
 
     {{-- Teks Pengantar --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Teks Pengantar <span class="text-error">*</span></label>
-        <textarea class="w-full border rounded p-2" name="intro_text" rows="3"
+        <textarea class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" name="intro_text"
+            rows="3"
             placeholder="Contoh: Bersama ini kami sampaikan perihal penawaran harga pekerjaan renovasi rumah tinggal 1 lantai, sebagai berikut:"
             required maxlength="1000" oninvalid="this.setCustomValidity('Teks pengantar tidak boleh kosong')"
             oninput="this.setCustomValidity('')"></textarea>
-        <small class="text-gray-500 text-xs">Maksimal 1000 karakter</small>
+        <small class="text-text-secondary text-xs">Maksimal 1000 karakter</small>
     </div>
 
     {{-- Ditandatangani Oleh --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Ditandatangani Oleh</label>
-        <input type="text" class="w-full border rounded p-2" name="signed_by" placeholder="Nama pejabat"
-            maxlength="255">
+        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="signed_by" placeholder="Nama pejabat" maxlength="255">
     </div>
 
     {{-- Divisi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Divisi/Bagian</label>
-        <input type="text" class="w-full border rounded p-2" name="division" placeholder="Nama divisi"
-            maxlength="255">
+        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="division" placeholder="Nama divisi" maxlength="255">
     </div>
 
     {{-- Rekening Pembayaran --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
         <div id="paymentAccountsList" class="space-y-2" required>
-            <small class="text-gray-500 text-xs">Pilih minimal 1 rekening pembayaran</small>
+            <small class="text-text-secondary text-xs">Pilih minimal 1 rekening pembayaran</small>
             @foreach ($paymentAccounts as $account)
                 <div class="flex items-center">
                     <input class="form-check-input" type="checkbox" name="selected_payment_accounts[]"
@@ -72,18 +74,20 @@
     {{-- Detail Pekerjaan --}}
     <div class="mb-3">
         <h6 class="text-text-primary font-semibold mb-3">Detail Pekerjaan (Struktur Hierarki)</h6>
-        <div class="text-xs text-gray-600 mb-4 p-2 bg-gray-50 rounded">
+        <div class="text-xs text-text-secondary mb-4 p-2 bg-surface-secondary rounded">
             <p class="mb-1"><strong>Struktur:</strong> Kategori (Romawi) → Sub-Kategori (Angka) → Item (Huruf)</p>
-            <p><strong>Contoh:</strong> I. Pekerjaan Persiapan → 1. Pembongkaran → a. Pembongkaran atap</p>
+            <p><strong>Catatan:</strong> Volume, satuan, harga satuan, dan sub-harga diisi pada item huruf a, b, c...
+            </p>
         </div>
     </div>
 
     <div id="rabCategoriesContainer" class="space-y-4 mb-3">
-        <div class="category-block border rounded p-3 bg-white">
+        <div class="category-block border border-border-strong rounded p-3 bg-surface-base">
             <div class="mb-3">
                 <label class="block text-text-primary mb-1 text-sm font-semibold">Kategori (Romawi)</label>
                 <div class="flex gap-2">
-                    <input type="text" class="flex-1 w-full border rounded p-2 category-name"
+                    <input type="text"
+                        class="flex-1 w-full border border-border-strong rounded p-2 bg-surface-base text-text-input category-name"
                         placeholder="Contoh: Pekerjaan Persiapan" required maxlength="255"
                         oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
@@ -95,42 +99,15 @@
             </div>
 
             <div class="subcategories-container space-y-3 mb-3">
-                <div class="subcategory-block border rounded p-3 bg-gray-50">
+                <div class="subcategory-block border border-border-strong rounded p-3 bg-surface-secondary">
                     {{-- Sub-Kategori Info --}}
                     <div class="mb-3">
                         <label class="block text-text-primary mb-1 text-sm font-semibold">Sub-Kategori (Angka)</label>
-                        <input type="text" class="w-full border rounded p-2 subcategory-name"
+                        <input type="text"
+                            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input subcategory-name"
                             placeholder="Contoh: Pembongkaran" required maxlength="255"
                             oninvalid="this.setCustomValidity('Sub-kategori tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                    </div>
-
-                    {{-- Volume, Satuan, Harga --}}
-                    <div class="space-y-3 mb-3">
-                        <div>
-                            <label class="block text-text-primary mb-1 text-sm font-semibold">Volume</label>
-                            <input type="number" class="w-full border rounded p-2 volume" placeholder="0"
-                                min="0" step="0.01" required
-                                oninvalid="this.setCustomValidity('Volume harus lebih dari 0')"
-                                oninput="this.setCustomValidity('')">
-                        </div>
-                        <div>
-                            <label class="block text-text-primary mb-1 text-sm font-semibold">Satuan</label>
-                            <input type="text" class="w-full border rounded p-2 unit" placeholder="m²" required
-                                maxlength="50" oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                                oninput="this.setCustomValidity('')">
-                        </div>
-                        <div>
-                            <label class="block text-text-primary mb-1 text-sm font-semibold">Harga/Unit</label>
-                            <input type="number" class="w-full border rounded p-2 unit-price" placeholder="0"
-                                min="0" step="0.01" required
-                                oninvalid="this.setCustomValidity('Harga satuan harus lebih dari 0')"
-                                oninput="this.setCustomValidity('')">
-                        </div>
-                        <div class="bg-blue-50 border border-blue-300 rounded p-3 mb-3">
-                            <p class="text-sm text-blue-900"><strong>Total Harga:</strong> <span
-                                    class="sub-total-price font-bold text-lg text-blue-600">Rp 0</span></p>
-                        </div>
                     </div>
 
                     {{-- Item Details --}}
@@ -138,11 +115,28 @@
                         <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b,
                             c...)</label>
                         <div class="items-container space-y-2">
-                            <div class="item-block bg-white rounded border p-2 flex gap-2">
-                                <input type="text" class="flex-1 w-full border-0 p-1 item-description"
+                            <div
+                                class="item-block bg-surface-base rounded border border-border-strong p-3 flex flex-col gap-2">
+                                <input type="text"
+                                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input item-description"
                                     placeholder="Masukkan item pekerjaan" required maxlength="255"
                                     oninvalid="this.setCustomValidity('Item pekerjaan tidak boleh kosong')"
                                     oninput="this.setCustomValidity('')">
+                                <input type="number"
+                                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input item-volume"
+                                    placeholder="Vol" min="0" step="0.01" required
+                                    oninput="updatePrices()">
+                                <input type="text"
+                                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input item-unit"
+                                    placeholder="Satuan" maxlength="50" required oninput="updatePrices()">
+                                <input type="number"
+                                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input item-unit-price"
+                                    placeholder="Harga" min="0" step="0.01" required
+                                    oninput="updatePrices()">
+                                <div
+                                    class="w-full px-3 py-2 bg-primary-light border border-primary rounded text-right">
+                                    <span class="item-sub-total-price text-sm font-semibold text-primary">Rp 0</span>
+                                </div>
                                 <button type="button" class="btn btn-sm btn-danger" onclick="removeItemBlock(this)">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
@@ -152,6 +146,11 @@
                             onclick="addItemBlock(this)">
                             <i class="fa-solid fa-plus"></i> Tambah Item
                         </button>
+                    </div>
+
+                    <div class="bg-primary-light border border-primary rounded p-3 mb-3">
+                        <p class="text-sm text-primary"><strong>Total Sub-Kategori:</strong> <span
+                                class="sub-total-price font-bold text-lg text-primary">Rp 0</span></p>
                     </div>
 
                     <button type="button" class="btn btn-sm btn-outline-danger w-full"
@@ -178,7 +177,7 @@
     {{-- Biaya Lain-Lain Section --}}
     <div class="mb-3">
         <h6 class="text-text-primary font-semibold mb-3">III. Biaya Lain-Lain (Optional)</h6>
-        <div class="text-xs text-gray-600 mb-3 p-2 bg-gray-50 rounded">
+        <div class="text-xs text-text-secondary mb-3 p-2 bg-surface-secondary rounded">
             <p><strong>Contoh:</strong> Iuran RT, Perizinan Air, Wifi/CCTV/AC, Pekerjaan Listrik, dll</p>
         </div>
     </div>
@@ -197,19 +196,19 @@
 
     {{-- Total Keseluruhan --}}
     <div class="flex justify-end mb-3">
-        <div class="bg-green-50 border-2 border-green-300 rounded p-4 w-full">
+        <div class="bg-success-light border-2 border-success rounded p-4 w-full">
             <div class="space-y-2">
-                <div class="flex justify-between text-sm text-green-900 border-b border-green-300 pb-2">
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
                     <span><strong>Total Kategori:</strong></span>
                     <span id="totalCategoriesPrice" class="font-semibold">Rp 0</span>
                 </div>
-                <div class="flex justify-between text-sm text-green-900 border-b border-green-300 pb-2">
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
                     <span><strong>Total Biaya Lain-Lain:</strong></span>
                     <span id="totalMiscCostsPrice" class="font-semibold">Rp 0</span>
                 </div>
-                <div class="flex justify-between text-lg text-green-900">
+                <div class="flex justify-between text-lg text-success">
                     <span><strong>Total Keseluruhan:</strong></span>
-                    <p class="font-bold text-2xl text-green-600"><span id="grandTotalPrice">Rp 0</span></p>
+                    <p class="font-bold text-2xl text-success"><span id="grandTotalPrice">Rp 0</span></p>
                 </div>
             </div>
         </div>

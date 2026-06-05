@@ -3,11 +3,35 @@
     // LIVE CALCULATION FUNCTIONS
     // ==========================================
 
+    @include('partials.shared.currency-utils-script')
+
+    function bindEditCurrencyInput(input) {
+        if (!input || input.dataset.currencyBound === '1') return;
+
+        input.dataset.currencyBound = '1';
+
+        input.addEventListener('focus', function() {
+            this.value = String(parseCurrencyInput(this.value) || '');
+            requestAnimationFrame(() => this.select());
+        });
+
+        input.addEventListener('blur', function() {
+            formatCurrencyInput(this);
+        });
+    }
+
+    function normalizeInvoicePriceFields(form) {
+        form.querySelectorAll('input[name*="[harga]"]').forEach(input => {
+            const numeric = parseCurrencyInput(input.value);
+            input.value = numeric ? String(numeric) : '0';
+        });
+    }
+
     // Calculate individual row total for ADD modal
     function calculateRowTotal(input) {
         const row = input.closest('.item-row');
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
         const total = volume * harga;
 
         const totalSpan = row.querySelector('.item-total');
@@ -22,7 +46,7 @@
     function calculateRowTotalEdit(input, invoiceNumber) {
         const row = input.closest('.item-row-edit');
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
         const total = volume * harga;
 
         const totalSpan = row.querySelector('.item-total');
@@ -43,7 +67,7 @@
         let grandTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             grandTotal += (volume * harga);
         });
 
@@ -68,7 +92,7 @@
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
         const discountValueInput = document.getElementById('discount-value');
-        let discountValue = parseFloat(discountValueInput?.value) || 0;
+        let discountValue = parseDecimalInput(discountValueInput);
         const discountError = document.getElementById('discount-error');
 
         // Enable/disable based on type
@@ -105,7 +129,7 @@
         let baseTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             baseTotal += (volume * harga);
         });
         baseTotal = Math.round(baseTotal);
@@ -140,7 +164,7 @@
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
         const dpValueInput = document.getElementById('dp-value');
-        let dpValue = parseFloat(dpValueInput?.value) || 0;
+        let dpValue = parseCurrencyInput(dpValueInput?.value);
         const dpError = document.getElementById('dp-error');
 
         // Enable/disable based on type
@@ -177,14 +201,14 @@
         let baseTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             baseTotal += (volume * harga);
         });
         baseTotal = Math.round(baseTotal);
 
         // Check if there's discount
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValue = parseCurrencyInput(document.getElementById('discount-value')?.value);
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -218,7 +242,7 @@
     function calculateDiscountEdit(invoiceNumber) {
         const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
         const discountValueInput = document.getElementById('discount-value-edit-' + invoiceNumber);
-        let discountValue = parseFloat(discountValueInput?.value) || 0;
+        let discountValue = parseDecimalInput(discountValueInput);
 
         // Enable/disable based on type
         if (discountValueInput) {
@@ -241,7 +265,7 @@
         if (modal) {
             modal.querySelectorAll('.item-row-edit').forEach(row => {
                 const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-                const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+                const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
                 baseTotal += (volume * harga);
             });
         }
@@ -271,11 +295,21 @@
         calculateDPEdit(invoiceNumber);
     }
 
+    function parseDecimalInput(inputElement) {
+        const rawValue = String(inputElement?.value ?? '').trim();
+
+        if (!rawValue) {
+            return 0;
+        }
+
+        return parseFloat(rawValue.replace(',', '.')) || 0;
+    }
+
     // Calculate DP for EDIT modal
     function calculateDPEdit(invoiceNumber) {
         const dpType = document.getElementById('dp-type-edit-' + invoiceNumber)?.value;
         const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
-        let dpValue = parseFloat(dpValueInput?.value) || 0;
+        let dpValue = parseCurrencyInput(dpValueInput?.value);
 
         // Enable/disable based on type
         if (dpValueInput) {
@@ -298,14 +332,15 @@
         if (modal) {
             modal.querySelectorAll('.item-row-edit').forEach(row => {
                 const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-                const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+                const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
                 baseTotal += (volume * harga);
             });
         }
         baseTotal = Math.round(baseTotal);
 
         const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value-edit-' + invoiceNumber)?.value) || 0;
+        const discountValue = parseCurrencyInput(document.getElementById('discount-value-edit-' + invoiceNumber)
+            ?.value);
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -345,7 +380,7 @@
 
         modal.querySelectorAll('.item-row-edit').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             grandTotal += (volume * harga);
         });
 
@@ -412,12 +447,13 @@
         const autoLabel = `Pembayaran ke ${nextNumber}`;
 
         const newInstallment = document.createElement('div');
-        newInstallment.className = 'payment-installment-row mb-2 p-3 border rounded bg-white';
+        newInstallment.className =
+            'payment-installment-row mb-2 p-3 border border-border-strong rounded-lg bg-surface-base';
         newInstallment.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input type="text" class="payment-label border rounded p-2" 
+                <input type="text" class="payment-label border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Label (Pembayaran Ke 1)" value="${autoLabel}">
-                <input type="number" step="0.01" min="0" class="payment-amount border rounded p-2" 
+                <input type="number" step="0.01" min="0" class="payment-amount border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Jumlah (Rp)">
                 <button type="button" onclick="removePaymentInstallment(this)" 
                     class="bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
@@ -439,15 +475,16 @@
         const autoLabel = `Pembayaran ke ${nextNumber}`;
 
         const newInstallment = document.createElement('div');
-        newInstallment.className = 'payment-installment-row mb-2 p-3 border rounded bg-white';
+        newInstallment.className =
+            'payment-installment-row mb-2 p-3 border border-border-strong rounded-lg bg-surface-base';
         newInstallment.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <input type="text" name="payment_installments[${nextIndex}][label]"
-                    value="${autoLabel}" class="payment-label border rounded p-2" 
+                    value="${autoLabel}" class="payment-label border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Label (Pembayaran Ke 1)">
                 <input type="number" step="0.01" min="0" 
                     name="payment_installments[${nextIndex}][amount]"
-                    class="payment-amount border rounded p-2" 
+                    class="payment-amount border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
                     placeholder="Jumlah (Rp)">
                 <button type="button" onclick="removePaymentInstallmentEdit(this, '${invoiceNumber}')" 
                     class="bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
@@ -535,7 +572,9 @@
 
             const volume = volumeInput ? parseFloat(volumeInput.value) : 0;
             const satuan = satuanInput ? satuanInput.value : '';
-            const harga = hargaInput ? parseFloat(hargaInput.value) : 0;
+            // IMPORTANT: harga bisa sudah terformat "1.000" (titik ribuan)
+            // parse harus pakai parseCurrencyInput supaya tersimpan benar.
+            const harga = hargaInput ? parseCurrencyInput(hargaInput.value) : 0;
 
             if (keterangan && !isNaN(volume) && volume > 0 && satuan && !isNaN(harga) && harga > 0) {
                 items.push({
@@ -563,43 +602,11 @@
         return items.length > 0;
     }
 
-    // ==========================================
-    // PREVENT DOUBLE SUBMIT & LOADING STATE
-    // ==========================================
-
-    let isSubmitting = false;
-
-    function handleFormSubmit(submitBtn) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // BULK DELETE FUNCTION
     // ==========================================
-
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
-        }
-    }
 
     // ==========================================
     // DELETE INDIVIDUAL INVOICE
@@ -742,9 +749,9 @@
                         <input type="text" class="item-satuan border rounded p-2 w-full" placeholder="Satuan (m3, unit) *" required
                             oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" step="0.01" min="0" class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateRowTotal(this)"
+                        <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full" placeholder="Rp 0" required oninput="formatCurrencyInput(this); calculateRowTotal(this)"
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                            oninput="calculateRowTotal(this); this.setCustomValidity('')">
+                            oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                         </div>
@@ -829,9 +836,9 @@
                             class="item-satuan border rounded p-2 w-full" placeholder="Satuan *" required
                             oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" step="0.01" min="0" name="items[${newIndex}][harga]"
-                            class="item-harga border rounded p-2 w-full" placeholder="Harga *" required 
-                            oninput="calculateRowTotalEdit(this, '${invoiceNumber}')"
+                        <input type="text" inputmode="numeric" name="items[${newIndex}][harga]"
+                            class="item-harga border rounded p-2 w-full" placeholder="Rp 0" required 
+                            oninput="formatCurrencyInput(this); calculateRowTotalEdit(this, '${invoiceNumber}')"
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
@@ -971,14 +978,28 @@
                         return false;
                     }
 
+                    normalizeInvoicePriceFields(this);
+
                     // Set loading state
                     handleFormSubmit(submitBtn);
                 });
             }
         });
 
+        document.querySelectorAll('[id^="editModal-"] .item-harga').forEach(input => {
+            if (input.value) {
+                formatCurrencyInput(input);
+            }
+            bindEditCurrencyInput(input);
+        });
+
         // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
+
+        const newHargaInput = newItem.querySelector('.item-harga');
+        if (newHargaInput) {
+            bindEditCurrencyInput(newHargaInput);
+        }
         // ==========================================
 
         updateInvoiceTotal();
@@ -1002,8 +1023,39 @@
             validatePaymentSelectionEdit(invoiceNumber);
 
             modal.querySelectorAll('.payment-account-checkbox').forEach(cb => {
-                cb.addEventListener('change', () => validatePaymentSelectionEdit(invoiceNumber));
+                cb.addEventListener('change', () => validatePaymentSelectionEdit(
+                    invoiceNumber));
             });
         });
+
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+
+        function updateInvoiceFilterUrl() {
+            const url = new URL(window.location.href);
+
+            if (monthSelect && monthSelect.value) {
+                url.searchParams.set('month', monthSelect.value);
+            } else {
+                url.searchParams.delete('month');
+            }
+
+            if (yearSelect && yearSelect.value) {
+                url.searchParams.set('year', yearSelect.value);
+            } else {
+                url.searchParams.delete('year');
+            }
+
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        }
+
+        if (monthSelect) {
+            monthSelect.addEventListener('change', updateInvoiceFilterUrl);
+        }
+
+        if (yearSelect) {
+            yearSelect.addEventListener('change', updateInvoiceFilterUrl);
+        }
     });
 </script>

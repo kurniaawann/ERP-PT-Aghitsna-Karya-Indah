@@ -9,9 +9,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Traits\HasBulkActions;
 
 class ReimburseController extends Controller
 {
+    use HasBulkActions;
     /**
      * Display a listing of the resource.
      * Menampilkan halaman index reimburse dengan filter & search
@@ -35,7 +37,7 @@ class ReimburseController extends Controller
             })
             // Urutkan berdasarkan tanggal terbaru
             ->latest('date')
-            ->paginate(10);
+            ->paginate(15);
 
         // Return view dengan data reimburses
         return view('pages.finance.reimburse', compact('reimburses', 'search', 'status'));
@@ -87,19 +89,7 @@ class ReimburseController extends Controller
      */
     public function destroy(Request $request)
     {
-        // Ambil array reimburse_code dari checkbox
-        $ids = $request->input('ids');
-
-        // Validasi: cek apakah ada data yang dipilih
-        if (empty($ids)) {
-            return redirect()->route('reimburse.index')->with('error', 'Tidak ada data yang dipilih!');
-        }
-
-        // Hapus reimburse berdasarkan reimburse_code
-        Reimburse::whereIn('reimburse_code', $ids)->delete();
-
-        // Redirect dengan success message
-        return redirect()->route('reimburse.index')->with('success', 'Data reimburse berhasil dihapus!');
+        return $this->destroySelectedBy($request, Reimburse::class, 'ids', 'reimburse_code', 'reimburse.index');
     }
 
     /**

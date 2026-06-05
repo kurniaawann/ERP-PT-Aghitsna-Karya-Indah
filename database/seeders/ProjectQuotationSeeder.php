@@ -3,9 +3,10 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Administrasi\ProjectQuotation;
-use App\Models\Administrasi\ProjectQuotationGroup;
-use App\Models\Administrasi\ProjectQuotationItem;
+use Illuminate\Support\Facades\DB;
+use App\Models\Administrasi\AluminiumQuotation as ProjectQuotation;
+use App\Models\Administrasi\AluminiumQuotationGroup as ProjectQuotationGroup;
+use App\Models\Administrasi\AluminiumQuotationItem as ProjectQuotationItem;
 use App\Models\Finance\PaymentAccount;
 
 class ProjectQuotationSeeder extends Seeder
@@ -24,6 +25,13 @@ class ProjectQuotationSeeder extends Seeder
 
         $this->command->info('🌱 Seeding Project Quotations...');
 
+        // Idempotent terhadap unique constraint PRIMARY aluminium_quotations
+        // (quotation_number + sequence_number) => hindari duplicate saat seed ulang.
+        // Dengan truncate tidak aman bila ada foreign key, jadi pakai delete berdasarkan key unik.
+        DB::table('aluminium_quotation_items')->delete();
+        DB::table('aluminium_quotation_groups')->delete();
+        DB::table('aluminium_quotations')->delete();
+
         // ═══════════════════════════════════════════════════════════════════════════
         // Quotation 1 - Berdasarkan PDF yang diberikan
         // ═══════════════════════════════════════════════════════════════════════════
@@ -40,6 +48,7 @@ class ProjectQuotationSeeder extends Seeder
             'signed_by' => 'Akhmad Khaidir',
             'division' => 'Divisi Alumunium',
         ]);
+
 
         // Group 1: P.1 Kayu Kamper Samarinda Oven
         $g1 = ProjectQuotationGroup::create([

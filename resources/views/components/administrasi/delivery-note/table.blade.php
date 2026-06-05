@@ -23,7 +23,8 @@
                             <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="ids[]" value="{{ $deliveryNote->id_delivery_note }}"
-                                        class="w-4 h-4 accent-primary cursor-pointer">
+                                        class="row-checkbox w-4 h-4 accent-primary cursor-pointer"
+                                        {{ $deliveryNote->status === 'delivered' ? 'disabled' : '' }}>
                                 </td>
 
                                 <td class="p-2 font-medium text-primary">{{ $deliveryNote->id_delivery_note }}</td>

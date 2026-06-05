@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Administrasi\DocumentReceipt;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HasBulkActions;
 
 class DocumentReceiptController extends Controller
 {
+    use HasBulkActions;
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -21,7 +23,7 @@ class DocumentReceiptController extends Controller
                 ->orWhere('regarding', 'like', "%{$search}%");
         })
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.administrasi.document-receipt', compact('documents', 'search'));
     }
@@ -71,10 +73,7 @@ class DocumentReceiptController extends Controller
             return redirect()->route('document-receipt.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus dokumen berdasarkan id_document
-        DocumentReceipt::whereIn('id_document', $ids)->delete();
-
-        return redirect()->route('document-receipt.index')->with('success', 'Tanda terima dokumen berhasil dihapus!');
+        return $this->destroySelectedBy($request, DocumentReceipt::class, 'ids', 'id_document', 'document-receipt.index');
     }
 
     /**

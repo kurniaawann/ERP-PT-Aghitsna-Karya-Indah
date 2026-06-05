@@ -4,21 +4,7 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
-
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // INDIVIDUAL DELETE FUNCTION

@@ -8,6 +8,8 @@ use App\Models\Inventory\ItemStockIn;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\InputNormalizer;
+use App\Services\StockService;
 
 class ItemStockInController extends Controller
 {
@@ -63,7 +65,7 @@ class ItemStockInController extends Controller
             })
             ->orderBy('tanggal', 'desc')
             ->orderBy('id_stock_in', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         $items = Items::orderBy('id_item', 'asc')->get();
 
@@ -92,7 +94,7 @@ class ItemStockInController extends Controller
 
             $idItem = $itemData['id_item'];
             $quantity = (int) $itemData['quantity'];
-            $capitalPrice = (int) $itemData['capital_price'];
+            $capitalPrice = InputNormalizer::normalizeCurrency($itemData['capital_price'] ?? 0);
             $fromStock = $itemData['from_stock'] ?? false;
 
             // Handle "dari stok" - ambil dari data barang yang ada
@@ -108,7 +110,7 @@ class ItemStockInController extends Controller
                 if (!$item) {
                     // Create new item jika belum ada
                     $item = Items::create([
-                        'id_item' => $this->generateIdItem(),
+                        'id_item' => Items::generateNextId(),
                         'name_item' => $itemData['name_item'],
                         'quantity' => 0,
                         'capital_price' => $capitalPrice,
@@ -167,7 +169,7 @@ class ItemStockInController extends Controller
         }
 
         $newQuantity = (int) $itemData['quantity'];
-        $newCapitalPrice = (int) $itemData['capital_price'];
+        $newCapitalPrice = InputNormalizer::normalizeCurrency($itemData['capital_price'] ?? 0);
         $newItemId = $itemData['id_item'] ?? null;
         $newItemName = $itemData['name_item'] ?? null;
 
@@ -227,7 +229,7 @@ class ItemStockInController extends Controller
                 if (!$newItem) {
                     // Create new item
                     $newItem = Items::create([
-                        'id_item' => $this->generateIdItem(),
+                        'id_item' => Items::generateNextId(),
                         'name_item' => $newItemName,
                         'quantity' => 0,
                         'capital_price' => $newCapitalPrice,
@@ -267,27 +269,9 @@ class ItemStockInController extends Controller
     public function destroy($id_stock_in)
     {
         $stockIn = ItemStockIn::findOrFail($id_stock_in);
-        $item = Items::find($stockIn->id_item);
 
-        // Calculate remaining value after removing this stock-in
-        $currentItemValue = $item->quantity * $item->capital_price;
-        $removedValue = $stockIn->quantity * $stockIn->capital_price;
-        $remainingValue = $currentItemValue - $removedValue;
-
-        // Reduce item quantity
-        $item->quantity -= $stockIn->quantity;
-        if ($item->quantity < 0) {
-            $item->quantity = 0;
-        }
-
-        // Recalculate average price based on remaining stock
-        if ($item->quantity > 0) {
-            $item->capital_price = (int) round($remainingValue / $item->quantity);
-        }
-
-        $item->save();
-
-        $stockIn->delete();
+        // Delegate deletion handling to StockService (keeps weighted-average logic consistent)
+        (new StockService())->processStockInDeletion($stockIn);
 
         return redirect()->back()->with('success', 'Data barang masuk berhasil dihapus!');
     }
@@ -304,30 +288,8 @@ class ItemStockInController extends Controller
         $stockIns = ItemStockIn::whereIn('id_stock_in', $selectedIds)->get();
 
         foreach ($stockIns as $stockIn) {
-            $item = Items::find($stockIn->id_item);
-            if ($item) {
-                // Calculate remaining value after removing this stock-in
-                $currentItemValue = $item->quantity * $item->capital_price;
-                $removedValue = $stockIn->quantity * $stockIn->capital_price;
-                $remainingValue = $currentItemValue - $removedValue;
-
-                // Reduce item quantity
-                $item->quantity -= $stockIn->quantity;
-                if ($item->quantity < 0) {
-                    $item->quantity = 0;
-                }
-
-                // Recalculate average price based on remaining stock
-                if ($item->quantity > 0) {
-                    $item->capital_price = (int) round($remainingValue / $item->quantity);
-                }
-
-                $item->save();
-            }
+            (new StockService())->processStockInDeletion($stockIn);
         }
-
-        // Delete all selected stock-in records
-        ItemStockIn::whereIn('id_stock_in', $selectedIds)->delete();
 
         return redirect()->back()->with('success', 'Data terpilih berhasil dihapus.');
     }
@@ -372,4 +334,6 @@ class ItemStockInController extends Controller
             'barang-masuk-' . date('Y-m-d-His') . '.xlsx'
         );
     }
+
+
 }

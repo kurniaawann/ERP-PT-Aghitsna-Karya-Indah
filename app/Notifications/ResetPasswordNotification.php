@@ -41,14 +41,18 @@ class ResetPasswordNotification extends Notification
             'email' => $notifiable->getEmailForPasswordReset(),
         ], false));
 
+        // Gunakan email view custom agar bisa styling lebih menarik
         return (new MailMessage)
-            ->subject('Notifikasi Reset Password')
-            ->greeting('Halo ' . $notifiable->name . ',')
-            ->line('Anda menerima email ini karena kami menerima permintaan reset password untuk akun Anda.')
-            ->action('Reset Password', $resetUrl)
-            ->line('Link ini akan kadaluarsa dalam 60 menit.')
-            ->line('Jika Anda tidak meminta reset password, abaikan email ini.')
-            ->salutation('Salam, tim kami');
+            ->subject('Reset Password')
+            ->greeting('')
+            ->line('')
+            ->view('emails.password-reset', [
+                'name' => $notifiable->name,
+                'resetUrl' => $resetUrl,
+            ]);
+
+
+
     }
 
     /**

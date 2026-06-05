@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Traits\HasBulkActions;
 
 class UserController extends Controller
 {
+    use HasBulkActions;
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -18,7 +20,7 @@ class UserController extends Controller
                 ->orWhere('email', 'like', "%{$search}%");
         })
             ->latest()
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.user-management.index', compact('users', 'search'));
     }
@@ -63,15 +65,7 @@ class UserController extends Controller
 
     public function destroy(Request $request)
     {
-        $ids = $request->input('ids', []);
-
-        if (empty($ids)) {
-            return redirect()->route('user-management.index')->with('error', 'Tidak ada user yang dipilih!');
-        }
-
-        User::whereIn('id', $ids)->delete();
-
-        return redirect()->route('user-management.index')->with('success', 'User berhasil dihapus!');
+        return $this->destroySelectedBy($request, User::class, 'ids', 'id', 'user-management.index');
     }
 
 }

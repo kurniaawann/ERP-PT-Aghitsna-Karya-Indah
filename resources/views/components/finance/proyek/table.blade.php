@@ -14,6 +14,8 @@
                             <th class="p-2 text-left">Kepada</th>
                             <th class="p-2 text-left">Proyek</th>
                             <th class="p-2 text-center">Total</th>
+                            <th class="p-2 text-center">Terbayar</th>
+                            <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -35,6 +37,17 @@
 
                                 <td class="p-2 text-right font-medium">
                                     {{ 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') }}
+                                </td>
+
+                                <td class="p-2 text-right font-medium whitespace-nowrap">
+                                    Rp {{ number_format($invoice->getTotalPaidAmount(), 0, ',', '.') }}
+                                </td>
+
+                                <td class="p-2 text-center">
+                                    <span
+                                        class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $invoice->payment_status_badge_class }}">
+                                        {{ $invoice->payment_status_label }}
+                                    </span>
                                 </td>
 
                                 <td class="p-2 text-center">
@@ -73,7 +86,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center p-4 text-text-secondary">
+                                <td colspan="9" class="text-center p-4 text-text-secondary">
                                     Data invoice tidak ditemukan.
                                 </td>
                             </tr>

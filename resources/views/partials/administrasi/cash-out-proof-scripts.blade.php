@@ -3,21 +3,18 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
+    @include('partials.shared.currency-utils-script')
+    @include('partials.shared.delete-form-script')
+    @include('partials.shared.print-selected-script')
 
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
+    function formatCurrencyInput(input) {
+        if (!input) return;
 
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
     }
+
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // SELECT ALL CHECKBOX
@@ -81,56 +78,25 @@
     }
 
     // Submit Delete Form
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-        document.getElementById('deleteForm').submit();
-    }
-
     // Initialize button states on page load
     updateButtonStates();
+
+    document.querySelectorAll('.cash-out-amount-input').forEach(input => {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+
+        input.addEventListener('input', function() {
+            formatCurrencyInput(this);
+        });
+    });
 
     // ==========================================
     // PRINT SELECTED HANDLER
     // ==========================================
 
     function printSelected() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-        const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
-
-        if (selectedIds.length === 0) {
-            alert('Silakan pilih data terlebih dahulu!');
-            return;
-        }
-
-        // Create a form and submit
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('cash-out-proof.export.pdf.selected') }}';
-
-        // Add CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        form.appendChild(csrfInput);
-
-        // Add selected IDs
-        selectedIds.forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'ids[]';
-            input.value = id;
-            form.appendChild(input);
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
+        return sharedPrintSelected('{{ route('cash-out-proof.export.pdf.selected') }}');
     }
 
     // ==========================================

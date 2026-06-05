@@ -4,8 +4,8 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">ID Barang</label>
-        <input type="text" value="{{ $item->id_item }}" class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed"
-            readonly>
+        <input type="text" value="{{ $item->id_item }}"
+            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" readonly>
         <p class="text-xs text-text-secondary mt-1">ID Barang tidak dapat diubah</p>
     </div>
 
@@ -25,17 +25,17 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Harga Modal <span class="text-error">*</span></label>
-        <input type="number" name="capital_price" value="{{ $item->capital_price ?? 0 }}"
-            class="w-full border rounded p-2" required min="0" step="0.01"
-            id="edit-capital-price-{{ $item->id_item }}"
+        <input type="text" name="capital_price"
+            value="Rp {{ number_format($item->capital_price ?? 0, 0, ',', '.') }}" class="w-full border rounded p-2"
+            required inputmode="numeric" id="edit-capital-price-{{ $item->id_item }}"
             oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Harga Jual <span class="text-error">*</span></label>
-        <input type="number" name="selling_price" value="{{ $item->selling_price ?? 0 }}"
-            class="w-full border rounded p-2" required min="0" step="0.01"
-            id="edit-selling-price-{{ $item->id_item }}"
+        <input type="text" name="selling_price"
+            value="Rp {{ number_format($item->selling_price ?? 0, 0, ',', '.') }}" class="w-full border rounded p-2"
+            required inputmode="numeric" id="edit-selling-price-{{ $item->id_item }}"
             oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
         <p id="edit-price-warning-{{ $item->id_item }}" class="text-error text-sm mt-1 hidden">
             <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama dengan harga

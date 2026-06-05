@@ -5,8 +5,8 @@
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                             <th class="p-2 text-left">No. Nota</th>
@@ -32,7 +32,7 @@
                                 <td class="p-2">{{ $nota->sj_no }}</td>
 
                                 {{-- Jumlah Total --}}
-                                <td class="p-2 text-right font-semibold text-green-600">
+                                <td class="p-2 text-right font-semibold text-success">
                                     Rp {{ number_format($nota->jumlah_total, 0, ',', '.') }}
                                 </td>
 

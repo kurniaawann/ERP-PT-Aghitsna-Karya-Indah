@@ -8,7 +8,11 @@ use App\Http\Controllers\Inventory\ItemReturnController;
 use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
+use App\Http\Controllers\Finance\ItemInvoiceController;
+use App\Http\Controllers\Finance\RecapAlumuniumController;
+use App\Http\Controllers\Finance\RecapProyekController;
 use App\Http\Controllers\Finance\ProyekInvoiceController;
+use App\Http\Controllers\Finance\PaymentProofController;
 use App\Http\Controllers\Finance\PurchaseInvoiceController;
 use App\Http\Controllers\Finance\PaymentAccountController;
 use App\Http\Controllers\Finance\RecapSalesController;
@@ -104,6 +108,21 @@ Route::middleware('auth')->group(function () {
 
     // Route Stock Report (Laporan Stok)
     Route::get('/stock-report', [StockReportController::class, 'index'])->name('stock-report.index');
+    Route::get('/stock-report/items-dropdown', [StockReportController::class, 'itemsDropdown'])->name('stock-report.items-dropdown');
+
+    // Route Item Invoice
+    Route::get('/item-invoice', [ItemInvoiceController::class, 'index'])->name('item-invoice.index');
+    Route::get('/item-invoice/next-number', [ItemInvoiceController::class, 'getNextInvoiceNumber'])->name('item-invoice.getNextNumber');
+    Route::post('/item-invoice', [ItemInvoiceController::class, 'store'])->name('item-invoice.store');
+    Route::get('/item-invoice/{item_invoice}/edit', [ItemInvoiceController::class, 'edit'])->name('item-invoice.edit')->where('item_invoice', '.*');
+    Route::put('/item-invoice/{item_invoice}', [ItemInvoiceController::class, 'update'])->name('item-invoice.update')->where('item_invoice', '.*');
+    Route::delete('/item-invoice/destroy-selected', [ItemInvoiceController::class, 'destroySelected'])->name('item-invoice.destroySelected');
+    Route::get('/item-invoice/export/excel', [ItemInvoiceController::class, 'exportExcel'])->name('item-invoice.export.excel');
+    Route::get('/item-invoice/export/pdf', [ItemInvoiceController::class, 'exportPdf'])->name('item-invoice.export.pdf');
+
+    // Item Invoice Print Routes
+    Route::get('/item-invoice/{invoice_number}/print/pdf', [ItemInvoiceController::class, 'printPdf'])->name('item-invoice.print.pdf')->where('invoice_number', '.*');
+    Route::get('/item-invoice/{invoice_number}/print/excel', [ItemInvoiceController::class, 'printExcel'])->name('item-invoice.print.excel')->where('invoice_number', '.*');
 
     // Route Alumunium Invoice
     Route::get('/alumunium-invoice', [AlumuniumInvoiceController::class, 'index'])->name('alumunium-invoice.index');
@@ -128,6 +147,12 @@ Route::middleware('auth')->group(function () {
     // Proyek Invoice Print Routes
     Route::get('/proyek-invoice/{invoice_number}/print/pdf', [ProyekInvoiceController::class, 'printPdf'])->name('proyek-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/proyek-invoice/{invoice_number}/print/excel', [ProyekInvoiceController::class, 'printExcel'])->name('proyek-invoice.print.excel')->where('invoice_number', '.*');
+
+    // Route Bukti Pembayaran Invoice
+    Route::get('/payment-proofs', [PaymentProofController::class, 'index'])->name('payment-proofs.index');
+    Route::post('/payment-proofs', [PaymentProofController::class, 'store'])->name('payment-proofs.store');
+    Route::put('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'update'])->name('payment-proofs.update');
+    Route::delete('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'destroy'])->name('payment-proofs.destroy');
 
     // Route Purchase Invoice
     Route::get('/purchase-invoice', [PurchaseInvoiceController::class, 'index'])->name('purchase-invoice.index');
@@ -157,6 +182,16 @@ Route::middleware('auth')->group(function () {
     // Export routes
     Route::get('/recap-sales/export/excel', [RecapSalesController::class, 'exportExcel'])->name('recap-sales.export.excel');
     Route::get('/recap-sales/export/pdf', [RecapSalesController::class, 'exportPdf'])->name('recap-sales.export.pdf');
+
+    // Route Recap Alumunium
+    Route::get('/recap-alumunium', [RecapAlumuniumController::class, 'index'])->name('recap-alumunium.index');
+    Route::get('/recap-alumunium/export/excel', [RecapAlumuniumController::class, 'exportExcel'])->name('recap-alumunium.export.excel');
+    Route::get('/recap-alumunium/export/pdf', [RecapAlumuniumController::class, 'exportPdf'])->name('recap-alumunium.export.pdf');
+
+    // Route Recap Proyek
+    Route::get('/recap-proyek', [RecapProyekController::class, 'index'])->name('recap-proyek.index');
+    Route::get('/recap-proyek/export/excel', [RecapProyekController::class, 'exportExcel'])->name('recap-proyek.export.excel');
+    Route::get('/recap-proyek/export/pdf', [RecapProyekController::class, 'exportPdf'])->name('recap-proyek.export.pdf');
 
     // Route Recap Expense
     Route::get('/recap-expense', [RecapExpenseController::class, 'index'])->name('recap-expense.index');
@@ -224,6 +259,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/payroll/export/excel', [PayrollController::class, 'exportExcel'])->name('payroll.export.excel');
     Route::get('/payroll/export/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export.pdf');
     Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+    Route::put('/payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
     Route::post('/payroll/check-attendance', [PayrollController::class, 'checkAttendanceCompleteness'])->name('payroll.check-attendance');
     Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
     Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
@@ -360,6 +396,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/rab/next-number', [RABController::class, 'getNextRABNumber'])->name('rab.getNextNumber');
     Route::post('/rab', [RABController::class, 'store'])->name('rab.store');
     Route::delete('/rab/destroy', [RABController::class, 'destroy'])->name('rab.destroy');
+    Route::get('/rab/{rab_number}/export-excel', [RABController::class, 'exportExcel'])->name('rab.export-excel')->where('rab_number', '.*');
     Route::get('/rab/{rab_number}/export-pdf', [RABController::class, 'exportPDF'])->name('rab.export-pdf')->where('rab_number', '.*');
     Route::get('/rab/{rab_number}', [RABController::class, 'show'])->name('rab.show')->where('rab_number', '.*');
     Route::get('/rab/{rab_number}/edit', [RABController::class, 'edit'])->name('rab.edit')->where('rab_number', '.*');

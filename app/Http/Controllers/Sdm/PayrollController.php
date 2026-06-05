@@ -53,7 +53,7 @@ class PayrollController extends Controller
             ->latest('period_month')
             ->latest('week_number')
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber'));
     }
@@ -69,6 +69,56 @@ class PayrollController extends Controller
         // Ambil semua data karyawan
         $employees = Employee::all();
         return view('pages.sdm.payroll', compact('employees'));
+    }
+
+    /**
+     * Update data payroll draft.
+     *
+     * Hanya payroll berstatus draft yang boleh diubah.
+     * Validasi dibuat mirip form input lain: wajib, numerik, dan pesan error yang jelas.
+     */
+    public function update(Request $request, Payroll $payroll)
+    {
+        if ($payroll->status !== 'draft') {
+            return redirect()->route('payroll.index')
+                ->with('error', 'Payroll yang sudah dibayar tidak dapat diubah.');
+        }
+
+        $validated = $request->validate([
+            'project_name' => 'required|string|max:255',
+            'additional_expenses' => 'required|integer|min:0',
+            'additional_expenses_notes' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:1000',
+        ], [
+            'project_name.required' => 'Nama proyek tidak boleh kosong.',
+            'project_name.string' => 'Nama proyek harus berupa teks.',
+            'project_name.max' => 'Nama proyek maksimal 255 karakter.',
+            'additional_expenses.required' => 'Pengeluaran tambahan tidak boleh kosong.',
+            'additional_expenses.integer' => 'Pengeluaran tambahan harus berupa angka.',
+            'additional_expenses.min' => 'Pengeluaran tambahan tidak boleh negatif.',
+            'additional_expenses_notes.string' => 'Keterangan pengeluaran tambahan harus berupa teks.',
+            'additional_expenses_notes.max' => 'Keterangan pengeluaran tambahan maksimal 1000 karakter.',
+            'notes.string' => 'Catatan harus berupa teks.',
+            'notes.max' => 'Catatan maksimal 1000 karakter.',
+        ]);
+
+        if ((int) $validated['additional_expenses'] > 0 && empty(trim((string) ($validated['additional_expenses_notes'] ?? '')))) {
+            return redirect()->back()
+                ->withErrors([
+                    'additional_expenses_notes' => 'Keterangan pengeluaran tambahan wajib diisi jika nominal lebih dari 0.',
+                ])
+                ->withInput();
+        }
+
+        $payroll->update([
+            'project_name' => $validated['project_name'],
+            'additional_expenses' => (int) $validated['additional_expenses'],
+            'additional_expenses_notes' => $validated['additional_expenses_notes'] ?: null,
+            'notes' => $validated['notes'] ?: null,
+        ]);
+
+        return redirect()->route('payroll.index')
+            ->with('success', 'Payroll draft berhasil diperbarui!');
     }
 
     /**
@@ -639,6 +689,20 @@ class PayrollController extends Controller
                 'net_salary' => $netWage,
                 'status' => 'draft',
             ]);
+
+            // Ensure a SalaryReminder exists for this payroll
+            SalaryReminder::updateOrCreate(
+                ['payroll_id' => $payroll->id],
+                [
+                    'employee_id' => $employee->employee_code,
+                    'period_month' => $month,
+                    'period_year' => $year,
+                    'reminder_date' => Carbon::now(),
+                    'status' => $payroll->status ?? 'draft',
+                    'notification_sent_at' => null,
+                    'notes' => 'Reminder gaji untuk periode ' . $month . '/' . $year,
+                ]
+            );
 
             // Update status kasbon menjadi 'deducted'
             $kasbons = Kasbon::where('employee_id', $employee->employee_code)

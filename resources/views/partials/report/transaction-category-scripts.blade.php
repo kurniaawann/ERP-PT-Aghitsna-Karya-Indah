@@ -3,21 +3,7 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
-
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // BULK DELETE - CHECK USED CATEGORIES
@@ -46,7 +32,7 @@
     function showWarningModal(usedCategories) {
         const modal = document.getElementById('warningUsedModal');
         const list = document.getElementById('usedCategoriesList');
-        const modalContent = modal.querySelector('.bg-white');
+        const modalContent = modal.querySelector('.bg-surface-base');
 
         // Clear previous list
         list.innerHTML = '';
@@ -71,7 +57,7 @@
 
     function closeWarningModal() {
         const modal = document.getElementById('warningUsedModal');
-        const modalContent = modal.querySelector('.bg-white');
+        const modalContent = modal.querySelector('.bg-surface-base');
 
         modalContent.classList.remove('scale-100', 'opacity-100');
         modalContent.classList.add('scale-95', 'opacity-0');

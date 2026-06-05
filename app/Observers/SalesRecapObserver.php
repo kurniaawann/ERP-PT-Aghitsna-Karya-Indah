@@ -21,14 +21,13 @@ class SalesRecapObserver
     /**
      * Handle the SalesRecap "updated" event.
      * Update stock out records and auto-create expense recap when status becomes LUNAS.
-     * Only create stock out records if checkbox is checked.
+     * Always recreate stock outs to ensure consistency.
      */
     public function updated(SalesRecap $salesRecap): void
     {
-        // Check if checkbox is checked before creating stock outs
-        if ($salesRecap->wasChanged('items')) {
-            $this->createStockOuts($salesRecap);
-        }
+        // Always recreate stock outs whenever SalesRecap is updated
+        // This ensures that even if only date/name_proyek changed, stock outs are synced
+        $this->createStockOuts($salesRecap);
 
         if ($salesRecap->wasChanged('status') && $salesRecap->status === 'Lunas') {
             $salesRecapId = $salesRecap->getKey();

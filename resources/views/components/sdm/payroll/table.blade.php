@@ -2,8 +2,8 @@
 <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
     <div class="inline-block min-w-full align-middle">
         <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+            <table class="min-w-full divide-y divide-border-light">
+                <thead class="bg-surface-secondary">
                     <tr>
                         <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                         <th class="p-2 text-left">Nama Karyawan</th>
@@ -50,7 +50,7 @@
                             </td>
 
                             {{-- Kasbon --}}
-                            <td class="p-2 text-right text-red-600 text-sm">
+                            <td class="p-2 text-right text-error text-sm">
                                 @if ($payroll->kasbon_deduction)
                                     {{ 'Rp ' . number_format($payroll->kasbon_deduction, 0, ',', '.') }}
                                 @else
@@ -59,7 +59,7 @@
                             </td>
 
                             {{-- Lembur --}}
-                            <td class="p-2 text-right text-green-600 text-sm">
+                            <td class="p-2 text-right text-success text-sm">
                                 {{ 'Rp ' . number_format($payroll->overtime_total, 0, ',', '.') }}
                             </td>
 
@@ -72,12 +72,12 @@
                             <td class="p-2 text-center">
                                 @if ($payroll->status === 'draft')
                                     <span
-                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
                                         Draft
                                     </span>
                                 @else
                                     <span
-                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
                                         Paid
                                     </span>
                                 @endif
@@ -86,8 +86,17 @@
                             {{-- Aksi --}}
                             <td class="p-2 text-center">
                                 <div class="flex justify-center gap-2">
+                                    @if ($payroll->status === 'draft')
+                                        <button type="button" onclick="openModal('editModal-{{ $payroll->id }}')"
+                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Edit Payroll Draft">
+                                            <i class="fa-solid fa-pen w-3 h-3"></i>
+                                            Edit
+                                        </button>
+                                    @endif
+
                                     <button type="button" onclick="openModal('detailModal-{{ $payroll->id }}')"
-                                        class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                        class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                         title="Detail Payroll">
                                         <i class="fa-solid fa-eye w-3 h-3"></i>
                                         Detail

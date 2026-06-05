@@ -9,11 +9,13 @@ use App\Exports\Finance\ProyekInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 
 class ProyekInvoiceController extends Controller
 {
-
+    use HasBulkActions;
     public function getNextInvoiceNumber()
     {
         // Ambil tahun 2 digit (contoh: 25 untuk tahun 2025)
@@ -44,18 +46,28 @@ class ProyekInvoiceController extends Controller
     public function index(Request $request)
     {
         // Query builder untuk InvoiceProyek
-        $query = InvoiceProyek::query();
+        $query = InvoiceProyek::with('paymentProofs');
 
         // Fitur pencarian: cari di nomor invoice, penerima, atau deskripsi proyek
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('invoice_number', 'like', "%{$search}%")
-                ->orWhere('recipient', 'like', "%{$search}%")
-                ->orWhere('project_description', 'like', "%{$search}%");
+            $query->where(function ($searchQuery) use ($search) {
+                $searchQuery->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('recipient', 'like', "%{$search}%")
+                    ->orWhere('project_description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('invoice_date', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('invoice_date', $request->year);
         }
 
         // Urutkan berdasarkan tanggal invoice terbaru, lalu pagination
-        $invoices = $query->orderBy('invoice_date', 'desc')->paginate(10);
+        $invoices = $query->orderBy('invoice_date', 'desc')->paginate(15);
 
         // Get active payment accounts
         $paymentAccounts = PaymentAccount::active()->get();
@@ -66,6 +78,11 @@ class ProyekInvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'discount_value' => InputNormalizer::normalizeDecimal($request->discount_value),
+            'dp_value' => InputNormalizer::normalizeDecimal($request->dp_value),
+        ]);
+
         // Validasi awal: pastikan items ada dan tidak kosong
         if (!$request->has('items') || empty($request->items)) {
             return back()->with('error', 'Data items tidak ditemukan atau kosong')->withInput();
@@ -111,9 +128,13 @@ class ProyekInvoiceController extends Controller
             $request->merge(['invoice_number' => "{$nextNumber}/{$nextNumber}/PT.AKI/{$year}"]);
         }
 
-        // Parse items JSON dari request dan hitung total amount
-        $items = json_decode($request->items, true);
+        // Parse items JSON dari request dan normalisasi harga sebelum dihitung/simpan
+        $items = $this->normalizeInvoiceItems(json_decode($request->items, true));
         $totalAmount = 0;
+
+        if (!is_array($items)) {
+            return back()->with('error', 'Data items tidak valid')->withInput();
+        }
 
         // Loop setiap item untuk hitung total: volume × harga
         foreach ($items as $item) {
@@ -151,6 +172,11 @@ class ProyekInvoiceController extends Controller
     public function update(Request $request, InvoiceProyek $proyek_invoice)
     {
         try {
+            $request->merge([
+                'discount_value' => InputNormalizer::normalizeDecimal($request->discount_value),
+                'dp_value' => InputNormalizer::normalizeDecimal($request->dp_value),
+            ]);
+
             // Validasi discount percentage
             if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
                 return back()->with('error', 'Persentase diskon tidak boleh lebih dari 100%')->withInput();
@@ -161,13 +187,13 @@ class ProyekInvoiceController extends Controller
                 return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
             }
 
-            // Ambil items dari request (validasi sudah dilakukan di HTML)
-            $items = $request->items;
+            // Ambil items dari request dan normalisasi harga sebelum dihitung/simpan
+            $items = $this->normalizeInvoiceItems($request->items);
             $totalAmount = 0;
 
             // Hitung ulang total_amount dari items baru: volume × harga
             foreach ($items as $item) {
-                $jumlah = $item['volume'] * $item['harga'];
+                $jumlah = ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
                 $totalAmount += $jumlah;
             }
 
@@ -182,13 +208,13 @@ class ProyekInvoiceController extends Controller
                     : json_decode($request->payment_installments, true);
             }
 
-            // Update data invoice (invoice_number tidak diupdate karena sebagai primary key)
-            $proyek_invoice->update([
+            // Update data invoice secara eksplisit berdasarkan primary key string.
+            InvoiceProyek::where('invoice_number', $proyek_invoice->invoice_number)->update([
                 'invoice_date' => $request->invoice_date,
                 'recipient' => $request->recipient,
                 'regarding' => $request->regarding ?? null,
                 'project_description' => $request->project_description,
-                'items' => $items, // Laravel akan auto-encode ke JSON karena cast di Model
+                'items' => json_encode($items),
                 'total_amount' => $totalAmount,
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
@@ -196,8 +222,8 @@ class ProyekInvoiceController extends Controller
                 'dp_type' => $request->dp_type,
                 'dp_value' => $request->dp_value,
                 'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
-                'payment_installments' => $paymentInstallments,
-                'selected_payment_accounts' => $request->selected_payment_accounts,
+                'payment_installments' => json_encode($paymentInstallments ?? []),
+                'selected_payment_accounts' => json_encode($request->selected_payment_accounts ?? []),
             ]);
 
             return redirect()->route('proyek-invoice.index')
@@ -223,20 +249,7 @@ class ProyekInvoiceController extends Controller
 
     public function destroySelected(Request $request)
     {
-        // Ambil array invoice_number dari checkbox
-        $selectedInvoiceNumbers = $request->input('selected_invoices', []);
-
-        // Validasi: pastikan ada data yang dipilih
-        if (empty($selectedInvoiceNumbers)) {
-            return redirect()->back()->with('error', 'Tidak ada invoice yang dipilih untuk dihapus.');
-        }
-
-        // Hapus invoice berdasarkan invoice_number
-        InvoiceProyek::whereIn('invoice_number', $selectedInvoiceNumbers)->delete();
-
-        // Redirect dengan info jumlah yang dihapus
-        return redirect()->route('proyek-invoice.index')
-            ->with('success', count($selectedInvoiceNumbers) . ' invoice proyek berhasil dihapus!');
+        return $this->destroySelectedBy($request, InvoiceProyek::class, 'selected_invoices', 'invoice_number', 'proyek-invoice.index');
     }
 
 
@@ -301,4 +314,32 @@ class ProyekInvoiceController extends Controller
             'dpAmount' => $dpAmount,
         ];
     }
+
+
+
+    /**
+     * Normalisasi data items invoice agar harga format ribuan tetap tersimpan sebagai angka utuh.
+     */
+    private function normalizeInvoiceItems($items): array
+    {
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return array_map(function ($item) {
+            $item['volume'] = InputNormalizer::normalizeDecimal($item['volume'] ?? 0);
+            $item['harga'] = InputNormalizer::normalizeCurrency($item['harga'] ?? 0);
+
+            return $item;
+        }, $items);
+    }
+
+    /**
+     * Ubah input harga berformat lokal seperti 1.000 atau Rp 1.000 menjadi angka.
+     */
+
 }

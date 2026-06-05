@@ -39,8 +39,8 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
-        <input type="number" name="amount" class="w-full border rounded p-2" value="{{ $kasbon->amount }}" required
-            min="1000" step="1000">
+        <input type="text" inputmode="numeric" name="amount" class="w-full border rounded p-2 kasbon-amount-input"
+            value="{{ $kasbon->amount }}" required min="1000" step="1000">
     </div>
 
     <div class="mb-3">

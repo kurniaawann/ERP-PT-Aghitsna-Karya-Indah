@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Administrasi\DeliveryNote;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HasBulkActions;
 
 class DeliveryNoteController extends Controller
 {
+    use HasBulkActions;
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -22,7 +24,7 @@ class DeliveryNoteController extends Controller
                 ->orWhere('shipper_name', 'like', "%{$search}%");
         })
             ->latest('created_at')
-            ->paginate(10);
+            ->paginate(15);
 
         return view('pages.administrasi.delivery-note', compact('deliveryNotes', 'search'));
     }
@@ -87,7 +89,7 @@ class DeliveryNoteController extends Controller
             'status' => $request->input('status', 'draft'),
         ]);
 
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Delivery Note berhasil ditambahkan!');
+        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil ditambahkan!');
     }
 
     public function update(Request $request, $id)
@@ -148,7 +150,7 @@ class DeliveryNoteController extends Controller
             'status' => $request->input('status', 'draft'),
         ]);
 
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Delivery Note berhasil diperbarui!');
+        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil diperbarui!');
     }
 
     public function destroySelected(Request $request)
@@ -161,10 +163,7 @@ class DeliveryNoteController extends Controller
             return redirect()->route('delivery-note.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Hapus delivery notes berdasarkan id
-        DeliveryNote::whereIn('id_delivery_note', $ids)->delete();
-
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Delivery Note berhasil dihapus!');
+        return $this->destroySelectedBy($request, DeliveryNote::class, 'ids', 'id_delivery_note', 'delivery-note.administrasi.index');
     }
 
     /**
@@ -182,7 +181,7 @@ class DeliveryNoteController extends Controller
             'status' => $request->input('status'),
         ]);
 
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Status Delivery Note berhasil diperbarui!');
+        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Status Surat Jalan berhasil diperbarui!');
     }
 
     /**
@@ -202,7 +201,7 @@ class DeliveryNoteController extends Controller
 
         $pdf = Pdf::loadView('exports.administrasi.delivery-note-pdf', compact('deliveryNotes'));
 
-        $filename = 'delivery-note-' . date('Y-m-d') . '.pdf';
+        $filename = 'surat-jalan-' . date('Y-m-d') . '.pdf';
         return $pdf->download($filename);
     }
 
@@ -225,9 +224,9 @@ class DeliveryNoteController extends Controller
 
         if (count($ids) == 1) {
             $safeId = str_replace(['/', '\\'], '-', $ids[0]);
-            $filename = 'delivery-note-' . $safeId . '.pdf';
+            $filename = 'surat-jalan-' . $safeId . '.pdf';
         } else {
-            $filename = 'delivery-note-selected-' . date('Y-m-d') . '.pdf';
+            $filename = 'surat-jalan-selected-' . date('Y-m-d') . '.pdf';
         }
 
         return $pdf->download($filename);

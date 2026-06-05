@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delivery Note - PT. Aghitsna Karya Indah</title>
+    <title>Surat Jalan - PT. Aghitsna Karya Indah</title>
     <style>
         /* @page {
             size: A4;
@@ -232,7 +232,6 @@
             {{-- Header --}}
             <div class="header">
                 <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
-                <div style="font-size: 10px;">Jalan Andalas Kabupaten Lubuk Linggau Sumatera Barat, Indonesia</div>
             </div>
 
             {{-- Document Title --}}
@@ -308,7 +307,7 @@
                     @forelse ($deliveryNote->items as $item)
                         <tr>
                             <td>{{ $item['no'] }}</td>
-                            <td>{{ $item['item_name'] }}</td>
+                            <td>{{ data_get($item, 'item_name', data_get($item, 'name', '-')) }}</td>
                             <td>{{ $item['quantity'] }}</td>
                             <td>{{ $item['unit'] ?? 'pcs' }}</td>
                             <td>{{ $item['notes'] ?? '-' }}</td>

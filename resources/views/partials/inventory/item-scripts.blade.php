@@ -3,20 +3,20 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
+    function parseCurrencyInput(value) {
+        const rawValue = String(value ?? '').trim();
 
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        if (!rawValue) {
+            return 0;
         }
 
-        return true;
+        return parseInt(rawValue.replace(/[^0-9-]/g, ''), 10) || 0;
+    }
+
+    function formatRupiah(value) {
+        return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
     }
 
     // ==========================================
@@ -52,8 +52,8 @@
         const addSubmitBtn = document.getElementById('submit-btn-addModal');
 
         function validateAddModalPrices() {
-            const capitalPrice = parseFloat(addCapitalPrice.value) || 0;
-            const sellingPrice = parseFloat(addSellingPrice.value) || 0;
+            const capitalPrice = parseCurrencyInput(addCapitalPrice.value);
+            const sellingPrice = parseCurrencyInput(addSellingPrice.value);
 
             if (capitalPrice >= sellingPrice && sellingPrice > 0) {
                 addPriceWarning.classList.remove('hidden');
@@ -75,8 +75,14 @@
         }
 
         if (addCapitalPrice && addSellingPrice) {
-            addCapitalPrice.addEventListener('input', validateAddModalPrices);
-            addSellingPrice.addEventListener('input', validateAddModalPrices);
+            addCapitalPrice.addEventListener('input', function() {
+                this.value = formatRupiah(parseCurrencyInput(this.value));
+                validateAddModalPrices();
+            });
+            addSellingPrice.addEventListener('input', function() {
+                this.value = formatRupiah(parseCurrencyInput(this.value));
+                validateAddModalPrices();
+            });
 
             // Prevent form submission if validation fails
             const addForm = document.querySelector('#addModal form');
@@ -119,8 +125,8 @@
             const editSubmitBtn = document.getElementById('submit-btn-editModal-' + itemId);
 
             function validateEditModalPrices() {
-                const capitalPrice = parseFloat(capitalPriceInput.value) || 0;
-                const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
+                const capitalPrice = parseCurrencyInput(capitalPriceInput.value);
+                const sellingPrice = parseCurrencyInput(sellingPriceInput.value);
 
                 if (capitalPrice >= sellingPrice && sellingPrice > 0) {
                     priceWarning.classList.remove('hidden');
@@ -141,8 +147,14 @@
                 }
             }
 
-            capitalPriceInput.addEventListener('input', validateEditModalPrices);
-            sellingPriceInput.addEventListener('input', validateEditModalPrices);
+            capitalPriceInput.addEventListener('input', function() {
+                this.value = formatRupiah(parseCurrencyInput(this.value));
+                validateEditModalPrices();
+            });
+            sellingPriceInput.addEventListener('input', function() {
+                this.value = formatRupiah(parseCurrencyInput(this.value));
+                validateEditModalPrices();
+            });
 
             // Prevent form submission if validation fails
             const editForm = document.querySelector('#editModal-' + itemId + ' form');

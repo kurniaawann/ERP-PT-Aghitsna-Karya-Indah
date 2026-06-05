@@ -3,7 +3,7 @@
 @section('title', 'PT Aghitsna Karya Indah - Invoice Proyek')
 
 @section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Proyek</h1>
 
         {{-- Search & Action Buttons --}}
@@ -11,6 +11,8 @@
             {{-- Form Pencarian --}}
             <form method="GET" action="{{ route('proyek-invoice.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" />
+                <x-filters.year-filter :value="request('year')" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari no invoice atau kepada..." />
             </form>
 

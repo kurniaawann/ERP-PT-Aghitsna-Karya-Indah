@@ -1,18 +1,6 @@
 {{-- Sales Report Scripts --}}
 <script>
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
-        }
-    }
+    @include('partials.shared.currency-utils-script')
 
     document.addEventListener('DOMContentLoaded', function() {
         // Toggle Print Dropdown
@@ -110,6 +98,8 @@
                     nameInput.value = selectedOption.dataset.name;
                     capitalInput.value = selectedOption.dataset.capital;
                     sellingInput.value = selectedOption.dataset.selling;
+                    formatCurrencyInput(capitalInput);
+                    formatCurrencyInput(sellingInput);
                 }
             });
         });
@@ -136,7 +126,7 @@
                             autocomplete="off">
                         <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options">
                                 <div class="p-2 text-sm text-text-secondary hover:bg-gray-50 cursor-pointer border-b" data-value="">
                                     -- Pilih Barang --
@@ -173,12 +163,12 @@
                         <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required min="1" value="1"
                             oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *" required min="0"
+                        <input type="text" inputmode="numeric" class="item-capital border rounded p-2" placeholder="Rp 0" required
                             oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
-                        <input type="number" class="item-selling border rounded p-2" placeholder="Harga Jual *" required min="0"
+                            oninput="formatCurrencyInput(this); this.setCustomValidity('')">
+                        <input type="text" inputmode="numeric" class="item-selling border rounded p-2" placeholder="Rp 0" required
                             oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
+                            oninput="formatCurrencyInput(this); this.setCustomValidity('')">
                     </div>
                     
                     <p class="stock-warning text-error text-sm mt-2 hidden">
@@ -341,6 +331,8 @@
                 nameInput.value = selectedOption.dataset.name;
                 capitalInput.value = selectedOption.dataset.capital;
                 sellingInput.value = selectedOption.dataset.selling;
+                formatCurrencyInput(capitalInput);
+                formatCurrencyInput(sellingInput);
             }
         }
 
@@ -379,8 +371,8 @@
                     priceWarning.classList.add('hidden');
                     // Check all rows before enabling submit
                     const allValid = Array.from(document.querySelectorAll('.item-row')).every(r => {
-                        const cap = parseFloat(r.querySelector('.item-capital')?.value) || 0;
-                        const sel = parseFloat(r.querySelector('.item-selling')?.value) || 0;
+                        const cap = parseCurrencyInput(r.querySelector('.item-capital')?.value);
+                        const sel = parseCurrencyInput(r.querySelector('.item-selling')?.value);
                         return sel === 0 || cap < sel;
                     });
                     if (submitBtn && allValid) {
@@ -501,8 +493,8 @@
 
                     // Also check prices
                     const allPricesValid = Array.from(document.querySelectorAll('.item-row')).every(r => {
-                        const cap = parseFloat(r.querySelector('.item-capital')?.value) || 0;
-                        const sel = parseFloat(r.querySelector('.item-selling')?.value) || 0;
+                        const cap = parseCurrencyInput(r.querySelector('.item-capital')?.value);
+                        const sel = parseCurrencyInput(r.querySelector('.item-selling')?.value);
                         return sel === 0 || cap < sel;
                     });
 
@@ -585,10 +577,10 @@
                     // Validate all prices before submission
                     let hasInvalidPrice = false;
                     itemRows.forEach(row => {
-                        const capital = parseFloat(row.querySelector('.item-capital')?.value) ||
-                            0;
-                        const selling = parseFloat(row.querySelector('.item-selling')?.value) ||
-                            0;
+                        const capital = parseCurrencyInput(row.querySelector('.item-capital')
+                            ?.value);
+                        const selling = parseCurrencyInput(row.querySelector('.item-selling')
+                            ?.value);
                         if (capital >= selling && selling > 0) {
                             hasInvalidPrice = true;
                         }
@@ -605,8 +597,10 @@
                         const hiddenSelect = row.querySelector('.item-select-hidden');
                         const itemName = row.querySelector('.item-name').value;
                         const qty = parseInt(row.querySelector('.item-qty').value) || 0;
-                        const capital = parseInt(row.querySelector('.item-capital').value) || 0;
-                        const selling = parseInt(row.querySelector('.item-selling').value) || 0;
+                        const capital = parseCurrencyInput(row.querySelector('.item-capital')
+                            .value);
+                        const selling = parseCurrencyInput(row.querySelector('.item-selling')
+                            .value);
 
                         if (itemName && qty > 0) {
                             const item = {
@@ -661,7 +655,7 @@
                             autocomplete="off">
                         <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown-edit absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown-edit absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options-edit">
                                 <div class="p-2 text-sm text-text-secondary hover:bg-gray-50 cursor-pointer border-b" data-value="">
                                     -- Pilih Barang --
@@ -700,14 +694,14 @@
                             class="item-qty-edit border rounded p-2" placeholder="Qty *" required min="1" value="1"
                             oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" name="items[${newIndex}][capital_price]"
-                            class="item-capital-edit border rounded p-2" placeholder="Harga Modal *" required min="0" value="0"
+                        <input type="text" inputmode="numeric" name="items[${newIndex}][capital_price]"
+                            class="item-capital-edit border rounded p-2" placeholder="Rp 0" required value="Rp 0"
                             oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
-                        <input type="number" name="items[${newIndex}][selling_price]"
-                            class="item-selling-edit border rounded p-2" placeholder="Harga Jual *" required min="0" value="0"
+                            oninput="formatCurrencyInput(this); this.setCustomValidity('')">
+                        <input type="text" inputmode="numeric" name="items[${newIndex}][selling_price]"
+                            class="item-selling-edit border rounded p-2" placeholder="Rp 0" required value="Rp 0"
                             oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
+                            oninput="formatCurrencyInput(this); this.setCustomValidity('')">
                     </div>
 
                     <p class="price-warning-edit text-error text-sm mt-2 hidden">
@@ -836,6 +830,9 @@
                         sellingInput.value = selling;
                         idItemHidden.value = value;
                         row.dataset.stock = stock; // Store stock in row for validation
+
+                        formatCurrencyInput(capitalInput);
+                        formatCurrencyInput(sellingInput);
                     }
 
                     dropdown.classList.add('hidden');

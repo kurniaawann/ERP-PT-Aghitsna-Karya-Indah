@@ -47,7 +47,8 @@
                         <tr>
                             <td class="border border-border-strong px-2 py-2 text-sm">{{ $index + 1 }}</td>
                             <td class="border border-border-strong px-2 py-2 text-sm">
-                                {{ $item['keterangan'] ?? '-' }}</td>
+                                {{ $item['keterangan'] ?? '-' }}
+                            </td>
                             <td class="border border-border-strong px-2 py-2 text-right text-sm">
                                 {{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
                             <td class="border border-border-strong px-2 py-2 text-sm">
@@ -72,6 +73,14 @@
                         $totalAfterDiscount = $invoice->total_amount;
                         $discountAmount = 0;
                         $dpAmount = 0;
+                        $discountValueDisplay = rtrim(
+                            rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'),
+                            ',',
+                        );
+                        $dpValueDisplay = rtrim(
+                            rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'),
+                            ',',
+                        );
                     @endphp
 
                     @if ($invoice->discount_value && $invoice->discount_value > 0)
@@ -87,7 +96,7 @@
                             <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
                                 DISCOUNT
                                 @if ($invoice->discount_type === 'percentage')
-                                    ({{ number_format($invoice->discount_value, 0) }}%)
+                                    ({{ $discountValueDisplay }}%)
                                 @else
                                     (Nominal)
                                 @endif
@@ -118,7 +127,7 @@
                             <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
                                 DP
                                 @if ($invoice->dp_type === 'percentage')
-                                    ({{ number_format($invoice->dp_value, 0) }}%)
+                                    ({{ $dpValueDisplay }}%)
                                 @else
                                     (Nominal)
                                 @endif
@@ -159,7 +168,7 @@
                     <label class="block text-xs text-text-label mb-1">Nilai Discount</label>
                     <p class="text-sm font-medium text-gray-900">
                         @if ($invoice->discount_type === 'percentage')
-                            {{ number_format($invoice->discount_value, 0) }}%
+                            {{ $discountValueDisplay }}%
                         @else
                             Rp {{ number_format($invoice->discount_value, 0, ',', '.') }}
                         @endif
@@ -231,7 +240,7 @@
                     <label class="block text-xs text-text-label mb-1">Nilai DP</label>
                     <p class="text-sm font-medium text-gray-900">
                         @if ($invoice->dp_type === 'percentage')
-                            {{ number_format($invoice->dp_value, 0) }}%
+                            {{ $dpValueDisplay }}%
                         @else
                             Rp {{ number_format($invoice->dp_value, 0, ',', '.') }}
                         @endif

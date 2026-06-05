@@ -3,20 +3,16 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
+    function parseCurrencyInput(value) {
+        const rawValue = String(value ?? '').replace(/[^0-9]/g, '');
+        return rawValue ? parseInt(rawValue, 10) || 0 : 0;
+    }
 
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
+    function formatCurrencyInput(input) {
+        const rawValue = String(input.value ?? '').replace(/[^0-9]/g, '');
+        input.value = rawValue ? parseInt(rawValue, 10).toLocaleString('id-ID') : '';
     }
 
     // ==========================================
@@ -57,7 +53,7 @@
                     id_item: hiddenInput ? hiddenInput.value : null,
                     name_item: nameInput.value || '',
                     quantity: parseInt(qtyInput?.value) || 0,
-                    capital_price: parseInt(capitalInput?.value) || 0,
+                    capital_price: parseCurrencyInput(capitalInput?.value),
                     from_stock: fromStock ? fromStock.checked : false
                 });
             }
@@ -72,6 +68,7 @@
         itemRows.forEach(row => {
             const removeBtn = row.querySelector('.remove-item');
             const fromStockCheckbox = row.querySelector('.item-from-stock, .item-from-stock-edit');
+            const capitalInput = row.querySelector('.item-capital, .item-capital-edit');
 
             if (removeBtn) {
                 removeBtn.addEventListener('click', function(e) {
@@ -103,6 +100,15 @@
                         capitalInput.value = '';
                         row.querySelector('.item-select-hidden').value = '';
                     }
+                });
+            }
+
+            if (capitalInput) {
+                if (capitalInput.value) {
+                    formatCurrencyInput(capitalInput);
+                }
+                capitalInput.addEventListener('input', function() {
+                    formatCurrencyInput(this);
                 });
             }
 
@@ -165,6 +171,7 @@
                 if (value) {
                     nameInput.value = name;
                     capitalInput.value = capital;
+                    formatCurrencyInput(capitalInput);
                 }
 
                 dropdown.classList.add('hidden');
@@ -224,14 +231,14 @@
 
                     <div class="relative mb-2 item-select-wrapper" style="display: none;">
                         <input type="text" 
-                            class="item-search-input w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" 
+                            class="item-search-input w-full border border-border-strong rounded-lg p-2 pr-10 bg-surface-base text-text-input focus:border-primary focus:ring-2 focus:ring-primary-light" 
                             placeholder="Cari barang..." 
                             autocomplete="off">
                         <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
                         
-                        <div class="item-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
+                        <div class="item-dropdown absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">
                             <div class="item-options">
-                                <div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b" data-value="">
+                                <div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b border-border-light" data-value="">
                                     -- Pilih Barang --
                                 </div>
                                 @foreach ($items as $item)
@@ -257,15 +264,15 @@
                     
                     <input type="hidden" class="item-select-hidden">
 
-                    <input type="text" class="item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required
+                    <input type="text" class="item-name w-full border border-border-strong rounded p-2 mb-2 bg-surface-base text-text-input" placeholder="Nama Barang *" required
                         oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
                     
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="number" class="item-qty border rounded p-2" placeholder="Qty *" required min="1" value="1"
+                        <input type="number" class="item-qty border border-border-strong rounded p-2 bg-surface-base text-text-input" placeholder="Qty *" required min="1" value="1"
                             oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" class="item-capital border rounded p-2" placeholder="Harga Modal *" required min="0"
+                        <input type="number" class="item-capital border border-border-strong rounded p-2 bg-surface-base text-text-input" placeholder="Harga Modal *" required min="0"
                             oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
                     </div>

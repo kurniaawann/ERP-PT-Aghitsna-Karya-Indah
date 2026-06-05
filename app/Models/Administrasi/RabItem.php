@@ -15,11 +15,18 @@ class RABItem extends Model
         'rab_subcategory_id',
         'letter_order',
         'item_description',
+        'volume',
+        'unit',
+        'unit_price',
+        'sub_harga',
         'order',
     ];
 
     protected $casts = [
         'letter_order' => 'integer',
+        'volume' => 'float',
+        'unit_price' => 'integer',
+        'sub_harga' => 'integer',
         'order' => 'integer',
     ];
 

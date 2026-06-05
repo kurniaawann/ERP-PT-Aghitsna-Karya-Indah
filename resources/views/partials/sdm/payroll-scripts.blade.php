@@ -1,23 +1,5 @@
 <script>
-    // ==========================================
-    // PREVENT DOUBLE SUBMIT & LOADING STATE
-    // ==========================================
-
-    let isSubmitting = false;
-
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // AUTO-CHECK ATTENDANCE SAAT PILIH BULAN/TAHUN/MINGGU
@@ -98,17 +80,17 @@
 
                 // Tambahkan info periode di bagian atas
                 let completeHTML =
-                    `<p class="text-xs text-green-700 mb-2 pb-2 border-b border-green-200">${periodInfo}</p>`;
+                    `<p class="text-xs text-success mb-2 pb-2 border-b border-border-light">${periodInfo}</p>`;
 
                 completeHTML += data.complete_employees.map(emp => {
                     return `
-                        <div class="flex items-center justify-between text-sm bg-white p-2 rounded border border-green-200">
+                        <div class="flex items-center justify-between text-sm bg-surface-base p-2 rounded border border-success">
                             <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-circle-check text-green-600"></i>
+                                <i class="fa-solid fa-circle-check text-success"></i>
                                 <span class="font-medium text-text-heading">${emp.name}</span>
                                 <span class="text-xs text-text-label">(${emp.employee_code})</span>
                             </div>
-                            <span class="text-xs text-green-700 font-semibold">${emp.filled_days}/${emp.total_days} hari</span>
+                            <span class="text-xs text-success font-semibold">${emp.filled_days}/${emp.total_days} hari</span>
                         </div>
                     `;
                 }).join('');
@@ -123,7 +105,7 @@
 
                 // Tambahkan info periode di bagian atas
                 let incompleteHTML =
-                    `<p class="text-xs text-red-700 mb-2 pb-2 border-b border-red-200 font-semibold">${periodInfo}</p>`;
+                    `<p class="text-xs text-error mb-2 pb-2 border-b border-error font-semibold">${periodInfo}</p>`;
 
                 incompleteHTML += data.incomplete_employees.map(emp => {
                     // Format tanggal yang kosong
@@ -133,20 +115,20 @@
                     }).join(', ');
 
                     return `
-                        <div class="bg-white p-2 rounded border border-red-200">
+                        <div class="bg-surface-base p-2 rounded border border-error">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="font-semibold text-text-heading text-sm">${emp.name}</span>
-                                <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">${emp.employee_code}</span>
+                                <span class="text-xs bg-error-light text-error px-2 py-1 rounded">${emp.employee_code}</span>
                             </div>
                             <div class="text-xs text-text-label space-y-1">
                                 <div class="flex items-center gap-1">
-                                    <i class="fa-solid fa-calendar-xmark text-red-500"></i>
-                                    <span><strong class="text-red-600">${emp.filled_days}</strong> dari <strong>${emp.total_days}</strong> hari kerja</span>
+                                    <i class="fa-solid fa-calendar-xmark text-error"></i>
+                                    <span><strong class="text-error">${emp.filled_days}</strong> dari <strong>${emp.total_days}</strong> hari kerja</span>
                                 </div>
                                 ${emp.missing_dates.length > 0 ? `
                                 <div class="flex items-start gap-1">
-                                    <i class="fa-solid fa-ban text-red-400 text-xs mt-0.5"></i>
-                                    <span>Tanggal kosong: <strong class="text-red-600">${missingDatesFormatted}</strong> ${monthNames[month]}</span>
+                                    <i class="fa-solid fa-ban text-error text-xs mt-0.5"></i>
+                                    <span>Tanggal kosong: <strong class="text-error">${missingDatesFormatted}</strong> ${monthNames[month]}</span>
                                 </div>
                                 ` : ''}
                             </div>
@@ -163,14 +145,14 @@
                 alreadyGeneratedWarningDiv.classList.remove('hidden');
                 alreadyGeneratedList.innerHTML = '<ul class="list-disc list-inside space-y-1">' +
                     data.already_generated.map(emp =>
-                        `<li class="text-sm">${emp.name} <span class="text-xs text-yellow-600">(${emp.employee_code})</span></li>`
+                        `<li class="text-sm">${emp.name} <span class="text-xs text-warning">(${emp.employee_code})</span></li>`
                     ).join('') + '</ul>';
 
                 // Add additional message
                 const noteDiv = document.createElement('div');
-                noteDiv.className = 'mt-3 p-2 bg-white rounded border border-yellow-300';
+                noteDiv.className = 'mt-3 p-2 bg-warning-light rounded border border-border-strong';
                 noteDiv.innerHTML =
-                    '<p class="text-xs text-yellow-700"><strong>Catatan:</strong> Semua karyawan sudah memiliki payroll untuk periode ini. Tidak dapat melakukan generate ulang.</p>';
+                    '<p class="text-xs text-warning"><strong>Catatan:</strong> Semua karyawan sudah memiliki payroll untuk periode ini. Tidak dapat melakukan generate ulang.</p>';
                 alreadyGeneratedList.appendChild(noteDiv);
             }
             // If already generated BUT there are new employees - Show info
@@ -179,14 +161,14 @@
                 alreadyGeneratedWarningDiv.classList.remove('hidden');
                 alreadyGeneratedList.innerHTML = '<ul class="list-disc list-inside space-y-1">' +
                     data.already_generated.map(emp =>
-                        `<li class="text-sm">${emp.name} <span class="text-xs text-yellow-600">(${emp.employee_code})</span></li>`
+                        `<li class="text-sm">${emp.name} <span class="text-xs text-warning">(${emp.employee_code})</span></li>`
                     ).join('') + '</ul>';
 
                 // Add info message
                 const noteDiv = document.createElement('div');
-                noteDiv.className = 'mt-3 p-2 bg-green-50 rounded border border-green-300';
+                noteDiv.className = 'mt-3 p-2 bg-success-light rounded border border-border-strong';
                 noteDiv.innerHTML =
-                    '<p class="text-xs text-green-700"><strong>Info:</strong> Ada karyawan baru yang belum memiliki payroll. Anda dapat melanjutkan generate untuk karyawan baru tersebut.</p>';
+                    '<p class="text-xs text-success"><strong>Info:</strong> Ada karyawan baru yang belum memiliki payroll. Anda dapat melanjutkan generate untuk karyawan baru tersebut.</p>';
                 alreadyGeneratedList.appendChild(noteDiv);
             }
 
@@ -195,9 +177,9 @@
                 disableReason = 'Tidak ada karyawan yang perlu di-generate untuk periode ini';
                 incompleteWarningDiv.classList.remove('hidden');
                 incompleteList.innerHTML = `
-                    <p class="text-xs text-red-700 mb-2 pb-2 border-b border-red-200 font-semibold">${periodInfo}</p>
-                    <div class="bg-white p-3 rounded border border-red-200 text-center">
-                        <i class="fa-solid fa-users-slash text-red-500 text-3xl mb-2"></i>
+                    <p class="text-xs text-error mb-2 pb-2 border-b border-error font-semibold">${periodInfo}</p>
+                    <div class="bg-surface-base p-3 rounded border border-error text-center">
+                        <i class="fa-solid fa-users-slash text-error text-3xl mb-2"></i>
                         <p class="text-sm text-text-heading font-semibold">Tidak Ada Karyawan</p>
                         <p class="text-xs text-text-label mt-1">Tidak ada karyawan yang perlu di-generate payroll untuk periode ini.</p>
                     </div>
@@ -213,11 +195,11 @@
                 if (canGenerate) {
                     generateSubmitBtn.disabled = false;
                     generateSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    generateSubmitBtn.classList.add('hover:bg-green-700');
+                    generateSubmitBtn.classList.add('hover:bg-success-hover');
                 } else {
                     generateSubmitBtn.disabled = true;
                     generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                    generateSubmitBtn.classList.remove('hover:bg-green-700');
+                    generateSubmitBtn.classList.remove('hover:bg-success-hover');
                     generateSubmitBtn.title = disableReason;
                 }
             }
@@ -261,7 +243,7 @@
     if (generateSubmitBtn) {
         generateSubmitBtn.disabled = true;
         generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        generateSubmitBtn.classList.remove('hover:bg-green-700');
+        generateSubmitBtn.classList.remove('hover:bg-success-hover');
     }
 
     // Reset saat modal ditutup
@@ -278,7 +260,7 @@
             if (generateSubmitBtn) {
                 generateSubmitBtn.disabled = true;
                 generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                generateSubmitBtn.classList.remove('hover:bg-green-700');
+                generateSubmitBtn.classList.remove('hover:bg-success-hover');
                 generateSubmitBtn.title = '';
             }
         }
@@ -325,7 +307,7 @@
             // Enable Bulk Pay Button
             bulkPayButton.disabled = false;
             bulkPayButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            bulkPayButton.classList.add('hover:bg-blue-700');
+            bulkPayButton.classList.add('hover:bg-primary-hover');
         } else {
             // Disable Delete Button
             deleteButton.disabled = true;
@@ -335,7 +317,7 @@
             // Disable Bulk Pay Button
             bulkPayButton.disabled = true;
             bulkPayButton.classList.add('opacity-50', 'cursor-not-allowed');
-            bulkPayButton.classList.remove('hover:bg-blue-700');
+            bulkPayButton.classList.remove('hover:bg-primary-hover');
         }
     }
 
@@ -449,7 +431,7 @@
     if (generateForm) {
         generateForm.addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');
-            if (!handleFormSubmit(submitBtn)) {
+            if (!handleFormSubmit(submitBtn, undefined, 'Memproses...')) {
                 e.preventDefault();
                 return false;
             }
@@ -459,13 +441,44 @@
     // Handle Edit Modal Submits
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
         form.addEventListener('submit', function(e) {
+            const modal = this.closest('[id^="editModal-"]');
+            const payrollId = modal ? modal.id.replace('editModal-', '') : null;
+
+            if (payrollId && !validatePayrollEditNotes(payrollId)) {
+                e.preventDefault();
+                return false;
+            }
+
             const submitBtn = this.querySelector('button[type="submit"]');
-            if (!handleFormSubmit(submitBtn)) {
+            if (!handleFormSubmit(submitBtn, undefined, 'Memproses...')) {
                 e.preventDefault();
                 return false;
             }
         });
     });
+
+    function validatePayrollEditNotes(payrollId) {
+        const amountInput = document.getElementById(`additional_expenses_${payrollId}`);
+        const notesInput = document.getElementById(`additional_expenses_notes_${payrollId}`);
+
+        if (!amountInput || !notesInput) {
+            return true;
+        }
+
+        const amount = parseInt(amountInput.value, 10) || 0;
+        const notes = notesInput.value.trim();
+
+        if (amount > 0 && !notes) {
+            notesInput.setCustomValidity('Keterangan pengeluaran tambahan wajib diisi jika nominal lebih dari 0.');
+            notesInput.reportValidity();
+            return false;
+        }
+
+        notesInput.setCustomValidity('');
+        return true;
+    }
+
+    window.validatePayrollEditNotes = validatePayrollEditNotes;
 
     // ==========================================
     // DYNAMIC EXPENSE ITEMS
@@ -486,21 +499,21 @@
         }
 
         const itemHTML = `
-            <div class="expense-item border border-gray-300 rounded-lg p-3 bg-white" data-item-id="${itemId}">
+            <div class="expense-item border border-border-strong rounded-lg p-3 bg-surface-base" data-item-id="${itemId}">
                 <div class="flex gap-2 items-start">
                     <div class="flex-1 grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs text-gray-600 mb-1">Nama Pengeluaran</label>
+                            <label class="block text-xs text-text-secondary mb-1">Nama Pengeluaran</label>
                             <input type="text" 
-                                class="expense-name w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                                class="expense-name w-full border border-border-strong rounded-lg px-2 py-1.5 text-sm bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
                                 placeholder="Contoh: Token Listrik"
                                 oninput="updateExpenseData()"
                                 required>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-600 mb-1">Jumlah (Rp)</label>
+                            <label class="block text-xs text-text-secondary mb-1">Jumlah (Rp)</label>
                             <input type="number" 
-                                class="expense-amount w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                                class="expense-amount w-full border border-border-strong rounded-lg px-2 py-1.5 text-sm bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
                                 placeholder="0"
                                 min="0"
                                 oninput="updateExpenseData()"
@@ -509,7 +522,7 @@
                     </div>
                     <button type="button" 
                         onclick="removeExpenseItem(${itemId})"
-                        class="mt-6 text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition-colors"
+                        class="mt-6 text-error hover:text-error hover:bg-error-light px-2 py-1.5 rounded transition-colors"
                         title="Hapus item">
                         <i class="fa-solid fa-trash"></i>
                     </button>

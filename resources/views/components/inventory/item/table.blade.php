@@ -24,7 +24,6 @@
                                     <input type="checkbox" name="selected_items[]" value="{{ $item->id_item }}"
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
-
                                 <td class="p-2 font-medium text-primary">{{ $item->id_item }}</td>
                                 <td class="p-2">{{ $item->name_item }}</td>
                                 <td class="p-2 text-center">{{ $item->quantity }}</td>

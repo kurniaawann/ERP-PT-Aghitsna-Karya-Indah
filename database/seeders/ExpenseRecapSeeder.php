@@ -15,141 +15,55 @@ class ExpenseRecapSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get all categories
+        // Pastikan tidak duplicate saat seed diulang (expense_recaps punya PRIMARY pada `id`)
+        // Karena FK ke transaction_categories tidak relevan untuk penghapusan expense_recaps,
+        // maka kita bersihkan expense_recaps terlebih dulu.
+        ExpenseRecap::query()->delete();
+
         $categories = TransactionCategory::all()->keyBy('code');
-
-        // Generate data for 2025 and early 2026
-        $this->generateExpenseData($categories);
-
-        $this->command->info('✅ Expense Recap seeder berhasil dijalankan dengan data lengkap 2025-2026!');
-    }
-
-    /**
-     * Generate expense data for multiple months
-     */
-    private function generateExpenseData($categories)
-    {
+        $expenseData = [];
         $counter = 1;
 
-        // Data untuk setiap bulan dari Januari 2025 - Januari 2026
-        for ($year = 2025; $year <= 2026; $year++) {
-            $maxMonth = ($year == 2026) ? 1 : 12; // Untuk 2026 hanya sampai Januari
+        // 15 diverse expense records
+        $expenses = [
+            ['cat' => 'UANG_MASUK', 'inv' => 'INV-001', 'date' => now()->subDays(10), 'desc' => 'Penjualan Produk', 'income' => 50000000, 'expense' => null, 'source' => 'Transfer'],
+            ['cat' => 'UPAH_KERJA', 'inv' => 'UH-001', 'date' => now()->subDays(8), 'desc' => 'Gaji Karyawan Tetap', 'income' => null, 'expense' => 3500000, 'source' => 'Kas Kecil'],
+            ['cat' => 'MATERIAL', 'inv' => 'MAT-001', 'date' => now()->subDays(7), 'desc' => 'Pembelian Bahan Baku', 'income' => null, 'expense' => 8000000, 'source' => 'Transfer BCA'],
+            ['cat' => 'PEMBELIAN_COIL', 'inv' => 'COIL-001', 'date' => now()->subDays(6), 'desc' => 'Pembelian Coil Alumunium', 'income' => null, 'expense' => 12000000, 'source' => 'Transfer Mandiri'],
+            ['cat' => 'ATK_OPERASIONAL', 'inv' => 'ATK-001', 'date' => now()->subDays(5), 'desc' => 'Pembelian Alat Tulis Kantor', 'income' => null, 'expense' => 750000, 'source' => 'Kas Kecil'],
+            ['cat' => 'TRANSPORT', 'inv' => 'TRP-001', 'date' => now()->subDays(4), 'desc' => 'Pengiriman Material', 'income' => null, 'expense' => 2500000, 'source' => 'Kas Kecil'],
+            ['cat' => 'TOKEN_LISTRIK', 'inv' => 'TKN-001', 'date' => now()->subDays(3), 'desc' => 'Pembelian Token Listrik', 'income' => null, 'expense' => 1000000, 'source' => 'Transfer'],
+            ['cat' => 'LAIN_LAIN', 'inv' => 'LL-001', 'date' => now()->subDays(2), 'desc' => 'Konsumsi Rapat', 'income' => null, 'expense' => 450000, 'source' => 'Kas Kecil'],
+            ['cat' => 'UANG_MASUK', 'inv' => 'INV-002', 'date' => now()->subDays(9), 'desc' => 'Bonus Proyek', 'income' => 25000000, 'expense' => null, 'source' => 'Transfer'],
+            ['cat' => 'UPAH_KERJA', 'inv' => 'KB-001', 'date' => now()->subDays(11), 'desc' => 'Kasbon Karyawan', 'income' => null, 'expense' => 2000000, 'source' => 'Transfer'],
+            ['cat' => 'MATERIAL', 'inv' => 'MAT-002', 'date' => now()->subDays(12), 'desc' => 'Pembelian Accesories', 'income' => null, 'expense' => 3500000, 'source' => 'Transfer BCA'],
+            ['cat' => 'TRANSPORT', 'inv' => 'TRP-002', 'date' => now()->subDays(13), 'desc' => 'Biaya Bensin Operasional', 'income' => null, 'expense' => 1200000, 'source' => 'Kas Kecil'],
+            ['cat' => 'ATK_OPERASIONAL', 'inv' => 'ATK-002', 'date' => now()->subDays(14), 'desc' => 'Pembelian Perlengkapan Kebersihan', 'income' => null, 'expense' => 600000, 'source' => 'Kas Kecil'],
+            ['cat' => 'LAIN_LAIN', 'inv' => 'LL-002', 'date' => now()->subDays(15), 'desc' => 'Biaya Maintenance Peralatan', 'income' => null, 'expense' => 1800000, 'source' => 'Transfer'],
+            ['cat' => 'PEMBELIAN_COIL', 'inv' => 'COIL-002', 'date' => now(), 'desc' => 'Coil untuk Produksi', 'income' => null, 'expense' => 15000000, 'source' => 'Transfer Mandiri'],
+        ];
 
-            for ($month = 1; $month <= $maxMonth; $month++) {
-                // UANG MASUK - 2-3 transaksi per bulan
-                for ($i = 1; $i <= rand(2, 3); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['UANG_MASUK']->id ?? null,
-                        'invoice_number' => 'INV-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getIncomeDescription($i),
-                        'income_amount' => rand(5000, 50000) * 1000,
-                        'expense_amount' => null,
-                        'money_source' => $this->getRandomPaymentMethod(),
-                    ]);
-                }
-
-                // UPAH KERJA / KASBON - 3-4 transaksi per bulan
-                for ($i = 1; $i <= rand(3, 4); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['UPAH_KERJA']->id ?? null,
-                        'invoice_number' => ($i % 2 == 0 ? 'KB-' : 'UH-') . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getWageDescription($i),
-                        'income_amount' => null,
-                        'expense_amount' => rand(500, 5000) * 1000,
-                        'money_source' => ($i % 2 == 0) ? 'Kas Kecil' : 'Transfer',
-                    ]);
-                }
-
-                // ATK / OPERASIONAL - 2-3 transaksi per bulan
-                for ($i = 1; $i <= rand(2, 3); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['ATK_OPERASIONAL']->id ?? null,
-                        'invoice_number' => 'ATK-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getAtkDescription($i),
-                        'income_amount' => null,
-                        'expense_amount' => rand(200, 2000) * 1000,
-                        'money_source' => $this->getRandomPaymentMethod(),
-                    ]);
-                }
-
-                // MATERIAL - 2-4 transaksi per bulan
-                for ($i = 1; $i <= rand(2, 4); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['MATERIAL']->id ?? null,
-                        'invoice_number' => 'MAT-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getMaterialDescription($i),
-                        'income_amount' => null,
-                        'expense_amount' => rand(400, 5000) * 1000,
-                        'money_source' => $this->getRandomPaymentMethod(),
-                    ]);
-                }
-
-                // PEMBELIAN COIL - 1-2 transaksi per bulan (transaksi besar)
-                for ($i = 1; $i <= rand(1, 2); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['PEMBELIAN_COIL']->id ?? null,
-                        'invoice_number' => 'COIL-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getCoilDescription($i),
-                        'income_amount' => null,
-                        'expense_amount' => rand(7000, 15000) * 1000,
-                        'money_source' => 'Transfer ' . ($i % 2 == 0 ? 'BCA' : 'Mandiri'),
-                    ]);
-                }
-
-                // TRANSPORT - 2-3 transaksi per bulan
-                for ($i = 1; $i <= rand(2, 3); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['TRANSPORT']->id ?? null,
-                        'invoice_number' => 'TRP-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getTransportDescription($i),
-                        'income_amount' => null,
-                        'expense_amount' => rand(300, 800) * 1000,
-                        'money_source' => 'Kas Kecil',
-                    ]);
-                }
-
-                // TOKEN LISTRIK - 1-2 transaksi per bulan
-                for ($i = 1; $i <= rand(1, 2); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['TOKEN_LISTRIK']->id ?? null,
-                        'invoice_number' => 'TKN-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getTokenDescription($i),
-                        'income_amount' => null,
-                        'expense_amount' => rand(500, 1500) * 1000,
-                        'money_source' => $i % 2 == 0 ? 'Transfer' : 'Kas Kecil',
-                    ]);
-                }
-
-                // LAIN-LAIN - 2-3 transaksi per bulan
-                for ($i = 1; $i <= rand(2, 3); $i++) {
-                    ExpenseRecap::create([
-                        'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
-                        'transaction_category_id' => $categories['LAIN_LAIN']->id ?? null,
-                        'invoice_number' => 'LL-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                        'transaction_date' => Carbon::create($year, $month, rand(1, 28)),
-                        'description' => $this->getMiscDescription($i),
-                        'income_amount' => null,
-                        'expense_amount' => rand(150, 600) * 1000,
-                        'money_source' => $this->getRandomPaymentMethod(),
-                    ]);
-                }
-            }
+        foreach ($expenses as $expense) {
+            $expenseData[] = [
+                'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
+                'transaction_category_id' => $categories[$expense['cat']]->id ?? null,
+                'invoice_number' => $expense['inv'],
+                'transaction_date' => $expense['date'],
+                'description' => $expense['desc'],
+                'income_amount' => $expense['income'],
+                'expense_amount' => $expense['expense'],
+                'money_source' => $expense['source'],
+            ];
         }
+
+        foreach ($expenseData as $data) {
+            ExpenseRecap::create($data);
+        }
+
+        $this->command->info('✅ Expense Recap seeder berhasil dijalankan dengan 15 records!');
     }
+
+
 
     // Helper methods untuk generate description
     private function getIncomeDescription($index)

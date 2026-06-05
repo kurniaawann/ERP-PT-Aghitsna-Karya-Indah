@@ -33,9 +33,9 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Pengeluaran <span class="text-error">*</span></label>
-        <input type="number" name="expense_amount" class="w-full border rounded p-2"
-            value="{{ $expense->expense_amount }}" required min="0"
-            oninvalid="this.setCustomValidity('Jumlah pengeluaran tidak boleh kosong')"
+        <input type="text" inputmode="numeric" name="expense_amount"
+            class="w-full border rounded p-2 expense-amount-input" value="{{ $expense->expense_amount }}" required
+            min="0" oninvalid="this.setCustomValidity('Jumlah pengeluaran tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 

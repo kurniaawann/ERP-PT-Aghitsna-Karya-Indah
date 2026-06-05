@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DivisionSeeder extends Seeder
@@ -13,38 +12,33 @@ class DivisionSeeder extends Seeder
     public function run(): void
     {
         $divisions = [
-            [
-                'name' => 'Produksi',
-                'description' => 'Divisi yang menangani produksi dan manufacturing',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Pemasaran',
-                'description' => 'Divisi yang menangani marketing dan penjualan',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Keuangan',
-                'description' => 'Divisi yang menangani keuangan dan akuntansi',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Gudang',
-                'description' => 'Divisi yang menangani pergudangan dan inventori',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Administrasi',
-                'description' => 'Divisi yang menangani administrasi dan HRD',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            ['name' => 'Produksi', 'description' => 'Divisi yang menangani produksi dan manufacturing'],
+            ['name' => 'Pemasaran', 'description' => 'Divisi yang menangani marketing dan penjualan'],
+            ['name' => 'Keuangan', 'description' => 'Divisi yang menangani keuangan dan akuntansi'],
+            ['name' => 'Gudang', 'description' => 'Divisi yang menangani pergudangan dan inventori'],
+            ['name' => 'Administrasi', 'description' => 'Divisi yang menangani administrasi dan HRD'],
+            ['name' => 'Teknologi Informasi', 'description' => 'Divisi yang menangani sistem dan teknologi'],
+            ['name' => 'Quality Control', 'description' => 'Divisi yang menangani kontrol kualitas produk'],
+            ['name' => 'Logistik', 'description' => 'Divisi yang menangani pengiriman dan distribusi'],
+            ['name' => 'Riset & Pengembangan', 'description' => 'Divisi yang menangani penelitian dan inovasi'],
+            ['name' => 'Customer Service', 'description' => 'Divisi yang menangani layanan pelanggan'],
+            ['name' => 'Manajemen Proyek', 'description' => 'Divisi yang menangani pengelolaan proyek'],
+            ['name' => 'Procurement', 'description' => 'Divisi yang menangani pengadaan barang dan layanan'],
+            ['name' => 'Humas & Media', 'description' => 'Divisi yang menangani hubungan masyarakat'],
+            ['name' => 'Keselamatan Kerja', 'description' => 'Divisi yang menangani K3 dan keselamatan kerja'],
+            ['name' => 'Training & Development', 'description' => 'Divisi yang menangani pelatihan dan pengembangan SDM'],
         ];
 
-        \DB::table('divisions')->insert($divisions);
+        // divisions.name punya unique constraint, jadi buat idempotent
+        foreach ($divisions as $division) {
+            \DB::table('divisions')->updateOrInsert(
+                ['name' => $division['name']],
+                [
+                    'description' => $division['description'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
     }
 }

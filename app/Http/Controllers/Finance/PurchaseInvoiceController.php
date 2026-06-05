@@ -8,9 +8,12 @@ use App\Exports\Finance\PurchaseInvoiceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 class PurchaseInvoiceController extends Controller
 {
+    use HasBulkActions;
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -36,21 +39,26 @@ class PurchaseInvoiceController extends Controller
             $q->whereYear('date', $year);
         });
 
-        $invoices = $query->orderBy('date', 'desc')->paginate(10);
+        $invoices = $query->orderBy('date', 'desc')->paginate(15);
 
         return view('pages.finance.purchase-invoice', compact('invoices'));
     }
 
     public function store(Request $request)
     {
+        $request->merge([
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
+            'ppn_percentage' => InputNormalizer::normalizeDecimal($request->ppn_percentage),
+        ]);
+
         $validated = $request->validate([
             'date' => 'required|date',
             'material_name' => 'required|string|max:255',
             'npwp' => 'required|string|max:50',
             'tax_number_code' => 'required|string|max:50',
             'item_name' => 'required|string|max:255',
-            'selling_price' => 'required|integer|min:0',
-            'ppn_percentage' => 'required|integer|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'ppn_percentage' => 'required|numeric|min:0|max:100',
             'notes' => 'nullable|string',
         ]);
 
@@ -75,14 +83,19 @@ class PurchaseInvoiceController extends Controller
 
     public function update(Request $request, PurchaseInvoice $purchase_invoice)
     {
+        $request->merge([
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
+            'ppn_percentage' => InputNormalizer::normalizeDecimal($request->ppn_percentage),
+        ]);
+
         $validated = $request->validate([
             'date' => 'required|date',
             'material_name' => 'required|string|max:255',
             'npwp' => 'required|string|max:50',
             'tax_number_code' => 'required|string|max:50',
             'item_name' => 'required|string|max:255',
-            'selling_price' => 'required|integer|min:0',
-            'ppn_percentage' => 'required|integer|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'ppn_percentage' => 'required|numeric|min:0|max:100',
             'notes' => 'nullable|string',
         ]);
 
@@ -105,16 +118,7 @@ class PurchaseInvoiceController extends Controller
 
     public function destroySelected(Request $request)
     {
-        $selectedIds = $request->input('selected_invoices', []);
-
-        if (empty($selectedIds)) {
-            return redirect()->back()->with('error', 'Tidak ada faktur yang dipilih untuk dihapus.');
-        }
-
-        PurchaseInvoice::whereIn('id', $selectedIds)->delete();
-
-        return redirect()->route('purchase-invoice.index')
-            ->with('success', count($selectedIds) . ' faktur pembelian berhasil dihapus!');
+        return $this->destroySelectedBy($request, PurchaseInvoice::class, 'selected_invoices', 'id', 'purchase-invoice.index');
     }
 
     public function printPdf($id)
@@ -175,4 +179,6 @@ class PurchaseInvoiceController extends Controller
 
         return $pdf->download('Faktur-Pembelian-' . now()->format('d-m-Y') . '.pdf');
     }
+
+
 }

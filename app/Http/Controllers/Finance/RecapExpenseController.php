@@ -12,9 +12,13 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Services\InputNormalizer;
+use App\Traits\HasBulkActions;
 
 class RecapExpenseController extends Controller
 {
+    use HasBulkActions;
+
     /**
      * Display a listing of the resource.
      */
@@ -68,11 +72,11 @@ class RecapExpenseController extends Controller
                 });
             })
 
-            // Urutkan hasil berdasarkan transaction_date descending (terbaru di atas)
-            ->orderBy('transaction_date', 'desc')
+            // Urutkan hasil berdasarkan transaction_date ascending (tanggal paling lama di atas)
+            ->orderBy('transaction_date', 'asc')
 
-            // Jika tanggal sama, urutkan berdasarkan created_at descending (yang dibuat terakhir di atas)
-            ->orderBy('created_at', 'desc')
+            // Jika tanggal sama, urutkan berdasarkan created_at ascending (data lama dulu)
+            ->orderBy('created_at', 'asc')
 
             // Pagination 10 data per halaman dengan append query parameters agar filter tetap ada saat pindah halaman
             ->paginate(10)->appends($request->all());
@@ -136,6 +140,7 @@ class RecapExpenseController extends Controller
 
         // Set income_amount ke null (karena ini expense, bukan income)
         $data['income_amount'] = null;
+        $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
 
         try {
             // Simpan data expense report ke database
@@ -168,6 +173,7 @@ class RecapExpenseController extends Controller
 
         // Ambil semua data dari form (validasi sudah dilakukan di HTML)
         $data = $request->all();
+        $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
 
         try {
             // Update data expense report dengan data dari form
@@ -199,11 +205,7 @@ class RecapExpenseController extends Controller
         // Hapus semua expense report yang ID-nya ada dalam array $selectedIds
         // whereIn() akan match semua record dengan id di dalam array
         // delete() akan menghapus record tersebut dan return jumlah row yang terhapus
-        $deletedCount = ExpenseRecap::whereIn('id', $selectedIds)->delete();
-
-        // Redirect ke halaman index dengan pesan sukses dan jumlah data yang terhapus
-        return redirect()->route('recap-expense.index')
-            ->with('success', "Berhasil menghapus {$deletedCount} data pengeluaran.");
+        return $this->destroySelectedBy($request, ExpenseRecap::class, 'selected_expenses', 'id', 'recap-expense.index');
     }
 
     /**
@@ -234,11 +236,11 @@ class RecapExpenseController extends Controller
                 return $query->whereYear('transaction_date', $year);
             })
 
-            // Urutkan berdasarkan tanggal transaksi descending (terbaru di atas)
-            ->orderBy('transaction_date', 'desc')
+            // Urutkan berdasarkan tanggal transaksi ascending (tanggal paling lama di atas)
+            ->orderBy('transaction_date', 'asc')
 
-            // Jika tanggal sama, urutkan berdasarkan created_at descending
-            ->orderBy('created_at', 'desc')
+            // Jika tanggal sama, urutkan berdasarkan created_at ascending
+            ->orderBy('created_at', 'asc')
 
             // Ambil semua data (tanpa pagination) untuk export
             ->get();
@@ -295,11 +297,11 @@ class RecapExpenseController extends Controller
                 return $query->whereYear('transaction_date', $year);
             })
 
-            // Urutkan berdasarkan tanggal transaksi descending (terbaru di atas)
-            ->orderBy('transaction_date', 'desc')
+            // Urutkan berdasarkan tanggal transaksi ascending (tanggal paling lama di atas)
+            ->orderBy('transaction_date', 'asc')
 
-            // Jika tanggal sama, urutkan berdasarkan created_at descending
-            ->orderBy('created_at', 'desc')
+            // Jika tanggal sama, urutkan berdasarkan created_at ascending
+            ->orderBy('created_at', 'asc')
 
             // Ambil semua data (tanpa pagination) untuk export PDF
             ->get();

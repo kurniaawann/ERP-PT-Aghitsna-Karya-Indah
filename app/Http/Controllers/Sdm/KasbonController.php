@@ -7,9 +7,12 @@ use App\Models\Sdm\Kasbon;
 use App\Models\Sdm\Employee;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Services\InputNormalizer;
 
 class KasbonController extends Controller
 {
+
+
     /**
      * Menampilkan halaman daftar kasbon dengan fitur filter dan pencarian.
      */
@@ -60,6 +63,10 @@ class KasbonController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge([
+            'amount' => InputNormalizer::normalizeCurrency($request->input('amount')),
+        ]);
+
         $validated = $request->validate([
             'kasbon_type' => 'required|in:personal,team',
             'employee_id' => 'required_if:kasbon_type,personal|nullable|exists:employees,employee_code',
@@ -166,6 +173,10 @@ class KasbonController extends Controller
         if ($kasbon->status === 'deducted') {
             return redirect()->back()->with('error', 'Kasbon yang sudah dipotong tidak bisa diubah');
         }
+
+        $request->merge([
+            'amount' => InputNormalizer::normalizeCurrency($request->input('amount')),
+        ]);
 
         $validated = $request->validate([
             'kasbon_type' => 'required|in:personal,team',

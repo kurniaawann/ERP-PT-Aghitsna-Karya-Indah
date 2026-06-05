@@ -2,6 +2,17 @@
     // Store maksimal kasbon untuk setiap form
     let maxKasbonData = {};
 
+    function parseCurrencyInput(value) {
+        return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
+    }
+
+    function formatCurrencyInput(input) {
+        if (!input) return;
+
+        const numeric = input.value.replace(/[^\d]/g, '');
+        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+    }
+
     // Toggle employee select based on kasbon type
     function toggleEmployeeSelect(prefix) {
         const kasbonTypeSelect = document.getElementById(prefix + '_kasbon_type');
@@ -72,12 +83,12 @@
             if (limitAlert && limitMessage) {
                 limitMessage.textContent =
                     'Silakan lengkapi Bulan, Tahun, dan Tanggal Kasbon terlebih dahulu';
-                limitAlert.classList.remove('hidden', 'bg-yellow-50', 'border-yellow-200');
-                limitAlert.classList.add('bg-red-50', 'border-red-200');
+                limitAlert.classList.remove('hidden', 'bg-warning-light', 'border-border-strong');
+                limitAlert.classList.add('bg-error-light', 'border-error');
                 const icon = limitAlert.querySelector('i');
                 if (icon) {
-                    icon.classList.remove('text-yellow-600');
-                    icon.classList.add('text-red-600');
+                    icon.classList.remove('text-warning');
+                    icon.classList.add('text-error');
                 }
             }
             maxKasbonData[prefix] = null;
@@ -112,19 +123,19 @@
 
                 if (limitAlert && limitMessage) {
                     limitMessage.textContent = data.message;
-                    limitAlert.classList.remove('hidden', 'bg-red-50', 'border-red-200');
-                    limitAlert.classList.add('bg-yellow-50', 'border-yellow-200');
+                    limitAlert.classList.remove('hidden', 'bg-error-light', 'border-error');
+                    limitAlert.classList.add('bg-warning-light', 'border-border-strong');
 
                     const icon = limitAlert.querySelector('i');
                     if (icon) {
-                        icon.classList.remove('text-red-600');
-                        icon.classList.add('text-yellow-600');
+                        icon.classList.remove('text-error');
+                        icon.classList.add('text-warning');
                     }
 
                     const textDiv = limitAlert.querySelector('.text-sm');
                     if (textDiv) {
-                        textDiv.classList.remove('text-red-800');
-                        textDiv.classList.add('text-yellow-800');
+                        textDiv.classList.remove('text-error');
+                        textDiv.classList.add('text-warning');
                     }
                 }
 
@@ -143,19 +154,19 @@
 
                 if (limitAlert && limitMessage) {
                     limitMessage.textContent = data.message || 'Gagal mengecek maksimal kasbon';
-                    limitAlert.classList.remove('hidden', 'bg-yellow-50', 'border-yellow-200');
-                    limitAlert.classList.add('bg-red-50', 'border-red-200');
+                    limitAlert.classList.remove('hidden', 'bg-warning-light', 'border-border-strong');
+                    limitAlert.classList.add('bg-error-light', 'border-error');
 
                     const icon = limitAlert.querySelector('i');
                     if (icon) {
-                        icon.classList.remove('text-yellow-600');
-                        icon.classList.add('text-red-600');
+                        icon.classList.remove('text-warning');
+                        icon.classList.add('text-error');
                     }
 
                     const textDiv = limitAlert.querySelector('.text-sm');
                     if (textDiv) {
-                        textDiv.classList.remove('text-yellow-800');
-                        textDiv.classList.add('text-red-800');
+                        textDiv.classList.remove('text-warning');
+                        textDiv.classList.add('text-error');
                     }
                 }
 
@@ -196,14 +207,15 @@
 
         if (!amountInput || !maxKasbonData[prefix]) {
             // Jika belum ada data max kasbon, enable button jika amount >= 1000
-            if (submitButton && amountInput.value >= 1000) {
+            const amountValue = parseCurrencyInput(amountInput ? amountInput.value : '');
+            if (submitButton && amountValue >= 1000) {
                 submitButton.disabled = false;
                 submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
             }
             return;
         }
 
-        const amount = parseInt(amountInput.value) || 0;
+        const amount = parseCurrencyInput(amountInput.value);
         const maxKasbon = maxKasbonData[prefix].max_kasbon;
 
         if (amount > maxKasbon) {
@@ -216,19 +228,19 @@
             if (limitAlert && limitMessage) {
                 limitMessage.textContent =
                     `Jumlah kasbon melebihi batas maksimal ${maxKasbonData[prefix].max_kasbon_formatted}`;
-                limitAlert.classList.remove('bg-yellow-50', 'border-yellow-200');
-                limitAlert.classList.add('bg-red-50', 'border-red-200');
+                limitAlert.classList.remove('bg-warning-light', 'border-border-strong');
+                limitAlert.classList.add('bg-error-light', 'border-error');
 
                 const icon = limitAlert.querySelector('i');
                 if (icon) {
-                    icon.classList.remove('text-yellow-600');
-                    icon.classList.add('text-red-600');
+                    icon.classList.remove('text-warning');
+                    icon.classList.add('text-error');
                 }
 
                 const textDiv = limitAlert.querySelector('.text-sm');
                 if (textDiv) {
-                    textDiv.classList.remove('text-yellow-800');
-                    textDiv.classList.add('text-red-800');
+                    textDiv.classList.remove('text-warning');
+                    textDiv.classList.add('text-error');
                 }
             }
         } else if (amount >= 1000) {
@@ -240,19 +252,19 @@
 
             if (limitAlert && limitMessage) {
                 limitMessage.textContent = maxKasbonData[prefix].message;
-                limitAlert.classList.add('bg-yellow-50', 'border-yellow-200');
-                limitAlert.classList.remove('bg-red-50', 'border-red-200');
+                limitAlert.classList.add('bg-warning-light', 'border-border-strong');
+                limitAlert.classList.remove('bg-error-light', 'border-error');
 
                 const icon = limitAlert.querySelector('i');
                 if (icon) {
-                    icon.classList.add('text-yellow-600');
-                    icon.classList.remove('text-red-600');
+                    icon.classList.add('text-warning');
+                    icon.classList.remove('text-error');
                 }
 
                 const textDiv = limitAlert.querySelector('.text-sm');
                 if (textDiv) {
-                    textDiv.classList.add('text-yellow-800');
-                    textDiv.classList.remove('text-red-800');
+                    textDiv.classList.add('text-warning');
+                    textDiv.classList.remove('text-error');
                 }
             }
         } else {
@@ -283,7 +295,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const selectAll = document.getElementById('select-all');
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-        const deleteButton = document.querySelector('[onclick*="deleteModal"]');
+        const deleteButton = document.getElementById('delete-button') || document.querySelector(
+            '[onclick*="deleteModal"]') || document.querySelector('[data-delete-button]');
 
         if (selectAll) {
             selectAll.addEventListener('change', function() {
@@ -331,5 +344,18 @@
 
         // Initialize employee field visibility for add modal
         toggleEmployeeSelect('add');
+
+        document.querySelectorAll('.kasbon-amount-input').forEach(input => {
+            if (input.value) {
+                formatCurrencyInput(input);
+            }
+
+            input.addEventListener('input', function() {
+                formatCurrencyInput(this);
+                const prefix = this.id === 'add_amount' ? 'add' :
+                    `edit_${this.closest('[id^="editModal"]')?.id.replace('editModal', '') || ''}`;
+                validateKasbonAmount(prefix);
+            });
+        });
     });
 </script>

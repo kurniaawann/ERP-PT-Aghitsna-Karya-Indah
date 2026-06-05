@@ -7,7 +7,7 @@
     function calculateRowTotal(input) {
         const row = input.closest('.item-row');
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
         const total = volume * harga;
 
         const totalSpan = row.querySelector('.item-total');
@@ -21,11 +21,11 @@
     // Calculate edit modal row total
     function calculateEditRowTotal(input) {
         const row = input.closest('.item-row-edit');
-        const volume = parseFloat(row.querySelector('.item-volume-edit')?.value) || 0;
-        const harga = parseFloat(row.querySelector('.item-harga-edit')?.value) || 0;
+        const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
         const total = volume * harga;
 
-        const totalSpan = row.querySelector('.item-total-edit');
+        const totalSpan = row.querySelector('.item-total');
         if (totalSpan) {
             totalSpan.textContent = 'Rp ' + total.toLocaleString('id-ID');
         }
@@ -38,7 +38,7 @@
         let grandTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             grandTotal += (volume * harga);
         });
 
@@ -63,7 +63,7 @@
     function calculateDiscount() {
         const discountType = document.getElementById('discount-type')?.value;
         const discountValueInput = document.getElementById('discount-value');
-        let discountValue = parseFloat(discountValueInput?.value) || 0;
+        let discountValue = parseDecimalInput(discountValueInput);
         const discountError = document.getElementById('discount-error');
 
         // Enable/disable based on type
@@ -100,7 +100,7 @@
         let baseTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             baseTotal += (volume * harga);
         });
         baseTotal = Math.round(baseTotal);
@@ -172,7 +172,7 @@
         let baseTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             baseTotal += (volume * harga);
         });
         baseTotal = Math.round(baseTotal);
@@ -214,7 +214,7 @@
         const typeEl = document.getElementById('discount-type-edit-' + invoiceNumber);
         const valueEl = document.getElementById('discount-value-edit-' + invoiceNumber);
         const discountType = typeEl?.value;
-        let discountValue = parseFloat(valueEl?.value) || 0;
+        let discountValue = parseDecimalInput(valueEl);
 
         // Enable/disable value input based on type selection
         if (valueEl) {
@@ -236,8 +236,8 @@
         let baseTotal = 0;
         if (modal) {
             modal.querySelectorAll('.item-row-edit').forEach(row => {
-                const volume = parseFloat(row.querySelector('.item-volume-edit')?.value) || 0;
-                const harga = parseFloat(row.querySelector('.item-harga-edit')?.value) || 0;
+                const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+                const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
                 baseTotal += (volume * harga);
             });
         }
@@ -260,6 +260,56 @@
         if (totalAfterDiscountEl) totalAfterDiscountEl.textContent = 'Rp ' + totalAfterDiscount.toLocaleString('id-ID');
 
         calculateDPEdit(invoiceNumber);
+    }
+
+    function parseDecimalInput(inputElement) {
+        const rawValue = String(inputElement?.value ?? '').trim();
+
+        if (!rawValue) {
+            return 0;
+        }
+
+        return parseFloat(rawValue.replace(',', '.')) || 0;
+    }
+
+    function parseCurrencyInput(value) {
+        const str = String(value ?? '').trim();
+        if (!str) return 0;
+
+        // examples:
+        // - "1.000" => 1000
+        // - "1,5" => 1.5
+        // - "Rp 1.000" => 1000
+        // - "1.234.567" => 1234567
+        const cleaned = str.replace(/Rp\s*/gi, '');
+
+        if (cleaned.includes(',')) {
+            // comma as decimal separator
+            const normalized = cleaned.replace(/\./g, '').replace(',', '.');
+            const num = parseFloat(normalized);
+            return Number.isFinite(num) ? num : 0;
+        }
+
+        // no comma => dots are thousand separators
+        const normalized = cleaned.replace(/\./g, '');
+        const num = parseFloat(normalized);
+        return Number.isFinite(num) ? num : 0;
+    }
+
+    function formatCurrencyInput(input) {
+        const str = String(input.value ?? '').trim();
+        if (!str) return;
+
+        // reuse parser to handle "1.000" / "1,5"
+        const num = parseCurrencyInput(str);
+        input.value = num ? Math.round(num).toLocaleString('id-ID') : '';
+    }
+
+    function normalizeInvoicePriceFields(form) {
+        form.querySelectorAll('input[name*="[harga]"]').forEach(input => {
+            const value = parseCurrencyInput(input.value);
+            input.value = value ? String(value) : '0';
+        });
     }
 
     // Calculate DP for EDIT modal (alumunium)
@@ -289,8 +339,8 @@
         let baseTotal = 0;
         if (modal) {
             modal.querySelectorAll('.item-row-edit').forEach(row => {
-                const volume = parseFloat(row.querySelector('.item-volume-edit')?.value) || 0;
-                const harga = parseFloat(row.querySelector('.item-harga-edit')?.value) || 0;
+                const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+                const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
                 baseTotal += (volume * harga);
             });
         }
@@ -333,8 +383,8 @@
         let grandTotal = 0;
 
         modal.querySelectorAll('.item-row-edit').forEach(row => {
-            const volume = parseFloat(row.querySelector('.item-volume-edit')?.value) || 0;
-            const harga = parseFloat(row.querySelector('.item-harga-edit')?.value) || 0;
+            const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
             grandTotal += (volume * harga);
         });
 
@@ -387,25 +437,7 @@
         return units[num];
     }
 
-    // ==========================================
-    // PREVENT DOUBLE SUBMIT & LOADING STATE
-    // ==========================================
-
-    let isSubmitting = false;
-
-    function handleFormSubmit(submitBtn) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // BULK DELETE FUNCTION
@@ -554,9 +586,9 @@
                         <input type="text" class="item-satuan border rounded p-2 w-full" placeholder="Satuan (m3, unit) *" required
                             oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" step="0.01" min="0" class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateRowTotal(this)"
+                        <input type="text" inputmode="numeric" min="0" class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="formatCurrencyInput(this); calculateRowTotal(this)"
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                            oninput="calculateRowTotal(this); this.setCustomValidity('')">
+                            oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                         </div>
@@ -586,6 +618,12 @@
 
         attachRemoveListener();
 
+        document.querySelectorAll('[id^="editModal-"] .item-harga').forEach(input => {
+            if (input.value) {
+                formatCurrencyInput(input);
+            }
+        });
+
         // ==========================================
         // EDIT MODAL - ADD ITEM FUNCTIONALITY
         // ==========================================
@@ -603,25 +641,25 @@
                 newItem.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                         <input type="text" name="items[${newIndex}][keterangan]" 
-                            class="item-keterangan-edit border rounded p-2 w-full" placeholder="Keterangan *" required
+                            class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required
                             oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
                         <input type="number" step="0.01" min="0" name="items[${newIndex}][volume]"
-                            class="item-volume-edit border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateEditRowTotal(this)"
+                            class="item-volume border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateEditRowTotal(this)"
                             oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
                             oninput="calculateEditRowTotal(this); this.setCustomValidity('')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <input type="text" name="items[${newIndex}][satuan]"
-                            class="item-satuan-edit border rounded p-2 w-full" placeholder="Satuan *" required
+                            class="item-satuan border rounded p-2 w-full" placeholder="Satuan *" required
                             oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
-                        <input type="number" step="0.01" min="0" name="items[${newIndex}][harga]"
-                            class="item-harga-edit border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateEditRowTotal(this)"
+                        <input type="text" inputmode="numeric" min="0" name="items[${newIndex}][harga]"
+                            class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="calculateEditRowTotal(this, '${invoiceId}')"
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                            oninput="calculateEditRowTotal(this); this.setCustomValidity('')">
+                            oninput="calculateEditRowTotal(this, '${invoiceId}'); this.setCustomValidity('')">
                         <div class="flex items-center">
-                            <span class="item-total-edit text-sm font-semibold text-primary">Rp 0</span>
+                            <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                         </div>
                         <button type="button" class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
                             <i class="fa-solid fa-trash"></i>
@@ -662,7 +700,7 @@
             });
 
             // Update total after removing item
-            const firstInput = itemsContainer.querySelector('.item-volume-edit');
+            const firstInput = itemsContainer.querySelector('.item-volume');
             if (firstInput) {
                 updateEditInvoiceTotal(firstInput);
             }
@@ -715,7 +753,9 @@
 
                     const volume = volumeInput ? parseFloat(volumeInput.value) : 0;
                     const satuan = satuanInput ? satuanInput.value : '';
-                    const harga = hargaInput ? parseFloat(hargaInput.value) : 0;
+                    // IMPORTANT: harga bisa sudah terformat "1.000" (titik ribuan)
+                    // parse harus pakai parseCurrencyInput supaya tersimpan benar.
+                    const harga = hargaInput ? parseCurrencyInput(hargaInput.value) : 0;
 
                     console.log(`Row ${index}:`, {
                         keterangan,
@@ -784,6 +824,8 @@
                         return false;
                     }
 
+                    normalizeInvoicePriceFields(this);
+
                     // Set loading state
                     handleFormSubmit(submitBtn);
                 });
@@ -815,8 +857,39 @@
             validatePaymentSelectionEdit(invoiceNumber);
 
             modal.querySelectorAll('.payment-account-checkbox-edit').forEach(cb => {
-                cb.addEventListener('change', () => validatePaymentSelectionEdit(invoiceNumber));
+                cb.addEventListener('change', () => validatePaymentSelectionEdit(
+                    invoiceNumber));
             });
         });
+
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+
+        function updateInvoiceFilterUrl() {
+            const url = new URL(window.location.href);
+
+            if (monthSelect && monthSelect.value) {
+                url.searchParams.set('month', monthSelect.value);
+            } else {
+                url.searchParams.delete('month');
+            }
+
+            if (yearSelect && yearSelect.value) {
+                url.searchParams.set('year', yearSelect.value);
+            } else {
+                url.searchParams.delete('year');
+            }
+
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        }
+
+        if (monthSelect) {
+            monthSelect.addEventListener('change', updateInvoiceFilterUrl);
+        }
+
+        if (yearSelect) {
+            yearSelect.addEventListener('change', updateInvoiceFilterUrl);
+        }
     });
 </script>

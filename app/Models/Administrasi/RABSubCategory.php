@@ -15,18 +15,11 @@ class RABSubCategory extends Model
         'rab_category_id',
         'number_order',
         'subcategory_name',
-        'volume',
-        'unit',
-        'unit_price',
-        'sub_harga',
         'order',
     ];
 
     protected $casts = [
         'number_order' => 'integer',
-        'volume' => 'integer',
-        'unit_price' => 'integer',
-        'sub_harga' => 'integer',
         'order' => 'integer',
     ];
 

@@ -3,7 +3,7 @@
 @section('title', 'PT Aghitsna Karya Indah - Pengembalian Barang')
 
 @section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Pengembalian Barang</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -13,7 +13,7 @@
 
                 {{-- Filter Return Type --}}
                 <select name="return_type" id="return_type"
-                    class="px-3 py-2 rounded-lg border-2 border-border text-sm font-medium text-text-primary bg-white hover:border-border-hover transition-colors duration-150">
+                    class="block w-full lg:w-48 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-colors duration-150">
                     <option value="">Semua Tipe</option>
                     <option value="masuk" @selected(request('return_type') === 'masuk')>Pengembalian Masuk</option>
                     <option value="keluar" @selected(request('return_type') === 'keluar')>Pengembalian Keluar</option>
@@ -83,10 +83,10 @@
                                         <td class="p-2 text-center">
                                             @if ($record->return_type === 'masuk')
                                                 <span
-                                                    class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">Masuk</span>
+                                                    class="bg-surface-secondary text-text-primary px-2 py-1 rounded text-xs font-medium">Masuk</span>
                                             @else
                                                 <span
-                                                    class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">Keluar</span>
+                                                    class="bg-surface-secondary text-text-primary px-2 py-1 rounded text-xs font-medium">Keluar</span>
                                             @endif
                                         </td>
                                         <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
@@ -96,11 +96,6 @@
                                                     onclick="openModal('editModal-{{ $record->id_return }}')"
                                                     class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors text-xs">
                                                     <i class="fa-solid fa-pen w-3 h-3"></i> Edit
-                                                </button>
-                                                <button type="button"
-                                                    onclick="deleteRecord('{{ route('item-return.destroy', $record->id_return) }}')"
-                                                    class="flex items-center gap-1 bg-btn-delete hover:bg-btn-delete-hover text-white px-2 py-1 rounded-lg transition-colors text-xs">
-                                                    <i class="fa-solid fa-trash w-3 h-3"></i> Hapus
                                                 </button>
                                             </div>
                                         </td>

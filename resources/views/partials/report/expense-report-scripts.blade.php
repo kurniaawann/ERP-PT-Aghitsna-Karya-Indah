@@ -3,21 +3,9 @@
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
 
-    let isSubmitting = false;
+    @include('partials.shared.currency-utils-script')
 
-    function handleFormSubmit(submitBtn, originalText) {
-        if (isSubmitting) return false;
-
-        isSubmitting = true;
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        return true;
-    }
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     // ==========================================
     // BULK DELETE FUNCTION
@@ -88,6 +76,16 @@
 
         // Initialize button state on page load
         updateDeleteButtonState();
+
+        document.querySelectorAll('.expense-amount-input').forEach(input => {
+            if (input.value) {
+                formatCurrencyInput(input);
+            }
+
+            input.addEventListener('input', function() {
+                formatCurrencyInput(this);
+            });
+        });
 
         // ==========================================
         // AUTO-SUBMIT FILTER FORM

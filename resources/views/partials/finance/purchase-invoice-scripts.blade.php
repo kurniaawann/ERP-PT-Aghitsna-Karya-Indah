@@ -11,6 +11,30 @@
         }
     }
 
+    function parseDecimalInput(value) {
+        const rawValue = String(value ?? '').trim();
+
+        if (!rawValue) {
+            return 0;
+        }
+
+        return parseFloat(rawValue.replace(',', '.')) || 0;
+    }
+
+    function parseCurrencyInput(value) {
+        const rawValue = String(value ?? '').trim();
+
+        if (!rawValue) {
+            return 0;
+        }
+
+        return parseInt(rawValue.replace(/[^0-9-]/g, ''), 10) || 0;
+    }
+
+    function formatRupiah(value) {
+        return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
+    }
+
     // ==========================================
     // AUTO-CALCULATE PPN TAX FROM PERCENTAGE
     // ==========================================
@@ -22,11 +46,11 @@
 
         if (!sellingPriceInput || !ppnPercentageInput || !ppnTaxInput) return;
 
-        const sellingPrice = parseInt(sellingPriceInput.value) || 0;
-        const ppnPercentage = parseInt(ppnPercentageInput.value) || 0;
+        const sellingPrice = parseCurrencyInput(sellingPriceInput.value);
+        const ppnPercentage = parseDecimalInput(ppnPercentageInput.value);
         const ppnTax = Math.round((sellingPrice * ppnPercentage) / 100);
 
-        ppnTaxInput.value = ppnTax;
+        ppnTaxInput.value = formatRupiah(ppnTax);
     }
 
     function initPpnCalculation() {
@@ -36,6 +60,7 @@
 
         if (addSellingPrice && addPpnPercentage) {
             addSellingPrice.addEventListener('input', () => {
+                addSellingPrice.value = formatRupiah(parseCurrencyInput(addSellingPrice.value));
                 calculatePpnTax('addSellingPrice', 'addPpnPercentage', 'addPpnTax');
             });
             addPpnPercentage.addEventListener('input', () => {
@@ -52,6 +77,7 @@
 
             if (ppnPercentageInput) {
                 sellingPriceInput.addEventListener('input', () => {
+                    sellingPriceInput.value = formatRupiah(parseCurrencyInput(sellingPriceInput.value));
                     calculatePpnTax(`editSellingPrice-${invoiceId}`, `editPpnPercentage-${invoiceId}`,
                         `editPpnTax-${invoiceId}`);
                 });

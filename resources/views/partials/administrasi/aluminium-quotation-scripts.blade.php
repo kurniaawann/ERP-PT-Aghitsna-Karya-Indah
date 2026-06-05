@@ -130,13 +130,13 @@
     function addItem(itemsContainer, prefix, prefillData) {
         prefillData = prefillData || {};
         const itemEl = document.createElement('div');
-        itemEl.className = 'item-row bg-white border border-gray-200 rounded-lg p-3 space-y-2';
+        itemEl.className = 'item-row bg-surface-base border border-border-strong rounded-lg p-3 space-y-2';
         itemEl.innerHTML = `
         <div class="space-y-2">
             {{-- Description --}}
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Keterangan <span class="text-red-500">*</span></label>
-                <input type="text" class="item-description w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                <label class="block text-xs font-semibold text-text-label mb-1">Keterangan <span class="text-error">*</span></label>
+                <input type="text" class="item-description w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text-input bg-surface-base"
                     placeholder="Contoh: 5 x 130 x 300" required maxlength="255"
                     oninvalid="this.setCustomValidity('Keterangan item harus diisi')"
                     oninput="this.setCustomValidity('')"
@@ -146,8 +146,8 @@
             <div class="grid grid-cols-2 gap-2">
                 {{-- Volume --}}
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Volume</label>
-                    <input type="text" class="item-volume w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    <label class="block text-xs font-semibold text-text-label mb-1">Volume</label>
+                    <input type="text" class="item-volume w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text-input bg-surface-base"
                         placeholder="-" maxlength="50"
                         oninvalid="this.setCustomValidity('Volume maksimal 50 karakter')"
                         oninput="this.setCustomValidity('')"
@@ -155,8 +155,8 @@
                 </div>
                 {{-- Unit --}}
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Satuan</label>
-                    <input type="text" class="item-unit w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    <label class="block text-xs font-semibold text-text-label mb-1">Satuan</label>
+                    <input type="text" class="item-unit w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text-input bg-surface-base"
                         placeholder="-" maxlength="50"
                         oninvalid="this.setCustomValidity('Satuan maksimal 50 karakter')"
                         oninput="this.setCustomValidity('')"
@@ -166,8 +166,8 @@
             
             {{-- Unit Price --}}
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Harga Satuan <span class="text-red-500">*</span></label>
-                <input type="text" class="item-unit-price w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right"
+                <label class="block text-xs font-semibold text-text-label mb-1">Harga Satuan <span class="text-error">*</span></label>
+                <input type="text" class="item-unit-price w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-right text-text-input bg-surface-base"
                     placeholder="0" required
                     oninvalid="this.setCustomValidity('Harga satuan harus diisi')"
                     oninput="this.setCustomValidity('')"
@@ -176,8 +176,8 @@
             
             {{-- Total --}}
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Jumlah</label>
-                <div class="item-total-display text-sm font-semibold text-green-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-right">
+                <label class="block text-xs font-semibold text-text-label mb-1">Jumlah</label>
+                <div class="item-total-display text-sm font-semibold text-success border border-border-strong rounded-lg px-3 py-2 bg-surface-secondary text-right">
                     ${formatRp(prefillData.total_price || 0)}
                 </div>
             </div>
@@ -185,7 +185,7 @@
             {{-- Delete Button --}}
             <div>
                 <button type="button" onclick="removeItem(this, '${prefix}')"
-                    class="w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors">
+                    class="w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors">
                     <i class="fa-solid fa-trash"></i>
                     <span>Hapus Item</span>
                 </button>
@@ -217,19 +217,20 @@
         const groupCount = container.querySelectorAll('.group-card').length + 1;
 
         const groupEl = document.createElement('div');
-        groupEl.className = 'group-card border-2 border-gray-300 rounded-xl bg-gray-50 overflow-hidden shadow-sm';
+        groupEl.className =
+            'group-card border-2 border-border-strong rounded-xl bg-surface-secondary overflow-hidden shadow-sm';
         groupEl.innerHTML = `
-        <div class="flex items-center justify-between bg-gray-200 px-4 py-2">
-            <span class="font-bold text-sm text-gray-700">Kelompok ${groupCount}</span>
+        <div class="flex items-center justify-between bg-surface-hover px-4 py-2">
+            <span class="font-bold text-sm text-text-heading">Kelompok ${groupCount}</span>
             <button type="button" onclick="removeGroup(this, '${prefix}')"
-                class="text-red-500 hover:text-red-700 text-sm flex items-center gap-1 transition-colors">
+                class="text-error hover:text-error text-sm flex items-center gap-1 transition-colors">
                 <i class="fa-solid fa-circle-minus"></i> Hapus Kelompok
             </button>
         </div>
         <div class="p-4 space-y-3">
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Kelompok <span class="text-red-500">*</span></label>
-                <input type="text" class="group-name w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                <label class="block text-xs font-semibold text-text-label mb-1">Nama Kelompok <span class="text-error">*</span></label>
+                <input type="text" class="group-name w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text-input bg-surface-base"
                     placeholder="Contoh: P.1 Kayu Kamper Samarinda Oven" required maxlength="255"
                     oninvalid="this.setCustomValidity('Nama kelompok harus diisi')"
                     oninput="this.setCustomValidity('')"
@@ -237,7 +238,7 @@
             </div>
             <div class="items-list space-y-2"></div>
             <button type="button" onclick="addItemToGroup(this, '${prefix}')"
-                class="flex items-center gap-2 bg-white border-2 border-dashed border-gray-300 hover:border-primary hover:text-primary text-gray-500 px-4 py-2 rounded-lg text-sm w-full justify-center transition-all duration-200">
+                class="flex items-center gap-2 bg-surface-base border-2 border-dashed border-border-strong hover:border-primary hover:text-primary text-text-secondary px-4 py-2 rounded-lg text-sm w-full justify-center transition-all duration-200">
                 <i class="fa-solid fa-plus"></i> Tambah Item
             </button>
             <div class="flex justify-end">

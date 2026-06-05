@@ -8,6 +8,8 @@ use App\Models\Inventory\Items;
 use App\Exports\Report\SalesRecapExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\InputNormalizer;
+use App\Services\StockService;
 
 /**
  * Controller untuk mengelola rekap penjualan/sales recap.
@@ -84,227 +86,74 @@ class RecapSalesController extends Controller
      */
     public function store(Request $request)
     {
-        // Ambil data dari request (validasi sudah dilakukan di HTML)
         $itemsJson = $request->input('items');
+        $items = $this->normalizeRecapItems(json_decode($itemsJson, true));
 
-        // Decode JSON items menjadi array
-        $items = json_decode($itemsJson, true);
-
-        // Validasi sederhana: minimal harus ada 1 item
         if (empty($items)) {
             return back()->with('error', 'Minimal harus ada 1 item!')->withInput();
         }
 
-        // Mulai database transaction untuk ensure consistency
         DB::beginTransaction();
         try {
-            // Proses setiap item untuk stock management dan pricing
             foreach ($items as &$item) {
-                // Cek apakah item dari stock inventory
                 if (!empty($item['from_stock']) && !empty($item['id_item'])) {
-                    // Lock stock item untuk concurrency control
                     $stockItem = Items::lockForUpdate()->where('id_item', $item['id_item'])->first();
 
-                    // Validasi: stock item harus ada
                     if (!$stockItem) {
                         DB::rollBack();
-                        return back()->with('error', 'Barang "' . $item['name_item'] . '" tidak ditemukan!')->withInput();
+                        return back()->with('error', 'Barang "' . ($item['name_item'] ?? '') . '" tidak ditemukan!')->withInput();
                     }
 
-                    // Validasi: stock harus cukup
                     if ($stockItem->quantity < $item['quantity']) {
                         DB::rollBack();
-                        return back()
-                            ->with('error', 'Stok Barang Tidak Cukup Silahkan Sesuaikan Dengan Stook Yang Tersedia')
-                            ->withInput();
+                        return back()->with('error', 'Stok Barang Tidak Cukup Silahkan Sesuaikan Dengan Stok Yang Tersedia')->withInput();
                     }
 
-                    // Kurangi stock dengan quantity yang dijual
                     $stockItem->quantity -= $item['quantity'];
                     $stockItem->save();
 
-                    // Gunakan harga dari stock item
-                    $item['capital_price'] = $stockItem->capital_price;
-                    $item['selling_price'] = $stockItem->selling_price;
+                    $item['capital_price'] = (int) $stockItem->capital_price;
+                    $item['selling_price'] = (int) $stockItem->selling_price;
+                    $item['from_stock'] = true;
                 } else {
-                    // Item bukan dari stock - validasi harga manual
-                    $capitalPrice = $item['capital_price'] ?? 0;
-                    $sellingPrice = $item['selling_price'] ?? 0;
+                    $capitalPrice = (int) ($item['capital_price'] ?? 0);
+                    $sellingPrice = (int) ($item['selling_price'] ?? 0);
 
-                    // Validasi business logic: harga modal < harga jual
                     if ($capitalPrice >= $sellingPrice) {
                         DB::rollBack();
-                        return back()
-                            ->with('error', "Harga modal harus lebih kecil dari harga jual untuk item")
-                            ->withInput();
+                        return back()->with('error', 'Harga modal harus lebih kecil dari harga jual untuk item')->withInput();
                     }
-                }
 
-                // Hitung profit per item: (harga jual - harga modal) × quantity
-                $item['profit'] = ($item['selling_price'] - $item['capital_price']) * $item['quantity'];
-            }
-
-            // Siapkan data untuk insert ke database
-            $data = [];
-            $data['id_sales_recap'] = $this->generateSalesRecapId();
-            $data['date'] = $request->date;  // Ambil dari request
-            $data['name_proyek'] = $request->name_proyek;  // Ambil dari request
-            $data['items'] = json_encode($items);
-            $data['status'] = 'Belum Lunas';
-
-            // Hitung total capital, selling, dan profit
-            $totalCapital = 0;
-            $totalSelling = 0;
-            foreach ($items as $item) {
-                $totalCapital += ($item['capital_price'] ?? 0) * ($item['quantity'] ?? 0);
-                $totalSelling += ($item['selling_price'] ?? 0) * ($item['quantity'] ?? 0);
-            }
-            $data['total_capital'] = $totalCapital;
-            $data['total_selling'] = $totalSelling;
-            $data['total_profit'] = $totalSelling - $totalCapital;
-
-            // Create sales report dengan data lengkap
-            $salesRecap = SalesRecap::create($data);
-
-            DB::commit();
-            return redirect()->route('recap-sales.index')
-                ->with('success', 'Data rekap penjualan berhasil ditambahkan!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
-        }
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        // Cari sales report berdasarkan ID
-        $salesRecap = SalesRecap::findOrFail($id);
-
-        // Cek apakah sudah lunas (data lunas tidak bisa diubah)
-        if ($salesRecap->isLunas()) {
-            return back()->with('error', 'Data yang sudah lunas tidak dapat diubah!');
-        }
-
-        // Ambil items dari request (validasi sudah dilakukan di HTML)
-        $newItems = $request->items;
-
-        // Mulai database transaction untuk ensure consistency
-        DB::beginTransaction();
-        try {
-            // Ambil old items untuk stock restoration
-            $oldItems = is_string($salesRecap->items) ? json_decode($salesRecap->items, true) : $salesRecap->items;
-
-            // Map untuk tracking perubahan stock per item: [id_item => delta_quantity]
-            $stockChanges = [];
-
-            // STEP 1: Hitung stock yang akan DIKEMBALIKAN dari old items
-            foreach ($oldItems as $oldItem) {
-                $isOldFromStock = isset($oldItem['from_stock']) && ($oldItem['from_stock'] === true || $oldItem['from_stock'] === 'true');
-
-                if ($isOldFromStock && !empty($oldItem['id_item'])) {
-                    $itemId = $oldItem['id_item'];
-                    // Initialize jika belum ada
-                    if (!isset($stockChanges[$itemId])) {
-                        $stockChanges[$itemId] = 0;
-                    }
-                    // Tambahkan quantity yang dikembalikan (positif)
-                    $stockChanges[$itemId] += $oldItem['quantity'];
-                }
-            }
-
-            // STEP 2: Hitung stock yang akan DIKURANGI dari new items
-            foreach ($newItems as &$item) {
-                $isNewFromStock = isset($item['from_stock']) && ($item['from_stock'] === true || $item['from_stock'] === 'true');
-
-                if ($isNewFromStock && !empty($item['id_item'])) {
-                    $itemId = $item['id_item'];
-                    // Initialize jika belum ada
-                    if (!isset($stockChanges[$itemId])) {
-                        $stockChanges[$itemId] = 0;
-                    }
-                    // Kurangi quantity yang akan diambil (negatif)
-                    $stockChanges[$itemId] -= $item['quantity'];
-                } else {
-                    // Item tidak dari stock, set flag
                     $item['from_stock'] = false;
                     $item['id_item'] = null;
                 }
-            }
 
-            // STEP 3: Validasi dan apply perubahan stock
-            foreach ($stockChanges as $itemId => $delta) {
-                // Lock item untuk concurrency
-                $stockItem = Items::lockForUpdate()->where('id_item', $itemId)->first();
-
-                if (!$stockItem) {
-                    DB::rollBack();
-                    return back()->with('error', 'Barang dengan ID "' . $itemId . '" tidak ditemukan!')->withInput();
-                }
-
-                // Hitung new stock: current + delta
-                // delta bisa positif (return lebih banyak) atau negatif (ambil lebih banyak)
-                $newStock = $stockItem->quantity + $delta;
-
-                // Validasi: stock tidak boleh negatif
-                if ($newStock < 0) {
-                    DB::rollBack();
-                    return back()
-                        ->with('error', "Stock barang yang diambil melebihi stok tersedia")
-                        ->withInput();
-                }
-
-                // Apply perubahan stock
-                $stockItem->quantity = $newStock;
-                $stockItem->save();
-            }
-
-            // STEP 4: Update item details untuk items from stock
-            foreach ($newItems as &$item) {
-                $isNewFromStock = isset($item['from_stock']) && ($item['from_stock'] === true || $item['from_stock'] === 'true');
-
-                if ($isNewFromStock && !empty($item['id_item'])) {
-                    // Ambil harga dari stock
-                    $stockItem = Items::where('id_item', $item['id_item'])->first();
-
-                    if ($stockItem) {
-                        $item['capital_price'] = $stockItem->capital_price;
-                        $item['selling_price'] = $stockItem->selling_price;
-                    }
-
-                    // Store sebagai boolean true
-                    $item['from_stock'] = true;
-                } else {
-                    // Item bukan dari stock - validasi harga
-                    $capitalPrice = $item['capital_price'] ?? 0;
-                    $sellingPrice = $item['selling_price'] ?? 0;
-
-                    if ($capitalPrice >= $sellingPrice) {
-                        DB::rollBack();
-                        return back()
-                            ->with('error', "Harga modal harus lebih kecil dari harga jual untuk item")
-                            ->withInput();
-                    }
-                }
-
-                // Hitung profit per item
                 $item['profit'] = ($item['selling_price'] - $item['capital_price']) * $item['quantity'];
             }
+            unset($item);
 
-            // Update sales report
-            $salesRecap->date = $request->date;
-            $salesRecap->name_proyek = $request->name_proyek;
-            $salesRecap->items = json_encode($newItems);
-            // calculateTotals() method di model untuk hitung total_capital, total_selling, total_profit
-            $salesRecap->calculateTotals();
-            $salesRecap->save();
+            $totalCapital = 0;
+            $totalSelling = 0;
+            foreach ($items as $item) {
+                $totalCapital += (int) ($item['capital_price'] ?? 0) * (int) ($item['quantity'] ?? 0);
+                $totalSelling += (int) ($item['selling_price'] ?? 0) * (int) ($item['quantity'] ?? 0);
+            }
 
-            // Commit transaction
+            $salesRecap = SalesRecap::create([
+                'id_sales_recap' => $this->generateSalesRecapId(),
+                'date' => $request->date,
+                'name_proyek' => $request->name_proyek,
+                'items' => json_encode($items),
+                'status' => 'Belum Lunas',
+                'total_capital' => $totalCapital,
+                'total_selling' => $totalSelling,
+                'total_profit' => $totalSelling - $totalCapital,
+            ]);
+
             DB::commit();
+
             return redirect()->route('recap-sales.index')
-                ->with('success', 'Data rekap penjualan berhasil diupdate!');
+                ->with('success', 'Data rekap penjualan berhasil ditambahkan!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
@@ -362,22 +211,9 @@ class RecapSalesController extends Controller
                     ? json_decode($salesRecap->items, true)
                     : $salesRecap->items;
 
-                // Loop setiap item untuk restore stock
-                foreach ($items as $item) {
-                    // Cek apakah item dari stock
-                    if (!empty($item['from_stock']) && !empty($item['id_item'])) {
-                        // Lock item untuk concurrency
-                        $stockItem = Items::lockForUpdate()
-                            ->where('id_item', $item['id_item'])
-                            ->first();
 
-                        if ($stockItem) {
-                            // Kembalikan stock: tambahkan quantity yang sebelumnya dikurangi
-                            $stockItem->quantity += $item['quantity'];
-                            $stockItem->save();
-                        }
-                    }
-                }
+                // Restore stock using StockService to keep logic consistent
+                (new StockService())->increaseStockFromItems($items ?? []);
 
                 // Hapus sales report dari database (ItemStockOut otomatis dihapus via Observer)
                 $salesRecap->delete();
@@ -540,6 +376,35 @@ class RecapSalesController extends Controller
 
         $pdf->setPaper('a4', 'landscape');
 
+        return $pdf->download('recap-sales-' . date('Y-m-d-His') . '.pdf');
+
     }
+
+    /**
+     * Normalisasi item rekap penjualan agar harga rupiah yang tampil di form tetap dihitung sebagai angka.
+     */
+    private function normalizeRecapItems($items): array
+    {
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return array_map(function ($item) {
+            $item['quantity'] = (int) ($item['quantity'] ?? 0);
+            $item['capital_price'] = InputNormalizer::normalizeCurrency($item['capital_price'] ?? 0);
+            $item['selling_price'] = InputNormalizer::normalizeCurrency($item['selling_price'] ?? 0);
+
+            return $item;
+        }, $items);
+    }
+
+    /**
+     * Convert input harga seperti "Rp 1.000" atau "1.000" menjadi angka.
+     */
+
 }
 

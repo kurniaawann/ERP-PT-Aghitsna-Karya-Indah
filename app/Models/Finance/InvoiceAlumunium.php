@@ -4,6 +4,7 @@ namespace App\Models\Finance;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Finance\PaymentProof;
 
 class InvoiceAlumunium extends Model
 {
@@ -49,6 +50,70 @@ class InvoiceAlumunium extends Model
     public function getRouteKeyName()
     {
         return 'invoice_number';
+    }
+
+    /**
+     * Bukti pembayaran untuk invoice alumunium.
+     */
+    public function paymentProofs()
+    {
+        return $this->hasMany(PaymentProof::class, 'invoice_number', 'invoice_number')
+            ->where('invoice_type', 'alumunium')
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Total pembayaran dari bukti pembayaran yang sudah masuk.
+     */
+    public function getTotalPaidAmount(): int
+    {
+        $paymentProofs = $this->relationLoaded('paymentProofs')
+            ? $this->paymentProofs
+            : $this->paymentProofs()->get();
+
+        return (int) max(0, $paymentProofs->sum(fn($paymentProof) => (int) ($paymentProof->amount ?? 0)));
+    }
+
+    /**
+     * Total invoice setelah diskon.
+     */
+    public function getNetAmount(): int
+    {
+        return (int) max(0, $this->total_after_discount ?? $this->total_amount ?? 0);
+    }
+
+    /**
+     * Sisa pembayaran yang harus dilunasi.
+     */
+    public function getRemainingAmount(): int
+    {
+        return (int) max(0, $this->getNetAmount() - $this->getTotalPaidAmount());
+    }
+
+    /**
+     * Cek apakah invoice sudah lunas.
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->getTotalPaidAmount() >= $this->getNetAmount();
+    }
+
+    /**
+     * Label status pembayaran invoice alumunium.
+     */
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return $this->isFullyPaid() ? 'Sudah Dibayarkan' : 'Belum Dibayar';
+    }
+
+    /**
+     * Badge class untuk status pembayaran invoice alumunium.
+     */
+    public function getPaymentStatusBadgeClassAttribute(): string
+    {
+        return $this->isFullyPaid()
+            ? 'bg-green-100 text-green-800'
+            : 'bg-yellow-100 text-yellow-800';
     }
 
     /**

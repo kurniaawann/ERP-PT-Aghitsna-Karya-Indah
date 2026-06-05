@@ -22,6 +22,28 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             AttendanceSeeder::class,
             OvertimeSeeder::class,
+            DivisionSeeder::class,
+            PaymentAccountSeeder::class,
+            ProjectQuotationSeeder::class,
+                // Seeders dengan data inventory & keuangan:
+            ItemStockInSeeder::class,
+            ItemStockOutSeeder::class,
+            ItemReturnSeeder::class,
+            ReimburseSeeder::class,
+            ReimburseDataSeeder::class,
+            PayrollSeeder::class,
+            KasbonSeeder::class,
+            PurchaseInvoiceSeeder::class,
+            CashOutProofSeeder::class,
+            KwintansiSeeder::class,
+            DocumentReceiptSeeder::class,
+            RabMiscellaneousCostSeeder::class,
+                // Seeders untuk proyek & reminders:
+            ProyekInvoiceSeeder::class,
+            DeliveryNoteSeeder::class,
+            InvoiceProyekReminderSeeder::class,
+            SalaryReminderSeeder::class,
+            SdmSeeder::class,
         ]);
     }
 }

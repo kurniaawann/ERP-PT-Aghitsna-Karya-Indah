@@ -9,8 +9,11 @@ use App\Models\Administrasi\RABSubCategory;
 use App\Models\Administrasi\RABItem;
 use App\Models\Administrasi\RABMiscellaneousCost;
 use App\Models\Finance\PaymentAccount;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\Administrasi\RABExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RABController extends Controller
 {
@@ -26,7 +29,7 @@ class RABController extends Controller
                     ->orWhere('recipient', 'like', "%{$search}%");
             })
             ->orderBy('sequence_number', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         $paymentAccounts = PaymentAccount::active()->get();
 
@@ -80,21 +83,36 @@ class RABController extends Controller
                     'roman_order' => $category->roman_order,
                     'category_name' => $category->category_name,
                     'subcategories' => $category->subcategories->map(function ($subcategory) {
+                        $legacySubtotal = (int) ($subcategory->sub_harga ?? 0);
+                        $legacyVolume = $subcategory->volume;
+                        $legacyUnit = $subcategory->unit;
+                        $legacyUnitPrice = $subcategory->unit_price;
+
                         return [
                             'id' => $subcategory->id,
                             'number_order' => $subcategory->number_order,
                             'subcategory_name' => $subcategory->subcategory_name,
-                            'volume' => $subcategory->volume,
-                            'unit' => $subcategory->unit,
-                            'unit_price' => $subcategory->unit_price,
-                            'sub_harga' => $subcategory->sub_harga,
-                            'items' => $subcategory->items->map(function ($item) {
+                            'items' => $subcategory->items->values()->map(function ($item, $index) use ($legacyVolume, $legacyUnit, $legacyUnitPrice, $legacySubtotal) {
+                                $hasItemPricing = $item->volume !== null
+                                    || $item->unit !== null
+                                    || $item->unit_price !== null
+                                    || $item->sub_harga !== null;
+
+                                $useLegacyPricing = !$hasItemPricing && $index === 0;
+
                                 return [
                                     'id' => $item->id,
                                     'letter_order' => $item->letter_order,
                                     'item_description' => $item->item_description,
+                                    'volume' => $hasItemPricing ? $item->volume : ($useLegacyPricing ? $legacyVolume : null),
+                                    'unit' => $hasItemPricing ? $item->unit : ($useLegacyPricing ? $legacyUnit : null),
+                                    'unit_price' => $hasItemPricing ? $item->unit_price : ($useLegacyPricing ? $legacyUnitPrice : null),
+                                    'sub_harga' => $hasItemPricing ? $item->sub_harga : ($useLegacyPricing ? $legacySubtotal : 0),
                                 ];
                             })->toArray(),
+                            'sub_harga' => $subcategory->items->sum(function ($item) {
+                                return (int) ($item->sub_harga ?? 0);
+                            }) ?: $legacySubtotal,
                         ];
                     })->toArray(),
                 ];
@@ -148,7 +166,20 @@ class RABController extends Controller
         $totalAmount = 0;
         foreach ($rabData as $category) {
             foreach ($category['subcategories'] ?? [] as $subcategory) {
-                $totalAmount += (int) ($subcategory['sub_harga'] ?? 0);
+                $subcategoryTotal = 0;
+
+                foreach ($subcategory['items'] ?? [] as $itemData) {
+                    $volume = (float) ($itemData['volume'] ?? 0);
+                    $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+                    $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
+                    $subcategoryTotal += $itemTotal;
+                }
+
+                if ($subcategoryTotal === 0) {
+                    $subcategoryTotal = (int) ($subcategory['sub_harga'] ?? 0);
+                }
+
+                $totalAmount += $subcategoryTotal;
             }
         }
 
@@ -188,23 +219,41 @@ class RABController extends Controller
 
                 // Create subcategories
                 foreach ($categoryData['subcategories'] ?? [] as $subcategoryIndex => $subcategoryData) {
+                    $subcategoryTotal = 0;
+
+                    foreach ($subcategoryData['items'] ?? [] as $itemData) {
+                        $volume = (float) ($itemData['volume'] ?? 0);
+                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
+                        $subcategoryTotal += $itemTotal;
+                    }
+
+                    if ($subcategoryTotal === 0) {
+                        $subcategoryTotal = (int) ($subcategoryData['sub_harga'] ?? 0);
+                    }
+
                     $subcategory = RABSubCategory::create([
                         'rab_category_id' => $category->id,
                         'number_order' => $subcategoryIndex + 1,
                         'subcategory_name' => $subcategoryData['subcategory_name'],
-                        'volume' => (int) ($subcategoryData['volume'] ?? 0),
-                        'unit' => $subcategoryData['unit'] ?? '',
-                        'unit_price' => (int) ($subcategoryData['unit_price'] ?? 0),
-                        'sub_harga' => (int) ($subcategoryData['sub_harga'] ?? 0),
+                        'sub_harga' => $subcategoryTotal,
                         'order' => $subcategoryIndex,
                     ]);
 
                     // Create items
                     foreach ($subcategoryData['items'] ?? [] as $itemIndex => $itemData) {
+                        $volume = (float) ($itemData['volume'] ?? 0);
+                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
+
                         RABItem::create([
                             'rab_subcategory_id' => $subcategory->id,
                             'letter_order' => $itemIndex + 1,
                             'item_description' => $itemData['item_description'],
+                            'volume' => $volume ?: null,
+                            'unit' => $itemData['unit'] ?? null,
+                            'unit_price' => $unitPrice ?: null,
+                            'sub_harga' => $itemTotal,
                             'order' => $itemIndex,
                         ]);
                     }
@@ -260,7 +309,20 @@ class RABController extends Controller
         $totalAmount = 0;
         foreach ($rabData as $category) {
             foreach ($category['subcategories'] ?? [] as $subcategory) {
-                $totalAmount += (int) ($subcategory['sub_harga'] ?? 0);
+                $subcategoryTotal = 0;
+
+                foreach ($subcategory['items'] ?? [] as $itemData) {
+                    $volume = (float) ($itemData['volume'] ?? 0);
+                    $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+                    $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
+                    $subcategoryTotal += $itemTotal;
+                }
+
+                if ($subcategoryTotal === 0) {
+                    $subcategoryTotal = (int) ($subcategory['sub_harga'] ?? 0);
+                }
+
+                $totalAmount += $subcategoryTotal;
             }
         }
 
@@ -299,22 +361,40 @@ class RABController extends Controller
                 ]);
 
                 foreach ($categoryData['subcategories'] ?? [] as $subcategoryIndex => $subcategoryData) {
+                    $subcategoryTotal = 0;
+
+                    foreach ($subcategoryData['items'] ?? [] as $itemData) {
+                        $volume = (float) ($itemData['volume'] ?? 0);
+                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
+                        $subcategoryTotal += $itemTotal;
+                    }
+
+                    if ($subcategoryTotal === 0) {
+                        $subcategoryTotal = (int) ($subcategoryData['sub_harga'] ?? 0);
+                    }
+
                     $subcategory = RABSubCategory::create([
                         'rab_category_id' => $category->id,
                         'number_order' => $subcategoryIndex + 1,
                         'subcategory_name' => $subcategoryData['subcategory_name'],
-                        'volume' => (int) ($subcategoryData['volume'] ?? 0),
-                        'unit' => $subcategoryData['unit'] ?? '',
-                        'unit_price' => (int) ($subcategoryData['unit_price'] ?? 0),
-                        'sub_harga' => (int) ($subcategoryData['sub_harga'] ?? 0),
+                        'sub_harga' => $subcategoryTotal,
                         'order' => $subcategoryIndex,
                     ]);
 
                     foreach ($subcategoryData['items'] ?? [] as $itemIndex => $itemData) {
+                        $volume = (float) ($itemData['volume'] ?? 0);
+                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
+
                         RABItem::create([
                             'rab_subcategory_id' => $subcategory->id,
                             'letter_order' => $itemIndex + 1,
                             'item_description' => $itemData['item_description'],
+                            'volume' => $volume ?: null,
+                            'unit' => $itemData['unit'] ?? null,
+                            'unit_price' => $unitPrice ?: null,
+                            'sub_harga' => $itemTotal,
                             'order' => $itemIndex,
                         ]);
                     }
@@ -369,11 +449,21 @@ class RABController extends Controller
         // Buat nama file yang aman (tanpa karakter /)
         $safeFileName = str_replace('/', '-', $rabNumber);
 
-        $pdf = \PDF::loadView('exports.administrasi.rab-pdf', [
+        $pdf = Pdf::loadView('exports.administrasi.rab-pdf', [
             'rab' => $rab,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download("{$safeFileName}.pdf");
+    }
+
+    // ─── Export Excel ─────────────────────────────────────────────────────────
+
+    public function exportExcel(string $rabNumber)
+    {
+        $rab = RAB::where('rab_number', $rabNumber)->firstOrFail();
+        $safeFileName = str_replace('/', '-', $rabNumber);
+
+        return Excel::download(new RABExport($rab->rab_number), "{$safeFileName}.xlsx");
     }
 
     // ─── Helper: Convert Arabic to Roman ───────────────────────────────────────
