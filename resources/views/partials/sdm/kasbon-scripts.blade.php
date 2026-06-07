@@ -95,6 +95,24 @@
             return;
         }
 
+        // Loading state untuk request check-max
+        let modalId;
+        if (prefix === 'add') {
+            modalId = 'addModal';
+        } else if (prefix.startsWith('edit_')) {
+            modalId = 'editModal' + prefix.replace('edit_', '');
+        }
+        const submitButton = modalId ? document.getElementById('submit-btn-' + modalId) : null;
+        if (submitButton) {
+            if (!submitButton.dataset.originalHtml) {
+                submitButton.dataset.originalHtml = submitButton.textContent.trim();
+            }
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+            // Kalau sudah ada handleFormSubmit, kita cukup ganti innerHTML jadi spinner
+            submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengecek...';
+        }
+
         try {
             const response = await fetch('{{ route('kasbon.check-max') }}', {
                 method: 'POST',
@@ -111,6 +129,14 @@
             });
 
             const data = await response.json();
+
+            // restore tombol setelah request selesai (akan diputuskan lagi oleh validateKasbonAmount)
+            if (submitButton && submitButton.dataset.originalHtml) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                submitButton.innerHTML = submitButton.dataset.originalHtml;
+            }
+
 
             if (data.success) {
                 // Auto-fill week number jika ada hidden input
@@ -356,6 +382,46 @@
                     `edit_${this.closest('[id^="editModal"]')?.id.replace('editModal', '') || ''}`;
                 validateKasbonAmount(prefix);
             });
+        });
+    });
+
+    // ==========================================
+    // ADD/EDIT FORM SUBMIT HANDLERS (KASBON)
+    // ==========================================
+
+    // handleFormSubmit is provided by:
+    // resources/js/shared/form-submit.js
+
+    // Handle Add Modal Submit
+    const addForm = document.querySelector('#addModal form');
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+
+            if (typeof window.handleFormSubmit === 'function') {
+                const ok = window.handleFormSubmit(submitBtn, submitBtn.textContent.trim() || 'Simpan', );
+                if (!ok) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    }
+
+    // Handle Edit Modal Submits
+    document.querySelectorAll('[id^="editModal"] form').forEach((form) => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+
+            if (typeof window.handleFormSubmit === 'function') {
+                const ok = window.handleFormSubmit(submitBtn, submitBtn.textContent.trim() || 'Update');
+                if (!ok) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
         });
     });
 </script>
