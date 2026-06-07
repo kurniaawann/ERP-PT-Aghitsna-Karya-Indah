@@ -8,6 +8,7 @@
 .env
 .env.backup
 .env.production
+/public/images/proof_payment/
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
