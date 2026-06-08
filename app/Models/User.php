@@ -42,6 +42,27 @@ class User extends Authenticatable
         return $this->role === 'superadmin';
     }
 
+    public function isStafGudang(): bool
+    {
+        return $this->role === 'staf_gudang';
+    }
+
+    public function isStafSDM(): bool
+    {
+        return $this->role === 'staf_sdm';
+    }
+
+    public function isGeneralManager(): bool
+    {
+        return $this->role === 'general_manager';
+    }
+
+    public function isAnother(): bool
+    {
+        return $this->role === 'another';
+    }
+
+
     public function hasRole(string|array $roles): bool
     {
         return in_array($this->role, (array) $roles);

@@ -391,7 +391,105 @@ Route::middleware('auth')->group(function () {
         Route::put('/user-management/{user}', [UserController::class, 'update'])->name('user-management.update');
     });
 
+    // ============================================
+    // Role-based access (selain superadmin)
+    // ============================================
+
+    // staf_gudang: hanya Inventory
+    Route::middleware('role:staf_gudang')->group(function () {
+        Route::get('/item', [ItemController::class, 'index'])->name('item.index');
+        Route::post('/item', [ItemController::class, 'store'])->name('item.store');
+        Route::put('/item/{id_item}', [ItemController::class, 'update'])->name('item.update');
+        Route::delete('/items', [ItemController::class, 'destroySelected'])->name('items.destroySelected');
+
+        Route::get('/item/export/pdf', [ItemController::class, 'exportPdf'])->name('item.export.pdf');
+        Route::get('/item/export/excel', [ItemController::class, 'exportExcel'])->name('item.export.excel');
+
+        Route::get('/stock-in', [ItemStockInController::class, 'index'])->name('stock-in.index');
+        Route::post('/stock-in', [ItemStockInController::class, 'store'])->name('stock-in.store');
+        Route::put('/stock-in/{id_stock_in}', [ItemStockInController::class, 'update'])->name('stock-in.update');
+        Route::delete('/stock-in/{id_stock_in}', [ItemStockInController::class, 'destroy'])->name('stock-in.destroy');
+        Route::delete('/stock-ins', [ItemStockInController::class, 'destroySelected'])->name('stock-ins.destroySelected');
+        Route::get('/stock-in/export/pdf', [ItemStockInController::class, 'exportPdf'])->name('stock-in.export.pdf');
+        Route::get('/stock-in/export/excel', [ItemStockInController::class, 'exportExcel'])->name('stock-in.export.excel');
+
+        Route::get('/stock-out', [ItemStockOutController::class, 'index'])->name('stock-out.index');
+        Route::get('/stock-out/export/pdf', [ItemStockOutController::class, 'exportPdf'])->name('stock-out.export.pdf');
+        Route::get('/stock-out/export/excel', [ItemStockOutController::class, 'exportExcel'])->name('stock-out.export.excel');
+
+        Route::get('/item-return', [ItemReturnController::class, 'index'])->name('item-return.index');
+        Route::post('/item-return', [ItemReturnController::class, 'store'])->name('item-return.store');
+        Route::put('/item-return/{id_return}', [ItemReturnController::class, 'update'])->name('item-return.update');
+        Route::delete('/item-return/bulk-delete', [ItemReturnController::class, 'bulkDelete'])->name('item-return.bulk-delete');
+        Route::delete('/item-return/{id_return}', [ItemReturnController::class, 'destroy'])->name('item-return.destroy');
+        Route::get('/item-return/export/pdf', [ItemReturnController::class, 'exportPdf'])->name('item-return.export.pdf');
+        Route::get('/item-return/export/excel', [ItemReturnController::class, 'exportExcel'])->name('item-return.export.excel');
+
+        Route::get('/stock-report', [StockReportController::class, 'index'])->name('stock-report.index');
+        Route::get('/stock-report/items-dropdown', [StockReportController::class, 'itemsDropdown'])->name('stock-report.items-dropdown');
+    });
+
+    // staf_sdm: hanya Human Resource
+    Route::middleware('role:staf_sdm')->group(function () {
+        Route::get('/employee', [EmployeeController::class, 'index'])->name('employee.index');
+        Route::post('/employee', [EmployeeController::class, 'store'])->name('employee.store');
+        Route::put('/employee/{employee}', [EmployeeController::class, 'update'])->name('employee.update');
+        Route::delete('/employee/destroy-selected', [EmployeeController::class, 'destroy'])->name('employee.destroy');
+
+        Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+        Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])->name('attendance.update');
+        Route::delete('/attendance/destroy-selected', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+
+        Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
+        Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
+        Route::put('/overtime/{overtime}', [OvertimeController::class, 'update'])->name('overtime.update');
+        Route::delete('/overtime/destroy-selected', [OvertimeController::class, 'destroy'])->name('overtime.destroy');
+
+        Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+        Route::get('/payroll/export/excel', [PayrollController::class, 'exportExcel'])->name('payroll.export.excel');
+        Route::get('/payroll/export/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export.pdf');
+        Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+        Route::put('/payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
+        Route::post('/payroll/check-attendance', [PayrollController::class, 'checkAttendanceCompleteness'])->name('payroll.check-attendance');
+        Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
+        Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
+        Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+
+        Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');
+        Route::post('/kasbon', [KasbonController::class, 'store'])->name('kasbon.store');
+        Route::put('/kasbon/{kasbonCode}', [KasbonController::class, 'update'])->name('kasbon.update');
+        Route::delete('/kasbon/destroy-selected', [KasbonController::class, 'destroySelected'])->name('kasbon.destroySelected');
+        Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
+        Route::post('/kasbon/check-max', [KasbonController::class, 'checkMaxKasbon'])->name('kasbon.check-max');
+
+        Route::get('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'index'])->name('division.index');
+        Route::post('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'store'])->name('division.store');
+        Route::put('/division/{division}', [\App\Http\Controllers\Sdm\DivisionController::class, 'update'])->name('division.update');
+        Route::delete('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'destroy'])->name('division.destroy');
+    });
+
+    // general_manager: User Management + Report
+    Route::middleware('role:general_manager')->group(function () {
+        Route::get('/user-management', [UserController::class, 'index'])->name('user-management.index');
+        Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
+        Route::delete('/user-management/destroy-selected', [UserController::class, 'destroy'])->name('user-management.destroy');
+        Route::put('/user-management/{user}', [UserController::class, 'update'])->name('user-management.update');
+
+        Route::get('/transaction-category', [TransactionCategoryController::class, 'index'])->name('transaction-category.index');
+        Route::post('/transaction-category', [TransactionCategoryController::class, 'store'])->name('transaction-category.store');
+        Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
+        Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
+        Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
+
+        Route::get('/report/sales', [SalesReportController::class, 'index'])->name('report.sales');
+        Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
+    });
+
+    // another: akses penuh (tanpa group pembatasan)
+
     // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
+
     Route::get('/rab', [RABController::class, 'index'])->name('rab.index');
     Route::get('/rab/next-number', [RABController::class, 'getNextRABNumber'])->name('rab.getNextNumber');
     Route::post('/rab', [RABController::class, 'store'])->name('rab.store');
