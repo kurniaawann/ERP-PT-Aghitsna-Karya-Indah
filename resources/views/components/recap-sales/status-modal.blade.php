@@ -19,7 +19,7 @@
                 <div>
                     <p class="font-semibold text-warning mb-1">Informasi</p>
                     <p class="text-sm text-text-primary">
-                        Setelah bukti pembayaran invoice proyek diupload dan dikaitkan ke rekap penjualan ini,
+                        Setelah bukti pembayaran {{ auth()->user()?->isSuperAdmin() ? 'invoice' : 'invoice proyek' }} diupload dan dikaitkan ke rekap penjualan ini,
                         status akan berubah otomatis menjadi <strong>"Lunas"</strong> jika total pembayaran sudah
                         terpenuhi.
                     </p>

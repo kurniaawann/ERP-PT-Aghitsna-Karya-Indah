@@ -32,9 +32,9 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi Proyek' }} <span class="text-error">*</span></label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2" required
-            oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
+            oninvalid="this.setCustomValidity('{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi proyek' }} tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
     <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">

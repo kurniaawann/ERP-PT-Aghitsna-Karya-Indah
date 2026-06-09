@@ -1,6 +1,5 @@
 {{-- Modal Tambah Invoice Proyek --}}
-<x-modal id="addModal" title="Tambah Invoice Proyek" action="{{ route('proyek-invoice.store') }}" method="POST"
-    buttonText="Simpan">
+<x-modal id="addModal" :title="auth()->user()?->isSuperAdmin() ? 'Tambah Invoice' : 'Tambah Invoice Proyek'" action="{{ route('proyek-invoice.store') }}" method="POST" buttonText="Simpan">
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
@@ -24,10 +23,12 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
+        <label
+            class="block text-text-primary mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi Proyek ' }}<span
+                class="text-error">*</span></label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2"
             placeholder="Contoh: Renovasi Rumah" required
-            oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
+            oninvalid="this.setCustomValidity('{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi proyek' }} tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
     <div id="items-container" class="mb-4">

@@ -54,7 +54,7 @@
         <p id="payment-proof-amount-help-edit-{{ $paymentProof->id }}" class="text-xs text-text-secondary mt-1">
             Nominal akan divalidasi terhadap sisa tagihan invoice yang dipilih.
         </p>
-        <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek.</p>
+        <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk {{ auth()->user()?->isSuperAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
     </div>
 
     <div class="mb-3 p-3 border rounded bg-blue-50">

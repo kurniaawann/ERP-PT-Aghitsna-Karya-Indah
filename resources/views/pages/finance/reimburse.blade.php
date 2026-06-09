@@ -34,7 +34,7 @@
                         <x-buttons.add-button modalId="addModal" text="Tambah Reimburse" />
                     @endif
 
-                    @if (Auth::user()->role === 'superadmin')
+                    @if (Auth::user()->role === 'superadmin' || Auth::user()->role === 'another')
                         {{-- Super Admin can approve/reject --}}
                         <button type="button" id="approve-button" disabled onclick="openModal('approveModal')"
                             class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
@@ -55,7 +55,7 @@
         </div>
 
         {{-- Total Info untuk Super Admin --}}
-        @if (Auth::user()->role === 'superadmin')
+        @if (Auth::user()->role === 'superadmin' || Auth::user()->role === 'another')
             <div id="selected-info" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p class="text-sm text-text-primary">
                     <span id="selected-count">0</span> reimburse terpilih | Total: <strong id="selected-total">Rp 0</strong>
@@ -83,7 +83,7 @@
     @endforeach
 
     {{-- Modal Konfirmasi Approve (Super Admin) --}}
-    @if (Auth::user()->role === 'superadmin')
+    @if (Auth::user()->role === 'superadmin' || Auth::user()->role === 'another')
         @include('components.finance.reimburse.approve-modal')
         @include('components.finance.reimburse.reject-modal')
     @endif

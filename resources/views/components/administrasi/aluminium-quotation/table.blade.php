@@ -78,7 +78,7 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center p-4 text-text-secondary">
-                                    Belum ada data penawaran proyek.
+                                    {{ auth()->user()?->isSuperAdmin() ? 'Belum ada data penawaran.' : 'Belum ada data penawaran proyek.' }}
                                 </td>
                             </tr>
                         @endforelse

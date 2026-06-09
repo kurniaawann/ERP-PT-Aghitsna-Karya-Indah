@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Penawaran Proyek</title>
+    <title>{{ auth()->user()?->isSuperAdmin() ? 'Penawaran' : 'Penawaran Proyek' }}</title>
     <style>
         @page {
             size: A4;

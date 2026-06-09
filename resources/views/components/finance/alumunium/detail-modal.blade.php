@@ -21,7 +21,7 @@
     </div>
 
     <div class="mb-4">
-        <label class="block text-sm font-semibold text-text-primary mb-1">Deskripsi Proyek</label>
+        <label class="block text-sm font-semibold text-text-primary mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi Proyek' }}</label>
         <p class="text-gray-900">{{ $invoice->project_description }}</p>
     </div>
 

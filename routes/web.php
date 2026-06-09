@@ -396,7 +396,7 @@ Route::middleware('auth')->group(function () {
     // ============================================
 
     // staf_gudang: hanya Inventory
-    Route::middleware('role:staf_gudang')->group(function () {
+    Route::middleware('role:staf_gudang|role:another')->group(function () {
         Route::get('/item', [ItemController::class, 'index'])->name('item.index');
         Route::post('/item', [ItemController::class, 'store'])->name('item.store');
         Route::put('/item/{id_item}', [ItemController::class, 'update'])->name('item.update');

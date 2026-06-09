@@ -123,7 +123,7 @@
 
 <body>
     <div class="header">
-        <h1>LAPORAN REKAP INVOICE PROYEK</h1>
+        <h1>LAPORAN REKAP {{ auth()->user()?->isSuperAdmin() ? 'INVOICE' : 'INVOICE PROYEK' }}</h1>
         <h2>PT AGHITSNA KARYA INDAH</h2>
         <p>Periode: <strong>{{ strtoupper($periodTitle) }}</strong></p>
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>

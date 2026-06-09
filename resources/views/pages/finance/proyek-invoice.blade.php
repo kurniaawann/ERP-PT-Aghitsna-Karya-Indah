@@ -1,10 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Invoice Proyek')
+@section('title', 'PT Aghitsna Karya Indah - ' . (auth()->user()?->isSuperAdmin() ? 'Invoice' : 'Invoice Proyek'))
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Proyek</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">
+            {{ auth()->user()?->isSuperAdmin() ? 'Invoice' : 'Invoice Proyek' }}</h1>
+
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -21,7 +23,7 @@
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <x-buttons.delete-button modalId="deleteModal" />
 
-                    <x-buttons.add-button modalId="addModal" text="Tambah Invoice" />
+                    <x-buttons.add-button modalId="addModal" :text="auth()->user()?->isSuperAdmin() ? 'Tambah Invoice' : 'Tambah Invoice Proyek'" />
                 </div>
             </div>
         </div>

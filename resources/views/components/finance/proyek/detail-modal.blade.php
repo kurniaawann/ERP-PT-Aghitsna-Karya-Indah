@@ -1,5 +1,5 @@
 {{-- Modal Detail Invoice Proyek --}}
-<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice Proyek" :readOnly="true">
+<x-modal id="detailModal-{{ $invoice->invoice_number }}" :title="auth()->user()?->isSuperAdmin() ? 'Detail Invoice' : 'Detail Invoice Proyek'" :readOnly="true">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
@@ -21,7 +21,8 @@
     </div>
 
     <div class="mb-4">
-        <label class="block text-sm font-semibold text-text-primary mb-1">Deskripsi Proyek</label>
+        <label
+            class="block text-sm font-semibold text-text-primary mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi Proyek' }}</label>
         <p class="text-gray-900">{{ $invoice->project_description }}</p>
     </div>
 

@@ -16,8 +16,8 @@
                         Module</span>
                     <div>
                         <h1 class="text-3xl font-bold tracking-tight">Bukti Pembayaran</h1>
-                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran invoice proyek dan
-                            alumunium. Tahap pembayaran hanya berlaku untuk invoice proyek.</p>
+                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()?->isSuperAdmin() ? 'invoice' : 'invoice proyek' }} dan
+                            alumunium. Tahap pembayaran hanya berlaku untuk {{ auth()->user()?->isSuperAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -46,7 +46,7 @@
                 class="group rounded-2xl border border-primary/20 bg-gradient-to-br from-primary-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Invoice Proyek</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{{ auth()->user()?->isSuperAdmin() ? 'Invoice' : 'Invoice Proyek' }}</p>
                         <p class="mt-2 text-3xl font-bold tracking-tight text-primary">{{ number_format($projectProofs) }}
                         </p>
                     </div>

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Penawaran Proyek - Bulk</title>
+    <title>{{ auth()->user()?->isSuperAdmin() ? 'Penawaran' : 'Penawaran Proyek' }} - Bulk</title>
     <style>
         @page {
             size: A4;

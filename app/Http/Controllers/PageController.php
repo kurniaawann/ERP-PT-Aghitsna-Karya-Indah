@@ -15,8 +15,11 @@ class PageController extends Controller
         // Dashboard adalah halaman pertama yang dilihat user setelah login
         // Berisi ringkasan informasi, statistik, dan quick access ke fitur-fitur utama sistem ERP
 
+        $role = auth()->user()?->role;
+
         // Get current date info
         $now = Carbon::now();
+
         $currentMonth = $now->month;
         $currentYear = $now->year;
         $currentDay = $now->dayOfWeek; // 0=Minggu, 1=Senin, ..., 6=Sabtu
@@ -31,43 +34,51 @@ class PageController extends Controller
         // Get employees who haven't received salary from week 1 to current week
         // Cek semua karyawan dan tentukan minggu mana saja yang belum dibayar
         $employeesWithoutSalary = [];
-        $allEmployees = Employee::all();
 
-        foreach ($allEmployees as $employee) {
-            $unpaidWeeks = [];
+        // staf_gudang hanya melihat Reminder Stok Menipis
+        $shouldShowPayrollReminder = $role !== 'staf_gudang';
+        $shouldShowStockReminder = true; // semua role masih bisa lihat stok reminder (sesuai checklist hanya membatasi staf_gudang untuk payroll)
 
-            // Cek dari minggu 1 sampai minggu saat ini
-            for ($week = 1; $week <= $currentWeek; $week++) {
-                // Cek apakah payroll minggu ini sudah dibayar
-                $isPaid = Payroll::where('employee_id', $employee->employee_code)
-                    ->where('period_month', $currentMonth)
-                    ->where('period_year', $currentYear)
-                    ->where('week_number', $week)
-                    ->where('status', 'paid')
-                    ->exists();
+        if ($shouldShowPayrollReminder) {
+            $allEmployees = Employee::all();
 
-                if (!$isPaid) {
-                    $weekRange = $this->getWeekDateRange($currentYear, $currentMonth, $week);
-                    $unpaidWeeks[] = [
-                        'week_number' => $week,
-                        'start_date' => $weekRange['start']->format('d M'),
-                        'end_date' => $weekRange['end']->format('d M'),
+            foreach ($allEmployees as $employee) {
+                $unpaidWeeks = [];
+
+                // Cek dari minggu 1 sampai minggu saat ini
+                for ($week = 1; $week <= $currentWeek; $week++) {
+                    // Cek apakah payroll minggu ini sudah dibayar
+                    $isPaid = Payroll::where('employee_id', $employee->employee_code)
+                        ->where('period_month', $currentMonth)
+                        ->where('period_year', $currentYear)
+                        ->where('week_number', $week)
+                        ->where('status', 'paid')
+                        ->exists();
+
+                    if (!$isPaid) {
+                        $weekRange = $this->getWeekDateRange($currentYear, $currentMonth, $week);
+                        $unpaidWeeks[] = [
+                            'week_number' => $week,
+                            'start_date' => $weekRange['start']->format('d M'),
+                            'end_date' => $weekRange['end']->format('d M'),
+                        ];
+                    }
+                }
+
+                // Jika ada minggu yang belum dibayar, masukkan ke array
+                if (count($unpaidWeeks) > 0) {
+                    $employeesWithoutSalary[] = [
+                        'employee' => $employee,
+                        'unpaid_weeks' => $unpaidWeeks,
+                        'total_unpaid_weeks' => count($unpaidWeeks),
                     ];
                 }
-            }
-
-            // Jika ada minggu yang belum dibayar, masukkan ke array
-            if (count($unpaidWeeks) > 0) {
-                $employeesWithoutSalary[] = [
-                    'employee' => $employee,
-                    'unpaid_weeks' => $unpaidWeeks,
-                    'total_unpaid_weeks' => count($unpaidWeeks),
-                ];
             }
         }
 
         // Get items with low stock (quantity <= 5)
-        $lowStockItems = Items::where('quantity', '<=', 5)->get();
+        $lowStockItems = $shouldShowStockReminder ? Items::where('quantity', '<=', 5)->get() : collect();
+
 
         // Hitung tanggal range minggu ini untuk ditampilkan di view
         $weekRange = $this->getWeekDateRange($currentYear, $currentMonth, $currentWeek);
@@ -77,8 +88,11 @@ class PageController extends Controller
             'lowStockItems',
             'isPayrollPeriod',
             'currentWeek',
-            'weekRange'
+            'weekRange',
+            'shouldShowPayrollReminder',
+            'shouldShowStockReminder'
         ));
+
     }
 
     /**

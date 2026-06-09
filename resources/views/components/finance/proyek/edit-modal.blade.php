@@ -1,5 +1,5 @@
 {{-- Modal Edit Invoice Proyek --}}
-<x-modal id="editModal-{{ $invoice->invoice_number }}" title="Edit Invoice Proyek"
+<x-modal id="editModal-{{ $invoice->invoice_number }}" :title="auth()->user()?->isSuperAdmin() ? 'Edit Invoice' : 'Edit Invoice Proyek'"
     action="{{ route('proyek-invoice.update', $invoice->invoice_number) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">
@@ -33,10 +33,10 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi Proyek' }} <span class="text-error">*</span></label>
         <textarea name="project_description"
             class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" rows="2" required
-            oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
+            oninvalid="this.setCustomValidity('{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi proyek' }} tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
     <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">

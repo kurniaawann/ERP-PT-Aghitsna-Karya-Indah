@@ -28,7 +28,7 @@
                         @forelse($reimburses as $reimburse)
                             <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
-                                    @if (Auth::user()->role === 'superadmin' && $reimburse->status === 'draft')
+                                    @if ((Auth::user()->role === 'superadmin' || Auth::user()->role === 'another') && $reimburse->status === 'draft')
                                         {{-- Super admin can select draft items --}}
                                         <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
                                             class="reimburse-checkbox w-4 h-4 accent-primary cursor-pointer"

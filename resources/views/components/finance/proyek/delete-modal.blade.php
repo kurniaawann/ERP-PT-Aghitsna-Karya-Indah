@@ -18,7 +18,7 @@
             </div>
             <h4 class="text-lg font-bold text-text-heading mb-2">Apakah Anda yakin?</h4>
             <p class="text-text-label">
-                Data invoice proyek ini akan dihapus secara permanen dan tidak dapat dikembalikan.
+                Data {{ auth()->user()?->isSuperAdmin() ? 'invoice' : 'invoice proyek' }} ini akan dihapus secara permanen dan tidak dapat dikembalikan.
             </p>
         </div>
 

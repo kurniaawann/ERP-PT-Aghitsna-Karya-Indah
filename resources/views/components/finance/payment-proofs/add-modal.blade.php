@@ -43,7 +43,7 @@
             class="w-full border rounded p-2" placeholder="Masukkan nominal pembayaran" required>
         <p id="payment-proof-amount-help-create" class="text-xs text-text-secondary mt-1">Pilih invoice terlebih dahulu
             agar sisa tagihan tampil di sini.</p>
-        <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek.</p>
+        <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk {{ auth()->user()?->isSuperAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
     </div>
 
     <div class="mb-3">
