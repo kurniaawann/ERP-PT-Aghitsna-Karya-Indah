@@ -64,15 +64,19 @@ class PaymentAccountController extends Controller
 
     public function destroySelected(Request $request)
     {
-
         $selectedIds = $request->selected_accounts;
         $totalAccounts = PaymentAccount::count();
         $selectedCount = count($selectedIds);
 
-        // Cek apakah akan menghapus semua akun
         if ($selectedCount >= $totalAccounts) {
             return redirect()->route('payment-accounts.index')
                 ->with('error', 'Tidak dapat menghapus semua rekening pembayaran. Minimal 1 rekening harus tetap ada.');
+        }
+
+        $usedIds = PaymentAccount::getUsedIds($selectedIds);
+        if (!empty($usedIds)) {
+            return redirect()->route('payment-accounts.index')
+                ->with('error', 'Rekening pembayaran tidak dapat dihapus karena sudah digunakan.');
         }
 
         PaymentAccount::whereIn('id', $selectedIds)->delete();
@@ -83,11 +87,15 @@ class PaymentAccountController extends Controller
 
     public function destroy(PaymentAccount $paymentAccount)
     {
-        // Cek apakah ini satu-satunya rekening
         $totalAccounts = PaymentAccount::count();
         if ($totalAccounts <= 1) {
             return redirect()->route('payment-accounts.index')
                 ->with('error', 'Tidak dapat menghapus rekening terakhir. Minimal 1 rekening harus tetap ada.');
+        }
+
+        if ($paymentAccount->isUsed()) {
+            return redirect()->route('payment-accounts.index')
+                ->with('error', 'Rekening pembayaran tidak dapat dihapus karena sudah digunakan.');
         }
 
         $paymentAccount->delete();

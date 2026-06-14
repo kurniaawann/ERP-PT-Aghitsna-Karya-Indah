@@ -179,6 +179,11 @@ class AlumuniumInvoiceController extends Controller
                 return back()->with('error', 'Persentase DP tidak boleh lebih dari 100%')->withInput();
             }
 
+            // Validasi payment accounts
+            if (!$request->has('selected_payment_accounts') || empty($request->selected_payment_accounts)) {
+                return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih')->withInput();
+            }
+
             // Ambil items langsung dari form edit seperti invoice proyek
             $items = $this->normalizeInvoiceItems($request->items);
             $totalAmount = 0;
@@ -206,7 +211,7 @@ class AlumuniumInvoiceController extends Controller
                 'dp_type' => $request->dp_type,
                 'dp_value' => $request->dp_value,
                 'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
-                'selected_payment_accounts' => $request->selected_payment_accounts,
+                'selected_payment_accounts' => $request->selected_payment_accounts ?? [],
             ]);
 
             return redirect()->route('alumunium-invoice.index')
