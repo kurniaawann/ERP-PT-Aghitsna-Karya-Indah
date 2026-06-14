@@ -3,7 +3,7 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
-        <input type="date" name="invoice_date" class="w-full border rounded p-2" required
+        <input type="date" name="invoice_date" value="{{ date('Y-m-d') }}" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
@@ -28,7 +28,8 @@
                 class="text-error">*</span></label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2"
             placeholder="Contoh: Renovasi Rumah" required
-            oninvalid="this.setCustomValidity('{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi proyek' }} tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
+            oninvalid="this.setCustomValidity('{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi proyek' }} tidak boleh kosong')"
+            oninput="this.setCustomValidity('')"></textarea>
     </div>
 
     <div id="items-container" class="mb-4">
@@ -64,13 +65,13 @@
                 </div>
             </div>
         </div>
-        <button type="button" id="add-item" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover">
+        <button type="button" id="add-item" class="bg-btn-add text-white px-4 py-2 rounded hover:bg-btn-add-hover">
             <i class="fa-solid fa-plus"></i> Tambah Item
         </button>
     </div>
 
     <!-- Live Total Preview -->
-    <div class="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
+    <div class="mb-4 p-4 bg-primary-light rounded-lg border-2 border-primary-light">
         <div class="flex justify-between items-center">
             <span class="text-text-primary font-semibold">Total Invoice:</span>
             <span id="invoice-total-preview" class="text-2xl font-bold text-primary">Rp 0</span>
@@ -79,12 +80,12 @@
     </div>
 
     <!-- Discount Section -->
-    <div class="mb-3 p-3 border rounded bg-yellow-50">
+    <div class="mb-3 p-3 border border-warning-light rounded-lg bg-warning-light">
         <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-text-label text-sm mb-1">Tipe Discount</label>
-                <select name="discount_type" id="discount-type" class="w-full border rounded p-2"
+                <select name="discount_type" id="discount-type" class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input"
                     onchange="calculateDiscount()">
                     <option value="">Tidak Ada Discount</option>
                     <option value="percentage">Persentase (%)</option>
@@ -94,36 +95,36 @@
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
                 <input type="text" inputmode="decimal" name="discount_value" id="discount-value"
-                    class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
                     placeholder="Pilih tipe dulu" disabled oninput="calculateDiscount()">
                 <small class="text-xs text-text-secondary" id="discount-helper">Maksimal 100% untuk persentase. Boleh
                     pakai koma, contoh 1,5</small>
                 <div id="discount-error"
-                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    class="hidden mt-1 p-2 bg-error-light border border-error text-error rounded-lg text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
                     <span id="discount-error-text">Persentase diskon tidak boleh lebih dari 100%</span>
                 </div>
             </div>
         </div>
-        <div class="mt-2 p-2 bg-white rounded">
+        <div class="mt-2 p-2 bg-surface-base rounded-lg">
             <div class="flex justify-between">
                 <span class="text-sm text-text-label">Discount:</span>
-                <span id="discount-amount" class="text-sm font-semibold text-red-600">Rp 0</span>
+                <span id="discount-amount" class="text-sm font-semibold text-error">Rp 0</span>
             </div>
             <div class="flex justify-between mt-1">
                 <span class="text-sm font-bold text-text-primary">Total Setelah Discount:</span>
-                <span id="total-after-discount" class="text-sm font-bold text-green-600">Rp 0</span>
+                <span id="total-after-discount" class="text-sm font-bold text-success">Rp 0</span>
             </div>
         </div>
     </div>
 
     <!-- DP Section -->
-    <div class="mb-3 p-3 border rounded bg-blue-50">
+    <div class="mb-3 p-3 border border-info-light rounded-lg bg-info-light">
         <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-text-label text-sm mb-1">Tipe DP</label>
-                <select name="dp_type" id="dp-type" class="w-full border rounded p-2" onchange="calculateDP()">
+                <select name="dp_type" id="dp-type" class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" onchange="calculateDP()">
                     <option value="">Tidak Ada DP</option>
                     <option value="percentage">Persentase (%)</option>
                     <option value="amount">Nominal (Rp)</option>
@@ -132,44 +133,27 @@
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
                 <input type="text" inputmode="decimal" name="dp_value" id="dp-value"
-                    class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
                     placeholder="Pilih tipe dulu" disabled oninput="calculateDP()">
                 <small class="text-xs text-text-secondary" id="dp-helper">Maksimal 100% untuk persentase. Boleh pakai
                     koma, contoh 1,5</small>
                 <div id="dp-error"
-                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    class="hidden mt-1 p-2 bg-error-light border border-error text-error rounded-lg text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
                     <span id="dp-error-text">Persentase DP tidak boleh lebih dari 100%</span>
                 </div>
             </div>
         </div>
-        <div class="mt-2 p-2 bg-white rounded">
+        <div class="mt-2 p-2 bg-surface-base rounded-lg">
             <div class="flex justify-between">
                 <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
-                <span id="dp-amount" class="text-sm font-bold text-blue-600">Rp 0</span>
+                <span id="dp-amount" class="text-sm font-bold text-info">Rp 0</span>
             </div>
         </div>
     </div>
 
-    <!-- Payment Installments Section -->
-    <div class="mb-3 p-3 border rounded bg-purple-50">
-        <label class="block text-text-primary font-semibold mb-2">
-            Pembayaran Bertahap (Opsional)
-            <span class="text-xs font-normal text-text-label">- Contoh: Pembayaran Ke 1, Ke 2, Sisa</span>
-        </label>
-        <p class="text-xs text-text-label mb-3">
-            <i class="fa-solid fa-info-circle"></i>
-            Tambahkan detail pembayaran jika invoice ini dibayar secara bertahap
-        </p>
-        <div id="payment-installments-list" class="space-y-2">
-            <!-- Installments will be added here dynamically -->
-        </div>
-        <button type="button" id="add-payment-installment"
-            class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 mt-2">
-            <i class="fa-solid fa-plus"></i> Tambah Pembayaran
-        </button>
-    </div> <!-- Payment Accounts Selection -->
-    <div class="mb-3 p-3 border rounded bg-green-50">
+    <!-- Payment Accounts Selection -->
+    <div class="mb-3 p-3 border border-success-light rounded-lg bg-success-light">
         <label class="block text-text-primary font-semibold mb-2">
             Pilih Rekening Pembayaran <span class="text-error">*</span>
             <span class="text-xs font-normal text-text-label">(Minimal 1 rekening harus dipilih)</span>
@@ -178,7 +162,7 @@
             @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)
                     <label
-                        class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
+                        class="flex items-start p-2 bg-surface-base rounded-lg border border-border-strong hover:bg-surface-secondary cursor-pointer">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox" onchange="validatePaymentSelection()">
                         <div class="flex-1">
@@ -190,17 +174,17 @@
                     </label>
                 @endforeach
             @else
-                <div class="p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
-                    <i class="fa-solid fa-exclamation-triangle text-yellow-600"></i>
+                <div class="p-3 bg-warning-light border border-warning text-warning-text rounded-lg text-sm">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
                     Belum ada rekening pembayaran.
-                    <a href="{{ route('payment-accounts.index') }}" class="text-blue-600 hover:underline"
+                    <a href="{{ route('payment-accounts.index') }}" class="text-primary hover:underline"
                         target="_blank">
                         Tambah rekening pembayaran
                     </a>
                 </div>
             @endif
         </div>
-        <div id="payment-account-error" class="text-red-600 text-sm mt-2 hidden">
+        <div id="payment-account-error" class="text-error text-sm mt-2 hidden">
             <i class="fa-solid fa-exclamation-circle"></i> Minimal 1 rekening harus dipilih
         </div>
     </div>

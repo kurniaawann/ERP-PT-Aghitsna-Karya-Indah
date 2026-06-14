@@ -193,7 +193,7 @@
                                         {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                         </i>
                                         <span
-                                            class="ml-3 text-sm font-medium">{{ auth()->user()?->isSuperAdmin() || auth()->user()?->isAnother() ? 'Invoice' : 'Invoice Proyek' }}</span>
+                                            class="ml-3 text-sm font-medium">{{ auth()->user()?->isSuperAdmin() ? 'Invoice' : 'Invoice Proyek' }}</span>
 
                                     </a>
                                 </li>

@@ -135,7 +135,7 @@
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
         const dpValueInput = document.getElementById('dp-value');
-        let dpValue = parseFloat(dpValueInput?.value) || 0;
+        let dpValue = parseDecimalInput(dpValueInput);
         const dpError = document.getElementById('dp-error');
 
         // Enable/disable based on type
@@ -179,7 +179,7 @@
 
         // Check if there's discount
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValue = parseDecimalInput(document.getElementById('discount-value'));
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -263,34 +263,42 @@
     }
 
     function parseDecimalInput(inputElement) {
-        const rawValue = String(inputElement?.value ?? '').trim();
+        const str = String(inputElement?.value ?? '').trim();
+        if (!str) return 0;
 
-        if (!rawValue) {
-            return 0;
+        // Clean from Rp, % or other non-numeric stuff except . and ,
+        const cleaned = str.replace(/Rp\s*/gi, '').replace(/%\s*/g, '').replace(/[^\d.,-]/g, '');
+
+        if (cleaned.includes(',')) {
+            // has comma => assume dot is thousand separator, comma is decimal
+            return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
         }
 
-        return parseFloat(rawValue.replace(',', '.')) || 0;
+        // no comma => dots could be thousand separators or decimal.
+        // If there are multiple dots, or a single dot followed by exactly 3 digits, it's likely a thousand separator.
+        const parts = cleaned.split('.');
+        if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+            return parseFloat(cleaned.replace(/\./g, '')) || 0;
+        }
+
+        return parseFloat(cleaned) || 0;
     }
 
     function parseCurrencyInput(value) {
         const str = String(value ?? '').trim();
         if (!str) return 0;
 
-        // examples:
-        // - "1.000" => 1000
-        // - "1,5" => 1.5
-        // - "Rp 1.000" => 1000
-        // - "1.234.567" => 1234567
+        // Clean currency prefix and other non-numeric chars except separators
         const cleaned = str.replace(/Rp\s*/gi, '');
 
         if (cleaned.includes(',')) {
-            // comma as decimal separator
+            // If it has comma, assume dot is thousand separator and comma is decimal
             const normalized = cleaned.replace(/\./g, '').replace(',', '.');
             const num = parseFloat(normalized);
             return Number.isFinite(num) ? num : 0;
         }
 
-        // no comma => dots are thousand separators
+        // No comma => dots are thousand separators
         const normalized = cleaned.replace(/\./g, '');
         const num = parseFloat(normalized);
         return Number.isFinite(num) ? num : 0;
@@ -300,7 +308,6 @@
         const str = String(input.value ?? '').trim();
         if (!str) return;
 
-        // reuse parser to handle "1.000" / "1,5"
         const num = parseCurrencyInput(str);
         input.value = num ? Math.round(num).toLocaleString('id-ID') : '';
     }
@@ -317,7 +324,7 @@
         const typeEl = document.getElementById('dp-type-edit-' + invoiceNumber);
         const valueEl = document.getElementById('dp-value-edit-' + invoiceNumber);
         const dpType = typeEl?.value;
-        let dpValue = parseFloat(valueEl?.value) || 0;
+        let dpValue = parseDecimalInput(valueEl);
 
         // Enable/disable value input based on type selection
         if (valueEl) {
@@ -347,7 +354,7 @@
         baseTotal = Math.round(baseTotal);
 
         const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value-edit-' + invoiceNumber)?.value) || 0;
+        const discountValue = parseDecimalInput(document.getElementById('discount-value-edit-' + invoiceNumber));
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -734,12 +741,6 @@
 
                 const submitBtn = this.querySelector('button[type="submit"]');
 
-                // Prevent double submit
-                if (isSubmitting) {
-                    e.preventDefault();
-                    return false;
-                }
-
                 const items = [];
                 const itemRows = this.querySelectorAll('.item-row');
 
@@ -794,8 +795,11 @@
                 console.log('Items JSON value set:', itemsJsonField.value);
                 console.log('Field name:', itemsJsonField.name);
 
-                // Set loading state
-                handleFormSubmit(submitBtn);
+                // Set loading state and prevent double submit
+                if (!handleFormSubmit(submitBtn)) {
+                    e.preventDefault();
+                    return false;
+                }
 
                 // Let form submit naturally
                 return true;
@@ -811,12 +815,6 @@
                 form.addEventListener('submit', function(e) {
                     const submitBtn = this.querySelector('button[type="submit"]');
 
-                    // Prevent double submit
-                    if (isSubmitting) {
-                        e.preventDefault();
-                        return false;
-                    }
-
                     const editItems = this.querySelectorAll('.item-row-edit');
                     if (editItems.length === 0) {
                         e.preventDefault();
@@ -826,8 +824,11 @@
 
                     normalizeInvoicePriceFields(this);
 
-                    // Set loading state
-                    handleFormSubmit(submitBtn);
+                    // Set loading state and prevent double submit
+                    if (!handleFormSubmit(submitBtn)) {
+                        e.preventDefault();
+                        return false;
+                    }
                 });
             }
         });

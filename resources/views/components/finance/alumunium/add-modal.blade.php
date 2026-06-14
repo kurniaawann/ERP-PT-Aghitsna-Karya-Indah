@@ -4,7 +4,7 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
-        <input type="date" name="invoice_date" class="w-full border rounded p-2" required
+        <input type="date" name="invoice_date" value="{{ date('Y-m-d') }}" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>

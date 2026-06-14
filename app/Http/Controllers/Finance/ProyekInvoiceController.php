@@ -208,13 +208,13 @@ class ProyekInvoiceController extends Controller
                     : json_decode($request->payment_installments, true);
             }
 
-            // Update data invoice secara eksplisit berdasarkan primary key string.
-            InvoiceProyek::where('invoice_number', $proyek_invoice->invoice_number)->update([
+            // Update data invoice secara eksplisit menggunakan model instance.
+            $proyek_invoice->update([
                 'invoice_date' => $request->invoice_date,
                 'recipient' => $request->recipient,
                 'regarding' => $request->regarding ?? null,
                 'project_description' => $request->project_description,
-                'items' => json_encode($items),
+                'items' => $items,
                 'total_amount' => $totalAmount,
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
@@ -222,8 +222,8 @@ class ProyekInvoiceController extends Controller
                 'dp_type' => $request->dp_type,
                 'dp_value' => $request->dp_value,
                 'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
-                'payment_installments' => json_encode($paymentInstallments ?? []),
-                'selected_payment_accounts' => json_encode($request->selected_payment_accounts ?? []),
+                'payment_installments' => $paymentInstallments ?? [],
+                'selected_payment_accounts' => $request->selected_payment_accounts ?? [],
             ]);
 
             return redirect()->route('proyek-invoice.index')

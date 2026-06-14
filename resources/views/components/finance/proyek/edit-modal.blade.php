@@ -33,10 +33,13 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi Proyek' }} <span class="text-error">*</span></label>
+        <label
+            class="block text-text-primary mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi Proyek' }}
+            <span class="text-error">*</span></label>
         <textarea name="project_description"
             class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" rows="2" required
-            oninvalid="this.setCustomValidity('{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi proyek' }} tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
+            oninvalid="this.setCustomValidity('{{ auth()->user()?->isSuperAdmin() ? 'Deskripsi' : 'Deskripsi proyek' }} tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
     <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
@@ -70,10 +73,10 @@
                             oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
                         <input type="text" inputmode="numeric" name="items[{{ $index }}][harga]"
-                            value="Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
+                            value="{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
                             class="item-harga border border-border-strong rounded-lg p-2 w-full text-text-input"
-                            placeholder="Rp 0" required
-                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                            placeholder="0" required
+                            oninput="calculateEditRowTotal(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp
@@ -88,7 +91,8 @@
             @endforeach
         </div>
         <button type="button" id="add-item-edit-{{ $invoice->invoice_number }}"
-            class="bg-btn-add text-white px-4 py-2 rounded hover:bg-btn-add-hover">
+            class="bg-btn-add text-white px-4 py-2 rounded hover:bg-btn-add-hover"
+            onclick="addProyekItemEdit('{{ $invoice->invoice_number }}')">
             <i class="fa-solid fa-plus"></i> Tambah Item
         </button>
     </div>
@@ -181,7 +185,7 @@
     </div>
 
     <!-- Payment Installments Section -->
-    <div class="mb-3 p-3 border border-secondary-light rounded-lg bg-secondary-light">
+    {{-- <div class="mb-3 p-3 border border-secondary-light rounded-lg bg-secondary-light">
         <label class="block text-text-primary font-semibold mb-2">
             Pembayaran Bertahap (Opsional)
             <span class="text-xs font-normal text-text-label">- Contoh: Pembayaran Ke 1, Ke 2, Sisa</span>
@@ -223,7 +227,7 @@
             class="bg-secondary text-white px-4 py-2 rounded hover:bg-secondary-hover mt-2">
             <i class="fa-solid fa-plus"></i> Tambah Pembayaran
         </button>
-    </div>
+    </div> --}}
 
     <!-- Payment Accounts Selection -->
     <div class="mb-3 p-3 border border-success-light rounded-lg bg-success-light">
@@ -235,6 +239,9 @@
                 $selectedAccounts = is_string($invoice->selected_payment_accounts)
                     ? json_decode($invoice->selected_payment_accounts, true)
                     : $invoice->selected_payment_accounts;
+                if (!is_array($selectedAccounts)) {
+                    $selectedAccounts = [];
+                }
             @endphp
             @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)
@@ -243,7 +250,7 @@
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="mt-1 mr-3 payment-account-checkbox"
                             onchange="validatePaymentSelectionEdit('{{ $invoice->invoice_number }}')"
-                            {{ in_array($account->id, $selectedAccounts ?? []) ? 'checked' : '' }}>
+                            {{ in_array($account->id, $selectedAccounts) ? 'checked' : '' }}>
                         <div class="flex-1">
                             <div class="font-semibold text-text-heading">{{ $account->bank_name }}</div>
                             <div class="text-sm text-text-label">
