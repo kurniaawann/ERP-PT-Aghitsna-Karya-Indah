@@ -107,6 +107,46 @@
                                 <span class="font-semibold">- Rp
                                     {{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</span>
                             </div>
+                            @php
+                                $personalKasbons = \App\Models\Sdm\Kasbon::where('employee_id', $payroll->employee_id)
+                                    ->where('kasbon_type', 'personal')
+                                    ->where('period_month', $payroll->period_month)
+                                    ->where('period_year', $payroll->period_year)
+                                    ->where('week_number', $payroll->week_number)
+                                    ->where('deducted_in_payroll_id', $payroll->id)
+                                    ->get();
+                                $teamDeductionLogs = \App\Models\Sdm\KasbonDeductionLog::with('kasbon')
+                                    ->where('payroll_id', $payroll->id)
+                                    ->get();
+                            @endphp
+                            @if ($personalKasbons->count() > 0)
+                                <div class="mt-2 pl-4 text-xs text-error">
+                                    <div class="font-medium mb-1">Rincian Kasbon Personal:</div>
+                                    @foreach ($personalKasbons as $pk)
+                                        <div class="flex justify-between">
+                                            <span>{{ $pk->kasbon_code }}</span>
+                                            <span>- Rp {{ number_format($pk->amount, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @if ($teamDeductionLogs->count() > 0)
+                                <div class="mt-2 pl-4 text-xs text-error">
+                                    <div class="font-medium mb-1">Rincian Kasbon Tim:</div>
+                                    @foreach ($teamDeductionLogs as $log)
+                                        <div class="flex justify-between mb-1">
+                                            <div>
+                                                <span>{{ $log->kasbon->kasbon_code ?? $log->kasbon_code }}</span>
+                                                <span class="text-text-label"> - {{ $log->kasbon->division ?? '-' }}</span>
+                                            </div>
+                                            <span>- Rp {{ number_format($log->amount_deducted, 0, ',', '.') }}</span>
+                                        </div>
+                                        <div class="text-xs text-text-label pl-2 mb-1">
+                                            Sisa setelah potong: Rp {{ number_format($log->amount_remaining_after, 0, ',', '.') }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         @endif
                         <hr class="my-2">
                         <div class="flex justify-between text-lg font-bold text-primary">

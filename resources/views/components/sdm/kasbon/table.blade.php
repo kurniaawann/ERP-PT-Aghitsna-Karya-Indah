@@ -20,6 +20,8 @@
                                 Jenis</th>
                             <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">
                                 Jumlah</th>
+                            <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">
+                                Sisa</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">
                                 Tanggal</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">
@@ -51,7 +53,28 @@
                                         <div>
                                             <div class="font-medium text-secondary">Divisi {{ $kasbon->division }}
                                             </div>
-                                            <div class="text-xs text-text-label">Kasbon Tim</div>
+                                            <div class="text-xs text-text-label">
+                                                @if (!empty($kasbon->employee_details))
+                                                    {{ count($kasbon->employee_details) }} karyawan
+                                                @else
+                                                    Kasbon Tim
+                                                @endif
+                                            </div>
+                                            @php
+                                                $empNames = !empty($kasbon->employee_details)
+                                                    ? \App\Models\Sdm\Employee::whereIn('employee_code', $kasbon->employee_details)->pluck('name')->toArray()
+                                                    : [];
+                                            @endphp
+                                            @if (!empty($empNames))
+                                                <div class="text-xs text-text-label mt-1">
+                                                    <span title="{{ implode(', ', $empNames) }}" class="cursor-help">
+                                                        {{ implode(', ', array_slice($empNames, 0, 3)) }}
+                                                        @if (count($empNames) > 3)
+                                                            , +{{ count($empNames) - 3 }} lainnya
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                            @endif
                                         </div>
                                     @else
                                         <span class="text-text-label italic">-</span>
@@ -63,6 +86,13 @@
                                 </td>
                                 <td class="p-2 text-right text-sm font-medium text-text-primary">
                                     {{ $kasbon->formatted_amount }}</td>
+                                <td class="p-2 text-right text-sm font-medium {{ $kasbon->kasbon_type === 'team' && $kasbon->remaining_amount > 0 ? 'text-warning' : 'text-text-label' }}">
+                                    @if ($kasbon->kasbon_type === 'team')
+                                        {{ $kasbon->formatted_remaining }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td class="p-2 text-center text-sm text-text-label">
                                     {{ $kasbon->kasbon_date->format('d M Y') }}</td>
                                 <td class="p-2 text-center text-sm text-text-label">
@@ -73,10 +103,10 @@
                                 </td>
                                 <td class="p-2 text-center">
                                     <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status === 'pending' ? 'bg-warning-light text-warning' : 'bg-success-light text-success' }}">{{ $kasbon->status_label }}</span>
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status_class }}">{{ $kasbon->status_label }}</span>
                                 </td>
                                 <td class="p-2 text-center text-sm">
-                                    @if ($kasbon->status === 'pending')
+                                    @if ($kasbon->status === 'pending' || ($kasbon->kasbon_type === 'team' && $kasbon->remaining_amount > 0 && $kasbon->remaining_amount < $kasbon->amount))
                                         <div class="flex justify-center gap-2">
                                             <button type="button"
                                                 onclick="openModal('editModal{{ $kasbon->kasbon_code }}')"
@@ -87,13 +117,13 @@
                                             </button>
                                         </div>
                                     @else
-                                        <span class="text-text-label italic text-xs">Sudah Dipotong</span>
+                                        <span class="text-text-label italic text-xs">{{ $kasbon->status === 'deducted' ? 'Lunas' : 'Tidak bisa diubah' }}</span>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-6 py-8 text-center text-text-label">
+                                    <td colspan="10" class="px-6 py-8 text-center text-text-label">
                                         <i class="fa-solid fa-inbox text-4xl mb-2 text-border"></i>
                                         <p>Tidak ada data kasbon</p>
                                     </td>

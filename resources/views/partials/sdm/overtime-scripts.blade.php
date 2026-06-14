@@ -20,23 +20,120 @@
     }
 
     // ==========================================
+    // EMPLOYEE SEARCH & PAGINATION DROPDOWN
+    // ==========================================
+
+    let employeePage = 1;
+    let employeeSearch = '';
+    let employeeHasMore = false;
+    let debounceTimer = null;
+
+    function debounceFetchEmployees(query) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            employeeSearch = query;
+            employeePage = 1;
+            fetchEmployees();
+        }, 300);
+    }
+
+    function openEmployeeDropdown() {
+        const dropdown = document.getElementById('add-employee-dropdown');
+        if (dropdown) {
+            dropdown.classList.remove('hidden');
+            if (!dropdown.dataset.loaded) {
+                employeePage = 1;
+                fetchEmployees();
+            }
+        }
+    }
+
+    function closeEmployeeDropdown() {
+        const dropdown = document.getElementById('add-employee-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+    }
+
+    function fetchEmployees() {
+        const url = '{{ route('overtime.employees-dropdown') }}?search=' + encodeURIComponent(employeeSearch) +
+            '&page=' + employeePage + '&limit=10';
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('add-employee-list');
+                const prevBtn = document.getElementById('add-employee-prev');
+                const nextBtn = document.getElementById('add-employee-next');
+                const pageInfo = document.getElementById('add-employee-page-info');
+
+                if (!list) return;
+
+                if (employeePage === 1) {
+                    list.innerHTML = '';
+                }
+
+                if (data.data.length === 0) {
+                    list.innerHTML = '<div class="p-3 text-sm text-text-secondary text-center">Karyawan tidak ditemukan</div>';
+                } else {
+                    data.data.forEach(emp => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-surface-hover cursor-pointer border-b border-border-strong text-sm employee-option';
+                        div.dataset.id = emp.id;
+                        div.dataset.name = emp.name;
+                        div.textContent = emp.text;
+                        div.onclick = function() { selectEmployee(emp.id, emp.name); };
+                        list.appendChild(div);
+                    });
+                }
+
+                employeeHasMore = data.hasMore;
+
+                if (prevBtn) prevBtn.disabled = employeePage <= 1;
+                if (nextBtn) nextBtn.disabled = !employeeHasMore;
+                if (pageInfo) pageInfo.textContent = 'Halaman ' + employeePage;
+
+                document.getElementById('add-employee-dropdown').dataset.loaded = '1';
+            })
+            .catch(err => console.error('Error fetching employees:', err));
+    }
+
+    function changeEmployeePage(direction) {
+        employeePage += direction;
+        const list = document.getElementById('add-employee-list');
+        if (list) list.innerHTML = '';
+        fetchEmployees();
+    }
+
+    function selectEmployee(id, name) {
+        document.getElementById('add-selected-employee-id').value = id;
+        document.getElementById('add-employee-search').value = name;
+        document.getElementById('add-employee-selected-name').textContent = 'Dipilih: ' + name;
+        closeEmployeeDropdown();
+        validateAddOvertime();
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('add-employee-dropdown');
+        const search = document.getElementById('add-employee-search');
+        if (dropdown && search && !search.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // ==========================================
     // VALIDASI DUPLIKAT OVERTIME (CLIENT-SIDE)
     // ==========================================
 
     const existingAttendance = @json($existingAttendance ?? []);
 
-    // Validasi untuk Add Modal
-    const addEmployeeSelect = document.getElementById('add-employee-id');
     const addDateInput = document.getElementById('add-attendance-date');
     const addDuplicateWarning = document.getElementById('add-duplicate-warning');
     const addDuplicateWarningText = document.getElementById('add-duplicate-warning-text');
     const addSubmitBtn = document.querySelector('#addModal button[type="submit"]');
 
     function validateAddOvertime() {
-        if (!addEmployeeSelect || !addDateInput) return true;
-
-        const employeeId = addEmployeeSelect.value;
-        const date = addDateInput.value;
+        const employeeId = document.getElementById('add-selected-employee-id').value;
+        const date = addDateInput ? addDateInput.value : '';
 
         if (!employeeId || !date) {
             addDuplicateWarning.classList.add('hidden');
@@ -47,43 +144,34 @@
             return true;
         }
 
-        // Cek apakah kombinasi employee + date sudah ada
-        // Karyawan hanya boleh lembur jika mereka hadir (status: hadir)
         if (existingAttendance[employeeId] && existingAttendance[employeeId][date]) {
             const existing = existingAttendance[employeeId][date];
-            const employeeName = addEmployeeSelect.options[addEmployeeSelect.selectedIndex].text.split(' - ')[0];
+            const employeeName = document.getElementById('add-employee-search').value;
             const formattedDate = new Date(date).toLocaleDateString('id-ID', {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric'
             });
 
-            // Cegah jika sudah ada data lembur (duplikat)
             if (existing.status === 'lembur') {
                 addDuplicateWarningText.textContent =
                     `Karyawan ${employeeName} sudah memiliki data lembur pada tanggal ${formattedDate}. Silakan pilih tanggal lain atau edit data yang sudah ada.`;
                 addDuplicateWarning.classList.remove('hidden');
-
                 if (addSubmitBtn) {
                     addSubmitBtn.disabled = true;
                     addSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 }
                 return false;
-            }
-            // Cegah jika karyawan izin, sakit, atau cuti (tidak masuk akal ada lembur)
-            else if (existing.status === 'izin' || existing.status === 'sakit' || existing.status === 'cuti') {
+            } else if (existing.status === 'izin' || existing.status === 'sakit' || existing.status === 'cuti') {
                 addDuplicateWarningText.textContent =
                     `Karyawan ${employeeName} memiliki status ${existing.status.toUpperCase()} pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan untuk karyawan yang hadir.`;
                 addDuplicateWarning.classList.remove('hidden');
-
                 if (addSubmitBtn) {
                     addSubmitBtn.disabled = true;
                     addSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 }
                 return false;
-            }
-            // Izinkan jika status adalah "hadir" atau status lainnya
-            else {
+            } else {
                 addDuplicateWarning.classList.add('hidden');
                 if (addSubmitBtn) {
                     addSubmitBtn.disabled = false;
@@ -101,8 +189,7 @@
         }
     }
 
-    if (addEmployeeSelect && addDateInput) {
-        addEmployeeSelect.addEventListener('change', validateAddOvertime);
+    if (addDateInput) {
         addDateInput.addEventListener('change', validateAddOvertime);
     }
 

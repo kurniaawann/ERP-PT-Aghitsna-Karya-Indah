@@ -20,14 +20,17 @@
         const employeeSelect = document.getElementById(prefix + '_employee_id');
         const divisionField = document.getElementById(prefix + '_division_field');
         const divisionSelect = document.getElementById(prefix + '_division');
+        const teamEmployeesField = document.getElementById(prefix + '_team_employees_field');
+        const perEmployeeAmountField = document.getElementById(prefix + '_per_employee_amount_field');
+        const perEmployeeAlert = document.getElementById(prefix + '_kasbon_per_employee_alert');
         const limitAlert = document.getElementById(prefix + '_kasbon_limit_alert');
 
         if (kasbonTypeSelect && employeeField && divisionField) {
             if (kasbonTypeSelect.value === 'team') {
-                // Hide employee field, show division field
                 employeeField.style.display = 'none';
                 divisionField.style.display = 'block';
                 if (limitAlert) limitAlert.classList.add('hidden');
+                if (perEmployeeAlert) perEmployeeAlert.classList.add('hidden');
 
                 if (employeeSelect) {
                     employeeSelect.removeAttribute('required');
@@ -36,10 +39,18 @@
                 if (divisionSelect) {
                     divisionSelect.setAttribute('required', 'required');
                 }
+                if (teamEmployeesField) teamEmployeesField.style.display = 'none';
+                if (perEmployeeAmountField) perEmployeeAmountField.style.display = 'none';
             } else if (kasbonTypeSelect.value === 'personal') {
-                // Show employee field, hide division field
                 employeeField.style.display = 'block';
                 divisionField.style.display = 'none';
+                if (teamEmployeesField) {
+                    teamEmployeesField.style.display = 'none';
+                    teamEmployeesField.querySelectorAll('.team-employee-checkbox').forEach(cb => cb.checked = false);
+                }
+                if (perEmployeeAmountField) perEmployeeAmountField.style.display = 'none';
+                if (perEmployeeAlert) perEmployeeAlert.classList.add('hidden');
+                updateSelectedCount(prefix);
 
                 if (employeeSelect) {
                     employeeSelect.setAttribute('required', 'required');
@@ -49,12 +60,245 @@
                     divisionSelect.value = '';
                 }
             } else {
-                // No selection, hide both
                 employeeField.style.display = 'none';
                 divisionField.style.display = 'none';
+                if (teamEmployeesField) teamEmployeesField.style.display = 'none';
+                if (perEmployeeAmountField) perEmployeeAmountField.style.display = 'none';
+                if (perEmployeeAlert) perEmployeeAlert.classList.add('hidden');
                 if (limitAlert) limitAlert.classList.add('hidden');
             }
         }
+    }
+
+    function updateEmployeeEmptyState(prefix) {
+        const list = document.getElementById(prefix + '_team_employee_list');
+        const emptyState = document.getElementById(prefix + '_team_employee_empty');
+        if (!list || !emptyState) return;
+
+        const visibleItems = Array.from(list.querySelectorAll('.employee-checkbox-item'))
+            .filter(item => item.style.display !== 'none');
+        const searchValue = document.getElementById(prefix + '_team_employee_search')?.value?.toLowerCase() || '';
+
+        if (visibleItems.length === 0) {
+            const msgEl = emptyState.querySelector('p');
+            if (msgEl) {
+                if (searchValue) {
+                    msgEl.textContent = 'Tidak ada karyawan yang cocok dengan pencarian "' + searchValue + '".';
+                } else {
+                    msgEl.textContent = 'Tidak ada karyawan yang tersedia untuk dipilih.';
+                }
+            }
+            emptyState.classList.remove('hidden');
+        } else {
+            emptyState.classList.add('hidden');
+        }
+    }
+
+    function onDivisionChange(prefix) {
+        const divisionSelect = document.getElementById(prefix + '_division');
+        const teamEmployeesField = document.getElementById(prefix + '_team_employees_field');
+        const limitAlert = document.getElementById(prefix + '_kasbon_limit_alert');
+
+        if (divisionSelect && teamEmployeesField) {
+            const selectedDivision = divisionSelect.value;
+
+            if (selectedDivision) {
+                teamEmployeesField.style.display = 'block';
+                // Reset all checkboxes
+                teamEmployeesField.querySelectorAll('.team-employee-checkbox').forEach(cb => cb.checked = false);
+                // Show only employees in selected division
+                const items = teamEmployeesField.querySelectorAll('.employee-checkbox-item');
+                items.forEach(item => {
+                    const division = item.dataset.division;
+                    if (division === selectedDivision) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                if (limitAlert) limitAlert.classList.add('hidden');
+            } else {
+                teamEmployeesField.style.display = 'none';
+                teamEmployeesField.querySelectorAll('.team-employee-checkbox').forEach(cb => cb.checked = false);
+            }
+            updateSelectedCount(prefix);
+            updateSelectAllTeamState(prefix);
+            updatePerEmployeeAmount(prefix);
+            updateEmployeeEmptyState(prefix);
+        }
+    }
+
+    function filterTeamEmployees(prefix) {
+        const searchInput = document.getElementById(prefix + '_team_employee_search');
+        const list = document.getElementById(prefix + '_team_employee_list');
+        if (!searchInput || !list) return;
+
+        const query = searchInput.value.toLowerCase();
+        const items = list.querySelectorAll('.employee-checkbox-item');
+
+        items.forEach(item => {
+            if (item.style.display === 'none') return;
+            const text = item.textContent.toLowerCase();
+            if (text.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        updateEmployeeEmptyState(prefix);
+        updateSelectAllTeamState(prefix);
+    }
+
+    function getVisibleCheckboxes(list) {
+        return Array.from(list.querySelectorAll('.employee-checkbox-item'))
+            .filter(item => item.style.display !== 'none')
+            .map(item => item.querySelector('.team-employee-checkbox'))
+            .filter(cb => cb);
+    }
+
+    function updateSelectAllTeamState(prefix) {
+        const selectAllCheckbox = document.getElementById(prefix + '_select_all_team');
+        const list = document.getElementById(prefix + '_team_employee_list');
+        if (!selectAllCheckbox || !list) return;
+
+        const visible = getVisibleCheckboxes(list);
+        const allChecked = visible.length > 0 && visible.every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+
+    function toggleSelectAllTeam(prefix) {
+        const selectAllCheckbox = document.getElementById(prefix + '_select_all_team');
+        const list = document.getElementById(prefix + '_team_employee_list');
+        if (!selectAllCheckbox || !list) return;
+
+        const isChecked = selectAllCheckbox.checked;
+        getVisibleCheckboxes(list).forEach(cb => {
+            cb.checked = isChecked;
+        });
+
+        updateSelectedCount(prefix);
+        updatePerEmployeeAmount(prefix);
+    }
+
+    function onTeamEmployeeChange(prefix) {
+        updateSelectedCount(prefix);
+        updatePerEmployeeAmount(prefix);
+        updateSelectAllTeamState(prefix);
+    }
+
+    function updateSelectedCount(prefix) {
+        const teamEmployeesField = document.getElementById(prefix + '_team_employees_field');
+        const countDisplay = document.getElementById(prefix + '_selected_employee_count');
+        if (!teamEmployeesField || !countDisplay) return;
+
+        const checkedCount = teamEmployeesField.querySelectorAll('.team-employee-checkbox:checked').length;
+        countDisplay.textContent = 'Dipilih: ' + checkedCount + ' karyawan';
+    }
+
+    function updatePerEmployeeAmount(prefix) {
+        const amountInput = document.getElementById(prefix + '_amount');
+        const teamEmployeesField = document.getElementById(prefix + '_team_employees_field');
+        const perEmployeeAmountField = document.getElementById(prefix + '_per_employee_amount_field');
+        const displayTotal = document.getElementById(prefix + '_display_total_amount');
+        const displayPerEmployee = document.getElementById(prefix + '_display_per_employee_amount');
+        const perEmployeeAlert = document.getElementById(prefix + '_kasbon_per_employee_alert');
+        const perEmployeeMessage = document.getElementById(prefix + '_kasbon_per_employee_message');
+
+        // Dapatkan tombol submit
+        let modalId;
+        if (prefix === 'add') {
+            modalId = 'addModal';
+        } else if (prefix.startsWith('edit_')) {
+            modalId = 'editModal' + prefix.replace('edit_', '');
+        }
+        const submitBtn = modalId ? document.getElementById('submit-btn-' + modalId) : null;
+
+        if (!amountInput || !teamEmployeesField || !perEmployeeAmountField) return;
+
+        const checkedBoxes = teamEmployeesField.querySelectorAll('.team-employee-checkbox:checked');
+        const checkedCount = checkedBoxes.length;
+        const totalAmount = parseCurrencyInput(amountInput.value);
+
+        if (checkedCount > 0 && totalAmount > 0) {
+            const perEmployee = Math.floor(totalAmount / checkedCount);
+            const remainder = totalAmount - (perEmployee * checkedCount);
+
+            if (displayTotal) displayTotal.textContent = formatRupiah(totalAmount);
+            if (displayPerEmployee) displayPerEmployee.textContent = formatRupiah(perEmployee);
+
+            perEmployeeAmountField.style.display = 'block';
+
+            // Validasi: cek apakah per-employee amount melebihi gaji karyawan
+            let hasError = false;
+            let employeeWithLowWage = '';
+            checkedBoxes.forEach(cb => {
+                const label = cb.closest('.employee-checkbox-item');
+                if (!label) return;
+                const wage = parseInt(label.dataset.dailyWage || '0', 10);
+                if (wage > 0 && perEmployee > wage) {
+                    hasError = true;
+                    const name = label.textContent.trim().split('(')[0].trim();
+                    if (!employeeWithLowWage) employeeWithLowWage = name;
+                }
+            });
+
+            if (perEmployeeAlert && perEmployeeMessage) {
+                if (hasError) {
+                    // Tampilkan error: nominal melebihi gaji
+                    perEmployeeAlert.className = 'mb-4 p-4 bg-error-light border border-error rounded-lg';
+                    const icon = perEmployeeAlert.querySelector('i');
+                    if (icon) { icon.className = 'fa-solid fa-exclamation-circle text-error mt-1'; }
+                    const textDiv = perEmployeeAlert.querySelector('.text-sm');
+                    if (textDiv) { textDiv.className = 'text-sm text-error'; }
+                    const titleDiv = perEmployeeAlert.querySelector('.font-semibold');
+                    if (titleDiv) { titleDiv.className = 'font-semibold mb-1 text-error'; }
+                    perEmployeeMessage.textContent =
+                        'Kasbon divisi tidak dapat disimpan karena nominal pembagian kasbon melebihi gaji ' +
+                        employeeWithLowWage + '.';
+                    perEmployeeAlert.classList.remove('hidden');
+
+                    // Disable submit button
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    return;
+                }
+
+                // Validasi sukses: tampilkan info perhitungan
+                perEmployeeAlert.className = 'mb-4 p-4 bg-info-light border border-info rounded-lg';
+                const icon = perEmployeeAlert.querySelector('i');
+                if (icon) { icon.className = 'fa-solid fa-calculator text-info mt-1'; }
+                const textDiv = perEmployeeAlert.querySelector('.text-sm');
+                if (textDiv) { textDiv.className = 'text-sm text-info'; }
+                const titleDiv = perEmployeeAlert.querySelector('.font-semibold');
+                if (titleDiv) { titleDiv.className = 'font-semibold mb-1 text-info'; }
+
+                let msg = 'Total Rp ' + Number(totalAmount).toLocaleString('id-ID') +
+                    ' dibagi ' + checkedCount + ' karyawan = Rp ' + Number(perEmployee).toLocaleString('id-ID') +
+                    ' per orang';
+                if (remainder > 0) {
+                    msg += ' (sisa Rp ' + Number(remainder).toLocaleString('id-ID') +
+                        ' akan masuk ke karyawan terakhir)';
+                }
+                perEmployeeMessage.textContent = msg;
+                perEmployeeAlert.classList.remove('hidden');
+            }
+
+            // Enable submit button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            perEmployeeAmountField.style.display = 'none';
+            if (perEmployeeAlert) perEmployeeAlert.classList.add('hidden');
+        }
+    }
+
+    function formatRupiah(value) {
+        return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
     }
 
     // Check maksimal kasbon berdasarkan kehadiran sampai tanggal kasbon
@@ -370,6 +614,21 @@
 
         // Initialize employee field visibility for add modal
         toggleEmployeeSelect('add');
+
+        // Initialize team employee fields for edit modals
+        document.querySelectorAll('[id^="edit_kasbon_type_"]').forEach(el => {
+            const prefix = el.id.replace('edit_kasbon_type_', 'edit_');
+            toggleEmployeeSelect(prefix);
+            if (el.value === 'team') {
+                const division = document.getElementById(prefix + '_division');
+                if (division && division.value) {
+                    onDivisionChange(prefix);
+                    updatePerEmployeeAmount(prefix);
+                    updateSelectedCount(prefix);
+                    updateSelectAllTeamState(prefix);
+                }
+            }
+        });
 
         document.querySelectorAll('.kasbon-amount-input').forEach(input => {
             if (input.value) {

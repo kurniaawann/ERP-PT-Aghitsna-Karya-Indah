@@ -255,6 +255,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
     Route::put('/overtime/{overtime}', [OvertimeController::class, 'update'])->name('overtime.update');
     Route::delete('/overtime/destroy-selected', [OvertimeController::class, 'destroy'])->name('overtime.destroy');
+    Route::get('/overtime/employees-dropdown', [OvertimeController::class, 'employeesDropdown'])->name('overtime.employees-dropdown');
 
     // Route Payroll (Penggajian)
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');

@@ -3,6 +3,8 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Pilih Karyawan <span class="text-error">*</span></label>
+        <input type="text" id="employee-search" placeholder="Cari nama atau divisi..."
+            class="w-full border rounded p-2 mb-2 text-sm" oninput="filterEmployees(this.value)">
         <div class="border rounded p-3 max-h-48 overflow-y-auto bg-surface-secondary">
             <div class="mb-2">
                 <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
@@ -12,16 +14,34 @@
             </div>
             <hr class="my-2">
             @foreach ($employees as $employee)
-                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
+                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded employee-item"
+                    data-name="{{ strtolower($employee->name) }}"
+                    data-division="{{ strtolower($employee->division ?? '') }}">
                     <input type="checkbox" name="employee_ids[]" value="{{ $employee->employee_code }}"
                         class="w-4 h-4 accent-primary employee-checkbox">
-                    <span>{{ $employee->name }} - {{ $employee->employee_code }}</span>
+                    <span>{{ $employee->name }} - {{ $employee->employee_code }}
+                        @if ($employee->division)
+                            <span class="text-xs text-text-secondary">({{ $employee->division }})</span>
+                        @endif
+                    </span>
                 </label>
             @endforeach
         </div>
         <p class="text-xs text-text-secondary mt-1">Pilih satu atau lebih karyawan</p>
         <p id="employee-error" class="text-xs text-red-600 mt-1 hidden">Silakan pilih minimal 1 karyawan!</p>
     </div>
+
+    <script>
+        function filterEmployees(query) {
+            const q = query.toLowerCase().trim();
+            document.querySelectorAll('.employee-item').forEach(item => {
+                const name = item.dataset.name || '';
+                const division = item.dataset.division || '';
+                const match = !q || name.includes(q) || division.includes(q);
+                item.style.display = match ? '' : 'none';
+            });
+        }
+    </script>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Mulai <span class="text-error">*</span></label>

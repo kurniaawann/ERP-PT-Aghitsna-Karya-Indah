@@ -167,6 +167,43 @@ class OvertimeController extends Controller
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil diperbarui!');
     }
 
+    public function employeesDropdown(Request $request)
+    {
+        $search = $request->input('search', '');
+        $page = (int) $request->input('page', 1);
+        $limit = (int) $request->input('limit', 10);
+
+        $query = Employee::orderBy('name');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%")
+                    ->orWhere('division', 'like', "%{$search}%");
+            });
+        }
+
+        $total = $query->count();
+        $employees = $query->skip(($page - 1) * $limit)->take($limit)->get();
+
+        $data = $employees->map(function ($emp) {
+            return [
+                'id' => $emp->employee_code,
+                'text' => $emp->name . ' (' . $emp->employee_code . ')' . ($emp->division ? ' - ' . $emp->division : ''),
+                'name' => $emp->name,
+                'division' => $emp->division,
+            ];
+        });
+
+        return response()->json([
+            'data' => $data,
+            'page' => $page,
+            'limit' => $limit,
+            'hasMore' => ($page * $limit) < $total,
+            'total' => $total,
+        ]);
+    }
+
     public function destroy(Request $request)
     {
         // Ambil array ID dari input dengan nama 'ids' (dari checkbox selection)

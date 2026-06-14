@@ -18,7 +18,9 @@ class Kasbon extends Model
         'employee_id',
         'kasbon_type',
         'division',
+        'employee_details',
         'amount',
+        'remaining_amount',
         'kasbon_date',
         'week_number',
         'period_month',
@@ -29,7 +31,9 @@ class Kasbon extends Model
     ];
 
     protected $casts = [
+        'employee_details' => 'array',
         'amount' => 'integer',
+        'remaining_amount' => 'integer',
         'week_number' => 'integer',
         'period_month' => 'integer',
         'period_year' => 'integer',
@@ -69,6 +73,14 @@ class Kasbon extends Model
     public function payroll()
     {
         return $this->belongsTo(Payroll::class, 'deducted_in_payroll_id');
+    }
+
+    /**
+     * Relasi ke log pemotongan kasbon
+     */
+    public function deductionLogs()
+    {
+        return $this->hasMany(KasbonDeductionLog::class, 'kasbon_code', 'kasbon_code');
     }
 
     /**
@@ -119,6 +131,14 @@ class Kasbon extends Model
     }
 
     /**
+     * Scope untuk kasbon team yang masih memiliki sisa (active)
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('remaining_amount', '>', 0);
+    }
+
+    /**
      * Get total kasbon untuk employee tertentu dalam periode tertentu
      */
     public static function getTotalForEmployee($employeeId, $month, $year, $weekNumber = null)
@@ -136,20 +156,13 @@ class Kasbon extends Model
     }
 
     /**
-     * Get total kasbon team dalam periode tertentu
+     * Get total kasbon team yang masih aktif (belum lunas)
      */
-    public static function getTotalTeamKasbon($month, $year, $weekNumber = null)
+    public static function getTotalActiveTeamKasbon()
     {
-        $query = self::where('kasbon_type', 'team')
-            ->where('period_month', $month)
-            ->where('period_year', $year)
-            ->pending();
-
-        if ($weekNumber !== null) {
-            $query->where('week_number', $weekNumber);
-        }
-
-        return $query->sum('amount');
+        return self::where('kasbon_type', 'team')
+            ->where('remaining_amount', '>', 0)
+            ->sum('remaining_amount');
     }
 
     /**
@@ -159,6 +172,7 @@ class Kasbon extends Model
     {
         $this->status = 'deducted';
         $this->deducted_in_payroll_id = $payrollId;
+        $this->remaining_amount = 0;
         $this->save();
     }
 
@@ -171,11 +185,37 @@ class Kasbon extends Model
     }
 
     /**
+     * Format remaining_amount untuk display
+     */
+    public function getFormattedRemainingAttribute()
+    {
+        return 'Rp ' . number_format($this->remaining_amount ?? 0, 0, ',', '.');
+    }
+
+    /**
+     * Get total yang sudah terpotong
+     */
+    public function getTotalDeductedAttribute()
+    {
+        return $this->amount - ($this->remaining_amount ?? 0);
+    }
+
+    /**
+     * Format total deducted untuk display
+     */
+    public function getFormattedTotalDeductedAttribute()
+    {
+        return 'Rp ' . number_format(max(0, $this->total_deducted), 0, ',', '.');
+    }
+
+    /**
      * Get status label
      */
     public function getStatusLabelAttribute()
     {
-        return $this->status === 'pending' ? 'Belum Dipotong' : 'Sudah Dipotong';
+        if ($this->status === 'deducted') return 'Lunas';
+        if ($this->remaining_amount > 0 && $this->remaining_amount < $this->amount) return 'Belum Lunas';
+        return 'Belum Dipotong';
     }
 
     /**
@@ -184,5 +224,15 @@ class Kasbon extends Model
     public function getKasbonTypeLabelAttribute()
     {
         return $this->kasbon_type === 'personal' ? 'Per Orang' : 'Per Tim';
+    }
+
+    /**
+     * Status CSS class
+     */
+    public function getStatusClassAttribute()
+    {
+        if ($this->status === 'deducted') return 'bg-success-light text-success';
+        if ($this->remaining_amount > 0 && $this->remaining_amount < $this->amount) return 'bg-warning-light text-warning';
+        return 'bg-info-light text-info';
     }
 }

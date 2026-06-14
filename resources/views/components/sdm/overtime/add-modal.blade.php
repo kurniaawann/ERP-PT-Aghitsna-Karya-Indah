@@ -3,15 +3,28 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Pilih Karyawan <span class="text-error">*</span></label>
-        <select name="employee_id" id="add-employee-id"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-            oninvalid="this.setCustomValidity('Karyawan tidak boleh kosong')" oninput="this.setCustomValidity('')">
-            <option value="">Pilih Karyawan</option>
-            @foreach ($employees as $employee)
-                <option value="{{ $employee->employee_code }}">{{ $employee->name }} - {{ $employee->employee_code }}
-                </option>
-            @endforeach
-        </select>
+        <input type="hidden" name="employee_id" id="add-selected-employee-id" value="">
+        <div class="relative">
+            <input type="text" id="add-employee-search" placeholder="Cari nama atau divisi..."
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                oninput="debounceFetchEmployees(this.value)" onfocus="openEmployeeDropdown()">
+            <div id="add-employee-dropdown"
+                class="hidden absolute z-10 w-full mt-1 bg-surface-base border border-border-strong rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div id="add-employee-list"></div>
+                <div id="add-employee-pagination" class="flex justify-between items-center p-2 border-t border-border-strong bg-surface-secondary">
+                    <button type="button" id="add-employee-prev" onclick="changeEmployeePage(-1)"
+                        class="text-xs px-2 py-1 rounded bg-surface-base hover:bg-surface-hover disabled:opacity-30" disabled>
+                        <i class="fa-solid fa-chevron-left"></i> Prev
+                    </button>
+                    <span id="add-employee-page-info" class="text-xs text-text-secondary">Halaman 1</span>
+                    <button type="button" id="add-employee-next" onclick="changeEmployeePage(1)"
+                        class="text-xs px-2 py-1 rounded bg-surface-base hover:bg-surface-hover disabled:opacity-30" disabled>
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <p id="add-employee-selected-name" class="text-xs text-text-secondary mt-1"></p>
     </div>
 
     <div class="mb-3">

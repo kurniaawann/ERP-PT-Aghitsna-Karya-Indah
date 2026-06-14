@@ -68,115 +68,72 @@ class AttendanceController extends Controller
 
     public function store(Request $request)
     {
-        // Ambil array employee_ids dari request (default empty array jika tidak ada)
         $employeeIds = $request->input('employee_ids', []);
-        // Parse start_date dari string menjadi Carbon instance untuk manipulasi tanggal
         $startDate = \Carbon\Carbon::parse($request->start_date);
-        // Parse end_date dari string menjadi Carbon instance
         $endDate = \Carbon\Carbon::parse($request->end_date);
 
-        // TAHAP 1: Validasi duplikasi - cek semua kombinasi karyawan + tanggal
-        // Inisialisasi array kosong untuk menampung info duplikat
-        $duplicates = [];
-        // Loop setiap karyawan yang dipilih dari checkbox
-        foreach ($employeeIds as $employeeId) {
-            // Buat copy dari startDate untuk iterasi tanggal (agar startDate asli tidak berubah)
-            $currentDate = $startDate->copy();
-            // Loop setiap tanggal dari start_date sampai end_date (inclusive)
-            // lte() = less than or equal (<=)
-            while ($currentDate->lte($endDate)) {
-                // Cek di database apakah kombinasi employee_id + attendance_date sudah ada
-                // where('employee_id', $employeeId) = filter by karyawan
-                // where('attendance_date', ...) = filter by tanggal
-                // first() = ambil record pertama atau null jika tidak ada
-                $existing = Attendance::where('employee_id', $employeeId)
-                    ->where('attendance_date', $currentDate->format('Y-m-d'))
-                    ->first();
-
-                // Jika data sudah ada (existing bukan null)
-                if ($existing) {
-                    // Ambil data karyawan dari database berdasarkan employee_code
-                    $employee = Employee::where('employee_code', $employeeId)->first();
-                    // Buat pesan error detail dengan sprintf (formatting string)
-                    // Format: "Nama Karyawan pada tanggal DD-MM-YYYY (Status: Hadir)"
-                    $duplicates[] = sprintf(
-                        '%s pada tanggal %s (Status: %s)',
-                        $employee->name ?? $employeeId, // Gunakan nama karyawan, atau employee_code jika nama null
-                        $currentDate->format('d-m-Y'), // Format tanggal ke DD-MM-YYYY
-                        $existing->status // Status absensi yang sudah ada
-                    );
-                }
-                // Tambah 1 hari ke currentDate untuk iterasi berikutnya
-                $currentDate->addDay();
-            }
-        }
-
-        // TAHAP 2: Jika ada duplikat, tolak semua insert dan kembalikan dengan error
-        // count($duplicates) > 0 berarti ada minimal 1 duplikat
-        if (count($duplicates) > 0) {
-            // Inisialisasi pesan error
-            $errorMessage = 'Karyawan berikut sudah memiliki absensi: ';
-
-            // Batasi tampilan error maksimal 5 item pertama (agar pesan tidak terlalu panjang)
-            // array_slice($duplicates, 0, 5) mengambil index 0-4 (5 item pertama)
-            $displayDuplicates = array_slice($duplicates, 0, 5);
-            // implode('; ', $array) menggabungkan array menjadi string dengan separator '; '
-            $errorMessage .= implode('; ', $displayDuplicates);
-
-            // Jika total duplikat lebih dari 5, tampilkan info "dan X lainnya"
-            if (count($duplicates) > 5) {
-                // sprintf untuk formatting string dengan placeholder %d (integer)
-                $errorMessage .= sprintf(' dan %d lainnya', count($duplicates) - 5);
-            }
-
-            // Tambahkan petunjuk untuk user
-            $errorMessage .= '. Silakan hapus atau edit data yang sudah ada.';
-
-            // Redirect kembali ke halaman sebelumnya dengan flash message error
-            return back()->with('error', $errorMessage);
-        }
-
-        // TAHAP 3: Jika tidak ada duplikat, lakukan bulk insert
-        // Inisialisasi counter untuk menghitung jumlah data yang berhasil disimpan
         $totalInserted = 0;
-        // Loop setiap karyawan yang dipilih
+        $totalSkipped = 0;
+        $skippedDetails = [];
+
         foreach ($employeeIds as $employeeId) {
-            // Buat copy dari startDate untuk iterasi tanggal
             $currentDate = $startDate->copy();
-            // Loop setiap tanggal dari start_date sampai end_date
             while ($currentDate->lte($endDate)) {
-                // Insert data absensi ke database
-                Attendance::create([
-                    // ID karyawan (employee_code)
-                    'employee_id' => $employeeId,
-                    // Tanggal absensi (format Y-m-d untuk database)
-                    'attendance_date' => $currentDate->format('Y-m-d'),
-                    // Status absensi dari form (Hadir/Sakit/Izin/Alfa/Cuti)
-                    'status' => $request->status,
-                    // Catatan tambahan dari form (bisa null)
-                    'notes' => $request->notes,
-                ]);
-                // Increment counter setiap kali insert berhasil
-                $totalInserted++;
-                // Tambah 1 hari untuk iterasi berikutnya
+                $exists = Attendance::where('employee_id', $employeeId)
+                    ->where('attendance_date', $currentDate->format('Y-m-d'))
+                    ->exists();
+
+                if ($exists) {
+                    if ($totalSkipped < 5) {
+                        $employee = Employee::where('employee_code', $employeeId)->first();
+                        $skippedDetails[] = sprintf(
+                            '%s pada tanggal %s',
+                            $employee->name ?? $employeeId,
+                            $currentDate->format('d-m-Y')
+                        );
+                    }
+                    $totalSkipped++;
+                } else {
+                    Attendance::create([
+                        'employee_id' => $employeeId,
+                        'attendance_date' => $currentDate->format('Y-m-d'),
+                        'status' => $request->status,
+                        'notes' => $request->notes,
+                    ]);
+                    $totalInserted++;
+                }
+
                 $currentDate->addDay();
             }
         }
 
-        // Buat pesan sukses dengan informasi detail menggunakan sprintf
-        // diffInDays() menghitung selisih hari antara start dan end date, +1 karena inclusive
         $totalDays = $startDate->diffInDays($endDate) + 1;
-        // sprintf dengan placeholder: %d untuk integer, %s untuk string
-        $message = sprintf(
-            'Berhasil menambahkan %d record absensi untuk %d karyawan selama %d hari (%s s/d %s).',
-            $totalInserted, // Jumlah record yang diinsert
-            count($employeeIds), // Jumlah karyawan
-            $totalDays, // Jumlah hari (range)
-            $startDate->format('d-m-Y'), // Tanggal mulai (format DD-MM-YYYY)
-            $endDate->format('d-m-Y') // Tanggal akhir (format DD-MM-YYYY)
-        );
 
-        // Redirect ke halaman index attendance dengan flash message sukses
+        if ($totalInserted > 0 && $totalSkipped > 0) {
+            $message = sprintf(
+                'Berhasil menambahkan %d record absensi. %d record dilewati karena sudah ada.',
+                $totalInserted,
+                $totalSkipped
+            );
+            if (count($skippedDetails) > 0) {
+                $message .= ' (' . implode('; ', $skippedDetails) . ')';
+                if ($totalSkipped > 5) {
+                    $message .= sprintf(' dan %d lainnya', $totalSkipped - 5);
+                }
+            }
+        } elseif ($totalInserted > 0) {
+            $message = sprintf(
+                'Berhasil menambahkan %d record absensi untuk %d karyawan selama %d hari (%s s/d %s).',
+                $totalInserted,
+                count($employeeIds),
+                $totalDays,
+                $startDate->format('d-m-Y'),
+                $endDate->format('d-m-Y')
+            );
+        } else {
+            $message = 'Tidak ada data absensi baru yang ditambahkan. Semua data sudah ada sebelumnya.';
+        }
+
         return redirect()->route('attendance.index')->with('success', $message);
     }
 

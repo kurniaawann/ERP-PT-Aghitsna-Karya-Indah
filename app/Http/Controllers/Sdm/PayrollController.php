@@ -7,6 +7,7 @@ use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Kasbon;
+use App\Models\Sdm\KasbonDeductionLog;
 use App\Models\Notification\SalaryReminder;
 use App\Exports\Sdm\PayrollExport;
 use Illuminate\Http\Request;
@@ -300,28 +301,10 @@ class PayrollController extends Controller
         // Tentukan apakah ada karyawan baru (belum punya payroll untuk periode ini)
         $hasNewEmployees = count($newEmployees) > 0;
 
-        // VALIDASI KASBON - Cek apakah ada kasbon yang melebihi gaji
+        // VALIDASI KASBON - Cek apakah ada personal kasbon yang melebihi gaji
         $kasbonIssues = [];
-        $divisionTotals = []; // Total gaji per divisi
 
-        // 1. Hitung total gaji per divisi (daily_wage × 6 hari kerja wajib)
-        foreach ($employees as $employee) {
-            $dailyWage = $employee->daily_wage ?? $employee->base_salary;
-            $maxSalary = $dailyWage * 6; // 6 hari kerja wajib (Senin-Sabtu)
-
-            if ($employee->division) {
-                if (!isset($divisionTotals[$employee->division])) {
-                    $divisionTotals[$employee->division] = [
-                        'total_salary' => 0,
-                        'employee_count' => 0,
-                    ];
-                }
-                $divisionTotals[$employee->division]['total_salary'] += $maxSalary;
-                $divisionTotals[$employee->division]['employee_count']++;
-            }
-        }
-
-        // 2. Validasi kasbon personal per karyawan
+        // Validasi kasbon personal per karyawan
         foreach ($employees as $employee) {
             $dailyWage = $employee->daily_wage ?? $employee->base_salary;
             $maxSalary = $dailyWage * 6; // 6 hari kerja wajib
@@ -345,34 +328,11 @@ class PayrollController extends Controller
             }
         }
 
-        // 3. Validasi kasbon divisi (team)
-        $teamKasbons = \App\Models\Sdm\Kasbon::where('kasbon_type', 'team')
-            ->where('period_month', $month)
-            ->where('period_year', $year)
-            ->where('week_number', $weekNumber)
-            ->where('status', 'pending')
-            ->get();
-
-        foreach ($teamKasbons as $teamKasbon) {
-            if ($teamKasbon->division && isset($divisionTotals[$teamKasbon->division])) {
-                $divisionMaxSalary = $divisionTotals[$teamKasbon->division]['total_salary'];
-
-                if ($teamKasbon->amount > $divisionMaxSalary) {
-                    $kasbonIssues[] = [
-                        'type' => 'team',
-                        'division' => $teamKasbon->division,
-                        'kasbon_amount' => $teamKasbon->amount,
-                        'max_salary' => $divisionMaxSalary,
-                        'employee_count' => $divisionTotals[$teamKasbon->division]['employee_count'],
-                    ];
-                }
-            }
-        }
-
         // Tentukan apakah boleh generate:
         // 1. Harus ada karyawan yang perlu di-generate (newEmployees tidak kosong)
         // 2. Tidak boleh ada karyawan dengan absensi tidak lengkap (incompleteEmployees kosong)
-        // 3. Tidak boleh ada kasbon yang melebihi gaji (kasbonIssues kosong)
+        // 3. Personal kasbon > gaji tetap blokir (kasbonIssues), team kasbon TIDAK blokir karena ada capping
+        $hasKasbonWarnings = count($kasbonIssues) > 0;
         $canGenerate = count($newEmployees) > 0 && count($incompleteEmployees) === 0 && count($kasbonIssues) === 0;
 
 
@@ -390,8 +350,9 @@ class PayrollController extends Controller
             'has_new_employees' => $hasNewEmployees,
             'new_employees' => $newEmployees,
             'total_employees' => count($employees),
-            'kasbon_issues' => $kasbonIssues, // Tambahkan informasi kasbon bermasalah
-            'can_generate' => $canGenerate, // Boleh generate hanya jika ada karyawan baru DAN tidak ada yang incomplete DAN tidak ada kasbon bermasalah
+            'kasbon_issues' => $kasbonIssues,
+            'has_kasbon_warnings' => $hasKasbonWarnings, // Warning personal kasbon > gaji, tidak blokir
+            'can_generate' => $canGenerate, // Boleh generate jika ada karyawan baru DAN absensi lengkap
         ]);
     }
 
@@ -561,31 +522,48 @@ class PayrollController extends Controller
         // END VALIDASI
         // ========================================
 
-        // Group employees by division untuk hitung kasbon team per divisi
-        $divisionGroups = $employees->groupBy('division');
+        // ========================================
+        // KASBON TEAM: DENGAN CAPPING & CARRY-OVER
+        // ========================================
+        // Ambil SEMUA kasbon team yang masih aktif (remaining_amount > 0) dari periode manapun
+        $activeTeamKasbons = Kasbon::where('kasbon_type', 'team')
+            ->where('remaining_amount', '>', 0)
+            ->get();
 
-        // Hitung kasbon team per divisi
-        $kasbonPerDivision = [];
-        foreach ($divisionGroups as $division => $divisionEmployees) {
-            if ($division) { // Skip if division is null
-                $totalTeamKasbonForDivision = Kasbon::where('kasbon_type', 'team')
-                    ->where('division', $division)
-                    ->where('period_month', $month)
-                    ->where('period_year', $year)
-                    ->where('week_number', $weekNumber)
-                    ->where('status', 'pending')
-                    ->sum('amount');
+        // Buat rencana pemotongan: [employee_code => [kasbon_code => planned_amount]]
+        $teamKasbonPlan = [];
 
-                $employeeCountInDivision = $divisionEmployees->count();
-                $kasbonPerDivision[$division] = $employeeCountInDivision > 0
-                    ? $totalTeamKasbonForDivision / $employeeCountInDivision
-                    : 0;
+        foreach ($activeTeamKasbons as $kasbon) {
+            $division = $kasbon->division;
+            $details = $kasbon->employee_details;
+            $amountToDistribute = $kasbon->remaining_amount;
+
+            if ($amountToDistribute <= 0) continue;
+
+            if (!empty($details)) {
+                // Distribusi berdasarkan employee_details
+                $count = count($details);
+                $perPerson = $count > 0 ? intdiv($amountToDistribute, $count) : 0;
+                foreach ($details as $empId) {
+                    $teamKasbonPlan[$empId][$kasbon->kasbon_code] = ($teamKasbonPlan[$empId][$kasbon->kasbon_code] ?? 0) + $perPerson;
+                }
+            } elseif ($division) {
+                // Legacy: bagi rata ke semua karyawan di divisi
+                $divisionEmployees = $employees->where('division', $division);
+                $count = $divisionEmployees->count();
+                $perPerson = $count > 0 ? intdiv($amountToDistribute, $count) : 0;
+                foreach ($divisionEmployees as $emp) {
+                    $teamKasbonPlan[$emp->employee_code][$kasbon->kasbon_code] = ($teamKasbonPlan[$emp->employee_code][$kasbon->kasbon_code] ?? 0) + $perPerson;
+                }
             }
         }
 
+        // Track deductions for audit
+        $teamKasbonActualDeductions = []; // [kasbon_code => total_deducted_this_run]
+        $teamKasbonRemainingUpdates = []; // [kasbon_code => remaining_after]
+
         // Loop setiap pekerja untuk generate payroll
         foreach ($employees as $employee) {
-            // Cek apakah payroll untuk minggu ini sudah ada
             $existingPayroll = Payroll::where('employee_id', $employee->employee_code)
                 ->where('period_month', $month)
                 ->where('period_year', $year)
@@ -593,104 +571,76 @@ class PayrollController extends Controller
                 ->first();
 
             if ($existingPayroll) {
-                continue; // Skip jika sudah pernah digenerate
+                continue;
             }
 
-            // Ambil data absensi pekerja untuk minggu ini
             $attendances = Attendance::where('employee_id', $employee->employee_code)
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->get();
 
-            \Log::info('Payroll Generate - Attendance Data', [
-                'employee_code' => $employee->employee_code,
-                'employee_name' => $employee->name,
-                'week' => $weekNumber,
-                'date_range' => $startDate->format('Y-m-d') . ' to ' . $endDate->format('Y-m-d'),
-                'total_attendance' => $attendances->count(),
-                'attendances' => $attendances->map(function ($att) {
-                    return [
-                        'date' => $att->attendance_date,
-                        'status' => $att->status,
-                        'overtime_hours' => $att->overtime_hours,
-                        'overtime_rate' => $att->overtime_rate,
-                        'overtime_total' => $att->overtime_total,
-                    ];
-                })->toArray(),
-            ]);
-
-            // Hitung hari masuk (hadir + lembur)
             $presentDays = $attendances->whereIn('status', ['hadir', 'lembur'])->count();
             $permissionDays = $attendances->where('status', 'izin')->count();
             $sickDays = $attendances->where('status', 'sakit')->count();
             $leaveDays = $attendances->where('status', 'cuti')->count();
             $overtimeDays = $attendances->where('status', 'lembur')->count();
-
-            // Hitung total hari kerja dalam minggu (bisa 6-7 hari tergantung apakah ada yang masuk Minggu)
             $totalWorkDays = $weekDates['working_days'];
-
-            // Upah pekerja harian = daily_wage × hari masuk
-            // Jika tidak masuk = tidak dapat upah
             $dailyWage = $employee->daily_wage ?? $employee->base_salary;
             $totalWage = $dailyWage * $presentDays;
-
-            // Hitung bonus lembur jika ada
             $overtimeTotal = $attendances->where('status', 'lembur')->sum('overtime_total');
-
-            \Log::info('Payroll Generate - Overtime Calculation', [
-                'employee_code' => $employee->employee_code,
-                'employee_name' => $employee->name,
-                'overtime_days' => $overtimeDays,
-                'overtime_total' => $overtimeTotal,
-                'overtime_records' => $attendances->where('status', 'lembur')->map(function ($att) {
-                    return [
-                        'date' => $att->attendance_date,
-                        'hours' => $att->overtime_hours,
-                        'rate' => $att->overtime_rate,
-                        'total' => $att->overtime_total,
-                    ];
-                })->values()->toArray(),
-            ]);
-
-            // Total upah kotor = upah harian × hari masuk + bonus lembur
             $grossWage = $totalWage + $overtimeTotal;
 
-            // Hitung kasbon yang perlu dipotong
-            // 1. Kasbon personal
+            // Kasbon personal
             $personalKasbon = Kasbon::getTotalForEmployee($employee->employee_code, $month, $year, $weekNumber);
-            // 2. Bagian dari kasbon team (hanya untuk divisi yang sama)
-            $teamKasbonPerPerson = $employee->division && isset($kasbonPerDivision[$employee->division])
-                ? $kasbonPerDivision[$employee->division]
-                : 0;
-            $totalKasbonDeduction = $personalKasbon + $teamKasbonPerPerson;
 
-            // Hitung upah bersih = Upah Kotor - Kasbon
+            // Kasbon team: apply capping agar gaji tidak minus
+            $plannedTeamKasbon = $teamKasbonPlan[$employee->employee_code] ?? [];
+            $totalPlannedTeam = array_sum($plannedTeamKasbon);
+            $availableAfterPersonal = max(0, $grossWage - $personalKasbon);
+            $actualTeamKasbon = min($totalPlannedTeam, $availableAfterPersonal);
+
+            // Distribusi proporsional jika actual < planned
+            $actualTeamBreakdown = [];
+            if ($totalPlannedTeam > 0) {
+                $ratio = $actualTeamKasbon / $totalPlannedTeam;
+                foreach ($plannedTeamKasbon as $kCode => $planned) {
+                    $actualForThis = (int) round($planned * $ratio);
+                    $actualTeamBreakdown[$kCode] = $actualForThis;
+                }
+                // Adjust rounding error by adding/subtracting from largest
+                $sumActual = array_sum($actualTeamBreakdown);
+                $diff = $actualTeamKasbon - $sumActual;
+                if ($diff != 0 && count($actualTeamBreakdown) > 0) {
+                    $largestKey = array_keys($actualTeamBreakdown, max($actualTeamBreakdown))[0];
+                    $actualTeamBreakdown[$largestKey] += $diff;
+                }
+            }
+
+            $totalKasbonDeduction = $personalKasbon + $actualTeamKasbon;
             $netWage = $grossWage - $totalKasbonDeduction;
 
-            // Buat payroll record
             $payroll = Payroll::create([
                 'employee_id' => $employee->employee_code,
                 'period_month' => $month,
                 'period_year' => $year,
                 'period_type' => 'weekly',
                 'week_number' => $weekNumber,
-                'project_name' => $request->project_name, // Nama proyek (opsional)
-                'base_salary' => $dailyWage, // Simpan daily wage di base_salary
+                'project_name' => $request->project_name,
+                'base_salary' => $dailyWage,
                 'total_work_days' => $totalWorkDays,
                 'present_days' => $presentDays,
                 'permission_days' => $permissionDays,
                 'sick_days' => $sickDays,
                 'leave_days' => $leaveDays,
                 'overtime_days' => $overtimeDays,
-                'deduction_amount' => 0, // Tidak ada potongan izin/sakit untuk pekerja harian
+                'deduction_amount' => 0,
                 'overtime_total' => $overtimeTotal,
                 'kasbon_deduction' => $totalKasbonDeduction,
-                'additional_expenses' => $additionalExpenses, // Token listrik/air, dll
+                'additional_expenses' => $additionalExpenses,
                 'additional_expenses_notes' => $additionalExpensesNotes,
                 'net_salary' => $netWage,
                 'status' => 'draft',
             ]);
 
-            // Ensure a SalaryReminder exists for this payroll
             SalaryReminder::updateOrCreate(
                 ['payroll_id' => $payroll->id],
                 [
@@ -704,48 +654,64 @@ class PayrollController extends Controller
                 ]
             );
 
-            // Update status kasbon menjadi 'deducted'
-            $kasbons = Kasbon::where('employee_id', $employee->employee_code)
+            // Update personal kasbon menjadi 'deducted'
+            $personalKasbons = Kasbon::where('employee_id', $employee->employee_code)
                 ->where('period_month', $month)
                 ->where('period_year', $year)
                 ->where('week_number', $weekNumber)
                 ->pending()
                 ->get();
 
-            foreach ($kasbons as $kasbon) {
+            foreach ($personalKasbons as $kasbon) {
                 $kasbon->markAsDeducted($payroll->id);
+            }
+
+            // Catat pemotongan kasbon team dan update remaining_amount
+            foreach ($actualTeamBreakdown as $kCode => $actualDeduction) {
+                if ($actualDeduction <= 0) continue;
+
+                $kasbon = $activeTeamKasbons->firstWhere('kasbon_code', $kCode);
+                if (!$kasbon) continue;
+
+                $remainingBefore = $kasbon->remaining_amount;
+                $remainingAfter = max(0, $remainingBefore - $actualDeduction);
+
+                // Buat audit log
+                KasbonDeductionLog::create([
+                    'kasbon_code' => $kCode,
+                    'employee_id' => $employee->employee_code,
+                    'payroll_id' => $payroll->id,
+                    'amount_deducted' => $actualDeduction,
+                    'amount_remaining_before' => $remainingBefore,
+                    'amount_remaining_after' => $remainingAfter,
+                    'period_month' => $month,
+                    'period_year' => $year,
+                    'week_number' => $weekNumber,
+                ]);
+
+                // Track for batch update
+                if (!isset($teamKasbonActualDeductions[$kCode])) {
+                    $teamKasbonActualDeductions[$kCode] = 0;
+                }
+                $teamKasbonActualDeductions[$kCode] += $actualDeduction;
+                $teamKasbonRemainingUpdates[$kCode] = $remainingAfter;
             }
         }
 
-        // Update kasbon team untuk setiap divisi (hanya sekali per divisi)
-        $processedDivisions = [];
-        foreach ($employees as $employee) {
-            if ($employee->division && !in_array($employee->division, $processedDivisions)) {
-                $teamKasbons = Kasbon::where('kasbon_type', 'team')
-                    ->where('division', $employee->division)
-                    ->where('period_month', $month)
+        // Update remaining_amount pada kasbon team dan mark as deducted jika lunas
+        foreach ($teamKasbonRemainingUpdates as $kCode => $remainingAfter) {
+            $kasbon = $activeTeamKasbons->firstWhere('kasbon_code', $kCode);
+            if (!$kasbon) continue;
+
+            $kasbon->remaining_amount = $remainingAfter;
+            if ($remainingAfter <= 0) {
+                $kasbon->status = 'deducted';
+                $kasbon->deducted_in_payroll_id = Payroll::where('period_month', $month)
                     ->where('period_year', $year)
                     ->where('week_number', $weekNumber)
-                    ->pending()
-                    ->get();
-
-                foreach ($teamKasbons as $kasbon) {
-                    // Ambil payroll pertama dari divisi ini untuk referensi
-                    $firstPayrollInDivision = Payroll::whereHas('employee', function ($q) use ($employee) {
-                        $q->where('division', $employee->division);
-                    })
-                        ->where('period_month', $month)
-                        ->where('period_year', $year)
-                        ->where('week_number', $weekNumber)
-                        ->first();
-
-                    if ($firstPayrollInDivision) {
-                        $kasbon->markAsDeducted($firstPayrollInDivision->id);
-                    }
-                }
-
-                $processedDivisions[] = $employee->division;
+                    ->first()?->id;
             }
+            $kasbon->save();
         }
 
         return redirect()->route('payroll.index')->with('success', 'Payroll berhasil digenerate!');
