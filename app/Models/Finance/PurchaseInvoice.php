@@ -35,15 +35,15 @@ class PurchaseInvoice extends Model
      */
     public function getTotalAttribute()
     {
-        return $this->harga_jual + $this->ppn_pengenaan_pajak;
+        return $this->selling_price + $this->ppn_tax;
     }
 
     /**
      * Scope untuk filter berdasarkan tanggal
      */
-    public function scopeFilterByDate($query, $tanggal)
+    public function scopeFilterByDate($query, $date)
     {
-        return $query->whereDate('tanggal', $tanggal);
+        return $query->whereDate('date', $date);
     }
 
     /**
@@ -51,14 +51,14 @@ class PurchaseInvoice extends Model
      */
     public function scopeFilterByDateRange($query, $start, $end)
     {
-        return $query->whereBetween('tanggal', [$start, $end]);
+        return $query->whereBetween('date', [$start, $end]);
     }
 
     /**
      * Scope untuk filter berdasarkan nama material
      */
-    public function scopeFilterByMaterial($query, $nama_material)
+    public function scopeFilterByMaterial($query, $material_name)
     {
-        return $query->where('nama_material', 'like', "%{$nama_material}%");
+        return $query->where('material_name', 'like', "%{$material_name}%");
     }
 }
