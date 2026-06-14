@@ -1,17 +1,8 @@
 <script>
+    @include('partials.shared.currency-utils-script')
+
     // Store maksimal kasbon untuk setiap form
     let maxKasbonData = {};
-
-    function parseCurrencyInput(value) {
-        return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
-    }
-
-    function formatCurrencyInput(input) {
-        if (!input) return;
-
-        const numeric = input.value.replace(/[^\d]/g, '');
-        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
-    }
 
     // Toggle employee select based on kasbon type
     function toggleEmployeeSelect(prefix) {
@@ -297,10 +288,6 @@
         }
     }
 
-    function formatRupiah(value) {
-        return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
-    }
-
     // Check maksimal kasbon berdasarkan kehadiran sampai tanggal kasbon
     async function checkMaxKasbon(prefix) {
         const employeeSelect = document.getElementById(prefix + '_employee_id');
@@ -546,20 +533,7 @@
         }
     }
 
-    // Handle bulk delete
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
-        }
-    }
+    @include('partials.shared.delete-form-script')
 
     // Select All Checkbox Handler
     document.addEventListener('DOMContentLoaded', function() {

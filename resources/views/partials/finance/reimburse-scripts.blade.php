@@ -5,37 +5,11 @@
 
     // Shared helper is loaded from resources/js/shared/form-submit.js
 
-    // ==========================================
-    // SELECT ALL CHECKBOX
-    // ==========================================
+    @include('partials.shared.select-all-script')
 
-    // Select All Checkbox
-    const selectAllCheckbox = document.getElementById('selectAll');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-            updateButtonStates();
-            updateSelectedInfo();
-        });
-    }
-
-    // Individual Checkbox
-    document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-
-            if (selectAll) {
-                selectAll.checked = checkboxes.length === checkedCheckboxes.length && checkboxes
-                    .length > 0;
-            }
-            updateButtonStates();
-            updateSelectedInfo();
-        });
+    initSelectAll('ids[]', 'delete-button', function(count) {
+        updateButtonStates();
+        updateSelectedInfo();
     });
 
     // ==========================================
@@ -139,16 +113,7 @@
     // SUBMIT FORMS
     // ==========================================
 
-    // Submit Delete Form
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-        document.getElementById('deleteForm').submit();
-    }
+    @include('partials.shared.delete-form-script')
 
     // ==========================================
     // ADD/EDIT FORM SUBMIT HANDLERS

@@ -33,35 +33,10 @@
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        {{-- View Detail Modal --}}
-                                        <button type="button"
-                                            onclick="openModal('detailRABModal{{ $rab->rab_number }}')"
-                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
-                                            title="Lihat Detail">
-                                            <i class="fa-solid fa-eye w-3 h-3"></i>
-                                            Lihat
-                                        </button>
-                                        {{-- Export Excel --}}
-                                        <a href="{{ route('rab.export-excel', $rab->rab_number) }}"
-                                            class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
-                                            title="Download Excel">
-                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
-                                            Excel
-                                        </a>
-                                        {{-- Download PDF --}}
-                                        <a href="{{ route('rab.export-pdf', $rab->rab_number) }}"
-                                            class="flex items-center gap-1 bg-error hover:bg-error-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
-                                            title="Download PDF">
-                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
-                                            PDF
-                                        </a>
-                                        {{-- Edit --}}
-                                        <button type="button" onclick="editRAB('{{ $rab->rab_number }}')"
-                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
-                                            title="Edit">
-                                            <i class="fa-solid fa-pen-to-square w-3 h-3"></i>
-                                            Edit
-                                        </button>
+                                        <x-buttons.detail onclick="openModal('detailRABModal{{ $rab->rab_number }}')" />
+                                        <x-buttons.edit onclick="editRAB('{{ $rab->rab_number }}')" />
+                                        <x-buttons.pdf url="{{ route('rab.export-pdf', $rab->rab_number) }}" />
+                                        <x-buttons.excel url="{{ route('rab.export-excel', $rab->rab_number) }}" />
                                     </div>
                                 </td>
                             </tr>

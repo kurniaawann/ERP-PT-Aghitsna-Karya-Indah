@@ -5,37 +5,9 @@
 
     // Shared helper is loaded from resources/js/shared/form-submit.js
 
-    function parseCurrencyInput(value) {
-        const rawValue = String(value ?? '').trim();
-
-        if (!rawValue) {
-            return 0;
-        }
-
-        return parseInt(rawValue.replace(/[^0-9-]/g, ''), 10) || 0;
-    }
-
-    function formatRupiah(value) {
-        return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
-    }
-
-    // ==========================================
-    // BULK DELETE FUNCTION
-    // ==========================================
-
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
-        }
-    }
+    @include('partials.shared.currency-utils-script')
+    @include('partials.shared.select-all-script')
+    @include('partials.shared.delete-form-script')
 
     // ==========================================
     // MAIN SCRIPT - DOM READY
@@ -186,43 +158,7 @@
         // SELECT ALL CHECKBOX FUNCTIONALITY
         // ==========================================
 
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const itemCheckboxes = document.querySelectorAll('input[name="selected_items[]"]');
-        const deleteButton = document.getElementById('delete-button');
-
-        // Function to update delete button state
-        function updateDeleteButtonState() {
-            const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
-            if (deleteButton) {
-                deleteButton.disabled = !anyChecked;
-            }
-        }
-
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function() {
-                itemCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-                updateDeleteButtonState();
-            });
-        }
-
-        // Uncheck "Select All" if any individual checkbox is unchecked
-        itemCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                if (!this.checked) {
-                    selectAllCheckbox.checked = false;
-                } else {
-                    // Check if all checkboxes are checked
-                    const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
-                    selectAllCheckbox.checked = allChecked;
-                }
-                updateDeleteButtonState();
-            });
-        });
-
-        // Initialize button state on page load
-        updateDeleteButtonState();
+        initSelectAll('selected_items[]');
 
         // ==========================================
         // PRINT DROPDOWN FUNCTIONALITY

@@ -39,30 +39,9 @@
 
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        {{-- Edit --}}
-                                        <button type="button"
-                                            onclick="openModal('editModal-{{ $quotation->quotation_number }}')"
-                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit">
-                                            <i class="fa-solid fa-pen-to-square w-3 h-3"></i>
-                                            Edit
-                                        </button>
-
-                                        {{-- Print PDF --}}
-                                        <a href="{{ route('project-quotation.print.pdf', $quotation->quotation_number) }}"
-                                            class="flex items-center gap-1 bg-warning hover:bg-warning-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Cetak PDF">
-                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
-                                            PDF
-                                        </a>
-
-                                        {{-- Print Excel --}}
-                                        <a href="{{ route('project-quotation.print.excel', $quotation->quotation_number) }}"
-                                            class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Export Excel">
-                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
-                                            Excel
-                                        </a>
+                                        <x-buttons.edit onclick="openModal('editModal-{{ $quotation->quotation_number }}')" />
+                                        <x-buttons.pdf url="{{ route('project-quotation.print.pdf', $quotation->quotation_number) }}" />
+                                        <x-buttons.excel url="{{ route('project-quotation.print.excel', $quotation->quotation_number) }}" />
                                     </div>
                                 </td>
                             </tr>

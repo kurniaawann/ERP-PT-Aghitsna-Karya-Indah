@@ -82,11 +82,7 @@
 
                                 {{-- Aksi --}}
                                 <td class="p-2 text-center">
-                                    <button type="button" onclick="openModal('editModal-{{ $category->id }}')"
-                                        class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 mx-auto">
-                                        <i class="fa-solid fa-pen w-4 h-4"></i>
-                                        Edit
-                                    </button>
+                                    <x-buttons.edit onclick="openModal('editModal-{{ $category->id }}')" />
                                 </td>
                             </tr>
                         @empty

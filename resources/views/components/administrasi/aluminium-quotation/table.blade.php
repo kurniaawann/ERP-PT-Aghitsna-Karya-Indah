@@ -39,39 +39,10 @@
 
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        {{-- Detail --}}
-                                        <button type="button"
-                                            onclick="openModal('detailModal-{{ $quotation->quotation_number }}')"
-                                            class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Detail">
-                                            <i class="fa-solid fa-eye w-3 h-3"></i>
-                                            Detail
-                                        </button>
-
-                                        {{-- Edit --}}
-                                        <button type="button"
-                                            onclick="openModal('editModal-{{ $quotation->quotation_number }}')"
-                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit">
-                                            <i class="fa-solid fa-pen w-3 h-3"></i>
-                                            Edit
-                                        </button>
-
-                                        {{-- PDF --}}
-                                        <a href="{{ route('aluminium-quotation.print.pdf', $quotation->quotation_number) }}"
-                                            class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Print PDF">
-                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
-                                            PDF
-                                        </a>
-
-                                        {{-- Excel --}}
-                                        <a href="{{ route('aluminium-quotation.print.excel', $quotation->quotation_number) }}"
-                                            class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Print Excel">
-                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
-                                            Excel
-                                        </a>
+                                        <x-buttons.detail onclick="openModal('detailModal-{{ $quotation->quotation_number }}')" />
+                                        <x-buttons.edit onclick="openModal('editModal-{{ $quotation->quotation_number }}')" />
+                                        <x-buttons.pdf url="{{ route('aluminium-quotation.print.pdf', $quotation->quotation_number) }}" />
+                                        <x-buttons.excel url="{{ route('aluminium-quotation.print.excel', $quotation->quotation_number) }}" />
                                     </div>
                                 </td>
                             </tr>

@@ -44,13 +44,7 @@
                                 <td class="p-2">{{ $employee->address ?? '-' }}</td>
 
                                 <td class="p-2 text-center">
-                                    <button type="button"
-                                        onclick="openModal('editModal-{{ $employee->employee_code }}')"
-                                        class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                        title="Edit Karyawan">
-                                        <i class="fa-solid fa-pen w-3 h-3"></i>
-                                        Edit
-                                    </button>
+                                    <x-buttons.edit onclick="openModal('editModal-{{ $employee->employee_code }}')" />
                                 </td>
                             </tr>
                         @empty

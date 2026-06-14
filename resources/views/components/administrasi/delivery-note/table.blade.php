@@ -53,13 +53,7 @@
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-2">
                                         {{-- Button Edit --}}
-                                        <button type="button"
-                                            onclick="openModal('editModal-{{ $deliveryNote->id_delivery_note }}')"
-                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit Surat Jalan">
-                                            <i class="fa-solid fa-pencil"></i>
-                                            <span>Edit</span>
-                                        </button>
+                                        <x-buttons.edit onclick="openModal('editModal-{{ $deliveryNote->id_delivery_note }}')" />
                                     </div>
                                 </td>
                             </tr>

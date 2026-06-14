@@ -106,12 +106,7 @@
                                             rowspan="{{ $itemCount }}">
                                             <div class="flex flex-col gap-2">
                                                 @if (!$sale->isLunas())
-                                                    <button type="button"
-                                                        onclick="openModal('editModal-{{ $sale->id_sales_recap }}')"
-                                                        class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200">
-                                                        <i class="fa-solid fa-pen w-4 h-4"></i>
-                                                        Edit
-                                                    </button>
+                                                    <x-buttons.edit onclick="openModal('editModal-{{ $sale->id_sales_recap }}')" />
                                                     <button type="button"
                                                         onclick="openModal('statusModal-{{ $sale->id_sales_recap }}')"
                                                         class="flex items-center justify-center gap-2 bg-success hover:bg-success/90 text-white px-3 py-1 rounded-lg transition-colors duration-200">

@@ -108,13 +108,7 @@
                                 <td class="p-2 text-center text-sm">
                                     @if ($kasbon->status === 'pending' || ($kasbon->kasbon_type === 'team' && $kasbon->remaining_amount > 0 && $kasbon->remaining_amount < $kasbon->amount))
                                         <div class="flex justify-center gap-2">
-                                            <button type="button"
-                                                onclick="openModal('editModal{{ $kasbon->kasbon_code }}')"
-                                                class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                                title="Edit Kasbon">
-                                                <i class="fa-solid fa-pen w-3 h-3"></i>
-                                                Edit
-                                            </button>
+                                            <x-buttons.edit onclick="openModal('editModal{{ $kasbon->kasbon_code }}')" />
                                         </div>
                                     @else
                                         <span class="text-text-label italic text-xs">{{ $kasbon->status === 'deducted' ? 'Lunas' : 'Tidak bisa diubah' }}</span>

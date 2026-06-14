@@ -42,35 +42,10 @@
                                 </td>
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        <button type="button"
-                                            onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
-                                            class="flex items-center gap-1 bg-info hover:bg-info/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Lihat Detail">
-                                            <i class="fa-solid fa-eye w-3 h-3"></i>
-                                            Lihat
-                                        </button>
-
-                                        <button type="button"
-                                            onclick="openModal('editModal-{{ $invoice->invoice_number }}')"
-                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit Invoice">
-                                            <i class="fa-solid fa-pen w-3 h-3"></i>
-                                            Edit
-                                        </button>
-
-                                        <a href="{{ route('item-invoice.print.pdf', $invoice->invoice_number) }}"
-                                            class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Print PDF">
-                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
-                                            PDF
-                                        </a>
-
-                                        <a href="{{ route('item-invoice.print.excel', $invoice->invoice_number) }}"
-                                            class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Print Excel">
-                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
-                                            Excel
-                                        </a>
+                                        <x-buttons.detail onclick="openModal('detailModal-{{ $invoice->invoice_number }}')" />
+                                        <x-buttons.edit onclick="openModal('editModal-{{ $invoice->invoice_number }}')" />
+                                        <x-buttons.pdf url="{{ route('item-invoice.print.pdf', $invoice->invoice_number) }}" />
+                                        <x-buttons.excel url="{{ route('item-invoice.print.excel', $invoice->invoice_number) }}" />
                                     </div>
                                 </td>
                             </tr>

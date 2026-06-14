@@ -5,6 +5,8 @@
 
     // Shared helper is loaded from resources/js/shared/form-submit.js
 
+    @include('partials.shared.select-all-script')
+
     // ==========================================
     // TOGGLE ACTIVE STATUS FUNCTION
     // ==========================================
@@ -58,43 +60,7 @@
     // ==========================================
 
     document.addEventListener('DOMContentLoaded', function() {
-        // ==========================================
-        // SELECT ALL CHECKBOX
-        // ==========================================
-
-        const selectAll = document.getElementById('selectAll');
-        const checkboxes = document.querySelectorAll('.account-checkbox');
-        const deleteButton = document.getElementById('delete-button');
-
-        if (selectAll) {
-            selectAll.addEventListener('change', function() {
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-                updateDeleteButton();
-            });
-        }
-
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                const someChecked = Array.from(checkboxes).some(cb => cb.checked);
-
-                if (selectAll) {
-                    selectAll.checked = allChecked;
-                    selectAll.indeterminate = !allChecked && someChecked;
-                }
-
-                updateDeleteButton();
-            });
-        });
-
-        function updateDeleteButton() {
-            const checkedCount = document.querySelectorAll('.account-checkbox:checked').length;
-            if (deleteButton) {
-                deleteButton.disabled = checkedCount === 0;
-            }
-        }
+        initSelectAll('selected_accounts[]');
 
         // ==========================================
         // ADD/EDIT FORM SUBMIT HANDLERS

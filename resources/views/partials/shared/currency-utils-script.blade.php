@@ -10,16 +10,7 @@ function formatCurrencyInput(input) {
     input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
 }
 
-function submitDeleteForm() {
-    const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-    if (deleteBtn) {
-        deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-        deleteBtn.disabled = true;
-        deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-    }
-
-    const form = document.getElementById('deleteForm');
-    if (form) {
-        form.submit();
-    }
+function formatRupiah(value) {
+    return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
 }
+

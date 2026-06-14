@@ -74,11 +74,7 @@
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        <button type="button" onclick="openModal('editModal-{{ $paymentProof->id }}')"
-                                            class="flex items-center gap-1 rounded-lg bg-btn-edit px-2.5 py-1.5 text-xs text-white transition hover:bg-btn-edit-hover">
-                                            <i class="fa-solid fa-pen w-3 h-3"></i>
-                                            Edit
-                                        </button>
+                                        <x-buttons.edit onclick="openModal('editModal-{{ $paymentProof->id }}')" />
                                         <button type="button"
                                             onclick="openModal('deleteModal-{{ $paymentProof->id }}')"
                                             class="flex items-center gap-1 rounded-lg bg-error px-2.5 py-1.5 text-xs text-white transition hover:bg-error-hover">

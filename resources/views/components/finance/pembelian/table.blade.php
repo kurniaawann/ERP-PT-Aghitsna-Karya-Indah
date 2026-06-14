@@ -46,12 +46,7 @@
 
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        <button type="button" onclick="openModal('editModal-{{ $invoice->id }}')"
-                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit Faktur">
-                                            <i class="fa-solid fa-pen w-3 h-3"></i>
-                                            Edit
-                                        </button>
+                                        <x-buttons.edit onclick="openModal('editModal-{{ $invoice->id }}')" />
 
                                         {{-- PDF action removed as requested --}}
                                     </div>

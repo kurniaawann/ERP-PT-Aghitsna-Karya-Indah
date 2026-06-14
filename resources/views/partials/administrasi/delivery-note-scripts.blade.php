@@ -7,6 +7,7 @@
 
     @include('partials.shared.delete-form-script')
     @include('partials.shared.print-selected-script')
+    @include('partials.shared.select-all-script')
 
     // ==========================================
     // AUTO-GENERATE DOCUMENT NUMBER
@@ -27,42 +28,12 @@
         }
     });
 
-    // ==========================================
-    // SELECT ALL CHECKBOX
-    // ==========================================
-
-
-    // Select All Checkbox
-    const selectAllEl = document.getElementById('selectAll');
-    if (selectAllEl) {
-        selectAllEl.addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.row-checkbox');
-            checkboxes.forEach(checkbox => {
-                if (!checkbox.disabled) checkbox.checked = this.checked;
-            });
-            updateButtonStates();
-        });
-    }
-
-    // Individual Checkbox
-    document.querySelectorAll('.row-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = Array.from(document.querySelectorAll('.row-checkbox')).filter(cb => !cb
-                .disabled);
-            const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
-
-            if (selectAll) selectAll.checked = checkboxes.length === checkedCheckboxes.length;
-            updateButtonStates();
-        });
-    });
-
     // Update Delete Button and Print Button State
     function updateButtonStates() {
         const deleteButton = document.getElementById('delete-button');
         const printButton = document.getElementById('printDropdownButton');
         const selectedCountText = document.getElementById('selectedCountText');
-        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
+        const checkedCheckboxes = Array.from(document.querySelectorAll('input[name="ids[]"]:checked')).filter(cb => !cb
             .disabled);
         const count = checkedCheckboxes.length;
 
@@ -92,95 +63,33 @@
         }
     }
 
-    // Initialize button states
-    updateButtonStates();
-
-    // ==========================================
-    // SUBMIT DELETE FORM
-    // ==========================================
-
-    function submitDeleteForm() {
-        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
-            .disabled);
-        if (checkedCheckboxes.length === 0) {
-            alert('Tidak ada data yang dipilih!');
-            return;
-        }
-
-        // Update confirm button in modal
-        const confirmBtn = document.getElementById('confirm-btn-deleteModal');
-        if (confirmBtn) {
-            confirmBtn.disabled = true;
-            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            confirmBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        form.submit();
-    }
+    // Initialize selection state
+    initSelectAll('ids[]', 'delete-button', updateButtonStates);
 
     // ==========================================
     // PRINT SELECTED FUNCTION
     // ==========================================
 
     function printSelected() {
-        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
-            .disabled);
-
-        if (checkedCheckboxes.length === 0) {
-            alert('Tidak ada data yang dipilih!');
-            return;
-        }
-
-        // Create a temporary form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('delivery-note.administrasi.export.pdf.selected') }}';
-        form.style.display = 'none';
-
-        // Add CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        form.appendChild(csrfInput);
-
-        // Add all checked IDs
-        checkedCheckboxes.forEach(checkbox => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'ids[]';
-            input.value = checkbox.value;
-            form.appendChild(input);
-        });
-
-        // Submit form
-        document.body.appendChild(form);
-        form.submit();
-
-        // Close dropdown after submit
-        const dropdownMenu = document.getElementById('printDropdownMenu');
-        if (dropdownMenu) {
-            dropdownMenu.classList.add('hidden');
-        }
         return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}',
             '.row-checkbox:checked:not([disabled])', 'Tidak ada data yang dipilih!');
+    }
 
-        // ==========================================
-        // ADD ITEM ROW
-        // ==========================================
+    // ==========================================
+    // ADD ITEM ROW
+    // ==========================================
 
-        function addItemRow(modalId) {
-            const container = document.getElementById(`itemsContainer-${modalId}`);
+    function addItemRow(modalId) {
+        const container = document.getElementById(`itemsContainer-${modalId}`);
 
-            // Get current number of items
-            const itemRows = container.querySelectorAll('.item-row');
-            const newNo = itemRows.length + 1;
+        // Get current number of items
+        const itemRows = container.querySelectorAll('.item-row');
+        const newNo = itemRows.length + 1;
 
-            const newRow = document.createElement('div');
-            newRow.className =
-                'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
-            newRow.innerHTML = `
+        const newRow = document.createElement('div');
+        newRow.className =
+            'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+        newRow.innerHTML = `
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-text-label mb-1.5">No</label>
@@ -222,50 +131,50 @@
             </div>
         `;
 
-            container.appendChild(newRow);
+        container.appendChild(newRow);
 
-            // Update delete button visibility
-            updateDeleteButtonVisibility(modalId);
-        }
+        // Update delete button visibility
+        updateDeleteButtonVisibility(modalId);
+    }
 
-        // ==========================================
-        // REMOVE ITEM ROW
-        // ==========================================
+    // ==========================================
+    // REMOVE ITEM ROW
+    // ==========================================
 
-        function removeItemRow(button) {
-            const row = button.closest('.item-row');
-            if (row) {
-                row.remove();
-                // Update the modal ID to ensure delete buttons are properly toggled
-                const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
-                if (modal) {
-                    updateDeleteButtonVisibility(modal.id);
-                }
+    function removeItemRow(button) {
+        const row = button.closest('.item-row');
+        if (row) {
+            row.remove();
+            // Update the modal ID to ensure delete buttons are properly toggled
+            const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
+            if (modal) {
+                updateDeleteButtonVisibility(modal.id);
             }
         }
+    }
 
-        // ==========================================
-        // UPDATE DELETE BUTTON VISIBILITY
-        // ==========================================
+    // ==========================================
+    // UPDATE DELETE BUTTON VISIBILITY
+    // ==========================================
 
-        function updateDeleteButtonVisibility(modalId) {
-            const container = document.getElementById(`itemsContainer-${modalId}`);
-            const itemRows = container.querySelectorAll('.item-row');
+    function updateDeleteButtonVisibility(modalId) {
+        const container = document.getElementById(`itemsContainer-${modalId}`);
+        const itemRows = container.querySelectorAll('.item-row');
 
-            itemRows.forEach((row, index) => {
-                const deleteBtn = row.querySelector('.delete-btn');
-                // Show delete button only if there are more than 1 item rows
-                if (deleteBtn) {
-                    deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
-                }
-            });
-        }
-
-        // Initialize delete button visibility on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
-                const modalId = container.id.replace('itemsContainer-', '');
-                updateDeleteButtonVisibility(modalId);
-            });
+        itemRows.forEach((row, index) => {
+            const deleteBtn = row.querySelector('.delete-btn');
+            // Show delete button only if there are more than 1 item rows
+            if (deleteBtn) {
+                deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
+            }
         });
+    }
+
+    // Initialize delete button visibility on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
+            const modalId = container.id.replace('itemsContainer-', '');
+            updateDeleteButtonVisibility(modalId);
+        });
+    });
 </script>

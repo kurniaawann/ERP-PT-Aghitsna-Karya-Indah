@@ -6,40 +6,9 @@
     @include('partials.shared.currency-utils-script')
     @include('partials.shared.delete-form-script')
     @include('partials.shared.print-selected-script')
-
-    function formatCurrencyInput(input) {
-        if (!input) return;
-
-        const numeric = input.value.replace(/[^\d]/g, '');
-        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
-    }
+    @include('partials.shared.select-all-script')
 
     // Shared helper is loaded from resources/js/shared/form-submit.js
-
-    // ==========================================
-    // SELECT ALL CHECKBOX
-    // ==========================================
-
-    // Select All Checkbox
-    document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-        updateButtonStates();
-    });
-
-    // Individual Checkbox
-    document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-
-            selectAll.checked = checkboxes.length === checkedCheckboxes.length;
-            updateButtonStates();
-        });
-    });
 
     // Update Delete Button and Print Button State
     function updateButtonStates() {
@@ -77,9 +46,7 @@
         }
     }
 
-    // Submit Delete Form
-    // Initialize button states on page load
-    updateButtonStates();
+    initSelectAll('ids[]', 'delete-button', updateButtonStates);
 
     document.querySelectorAll('.cash-out-amount-input').forEach(input => {
         if (input.value) {

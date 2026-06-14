@@ -1,28 +1,7 @@
 <script>
-    function parseCurrencyInput(value) {
-        return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
-    }
-
-    function formatCurrencyInput(input) {
-        if (!input) return;
-
-        const numeric = String(input.value || '').replace(/[^\d]/g, '');
-        input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
-    }
-
-    function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
-        if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            deleteBtn.disabled = true;
-            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
-        }
-    }
+    @include('partials.shared.currency-utils-script')
+    @include('partials.shared.delete-form-script')
+    @include('partials.shared.select-all-script')
 
     document.addEventListener('DOMContentLoaded', function() {
         // Handle Form Submission for Add Modal
@@ -307,41 +286,6 @@
             }
         });
 
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const invoiceCheckboxes = document.querySelectorAll('input[name="selected_invoices[]"]');
-        const deleteButton = document.getElementById('delete-button');
-
-        function updateDeleteButtonState() {
-            const anyChecked = Array.from(invoiceCheckboxes).some(cb => cb.checked);
-            if (deleteButton) {
-                deleteButton.disabled = !anyChecked;
-            }
-        }
-
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function() {
-                invoiceCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-                updateDeleteButtonState();
-            });
-        }
-
-        invoiceCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                if (!this.checked && selectAllCheckbox) {
-                    selectAllCheckbox.checked = false;
-                }
-
-                if (selectAllCheckbox) {
-                    const allChecked = Array.from(invoiceCheckboxes).every(cb => cb.checked);
-                    selectAllCheckbox.checked = allChecked;
-                }
-
-                updateDeleteButtonState();
-            });
-        });
-
-        updateDeleteButtonState();
+        initSelectAll('selected_invoices[]');
     });
 </script>
