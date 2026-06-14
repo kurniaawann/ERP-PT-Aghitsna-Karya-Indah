@@ -47,9 +47,14 @@
 
                         <div id="itemDropdownMenu"
                             class="absolute z-20 mt-1 w-full bg-surface-base border border-border-light rounded-lg shadow-sm hidden">
+                            <div class="p-2 border-b border-border-light">
+                                <input type="text" id="itemSearchInput"
+                                    class="w-full px-3 py-2 text-sm border border-border-strong rounded-md bg-surface-base text-text-input focus:outline-none focus:ring-1 focus:ring-primary"
+                                    placeholder="Cari nama/kode barang...">
+                            </div>
                             <div id="itemDropdownList" class="max-h-60 overflow-y-auto">
                                 <div class="p-2 text-sm text-text-secondary" id="dropdownLoadingPlaceholder">
-                                    Silakan klik scroll untuk memuat data...
+                                    Silakan ketik atau scroll untuk memuat data...
                                 </div>
                             </div>
 
@@ -76,7 +81,7 @@
                         <h5 class="text-2xl font-bold text-text-primary">{{ number_format($summary['total_items']) }} item
                         </h5>
                     </div>
-                    <i class="fas fa-box-open text-primary text-3xl opacity-20"></i>
+                    <i class="fas fa-box-open text-primary text-3xl"></i>
                 </div>
             </div>
 
@@ -88,7 +93,7 @@
                         <h5 class="text-2xl font-bold text-text-primary">{{ number_format($summary['total_ending_stock']) }}
                             unit</h5>
                     </div>
-                    <i class="fas fa-check-circle text-success text-3xl opacity-20"></i>
+                    <i class="fas fa-check-circle text-success text-3xl"></i>
                 </div>
             </div>
 
@@ -100,7 +105,7 @@
                         <h5 class="text-xl font-bold text-text-primary truncate">Rp
                             {{ number_format($summary['total_stock_value']) }}</h5>
                     </div>
-                    <i class="fas fa-coins text-warning text-3xl opacity-20"></i>
+                    <i class="fas fa-coins text-warning text-3xl"></i>
                 </div>
             </div>
         </div>

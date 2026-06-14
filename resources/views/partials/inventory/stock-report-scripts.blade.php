@@ -4,6 +4,7 @@
             const btn = document.getElementById('itemDropdownBtn');
             const menu = document.getElementById('itemDropdownMenu');
             const list = document.getElementById('itemDropdownList');
+            const searchInput = document.getElementById('itemSearchInput');
             const label = document.getElementById('itemDropdownLabel');
             const hiddenInput = document.getElementById('item_id');
             const clearBtn = document.getElementById('clearItemBtn');
@@ -14,6 +15,7 @@
             const limit = 10;
             let loading = false;
             let hasMore = true;
+            let searchTimeout = null;
 
             function getCurrentDates() {
                 const start = document.getElementById('start_date')?.value;
@@ -54,11 +56,13 @@
             }
 
             function fetchItems(append = false) {
-                if (loading || !hasMore) return;
+                if (loading || (!hasMore && append)) return;
                 loading = true;
 
+                const query = searchInput ? searchInput.value : '';
+
                 const params = new URLSearchParams({
-                    search: '',
+                    search: query,
                     page: String(page),
                     limit: String(limit),
                 });
@@ -90,7 +94,7 @@
 
                         if (data.length === 0 && !append) {
                             const el = document.createElement('div');
-                            el.className = 'p-2 text-sm text-text-secondary';
+                            el.className = 'p-2 text-sm text-text-secondary text-center py-4';
                             el.textContent = 'Tidak ada data barang';
                             list.appendChild(el);
                         } else {
@@ -98,7 +102,7 @@
                                 const row = document.createElement('button');
                                 row.type = 'button';
                                 row.className =
-                                    'w-full text-left px-3 py-2 hover:bg-surface-secondary text-sm text-text-primary';
+                                    'w-full text-left px-3 py-2 hover:bg-surface-secondary text-sm text-text-primary transition-colors';
                                 row.textContent = `${item.id_item} - ${item.name_item}`;
                                 row.dataset.id = item.id_item;
 
@@ -120,6 +124,18 @@
                     });
             }
 
+            // Handle Search Input
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        page = 1;
+                        hasMore = true;
+                        fetchItems(false);
+                    }, 300);
+                });
+            }
+
             // Toggle menu
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -127,15 +143,13 @@
 
                 // Always reset pagination & fetch when opening dropdown for the first visible time
                 if (!menu.classList.contains('hidden')) {
-                    page = 1;
-                    hasMore = true;
-
-                    // If list only contains the placeholder (or empty), then fetch
-                    const placeholder = list.querySelector('#dropdownLoadingPlaceholder');
-                    const hasPlaceholder = !!placeholder;
-                    const itemRowsCount = hasPlaceholder ? (list.children.length - 1) : list.children.length;
-
-                    if (list.children.length === 0 || itemRowsCount <= 0) {
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                    
+                    if (list.children.length <= 1) { // 1 because of the initial placeholder
+                        page = 1;
+                        hasMore = true;
                         fetchItems(false);
                     }
                 }

@@ -53,92 +53,170 @@
     }
 
     // ==========================================
-    // ITEM RETURN DATA & CONFIG
+    // ITEM RETURN DATA & CONFIG (SEARCHABLE DROPDOWN)
     // ==========================================
 
-    // Data dari server (Stock Ins dan Stock Outs)
-    const stockInsData = @json($stockIns);
-    const stockOutsData = @json($stockOuts);
-    const itemsData = @json($items);
+    (function() {
+        const addReturnTypeSelect = document.getElementById('addReturnType');
+        const addItemBtn = document.getElementById('addItemDropdownBtn');
+        const addItemMenu = document.getElementById('addItemDropdownMenu');
+        const addItemSearch = document.getElementById('addItemSearchInput');
+        const addItemList = document.getElementById('addItemDropdownList');
+        const addItemLabel = document.getElementById('addItemDropdownLabel');
+        
+        const addItemIdInput = document.getElementById('addItemId');
+        const addStockInIdInput = document.getElementById('addStockInId');
+        const addStockOutIdInput = document.getElementById('addStockOutId');
 
-    // Fungsi untuk handle dynamic item selection berdasarkan return type
-    function handleReturnTypeChange(modalPrefix) {
-        const returnTypeSelect = document.getElementById(modalPrefix + 'ReturnType');
-        const itemSelect = document.getElementById(modalPrefix + 'ItemSelect');
-        const stockInIdInput = document.getElementById(modalPrefix + 'StockInId');
-        const stockOutIdInput = document.getElementById(modalPrefix + 'StockOutId');
+        const addQuantityInput = document.getElementById('addQuantity');
+        const addQuantityWarning = document.getElementById('addQuantityWarning');
+        const addAvailableStock = document.getElementById('addAvailableStock');
+        const addSubmitBtn = document.querySelector('#addModal button[type="submit"]');
 
-        if (!returnTypeSelect || !itemSelect) return;
+        if (!addReturnTypeSelect || !addItemBtn) return;
 
-        const returnType = returnTypeSelect.value;
-        itemSelect.innerHTML = '<option value="">-- Pilih Barang --</option>';
-        stockInIdInput.value = '';
-        stockOutIdInput.value = '';
+        let page = 1;
+        const limit = 10;
+        let loading = false;
+        let hasMore = true;
+        let searchTimeout = null;
+        let currentMaxQuantity = 0;
 
-        if (returnType === 'masuk') {
-            // Populate barang dari Stock In
-            const uniqueItems = {};
-            stockInsData.forEach(stockIn => {
-                if (!uniqueItems[stockIn.id_item]) {
-                    uniqueItems[stockIn.id_item] = {
-                        id_item: stockIn.id_item,
-                        name: itemsData.find(i => i.id_item === stockIn.id_item)?.name_item || 'Item',
-                        id_stock_in: stockIn.id_stock_in,
-                        quantity: stockIn.quantity
-                    };
-                }
-            });
-
-            Object.values(uniqueItems).forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.id_item;
-                option.textContent = `${item.id_item} - ${item.name} (Stok: ${item.quantity})`;
-                option.dataset.stockInId = item.id_stock_in;
-                option.dataset.quantity = item.quantity;
-                itemSelect.appendChild(option);
-            });
-        } else if (returnType === 'keluar') {
-            // Populate barang dari Stock Out
-            const uniqueItems = {};
-            stockOutsData.forEach(stockOut => {
-                if (!uniqueItems[stockOut.id_item]) {
-                    uniqueItems[stockOut.id_item] = {
-                        id_item: stockOut.id_item,
-                        name: itemsData.find(i => i.id_item === stockOut.id_item)?.name_item || 'Item',
-                        id_stock_out: stockOut.id_stock_out,
-                        quantity: stockOut.quantity
-                    };
-                }
-            });
-
-            Object.values(uniqueItems).forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.id_item;
-                option.textContent = `${item.id_item} - ${item.name} (Stok: ${item.quantity})`;
-                option.dataset.stockOutId = item.id_stock_out;
-                option.dataset.quantity = item.quantity;
-                itemSelect.appendChild(option);
-            });
+        function resetItemSelection() {
+            addItemIdInput.value = '';
+            addStockInIdInput.value = '';
+            addStockOutIdInput.value = '';
+            addItemLabel.textContent = '-- Pilih Barang --';
+            currentMaxQuantity = 0;
+            addAvailableStock.textContent = '';
+            validateAddQuantity();
         }
-    }
 
-    // Fungsi untuk handle item selection dan set hidden field
-    function handleItemChange(modalPrefix) {
-        const itemSelect = document.getElementById(modalPrefix + 'ItemSelect');
-        const stockInIdInput = document.getElementById(modalPrefix + 'StockInId');
-        const stockOutIdInput = document.getElementById(modalPrefix + 'StockOutId');
-
-        if (!itemSelect) return;
-
-        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
-        if (selectedOption.dataset.stockInId) {
-            stockInIdInput.value = selectedOption.dataset.stockInId;
-            stockOutIdInput.value = '';
-        } else if (selectedOption.dataset.stockOutId) {
-            stockOutIdInput.value = selectedOption.dataset.stockOutId;
-            stockInIdInput.value = '';
+        function validateAddQuantity() {
+            const qty = parseInt(addQuantityInput.value) || 0;
+            if (qty > currentMaxQuantity && currentMaxQuantity > 0) {
+                addQuantityWarning.classList.remove('hidden');
+                if (addSubmitBtn) addSubmitBtn.disabled = true;
+            } else {
+                addQuantityWarning.classList.add('hidden');
+                if (addSubmitBtn) addSubmitBtn.disabled = false;
+            }
         }
-    }
+
+        function fetchStockItems(append = false) {
+            if (loading || (!hasMore && append)) return;
+            loading = true;
+
+            const returnType = addReturnTypeSelect.value;
+            const search = addItemSearch.value;
+
+            const params = new URLSearchParams({
+                return_type: returnType,
+                search: search,
+                page: String(page),
+                limit: String(limit)
+            });
+
+            if (!append) {
+                addItemList.innerHTML = '<div class="p-2 text-center text-sm text-text-secondary">Memuat...</div>';
+            }
+
+            fetch('{{ route('item-return.stock-dropdown') }}?' + params.toString())
+                .then(r => r.json())
+                .then(res => {
+                    if (!append) addItemList.innerHTML = '';
+                    
+                    const data = res.data || [];
+                    if (data.length === 0 && !append) {
+                        addItemList.innerHTML = '<div class="p-2 text-center text-sm text-text-secondary">Tidak ada data</div>';
+                    } else {
+                        data.forEach(item => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'w-full text-left px-3 py-2 hover:bg-surface-secondary text-sm text-text-primary transition-colors border-b border-border-light last:border-0';
+                            btn.innerHTML = `
+                                <div class="font-semibold">${item.id_item} - ${item.name_item}</div>
+                                <div class="text-xs text-text-secondary">Stok Tersedia: <span class="text-primary font-bold">${item.quantity}</span></div>
+                            `;
+
+                            btn.addEventListener('click', () => {
+                                addItemIdInput.value = item.id_item;
+                                if (returnType === 'masuk') {
+                                    addStockInIdInput.value = item.stock_record_id;
+                                    addStockOutIdInput.value = '';
+                                } else {
+                                    addStockOutIdInput.value = item.stock_record_id;
+                                    addStockInIdInput.value = '';
+                                }
+                                
+                                addItemLabel.textContent = `${item.id_item} - ${item.name_item}`;
+                                currentMaxQuantity = item.quantity;
+                                addAvailableStock.textContent = `Stok tersedia: ${currentMaxQuantity}`;
+                                validateAddQuantity();
+                                addItemMenu.classList.add('hidden');
+                            });
+
+                            addItemList.appendChild(btn);
+                        });
+                    }
+
+                    hasMore = res.hasMore;
+                    if (hasMore) page++;
+                })
+                .finally(() => {
+                    loading = false;
+                });
+        }
+
+        // Return Type Change logic
+        addReturnTypeSelect.addEventListener('change', function() {
+            const val = this.value;
+            if (val) {
+                addItemBtn.disabled = false;
+                addItemLabel.textContent = '-- Pilih Barang --';
+            } else {
+                addItemBtn.disabled = true;
+                addItemLabel.textContent = '-- Pilih Tipe Return Dulu --';
+            }
+            resetItemSelection();
+            addItemMenu.classList.add('hidden');
+        });
+
+        // Toggle Menu
+        addItemBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addItemMenu.classList.toggle('hidden');
+            if (!addItemMenu.classList.contains('hidden')) {
+                addItemSearch.focus();
+                page = 1;
+                hasMore = true;
+                fetchStockItems(false);
+            }
+        });
+
+        // Search logic
+        addItemSearch.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                page = 1;
+                hasMore = true;
+                fetchStockItems(false);
+            }, 300);
+        });
+
+        // Infinite scroll logic
+        addItemList.addEventListener('scroll', () => {
+            const nearBottom = addItemList.scrollTop + addItemList.clientHeight >= addItemList.scrollHeight - 20;
+            if (nearBottom) fetchStockItems(true);
+        });
+
+        // Close on outside click
+        document.addEventListener('click', () => addItemMenu.classList.add('hidden'));
+        addItemMenu.addEventListener('click', (e) => e.stopPropagation());
+
+        // Quantity validation
+        addQuantityInput.addEventListener('input', validateAddQuantity);
+    })();
 
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -161,70 +239,10 @@
         const addModal = document.getElementById('addModal');
         const addFormElement = addModal ? addModal.querySelector('form') : null;
         const addButton = addFormElement ? addFormElement.querySelector('button[type="submit"]') : null;
-        const addReturnType = addModal ? addModal.querySelector('#addReturnType') : null;
-        const addItemSelect = addModal ? addModal.querySelector('#addItemSelect') : null;
-        const addQuantityInput = addModal ? addModal.querySelector('#addQuantity') : null;
-        const addQuantityWarning = addModal ? addModal.querySelector('#addQuantityWarning') : null;
-        const addAvailableStock = addModal ? addModal.querySelector('#addAvailableStock') : null;
-
-        // Setup return type change handler
-        if (addReturnType) {
-            addReturnType.addEventListener('change', function() {
-                handleReturnTypeChange('add');
-            });
-        }
-
-        // Setup item change handler
-        if (addItemSelect) {
-            addItemSelect.addEventListener('change', function() {
-                handleItemChange('add');
-                validateAddQuantity(); // Validate quantity when item changes
-            });
-        }
-
-        // Real-time quantity validation for ADD modal
-        function validateAddQuantity() {
-            if (!addQuantityInput || !addItemSelect) return;
-
-            const selectedOption = addItemSelect.options[addItemSelect.selectedIndex];
-            const maxQuantity = parseInt(selectedOption.dataset.quantity) || 0;
-            const inputQuantity = parseInt(addQuantityInput.value) || 0;
-
-            if (inputQuantity > maxQuantity && maxQuantity > 0) {
-                addQuantityWarning.classList.remove('hidden');
-                if (addButton) {
-                    addButton.disabled = true;
-                    addButton.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-            } else {
-                addQuantityWarning.classList.add('hidden');
-                if (addButton) {
-                    addButton.disabled = false;
-                    addButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
-
-            // Update available stock text
-            if (addAvailableStock && maxQuantity > 0) {
-                addAvailableStock.textContent = `Stok tersedia: ${maxQuantity}`;
-            }
-        }
-
-        if (addQuantityInput) {
-            addQuantityInput.addEventListener('input', validateAddQuantity);
-        }
 
         if (addFormElement && addButton) {
             addFormElement.addEventListener('submit', function(e) {
-                validateAddQuantity();
-                if (addButton.disabled) {
-                    e.preventDefault();
-                    addQuantityWarning.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                    return false;
-                }
+                // validation is already handled by the new logic above setting disabled state
                 showSpinner(addButton);
             });
         }

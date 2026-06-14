@@ -99,6 +99,7 @@ Route::middleware('auth')->group(function () {
 
     // Route Item Return (Return Barang)
     Route::get('/item-return', [ItemReturnController::class, 'index'])->name('item-return.index');
+    Route::get('/item-return/stock-dropdown', [ItemReturnController::class, 'stockDropdown'])->name('item-return.stock-dropdown');
     Route::post('/item-return', [ItemReturnController::class, 'store'])->name('item-return.store');
     Route::put('/item-return/{id_return}', [ItemReturnController::class, 'update'])->name('item-return.update');
     Route::delete('/item-return/bulk-delete', [ItemReturnController::class, 'bulkDelete'])->name('item-return.bulk-delete');
