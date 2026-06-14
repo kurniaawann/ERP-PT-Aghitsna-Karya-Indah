@@ -197,11 +197,10 @@
                 </table>
             </div>
 
-            {{-- Pagination --}}
-            <div class="bg-surface-secondary px-6 py-4 border-t border-border-light">
-                {{ $reminders->links() }}
-            </div>
         </div>
+
+        {{-- Pagination --}}
+        <x-pagination :paginator="$reminders" />
 
         {{-- Attendance Reminder Section --}}
         @if (count($attendanceReminders) > 0)

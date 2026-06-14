@@ -375,16 +375,7 @@
         </div>
 
         {{-- Pagination --}}
-        <div class="bg-surface-base p-4 rounded-xl shadow">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="text-sm text-text-primary font-semibold">
-                    Halaman {{ $expenseRecaps->currentPage() }} dari {{ $expenseRecaps->lastPage() }}
-                </div>
-                <div>
-                    {{ $expenseRecaps->links() }}
-                </div>
-            </div>
-        </div>
+        <x-pagination :paginator="$expenseRecaps" />
     </div>
 
     {{-- Script untuk Chart --}}

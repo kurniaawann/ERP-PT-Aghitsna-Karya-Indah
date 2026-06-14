@@ -14,7 +14,7 @@
         <div class="py-1" role="menu">
             @if ($pdfRoute)
                 {{-- Export All --}}
-                <a href="{{ $pdfRoute }}?{{ http_build_query(array_filter($queryParams)) }}"
+                <a href="{{ $pdfRoute }}?{{ http_build_query(array_filter($queryParams)) }}" data-loading
                     class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
                     <i class="fa-solid fa-file-pdf text-error w-4"></i>
                     <span>Export Semua (PDF)</span>

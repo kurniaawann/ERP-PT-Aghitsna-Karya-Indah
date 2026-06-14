@@ -1,23 +1,22 @@
 @props(['paginator'])
 
-<div class="flex mt-4 justify-center">
-    <div class="flex items-center gap-3 bg-surface-base border border-border-strong rounded-lg px-4 py-2 shadow-sm">
-        <a href="{{ $paginator->appends(request()->query())->previousPageUrl() }}"
-            class="flex items-center justify-center w-8 h-8 rounded-md border border-border-strong text-text-label hover:bg-surface-hover transition-colors duration-200
-            {{ $paginator->onFirstPage() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:border-primary' }}">
-            &lt;
-        </a>
+<div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 px-4 py-3 bg-surface-base border border-border-strong rounded-lg shadow-sm">
+    {{-- Previous --}}
+    <a href="{{ $paginator->appends(request()->query())->previousPageUrl() }}"
+        class="w-full sm:w-auto text-center px-4 py-2 text-sm font-medium rounded-md border border-border-strong text-text-label transition-colors duration-200
+        {{ $paginator->onFirstPage() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:bg-surface-hover hover:border-primary' }}">
+        Previous
+    </a>
 
-        <span class="text-sm font-medium text-text-primary">
-            {{ $paginator->currentPage() }}
-            <span class="text-text-tertiary">/</span>
-            {{ $paginator->lastPage() }}
-        </span>
+    {{-- Page indicator --}}
+    <span class="text-sm font-medium text-text-primary whitespace-nowrap">
+        Page {{ $paginator->currentPage() }} of {{ $paginator->lastPage() }}
+    </span>
 
-        <a href="{{ $paginator->appends(request()->query())->nextPageUrl() }}"
-            class="flex items-center justify-center w-8 h-8 rounded-md border border-border-strong text-text-label hover:bg-surface-hover transition-colors duration-200
-            {{ !$paginator->hasMorePages() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:border-primary' }}">
-            &gt;
-        </a>
-    </div>
+    {{-- Next --}}
+    <a href="{{ $paginator->appends(request()->query())->nextPageUrl() }}"
+        class="w-full sm:w-auto text-center px-4 py-2 text-sm font-medium rounded-md border border-border-strong text-text-label transition-colors duration-200
+        {{ !$paginator->hasMorePages() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:bg-surface-hover hover:border-primary' }}">
+        Next
+    </a>
 </div>

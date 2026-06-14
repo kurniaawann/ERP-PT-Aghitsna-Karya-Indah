@@ -220,12 +220,10 @@
                     </table>
                 </div>
             </div>
-
-            <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-border-light">
-                {{ $reportData->appends(request()->query())->links() }}
-            </div>
         </div>
+
+        {{-- Pagination --}}
+        <x-pagination :paginator="$reportData" />
 
     </div>
 
