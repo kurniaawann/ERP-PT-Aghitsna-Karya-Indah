@@ -47,9 +47,9 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tarif per Jam <span class="text-error">*</span></label>
-        <input type="number" name="overtime_rate" value="0"
+        <input type="text" name="overtime_rate" value="Rp 0"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan tarif per jam" required min="0" id="add-overtime-rate"
+            placeholder="Masukkan tarif per jam" required inputmode="numeric" id="add-overtime-rate"
             oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 

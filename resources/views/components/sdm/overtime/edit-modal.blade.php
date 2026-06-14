@@ -48,11 +48,12 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tarif per Jam <span class="text-error">*</span></label>
-        <input type="number" name="overtime_rate"
+        <input type="text" name="overtime_rate"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan tarif per jam" value="{{ $overtime->overtime_rate }}" required min="0"
-            id="edit-overtime-rate-{{ $overtime->id }}" oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+            placeholder="Masukkan tarif per jam"
+            value="Rp {{ number_format($overtime->overtime_rate ?? 0, 0, ',', '.') }}" required
+            inputmode="numeric" id="edit-overtime-rate-{{ $overtime->id }}"
+            oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">

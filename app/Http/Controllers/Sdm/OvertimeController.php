@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Sdm;
 use App\Http\Controllers\Controller;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Employee;
+use App\Services\InputNormalizer;
 use Illuminate\Http\Request;
 
 class OvertimeController extends Controller
@@ -71,6 +72,11 @@ class OvertimeController extends Controller
 
     public function store(Request $request)
     {
+        // Normalize currency input
+        $request->merge([
+            'overtime_rate' => InputNormalizer::normalizeCurrency($request->overtime_rate),
+        ]);
+
         // Validasi input
         $validated = $request->validate([
             'employee_id' => 'required|string',
@@ -138,6 +144,12 @@ class OvertimeController extends Controller
     {
         // Parameter $overtime sudah otomatis di-inject oleh Laravel Route Model Binding
         // Laravel otomatis mencari Attendance by ID dari route parameter
+
+        // Normalize currency input
+        $request->merge([
+            'overtime_rate' => InputNormalizer::normalizeCurrency($request->overtime_rate),
+        ]);
+
         // Ambil semua input dari form edit dan simpan ke variable $data
         $data = $request->all();
 

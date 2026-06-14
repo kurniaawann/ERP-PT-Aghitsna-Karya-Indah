@@ -5,6 +5,20 @@
 
     // Shared helper is loaded from resources/js/shared/form-submit.js
 
+    function parseCurrencyInput(value) {
+        const rawValue = String(value ?? '').trim();
+
+        if (!rawValue) {
+            return 0;
+        }
+
+        return parseInt(rawValue.replace(/[^0-9-]/g, ''), 10) || 0;
+    }
+
+    function formatRupiah(value) {
+        return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
+    }
+
     // ==========================================
     // VALIDASI DUPLIKAT OVERTIME (CLIENT-SIDE)
     // ==========================================
@@ -211,14 +225,17 @@
 
     function calculateAddOvertimeTotal() {
         const hours = parseFloat(addHoursInput.value) || 0;
-        const rate = parseInt(addRateInput.value) || 0;
+        const rate = parseCurrencyInput(addRateInput.value);
         const total = hours * rate;
-        addTotalInput.value = 'Rp ' + total.toLocaleString('id-ID');
+        addTotalInput.value = formatRupiah(total);
     }
 
     if (addHoursInput && addRateInput) {
         addHoursInput.addEventListener('input', calculateAddOvertimeTotal);
-        addRateInput.addEventListener('input', calculateAddOvertimeTotal);
+        addRateInput.addEventListener('input', function() {
+            this.value = formatRupiah(parseCurrencyInput(this.value));
+            calculateAddOvertimeTotal();
+        });
     }
 
     // Calculate Overtime Total in Edit Modals
@@ -229,13 +246,18 @@
 
         function calculateEditOvertimeTotal() {
             const hours = parseFloat(hoursInput.value) || 0;
-            const rate = parseInt(rateInput.value) || 0;
+            const rate = parseCurrencyInput(rateInput.value);
             const total = hours * rate;
-            totalInput.value = 'Rp ' + total.toLocaleString('id-ID');
+            totalInput.value = formatRupiah(total);
         }
 
         hoursInput.addEventListener('input', calculateEditOvertimeTotal);
-        rateInput.addEventListener('input', calculateEditOvertimeTotal);
+        if (rateInput) {
+            rateInput.addEventListener('input', function() {
+                this.value = formatRupiah(parseCurrencyInput(this.value));
+                calculateEditOvertimeTotal();
+            });
+        }
     });
 
     // ==========================================
