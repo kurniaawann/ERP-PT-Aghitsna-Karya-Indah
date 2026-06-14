@@ -327,6 +327,53 @@ class ItemInvoiceController extends Controller
         );
     }
 
+    /**
+     * JSON endpoint for dropdown infinite scroll.
+     * GET /item-invoice/items-dropdown?search=&page=&limit=
+     */
+    public function itemsDropdown(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+        $page = (int) $request->input('page', 1);
+        $limit = (int) $request->input('limit', 10);
+
+        $page = max(1, $page);
+        $limit = max(1, min($limit, 25));
+
+        $query = Items::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('id_item', 'like', '%' . $search . '%')
+                    ->orWhere('name_item', 'like', '%' . $search . '%');
+            });
+        }
+
+        $total = (clone $query)->count();
+
+        $items = $query
+            ->orderBy('name_item')
+            ->skip(($page - 1) * $limit)
+            ->take($limit)
+            ->get(['id_item', 'name_item', 'capital_price', 'selling_price', 'quantity']);
+
+        $hasMore = (($page - 1) * $limit + $items->count()) < $total;
+
+        return response()->json([
+            'data' => $items->map(fn($it) => [
+                'id_item' => $it->id_item,
+                'name_item' => $it->name_item,
+                'capital_price' => $it->capital_price,
+                'selling_price' => $it->selling_price,
+                'quantity' => $it->quantity,
+            ])->values(),
+            'page' => $page,
+            'limit' => $limit,
+            'hasMore' => $hasMore,
+            'total' => $total,
+        ]);
+    }
+
     private function generateInvoiceNumber(): string
     {
         $year = date('y');

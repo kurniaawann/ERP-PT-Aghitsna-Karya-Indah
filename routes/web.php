@@ -113,6 +113,7 @@ Route::middleware('auth')->group(function () {
 
     // Route Item Invoice
     Route::get('/item-invoice', [ItemInvoiceController::class, 'index'])->name('item-invoice.index');
+    Route::get('/item-invoice/items-dropdown', [ItemInvoiceController::class, 'itemsDropdown'])->name('item-invoice.items-dropdown');
     Route::get('/item-invoice/next-number', [ItemInvoiceController::class, 'getNextInvoiceNumber'])->name('item-invoice.getNextNumber');
     Route::post('/item-invoice', [ItemInvoiceController::class, 'store'])->name('item-invoice.store');
     Route::get('/item-invoice/{item_invoice}/edit', [ItemInvoiceController::class, 'edit'])->name('item-invoice.edit')->where('item_invoice', '.*');

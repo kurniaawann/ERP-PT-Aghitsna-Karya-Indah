@@ -51,21 +51,31 @@
                         </label>
                     </div>
 
+                    {{-- Hidden input used for id_item --}}
+                    <input type="hidden" name="items[{{ $index }}][id_item]" class="barang-item-id" value="{{ $item['id_item'] ?? '' }}">
+
+                    {{-- Custom searchable dropdown wrapper --}}
                     <div class="relative mb-2 barang-select-wrapper"
                         style="display: {{ !empty($item['from_stock']) ? 'block' : 'none' }};">
-                        <select name="items[{{ $index }}][id_item]"
-                            class="barang-item-select w-full border rounded p-2">
-                            <option value="">-- Pilih Barang --</option>
-                            @foreach ($items as $stockItem)
-                                <option value="{{ $stockItem->id_item }}" data-name="{{ $stockItem->name_item }}"
-                                    data-capital="{{ $stockItem->capital_price }}"
-                                    data-selling="{{ $stockItem->selling_price }}"
-                                    data-stock="{{ $stockItem->quantity }}"
-                                    {{ ($item['id_item'] ?? null) == $stockItem->id_item ? 'selected' : '' }}>
-                                    {{ $stockItem->name_item }} (Stok: {{ $stockItem->quantity }})
-                                </option>
-                            @endforeach
-                        </select>
+                        <button type="button"
+                            class="barang-item-dropdown-btn w-full px-3 py-2 border border-border-strong rounded bg-surface-base flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-primary transition-colors">
+                            <span class="barang-item-dropdown-label text-sm text-text-primary">
+                                {{ !empty($item['id_item']) ? $item['id_item'] . ' - ' . ($item['name_item'] ?? '') : '-- Pilih Barang --' }}
+                            </span>
+                            <span class="text-text-secondary text-xs">▼</span>
+                        </button>
+
+                        <div class="barang-item-dropdown-menu absolute z-50 mt-1 w-full bg-surface-base border border-border-light rounded shadow-lg hidden">
+                            <div class="p-2 border-b border-border-light">
+                                <input type="text" class="barang-item-search w-full px-3 py-2 text-sm border border-border-strong rounded bg-surface-base text-text-input focus:outline-none focus:ring-1 focus:ring-primary"
+                                    placeholder="Cari nama/kode barang...">
+                            </div>
+                            <div class="barang-item-dropdown-list max-h-48 overflow-y-auto">
+                                <div class="p-2 text-sm text-text-secondary text-center dropdown-loading-placeholder">
+                                    Memuat data...
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <input type="text" name="items[{{ $index }}][name_item]"
@@ -109,17 +119,28 @@
                 </label>
             </div>
 
+            {{-- Hidden input used for id_item --}}
+            <input type="hidden" class="barang-item-id">
+
+            {{-- Custom searchable dropdown wrapper --}}
             <div class="relative mb-2 barang-select-wrapper" style="display: none;">
-                <select class="barang-item-select w-full border rounded p-2">
-                    <option value="">-- Pilih Barang --</option>
-                    @foreach ($items as $stockItem)
-                        <option value="{{ $stockItem->id_item }}" data-name="{{ $stockItem->name_item }}"
-                            data-capital="{{ $stockItem->capital_price }}"
-                            data-selling="{{ $stockItem->selling_price }}" data-stock="{{ $stockItem->quantity }}">
-                            {{ $stockItem->name_item }} (Stok: {{ $stockItem->quantity }})
-                        </option>
-                    @endforeach
-                </select>
+                <button type="button"
+                    class="barang-item-dropdown-btn w-full px-3 py-2 border border-border-strong rounded bg-surface-base flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-primary transition-colors">
+                    <span class="barang-item-dropdown-label text-sm text-text-primary">-- Pilih Barang --</span>
+                    <span class="text-text-secondary text-xs">▼</span>
+                </button>
+
+                <div class="barang-item-dropdown-menu absolute z-50 mt-1 w-full bg-surface-base border border-border-light rounded shadow-lg hidden">
+                    <div class="p-2 border-b border-border-light">
+                        <input type="text" class="barang-item-search w-full px-3 py-2 text-sm border border-border-strong rounded bg-surface-base text-text-input focus:outline-none focus:ring-1 focus:ring-primary"
+                            placeholder="Cari nama/kode barang...">
+                    </div>
+                    <div class="barang-item-dropdown-list max-h-48 overflow-y-auto">
+                        <div class="p-2 text-sm text-text-secondary text-center dropdown-loading-placeholder">
+                            Memuat data...
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <input type="text" class="barang-item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *"
