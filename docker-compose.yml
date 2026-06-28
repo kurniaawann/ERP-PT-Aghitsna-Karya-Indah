@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: 'postgres'
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: always
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=9283rj2093d09dksa!d2839
+      - POSTGRES_USER=whoami
+    networks:
+      - whoami-network
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  whoami-network:
+    external: true
