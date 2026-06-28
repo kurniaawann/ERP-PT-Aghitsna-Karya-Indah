@@ -2,6 +2,7 @@
 
 namespace App\Exports\Finance;
 
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -46,6 +47,9 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
             ];
         }
 
+
+        Log::debug('Masuk sini pak eko', ['totals' => $this->totals]);
+
         $data[] = [
             'no' => '',
             'invoice_number' => '',
@@ -53,8 +57,8 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
             'recipient' => 'TOTAL',
             'project_description' => 'JUMLAH REKAP INVOICE ALUMUNIUM',
             'total_amount' => 'Rp ' . number_format((int) $this->totals->total_invoice, 0, ',', '.'),
-            'paid_amount' => 'Rp ' . number_format((int) $this->totals->total_paid, 0, ',', '.'),
-            'remaining_amount' => 'Rp ' . number_format((int) $this->totals->total_remaining, 0, ',', '.'),
+            'paid_amount' => 'Rp ' . number_format((int) $this->totals->paid_amount, 0, ',', '.'),
+            'remaining_amount' => 'Rp ' . number_format((int) $this->totals->remaining_amount, 0, ',', '.'),
             'status' => '',
         ];
 

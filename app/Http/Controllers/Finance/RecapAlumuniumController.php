@@ -100,6 +100,11 @@ class RecapAlumuniumController extends Controller
             'total_invoice' => $invoices->sum(fn($invoice) => (int) $invoice->getNetAmount()),
             'invoice_count' => $invoices->count(),
             'paid_count' => $invoices->filter(fn($invoice) => $invoice->isFullyPaid())->count(),
+            "paid_amount" => $invoices->sum(fn($invoice) => (int) $invoice->getTotalPaidAmount()),
+            'remaining_amount' => $invoices->sum(fn($invoice) => (int) $invoice->getRemainingAmount()),
+            // 'remaining_count' => $invoices->filter(fn($invoice) => !$invoice->isFullyPaid())->count(),
+            // 'total_paid' => $invoices->sum(fn($invoice) => (int) $invoice->getTotalPaidAmount()),
+            
         ];
     }
 

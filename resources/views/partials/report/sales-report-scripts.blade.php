@@ -1,6 +1,12 @@
 {{-- Sales Report Scripts --}}
 <script>
+    // ==========================================
+    // PREVENT DOUBLE SUBMIT & LOADING STATE
+    // ==========================================
+
     @include('partials.shared.currency-utils-script')
+
+    // Shared helper is loaded from resources/js/shared/form-submit.js
 
     document.addEventListener('DOMContentLoaded', function() {
         // Toggle Print Dropdown
@@ -623,10 +629,30 @@
                     }
 
                     document.getElementById('items-json').value = JSON.stringify(items);
-                    return true;
+
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn ? submitBtn.innerHTML : '';
+                    if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                        e.preventDefault();
+                        return false;
+                    }
                 });
             }
         }
+
+        // Handle edit form submission
+        const editForms = document.querySelectorAll('[id^="editModal-"] form');
+        editForms.forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn ? submitBtn.innerHTML : '';
+
+                if (!handleFormSubmit(submitBtn, originalText, 'Update...')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
 
         // Handle edit form - add item button
         document.querySelectorAll('.add-item-edit').forEach(btn => {
@@ -930,5 +956,13 @@
                 filterForm.submit();
             });
         }
+
+        // ==========================================
+        // RESET isSubmitting FLAG ON PAGE SHOW
+        // ==========================================
+
+        window.addEventListener('pageshow', function() {
+            resetFormSubmitState();
+        });
     });
 </script>

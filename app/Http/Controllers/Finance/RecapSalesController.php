@@ -160,6 +160,110 @@ class RecapSalesController extends Controller
         }
     }
 
+    public function update(Request $request, $id)
+    {
+        $salesRecap = SalesRecap::findOrFail($id);
+
+        if ($salesRecap->isLunas()) {
+            return back()->with('error', 'Data yang sudah lunas tidak dapat diubah!');
+        }
+
+        $newItems = $this->normalizeRecapItems($request->input('items', []));
+
+        if (empty($newItems)) {
+            return back()->with('error', 'Minimal harus ada 1 item!')->withInput();
+        }
+
+        DB::beginTransaction();
+        try {
+            $oldItems = is_string($salesRecap->items)
+                ? json_decode($salesRecap->items, true)
+                : $salesRecap->items;
+
+            $stockChanges = [];
+
+            foreach ($oldItems as $oldItem) {
+                if (filter_var($oldItem['from_stock'] ?? false, FILTER_VALIDATE_BOOLEAN) && !empty($oldItem['id_item'])) {
+                    $itemId = $oldItem['id_item'];
+                    $stockChanges[$itemId] = ($stockChanges[$itemId] ?? 0) + (int) ($oldItem['quantity'] ?? 0);
+                }
+            }
+
+            foreach ($newItems as &$item) {
+                $isFromStock = filter_var($item['from_stock'] ?? false, FILTER_VALIDATE_BOOLEAN) && !empty($item['id_item']);
+
+                if ($isFromStock) {
+                    $itemId = $item['id_item'];
+                    $stockChanges[$itemId] = ($stockChanges[$itemId] ?? 0) - (int) ($item['quantity'] ?? 0);
+                } else {
+                    $item['from_stock'] = false;
+                    $item['id_item'] = null;
+                }
+            }
+            unset($item);
+
+            foreach ($stockChanges as $itemId => $delta) {
+                if ($delta === 0) continue;
+
+                $stockItem = Items::lockForUpdate()->where('id_item', $itemId)->first();
+
+                if (!$stockItem) {
+                    DB::rollBack();
+                    return back()->with('error', 'Barang dengan ID "' . $itemId . '" tidak ditemukan!')->withInput();
+                }
+
+                $newStock = $stockItem->quantity + $delta;
+                if ($newStock < 0) {
+                    DB::rollBack();
+                    return back()->with('error', 'Stok barang yang diambil melebihi stok tersedia!')->withInput();
+                }
+
+                $stockItem->quantity = $newStock;
+                $stockItem->save();
+            }
+
+            foreach ($newItems as &$item) {
+                $isFromStock = filter_var($item['from_stock'] ?? false, FILTER_VALIDATE_BOOLEAN) && !empty($item['id_item']);
+
+                if ($isFromStock) {
+                    $stockItem = Items::where('id_item', $item['id_item'])->first();
+
+                    if ($stockItem) {
+                        $item['capital_price'] = (int) $stockItem->capital_price;
+                        $item['selling_price'] = (int) $stockItem->selling_price;
+                    }
+
+                    $item['from_stock'] = true;
+                } else {
+                    $capitalPrice = (int) ($item['capital_price'] ?? 0);
+                    $sellingPrice = (int) ($item['selling_price'] ?? 0);
+
+                    if ($capitalPrice >= $sellingPrice) {
+                        DB::rollBack();
+                        // return back()->with('error', 'Harga modal harus lebih kecil dari harga jual untuk item')->withInput();
+                    }
+                }
+
+                $item['profit'] = ((int) ($item['selling_price'] ?? 0) - (int) ($item['capital_price'] ?? 0)) * (int) ($item['quantity'] ?? 0);
+            }
+            unset($item);
+
+            $salesRecap->date = $request->date;
+            $salesRecap->name_proyek = $request->name_proyek;
+            $salesRecap->items = json_encode($newItems);
+            $salesRecap->calculateTotals();
+            $salesRecap->save();
+
+            DB::commit();
+
+            return redirect()->route('recap-sales.index')
+                ->with('success', 'Data rekap penjualan berhasil diupdate!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
     /**
      * Update status to lunas
      */
