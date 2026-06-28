@@ -61,5 +61,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.report.sales-report-scripts')
+    @include('partials.finance.recap-sales-scripts')
 @endsection

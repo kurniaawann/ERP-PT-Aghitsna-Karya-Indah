@@ -1,4 +1,4 @@
-{{-- Sales Report Scripts --}}
+{{-- Recap Sales Scripts --}}
 <script>
     // ==========================================
     // PREVENT DOUBLE SUBMIT & LOADING STATE
@@ -440,8 +440,8 @@
                         const allPricesValid = Array.from(modalContainer.querySelectorAll('.item-row-edit'))
                             .every(
                                 r => {
-                                    const cap = parseFloat(r.querySelector('.item-capital-edit')?.value) || 0;
-                                    const sel = parseFloat(r.querySelector('.item-selling-edit')?.value) || 0;
+                                    const cap = parseCurrencyInput(r.querySelector('.item-capital-edit')?.value) || 0;
+                                    const sel = parseCurrencyInput(r.querySelector('.item-selling-edit')?.value) || 0;
                                     return sel === 0 || cap < sel;
                                 });
 
@@ -528,8 +528,8 @@
             if (!capitalInput || !sellingInput || !priceWarning) return;
 
             function validatePrices() {
-                const capital = parseFloat(capitalInput.value) || 0;
-                const selling = parseFloat(sellingInput.value) || 0;
+                const capital = parseCurrencyInput(capitalInput.value) || 0;
+                const selling = parseCurrencyInput(sellingInput.value) || 0;
 
                 if (capital >= selling && selling > 0) {
                     priceWarning.classList.remove('hidden');
@@ -545,8 +545,8 @@
                     if (modalContainer) {
                         const allValid = Array.from(modalContainer.querySelectorAll('.item-row-edit')).every(
                             r => {
-                                const cap = parseFloat(r.querySelector('.item-capital-edit')?.value) || 0;
-                                const sel = parseFloat(r.querySelector('.item-selling-edit')?.value) || 0;
+                                const cap = parseCurrencyInput(r.querySelector('.item-capital-edit')?.value) || 0;
+                                const sel = parseCurrencyInput(r.querySelector('.item-selling-edit')?.value) || 0;
                                 return sel === 0 || cap < sel;
                             });
                         if (submitBtn && allValid) {
@@ -644,6 +644,30 @@
         const editForms = document.querySelectorAll('[id^="editModal-"] form');
         editForms.forEach(function(form) {
             form.addEventListener('submit', function(e) {
+                const modal = this.closest('[id^="editModal-"]');
+                const saleId = modal ? modal.id.replace('editModal-', '') : '';
+                const itemsContainer = document.getElementById('items-list-edit-' + saleId);
+
+                // Validate all prices before submission
+                if (itemsContainer) {
+                    let hasInvalidPrice = false;
+                    itemsContainer.querySelectorAll('.item-row-edit').forEach(row => {
+                        const capital = parseCurrencyInput(row.querySelector('.item-capital-edit')
+                            ?.value);
+                        const selling = parseCurrencyInput(row.querySelector('.item-selling-edit')
+                            ?.value);
+                        if (capital >= selling && selling > 0) {
+                            hasInvalidPrice = true;
+                        }
+                    });
+
+                    if (hasInvalidPrice) {
+                        e.preventDefault();
+                        alert('Harga modal tidak boleh lebih besar atau sama dengan harga jual!');
+                        return false;
+                    }
+                }
+
                 const submitBtn = this.querySelector('button[type="submit"]');
                 const originalText = submitBtn ? submitBtn.innerHTML : '';
 

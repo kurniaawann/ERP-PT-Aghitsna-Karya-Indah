@@ -240,7 +240,7 @@ class RecapSalesController extends Controller
 
                     if ($capitalPrice >= $sellingPrice) {
                         DB::rollBack();
-                        // return back()->with('error', 'Harga modal harus lebih kecil dari harga jual untuk item')->withInput();
+                        return back()->with('error', 'Harga modal harus lebih kecil dari harga jual untuk item')->withInput();
                     }
                 }
 
