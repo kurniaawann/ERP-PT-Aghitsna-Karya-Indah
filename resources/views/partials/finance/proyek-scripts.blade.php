@@ -164,7 +164,7 @@
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
         const dpValueInput = document.getElementById('dp-value');
-        let dpValue = parseCurrencyInput(dpValueInput?.value);
+        let dpValue = parseDecimalInput(dpValueInput);
         const dpError = document.getElementById('dp-error');
 
         // Enable/disable based on type
@@ -208,7 +208,7 @@
 
         // Check if there's discount
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseCurrencyInput(document.getElementById('discount-value')?.value);
+        const discountValue = parseDecimalInput(document.getElementById('discount-value'));
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -309,7 +309,7 @@
     function calculateDPEdit(invoiceNumber) {
         const dpType = document.getElementById('dp-type-edit-' + invoiceNumber)?.value;
         const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
-        let dpValue = parseCurrencyInput(dpValueInput?.value);
+        let dpValue = parseDecimalInput(dpValueInput);
 
         // Enable/disable based on type
         if (dpValueInput) {
@@ -339,8 +339,7 @@
         baseTotal = Math.round(baseTotal);
 
         const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
-        const discountValue = parseCurrencyInput(document.getElementById('discount-value-edit-' + invoiceNumber)
-            ?.value);
+        const discountValue = parseDecimalInput(document.getElementById('discount-value-edit-' + invoiceNumber));
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -922,12 +921,6 @@
 
                 const submitBtn = this.querySelector('button[type="submit"]');
 
-                // Prevent double submit
-                if (isSubmitting) {
-                    e.preventDefault();
-                    return false;
-                }
-
                 // Serialize items and payment installments
                 const hasItems = serializeItems();
 
@@ -948,8 +941,11 @@
                 console.log('Items JSON value set:', itemsJsonField.value);
                 console.log('Field name:', itemsJsonField.name);
 
-                // Set loading state
-                handleFormSubmit(submitBtn);
+                // Prevent double submit and set loading state
+                if (!handleFormSubmit(submitBtn)) {
+                    e.preventDefault();
+                    return false;
+                }
 
                 // Let form submit naturally
                 return true;
@@ -965,12 +961,6 @@
                 form.addEventListener('submit', function(e) {
                     const submitBtn = this.querySelector('button[type="submit"]');
 
-                    // Prevent double submit
-                    if (isSubmitting) {
-                        e.preventDefault();
-                        return false;
-                    }
-
                     const editItems = this.querySelectorAll('.item-row-edit');
                     if (editItems.length === 0) {
                         e.preventDefault();
@@ -980,8 +970,11 @@
 
                     normalizeInvoicePriceFields(this);
 
-                    // Set loading state
-                    handleFormSubmit(submitBtn);
+                    // Prevent double submit and set loading state
+                    if (!handleFormSubmit(submitBtn)) {
+                        e.preventDefault();
+                        return false;
+                    }
                 });
             }
         });
@@ -1057,5 +1050,13 @@
         if (yearSelect) {
             yearSelect.addEventListener('change', updateInvoiceFilterUrl);
         }
+
+        // ==========================================
+        // RESET isSubmitting FLAG ON PAGE SHOW
+        // ==========================================
+
+        window.addEventListener('pageshow', function() {
+            resetFormSubmitState();
+        });
     });
 </script>

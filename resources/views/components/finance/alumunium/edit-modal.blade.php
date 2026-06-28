@@ -110,10 +110,10 @@
                 <select name="discount_type" id="discount-type-edit-{{ $invoice->invoice_number }}"
                     class="w-full border rounded p-2"
                     onchange="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
-                    <option value="">Tidak Ada Discount</option>
-                    <option value="percentage" {{ $invoice->discount_type === 'percentage' ? 'selected' : '' }}>
+                    <option value="" {{ !$invoice->discount_type ? 'selected' : '' }}>Tidak Ada Discount</option>
+                    <option value="percentage" {{ $invoice->discount_type == 'percentage' ? 'selected' : '' }}>
                         Persentase (%)</option>
-                    <option value="amount" {{ $invoice->discount_type === 'amount' ? 'selected' : '' }}>Nominal (Rp)
+                    <option value="amount" {{ $invoice->discount_type == 'amount' ? 'selected' : '' }}>Nominal (Rp)
                     </option>
                 </select>
             </div>
@@ -148,10 +148,10 @@
                 <label class="block text-text-label text-sm mb-1">Tipe DP</label>
                 <select name="dp_type" id="dp-type-edit-{{ $invoice->invoice_number }}"
                     class="w-full border rounded p-2" onchange="calculateDPEdit('{{ $invoice->invoice_number }}')">
-                    <option value="">Tidak Ada DP</option>
-                    <option value="percentage" {{ $invoice->dp_type === 'percentage' ? 'selected' : '' }}>Persentase
+                    <option value="" {{ !$invoice->dp_type ? 'selected' : '' }}>Tidak Ada DP</option>
+                    <option value="percentage" {{ $invoice->dp_type == 'percentage' ? 'selected' : '' }}>Persentase
                         (%)</option>
-                    <option value="amount" {{ $invoice->dp_type === 'amount' ? 'selected' : '' }}>Nominal (Rp)
+                    <option value="amount" {{ $invoice->dp_type == 'amount' ? 'selected' : '' }}>Nominal (Rp)
                     </option>
                 </select>
             </div>

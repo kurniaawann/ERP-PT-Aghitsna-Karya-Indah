@@ -135,7 +135,7 @@
     function calculateDP() {
         const dpType = document.getElementById('dp-type')?.value;
         const dpValueInput = document.getElementById('dp-value');
-        let dpValue = parseFloat(dpValueInput?.value) || 0;
+        let dpValue = parseDecimalInput(dpValueInput);
         const dpError = document.getElementById('dp-error');
 
         // Enable/disable based on type
@@ -179,7 +179,7 @@
 
         // Check if there's discount
         const discountType = document.getElementById('discount-type')?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+        const discountValue = parseDecimalInput(document.getElementById('discount-value'));
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -317,7 +317,7 @@
         const typeEl = document.getElementById('dp-type-edit-' + invoiceNumber);
         const valueEl = document.getElementById('dp-value-edit-' + invoiceNumber);
         const dpType = typeEl?.value;
-        let dpValue = parseFloat(valueEl?.value) || 0;
+        let dpValue = parseDecimalInput(valueEl);
 
         // Enable/disable value input based on type selection
         if (valueEl) {
@@ -347,7 +347,7 @@
         baseTotal = Math.round(baseTotal);
 
         const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
-        const discountValue = parseFloat(document.getElementById('discount-value-edit-' + invoiceNumber)?.value) || 0;
+        const discountValue = parseDecimalInput(document.getElementById('discount-value-edit-' + invoiceNumber));
 
         let discountAmount = 0;
         if (discountType && discountValue > 0) {
@@ -734,12 +734,6 @@
 
                 const submitBtn = this.querySelector('button[type="submit"]');
 
-                // Prevent double submit
-                if (isSubmitting) {
-                    e.preventDefault();
-                    return false;
-                }
-
                 const items = [];
                 const itemRows = this.querySelectorAll('.item-row');
 
@@ -789,13 +783,15 @@
                     return false;
                 }
 
-                const jsonString = JSON.stringify(items);
-                itemsJsonField.value = jsonString;
+                itemsJsonField.value = JSON.stringify(items);
                 console.log('Items JSON value set:', itemsJsonField.value);
                 console.log('Field name:', itemsJsonField.name);
 
-                // Set loading state
-                handleFormSubmit(submitBtn);
+                // Prevent double submit and set loading state
+                if (!handleFormSubmit(submitBtn)) {
+                    e.preventDefault();
+                    return false;
+                }
 
                 // Let form submit naturally
                 return true;
@@ -811,12 +807,6 @@
                 form.addEventListener('submit', function(e) {
                     const submitBtn = this.querySelector('button[type="submit"]');
 
-                    // Prevent double submit
-                    if (isSubmitting) {
-                        e.preventDefault();
-                        return false;
-                    }
-
                     const editItems = this.querySelectorAll('.item-row-edit');
                     if (editItems.length === 0) {
                         e.preventDefault();
@@ -826,8 +816,11 @@
 
                     normalizeInvoicePriceFields(this);
 
-                    // Set loading state
-                    handleFormSubmit(submitBtn);
+                    // Prevent double submit and set loading state
+                    if (!handleFormSubmit(submitBtn)) {
+                        e.preventDefault();
+                        return false;
+                    }
                 });
             }
         });
@@ -891,5 +884,13 @@
         if (yearSelect) {
             yearSelect.addEventListener('change', updateInvoiceFilterUrl);
         }
+
+        // ==========================================
+        // RESET isSubmitting FLAG ON PAGE SHOW
+        // ==========================================
+
+        window.addEventListener('pageshow', function() {
+            resetFormSubmitState();
+        });
     });
 </script>
