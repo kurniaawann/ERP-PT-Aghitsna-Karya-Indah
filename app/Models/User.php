@@ -50,6 +50,17 @@ class User extends Authenticatable
         return $this->role === 'general_manager';
     }
 
+    public function getHomeRoute(): string
+    {
+        if ($this->isAdmin()) {
+            return '/proyek-invoice';
+        }
+        if ($this->isGeneralManager()) {
+            return '/report/sales';
+        }
+        return '/dashboard';
+    }
+
     public function hasRole(string|array $roles): bool
     {
         return in_array($this->role, (array) $roles);

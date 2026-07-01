@@ -69,6 +69,14 @@ Route::middleware('guest')->group(function () {
 // Logout route (untuk user yang sudah login)
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Root route — entry point aplikasi
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect(auth()->user()->getHomeRoute());
+    }
+    return redirect('/login');
+});
+
 // Website pages
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
@@ -236,17 +244,6 @@ Route::middleware('auth')->group(function () {
     // ─── Routes untuk Admin + General Manager ───
     Route::middleware('role:admin,general_manager')->group(function () {
 
-        // Route Transaction Category
-        Route::get('/transaction-category', [TransactionCategoryController::class, 'index'])->name('transaction-category.index');
-        Route::post('/transaction-category', [TransactionCategoryController::class, 'store'])->name('transaction-category.store');
-        Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
-        Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
-        Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
-
-        // ============================================
-        // Laporan Routes
-        // ============================================
-
         // Route Laporan Rekap Pengeluaran
         Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
 
@@ -262,6 +259,13 @@ Route::middleware('auth')->group(function () {
 
     // ─── Routes untuk Admin ───
     Route::middleware('role:admin')->group(function () {
+
+        // Route Transaction Category
+        Route::get('/transaction-category', [TransactionCategoryController::class, 'index'])->name('transaction-category.index');
+        Route::post('/transaction-category', [TransactionCategoryController::class, 'store'])->name('transaction-category.store');
+        Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
+        Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
+        Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
 
         // ============================================
         // Notification Routes (Notifikasi & Reminder)

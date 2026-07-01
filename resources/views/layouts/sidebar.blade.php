@@ -436,18 +436,7 @@
                 </button>
 
                 <ul id="laporanDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/sales*') || request()->is('report/expense*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/transaction-category') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-tags w-4 
-                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
-                        </a>
-                    </li>
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('report/sales*') || request()->is('report/expense*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ route('report.sales') }}"
                             class="flex items-center px-4 py-2 rounded-lg group
