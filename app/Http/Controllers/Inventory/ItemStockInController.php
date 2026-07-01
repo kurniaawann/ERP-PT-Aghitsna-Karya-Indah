@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\InputNormalizer;
@@ -25,47 +26,9 @@ class ItemStockInController extends Controller
         return 'SIN-' . date('Ymd') . '-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
 
-    private function generateIdItem()
-    {
-        // Ambil item terakhir dari database
-        $lastItem = Items::orderBy('id_item', 'desc')->first();
-
-        // Jika belum ada data, mulai dari ITM-0001
-        if (!$lastItem) {
-            return 'ITM-0001';
-        }
-
-        // Extract nomor dari id_item terakhir
-        $lastNumber = (int) substr($lastItem->id_item, 4);
-
-        // Tambah 1 dan format dengan padding 0
-        return 'ITM-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-    }
-
     public function index(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-
-        $stockIns = ItemStockIn::query()
-            ->with('item')
-            ->when($search, function ($query, $search) {
-                $query->where('id_stock_in', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
-            })
-            ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
-            })
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('id_stock_in', 'desc')
-            ->paginate(15);
+        $stockIns = $this->baseQuery($request)->paginate(15);
 
         $items = Items::orderBy('id_item', 'asc')->get();
 
@@ -86,69 +49,93 @@ class ItemStockInController extends Controller
             return redirect()->back()->with('error', 'Minimal harus ada satu item barang masuk!');
         }
 
-        foreach ($items as $itemData) {
-            // Validate each item
-            if (empty($itemData['name_item']) || empty($itemData['quantity']) || $itemData['quantity'] < 1) {
-                return redirect()->back()->with('error', 'Semua item harus memiliki nama dan quantity minimal 1!');
+        DB::beginTransaction();
+        try {
+            foreach ($items as $itemData) {
+                if (empty($itemData['name_item']) || empty($itemData['quantity']) || $itemData['quantity'] < 1) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Semua item harus memiliki nama dan quantity minimal 1!');
+                }
+
+                $idItem = $itemData['id_item'] ?? null;
+                $quantity = (int) $itemData['quantity'];
+                $capitalPrice = InputNormalizer::normalizeCurrency($itemData['capital_price'] ?? 0);
+                $fromStock = $itemData['from_stock'] ?? false;
+
+                if ($fromStock && $idItem) {
+                    $item = Items::lockForUpdate()->find($idItem);
+                    if (!$item) {
+                        DB::rollBack();
+                        return redirect()->back()->with('error', 'Barang dengan ID ' . $idItem . ' tidak ditemukan!');
+                    }
+                } else {
+                    $item = $idItem ? Items::lockForUpdate()->find($idItem) : null;
+
+                    if (!$item) {
+                        $item = Items::create([
+                            'id_item' => Items::generateNextId(),
+                            'name_item' => $itemData['name_item'],
+                            'quantity' => 0,
+                            'capital_price' => $capitalPrice,
+                            'selling_price' => 0,
+                        ]);
+                    }
+                }
+
+                $existingValue = $item->quantity * $item->capital_price;
+                $newValue = $quantity * $capitalPrice;
+                $totalQuantity = $item->quantity + $quantity;
+                $newAveragePrice = $totalQuantity > 0 ? (int) round(($existingValue + $newValue) / $totalQuantity) : $capitalPrice;
+
+                $item->quantity += $quantity;
+                $item->capital_price = $newAveragePrice;
+                $item->save();
+
+                ItemStockIn::create([
+                    'id_stock_in' => $this->generateIdStockIn(),
+                    'id_item' => $item->id_item,
+                    'quantity' => $quantity,
+                    'capital_price' => $capitalPrice,
+                    'keterangan' => $request->keterangan,
+                    'tanggal' => $request->tanggal,
+                ]);
             }
 
-            $idItem = $itemData['id_item'];
-            $quantity = (int) $itemData['quantity'];
-            $capitalPrice = InputNormalizer::normalizeCurrency($itemData['capital_price'] ?? 0);
-            $fromStock = $itemData['from_stock'] ?? false;
-
-            // Handle "dari stok" - ambil dari data barang yang ada
-            if ($fromStock && $idItem) {
-                $item = Items::find($idItem);
-                if (!$item) {
-                    return redirect()->back()->with('error', 'Barang dengan ID ' . $idItem . ' tidak ditemukan!');
-                }
-            } else {
-                // Handle barang baru/manual input
-                $item = Items::find($idItem);
-
-                if (!$item) {
-                    // Create new item jika belum ada
-                    $item = Items::create([
-                        'id_item' => Items::generateNextId(),
-                        'name_item' => $itemData['name_item'],
-                        'quantity' => 0,
-                        'capital_price' => $capitalPrice,
-                        'selling_price' => 0, // Will be set later
-                    ]);
-                }
-            }
-
-            // Calculate Weighted Average Cost
-            $existingValue = $item->quantity * $item->capital_price;
-            $newValue = $quantity * $capitalPrice;
-            $totalQuantity = $item->quantity + $quantity;
-            $newAveragePrice = $totalQuantity > 0 ? (int) round(($existingValue + $newValue) / $totalQuantity) : $capitalPrice;
-
-            // Update quantity dan modal dengan weighted average
-            $item->quantity += $quantity;
-            $item->capital_price = $newAveragePrice;
-            $item->save();
-
-            // Create stock in record
-            ItemStockIn::create([
-                'id_stock_in' => $this->generateIdStockIn(),
-                'id_item' => $item->id_item,
-                'quantity' => $quantity,
-                'capital_price' => $capitalPrice,
-                'keterangan' => $request->keterangan,
-                'tanggal' => $request->tanggal,
-            ]);
+            DB::commit();
+            return redirect()->back()->with('success', 'Data barang masuk berhasil ditambahkan!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        return redirect()->back()->with('success', 'Data barang masuk berhasil ditambahkan!');
     }
 
-    public function update(Request $request, $id_stock_in)
+    private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        $stockIn = ItemStockIn::findOrFail($id_stock_in);
-        $oldItem = Items::find($stockIn->id_item);
+        $search = $request->input('search');
+        $month = $request->input('month');
+        $year = $request->input('year');
 
+        return ItemStockIn::query()
+            ->with('item')
+            ->when($search, function ($query, $search) {
+                $query->where('id_stock_in', 'like', "%{$search}%")
+                    ->orWhere('id_item', 'like', "%{$search}%")
+                    ->orWhereHas('item', function ($q) use ($search) {
+                        $q->where('name_item', 'like', "%{$search}%");
+                    });
+            })
+            ->when($month, function ($query, $month) {
+                $query->whereMonth('tanggal', $month);
+            })
+            ->when($year, function ($query, $year) {
+                $query->whereYear('tanggal', $year);
+            })
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('id_stock_in', 'desc');
+    }
+
+    public function update(Request $request, string $id_stock_in)
+    {
         $validated = $request->validate([
             'items' => 'required|json',
             'tanggal' => 'required|date',
@@ -161,7 +148,6 @@ class ItemStockInController extends Controller
             return redirect()->back()->with('error', 'Minimal harus ada satu item barang masuk!');
         }
 
-        // For now, handle single item update (first item in array)
         $itemData = $newItems[0] ?? null;
 
         if (!$itemData) {
@@ -173,100 +159,97 @@ class ItemStockInController extends Controller
         $newItemId = $itemData['id_item'] ?? null;
         $newItemName = $itemData['name_item'] ?? null;
 
-        // ===== CASE 1: Item ID tidak berubah (update pada item yang sama) =====
-        if ($newItemId && $newItemId === $stockIn->id_item) {
-            // Item tetap sama, hanya update quantity dan price
-            $qtyDifference = $newQuantity - $stockIn->quantity;
+        DB::beginTransaction();
+        try {
+            $stockIn = ItemStockIn::lockForUpdate()->findOrFail($id_stock_in);
+            $oldItem = Items::lockForUpdate()->find($stockIn->id_item);
 
-            // Reverse the effect of previous stock-in
-            $oldValue = $stockIn->quantity * $stockIn->capital_price;
-            $currentItemValue = $oldItem->quantity * $oldItem->capital_price;
-            $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
+            if ($newItemId && $newItemId === $stockIn->id_item) {
+                $qtyDifference = $newQuantity - $stockIn->quantity;
 
-            // Calculate new average with updated values
-            $newValue = $newQuantity * $newCapitalPrice;
-            $totalQuantity = ($oldItem->quantity - $stockIn->quantity) + $newQuantity;
-            $newAveragePrice = $totalQuantity > 0 ? (int) round(($itemValueWithoutThisStockIn + $newValue) / $totalQuantity) : $newCapitalPrice;
+                $oldValue = $stockIn->quantity * $stockIn->capital_price;
+                $currentItemValue = $oldItem->quantity * $oldItem->capital_price;
+                $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
 
-            // Update item quantity and price
-            $oldItem->quantity += $qtyDifference;
-            $oldItem->capital_price = $newAveragePrice;
-            $oldItem->save();
-        }
-        // ===== CASE 2: Item ID berubah atau mode berubah dari "dari stock" =====
-        else {
-            // Step 1: Kembalikan stock/cost dari item lama
-            $oldValue = $stockIn->quantity * $stockIn->capital_price;
-            $currentItemValue = $oldItem->quantity * $oldItem->capital_price;
-            $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
+                $newValue = $newQuantity * $newCapitalPrice;
+                $totalQuantity = ($oldItem->quantity - $stockIn->quantity) + $newQuantity;
+                $newAveragePrice = $totalQuantity > 0 ? (int) round(($itemValueWithoutThisStockIn + $newValue) / $totalQuantity) : $newCapitalPrice;
 
-            $oldItem->quantity -= $stockIn->quantity;
-            if ($oldItem->quantity < 0) {
-                $oldItem->quantity = 0;
-            }
-
-            // Recalculate average price for old item
-            if ($oldItem->quantity > 0) {
-                $oldItem->capital_price = (int) round($itemValueWithoutThisStockIn / $oldItem->quantity);
+                $oldItem->quantity += $qtyDifference;
+                $oldItem->capital_price = $newAveragePrice;
+                $oldItem->save();
             } else {
-                $oldItem->capital_price = 0;
-            }
-            $oldItem->save();
+                $oldValue = $stockIn->quantity * $stockIn->capital_price;
+                $currentItemValue = $oldItem->quantity * $oldItem->capital_price;
+                $itemValueWithoutThisStockIn = $currentItemValue - $oldValue;
 
-            // Step 2: Tentukan item baru
-            $newItem = null;
-
-            if ($newItemId) {
-                // User pilih dari stock
-                $newItem = Items::find($newItemId);
-                if (!$newItem) {
-                    return redirect()->back()->with('error', 'Barang dengan ID ' . $newItemId . ' tidak ditemukan!');
+                $oldItem->quantity -= $stockIn->quantity;
+                if ($oldItem->quantity < 0) {
+                    $oldItem->quantity = 0;
                 }
-            } else if ($newItemName) {
-                // User input manual - cari atau buat item baru
-                $newItem = Items::where('name_item', $newItemName)->first();
+
+                if ($oldItem->quantity > 0) {
+                    $oldItem->capital_price = (int) round($itemValueWithoutThisStockIn / $oldItem->quantity);
+                } else {
+                    $oldItem->capital_price = 0;
+                }
+                $oldItem->save();
+
+                $newItem = null;
+
+                if ($newItemId) {
+                    $newItem = Items::lockForUpdate()->find($newItemId);
+                    if (!$newItem) {
+                        DB::rollBack();
+                        return redirect()->back()->with('error', 'Barang dengan ID ' . $newItemId . ' tidak ditemukan!');
+                    }
+                } else if ($newItemName) {
+                    $newItem = Items::where('name_item', $newItemName)->first();
+
+                    if (!$newItem) {
+                        $newItem = Items::create([
+                            'id_item' => Items::generateNextId(),
+                            'name_item' => $newItemName,
+                            'quantity' => 0,
+                            'capital_price' => $newCapitalPrice,
+                            'selling_price' => 0,
+                        ]);
+                    }
+                }
 
                 if (!$newItem) {
-                    // Create new item
-                    $newItem = Items::create([
-                        'id_item' => Items::generateNextId(),
-                        'name_item' => $newItemName,
-                        'quantity' => 0,
-                        'capital_price' => $newCapitalPrice,
-                        'selling_price' => 0,
-                    ]);
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Gagal menentukan item untuk diupdate!');
                 }
+
+                $existingValue = $newItem->quantity * $newItem->capital_price;
+                $newValue = $newQuantity * $newCapitalPrice;
+                $totalQuantity = $newItem->quantity + $newQuantity;
+                $newAveragePrice = $totalQuantity > 0 ? (int) round(($existingValue + $newValue) / $totalQuantity) : $newCapitalPrice;
+
+                $newItem->quantity += $newQuantity;
+                $newItem->capital_price = $newAveragePrice;
+                $newItem->save();
+
+                $stockIn->id_item = $newItem->id_item;
             }
 
-            if (!$newItem) {
-                return redirect()->back()->with('error', 'Gagal menentukan item untuk diupdate!');
-            }
+            $stockIn->update([
+                'quantity' => $newQuantity,
+                'capital_price' => $newCapitalPrice,
+                'keterangan' => $request->keterangan,
+                'tanggal' => $request->tanggal,
+            ]);
 
-            // Step 3: Update stock/cost untuk item baru
-            $existingValue = $newItem->quantity * $newItem->capital_price;
-            $newValue = $newQuantity * $newCapitalPrice;
-            $totalQuantity = $newItem->quantity + $newQuantity;
-            $newAveragePrice = $totalQuantity > 0 ? (int) round(($existingValue + $newValue) / $totalQuantity) : $newCapitalPrice;
-
-            $newItem->quantity += $newQuantity;
-            $newItem->capital_price = $newAveragePrice;
-            $newItem->save();
-
-            // Step 4: Update stock in record dengan item baru
-            $stockIn->id_item = $newItem->id_item;
+            DB::commit();
+            return redirect()->back()->with('success', 'Data barang masuk berhasil diupdate!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $stockIn->update([
-            'quantity' => $newQuantity,
-            'capital_price' => $newCapitalPrice,
-            'keterangan' => $request->keterangan,
-            'tanggal' => $request->tanggal,
-        ]);
-
-        return redirect()->back()->with('success', 'Data barang masuk berhasil diupdate!');
     }
 
-    public function destroy($id_stock_in)
+    public function destroy(string $id_stock_in)
     {
         $stockIn = ItemStockIn::findOrFail($id_stock_in);
 
@@ -296,28 +279,7 @@ class ItemStockInController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-
-        $stockIns = ItemStockIn::query()
-            ->with('item')
-            ->when($search, function ($query, $search) {
-                $query->where('id_stock_in', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
-            })
-            ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
-            })
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('id_stock_in', 'desc')
-            ->get();
+        $stockIns = $this->baseQuery($request)->get();
 
         $pdf = Pdf::loadView('exports.inventory.stock-in-pdf', compact('stockIns'));
         return $pdf->download('barang-masuk-' . date('Y-m-d-His') . '.pdf');
@@ -334,6 +296,4 @@ class ItemStockInController extends Controller
             'barang-masuk-' . date('Y-m-d-His') . '.xlsx'
         );
     }
-
-
 }
