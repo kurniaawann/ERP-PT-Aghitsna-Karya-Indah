@@ -27,18 +27,15 @@ class Items extends Model
         return $this->hasMany(ItemStockIn::class, 'id_item', 'id_item');
     }
 
-    /**
-     * Generate next sequential id_item like ITM-0001
-     */
     public static function generateNextId(): string
     {
-        $lastItem = self::orderBy('id_item', 'desc')->first();
+        $lastId = self::max('id_item');
 
-        if (!$lastItem) {
+        if (!$lastId) {
             return 'ITM-0001';
         }
 
-        $lastNumber = (int) substr($lastItem->id_item, 4);
+        $lastNumber = (int) substr($lastId, 4);
 
         return 'ITM-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }

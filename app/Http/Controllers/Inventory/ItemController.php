@@ -40,54 +40,42 @@ class ItemController extends Controller
     }
     public function store(Request $request)
     {
-        $request->merge([
-            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
-            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
+        $validated = $request->validate([
+            'name_item' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:0',
+            'capital_price' => 'required|string',
+            'selling_price' => 'required|string',
         ]);
 
-        // Insert data item baru ke database
-        // create() menerima array associative dan akan insert record baru
         Items::create([
-            // Generate id_item otomatis menggunakan private method generateIdItem()
-            // Format: ITM-0001, ITM-0002, ITM-0003, dst
             'id_item' => Items::generateNextId(),
-            // Nama item dari input form
-            'name_item' => $request->name_item,
-            // Quantity/jumlah stok dari input form (integer)
-            'quantity' => $request->quantity,
-            // Harga modal/beli dari supplier dari input form (integer, dalam Rupiah)
-            'capital_price' => $request->capital_price,
-            // Harga jual ke customer dari input form (integer, dalam Rupiah)
-            'selling_price' => $request->selling_price,
+            'name_item' => $validated['name_item'],
+            'quantity' => (int) $validated['quantity'],
+            'capital_price' => InputNormalizer::normalizeCurrency($validated['capital_price']),
+            'selling_price' => InputNormalizer::normalizeCurrency($validated['selling_price']),
         ]);
 
-        // Redirect kembali ke halaman sebelumnya (halaman index) dengan flash message sukses
         return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
     }
 
-    public function update(Request $request, $id_item)
+    public function update(Request $request, string $id_item)
     {
-        $request->merge([
-            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
-            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
+        $validated = $request->validate([
+            'name_item' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:0',
+            'capital_price' => 'required|string',
+            'selling_price' => 'required|string',
         ]);
 
-        // Update data item berdasarkan id_item
-        // where('id_item', $id_item) mencari record dengan id_item yang sesuai
-        // update() akan mengubah field yang ada di array
-        // Note: Menggunakan where()->update() karena id_item bukan primary key (primary key adalah id auto-increment)
-        Items::where('id_item', $id_item)->update([
-            // Update nama item dari input form edit
-            'name_item' => $request->name_item,
-            // Update quantity dari input form edit
-            'quantity' => $request->quantity,
-            // Update harga modal dari input form edit
-            'capital_price' => $request->capital_price,
-            // Update harga jual dari input form edit
-            'selling_price' => $request->selling_price,
+        $item = Items::where('id_item', $id_item)->firstOrFail();
+
+        $item->update([
+            'name_item' => $validated['name_item'],
+            'quantity' => (int) $validated['quantity'],
+            'capital_price' => InputNormalizer::normalizeCurrency($validated['capital_price']),
+            'selling_price' => InputNormalizer::normalizeCurrency($validated['selling_price']),
         ]);
 
-        // Redirect kembali ke halaman sebelumnya dengan flash message sukses
         return redirect()->back()->with('success', 'Data berhasil diupdate!');
     }
 
@@ -125,7 +113,4 @@ class ItemController extends Controller
         // Nama file: stock-hollow-YYYY-MM-DD.xlsx (dengan timestamp)
         return Excel::download(new ItemsExport, 'stock-hollow-' . date('Y-m-d') . '.xlsx');
     }
-
-
-
 }
