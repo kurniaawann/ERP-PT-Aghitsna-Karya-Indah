@@ -73,6 +73,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
 
+    // ─── Routes tanpa middleware tambahan (Super Admin + Legacy roles only) ───
+
     //Route All Item
     Route::get('/item', [ItemController::class, 'index'])->name('item.index');
     Route::post('/item', [ItemController::class, 'store'])->name('item.store');
@@ -136,17 +138,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/alumunium-invoice/{invoice_number}/print/pdf', [AlumuniumInvoiceController::class, 'printPdf'])->name('alumunium-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/alumunium-invoice/{invoice_number}/print/excel', [AlumuniumInvoiceController::class, 'printExcel'])->name('alumunium-invoice.print.excel')->where('invoice_number', '.*');
 
-    // Route Proyek Invoice
-    Route::get('/proyek-invoice', [ProyekInvoiceController::class, 'index'])->name('proyek-invoice.index');
-    Route::get('/proyek-invoice/next-number', [ProyekInvoiceController::class, 'getNextInvoiceNumber'])->name('proyek-invoice.getNextNumber');
-    Route::post('/proyek-invoice', [ProyekInvoiceController::class, 'store'])->name('proyek-invoice.store');
-    Route::get('/proyek-invoice/{proyek_invoice}/edit', [ProyekInvoiceController::class, 'edit'])->name('proyek-invoice.edit')->where('proyek_invoice', '.*');
-    Route::put('/proyek-invoice/{proyek_invoice}', [ProyekInvoiceController::class, 'update'])->name('proyek-invoice.update')->where('proyek_invoice', '.*');
-    Route::delete('/proyek-invoice/destroy-selected', [ProyekInvoiceController::class, 'destroySelected'])->name('proyek-invoice.destroySelected');
+    // ─── Routes untuk Admin (dan Super Admin / Legacy) ───
+    Route::middleware('role:admin')->group(function () {
 
-    // Proyek Invoice Print Routes
-    Route::get('/proyek-invoice/{invoice_number}/print/pdf', [ProyekInvoiceController::class, 'printPdf'])->name('proyek-invoice.print.pdf')->where('invoice_number', '.*');
-    Route::get('/proyek-invoice/{invoice_number}/print/excel', [ProyekInvoiceController::class, 'printExcel'])->name('proyek-invoice.print.excel')->where('invoice_number', '.*');
+        // Route Proyek Invoice
+        Route::get('/proyek-invoice', [ProyekInvoiceController::class, 'index'])->name('proyek-invoice.index');
+        Route::get('/proyek-invoice/next-number', [ProyekInvoiceController::class, 'getNextInvoiceNumber'])->name('proyek-invoice.getNextNumber');
+        Route::post('/proyek-invoice', [ProyekInvoiceController::class, 'store'])->name('proyek-invoice.store');
+        Route::get('/proyek-invoice/{proyek_invoice}/edit', [ProyekInvoiceController::class, 'edit'])->name('proyek-invoice.edit')->where('proyek_invoice', '.*');
+        Route::put('/proyek-invoice/{proyek_invoice}', [ProyekInvoiceController::class, 'update'])->name('proyek-invoice.update')->where('proyek_invoice', '.*');
+        Route::delete('/proyek-invoice/destroy-selected', [ProyekInvoiceController::class, 'destroySelected'])->name('proyek-invoice.destroySelected');
+
+        // Proyek Invoice Print Routes
+        Route::get('/proyek-invoice/{invoice_number}/print/pdf', [ProyekInvoiceController::class, 'printPdf'])->name('proyek-invoice.print.pdf')->where('invoice_number', '.*');
+        Route::get('/proyek-invoice/{invoice_number}/print/excel', [ProyekInvoiceController::class, 'printExcel'])->name('proyek-invoice.print.excel')->where('invoice_number', '.*');
+
+    });
+
+    // ─── Routes tanpa middleware tambahan (Super Admin + Legacy roles only) ───
 
     // Route Bukti Pembayaran Invoice
     Route::get('/payment-proofs', [PaymentProofController::class, 'index'])->name('payment-proofs.index');
@@ -203,84 +212,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/recap-expense/export/excel', [RecapExpenseController::class, 'exportExcel'])->name('recap-expense.export.excel');
     Route::get('/recap-expense/export/pdf', [RecapExpenseController::class, 'exportPdf'])->name('recap-expense.export.pdf');
 
-    // Route Transaction Category
-    Route::get('/transaction-category', [TransactionCategoryController::class, 'index'])->name('transaction-category.index');
-    Route::post('/transaction-category', [TransactionCategoryController::class, 'store'])->name('transaction-category.store');
-    Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
-    Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
-    Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
-
     // ============================================
-    // Laporan Routes
-    // ============================================
-
-    // Route Laporan Rekap Penjualan
-    Route::get('/report/sales', [SalesReportController::class, 'index'])->name('report.sales');
-
-    // Route Laporan Rekap Pengeluaran
-    Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
-
-    // ============================================
-    // Notification Routes (Notifikasi & Reminder)
-    // ============================================
-
-    // Route Reminder Gaji Karyawan
-    Route::get('/notification/salary-reminder', [SalaryReminderController::class, 'index'])->name('notification.salary-reminder');
-
-    // Route Reminder Jatuh Tempo Invoice Proyek
-    Route::get('/notification/invoice-proyek-reminder', [InvoiceProyekReminderController::class, 'index'])->name('notification.invoice-proyek-reminder');
-    Route::put('/notification/invoice-proyek-reminder/{id}/status', [InvoiceProyekReminderController::class, 'updateStatus'])->name('notification.invoice-proyek-reminder.update-status');
-    Route::post('/notification/invoice-proyek-reminder/bulk-update-status', [InvoiceProyekReminderController::class, 'bulkUpdateStatus'])->name('notification.invoice-proyek-reminder.bulk-update-status');
-
-    // ============================================
-    // SDM (Sumber Daya Manusia) Routes
-    // ============================================
-
-    // Route Employee (Karyawan)
-    Route::get('/employee', [EmployeeController::class, 'index'])->name('employee.index');
-    Route::post('/employee', [EmployeeController::class, 'store'])->name('employee.store');
-    Route::put('/employee/{employee}', [EmployeeController::class, 'update'])->name('employee.update');
-    Route::delete('/employee/destroy-selected', [EmployeeController::class, 'destroy'])->name('employee.destroy');
-
-    // Route Attendance (Absensi)
-    Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
-    Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
-    Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])->name('attendance.update');
-    Route::delete('/attendance/destroy-selected', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
-
-    // Route Overtime (Lembur)
-    Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
-    Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
-    Route::put('/overtime/{overtime}', [OvertimeController::class, 'update'])->name('overtime.update');
-    Route::delete('/overtime/destroy-selected', [OvertimeController::class, 'destroy'])->name('overtime.destroy');
-
-    // Route Payroll (Penggajian)
-    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
-    Route::get('/payroll/export/excel', [PayrollController::class, 'exportExcel'])->name('payroll.export.excel');
-    Route::get('/payroll/export/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export.pdf');
-    Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
-    Route::put('/payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
-    Route::post('/payroll/check-attendance', [PayrollController::class, 'checkAttendanceCompleteness'])->name('payroll.check-attendance');
-    Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
-    Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
-    Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
-
-    // Route Kasbon (Cash Advance)
-    Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');
-    Route::post('/kasbon', [KasbonController::class, 'store'])->name('kasbon.store');
-    Route::put('/kasbon/{kasbonCode}', [KasbonController::class, 'update'])->name('kasbon.update');
-    Route::delete('/kasbon/destroy-selected', [KasbonController::class, 'destroySelected'])->name('kasbon.destroySelected');
-    Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
-    Route::post('/kasbon/check-max', [KasbonController::class, 'checkMaxKasbon'])->name('kasbon.check-max');
-
-    // Route Division
-    Route::get('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'index'])->name('division.index');
-    Route::post('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'store'])->name('division.store');
-    Route::put('/division/{division}', [\App\Http\Controllers\Sdm\DivisionController::class, 'update'])->name('division.update');
-    Route::delete('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'destroy'])->name('division.destroy');
-
-    // ============================================
-    // Finance (Keuangan) Routes
+    // Finance (Keuangan) Routes - Reimburse
     // ============================================
 
     // Route Reimburse
@@ -300,62 +233,187 @@ Route::middleware('auth')->group(function () {
     // Route Reimburse - API untuk get total selected
     Route::post('/reimburse/get-selected-total', [ReimburseController::class, 'getSelectedTotal'])->name('reimburse.getSelectedTotal');
 
-    // ============================================
-    // Administrasi Routes
-    // ============================================
+    // ─── Routes untuk Admin + General Manager ───
+    Route::middleware('role:admin,general_manager')->group(function () {
 
-    // Route Document Receipt (Tanda Terima Dokumen)
-    Route::get('/document-receipt', [DocumentReceiptController::class, 'index'])->name('document-receipt.index');
-    Route::post('/document-receipt', [DocumentReceiptController::class, 'store'])->name('document-receipt.store');
-    Route::put('/document-receipt/{documentReceipt}', [DocumentReceiptController::class, 'update'])->name('document-receipt.update');
-    Route::delete('/document-receipt/destroy-selected', [DocumentReceiptController::class, 'destroySelected'])->name('document-receipt.destroySelected');
+        // Route Transaction Category
+        Route::get('/transaction-category', [TransactionCategoryController::class, 'index'])->name('transaction-category.index');
+        Route::post('/transaction-category', [TransactionCategoryController::class, 'store'])->name('transaction-category.store');
+        Route::put('/transaction-category/{id}', [TransactionCategoryController::class, 'update'])->name('transaction-category.update');
+        Route::patch('/transaction-category/{id}/toggle-status', [TransactionCategoryController::class, 'toggleStatus'])->name('transaction-category.toggleStatus');
+        Route::delete('/transaction-category/destroy-selected', [TransactionCategoryController::class, 'destroySelected'])->name('transaction-category.destroySelected');
 
-    // Route Document Receipt - Export PDF
-    Route::get('/document-receipt/export/pdf', [DocumentReceiptController::class, 'exportPdfAll'])->name('document-receipt.export.pdf');
-    Route::post('/document-receipt/export/pdf-selected', [DocumentReceiptController::class, 'exportPdfSelected'])->name('document-receipt.export.pdf.selected');
+        // ============================================
+        // Laporan Routes
+        // ============================================
 
-    // Route Cash Out Proof (Bukti Kas Keluar)
-    Route::get('/cash-out-proof', [CashOutProofController::class, 'index'])->name('cash-out-proof.index');
-    Route::post('/cash-out-proof', [CashOutProofController::class, 'store'])->name('cash-out-proof.store');
-    Route::put('/cash-out-proof/{cashOutProof}', [CashOutProofController::class, 'update'])->name('cash-out-proof.update');
-    Route::delete('/cash-out-proof/destroy-selected', [CashOutProofController::class, 'destroySelected'])->name('cash-out-proof.destroySelected');
+        // Route Laporan Rekap Pengeluaran
+        Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
 
-    // Route Cash Out Proof - Export PDF
-    Route::get('/cash-out-proof/export/pdf', [CashOutProofController::class, 'exportPdfAll'])->name('cash-out-proof.export.pdf');
-    Route::post('/cash-out-proof/export/pdf-selected', [CashOutProofController::class, 'exportPdfSelected'])->name('cash-out-proof.export.pdf.selected');
+    });
 
-    // Route Kwintansi
-    Route::get('/kwintansi', [KwintansiController::class, 'index'])->name('kwintansi.index');
-    Route::post('/kwintansi', [KwintansiController::class, 'store'])->name('kwintansi.store');
-    Route::put('/kwintansi/{kwintansi}', [KwintansiController::class, 'update'])->name('kwintansi.update');
-    Route::delete('/kwintansi/destroy-selected', [KwintansiController::class, 'destroySelected'])->name('kwintansi.destroySelected');
+    // ─── Routes untuk General Manager ONLY (Laporan Penjualan) ───
+    Route::middleware('role:general_manager')->group(function () {
 
-    // Route Kwintansi - Export PDF
-    Route::get('/kwintansi/export/pdf', [KwintansiController::class, 'exportPdfAll'])->name('kwintansi.export.pdf');
-    Route::post('/kwintansi/export/pdf-selected', [KwintansiController::class, 'exportPdfSelected'])->name('kwintansi.export.pdf.selected');
+        // Route Laporan Rekap Penjualan
+        Route::get('/report/sales', [SalesReportController::class, 'index'])->name('report.sales');
 
-    // Route Nota Administrasi
-    Route::get('/nota-administrasi', [NotaController::class, 'index'])->name('nota.administrasi.index');
-    Route::post('/nota-administrasi', [NotaController::class, 'store'])->name('nota.administrasi.store');
-    Route::put('/nota-administrasi/{nota}', [NotaController::class, 'update'])->name('nota.administrasi.update')->where('nota', '.*');
-    Route::delete('/nota-administrasi/destroy-selected', [NotaController::class, 'destroySelected'])->name('nota.administrasi.destroySelected');
+    });
 
-    // Route Nota Administrasi - Export PDF
-    Route::get('/nota-administrasi/export/pdf', [NotaController::class, 'exportPdfAll'])->name('nota.administrasi.export.pdf');
-    Route::post('/nota-administrasi/export/pdf-selected', [NotaController::class, 'exportPdfSelected'])->name('nota.administrasi.export.pdf.selected');
+    // ─── Routes untuk Admin ───
+    Route::middleware('role:admin')->group(function () {
 
-    // Route Delivery Note (Surat Jalan)
-    Route::get('/delivery-note', [DeliveryNoteController::class, 'index'])->name('delivery-note.administrasi.index');
-    Route::post('/delivery-note', [DeliveryNoteController::class, 'store'])->name('delivery-note.administrasi.store');
-    Route::put('/delivery-note/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('delivery-note.administrasi.update')->where('deliveryNote', '.*');
-    Route::delete('/delivery-note/destroy-selected', [DeliveryNoteController::class, 'destroySelected'])->name('delivery-note.administrasi.destroySelected');
-    Route::patch('/delivery-note/{deliveryNote}/status', [DeliveryNoteController::class, 'updateStatus'])->name('delivery-note.administrasi.updateStatus')->where('deliveryNote', '.*');
+        // ============================================
+        // Notification Routes (Notifikasi & Reminder)
+        // ============================================
 
-    // Route Delivery Note - Export PDF
-    Route::get('/delivery-note/export/pdf', [DeliveryNoteController::class, 'exportPdfAll'])->name('delivery-note.administrasi.export.pdf');
-    Route::post('/delivery-note/export/pdf-selected', [DeliveryNoteController::class, 'exportPdfSelected'])->name('delivery-note.administrasi.export.pdf.selected');
+        // Route Reminder Gaji Karyawan
+        Route::get('/notification/salary-reminder', [SalaryReminderController::class, 'index'])->name('notification.salary-reminder');
 
-    // ─── Penawaran Aluminium (Aluminium Quotation) ──────────────────────────────
+        // Route Reminder Jatuh Tempo Invoice Proyek
+        Route::get('/notification/invoice-proyek-reminder', [InvoiceProyekReminderController::class, 'index'])->name('notification.invoice-proyek-reminder');
+        Route::put('/notification/invoice-proyek-reminder/{id}/status', [InvoiceProyekReminderController::class, 'updateStatus'])->name('notification.invoice-proyek-reminder.update-status');
+        Route::post('/notification/invoice-proyek-reminder/bulk-update-status', [InvoiceProyekReminderController::class, 'bulkUpdateStatus'])->name('notification.invoice-proyek-reminder.bulk-update-status');
+
+        // ============================================
+        // SDM (Sumber Daya Manusia) Routes
+        // ============================================
+
+        // Route Employee (Karyawan)
+        Route::get('/employee', [EmployeeController::class, 'index'])->name('employee.index');
+        Route::post('/employee', [EmployeeController::class, 'store'])->name('employee.store');
+        Route::put('/employee/{employee}', [EmployeeController::class, 'update'])->name('employee.update');
+        Route::delete('/employee/destroy-selected', [EmployeeController::class, 'destroy'])->name('employee.destroy');
+
+        // Route Attendance (Absensi)
+        Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+        Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])->name('attendance.update');
+        Route::delete('/attendance/destroy-selected', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+
+        // Route Overtime (Lembur)
+        Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
+        Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
+        Route::put('/overtime/{overtime}', [OvertimeController::class, 'update'])->name('overtime.update');
+        Route::delete('/overtime/destroy-selected', [OvertimeController::class, 'destroy'])->name('overtime.destroy');
+
+        // Route Payroll (Penggajian)
+        Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+        Route::get('/payroll/export/excel', [PayrollController::class, 'exportExcel'])->name('payroll.export.excel');
+        Route::get('/payroll/export/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export.pdf');
+        Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+        Route::put('/payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
+        Route::post('/payroll/check-attendance', [PayrollController::class, 'checkAttendanceCompleteness'])->name('payroll.check-attendance');
+        Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
+        Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
+        Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+
+        // Route Kasbon (Cash Advance)
+        Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');
+        Route::post('/kasbon', [KasbonController::class, 'store'])->name('kasbon.store');
+        Route::put('/kasbon/{kasbonCode}', [KasbonController::class, 'update'])->name('kasbon.update');
+        Route::delete('/kasbon/destroy-selected', [KasbonController::class, 'destroySelected'])->name('kasbon.destroySelected');
+        Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
+        Route::post('/kasbon/check-max', [KasbonController::class, 'checkMaxKasbon'])->name('kasbon.check-max');
+
+        // Route Division
+        Route::get('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'index'])->name('division.index');
+        Route::post('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'store'])->name('division.store');
+        Route::put('/division/{division}', [\App\Http\Controllers\Sdm\DivisionController::class, 'update'])->name('division.update');
+        Route::delete('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'destroy'])->name('division.destroy');
+
+        // ============================================
+        // Administrasi Routes
+        // ============================================
+
+        // Route Document Receipt (Tanda Terima Dokumen)
+        Route::get('/document-receipt', [DocumentReceiptController::class, 'index'])->name('document-receipt.index');
+        Route::post('/document-receipt', [DocumentReceiptController::class, 'store'])->name('document-receipt.store');
+        Route::put('/document-receipt/{documentReceipt}', [DocumentReceiptController::class, 'update'])->name('document-receipt.update');
+        Route::delete('/document-receipt/destroy-selected', [DocumentReceiptController::class, 'destroySelected'])->name('document-receipt.destroySelected');
+
+        // Route Document Receipt - Export PDF
+        Route::get('/document-receipt/export/pdf', [DocumentReceiptController::class, 'exportPdfAll'])->name('document-receipt.export.pdf');
+        Route::post('/document-receipt/export/pdf-selected', [DocumentReceiptController::class, 'exportPdfSelected'])->name('document-receipt.export.pdf.selected');
+
+        // Route Cash Out Proof (Bukti Kas Keluar)
+        Route::get('/cash-out-proof', [CashOutProofController::class, 'index'])->name('cash-out-proof.index');
+        Route::post('/cash-out-proof', [CashOutProofController::class, 'store'])->name('cash-out-proof.store');
+        Route::put('/cash-out-proof/{cashOutProof}', [CashOutProofController::class, 'update'])->name('cash-out-proof.update');
+        Route::delete('/cash-out-proof/destroy-selected', [CashOutProofController::class, 'destroySelected'])->name('cash-out-proof.destroySelected');
+
+        // Route Cash Out Proof - Export PDF
+        Route::get('/cash-out-proof/export/pdf', [CashOutProofController::class, 'exportPdfAll'])->name('cash-out-proof.export.pdf');
+        Route::post('/cash-out-proof/export/pdf-selected', [CashOutProofController::class, 'exportPdfSelected'])->name('cash-out-proof.export.pdf.selected');
+
+        // Route Kwintansi
+        Route::get('/kwintansi', [KwintansiController::class, 'index'])->name('kwintansi.index');
+        Route::post('/kwintansi', [KwintansiController::class, 'store'])->name('kwintansi.store');
+        Route::put('/kwintansi/{kwintansi}', [KwintansiController::class, 'update'])->name('kwintansi.update');
+        Route::delete('/kwintansi/destroy-selected', [KwintansiController::class, 'destroySelected'])->name('kwintansi.destroySelected');
+
+        // Route Kwintansi - Export PDF
+        Route::get('/kwintansi/export/pdf', [KwintansiController::class, 'exportPdfAll'])->name('kwintansi.export.pdf');
+        Route::post('/kwintansi/export/pdf-selected', [KwintansiController::class, 'exportPdfSelected'])->name('kwintansi.export.pdf.selected');
+
+        // Route Nota Administrasi
+        Route::get('/nota-administrasi', [NotaController::class, 'index'])->name('nota.administrasi.index');
+        Route::post('/nota-administrasi', [NotaController::class, 'store'])->name('nota.administrasi.store');
+        Route::put('/nota-administrasi/{nota}', [NotaController::class, 'update'])->name('nota.administrasi.update')->where('nota', '.*');
+        Route::delete('/nota-administrasi/destroy-selected', [NotaController::class, 'destroySelected'])->name('nota.administrasi.destroySelected');
+
+        // Route Nota Administrasi - Export PDF
+        Route::get('/nota-administrasi/export/pdf', [NotaController::class, 'exportPdfAll'])->name('nota.administrasi.export.pdf');
+        Route::post('/nota-administrasi/export/pdf-selected', [NotaController::class, 'exportPdfSelected'])->name('nota.administrasi.export.pdf.selected');
+
+        // Route Delivery Note (Surat Jalan)
+        Route::get('/delivery-note', [DeliveryNoteController::class, 'index'])->name('delivery-note.administrasi.index');
+        Route::post('/delivery-note', [DeliveryNoteController::class, 'store'])->name('delivery-note.administrasi.store');
+        Route::put('/delivery-note/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('delivery-note.administrasi.update')->where('deliveryNote', '.*');
+        Route::delete('/delivery-note/destroy-selected', [DeliveryNoteController::class, 'destroySelected'])->name('delivery-note.administrasi.destroySelected');
+        Route::patch('/delivery-note/{deliveryNote}/status', [DeliveryNoteController::class, 'updateStatus'])->name('delivery-note.administrasi.updateStatus')->where('deliveryNote', '.*');
+
+        // Route Delivery Note - Export PDF
+        Route::get('/delivery-note/export/pdf', [DeliveryNoteController::class, 'exportPdfAll'])->name('delivery-note.administrasi.export.pdf');
+        Route::post('/delivery-note/export/pdf-selected', [DeliveryNoteController::class, 'exportPdfSelected'])->name('delivery-note.administrasi.export.pdf.selected');
+
+        // ─── Penawaran Proyek (Project Quotation) ───────────────────────────────────
+        Route::get('/project-quotation', [ProjectQuotationController::class, 'index'])->name('project-quotation.index');
+        Route::get('/project-quotation/next-number', [ProjectQuotationController::class, 'getNextQuotationNumber'])->name('project-quotation.getNextNumber');
+        Route::post('/project-quotation', [ProjectQuotationController::class, 'store'])->name('project-quotation.store');
+        Route::delete('/project-quotation/destroy-selected', [ProjectQuotationController::class, 'destroySelected'])->name('project-quotation.destroySelected');
+        Route::post('/project-quotation/export/pdf-selected', [ProjectQuotationController::class, 'exportPdfSelected'])->name('project-quotation.export.pdf.selected');
+
+        // Specific routes MUST come before generic {quotation_number} routes
+        Route::get('/project-quotation/{quotation_number}/print/pdf', [ProjectQuotationController::class, 'printPdfSingle'])->name('project-quotation.print.pdf')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+        Route::get('/project-quotation/{quotation_number}/print/excel', [ProjectQuotationController::class, 'printExcelSingle'])->name('project-quotation.print.excel')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+
+        // Generic routes come last
+        Route::get('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'show'])->name('project-quotation.show')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+        Route::put('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+
+        // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
+        Route::get('/rab', [RABController::class, 'index'])->name('rab.index');
+        Route::get('/rab/next-number', [RABController::class, 'getNextRABNumber'])->name('rab.getNextNumber');
+        Route::post('/rab', [RABController::class, 'store'])->name('rab.store');
+        Route::delete('/rab/destroy', [RABController::class, 'destroy'])->name('rab.destroy');
+        Route::get('/rab/{rab_number}/export-excel', [RABController::class, 'exportExcel'])->name('rab.export-excel')->where('rab_number', '.*');
+        Route::get('/rab/{rab_number}/export-pdf', [RABController::class, 'exportPDF'])->name('rab.export-pdf')->where('rab_number', '.*');
+        Route::get('/rab/{rab_number}', [RABController::class, 'show'])->name('rab.show')->where('rab_number', '.*');
+        Route::get('/rab/{rab_number}/edit', [RABController::class, 'edit'])->name('rab.edit')->where('rab_number', '.*');
+        Route::put('/rab/{rab_number}', [RABController::class, 'update'])->name('rab.update')->where('rab_number', '.*');
+
+        // ============================================
+        // User Management Routes (Admin + Super Admin)
+        // ============================================
+        Route::get('/user-management', [UserController::class, 'index'])->name('user-management.index');
+        Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
+        Route::delete('/user-management/destroy-selected', [UserController::class, 'destroy'])->name('user-management.destroy');
+        Route::put('/user-management/{user}', [UserController::class, 'update'])->name('user-management.update');
+
+    });
+
+    // ─── Penawaran Aluminium (Aluminium Quotation) - Super Admin / Legacy only ───
     Route::get('/aluminium-quotation', [AluminiumQuotationController::class, 'index'])->name('aluminium-quotation.index');
     Route::get('/aluminium-quotation/next-number', [AluminiumQuotationController::class, 'getNextQuotationNumber'])->name('aluminium-quotation.getNextNumber');
     Route::post('/aluminium-quotation', [AluminiumQuotationController::class, 'store'])->name('aluminium-quotation.store');
@@ -365,41 +423,5 @@ Route::middleware('auth')->group(function () {
     Route::post('/aluminium-quotation/export/pdf-selected', [AluminiumQuotationController::class, 'exportPdfSelected'])->name('aluminium-quotation.export.pdf.selected');
     Route::get('/aluminium-quotation/{quotation_number}', [AluminiumQuotationController::class, 'show'])->name('aluminium-quotation.show')->where('quotation_number', '.*');
     Route::put('/aluminium-quotation/{aluminium_quotation}', [AluminiumQuotationController::class, 'update'])->name('aluminium-quotation.update')->where('aluminium_quotation', '.*');
-
-    // ─── Penawaran Proyek (Project Quotation) ───────────────────────────────────
-    Route::get('/project-quotation', [ProjectQuotationController::class, 'index'])->name('project-quotation.index');
-    Route::get('/project-quotation/next-number', [ProjectQuotationController::class, 'getNextQuotationNumber'])->name('project-quotation.getNextNumber');
-    Route::post('/project-quotation', [ProjectQuotationController::class, 'store'])->name('project-quotation.store');
-    Route::delete('/project-quotation/destroy-selected', [ProjectQuotationController::class, 'destroySelected'])->name('project-quotation.destroySelected');
-    Route::post('/project-quotation/export/pdf-selected', [ProjectQuotationController::class, 'exportPdfSelected'])->name('project-quotation.export.pdf.selected');
-
-    // Specific routes MUST come before generic {quotation_number} routes
-    Route::get('/project-quotation/{quotation_number}/print/pdf', [ProjectQuotationController::class, 'printPdfSingle'])->name('project-quotation.print.pdf')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
-    Route::get('/project-quotation/{quotation_number}/print/excel', [ProjectQuotationController::class, 'printExcelSingle'])->name('project-quotation.print.excel')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
-
-    // Generic routes come last
-    Route::get('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'show'])->name('project-quotation.show')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
-    Route::put('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
-
-    // ============================================
-    // User Management Routes (Super Admin only)
-    // ============================================
-    Route::middleware('role:superadmin')->group(function () {
-        Route::get('/user-management', [UserController::class, 'index'])->name('user-management.index');
-        Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
-        Route::delete('/user-management/destroy-selected', [UserController::class, 'destroy'])->name('user-management.destroy');
-        Route::put('/user-management/{user}', [UserController::class, 'update'])->name('user-management.update');
-    });
-
-    // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
-    Route::get('/rab', [RABController::class, 'index'])->name('rab.index');
-    Route::get('/rab/next-number', [RABController::class, 'getNextRABNumber'])->name('rab.getNextNumber');
-    Route::post('/rab', [RABController::class, 'store'])->name('rab.store');
-    Route::delete('/rab/destroy', [RABController::class, 'destroy'])->name('rab.destroy');
-    Route::get('/rab/{rab_number}/export-excel', [RABController::class, 'exportExcel'])->name('rab.export-excel')->where('rab_number', '.*');
-    Route::get('/rab/{rab_number}/export-pdf', [RABController::class, 'exportPDF'])->name('rab.export-pdf')->where('rab_number', '.*');
-    Route::get('/rab/{rab_number}', [RABController::class, 'show'])->name('rab.show')->where('rab_number', '.*');
-    Route::get('/rab/{rab_number}/edit', [RABController::class, 'edit'])->name('rab.edit')->where('rab_number', '.*');
-    Route::put('/rab/{rab_number}', [RABController::class, 'update'])->name('rab.update')->where('rab_number', '.*');
 
 });

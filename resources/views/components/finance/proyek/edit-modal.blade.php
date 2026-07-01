@@ -1,5 +1,5 @@
 {{-- Modal Edit Invoice Proyek --}}
-<x-modal id="editModal-{{ $invoice->invoice_number }}" title="Edit Invoice Proyek"
+<x-modal id="editModal-{{ $invoice->invoice_number }}" title="{{ auth()->user()->isAdmin() ? 'Edit Invoice' : 'Edit Invoice Proyek' }}"
     action="{{ route('proyek-invoice.update', $invoice->invoice_number) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">

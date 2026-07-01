@@ -3,7 +3,7 @@
     $quotNum = $quotation->quotation_number;
 @endphp
 
-<x-modal id="editModal-{{ $quotNum }}" title="Edit Penawaran Proyek"
+<x-modal id="editModal-{{ $quotNum }}" title="{{ auth()->user()->isAdmin() ? 'Edit Penawaran' : 'Edit Penawaran Proyek' }}"
     action="{{ route('project-quotation.update', $quotNum) }}" method="PUT" buttonText="Update"
     formId="editQuotationForm-{{ $quotNum }}" onsubmit="return prepareEditSubmit('{{ $quotNum }}')">
 

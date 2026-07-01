@@ -45,7 +45,7 @@
                                     <div class="flex flex-col gap-1">
                                         <span
                                             class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-primary-light text-primary' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-warning-light text-warning' : 'bg-secondary-light text-secondary') }}">
-                                            {{ $paymentProof->invoice_type === 'proyek' ? 'Invoice Proyek' : ($paymentProof->invoice_type === 'alumunium' ? 'Invoice Alumunium' : 'Rekap Penjualan') }}
+                                            {{ $paymentProof->invoice_type === 'proyek' ? (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek') : ($paymentProof->invoice_type === 'alumunium' ? 'Invoice Alumunium' : 'Rekap Penjualan') }}
                                         </span>
                                         <span class="text-xs text-text-label">
                                             {{ $paymentProof->module_type === 'finance' ? 'Keuangan' : ucfirst($paymentProof->module_type) }}

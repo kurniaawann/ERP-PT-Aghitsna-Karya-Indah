@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Penawaran Proyek')
+@section('title', 'PT Aghitsna Karya Indah - ' . (auth()->user()->isAdmin() ? 'Penawaran' : 'Penawaran Proyek'))
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Penawaran Proyek</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">{{ auth()->user()->isAdmin() ? 'Penawaran' : 'Penawaran Proyek' }}</h1>
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">

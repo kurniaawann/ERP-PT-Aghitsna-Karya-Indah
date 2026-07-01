@@ -1,5 +1,5 @@
 {{-- Modal Tambah Invoice Proyek --}}
-<x-modal id="addModal" title="Tambah Invoice Proyek" action="{{ route('proyek-invoice.store') }}" method="POST"
+<x-modal id="addModal" title="{{ auth()->user()->isAdmin() ? 'Tambah Invoice' : 'Tambah Invoice Proyek' }}" action="{{ route('proyek-invoice.store') }}" method="POST"
     buttonText="Simpan">
 
     <div class="mb-3">

@@ -16,9 +16,7 @@ class User extends Authenticatable
     const ROLES = [
         'superadmin' => 'Super Admin',
         'admin' => 'Admin',
-        'keuangan' => 'Keuangan',
-        'sdm' => 'SDM',
-        'administrasi' => 'Administrasi',
+        'general_manager' => 'General Manager',
     ];
 
     protected $fillable = [
@@ -40,6 +38,16 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->role === 'superadmin';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isGeneralManager(): bool
+    {
+        return $this->role === 'general_manager';
     }
 
     public function hasRole(string|array $roles): bool

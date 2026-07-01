@@ -40,9 +40,7 @@
                                     $roleColors = [
                                         'superadmin' => 'bg-secondary-light text-secondary',
                                         'admin' => 'bg-primary-light text-primary',
-                                        'keuangan' => 'bg-success-light text-success',
-                                        'sdm' => 'bg-warning-light text-warning',
-                                        'administrasi' => 'bg-info-light text-info',
+                                        'general_manager' => 'bg-warning-light text-warning',
                                     ];
                                     $color = $roleColors[$user->role] ?? 'bg-button-cancel text-button-inactive';
                                 @endphp

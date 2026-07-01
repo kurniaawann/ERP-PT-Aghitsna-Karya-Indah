@@ -22,7 +22,15 @@
     <nav class="flex-1 overflow-y-auto py-4">
         <ul class="space-y-1 px-3">
 
+            @php
+                $user = auth()->user();
+                $isSuperAdmin = $user?->isSuperAdmin();
+                $isAdmin = $user?->isAdmin();
+                $isGeneralManager = $user?->isGeneralManager();
+            @endphp
+
             {{-- Dashboard --}}
+            @if (!$isGeneralManager && !$isAdmin)
             <li>
                 <a href="{{ url('/dashboard') }}"
                     class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
@@ -35,8 +43,10 @@
                     <span class="ml-3 font-medium">Dashboard</span>
                 </a>
             </li>
+            @endif
 
             {{-- Inventory Dropdown --}}
+            @if (!$isAdmin && !$isGeneralManager)
             <li>
                 <button onclick="toggleDropdown('inventoryDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
@@ -112,8 +122,10 @@
                     </li>
                 </ul>
             </li>
+            @endif
 
-            {{-- Invoice Dropdown --}}
+            {{-- Finance Dropdown --}}
+            @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
             <li>
                 <button onclick="toggleDropdown('invoiceDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
@@ -130,6 +142,24 @@
                 </button>
 
                 {{-- Submenu --}}
+                @if ($isAdmin)
+                {{-- Admin: Only show Invoice Proyek (renamed to "Invoice") --}}
+                <ul id="invoiceDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('proyek-invoice*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/proyek-invoice') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-file-contract w-4 
+                                {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Invoice</span>
+                        </a>
+                    </li>
+                </ul>
+                @else
+                {{-- Super Admin: Full Finance menu --}}
                 <ul id="invoiceDropdown"
                     class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('payment-proofs*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
@@ -298,9 +328,12 @@
                         </a>
                     </li>
                 </ul>
+                @endif
             </li>
+            @endif
 
-            {{-- Laporan Dropdown --}}
+            {{-- Report Dropdown --}}
+            @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
             <li>
                 <button onclick="toggleDropdown('laporanDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
@@ -316,7 +349,92 @@
                     </i>
                 </button>
 
-                {{-- Submenu --}}
+                @if ($isAdmin)
+                {{-- Admin: Report without Laporan Penjualan --}}
+                <ul id="laporanDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/expense*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/transaction-category') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-tags w-4 
+                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.expense') }}"
+                            class="flex items-center px-4 py-2 rounded-lg group
+                                {{ request()->is('report/expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-pie w-4 
+                                {{ request()->is('report/expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
+                        </a>
+                    </li>
+                </ul>
+                @else
+                {{-- Super Admin: Full Report menu --}}
+                <ul id="laporanDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/sales*') || request()->is('report/expense*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/transaction-category') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-tags w-4 
+                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.sales') }}"
+                            class="flex items-center px-4 py-2 rounded-lg group
+                                {{ request()->is('report/sales*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-line w-4 
+                                {{ request()->is('report/sales*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Penjualan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.expense') }}"
+                            class="flex items-center px-4 py-2 rounded-lg group
+                                {{ request()->is('report/expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-pie w-4 
+                                {{ request()->is('report/expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
+                        </a>
+                    </li>
+                </ul>
+                @endif
+            </li>
+            @endif
+
+            {{-- Report Module ONLY for General Manager --}}
+            @if ($isGeneralManager)
+            <li>
+                <button onclick="toggleDropdown('laporanDropdown')"
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
+
+                    <div class="flex items-center">
+                        <i class="fas fa-chart-line w-5 text-text-tertiary group-hover:text-primary">
+                        </i>
+                        <span class="ml-3 font-medium">Report</span>
+                    </div>
+
+                    <i id="laporanDropdownIcon"
+                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
+                    </i>
+                </button>
+
                 <ul id="laporanDropdown"
                     class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/sales*') || request()->is('report/expense*') ? '' : 'hidden' }}">
                     <li>
@@ -354,8 +472,10 @@
                     </li>
                 </ul>
             </li>
+            @endif
 
             {{-- SDM (Sumber Daya Manusia) Dropdown --}}
+            @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
             <li>
                 <button onclick="toggleDropdown('sdmDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
@@ -460,8 +580,10 @@
                     </li>
                 </ul>
             </li>
+            @endif
 
             {{-- Administrasi Dropdown --}}
+            @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
             <li>
                 <button onclick="toggleDropdown('administrasiDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
@@ -477,7 +599,134 @@
                     </i>
                 </button>
 
-                {{-- Submenu --}}
+                @if ($isAdmin)
+                {{-- Admin: Penawaran Aluminium hidden, Penawaran Proyek renamed to "Penawaran" --}}
+                <ul id="administrasiDropdown"
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('rab*') ? '' : 'hidden' }}">
+                    <li>
+                        <a href="{{ url('/cash-out-proof') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('cash-out-proof*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-money-bill-wave w-4 
+                                {{ request()->is('cash-out-proof*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Bukti Kas Keluar</span>
+                        </a>
+                    </li>
+                    <li>
+                        <button onclick="toggleDropdown('suratMenyuratDropdown')"
+                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <div class="flex items-center">
+                                <i
+                                    class="fas fa-envelope w-4
+                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                </i>
+                                <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
+                            </div>
+
+                            <i id="suratMenyuratDropdownIcon"
+                                class="fas fa-chevron-down text-xs transition-transform duration-200
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                        </button>
+
+                        <ul id="suratMenyuratDropdown"
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? '' : 'hidden' }}">
+                            <li>
+                                <a href="{{ url('/document-receipt') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('document-receipt*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-file-signature w-4 
+                                        {{ request()->is('document-receipt*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Tanda Terima Dokumen</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/kwintansi') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('kwintansi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-receipt w-4 
+                                        {{ request()->is('kwintansi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Kwintansi</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/nota-administrasi') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('nota-administrasi*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-file-invoice w-4 
+                                        {{ request()->is('nota-administrasi*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Nota</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/delivery-note') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('delivery-note*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-truck w-4 
+                                        {{ request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Surat Jalan</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <button onclick="toggleDropdown('penawaranHargaDropdown')"
+                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <div class="flex items-center">
+                                <i
+                                    class="fas fa-file-contract w-4
+                                    {{ request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                </i>
+                                <span class="ml-3 text-sm font-medium">Penawaran Harga</span>
+                            </div>
+
+                            <i id="penawaranHargaDropdownIcon"
+                                class="fas fa-chevron-down text-xs transition-transform duration-200
+                                {{ request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                        </button>
+
+                        <ul id="penawaranHargaDropdown"
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('project-quotation*') ? '' : 'hidden' }}">
+                            <li>
+                                <a href="{{ url('/project-quotation') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-clipboard-list w-4
+                                        {{ request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Penawaran</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{{ url('/rab') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-calculator w-4
+                                {{ request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">RAB</span>
+                        </a>
+                    </li>
+                </ul>
+                @else
+                {{-- Super Admin: Full Administration menu --}}
                 <ul id="administrasiDropdown"
                     class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('rab*') ? '' : 'hidden' }}">
                     <li>
@@ -613,10 +862,12 @@
                         </a>
                     </li>
                 </ul>
+                @endif
             </li>
+            @endif
 
-            {{-- Manajemen User (Super Admin only) --}}
-            @if (auth()->user()?->isSuperAdmin())
+            {{-- User Management (Super Admin + Admin) --}}
+            @if ($isSuperAdmin || $isAdmin)
                 <li>
                     <a href="{{ route('user-management.index') }}"
                         class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
@@ -631,6 +882,7 @@
             @endif
 
             {{-- Notification & Reminders Dropdown --}}
+            @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
             <li>
                 <button onclick="toggleDropdown('notificationDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
@@ -673,6 +925,7 @@
                     </li>
                 </ul>
             </li>
+            @endif
 
         </ul>
     </nav>

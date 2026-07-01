@@ -23,8 +23,9 @@ class PaymentProofController extends Controller
             ['value' => 'finance', 'label' => 'Keuangan'],
         ];
 
+        $isAdmin = auth()->check() && auth()->user()->isAdmin();
         $invoiceTypeOptions = [
-            ['value' => 'proyek', 'label' => 'Invoice Proyek'],
+            ['value' => 'proyek', 'label' => $isAdmin ? 'Invoice' : 'Invoice Proyek'],
             ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
             ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
         ];

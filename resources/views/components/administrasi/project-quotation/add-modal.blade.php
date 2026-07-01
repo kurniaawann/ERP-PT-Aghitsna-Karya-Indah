@@ -1,5 +1,5 @@
 {{-- Modal Tambah Penawaran Proyek --}}
-<x-modal id="addModal" title="Tambah Penawaran Proyek" action="{{ route('project-quotation.store') }}" method="POST"
+<x-modal id="addModal" title="{{ auth()->user()->isAdmin() ? 'Tambah Penawaran' : 'Tambah Penawaran Proyek' }}" action="{{ route('project-quotation.store') }}" method="POST"
     buttonText="Simpan" formId="addQuotationForm" onsubmit="return prepareAddSubmit()">
 
     {{-- Hidden JSON input --}}
