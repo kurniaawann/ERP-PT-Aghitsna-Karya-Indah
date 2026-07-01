@@ -10,14 +10,14 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ItemStockOutController extends Controller
 {
-    public function index(Request $request)
+    private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
         $search = $request->input('search');
         $month = $request->input('month');
         $year = $request->input('year');
 
-        $stockOuts = ItemStockOut::query()
-            ->with(['item', 'salesRecap'])
+        return ItemStockOut::query()
+            ->with(['item', 'salesRecap', 'returns'])
             ->when($search, function ($query, $search) {
                 $query->where('id_stock_out', 'like', "%{$search}%")
                     ->orWhere('id_item', 'like', "%{$search}%")
@@ -32,36 +32,19 @@ class ItemStockOutController extends Controller
                 $query->whereYear('tanggal', $year);
             })
             ->orderBy('tanggal', 'desc')
-            ->orderBy('id_stock_out', 'desc')
-            ->paginate(15);
+            ->orderBy('id_stock_out', 'desc');
+    }
+
+    public function index(Request $request)
+    {
+        $stockOuts = $this->baseQuery($request)->paginate(15);
 
         return view('pages.inventory.stock-out', compact('stockOuts'));
     }
 
     public function exportPdf(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-
-        $stockOuts = ItemStockOut::query()
-            ->with(['item', 'salesRecap'])
-            ->when($search, function ($query, $search) {
-                $query->where('id_stock_out', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
-            })
-            ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
-            })
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('id_stock_out', 'desc')
-            ->get();
+        $stockOuts = $this->baseQuery($request)->get();
 
         $pdf = Pdf::loadView('exports.inventory.stock-out-pdf', compact('stockOuts'));
         return $pdf->download('barang-keluar-' . date('Y-m-d-His') . '.pdf');

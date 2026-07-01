@@ -33,7 +33,7 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
     public function collection()
     {
         $stockOuts = ItemStockOut::query()
-            ->with('item')
+            ->with(['item', 'returns'])
             ->when($this->search, function ($query, $search) {
                 $query->where('id_stock_out', 'like', "%{$search}%")
                     ->orWhere('id_item', 'like', "%{$search}%")
