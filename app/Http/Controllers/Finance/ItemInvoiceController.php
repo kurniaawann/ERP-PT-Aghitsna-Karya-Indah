@@ -17,31 +17,27 @@ use App\Services\StockService;
 
 class ItemInvoiceController extends Controller
 {
+    private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        return InvoiceBarang::query()->with('salesRecap')
+            ->when($request->filled('search'), function ($builder) use ($request) {
+                $search = $request->search;
+                $builder->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('recipient', 'like', "%{$search}%")
+                        ->orWhere('regarding', 'like', "%{$search}%")
+                        ->orWhere('project_description', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('month'), fn($builder) => $builder->whereMonth('invoice_date', $request->month))
+            ->when($request->filled('year'), fn($builder) => $builder->whereYear('invoice_date', $request->year))
+            ->orderByDesc('invoice_date');
+    }
+
     public function index(Request $request)
     {
-        $query = InvoiceBarang::query()->with('salesRecap');
-
-        $query->when($request->filled('search'), function ($builder) use ($request) {
-            $search = $request->search;
-
-            $builder->where(function ($searchQuery) use ($search) {
-                $searchQuery->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhere('recipient', 'like', "%{$search}%")
-                    ->orWhere('regarding', 'like', "%{$search}%")
-                    ->orWhere('project_description', 'like', "%{$search}%");
-            });
-        });
-
-        $query->when($request->filled('month'), function ($builder) use ($request) {
-            $builder->whereMonth('invoice_date', $request->month);
-        });
-
-        $query->when($request->filled('year'), function ($builder) use ($request) {
-            $builder->whereYear('invoice_date', $request->year);
-        });
-
-        $invoices = $query->orderByDesc('invoice_date')->paginate(10)->appends($request->all());
-        $summaryInvoices = (clone $query)->get();
+        $invoices = $this->baseQuery($request)->paginate(10)->appends($request->all());
+        $summaryInvoices = (clone $this->baseQuery($request))->get();
         $totals = $this->buildTotals($summaryInvoices);
         $items = Items::query()->orderBy('name_item')->get();
 
@@ -50,22 +46,8 @@ class ItemInvoiceController extends Controller
 
     public function getNextInvoiceNumber()
     {
-        $year = date('y');
-
-        $lastInvoice = InvoiceBarang::where('invoice_number', 'like', "%/BRG/{$year}")
-            ->orderBy('invoice_number', 'desc')
-            ->first();
-
-        if ($lastInvoice) {
-            preg_match('/^(\d+)\//', $lastInvoice->invoice_number, $matches);
-            $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
         return response()->json([
-            'invoice_number' => "{$nextNumber}/{$nextNumber}/BRG/{$year}",
+            'invoice_number' => $this->generateInvoiceNumber(),
         ]);
     }
 
@@ -99,7 +81,7 @@ class ItemInvoiceController extends Controller
                 'id_sales_recap' => $salesRecapId,
                 'date' => $request->invoice_date,
                 'name_proyek' => $request->project_description,
-                'items' => json_encode($items),
+                'items' => $items,
                 'total_capital' => $totals['total_capital'],
                 'total_selling' => $totals['total_selling'],
                 'total_profit' => $totals['total_profit'],
@@ -177,7 +159,7 @@ class ItemInvoiceController extends Controller
                 $salesRecap->update([
                     'date' => $request->invoice_date,
                     'name_proyek' => $request->project_description,
-                    'items' => json_encode($items),
+                    'items' => $items,
                     'total_capital' => $totals['total_capital'],
                     'total_selling' => $totals['total_selling'],
                     'total_profit' => $totals['total_profit'],
@@ -221,11 +203,17 @@ class ItemInvoiceController extends Controller
 
             foreach ($invoices as $invoice) {
                 $salesRecap = $invoice->salesRecap;
-                $items = $salesRecap
-                    ? (is_string($salesRecap->items) ? json_decode($salesRecap->items, true) : $salesRecap->items)
-                    : (is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items);
 
-                $this->restoreStockFromItems($items ?? []);
+                if ($salesRecap && $salesRecap->isLunas()) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Invoice "' . $invoice->invoice_number . '" sudah Lunas dan tidak dapat dihapus!');
+                }
+
+                $items = $salesRecap
+                    ? ($salesRecap->items ?? [])
+                    : ($invoice->items ?? []);
+
+                $this->restoreStockFromItems($items);
 
                 if ($salesRecap) {
                     $salesRecap->delete();
@@ -266,28 +254,7 @@ class ItemInvoiceController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $query = InvoiceBarang::query()->with('salesRecap');
-
-        $query->when($request->filled('search'), function ($builder) use ($request) {
-            $search = $request->search;
-
-            $builder->where(function ($searchQuery) use ($search) {
-                $searchQuery->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhere('recipient', 'like', "%{$search}%")
-                    ->orWhere('regarding', 'like', "%{$search}%")
-                    ->orWhere('project_description', 'like', "%{$search}%");
-            });
-        });
-
-        $query->when($request->filled('month'), function ($builder) use ($request) {
-            $builder->whereMonth('invoice_date', $request->month);
-        });
-
-        $query->when($request->filled('year'), function ($builder) use ($request) {
-            $builder->whereYear('invoice_date', $request->year);
-        });
-
-        $invoices = $query->orderByDesc('invoice_date')->get();
+        $invoices = $this->baseQuery($request)->get();
 
         $pdf = Pdf::loadView('exports.finance.item-invoice-index-pdf', [
             'invoices' => $invoices,
@@ -298,28 +265,7 @@ class ItemInvoiceController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $query = InvoiceBarang::query()->with('salesRecap');
-
-        $query->when($request->filled('search'), function ($builder) use ($request) {
-            $search = $request->search;
-
-            $builder->where(function ($searchQuery) use ($search) {
-                $searchQuery->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhere('recipient', 'like', "%{$search}%")
-                    ->orWhere('regarding', 'like', "%{$search}%")
-                    ->orWhere('project_description', 'like', "%{$search}%");
-            });
-        });
-
-        $query->when($request->filled('month'), function ($builder) use ($request) {
-            $builder->whereMonth('invoice_date', $request->month);
-        });
-
-        $query->when($request->filled('year'), function ($builder) use ($request) {
-            $builder->whereYear('invoice_date', $request->year);
-        });
-
-        $invoices = $query->orderByDesc('invoice_date')->get();
+        $invoices = $this->baseQuery($request)->get();
 
         return Excel::download(
             new ItemInvoiceIndexExport($invoices, $request->month, $request->year),
@@ -465,7 +411,6 @@ class ItemInvoiceController extends Controller
             'total_profit' => $totalSelling - $totalCapital,
         ];
     }
-
 
     private function generateSalesRecapId(): string
     {
