@@ -58,7 +58,7 @@ class ItemInvoiceController extends Controller
             'recipient' => ['required', 'string', 'max:255'],
             'regarding' => ['nullable', 'string', 'max:255'],
             'project_description' => ['required', 'string', 'max:255'],
-            'items' => ['required', 'array', 'min:1'],
+            'items' => ['required'],
         ]);
 
         $rawItems = $this->normalizeInvoiceItems($request->input('items'));
