@@ -18,25 +18,18 @@ class ItemController extends Controller
 
     public function index(Request $request)
     {
-        // Ambil keyword pencarian dari request (untuk filter nama atau ID item)
         $search = $request->input('search');
 
-        // Mulai query untuk mengambil data items
         $items = Items::query()
-            // Filter berdasarkan pencarian jika parameter $search ada
             ->when($search, function ($query, $search) {
-                // when() menjalankan closure hanya jika $search tidak null/empty
-                // Cari berdasarkan nama item dengan LIKE (partial match)
-                $query->where('name_item', 'like', "%{$search}%")
-                    // ATAU cari berdasarkan ID item dengan LIKE (partial match)
-                    ->orWhere('id_item', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('name_item', 'like', "%{$search}%")
+                      ->orWhere('id_item', 'like', "%{$search}%");
+                });
             })
-            // Urutkan berdasarkan id_item descending (ID terbaru di atas)
             ->orderBy('id_item', 'desc')
-            // Pagination 10 data per halaman
             ->paginate(15);
 
-        // Return view dengan data items (barang inventory + pagination)
         return view('pages.inventory.item', compact('items'));
     }
 
@@ -69,36 +62,20 @@ class ItemController extends Controller
 
     public function destroySelected(Request $request)
     {
-        // Ambil array id_item dari input dengan nama 'selected_items'
-        // Default empty array jika input tidak ada (untuk handle jika user tidak centang checkbox)
         return $this->destroySelectedBy($request, Items::class, 'selected_items', 'id_item');
     }
 
     public function exportPdf()
     {
-        // Ambil semua data items dari database tanpa pagination
-        // orderBy('id_item', 'asc') mengurutkan berdasarkan id_item ascending (ITM-0001, ITM-0002, dst)
-        // get() mengambil semua record (bukan paginate, karena untuk export)
         $items = Items::orderBy('id_item', 'asc')->get();
 
-        // Generate PDF dari view 'exports.item-pdf' dengan data items
-        // Pdf::loadView() akan render blade template menjadi PDF
-        // compact('items') mengirim variable $items ke view
         $pdf = Pdf::loadView('exports.inventory.item-pdf', compact('items'));
 
-        // Download PDF dengan nama file dinamis: stock-hollow-YYYY-MM-DD.pdf
-        // date('Y-m-d') menghasilkan format tanggal: 2025-01-01
-        // download() akan trigger browser download file (bukan display inline)
         return $pdf->download('stock-hollow-' . date('Y-m-d') . '.pdf');
     }
 
     public function exportExcel()
     {
-        // Download file Excel menggunakan ItemsExport class
-        // new ItemsExport membuat instance dari class export (implements FromCollection)
-        // Logic export ada di app/Exports/Inventory/ItemsExport.php (query, format, dll)
-        // Excel::download() akan generate file .xlsx dan trigger browser download
-        // Nama file: stock-hollow-YYYY-MM-DD.xlsx (dengan timestamp)
         return Excel::download(new ItemsExport, 'stock-hollow-' . date('Y-m-d') . '.xlsx');
     }
 }

@@ -124,11 +124,13 @@ class ItemStockInController extends Controller
         return ItemStockIn::query()
             ->with('item')
             ->when($search, function ($query, $search) {
-                $query->where('id_stock_in', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
+                $query->where(function ($q) use ($search) {
+                    $q->where('id_stock_in', 'like', "%{$search}%")
+                        ->orWhere('id_item', 'like', "%{$search}%")
+                        ->orWhereHas('item', function ($sub) use ($search) {
+                            $sub->where('name_item', 'like', "%{$search}%");
+                        });
+                });
             })
             ->when($month, function ($query, $month) {
                 $query->whereMonth('tanggal', $month);
@@ -293,12 +295,12 @@ class ItemStockInController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-
         return Excel::download(
-            new \App\Exports\Inventory\StockInExport($search, $month, $year),
+            new \App\Exports\Inventory\StockInExport(
+                $request->input('search'),
+                $request->input('month'),
+                $request->input('year')
+            ),
             'barang-masuk-' . date('Y-m-d-His') . '.xlsx'
         );
     }

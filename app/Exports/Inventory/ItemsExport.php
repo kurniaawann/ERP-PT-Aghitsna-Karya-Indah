@@ -4,7 +4,7 @@ namespace App\Exports\Inventory;
 
 use App\Models\Inventory\Items;
 use Maatwebsite\Excel\Concerns\{
-    FromCollection,
+    FromQuery,
     WithHeadings,
     WithMapping,
     WithStyles,
@@ -14,11 +14,11 @@ use Maatwebsite\Excel\Concerns\{
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill};
 
-class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
+class ItemsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
 {
-    public function collection()
+    public function query()
     {
-        return Items::orderBy('id_item', 'asc')->get();
+        return Items::orderBy('id_item', 'asc');
     }
 
     public function headings(): array

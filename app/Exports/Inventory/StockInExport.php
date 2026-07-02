@@ -3,7 +3,7 @@
 namespace App\Exports\Inventory;
 
 use App\Models\Inventory\ItemStockIn;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -16,7 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StockInExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths, WithEvents
+class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths, WithEvents
 {
     protected $search;
     protected $month;
@@ -29,18 +29,45 @@ class StockInExport implements FromCollection, WithHeadings, WithMapping, WithSt
         $this->search = $search;
         $this->month = $month;
         $this->year = $year;
+
+        $this->calculateTotals();
     }
 
-    public function collection()
+    private function calculateTotals(): void
     {
-        $stockIns = ItemStockIn::query()
+        $query = ItemStockIn::query()
+            ->when($this->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('id_stock_in', 'like', "%{$search}%")
+                        ->orWhere('id_item', 'like', "%{$search}%")
+                        ->orWhereHas('item', function ($sub) use ($search) {
+                            $sub->where('name_item', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($this->month, function ($query, $month) {
+                $query->whereMonth('tanggal', $month);
+            })
+            ->when($this->year, function ($query, $year) {
+                $query->whereYear('tanggal', $year);
+            });
+
+        $this->totalQuantity = (clone $query)->sum('quantity');
+        $this->totalOverall = (clone $query)->selectRaw('COALESCE(SUM(quantity * capital_price), 0) as total')->value('total') ?? 0;
+    }
+
+    public function query()
+    {
+        return ItemStockIn::query()
             ->with('item')
             ->when($this->search, function ($query, $search) {
-                $query->where('id_stock_in', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
+                $query->where(function ($q) use ($search) {
+                    $q->where('id_stock_in', 'like', "%{$search}%")
+                        ->orWhere('id_item', 'like', "%{$search}%")
+                        ->orWhereHas('item', function ($sub) use ($search) {
+                            $sub->where('name_item', 'like', "%{$search}%");
+                        });
+                });
             })
             ->when($this->month, function ($query, $month) {
                 $query->whereMonth('tanggal', $month);
@@ -49,13 +76,7 @@ class StockInExport implements FromCollection, WithHeadings, WithMapping, WithSt
                 $query->whereYear('tanggal', $year);
             })
             ->orderBy('tanggal', 'desc')
-            ->orderBy('id_stock_in', 'desc')
-            ->get();
-
-        $this->totalQuantity = $stockIns->sum('quantity');
-        $this->totalOverall = $stockIns->sum('total_capital');
-
-        return $stockIns;
+            ->orderBy('id_stock_in', 'desc');
     }
 
     public function headings(): array

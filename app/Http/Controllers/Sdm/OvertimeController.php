@@ -99,15 +99,15 @@ class OvertimeController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            \Log::info('Overtime - Updated existing attendance', [
-                'employee_id' => $request->employee_id,
-                'date' => $request->attendance_date,
-                'overtime_hours' => $request->overtime_hours,
-                'overtime_rate' => $request->overtime_rate,
-                'overtime_total' => $overtimeTotal,
-                'old_status' => $existingAttendance->getOriginal('status'),
-                'record_id' => $existingAttendance->id,
-            ]);
+            // \Log::info('Overtime - Updated existing attendance', [
+            //     'employee_id' => $request->employee_id,
+            //     'date' => $request->attendance_date,
+            //     'overtime_hours' => $request->overtime_hours,
+            //     'overtime_rate' => $request->overtime_rate,
+            //     'overtime_total' => $overtimeTotal,
+            //     'old_status' => $existingAttendance->getOriginal('status'),
+            //     'record_id' => $existingAttendance->id,
+            // ]);
         } else {
             // Jika belum ada record, CREATE record baru dengan status "lembur"
             $created = Attendance::create([
@@ -120,14 +120,14 @@ class OvertimeController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            \Log::info('Overtime - Created new attendance', [
-                'employee_id' => $request->employee_id,
-                'date' => $request->attendance_date,
-                'overtime_hours' => $request->overtime_hours,
-                'overtime_rate' => $request->overtime_rate,
-                'overtime_total' => $overtimeTotal,
-                'record_id' => $created->id,
-            ]);
+            // \Log::info('Overtime - Created new attendance', [
+            //     'employee_id' => $request->employee_id,
+            //     'date' => $request->attendance_date,
+            //     'overtime_hours' => $request->overtime_hours,
+            //     'overtime_rate' => $request->overtime_rate,
+            //     'overtime_total' => $overtimeTotal,
+            //     'record_id' => $created->id,
+            // ]);
         }
 
         // Redirect ke halaman index overtime dengan flash message sukses

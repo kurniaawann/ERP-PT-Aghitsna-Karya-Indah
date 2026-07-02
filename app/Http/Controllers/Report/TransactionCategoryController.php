@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Report;
 use App\Http\Controllers\Controller;
 use App\Models\Report\TransactionCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TransactionCategoryController extends Controller
 {
@@ -95,9 +96,9 @@ class TransactionCategoryController extends Controller
                 ->with('success', 'Kategori transaksi berhasil ditambahkan!');
 
         } catch (\Exception $e) {
-            // Jika terjadi error saat insert (database error, dll)
-            // Redirect kembali dengan flash message error berisi detail exception dan input sebelumnya
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            Log::error('Transaction Category store failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan kategori. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -169,9 +170,9 @@ class TransactionCategoryController extends Controller
                 ->with('success', 'Kategori transaksi berhasil diupdate!');
 
         } catch (\Exception $e) {
-            // Jika terjadi error (database error, dll)
-            // Redirect kembali dengan flash message error berisi detail exception
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Transaction Category update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate kategori. Silakan coba lagi.');
         }
     }
 
@@ -199,9 +200,9 @@ class TransactionCategoryController extends Controller
                 ->with('success', "Kategori berhasil {$status}!");
 
         } catch (\Exception $e) {
-            // Jika terjadi error saat save
-            // Redirect kembali dengan flash message error berisi detail exception
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Transaction Category toggleStatus failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat mengubah status kategori. Silakan coba lagi.');
         }
     }
 
@@ -249,9 +250,9 @@ class TransactionCategoryController extends Controller
                 ->with('success', "Berhasil menghapus {$deletedCount} kategori.");
 
         } catch (\Exception $e) {
-            // Jika terjadi error (database error, dll)
-            // Redirect kembali dengan flash message error berisi detail exception
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Transaction Category destroySelected failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menghapus kategori. Silakan coba lagi.');
         }
     }
 }

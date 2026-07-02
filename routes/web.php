@@ -72,7 +72,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 // Root route — entry point aplikasi
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect(auth()->user()->getHomeRoute());
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        return redirect($user->getHomeRoute());
     }
     return redirect('/login');
 });
@@ -83,24 +85,27 @@ Route::middleware('auth')->group(function () {
 
     // ─── Routes tanpa middleware tambahan (Super Admin + Legacy roles only) ───
 
-    //Route All Item
-    Route::get('/item', [ItemController::class, 'index'])->name('item.index');
-    Route::post('/item', [ItemController::class, 'store'])->name('item.store');
-    Route::put('/item/{id_item}', [ItemController::class, 'update'])->name('item.update');
-    Route::delete('/items', [ItemController::class, 'destroySelected'])->name('items.destroySelected');
+    // ─── Inventory: Items (Super Admin only) ───
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/item', [ItemController::class, 'index'])->name('item.index');
+        Route::post('/item', [ItemController::class, 'store'])->name('item.store');
+        Route::put('/item/{id_item}', [ItemController::class, 'update'])->name('item.update');
+        Route::delete('/items', [ItemController::class, 'destroySelected'])->name('items.destroySelected');
 
-    //Route Item Export
-    Route::get('/item/export/pdf', [ItemController::class, 'exportPdf'])->name('item.export.pdf');
-    Route::get('/item/export/excel', [ItemController::class, 'exportExcel'])->name('item.export.excel');
+        Route::get('/item/export/pdf', [ItemController::class, 'exportPdf'])->name('item.export.pdf');
+        Route::get('/item/export/excel', [ItemController::class, 'exportExcel'])->name('item.export.excel');
+    });
 
-    // Route Stock In (Barang Masuk)
-    Route::get('/stock-in', [ItemStockInController::class, 'index'])->name('stock-in.index');
-    Route::post('/stock-in', [ItemStockInController::class, 'store'])->name('stock-in.store');
-    Route::put('/stock-in/{id_stock_in}', [ItemStockInController::class, 'update'])->name('stock-in.update');
-    Route::delete('/stock-in/{id_stock_in}', [ItemStockInController::class, 'destroy'])->name('stock-in.destroy');
-    Route::delete('/stock-ins', [ItemStockInController::class, 'destroySelected'])->name('stock-ins.destroySelected');
-    Route::get('/stock-in/export/pdf', [ItemStockInController::class, 'exportPdf'])->name('stock-in.export.pdf');
-    Route::get('/stock-in/export/excel', [ItemStockInController::class, 'exportExcel'])->name('stock-in.export.excel');
+    // ─── Inventory: Stock In (Super Admin only) ───
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/stock-in', [ItemStockInController::class, 'index'])->name('stock-in.index');
+        Route::post('/stock-in', [ItemStockInController::class, 'store'])->name('stock-in.store');
+        Route::put('/stock-in/{id_stock_in}', [ItemStockInController::class, 'update'])->name('stock-in.update');
+        Route::delete('/stock-in/{id_stock_in}', [ItemStockInController::class, 'destroy'])->name('stock-in.destroy');
+        Route::delete('/stock-ins', [ItemStockInController::class, 'destroySelected'])->name('stock-ins.destroySelected');
+        Route::get('/stock-in/export/pdf', [ItemStockInController::class, 'exportPdf'])->name('stock-in.export.pdf');
+        Route::get('/stock-in/export/excel', [ItemStockInController::class, 'exportExcel'])->name('stock-in.export.excel');
+    });
 
     // Route Stock Out (Barang Keluar) - Read Only
     Route::get('/stock-out', [ItemStockOutController::class, 'index'])->name('stock-out.index');

@@ -8,29 +8,20 @@ use Illuminate\Support\Str;
 
 class ItemsObserver
 {
-    /**
-     * Handle the Items "created" event.
-     *
-     * Auto-create opening stock (stok awal) as an ItemStockIn record so that
-     * StockReportService (which relies on item_stock_ins) can calculate beginning stock.
-     */
+    const OPENING_STOCK_DATE = '1970-01-01';
+    const OPENING_STOCK_DESCRIPTION = 'Opening stock (auto)';
+
     public function created(Items $item): void
     {
-        // Prevent duplicate opening stock inserts (in case of re-seeding / manual creation).
-        // We tag opening stock using a fixed keterangan and tanggal.
-        $openingTanggal = '1970-01-01';
-        $openingKeterangan = 'Opening stock (auto)';
-
         $alreadyExists = ItemStockIn::where('id_item', $item->id_item)
-            ->whereDate('tanggal', $openingTanggal)
-            ->where('keterangan', $openingKeterangan)
+            ->whereDate('tanggal', self::OPENING_STOCK_DATE)
+            ->where('keterangan', self::OPENING_STOCK_DESCRIPTION)
             ->exists();
 
         if ($alreadyExists) {
             return;
         }
 
-        // Only insert opening stock if quantity > 0 (avoid clutter).
         $qty = (int) ($item->quantity ?? 0);
         if ($qty <= 0) {
             return;
@@ -43,8 +34,8 @@ class ItemsObserver
             'id_item' => $item->id_item,
             'quantity' => $qty,
             'capital_price' => (int) ($item->capital_price ?? 0),
-            'keterangan' => $openingKeterangan,
-            'tanggal' => $openingTanggal,
+            'keterangan' => self::OPENING_STOCK_DESCRIPTION,
+            'tanggal' => self::OPENING_STOCK_DATE,
         ]);
     }
 }
