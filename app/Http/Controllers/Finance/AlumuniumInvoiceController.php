@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\InputNormalizer;
 use App\Traits\HasBulkActions;
+use Illuminate\Support\Facades\Log;
 
 
 class AlumuniumInvoiceController extends Controller
@@ -212,10 +213,11 @@ class AlumuniumInvoiceController extends Controller
             return redirect()->route('alumunium-invoice.index')
                 ->with('success', 'Invoice berhasil diupdate!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            Log::error('Alumunium Invoice update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate invoice. Silakan coba lagi.')->withInput();
         }
     }
-
 
 
     public function edit(string $invoiceNumber)
@@ -227,7 +229,6 @@ class AlumuniumInvoiceController extends Controller
             'invoice' => $aluminium_invoice,
             'items' => json_decode($aluminium_invoice->items) // Decode JSON ke array
         ]);
-
     }
 
 
@@ -321,10 +322,6 @@ class AlumuniumInvoiceController extends Controller
             return $item;
         }, $items);
     }
-
-    /**
-     * Ubah input harga berformat lokal seperti 1.000 atau Rp 1.000 menjadi angka.
-     */
 
 }
 

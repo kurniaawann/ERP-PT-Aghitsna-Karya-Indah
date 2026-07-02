@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Services\InputNormalizer;
 use App\Traits\HasBulkActions;
+use Illuminate\Support\Facades\Log;
 
 class RecapExpenseController extends Controller
 {
@@ -151,8 +152,9 @@ class RecapExpenseController extends Controller
                 ->with('success', 'Data rekap pengeluaran berhasil ditambahkan!');
 
         } catch (\Exception $e) {
-            // Jika terjadi error saat menyimpan, redirect kembali dengan pesan error dan input sebelumnya
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            Log::error('Recap Expense store failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -184,8 +186,9 @@ class RecapExpenseController extends Controller
                 ->with('success', 'Data rekap pengeluaran berhasil diupdate!');
 
         } catch (\Exception $e) {
-            // Jika terjadi error saat update, redirect kembali dengan pesan error
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Recap Expense update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate data. Silakan coba lagi.');
         }
     }
 

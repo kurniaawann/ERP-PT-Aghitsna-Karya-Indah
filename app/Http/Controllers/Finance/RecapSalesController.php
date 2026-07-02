@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\InputNormalizer;
 use App\Services\StockService;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Controller untuk mengelola rekap penjualan/sales recap.
@@ -37,6 +38,10 @@ use App\Services\StockService;
  */
 class RecapSalesController extends Controller
 {
+    public function __construct(
+        private StockService $stockService
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -156,7 +161,9 @@ class RecapSalesController extends Controller
                 ->with('success', 'Data rekap penjualan berhasil ditambahkan!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            Log::error('Recap Sales store failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -260,7 +267,9 @@ class RecapSalesController extends Controller
                 ->with('success', 'Data rekap penjualan berhasil diupdate!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            Log::error('Recap Sales update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate data. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -280,7 +289,9 @@ class RecapSalesController extends Controller
             return redirect()->route('recap-sales.index')
                 ->with('success', 'Status berhasil diupdate menjadi ' . $request->status . '!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Recap Sales updateStatus failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate status. Silakan coba lagi.');
         }
     }
 
@@ -317,7 +328,7 @@ class RecapSalesController extends Controller
 
 
                 // Restore stock using StockService to keep logic consistent
-                (new StockService())->increaseStockFromItems($items ?? []);
+                $this->stockService->increaseStockFromItems($items ?? []);
 
                 // Hapus sales report dari database (ItemStockOut otomatis dihapus via Observer)
                 $salesRecap->delete();
@@ -331,9 +342,10 @@ class RecapSalesController extends Controller
                 ->with('success', "Berhasil menghapus {$deletedCount} data penjualan.");
 
         } catch (\Exception $e) {
-            // Rollback jika ada error
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
+            Log::error('Recap Sales destroySelected failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
         }
     }
 
@@ -505,10 +517,6 @@ class RecapSalesController extends Controller
             return $item;
         }, $items);
     }
-
-    /**
-     * Convert input harga seperti "Rp 1.000" atau "1.000" menjadi angka.
-     */
 
 }
 

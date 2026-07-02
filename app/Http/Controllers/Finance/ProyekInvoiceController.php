@@ -11,11 +11,13 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\InputNormalizer;
 use App\Traits\HasBulkActions;
+use Illuminate\Support\Facades\Log;
 
 
 class ProyekInvoiceController extends Controller
 {
     use HasBulkActions;
+
     public function getNextInvoiceNumber()
     {
         // Ambil tahun 2 digit (contoh: 25 untuk tahun 2025)
@@ -229,10 +231,11 @@ class ProyekInvoiceController extends Controller
             return redirect()->route('proyek-invoice.index')
                 ->with('success', 'Invoice proyek berhasil diupdate!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            Log::error('Proyek Invoice update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate invoice. Silakan coba lagi.')->withInput();
         }
     }
-
 
 
     public function edit(InvoiceProyek $proyek_invoice)
@@ -337,9 +340,5 @@ class ProyekInvoiceController extends Controller
             return $item;
         }, $items);
     }
-
-    /**
-     * Ubah input harga berformat lokal seperti 1.000 atau Rp 1.000 menjadi angka.
-     */
 
 }

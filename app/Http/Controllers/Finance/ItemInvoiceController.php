@@ -11,12 +11,16 @@ use App\Models\Report\SalesRecap;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\InputNormalizer;
 use App\Services\StockService;
 
 class ItemInvoiceController extends Controller
 {
+    public function __construct(
+        private StockService $stockService
+    ) {}
     private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
         return InvoiceBarang::query()->with('salesRecap')
@@ -107,8 +111,9 @@ class ItemInvoiceController extends Controller
                 ->with('success', 'Invoice item berhasil ditambahkan dan otomatis masuk ke rekap penjualan!');
         } catch (\Throwable $throwable) {
             DB::rollBack();
+            Log::error('Item Invoice store failed', ['error' => $throwable->getMessage(), 'trace' => $throwable->getTraceAsString()]);
 
-            return back()->with('error', 'Terjadi kesalahan: ' . $throwable->getMessage())->withInput();
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan invoice. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -184,8 +189,9 @@ class ItemInvoiceController extends Controller
                 ->with('success', 'Invoice item berhasil diupdate!');
         } catch (\Throwable $throwable) {
             DB::rollBack();
+            Log::error('Item Invoice update failed', ['error' => $throwable->getMessage(), 'trace' => $throwable->getTraceAsString()]);
 
-            return back()->with('error', 'Terjadi kesalahan: ' . $throwable->getMessage())->withInput();
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate invoice. Silakan coba lagi.')->withInput();
         }
     }
 
@@ -228,8 +234,9 @@ class ItemInvoiceController extends Controller
                 ->with('success', count($invoices) . ' invoice berhasil dihapus!');
         } catch (\Throwable $throwable) {
             DB::rollBack();
+            Log::error('Item Invoice destroySelected failed', ['error' => $throwable->getMessage(), 'trace' => $throwable->getTraceAsString()]);
 
-            return back()->with('error', 'Terjadi kesalahan saat menghapus data: ' . $throwable->getMessage());
+            return back()->with('error', 'Terjadi kesalahan saat menghapus invoice. Silakan coba lagi.');
         }
     }
 
@@ -388,7 +395,7 @@ class ItemInvoiceController extends Controller
 
     private function restoreStockFromItems(array $items): void
     {
-        (new StockService())->increaseStockFromItems($items ?? []);
+        $this->stockService->increaseStockFromItems($items ?? []);
     }
 
     private function calculateTotals(array $items): array

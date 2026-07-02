@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use App\Services\InputNormalizer;
+use Illuminate\Support\Facades\Log;
 
 class PaymentProofController extends Controller
 {
@@ -23,7 +24,7 @@ class PaymentProofController extends Controller
             ['value' => 'finance', 'label' => 'Keuangan'],
         ];
 
-        $isAdmin = auth()->check() && auth()->user()->isAdmin();
+        $isAdmin = auth()->user()?->role === 'admin';
         $invoiceTypeOptions = [
             ['value' => 'proyek', 'label' => $isAdmin ? 'Invoice' : 'Invoice Proyek'],
             ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
@@ -181,11 +182,13 @@ class PaymentProofController extends Controller
                 $this->syncPaymentStatuses($validated['invoice_type'], $validated['invoice_number'], $salesRecapId);
             });
         } catch (\Throwable $throwable) {
+            Log::error('Payment Proof store failed', ['error' => $throwable->getMessage(), 'trace' => $throwable->getTraceAsString()]);
+
             if (isset($storedFile['file_path'])) {
                 $paymentProofService->delete($storedFile['file_path']);
             }
 
-            return back()->with('error', 'Gagal menyimpan bukti pembayaran: ' . $throwable->getMessage());
+            return back()->with('error', 'Gagal menyimpan bukti pembayaran. Silakan coba lagi.');
         }
 
         return back()->with('success', 'Bukti pembayaran berhasil diupload.');
@@ -275,11 +278,13 @@ class PaymentProofController extends Controller
                 $paymentProofService->delete($oldFilePath);
             }
         } catch (\Throwable $throwable) {
+            Log::error('Payment Proof update failed', ['error' => $throwable->getMessage(), 'trace' => $throwable->getTraceAsString()]);
+
             if (isset($storedFile['file_path'])) {
                 $paymentProofService->delete($storedFile['file_path']);
             }
 
-            return back()->with('error', 'Gagal mengupdate bukti pembayaran: ' . $throwable->getMessage());
+            return back()->with('error', 'Gagal mengupdate bukti pembayaran. Silakan coba lagi.');
         }
 
         return back()->with('success', 'Bukti pembayaran berhasil diupdate.');
@@ -451,6 +456,7 @@ class PaymentProofController extends Controller
             'status' => $invoice->isFullyPaid() ? 'Lunas' : 'Belum Lunas',
         ]);
     }
+
     private function buildInvoiceOptions($invoices, string $moduleType, string $invoiceType, $proofStageMap, array &$invoiceLookup): array
     {
         $options = [];
