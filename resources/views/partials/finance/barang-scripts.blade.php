@@ -79,7 +79,6 @@
                     row.dataset.stock = stock;
 
                     if (value) {
-                        nameInput.value = name;
                         capitalInput.value = capital;
                         sellingInput.value = selling;
                         formatCurrencyInput(capitalInput);
@@ -110,7 +109,9 @@
 
             if (this.checked) {
                 selectWrapper.style.display = 'block';
-                nameInput.readOnly = true;
+                nameInput.style.display = 'none';
+                nameInput.value = '';
+                nameInput.removeAttribute('required');
                 capitalInput.readOnly = true;
                 sellingInput.readOnly = true;
             } else {
@@ -119,7 +120,8 @@
                 const hiddenInput = row.querySelector('.barang-select-hidden');
                 if (searchInput) searchInput.value = '';
                 if (hiddenInput) hiddenInput.value = '';
-                nameInput.readOnly = false;
+                nameInput.style.display = 'block';
+                nameInput.setAttribute('required', '');
                 capitalInput.readOnly = false;
                 sellingInput.readOnly = false;
             }
@@ -393,7 +395,7 @@
                         const capital = parseCurrencyInput(row.querySelector('.barang-item-capital').value);
                         const selling = parseCurrencyInput(row.querySelector('.barang-item-selling').value);
 
-                        if (itemName && qty > 0) {
+                        if (qty > 0 && (itemName || (fromStockCheck.checked && hiddenSelect && hiddenSelect.value))) {
                             const item = {
                                 name_item: itemName,
                                 quantity: qty,
@@ -481,7 +483,6 @@
                     hiddenInput.value = value || '';
 
                     if (value) {
-                        nameInput.value = name;
                         capitalInput.value = capital;
                         sellingInput.value = selling;
                         idItemHidden.value = value;
@@ -513,10 +514,13 @@
             const capitalInput = row.querySelector('.barang-item-capital-edit');
             const sellingInput = row.querySelector('.barang-item-selling-edit');
             const fromStockHidden = row.querySelector('.barang-from-stock-hidden');
+            const idItemHidden = row.querySelector('.barang-id-item-hidden');
 
             if (this.checked) {
                 selectWrapper.style.display = 'block';
-                nameInput.readOnly = true;
+                nameInput.style.display = 'none';
+                nameInput.value = '';
+                nameInput.removeAttribute('required');
                 capitalInput.readOnly = true;
                 sellingInput.readOnly = true;
                 fromStockHidden.value = 'true';
@@ -526,11 +530,13 @@
                 const hiddenInput = row.querySelector('.barang-select-hidden-edit');
                 if (searchInput) searchInput.value = '';
                 if (hiddenInput) hiddenInput.value = '';
-                nameInput.readOnly = false;
+                nameInput.style.display = 'block';
+                nameInput.value = '';
+                nameInput.setAttribute('required', '');
                 capitalInput.readOnly = false;
                 sellingInput.readOnly = false;
                 fromStockHidden.value = 'false';
-                row.querySelector('.barang-id-item-hidden').value = '';
+                if (idItemHidden) idItemHidden.value = '';
             }
         }
 
