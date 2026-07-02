@@ -28,7 +28,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan / Proyek <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Proyek <span class="text-error">*</span></label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2" required>{{ $invoice->project_description }}</textarea>
     </div>
 
