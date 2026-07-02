@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\StoreItemRequest;
 use App\Models\Inventory\Items;
 use App\Services\InputNormalizer;
 use App\Exports\Inventory\ItemsExport;
@@ -38,42 +39,29 @@ class ItemController extends Controller
         // Return view dengan data items (barang inventory + pagination)
         return view('pages.inventory.item', compact('items'));
     }
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name_item' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'capital_price' => 'required|string',
-            'selling_price' => 'required|string',
-        ]);
 
+    public function store(StoreItemRequest $request)
+    {
         Items::create([
             'id_item' => Items::generateNextId(),
-            'name_item' => $validated['name_item'],
-            'quantity' => (int) $validated['quantity'],
-            'capital_price' => InputNormalizer::normalizeCurrency($validated['capital_price']),
-            'selling_price' => InputNormalizer::normalizeCurrency($validated['selling_price']),
+            'name_item' => $request->name_item,
+            'quantity' => $request->quantity,
+            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
         ]);
 
         return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
     }
 
-    public function update(Request $request, string $id_item)
+    public function update(StoreItemRequest $request, string $id_item)
     {
-        $validated = $request->validate([
-            'name_item' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'capital_price' => 'required|string',
-            'selling_price' => 'required|string',
-        ]);
-
         $item = Items::where('id_item', $id_item)->firstOrFail();
 
         $item->update([
-            'name_item' => $validated['name_item'],
-            'quantity' => (int) $validated['quantity'],
-            'capital_price' => InputNormalizer::normalizeCurrency($validated['capital_price']),
-            'selling_price' => InputNormalizer::normalizeCurrency($validated['selling_price']),
+            'name_item' => $request->name_item,
+            'quantity' => $request->quantity,
+            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
+            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
         ]);
 
         return redirect()->back()->with('success', 'Data berhasil diupdate!');

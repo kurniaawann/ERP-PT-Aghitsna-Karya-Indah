@@ -11,12 +11,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class StockReportController extends Controller
 {
-    protected StockReportService $stockReportService;
-
-    public function __construct(StockReportService $stockReportService)
-    {
-        $this->stockReportService = $stockReportService;
-    }
+    public function __construct(
+        private StockReportService $stockReportService
+    ) {}
 
     /**
      * Display stock report

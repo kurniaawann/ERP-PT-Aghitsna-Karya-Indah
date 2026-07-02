@@ -7,6 +7,7 @@ use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\InputNormalizer;
@@ -14,6 +15,10 @@ use App\Services\StockService;
 
 class ItemStockInController extends Controller
 {
+    public function __construct(
+        private StockService $stockService
+    ) {}
+
     private function generateIdStockIn()
     {
         $lastRecord = ItemStockIn::orderBy('id_stock_in', 'desc')->first();
@@ -105,7 +110,8 @@ class ItemStockInController extends Controller
             return redirect()->back()->with('success', 'Data barang masuk berhasil ditambahkan!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Stock In store failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
         }
     }
 
@@ -245,7 +251,8 @@ class ItemStockInController extends Controller
             return redirect()->back()->with('success', 'Data barang masuk berhasil diupdate!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Stock In update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengupdate data. Silakan coba lagi.');
         }
     }
 
@@ -253,8 +260,7 @@ class ItemStockInController extends Controller
     {
         $stockIn = ItemStockIn::findOrFail($id_stock_in);
 
-        // Delegate deletion handling to StockService (keeps weighted-average logic consistent)
-        (new StockService())->processStockInDeletion($stockIn);
+        $this->stockService->processStockInDeletion($stockIn);
 
         return redirect()->back()->with('success', 'Data barang masuk berhasil dihapus!');
     }
@@ -271,7 +277,7 @@ class ItemStockInController extends Controller
         $stockIns = ItemStockIn::whereIn('id_stock_in', $selectedIds)->get();
 
         foreach ($stockIns as $stockIn) {
-            (new StockService())->processStockInDeletion($stockIn);
+            $this->stockService->processStockInDeletion($stockIn);
         }
 
         return redirect()->back()->with('success', 'Data terpilih berhasil dihapus.');

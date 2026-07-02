@@ -9,12 +9,16 @@ use App\Models\Inventory\ItemStockIn;
 use App\Models\Inventory\ItemReturn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\StockService;
 
 class ItemReturnController extends Controller
 {
+    public function __construct(
+        private StockService $stockService
+    ) {}
     private function generateIdReturn()
     {
         $lastRecord = ItemReturn::orderBy('id_return', 'desc')->first();
@@ -174,8 +178,9 @@ class ItemReturnController extends Controller
             return redirect()->route('item-return.index')->with('success', 'Data return barang berhasil ditambahkan!');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Item Return store failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->withErrors([
-                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'error' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.'
             ])->withInput();
         }
     }
@@ -267,8 +272,9 @@ class ItemReturnController extends Controller
             return redirect()->route('item-return.index')->with('success', 'Data return barang berhasil diupdate!');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Item Return update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->withErrors([
-                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'error' => 'Terjadi kesalahan saat mengupdate data. Silakan coba lagi.'
             ])->withInput();
         }
     }
@@ -279,13 +285,14 @@ class ItemReturnController extends Controller
         try {
             $return = ItemReturn::findOrFail($id_return);
 
-            (new StockService())->processReturnDeletion($return);
+            $this->stockService->processReturnDeletion($return);
 
             DB::commit();
             return redirect()->back()->with('success', 'Data return barang berhasil dihapus!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Item Return destroy failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
         }
     }
 
@@ -302,14 +309,15 @@ class ItemReturnController extends Controller
             $returns = ItemReturn::whereIn('id_return', $ids)->get();
 
             foreach ($returns as $return) {
-                (new StockService())->processReturnDeletion($return);
+                $this->stockService->processReturnDeletion($return);
             }
 
             DB::commit();
             return redirect()->back()->with('success', 'Berhasil menghapus ' . count($returns) . ' data return barang!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            Log::error('Item Return bulkDelete failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
         }
     }
 
