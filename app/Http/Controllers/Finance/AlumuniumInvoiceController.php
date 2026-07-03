@@ -251,7 +251,7 @@ class AlumuniumInvoiceController extends Controller
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
 
         // Download PDF dengan nama invoice
-        return $pdf->download('Invoice-' . $safeFileName . '.pdf');
+        return $pdf->download('Invoice_Aluminium_' . $safeFileName . '.pdf');
     }
 
 
@@ -261,7 +261,7 @@ class AlumuniumInvoiceController extends Controller
         $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
 
         // Download Excel dengan parameter invoiceNumber dan nama file aman
-        return Excel::download(new AlumuniumInvoiceExport($invoiceNumber), 'Invoice-' . $safeFileName . '.xlsx');
+        return Excel::download(new AlumuniumInvoiceExport($invoiceNumber), 'Invoice_Aluminium_' . $safeFileName . '.xlsx');
     }
 
     /**

@@ -32,7 +32,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
     public function title(): string
     {
-        return 'Invoice ' . $this->invoice->invoice_number;
+        return 'Invoice_Proyek_' . $this->invoice->invoice_number;
     }
 
     public function columnWidths(): array

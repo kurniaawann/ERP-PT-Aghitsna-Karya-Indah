@@ -249,14 +249,14 @@ class ItemInvoiceController extends Controller
 
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
 
-        return $pdf->download('Invoice-Item-' . $safeFileName . '.pdf');
+        return $pdf->download('Invoice_Barang_' . $safeFileName . '.pdf');
     }
 
     public function printExcel(string $invoiceNumber)
     {
         $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
 
-        return Excel::download(new ItemInvoiceExport($invoiceNumber), 'Invoice-Item-' . $safeFileName . '.xlsx');
+        return Excel::download(new ItemInvoiceExport($invoiceNumber), 'Invoice_Barang_' . $safeFileName . '.xlsx');
     }
 
     public function exportPdf(Request $request)
@@ -267,7 +267,7 @@ class ItemInvoiceController extends Controller
             'invoices' => $invoices,
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('Rekap-Invoice-Item-' . date('Y-m-d-His') . '.pdf');
+        return $pdf->download('Rekap_Invoice_Barang_' . date('Y-m-d-His') . '.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -276,7 +276,7 @@ class ItemInvoiceController extends Controller
 
         return Excel::download(
             new ItemInvoiceIndexExport($invoices, $request->month, $request->year),
-            'Rekap-Invoice-Item-' . date('Y-m-d-His') . '.xlsx'
+            'Rekap_Invoice_Barang_' . date('Y-m-d-His') . '.xlsx'
         );
     }
 
@@ -284,7 +284,7 @@ class ItemInvoiceController extends Controller
     {
         $year = date('y');
 
-        $lastInvoice = InvoiceBarang::where('invoice_number', 'like', "%/BRG/{$year}")
+        $lastInvoice = InvoiceBarang::where('invoice_number', 'like', "%/PT.AKI/{$year}")
             ->orderBy('invoice_number', 'desc')
             ->first();
 
@@ -296,7 +296,7 @@ class ItemInvoiceController extends Controller
             $nextNumber = 1;
         }
 
-        return "{$nextNumber}/{$nextNumber}/BRG/{$year}";
+        return "{$nextNumber}/{$nextNumber}/PT.AKI/{$year}";
     }
 
     private function normalizeInvoiceItems($items): array

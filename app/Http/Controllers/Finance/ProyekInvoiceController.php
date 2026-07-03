@@ -269,7 +269,7 @@ class ProyekInvoiceController extends Controller
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
 
         // Download PDF dengan nama invoice
-        return $pdf->download('Invoice-Proyek-' . $safeFileName . '.pdf');
+        return $pdf->download('Invoice_Proyek_' . $safeFileName . '.pdf');
     }
 
 
@@ -279,7 +279,7 @@ class ProyekInvoiceController extends Controller
         $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
 
         // Download Excel dengan parameter invoiceNumber dan nama file aman
-        return Excel::download(new ProyekInvoiceExport($invoiceNumber), 'Invoice-Proyek-' . $safeFileName . '.xlsx');
+        return Excel::download(new ProyekInvoiceExport($invoiceNumber), 'Invoice_Proyek_' . $safeFileName . '.xlsx');
     }
 
     /**

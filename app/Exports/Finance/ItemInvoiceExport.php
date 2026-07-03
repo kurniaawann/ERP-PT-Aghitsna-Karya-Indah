@@ -29,7 +29,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
 
     public function title(): string
     {
-        return 'Invoice ' . $this->invoice->invoice_number;
+        return 'Invoice_Barang_' . $this->invoice->invoice_number;
     }
 
     public function columnWidths(): array

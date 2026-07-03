@@ -58,15 +58,22 @@ class RAB extends Model
 
     public static function generateRABNumber()
     {
-        $year = date('y');
+        $year = date('Y');
+        $romanMonth = self::arabicToRoman((int) date('n'));
         $sequence = self::getNextSequenceNumber();
-        return "{$sequence}/RAB/PT.AKI/{$year}";
+        return "{$sequence}/RAB/{$romanMonth}/{$year}";
     }
 
     public static function getNextSequenceNumber()
     {
         $latestSequence = self::max('sequence_number') ?? 0;
         return $latestSequence + 1;
+    }
+
+    private static function arabicToRoman(int $num): string
+    {
+        $map = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        return $map[$num] ?? '';
     }
 
     // ─── Instance Methods ──────────────────────────────────────────────────────

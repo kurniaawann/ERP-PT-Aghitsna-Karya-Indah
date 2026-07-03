@@ -34,7 +34,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
 
     public function title(): string
     {
-        return 'RAB ' . $this->rab->rab_number;
+        return 'RAB_' . $this->rab->rab_number;
     }
 
     public function columnWidths(): array

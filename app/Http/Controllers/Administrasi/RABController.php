@@ -159,8 +159,10 @@ class RABController extends Controller
 
         // Auto-generate RAB number
         $seqNumber = RAB::getNextSequenceNumber();
-        $year = date('y');
-        $rabNumber = "{$seqNumber}/RAB/PT.AKI/{$year}";
+        $month = (int) date('n');
+        $romanMonth = $this->arabicToRoman($month);
+        $year = date('Y');
+        $rabNumber = "{$seqNumber}/RAB/{$romanMonth}/{$year}";
 
         // Calculate grand total (main categories)
         $totalAmount = 0;
@@ -453,7 +455,7 @@ class RABController extends Controller
             'rab' => $rab,
         ])->setPaper('a4', 'portrait');
 
-        return $pdf->download("{$safeFileName}.pdf");
+        return $pdf->download("RAB_{$safeFileName}.pdf");
     }
 
     // ─── Export Excel ─────────────────────────────────────────────────────────
@@ -463,7 +465,7 @@ class RABController extends Controller
         $rab = RAB::where('rab_number', $rabNumber)->firstOrFail();
         $safeFileName = str_replace('/', '-', $rabNumber);
 
-        return Excel::download(new RABExport($rab->rab_number), "{$safeFileName}.xlsx");
+        return Excel::download(new RABExport($rab->rab_number), "RAB_{$safeFileName}.xlsx");
     }
 
     // ─── Helper: Convert Arabic to Roman ───────────────────────────────────────

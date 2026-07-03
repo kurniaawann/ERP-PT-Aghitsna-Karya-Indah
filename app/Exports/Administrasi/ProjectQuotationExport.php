@@ -31,7 +31,7 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
 
     public function title(): string
     {
-        return 'Penawaran ' . $this->quotation->quotation_number;
+        return 'Penawaran_Proyek_' . $this->quotation->quotation_number;
     }
 
     public function columnWidths(): array

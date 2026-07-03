@@ -61,27 +61,27 @@ class ProjectQuotation extends Model
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Generate next quotation number: {n}/{n}/PT.AKI/{yy}
-     * e.g. 265/300/PT.AKI/25
+     * Generate next quotation number: {n}/{n}/ALU/{yy}
+     * e.g. 265/300/ALU/25
      */
     public static function generateQuotationNumber(): string
     {
         $year = date('y');
 
-        $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
+        $last = self::where('quotation_number', 'like', "%/ALU/{$year}")
             ->orderBy('sequence_number', 'desc')
             ->first();
 
         $next = $last ? ($last->sequence_number + 1) : 1;
 
-        // Format: 265/300/PT.AKI/25 (arbitrary format, adjust as needed)
-        return "{$next}/{$next}/PT.AKI/{$year}";
+        // Format: 265/300/ALU/25 (arbitrary format, adjust as needed)
+        return "{$next}/{$next}/ALU/{$year}";
     }
 
     public static function getNextSequenceNumber(): int
     {
         $year = date('y');
-        $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
+        $last = self::where('quotation_number', 'like', "%/ALU/{$year}")
             ->orderBy('sequence_number', 'desc')
             ->first();
         return $last ? ($last->sequence_number + 1) : 1;

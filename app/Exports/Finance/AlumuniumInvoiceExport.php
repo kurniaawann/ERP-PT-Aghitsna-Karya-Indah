@@ -32,7 +32,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
     public function title(): string
     {
-        return 'Invoice ' . $this->invoice->invoice_number;
+        return 'Invoice_Aluminium_' . $this->invoice->invoice_number;
     }
 
     public function columnWidths(): array
