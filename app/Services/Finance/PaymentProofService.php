@@ -10,15 +10,31 @@ class PaymentProofService
 {
     public function store(UploadedFile $file, string $moduleType, string $invoiceType, string $invoiceNumber): array
     {
-        if (!function_exists('imagecreatetruecolor')) {
-            throw new RuntimeException('Extension GD tidak tersedia untuk resize gambar.');
-        }
-
         $relativeDirectory = $this->buildRelativeDirectory($moduleType, $invoiceType, $invoiceNumber);
         $absoluteDirectory = public_path($relativeDirectory);
 
         if (!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory, 0755, true) && !is_dir($absoluteDirectory)) {
             throw new RuntimeException('Gagal membuat folder penyimpanan bukti pembayaran.');
+        }
+
+        $fileName = Str::uuid()->toString() . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
+        $relativePath = $relativeDirectory . '/' . $fileName;
+        $absolutePath = public_path($relativePath);
+
+        if (!function_exists('imagecreatetruecolor')) {
+            $mimeType = $file->getClientMimeType() ?: $file->getMimeType();
+            try {
+                $file->move($absoluteDirectory, $fileName);
+            } catch (\Exception $e) {
+                throw new RuntimeException('Gagal menyimpan file bukti pembayaran.');
+            }
+
+            return [
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $relativePath,
+                'mime_type' => $mimeType,
+                'file_size' => file_exists($absolutePath) ? filesize($absolutePath) : null,
+            ];
         }
 
         $imageInfo = @getimagesize($file->getPathname());
@@ -41,6 +57,7 @@ class PaymentProofService
         imagefill($canvas, 0, 0, $white);
         imagecopyresampled($canvas, $sourceImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
 
+        // Save resized image as jpeg
         $fileName = Str::uuid()->toString() . '.jpg';
         $relativePath = $relativeDirectory . '/' . $fileName;
         $absolutePath = public_path($relativePath);

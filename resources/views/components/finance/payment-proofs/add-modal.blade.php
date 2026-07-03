@@ -23,7 +23,7 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Invoice <span class="text-error">*</span></label>
         <select name="invoice_number" id="payment-proof-invoice-number-create" class="w-full border rounded p-2"
-            required disabled size="8">
+            required disabled onfocus="this.size=8" onchange="this.size=1; this.blur()" onblur="this.size=1">
             <option value="">Pilih kategori dulu</option>
         </select>
         <p class="text-xs text-text-secondary mt-1">Gulir daftar invoice untuk menampilkan data berikutnya.</p>

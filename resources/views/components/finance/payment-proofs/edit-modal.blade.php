@@ -29,7 +29,7 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Invoice <span class="text-error">*</span></label>
         <select name="invoice_number" id="payment-proof-invoice-number-edit-{{ $paymentProof->id }}"
-            class="w-full border rounded p-2" required size="8">
+            class="w-full border rounded p-2" required onfocus="this.size=8" onchange="this.size=1; this.blur()" onblur="this.size=1">
             <option value="">Pilih kategori</option>
         </select>
         <p class="text-xs text-text-secondary mt-1">Gulir daftar invoice untuk menampilkan data berikutnya.</p>
