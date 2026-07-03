@@ -20,6 +20,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
     protected $payrolls;
     protected $periodText;
     protected $projectName;
+    protected $totals;
 
     public function __construct($payrolls, $month = null, $year = null, $projectName = null)
     {
