@@ -492,7 +492,7 @@ class RecapSalesController extends Controller
 
         $pdf->setPaper('a4', 'landscape');
 
-        return $pdf->download('recap-sales-' . date('Y-m-d-His') . '.pdf');
+        return $pdf->download('Rekap_Penjualan_' . date('Y-m-d') . '.pdf');
 
     }
 

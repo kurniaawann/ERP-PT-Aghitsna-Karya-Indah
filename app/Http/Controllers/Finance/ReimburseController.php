@@ -173,7 +173,7 @@ class ReimburseController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         // Download PDF
-        return $pdf->download('reimburse_' . date('YmdHis') . '.pdf');
+        return $pdf->download('Reimburse_' . date('Y-m-d') . '.pdf');
     }
 
     /**
@@ -200,7 +200,7 @@ class ReimburseController extends Controller
         // Export ke Excel
         return Excel::download(
             new ReimburseExport($reimburses, $status),
-            'reimburse_' . date('YmdHis') . '.xlsx'
+            'Reimburse_' . date('Y-m-d') . '.xlsx'
         );
     }
 

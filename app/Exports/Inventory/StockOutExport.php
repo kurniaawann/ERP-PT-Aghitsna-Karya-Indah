@@ -145,6 +145,6 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
 
     public function title(): string
     {
-        return 'Barang Keluar';
+        return 'Barang_Keluar';
     }
 }

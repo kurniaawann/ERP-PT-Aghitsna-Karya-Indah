@@ -290,7 +290,7 @@ class ItemStockInController extends Controller
         $stockIns = $this->baseQuery($request)->get();
 
         $pdf = Pdf::loadView('exports.inventory.stock-in-pdf', compact('stockIns'));
-        return $pdf->download('barang-masuk-' . date('Y-m-d-His') . '.pdf');
+        return $pdf->download('Barang_Masuk_' . date('Y-m-d') . '.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -301,7 +301,7 @@ class ItemStockInController extends Controller
                 $request->input('month'),
                 $request->input('year')
             ),
-            'barang-masuk-' . date('Y-m-d-His') . '.xlsx'
+            'Barang_Masuk_' . date('Y-m-d') . '.xlsx'
         );
     }
 }

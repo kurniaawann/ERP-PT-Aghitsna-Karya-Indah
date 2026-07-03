@@ -150,6 +150,6 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
 
     public function title(): string
     {
-        return 'Pengembalian Barang';
+        return 'Retur_Barang';
     }
 }

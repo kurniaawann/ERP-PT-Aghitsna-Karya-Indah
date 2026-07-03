@@ -262,7 +262,7 @@ class RecapExpenseController extends Controller
 
         // Generate nama file dengan format: rekap-pengeluaran-YYYY-MM-DD-HHMMSS.xlsx
         // date('Y-m-d-His') menghasilkan format tahun-bulan-tanggal-jammenitdetik
-        $filename = 'rekap-pengeluaran-' . date('Y-m-d-His') . '.xlsx';
+        $filename = 'Rekap_Pengeluaran_' . date('Y-m-d') . '.xlsx';
 
         // Download Excel menggunakan ExpenseRecapExport class
         // Parameter: data, month, year, category (null), totals
@@ -368,7 +368,7 @@ class RecapExpenseController extends Controller
             ->setPaper('a4', 'landscape');
 
         // Generate nama file dengan format: rekap-pengeluaran-YYYY-MM-DD-HHMMSS.pdf
-        $filename = 'rekap-pengeluaran-' . date('Y-m-d-His') . '.pdf';
+        $filename = 'Rekap_Pengeluaran_' . date('Y-m-d') . '.pdf';
 
         // Download PDF dengan nama file yang sudah di-generate
         return $pdf->download($filename);

@@ -128,12 +128,13 @@ class PurchaseInvoiceController extends Controller
         $pdf = Pdf::loadView('exports.finance.purchase-invoice-pdf', compact('invoice'));
         $pdf->setPaper('a4', 'portrait');
 
-        return $pdf->download('Faktur-Pembelian-' . $invoice->id . '.pdf');
+        $date = date('Y-m-d');
+        return $pdf->download("Faktur_Pembelian_{$invoice->id}_{$date}.pdf");
     }
 
     public function printExcel()
     {
-        return Excel::download(new PurchaseInvoiceExport(), 'Faktur-Pembelian.xlsx');
+        return Excel::download(new PurchaseInvoiceExport(), 'Faktur_Pembelian_' . date('Y-m-d') . '.xlsx');
     }
 
     /**
@@ -141,7 +142,7 @@ class PurchaseInvoiceController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        return Excel::download(new PurchaseInvoiceExport($request), 'Faktur-Pembelian.xlsx');
+        return Excel::download(new PurchaseInvoiceExport($request), 'Faktur_Pembelian_' . date('Y-m-d') . '.xlsx');
     }
 
     /**
@@ -177,7 +178,7 @@ class PurchaseInvoiceController extends Controller
         $pdf = Pdf::loadView('exports.finance.purchase-invoices-pdf', compact('invoices'));
         $pdf->setPaper('a4', 'portrait');
 
-        return $pdf->download('Faktur-Pembelian-' . now()->format('d-m-Y') . '.pdf');
+        return $pdf->download('Faktur_Pembelian_' . date('Y-m-d') . '.pdf');
     }
 
 

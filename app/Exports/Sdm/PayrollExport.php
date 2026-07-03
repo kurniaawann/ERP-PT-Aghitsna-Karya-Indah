@@ -330,6 +330,6 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
 
     public function title(): string
     {
-        return 'Laporan Payroll';
+        return 'Laporan_Payroll';
     }
 }

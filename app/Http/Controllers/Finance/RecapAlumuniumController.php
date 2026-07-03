@@ -44,7 +44,7 @@ class RecapAlumuniumController extends Controller
 
         $totals = $this->buildTotals($invoices);
         $periodTitle = $this->buildPeriodTitle($request);
-        $filename = 'rekap-alumunium-' . date('Y-m-d-His') . '.xlsx';
+        $filename = 'Rekap_Alumunium_' . date('Y-m-d') . '.xlsx';
 
         return Excel::download(new AlumuniumRecapExport($invoices, $totals, $periodTitle), $filename);
     }
@@ -67,7 +67,7 @@ class RecapAlumuniumController extends Controller
             'periodTitle' => $periodTitle,
         ])->setPaper('a4', 'landscape');
 
-        $filename = 'rekap-alumunium-' . date('Y-m-d-His') . '.pdf';
+        $filename = 'Rekap_Alumunium_' . date('Y-m-d') . '.pdf';
 
         return $pdf->download($filename);
     }

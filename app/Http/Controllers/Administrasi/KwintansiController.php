@@ -103,7 +103,7 @@ class KwintansiController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
         // Download PDF
-        return $pdf->download('kwintansi_' . date('YmdHis') . '.pdf');
+        return $pdf->download('Kwitansi_' . date('Y-m-d') . '.pdf');
     }
 
     /**
@@ -132,6 +132,6 @@ class KwintansiController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
         // Download PDF
-        return $pdf->download('kwintansi_selected_' . date('YmdHis') . '.pdf');
+        return $pdf->download('Kwitansi_' . date('Y-m-d') . '.pdf');
     }
 }

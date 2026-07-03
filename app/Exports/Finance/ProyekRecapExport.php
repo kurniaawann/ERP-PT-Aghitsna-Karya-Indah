@@ -175,7 +175,7 @@ class ProyekRecapExport implements FromCollection, WithHeadings, WithStyles, Wit
 
     public function title(): string
     {
-        return 'Rekap Proyek';
+        return 'Rekap_Proyek';
     }
 
     public function registerEvents(): array

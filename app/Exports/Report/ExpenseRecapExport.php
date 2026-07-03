@@ -466,6 +466,6 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
 
     public function title(): string
     {
-        return 'Laporan Pengeluaran';
+        return 'Laporan_Pengeluaran';
     }
 }

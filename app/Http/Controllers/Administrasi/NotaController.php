@@ -230,8 +230,7 @@ class NotaController extends Controller
         // Generate PDF dengan 1 file template yang sama
         $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 
-        $filename = 'nota-administrasi-' . date('Y-m-d') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->download('Nota_' . date('Y-m-d') . '.pdf');
     }
 
     /**
@@ -259,10 +258,10 @@ class NotaController extends Controller
         if (count($ids) == 1) {
             // Untuk 1 nota, gunakan ID yang sudah di-sanitize
             $safeId = str_replace(['/', '\\'], '-', $ids[0]);
-            $filename = 'nota-' . $safeId . '.pdf';
+            $filename = "Nota_{$safeId}_" . date('Y-m-d') . '.pdf';
         } else {
             // Untuk multiple notas, gunakan timestamp
-            $filename = 'nota-selected-' . date('Y-m-d') . '.pdf';
+            $filename = 'Nota_' . date('Y-m-d') . '.pdf';
         }
 
         return $pdf->download($filename);

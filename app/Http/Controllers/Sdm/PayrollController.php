@@ -997,8 +997,8 @@ class PayrollController extends Controller
         $pdf = Pdf::loadView('exports.sdm.payroll-pdf', $data);
         $pdf->setPaper('a4', 'landscape');
 
-        // Generate nama file dengan format: Daftar_Absensi_Pekerja_{periode}_{timestamp}.pdf
-        $filenameParts = ['Daftar_Absensi_Pekerja'];
+        // Generate nama file dengan format: Payroll_{periode}.pdf
+        $filenameParts = ['Payroll'];
         if ($month) {
             $filenameParts[] = $monthNames[$month];
         }
@@ -1011,7 +1011,7 @@ class PayrollController extends Controller
         if (!$month && !$year && !$weekNumber) {
             $filenameParts[] = 'Semua_Periode';
         }
-        $filenameParts[] = date('Ymd_His');
+        $filenameParts[] = date('Y-m-d');
         $fileName = implode('_', $filenameParts) . '.pdf';
 
         // Download file PDF

@@ -449,6 +449,6 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
 
     public function title(): string
     {
-        return 'Laporan Penjualan';
+        return 'Laporan_Penjualan';
     }
 }

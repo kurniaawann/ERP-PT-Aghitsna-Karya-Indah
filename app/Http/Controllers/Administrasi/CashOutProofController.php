@@ -136,7 +136,7 @@ class CashOutProofController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
         // Download PDF
-        return $pdf->download('bukti_kas_keluar_' . date('YmdHis') . '.pdf');
+        return $pdf->download('Bukti_Kas_Keluar_' . date('Y-m-d') . '.pdf');
     }
 
     /**
@@ -164,6 +164,6 @@ class CashOutProofController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
         // Download PDF
-        return $pdf->download('bukti_kas_keluar_selected_' . date('YmdHis') . '.pdf');
+        return $pdf->download('Bukti_Kas_Keluar_' . date('Y-m-d') . '.pdf');
     }
 }

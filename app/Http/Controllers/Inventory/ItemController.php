@@ -71,11 +71,11 @@ class ItemController extends Controller
 
         $pdf = Pdf::loadView('exports.inventory.item-pdf', compact('items'));
 
-        return $pdf->download('stock-hollow-' . date('Y-m-d') . '.pdf');
+        return $pdf->download('Stock_Hollow_' . date('Y-m-d') . '.pdf');
     }
 
     public function exportExcel()
     {
-        return Excel::download(new ItemsExport, 'stock-hollow-' . date('Y-m-d') . '.xlsx');
+        return Excel::download(new ItemsExport, 'Stock_Hollow_' . date('Y-m-d') . '.xlsx');
     }
 }

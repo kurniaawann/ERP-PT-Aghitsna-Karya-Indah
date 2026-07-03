@@ -91,7 +91,7 @@ class ItemInvoiceIndexExport implements FromCollection, WithHeadings, WithStyles
 
     public function title(): string
     {
-        return 'Rekap Invoice Item';
+        return 'Rekap_Invoice_Barang';
     }
 
     public function registerEvents(): array

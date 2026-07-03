@@ -47,7 +47,7 @@ class ItemStockOutController extends Controller
         $stockOuts = $this->baseQuery($request)->get();
 
         $pdf = Pdf::loadView('exports.inventory.stock-out-pdf', compact('stockOuts'));
-        return $pdf->download('barang-keluar-' . date('Y-m-d-His') . '.pdf');
+        return $pdf->download('Barang_Keluar_' . date('Y-m-d') . '.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -58,7 +58,7 @@ class ItemStockOutController extends Controller
 
         return Excel::download(
             new \App\Exports\Inventory\StockOutExport($search, $month, $year),
-            'barang-keluar-' . date('Y-m-d-His') . '.xlsx'
+            'Barang_Keluar_' . date('Y-m-d') . '.xlsx'
         );
     }
 }

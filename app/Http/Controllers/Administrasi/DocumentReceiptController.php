@@ -101,7 +101,7 @@ class DocumentReceiptController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
         // Download PDF
-        return $pdf->download('tanda_terima_dokumen_' . date('YmdHis') . '.pdf');
+        return $pdf->download('Tanda_Terima_Dokumen_' . date('Y-m-d') . '.pdf');
     }
 
     /**
@@ -129,6 +129,6 @@ class DocumentReceiptController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
         // Download PDF
-        return $pdf->download('tanda_terima_dokumen_selected_' . date('YmdHis') . '.pdf');
+        return $pdf->download('Tanda_Terima_Dokumen_' . date('Y-m-d') . '.pdf');
     }
 }

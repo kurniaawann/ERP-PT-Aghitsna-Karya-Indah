@@ -166,7 +166,7 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
 
     public function title(): string
     {
-        return 'Rekap Alumunium';
+        return 'Rekap_Alumunium';
     }
 
     public function registerEvents(): array

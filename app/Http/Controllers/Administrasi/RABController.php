@@ -455,7 +455,8 @@ class RABController extends Controller
             'rab' => $rab,
         ])->setPaper('a4', 'portrait');
 
-        return $pdf->download("RAB_{$safeFileName}.pdf");
+        $date = date('Y-m-d');
+        return $pdf->download("RAB_{$safeFileName}_{$date}.pdf");
     }
 
     // ─── Export Excel ─────────────────────────────────────────────────────────
@@ -464,8 +465,9 @@ class RABController extends Controller
     {
         $rab = RAB::where('rab_number', $rabNumber)->firstOrFail();
         $safeFileName = str_replace('/', '-', $rabNumber);
+        $date = date('Y-m-d');
 
-        return Excel::download(new RABExport($rab->rab_number), "RAB_{$safeFileName}.xlsx");
+        return Excel::download(new RABExport($rab->rab_number), "RAB_{$safeFileName}_{$date}.xlsx");
     }
 
     // ─── Helper: Convert Arabic to Roman ───────────────────────────────────────

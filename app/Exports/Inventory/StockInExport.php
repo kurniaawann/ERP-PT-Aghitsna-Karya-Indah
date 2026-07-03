@@ -174,6 +174,6 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
 
     public function title(): string
     {
-        return 'Barang Masuk';
+        return 'Barang_Masuk';
     }
 }

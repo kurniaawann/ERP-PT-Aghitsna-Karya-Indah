@@ -31,7 +31,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
 
     public function title(): string
     {
-        return 'Penawaran ' . $this->quotation->quotation_number;
+        return 'Penawaran_Aluminium_' . $this->quotation->quotation_number;
     }
 
     public function columnWidths(): array

@@ -44,7 +44,7 @@ class RecapProyekController extends Controller
 
         $totals = $this->buildTotals($invoices);
         $periodTitle = $this->buildPeriodTitle($request);
-        $filename = 'rekap-proyek-' . date('Y-m-d-His') . '.xlsx';
+        $filename = 'Rekap_Proyek_' . date('Y-m-d') . '.xlsx';
 
         return Excel::download(new ProyekRecapExport($invoices, $totals, $periodTitle), $filename);
     }
@@ -67,7 +67,7 @@ class RecapProyekController extends Controller
             'periodTitle' => $periodTitle,
         ])->setPaper('a4', 'landscape');
 
-        $filename = 'rekap-proyek-' . date('Y-m-d-His') . '.pdf';
+        $filename = 'Rekap_Proyek_' . date('Y-m-d') . '.pdf';
 
         return $pdf->download($filename);
     }

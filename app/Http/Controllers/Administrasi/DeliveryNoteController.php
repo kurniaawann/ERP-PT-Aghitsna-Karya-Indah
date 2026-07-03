@@ -201,8 +201,7 @@ class DeliveryNoteController extends Controller
 
         $pdf = Pdf::loadView('exports.administrasi.delivery-note-pdf', compact('deliveryNotes'));
 
-        $filename = 'surat-jalan-' . date('Y-m-d') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->download('Surat_Jalan_' . date('Y-m-d') . '.pdf');
     }
 
     /**
@@ -224,9 +223,9 @@ class DeliveryNoteController extends Controller
 
         if (count($ids) == 1) {
             $safeId = str_replace(['/', '\\'], '-', $ids[0]);
-            $filename = 'surat-jalan-' . $safeId . '.pdf';
+            $filename = "Surat_Jalan_{$safeId}_" . date('Y-m-d') . '.pdf';
         } else {
-            $filename = 'surat-jalan-selected-' . date('Y-m-d') . '.pdf';
+            $filename = 'Surat_Jalan_' . date('Y-m-d') . '.pdf';
         }
 
         return $pdf->download($filename);

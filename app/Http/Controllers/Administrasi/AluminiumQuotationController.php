@@ -242,7 +242,8 @@ class AluminiumQuotationController extends Controller
             ->setPaper('a4', 'portrait');
 
         $safeNumber = str_replace(['/', '\\'], '-', $quotationNumber);
-        return $pdf->download("penawaran-{$safeNumber}.pdf");
+        $date = date('Y-m-d');
+        return $pdf->download("Penawaran_Aluminium_{$safeNumber}_{$date}.pdf");
     }
 
     // ─── Print single Excel ──────────────────────────────────────────────────
@@ -251,9 +252,10 @@ class AluminiumQuotationController extends Controller
     {
         // Replace unsafe characters in filename
         $safeFileName = str_replace(['/', '\\'], '-', $quotationNumber);
+        $date = date('Y-m-d');
 
         // Download Excel with parameter quotationNumber and safe filename
-        return Excel::download(new AluminiumQuotationExport($quotationNumber), 'Penawaran-' . $safeFileName . '.xlsx');
+        return Excel::download(new AluminiumQuotationExport($quotationNumber), "Penawaran_Aluminium_{$safeFileName}_{$date}.xlsx");
     }
 
     // ─── Export selected PDF ─────────────────────────────────────────────────
@@ -275,9 +277,13 @@ class AluminiumQuotationController extends Controller
         $pdf = Pdf::loadView('exports.administrasi.aluminium-quotation-pdf-bulk', compact('quotations'))
             ->setPaper('a4', 'portrait');
 
-        $filename = count($ids) === 1
-            ? 'penawaran-' . str_replace(['/', '\\'], '-', $ids[0]) . '.pdf'
-            : 'penawaran-selected-' . date('Y-m-d') . '.pdf';
+        if (count($ids) === 1) {
+            $safeId = str_replace(['/', '\\'], '-', $ids[0]);
+            $date = date('Y-m-d');
+            $filename = "Penawaran_Aluminium_{$safeId}_{$date}.pdf";
+        } else {
+            $filename = 'Penawaran_Aluminium_' . date('Y-m-d') . '.pdf';
+        }
 
         return $pdf->download($filename);
     }

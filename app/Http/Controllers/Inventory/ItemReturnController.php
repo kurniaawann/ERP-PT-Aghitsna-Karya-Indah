@@ -326,7 +326,7 @@ class ItemReturnController extends Controller
         $returns = $this->baseQuery($request)->get();
 
         $pdf = Pdf::loadView('exports.inventory.item-return-pdf', compact('returns'));
-        return $pdf->download('return-barang-' . date('Y-m-d-His') . '.pdf');
+        return $pdf->download('Retur_Barang_' . date('Y-m-d') . '.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -338,7 +338,7 @@ class ItemReturnController extends Controller
 
         return Excel::download(
             new \App\Exports\Inventory\ItemReturnExport($search, $month, $year, $returnType),
-            'return-barang-' . date('Y-m-d-His') . '.xlsx'
+            'Retur_Barang_' . date('Y-m-d') . '.xlsx'
         );
     }
 }

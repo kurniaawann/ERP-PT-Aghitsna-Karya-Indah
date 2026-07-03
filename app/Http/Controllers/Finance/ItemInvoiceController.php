@@ -249,14 +249,15 @@ class ItemInvoiceController extends Controller
 
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
 
-        return $pdf->download('Invoice_Barang_' . $safeFileName . '.pdf');
+        $date = date('Y-m-d');
+        return $pdf->download("Invoice_Barang_{$safeFileName}_{$date}.pdf");
     }
 
     public function printExcel(string $invoiceNumber)
     {
         $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
-
-        return Excel::download(new ItemInvoiceExport($invoiceNumber), 'Invoice_Barang_' . $safeFileName . '.xlsx');
+        $date = date('Y-m-d');
+        return Excel::download(new ItemInvoiceExport($invoiceNumber), "Invoice_Barang_{$safeFileName}_{$date}.xlsx");
     }
 
     public function exportPdf(Request $request)
@@ -267,7 +268,7 @@ class ItemInvoiceController extends Controller
             'invoices' => $invoices,
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('Rekap_Invoice_Barang_' . date('Y-m-d-His') . '.pdf');
+        return $pdf->download('Rekap_Invoice_Barang_' . date('Y-m-d') . '.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -276,7 +277,7 @@ class ItemInvoiceController extends Controller
 
         return Excel::download(
             new ItemInvoiceIndexExport($invoices, $request->month, $request->year),
-            'Rekap_Invoice_Barang_' . date('Y-m-d-His') . '.xlsx'
+            'Rekap_Invoice_Barang_' . date('Y-m-d') . '.xlsx'
         );
     }
 

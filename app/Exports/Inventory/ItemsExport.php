@@ -99,7 +99,7 @@ class ItemsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, W
 
     public function title(): string
     {
-        return 'Stock Hollow';
+        return 'Stock_Hollow';
     }
 
     public function columnWidths(): array

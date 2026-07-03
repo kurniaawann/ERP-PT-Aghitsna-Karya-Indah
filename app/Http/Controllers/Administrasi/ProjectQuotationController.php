@@ -255,7 +255,8 @@ class ProjectQuotationController extends Controller
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, "Penawaran_Proyek_{$safeNumber}.pdf", [
+            $date = date('Y-m-d');
+            }, "Penawaran_Proyek_{$safeNumber}_{$date}.pdf", [
                 'Content-Type' => 'application/pdf',
             ]);
 
@@ -269,9 +270,10 @@ class ProjectQuotationController extends Controller
     public function printExcelSingle(string $quotationNumber)
     {
         $safeFileName = str_replace(['/', '\\'], '-', $quotationNumber);
+        $date = date('Y-m-d');
         return Excel::download(
             new ProjectQuotationExport($quotationNumber),
-            'Penawaran_Proyek_' . $safeFileName . '.xlsx'
+            "Penawaran_Proyek_{$safeFileName}_{$date}.xlsx"
         );
     }
 
@@ -326,7 +328,8 @@ class ProjectQuotationController extends Controller
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, "Penawaran_Proyek_{$safeNumber}.pdf", [
+            $date = date('Y-m-d');
+            }, "Penawaran_Proyek_{$safeNumber}_{$date}.pdf", [
                 'Content-Type' => 'application/pdf',
             ]);
         } else {
@@ -336,7 +339,7 @@ class ProjectQuotationController extends Controller
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, 'Penawaran_Proyek_' . date('Ymd-His') . '.pdf', [
+            }, 'Penawaran_Proyek_' . date('Y-m-d') . '.pdf', [
                 'Content-Type' => 'application/pdf',
             ]);
         }
@@ -355,15 +358,16 @@ class ProjectQuotationController extends Controller
 
         if (count($quotationNumbers) === 1) {
             $safeFileName = str_replace(['/', '\\'], '-', $quotationNumbers[0]);
+            $date = date('Y-m-d');
             return Excel::download(
                 new ProjectQuotationExport($quotationNumbers[0]),
-                'Penawaran_Proyek_' . $safeFileName . '.xlsx'
+                "Penawaran_Proyek_{$safeFileName}_{$date}.xlsx"
             );
         } else {
             // For multiple, create a multi-sheet Excel file
             return Excel::download(
                 new \App\Exports\Administrasi\ProjectQuotationMultiExport($quotationNumbers),
-                'Penawaran_Proyek_' . date('Ymd-His') . '.xlsx'
+                'Penawaran_Proyek_' . date('Y-m-d') . '.xlsx'
             );
         }
     }
