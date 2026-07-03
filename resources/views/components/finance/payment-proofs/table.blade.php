@@ -1,4 +1,4 @@
-<form id="deleteForm" method="POST" action="#">
+<form id="deleteForm" method="POST" action="{{ route('payment-proofs.destroySelected') }}">
     @csrf
     @method('DELETE')
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -7,6 +7,9 @@
                 <table class="min-w-full divide-y divide-border-light">
                     <thead class="bg-surface-secondary">
                         <tr>
+                            <th class="p-3 text-center text-xs font-semibold uppercase tracking-wide text-text-label">
+                                <input type="checkbox" id="selectAll" class="w-4 h-4 accent-primary cursor-pointer">
+                            </th>
                             <th class="p-3 text-left text-xs font-semibold uppercase tracking-wide text-text-label">
                                 Tanggal</th>
                             <th class="p-3 text-left text-xs font-semibold uppercase tracking-wide text-text-label">
@@ -38,6 +41,10 @@
                                 $invoiceLabel = $lookup['label'] ?? $paymentProof->invoice_number;
                             @endphp
                             <tr class="border-t hover:bg-surface-secondary/70 transition-colors">
+                                <td class="p-3 text-center">
+                                    <input type="checkbox" name="selected_items[]" value="{{ $paymentProof->id }}"
+                                        class="w-4 h-4 accent-primary cursor-pointer">
+                                </td>
                                 <td class="p-3 text-sm whitespace-nowrap">
                                     {{ $paymentProof->created_at?->format('d-m-Y H:i') }}</td>
                                 <td class="p-3 text-sm font-medium text-primary">{{ $invoiceLabel }}</td>
@@ -79,18 +86,13 @@
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
                                             Edit
                                         </button>
-                                        <button type="button"
-                                            onclick="openModal('deleteModal-{{ $paymentProof->id }}')"
-                                            class="flex items-center gap-1 rounded-lg bg-error px-2.5 py-1.5 text-xs text-white transition hover:bg-error-hover">
-                                            <i class="fa-solid fa-trash w-3 h-3"></i>
-                                            Hapus
-                                        </button>
+
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center p-4 text-text-secondary">Data bukti pembayaran
+                                <td colspan="8" class="text-center p-4 text-text-secondary">Data bukti pembayaran
                                     tidak ditemukan.</td>
                             </tr>
                         @endforelse

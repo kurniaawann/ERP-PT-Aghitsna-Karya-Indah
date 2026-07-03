@@ -174,6 +174,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/payment-proofs', [PaymentProofController::class, 'index'])->name('payment-proofs.index');
     Route::post('/payment-proofs', [PaymentProofController::class, 'store'])->name('payment-proofs.store');
     Route::put('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'update'])->name('payment-proofs.update');
+    Route::delete('/payment-proofs/destroy-selected', [PaymentProofController::class, 'destroySelected'])->name('payment-proofs.destroySelected');
     Route::delete('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'destroy'])->name('payment-proofs.destroy');
 
     // Route Purchase Invoice

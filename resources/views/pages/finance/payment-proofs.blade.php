@@ -21,6 +21,7 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <x-buttons.delete-button modalId="deleteModal" />
                     <x-buttons.add-button modalId="addModal" text="Tambah Bukti" />
                 </div>
             </div>
@@ -129,8 +130,12 @@
 
     @foreach ($paymentProofs as $paymentProof)
         @include('components.finance.payment-proofs.edit-modal', ['paymentProof' => $paymentProof])
-        @include('components.finance.payment-proofs.delete-modal', ['paymentProof' => $paymentProof])
     @endforeach
+
+    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
+        buttonText="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus data yang dipilih?
+    </x-modal>
 
     @include('partials.finance.payment-proofs-scripts')
 @endsection

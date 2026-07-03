@@ -211,8 +211,94 @@
         updatePaymentProofAmountSection(prefix);
     }
 
+    // ==========================================
+    // BULK DELETE FUNCTION
+    // ==========================================
+
+    function submitDeleteForm() {
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        const form = document.getElementById('deleteForm');
+        if (form) {
+            form.submit();
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         bindPaymentProofForm('create');
+
+        // ==========================================
+        // FORM SUBMIT LOADING STATE
+        // ==========================================
+
+        const addForm = document.querySelector('#addModal form');
+        if (addForm) {
+            addForm.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                if (!handleFormSubmit(submitBtn, originalText)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        @foreach ($paymentProofs as $paymentProof)
+            const editForm_{{ $paymentProof->id }} = document.querySelector('#editModal-{{ $paymentProof->id }} form');
+            if (editForm_{{ $paymentProof->id }}) {
+                editForm_{{ $paymentProof->id }}.addEventListener('submit', function(e) {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    if (!handleFormSubmit(submitBtn, originalText)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        @endforeach
+
+        // ==========================================
+        // SELECT ALL CHECKBOX FUNCTIONALITY
+        // ==========================================
+
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const itemCheckboxes = document.querySelectorAll('input[name="selected_items[]"]');
+        const deleteButton = document.getElementById('delete-button');
+
+        function updateDeleteButtonState() {
+            const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
+            if (deleteButton) {
+                deleteButton.disabled = !anyChecked;
+            }
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                itemCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateDeleteButtonState();
+            });
+        }
+
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (!this.checked) {
+                    selectAllCheckbox.checked = false;
+                } else {
+                    const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                }
+                updateDeleteButtonState();
+            });
+        });
+
+        updateDeleteButtonState();
 
         @foreach ($paymentProofs as $paymentProof)
             bindPaymentProofForm('edit-{{ $paymentProof->id }}', {

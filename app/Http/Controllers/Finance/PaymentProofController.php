@@ -290,6 +290,45 @@ class PaymentProofController extends Controller
         return back()->with('success', 'Bukti pembayaran berhasil diupdate.');
     }
 
+    public function destroySelected(Request $request, PaymentProofService $paymentProofService)
+    {
+        $selectedIds = $request->input('selected_items', []);
+
+        if (empty($selectedIds)) {
+            return redirect()->back()->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $paymentProofs = PaymentProof::whereIn('id', $selectedIds)->get();
+
+        $affectedInvoices = [];
+        foreach ($paymentProofs as $proof) {
+            $key = $proof->invoice_type . '|' . $proof->invoice_number . '|' . ($proof->sales_recap_id ?? '');
+            $affectedInvoices[$key] = [
+                'invoice_type' => $proof->invoice_type,
+                'invoice_number' => $proof->invoice_number,
+                'sales_recap_id' => $proof->sales_recap_id,
+            ];
+        }
+
+        DB::transaction(function () use ($paymentProofs, $affectedInvoices) {
+            foreach ($paymentProofs as $proof) {
+                $proof->delete();
+            }
+
+            foreach ($affectedInvoices as $info) {
+                $this->syncPaymentStatuses($info['invoice_type'], $info['invoice_number'], $info['sales_recap_id']);
+            }
+        });
+
+        foreach ($paymentProofs as $proof) {
+            $paymentProofService->delete($proof->file_path);
+        }
+
+        $message = count($selectedIds) . ' data terpilih berhasil dihapus.';
+
+        return redirect()->back()->with('success', $message);
+    }
+
     public function destroy(PaymentProof $payment_proof, PaymentProofService $paymentProofService)
     {
         $invoiceType = $payment_proof->invoice_type;
