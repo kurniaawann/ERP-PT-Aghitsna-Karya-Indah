@@ -109,33 +109,6 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             'total_expenses' => $totalExpenses,
             'expenses_details' => $allExpenses,
             'grand_total' => $totalNetSalary + $totalExpenses - $totalKasbon // Note: net_salary in loop already includes kasbon deduction subtraction? Wait.
-            // Let's check PDF logic: 
-            // $totalWages = $payrolls->sum('net_salary');
-            // $grandTotal = $totalWages + $totalExpenses - $totalKasbon;
-            // PDF Logic seems unexpected here if net_salary is already "Total Dibayar".
-            // Let's look at pdf logic closer: 
-            // $totalWages = $payrolls->sum('net_salary');
-            // $totalExpenses = array_sum($allExpenses);
-            // $grandTotal = $totalWages + $totalExpenses - $totalKasbon; 
-            // 
-            // If net_salary is what the employee receives, then grand total for the company is (Sum of net salaries) + (Operational Expenses).
-            // Why -totalKasbon? 
-            // Usually Kasbon is deducted from Employee Salary. So Net Salary = Gross - Kasbon.
-            // If the company pays Net Salary, they pay out X.
-            // If there are operational expenses (buying materials etc), they pay out Y.
-            // Total Payout = X + Y.
-            //
-            // Let's check the PDF code provided in context.
-            // PDF: $grandTotal = $totalWages + $totalExpenses - $totalKasbon;
-            // This implies the PDF logic subtracts Kasbon again? Or maybe $totalWages is Gross?
-            // In PDF loop: <td ...>{{ number_format($payroll->net_salary, ...)}}</td>
-            // So $totalWages is Sum of Net Salaries.
-            // If I look at the previous PDF code...
-            // $grandTotal = $totalWages + $totalExpenses - $totalKasbon;
-            // It subtracts Kasbon from the total payout calculation? 
-            // If the user wants 100% match, I will transpose the exact formula even if it looks weird financially, 
-            // unless clarity suggests otherwise. I will stick to the PDF formula to be safe: 
-            // Grant Total = Sum(NetSalary) + Sum(Expenses) - Sum(Kasbon).
         ];
 
         // Match PDF logic exactly
