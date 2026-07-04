@@ -1,5 +1,5 @@
 {{-- Modal Detail Invoice Proyek --}}
-<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="{{ auth()->user()->isAdmin() ? 'Detail Invoice' : 'Detail Invoice Proyek' }}" :readOnly="true">
+<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="{{ auth()->user()->isAdmin() ? 'Detail Invoice' : 'Detail Invoice Proyek' }}" :hideFooter="true">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>

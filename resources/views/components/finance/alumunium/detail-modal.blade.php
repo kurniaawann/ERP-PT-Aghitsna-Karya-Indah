@@ -1,5 +1,5 @@
 {{-- Modal Detail Invoice Alumunium --}}
-<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice" :readOnly="true">
+<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice" :hideFooter="true">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>

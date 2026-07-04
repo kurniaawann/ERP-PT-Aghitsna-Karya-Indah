@@ -1,4 +1,4 @@
-<x-modal id="detailRABModal{{ $rab->rab_number }}" title="Detail RAB — {{ $rab->rab_number }}" readonly="true">
+<x-modal id="detailRABModal{{ $rab->rab_number }}" title="Detail RAB — {{ $rab->rab_number }}" :hideFooter="true">
 
     {{-- Header Info --}}
     <div class="grid grid-cols-2 gap-2 mb-2 text-sm">

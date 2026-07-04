@@ -1,5 +1,5 @@
 {{-- Modal Detail Penawaran Proyek --}}
-<x-modal id="detailModal-{{ $quotation->quotation_number }}" title="Detail Penawaran Proyek" :readOnly="true">
+<x-modal id="detailModal-{{ $quotation->quotation_number }}" title="Detail Penawaran Proyek" :hideFooter="true">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
