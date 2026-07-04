@@ -51,4 +51,5 @@
 
     {{-- JavaScript --}}
     @include('partials.finance.proyek-scripts')
+    @include('partials.shared.print-dropdown-script')
 @endsection

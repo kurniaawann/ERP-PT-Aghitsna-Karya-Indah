@@ -96,4 +96,5 @@
 
     {{-- JavaScript --}}
     @include('partials.sdm.payroll-scripts')
+    @include('partials.shared.print-dropdown-script')
 @endsection

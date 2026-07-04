@@ -95,8 +95,8 @@
     // PRINT SELECTED HANDLER
     // ==========================================
 
-    function printSelected() {
-        return sharedPrintSelected('{{ route('cash-out-proof.export.pdf.selected') }}');
+    function printSelected(btn) {
+        return sharedPrintSelected('{{ route('cash-out-proof.export.pdf.selected') }}', btn);
     }
 
     // ==========================================

@@ -59,4 +59,5 @@
     </x-modal>
 
     @include('partials.finance.barang-scripts', ['items' => $items])
+    @include('partials.shared.print-dropdown-script')
 @endsection

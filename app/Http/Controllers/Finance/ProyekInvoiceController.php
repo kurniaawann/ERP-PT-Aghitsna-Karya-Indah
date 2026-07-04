@@ -261,6 +261,9 @@ class ProyekInvoiceController extends Controller
         // Cari invoice by invoice_number (throw 404 jika tidak ada)
         $invoice = InvoiceProyek::where('invoice_number', $invoiceNumber)->firstOrFail();
 
+        // Normalisasi items untuk memastikan key volume & harga tersedia
+        $invoice->items = $this->normalizeInvoiceItems($invoice->items);
+
         // Generate PDF dari view
         $pdf = Pdf::loadView('exports.finance.proyek-invoice-pdf', compact('invoice'));
         $pdf->setPaper('a4', 'portrait');

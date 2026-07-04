@@ -62,4 +62,5 @@
 
     {{-- JavaScript --}}
     @include('partials.finance.recap-sales-scripts')
+    {{-- @include('partials.shared.print-dropdown-script') --}}
 @endsection

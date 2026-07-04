@@ -396,22 +396,8 @@
     }
 
     // ─── Export PDF (selected) ───────────────────────────────────────────────────
-    function submitExportPdf() {
-        const checkboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-        if (checkboxes.length === 0) {
-            alert('Pilih minimal 1 penawaran untuk diekspor.');
-            return;
-        }
-        const container = document.getElementById('exportPdfIdsContainer');
-        container.innerHTML = '';
-        checkboxes.forEach(cb => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'ids[]';
-            input.value = cb.value;
-            container.appendChild(input);
-        });
-        document.getElementById('exportPdfForm').submit();
+    function submitExportPdf(btn) {
+        return sharedPrintSelected('{{ route('aluminium-quotation.export.pdf.selected') }}', btn);
     }
 
     // ─── Auto-populate Add modal number on open ──────────────────────────────────

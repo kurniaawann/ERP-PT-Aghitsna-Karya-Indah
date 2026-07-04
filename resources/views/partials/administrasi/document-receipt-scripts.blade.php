@@ -48,39 +48,8 @@
         // PRINT SELECTED HANDLER
         // ==========================================
 
-        function printSelected() {
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-            const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
-
-            if (selectedIds.length === 0) {
-                alert('Silakan pilih dokumen terlebih dahulu!');
-                return;
-            }
-
-            // Create a form and submit
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ route('document-receipt.export.pdf.selected') }}';
-
-            // Add CSRF token
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = '_token';
-            csrfInput.value = '{{ csrf_token() }}';
-            form.appendChild(csrfInput);
-
-            // Add selected IDs
-            selectedIds.forEach(id => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'ids[]';
-                input.value = id;
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+        function printSelected(btn) {
+            return sharedPrintSelected('{{ route('document-receipt.export.pdf.selected') }}', btn);
         }
 
         // ==========================================

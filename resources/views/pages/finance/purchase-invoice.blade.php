@@ -61,4 +61,5 @@
 
     {{-- JavaScript --}}
     @include('partials.finance.purchase-invoice-scripts')
+    @include('partials.shared.print-dropdown-script')
 @endsection

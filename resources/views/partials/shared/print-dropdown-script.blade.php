@@ -23,4 +23,20 @@
             });
         }
     });
+
+    // ─── Global Download Link Handler ─────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a[href*="/export/pdf"], a[href*="/export/excel"], a[href*="/print/pdf"], a[href*="/print/excel"], a[href*="/export-pdf"], a[href*="/export-excel"]').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Close dropdown if this link is inside one
+                const dropdown = this.closest('#printDropdownMenu');
+                if (dropdown) {
+                    dropdown.classList.add('hidden');
+                }
+                handleDownload(this.href, this, 'Downloading...');
+            });
+        });
+    });
 </script>

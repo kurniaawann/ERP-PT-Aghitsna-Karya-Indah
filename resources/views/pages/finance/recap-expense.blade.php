@@ -72,4 +72,5 @@
 
     {{-- JavaScript --}}
     @include('partials.report.expense-report-scripts')
+    {{-- @include('partials.shared.print-dropdown-script') --}}
 @endsection

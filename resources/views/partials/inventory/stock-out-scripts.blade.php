@@ -194,7 +194,7 @@
                     const baseUrl = '{{ route('stock-out.export.excel') }}';
                     const filterParams = getFilterParams();
                     const fullUrl = filterParams ? baseUrl + '?' + filterParams : baseUrl;
-                    window.location.href = fullUrl;
+                    handleDownload(fullUrl, this, 'Downloading...');
                 });
             }
 
@@ -204,7 +204,7 @@
                     const baseUrl = '{{ route('stock-out.export.pdf') }}';
                     const filterParams = getFilterParams();
                     const fullUrl = filterParams ? baseUrl + '?' + filterParams : baseUrl;
-                    window.location.href = fullUrl;
+                    handleDownload(fullUrl, this, 'Downloading...');
                 });
             }
         }

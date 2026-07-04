@@ -97,21 +97,8 @@
     // PRINT SELECTED FUNCTION
     // ==========================================
 
-    function printSelected() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-
-        if (checkedCheckboxes.length === 0) {
-            alert('Tidak ada data yang dipilih!');
-            return;
-        }
-
-        // Create a temporary form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('nota.administrasi.export.pdf.selected') }}';
-        form.style.display = 'none';
-
-        return sharedPrintSelected('{{ route('nota.administrasi.export.pdf.selected') }}');
+    function printSelected(btn) {
+        return sharedPrintSelected('{{ route('nota.administrasi.export.pdf.selected') }}', btn);
 
         function updateDeleteButtons(modalId) {
             const container = document.getElementById('itemsContainer-' + modalId);

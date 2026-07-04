@@ -123,54 +123,16 @@
     // PRINT SELECTED FUNCTION
     // ==========================================
 
-    function printSelected() {
-        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
-            .disabled);
-
-        if (checkedCheckboxes.length === 0) {
-            alert('Tidak ada data yang dipilih!');
-            return;
-        }
-
-        // Create a temporary form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('delivery-note.administrasi.export.pdf.selected') }}';
-        form.style.display = 'none';
-
-        // Add CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        form.appendChild(csrfInput);
-
-        // Add all checked IDs
-        checkedCheckboxes.forEach(checkbox => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'ids[]';
-            input.value = checkbox.value;
-            form.appendChild(input);
-        });
-
-        // Submit form
-        document.body.appendChild(form);
-        form.submit();
-
-        // Close dropdown after submit
-        const dropdownMenu = document.getElementById('printDropdownMenu');
-        if (dropdownMenu) {
-            dropdownMenu.classList.add('hidden');
-        }
-        return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}',
+    function printSelected(btn) {
+        return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}', btn,
             '.row-checkbox:checked:not([disabled])', 'Tidak ada data yang dipilih!');
+    }
 
-        // ==========================================
-        // ADD ITEM ROW
-        // ==========================================
+    // ==========================================
+    // ADD ITEM ROW
+    // ==========================================
 
-        function addItemRow(modalId) {
+    function addItemRow(modalId) {
             const container = document.getElementById(`itemsContainer-${modalId}`);
 
             // Get current number of items

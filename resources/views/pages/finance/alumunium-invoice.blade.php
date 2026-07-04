@@ -50,4 +50,5 @@
 
     {{-- JavaScript --}}
     @include('partials.finance.alumunium-scripts')
+    @include('partials.shared.print-dropdown-script')
 @endsection
