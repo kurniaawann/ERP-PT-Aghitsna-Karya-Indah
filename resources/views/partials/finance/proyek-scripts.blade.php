@@ -432,133 +432,9 @@
         return units[num];
     }
 
-    // ==========================================
-    // PAYMENT INSTALLMENT FUNCTIONS
-    // ==========================================
 
-    // Add a new payment installment row (for ADD modal)
-    function addPaymentInstallment() {
-        const installmentsContainer = document.getElementById('payment-installments-list');
-        if (!installmentsContainer) return;
 
-        const existingRows = installmentsContainer.querySelectorAll('.payment-installment-row');
-        const nextNumber = existingRows.length + 1;
-        const autoLabel = `Pembayaran ke ${nextNumber}`;
-
-        const newInstallment = document.createElement('div');
-        newInstallment.className =
-            'payment-installment-row mb-2 p-3 border border-border-strong rounded-lg bg-surface-base';
-        newInstallment.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input type="text" class="payment-label border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
-                    placeholder="Label (Pembayaran Ke 1)" value="${autoLabel}">
-                <input type="number" step="0.01" min="0" class="payment-amount border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
-                    placeholder="Jumlah (Rp)">
-                <button type="button" onclick="removePaymentInstallment(this)" 
-                    class="bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
-                    <i class="fa-solid fa-trash"></i> Hapus
-                </button>
-            </div>
-        `;
-        installmentsContainer.appendChild(newInstallment);
-    }
-
-    // Add a new payment installment row for EDIT modal
-    function addPaymentInstallmentEdit(invoiceNumber) {
-        const installmentsContainer = document.getElementById('payment-installments-list-edit-' + invoiceNumber);
-        if (!installmentsContainer) return;
-
-        const existingRows = installmentsContainer.querySelectorAll('.payment-installment-row');
-        const nextIndex = existingRows.length;
-        const nextNumber = nextIndex + 1;
-        const autoLabel = `Pembayaran ke ${nextNumber}`;
-
-        const newInstallment = document.createElement('div');
-        newInstallment.className =
-            'payment-installment-row mb-2 p-3 border border-border-strong rounded-lg bg-surface-base';
-        newInstallment.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input type="text" name="payment_installments[${nextIndex}][label]"
-                    value="${autoLabel}" class="payment-label border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
-                    placeholder="Label (Pembayaran Ke 1)">
-                <input type="number" step="0.01" min="0" 
-                    name="payment_installments[${nextIndex}][amount]"
-                    class="payment-amount border border-border-strong rounded-lg p-2 bg-surface-base text-text-input" 
-                    placeholder="Jumlah (Rp)">
-                <button type="button" onclick="removePaymentInstallmentEdit(this, '${invoiceNumber}')" 
-                    class="bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
-                    <i class="fa-solid fa-trash"></i> Hapus
-                </button>
-            </div>
-        `;
-        installmentsContainer.appendChild(newInstallment);
-    }
-
-    // Remove a payment installment row
-    function removePaymentInstallment(button) {
-        const container = button.closest('#payment-installments-list');
-        button.closest('.payment-installment-row').remove();
-
-        // Re-number remaining installments
-        if (container) {
-            const rows = container.querySelectorAll('.payment-installment-row');
-            rows.forEach((row, index) => {
-                const labelInput = row.querySelector('.payment-label');
-                if (labelInput && labelInput.value.startsWith('Pembayaran ke ')) {
-                    labelInput.value = `Pembayaran ke ${index + 1}`;
-                }
-            });
-        }
-    }
-
-    // Remove payment installment in edit modal
-    function removePaymentInstallmentEdit(button, invoiceNumber) {
-        const container = document.getElementById('payment-installments-list-edit-' + invoiceNumber);
-        button.closest('.payment-installment-row').remove();
-
-        // Re-index remaining installments
-        if (container) {
-            const rows = container.querySelectorAll('.payment-installment-row');
-            rows.forEach((row, index) => {
-                const labelInput = row.querySelector('.payment-label');
-                const amountInput = row.querySelector('.payment-amount');
-
-                // Update name attributes
-                if (labelInput) {
-                    labelInput.name = `payment_installments[${index}][label]`;
-                    // Update label if it's auto-generated
-                    if (labelInput.value.startsWith('Pembayaran ke ')) {
-                        labelInput.value = `Pembayaran ke ${index + 1}`;
-                    }
-                }
-                if (amountInput) {
-                    amountInput.name = `payment_installments[${index}][amount]`;
-                }
-            });
-        }
-    }
-
-    // Collect all payment installment data into JSON
-    function collectPaymentInstallments() {
-        const installments = [];
-        const installmentRows = document.querySelectorAll('.payment-installment-row');
-
-        installmentRows.forEach((row, index) => {
-            const label = row.querySelector('.payment-label')?.value || '';
-            const amount = row.querySelector('.payment-amount')?.value || '';
-
-            if (label && amount) {
-                installments.push({
-                    label: label,
-                    amount: parseFloat(amount)
-                });
-            }
-        });
-
-        return installments;
-    }
-
-    // Serialize items and payment installments for form submission
+    // Serialize items for form submission
     function serializeItems() {
         const items = [];
         const itemRows = document.querySelectorAll('.item-row');
@@ -589,13 +465,6 @@
         const itemsJsonField = document.querySelector('#items-json');
         if (itemsJsonField) {
             itemsJsonField.value = JSON.stringify(items);
-        }
-
-        // Collect and set payment installments JSON
-        const installments = collectPaymentInstallments();
-        const installmentsJsonField = document.querySelector('#payment-installments-json');
-        if (installmentsJsonField) {
-            installmentsJsonField.value = JSON.stringify(installments);
         }
 
         return items.length > 0;
@@ -781,30 +650,6 @@
         attachRemoveListener();
 
         // ==========================================
-        // ADD PAYMENT INSTALLMENT BUTTON
-        // ==========================================
-
-        const addInstallmentBtn = document.getElementById('add-payment-installment');
-        if (addInstallmentBtn) {
-            addInstallmentBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addPaymentInstallment();
-            });
-        }
-
-        // ==========================================
-        // EDIT MODAL - ADD PAYMENT INSTALLMENT BUTTONS
-        // ==========================================
-
-        document.querySelectorAll('[id^="add-payment-installment-edit-"]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const invoiceNumber = this.id.replace('add-payment-installment-edit-', '');
-                addPaymentInstallmentEdit(invoiceNumber);
-            });
-        });
-
-        // ==========================================
         // EDIT MODAL - ADD ITEM FUNCTIONALITY
         // ==========================================
 
@@ -921,7 +766,7 @@
 
                 const submitBtn = this.querySelector('button[type="submit"]');
 
-                // Serialize items and payment installments
+                // Serialize items
                 const hasItems = serializeItems();
 
                 if (!hasItems) {

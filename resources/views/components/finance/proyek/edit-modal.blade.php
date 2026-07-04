@@ -180,51 +180,6 @@
         </div>
     </div>
 
-    <!-- Payment Installments Section -->
-    <div class="mb-3 p-3 border border-secondary-light rounded-lg bg-secondary-light">
-        <label class="block text-text-primary font-semibold mb-2">
-            Pembayaran Bertahap (Opsional)
-            <span class="text-xs font-normal text-text-label">- Contoh: Pembayaran Ke 1, Ke 2, Sisa</span>
-        </label>
-        <p class="text-xs text-text-label mb-3">
-            <i class="fa-solid fa-info-circle"></i>
-            Tahap pembayaran akan terisi otomatis dari bukti pembayaran dan ikut terhapus saat bukti dihapus.
-        </p>
-        <div id="payment-installments-list-edit-{{ $invoice->invoice_number }}" class="space-y-2">
-            @php
-                $existingPayments = is_string($invoice->payment_installments)
-                    ? json_decode($invoice->payment_installments, true)
-                    : $invoice->payment_installments;
-            @endphp
-            @if ($existingPayments && is_array($existingPayments))
-                @foreach ($existingPayments as $index => $payment)
-                    <div
-                        class="payment-installment-row mb-2 p-3 border border-border-strong rounded-lg bg-surface-base">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <input type="text" name="payment_installments[{{ $index }}][label]"
-                                value="{{ $payment['label'] ?? '' }}"
-                                class="payment-label border border-border-strong rounded-lg p-2 text-text-input"
-                                placeholder="Label (Pembayaran Ke 1)">
-                            <input type="number" step="0.01" min="0"
-                                name="payment_installments[{{ $index }}][amount]"
-                                value="{{ $payment['amount'] ?? 0 }}"
-                                class="payment-amount border border-border-strong rounded-lg p-2 text-text-input"
-                                placeholder="Jumlah (Rp)">
-                            <button type="button" onclick="removePaymentInstallment(this)"
-                                class="bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                @endforeach
-            @endif
-        </div>
-        <button type="button" id="add-payment-installment-edit-{{ $invoice->invoice_number }}"
-            class="bg-secondary text-white px-4 py-2 rounded hover:bg-secondary-hover mt-2">
-            <i class="fa-solid fa-plus"></i> Tambah Pembayaran
-        </button>
-    </div>
-
     <!-- Payment Accounts Selection -->
     <div class="mb-3 p-3 border border-success-light rounded-lg bg-success-light">
         <label class="block text-text-primary font-semibold mb-2">

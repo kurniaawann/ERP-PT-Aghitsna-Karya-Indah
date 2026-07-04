@@ -31,7 +31,6 @@ class InvoiceProyek extends Model
         'dp_type',
         'dp_value',
         'dp_amount',
-        'payment_installments',
         'selected_payment_accounts',
     ];
 

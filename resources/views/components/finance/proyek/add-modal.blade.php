@@ -150,24 +150,7 @@
         </div>
     </div>
 
-    <!-- Payment Installments Section -->
-    <div class="mb-3 p-3 border rounded bg-purple-50">
-        <label class="block text-text-primary font-semibold mb-2">
-            Pembayaran Bertahap (Opsional)
-            <span class="text-xs font-normal text-text-label">- Contoh: Pembayaran Ke 1, Ke 2, Sisa</span>
-        </label>
-        <p class="text-xs text-text-label mb-3">
-            <i class="fa-solid fa-info-circle"></i>
-            Tambahkan detail pembayaran jika invoice ini dibayar secara bertahap
-        </p>
-        <div id="payment-installments-list" class="space-y-2">
-            <!-- Installments will be added here dynamically -->
-        </div>
-        <button type="button" id="add-payment-installment"
-            class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 mt-2">
-            <i class="fa-solid fa-plus"></i> Tambah Pembayaran
-        </button>
-    </div> <!-- Payment Accounts Selection -->
+    <!-- Payment Accounts Selection -->
     <div class="mb-3 p-3 border rounded bg-green-50">
         <label class="block text-text-primary font-semibold mb-2">
             Pilih Rekening Pembayaran <span class="text-error">*</span>
@@ -205,5 +188,4 @@
     </div>
 
     <input type="hidden" name="items" id="items-json" value="[]">
-    <input type="hidden" name="payment_installments" id="payment-installments-json" value="[]">
 </x-modal>

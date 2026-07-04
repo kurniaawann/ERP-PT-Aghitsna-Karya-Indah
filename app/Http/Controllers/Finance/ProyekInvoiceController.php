@@ -147,12 +147,6 @@ class ProyekInvoiceController extends Controller
         // Hitung discount dan DP menggunakan method helper
         $calculations = $this->calculateInvoiceTotals($request, $totalAmount);
 
-        // Parse payment installments if exists
-        $paymentInstallments = null;
-        if ($request->has('payment_installments') && !empty($request->payment_installments)) {
-            $paymentInstallments = json_decode($request->payment_installments, true);
-        }
-
         // Ambil semua data dari request (validasi sudah dilakukan di HTML)
         $data = $request->all();
         // Override items dengan array (bukan JSON string)
@@ -161,7 +155,6 @@ class ProyekInvoiceController extends Controller
         $data['total_amount'] = $totalAmount;
         $data['total_after_discount'] = $calculations['totalAfterDiscount'] > 0 && $calculations['totalAfterDiscount'] != $totalAmount ? $calculations['totalAfterDiscount'] : null;
         $data['dp_amount'] = $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null;
-        $data['payment_installments'] = $paymentInstallments;
 
         // Simpan invoice ke database
         InvoiceProyek::create($data);
@@ -202,14 +195,6 @@ class ProyekInvoiceController extends Controller
             // Hitung discount dan DP menggunakan method helper
             $calculations = $this->calculateInvoiceTotals($request, $totalAmount);
 
-            // Parse payment installments if exists
-            $paymentInstallments = null;
-            if ($request->has('payment_installments') && !empty($request->payment_installments)) {
-                $paymentInstallments = is_array($request->payment_installments)
-                    ? $request->payment_installments
-                    : json_decode($request->payment_installments, true);
-            }
-
             // Update data invoice secara eksplisit berdasarkan primary key string.
             InvoiceProyek::where('invoice_number', $proyek_invoice->invoice_number)->update([
                 'invoice_date' => $request->invoice_date,
@@ -224,7 +209,6 @@ class ProyekInvoiceController extends Controller
                 'dp_type' => $request->dp_type,
                 'dp_value' => $request->dp_value,
                 'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
-                'payment_installments' => json_encode($paymentInstallments ?? []),
                 'selected_payment_accounts' => json_encode($request->selected_payment_accounts ?? []),
             ]);
 
@@ -244,7 +228,6 @@ class ProyekInvoiceController extends Controller
         return response()->json([
             'invoice' => $proyek_invoice,
             'items' => json_decode($proyek_invoice->items), // Decode JSON ke array
-            'payment_installments' => json_decode($proyek_invoice->payment_installments) // Decode JSON ke array
         ]);
 
     }
