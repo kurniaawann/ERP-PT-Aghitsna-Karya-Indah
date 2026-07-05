@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\InputNormalizer;
+use App\Services\Finance\InvoiceCalculatorService;
 use App\Traits\HasBulkActions;
 use Illuminate\Support\Facades\Log;
 
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\Log;
 class AlumuniumInvoiceController extends Controller
 {
     use HasBulkActions;
+
+    public function __construct(
+        protected InvoiceCalculatorService $calculator
+    ) {}
 
     public function getNextInvoiceNumber()
     {
@@ -140,8 +145,8 @@ class AlumuniumInvoiceController extends Controller
             $totalAmount += $jumlah;
         }
 
-        // Hitung discount dan DP menggunakan method helper
-        $calculations = $this->calculateInvoiceTotals($request, $totalAmount);
+        // Hitung discount dan DP menggunakan service
+        $calculations = $this->calculator->calculateFromRequest($request, $totalAmount);
 
         // Ambil semua data dari request (validasi sudah dilakukan di HTML)
         $data = $request->all();
@@ -190,8 +195,8 @@ class AlumuniumInvoiceController extends Controller
                 $totalAmount += $jumlah;
             }
 
-            // Hitung discount dan DP menggunakan method helper
-            $calculations = $this->calculateInvoiceTotals($request, $totalAmount);
+            // Hitung discount dan DP menggunakan service
+            $calculations = $this->calculator->calculateFromRequest($request, $totalAmount);
 
             // Update data invoice menggunakan model yang sudah ditemukan secara eksplisit.
             $aluminium_invoice->update([
@@ -269,41 +274,7 @@ class AlumuniumInvoiceController extends Controller
         return Excel::download(new AlumuniumInvoiceExport($invoiceNumber), "Invoice_Aluminium_{$safeFileName}_{$date}.xlsx");
     }
 
-    /**
-     * Calculate invoice totals including discount and DP
-     */
-    private function calculateInvoiceTotals(Request $request, float $totalAmount): array
-    {
-        // Hitung discount
-        $discountAmount = 0;
-        $totalAfterDiscount = $totalAmount;
 
-        if ($request->filled('discount_value') && $request->discount_value > 0) {
-            if ($request->discount_type === 'percentage') {
-                $discountAmount = round(($totalAmount * $request->discount_value) / 100);
-            } else {
-                $discountAmount = round($request->discount_value);
-            }
-            $totalAfterDiscount = $totalAmount - $discountAmount;
-        }
-
-        // Hitung DP
-        $dpAmount = 0;
-        if ($request->filled('dp_value') && $request->dp_value > 0) {
-            $baseAmount = $totalAfterDiscount != $totalAmount ? $totalAfterDiscount : $totalAmount;
-            if ($request->dp_type === 'percentage') {
-                $dpAmount = round(($baseAmount * $request->dp_value) / 100);
-            } else {
-                $dpAmount = round($request->dp_value);
-            }
-        }
-
-        return [
-            'discountAmount' => $discountAmount,
-            'totalAfterDiscount' => $totalAfterDiscount,
-            'dpAmount' => $dpAmount,
-        ];
-    }
 
 
 

@@ -14,12 +14,29 @@
                             <th class="p-2 text-left">Kepada</th>
                             <th class="p-2 text-left">Proyek</th>
                             <th class="p-2 text-center">Total</th>
+                            <th class="p-2 text-center">Terbayar</th>
+                            <th class="p-2 text-center">Sisa</th>
                             <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($invoices as $invoice)
+                            @php
+                                $totalPaid = $invoice->getTotalPaidAmount();
+                                $remaining = $invoice->getRemainingAmount();
+                                $isFullyPaid = $invoice->isFullyPaid();
+                                if ($isFullyPaid) {
+                                    $statusLabel = 'Lunas';
+                                    $statusClass = 'bg-green-100 text-green-800';
+                                } elseif ($totalPaid > 0) {
+                                    $statusLabel = 'Sebagian';
+                                    $statusClass = 'bg-orange-100 text-orange-800';
+                                } else {
+                                    $statusLabel = 'Belum';
+                                    $statusClass = 'bg-red-100 text-red-800';
+                                }
+                            @endphp
                             <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_invoices[]"
@@ -34,14 +51,22 @@
                                     {{ substr($invoice->project_description ?? '-', 0, 30) }}
                                 </td>
 
-                                <td class="p-2 text-right font-medium">
-                                    {{ 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') }}
+                                <td class="p-2 text-right font-medium whitespace-nowrap">
+                                    Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
+                                </td>
+
+                                <td class="p-2 text-right font-medium whitespace-nowrap">
+                                    Rp {{ number_format($totalPaid, 0, ',', '.') }}
+                                </td>
+
+                                <td class="p-2 text-right font-semibold whitespace-nowrap
+                                    {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                    Rp {{ number_format($remaining, 0, ',', '.') }}
                                 </td>
 
                                 <td class="p-2 text-center">
-                                    <span
-                                        class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $invoice->payment_status_badge_class }}">
-                                        {{ $invoice->payment_status_label }}
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $statusClass }}">
+                                        {{ $statusLabel }}
                                     </span>
                                 </td>
 
@@ -81,7 +106,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center p-4 text-text-secondary">
+                                <td colspan="10" class="text-center p-4 text-text-secondary">
                                     Data invoice tidak ditemukan.
                                 </td>
                             </tr>
@@ -90,4 +115,5 @@
                 </table>
             </div>
         </div>
+    </div>
 </form>

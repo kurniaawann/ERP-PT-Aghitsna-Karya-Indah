@@ -15,12 +15,34 @@
                             <th class="p-2 text-left">Proyek</th>
                             <th class="p-2 text-center">Total</th>
                             <th class="p-2 text-center">Terbayar</th>
+                            <th class="p-2 text-center">Sisa</th>
                             <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($invoices as $invoice)
+                            @php
+                                $totalPaid = $invoice->getTotalPaidAmount();
+                                $netAmount = $invoice->getNetAmount();
+                                $remaining = $invoice->getRemainingAmount();
+                                $isFullyPaid = $invoice->isFullyPaid();
+                                $progressPercent = $netAmount > 0 ? min(100, (int) round(($totalPaid / $netAmount) * 100)) : 0;
+
+                                if ($isFullyPaid) {
+                                    $statusLabel = 'Lunas';
+                                    $statusClass = 'bg-green-100 text-green-800';
+                                    $progressColor = 'bg-green-500';
+                                } elseif ($totalPaid > 0) {
+                                    $statusLabel = 'Sebagian';
+                                    $statusClass = 'bg-orange-100 text-orange-800';
+                                    $progressColor = 'bg-orange-400';
+                                } else {
+                                    $statusLabel = 'Belum';
+                                    $statusClass = 'bg-red-100 text-red-800';
+                                    $progressColor = 'bg-red-400';
+                                }
+                            @endphp
                             <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_invoices[]"
@@ -35,19 +57,31 @@
                                     {{ substr($invoice->project_description ?? '-', 0, 30) }}
                                 </td>
 
-                                <td class="p-2 text-right font-medium">
-                                    {{ 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') }}
+                                <td class="p-2 text-right font-medium whitespace-nowrap">
+                                    Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
                                 </td>
 
                                 <td class="p-2 text-right font-medium whitespace-nowrap">
-                                    Rp {{ number_format($invoice->getTotalPaidAmount(), 0, ',', '.') }}
+                                    Rp {{ number_format($totalPaid, 0, ',', '.') }}
+                                </td>
+
+                                <td class="p-2 text-right font-semibold whitespace-nowrap
+                                    {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                    Rp {{ number_format($remaining, 0, ',', '.') }}
                                 </td>
 
                                 <td class="p-2 text-center">
-                                    <span
-                                        class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $invoice->payment_status_badge_class }}">
-                                        {{ $invoice->payment_status_label }}
-                                    </span>
+                                    <div class="flex flex-col items-center gap-1.5">
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $statusClass }}">
+                                            {{ $statusLabel }}
+                                        </span>
+                                        <div class="flex items-center gap-1.5 w-full max-w-[80px]">
+                                            <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full {{ $progressColor }}" style="width: {{ $progressPercent }}%"></div>
+                                            </div>
+                                            <span class="text-[10px] font-medium text-gray-400 tabular-nums">{{ $progressPercent }}%</span>
+                                        </div>
+                                    </div>
                                 </td>
 
                                 <td class="p-2 text-center">
@@ -86,7 +120,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center p-4 text-text-secondary">
+                                <td colspan="10" class="text-center p-4 text-text-secondary">
                                     Data invoice tidak ditemukan.
                                 </td>
                             </tr>

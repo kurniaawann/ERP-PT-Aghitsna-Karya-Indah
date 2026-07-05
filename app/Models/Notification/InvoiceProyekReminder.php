@@ -3,6 +3,7 @@
 namespace App\Models\Notification;
 
 use App\Models\Finance\InvoiceProyek;
+use App\Services\Finance\InvoiceCalculatorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
@@ -71,6 +72,11 @@ class InvoiceProyekReminder extends Model
         return $query->where('reminder_date', '>', now()->toDateString());
     }
 
+    protected function getCalculator(): InvoiceCalculatorService
+    {
+        return app(InvoiceCalculatorService::class);
+    }
+
     /**
      * Total invoice yang harus dibayar.
      */
@@ -80,7 +86,7 @@ class InvoiceProyekReminder extends Model
             return $this->invoice->getNetAmount();
         }
 
-        return (int) max(0, $this->total_amount ?? 0);
+        return $this->getCalculator()->calculateNetAmount(null, $this->total_amount);
     }
 
     /**
@@ -100,7 +106,10 @@ class InvoiceProyekReminder extends Model
      */
     public function getRemainingAmountAttribute(): int
     {
-        return (int) max(0, $this->net_amount - $this->paid_amount);
+        return $this->getCalculator()->calculateRemainingAmount(
+            $this->net_amount,
+            $this->paid_amount
+        );
     }
 
     /**
@@ -108,7 +117,9 @@ class InvoiceProyekReminder extends Model
      */
     public function getDisplayStatusAttribute(): string
     {
-        if ($this->status === 'paid' || $this->remaining_amount <= 0) {
+        $isFullyPaid = $this->getCalculator()->isFullyPaid($this->net_amount, $this->paid_amount);
+
+        if ($this->status === 'paid' || $isFullyPaid) {
             return 'paid';
         }
 
@@ -124,7 +135,9 @@ class InvoiceProyekReminder extends Model
      */
     public function getIsOverdueAttribute(): bool
     {
-        if ($this->status === 'paid' || $this->remaining_amount <= 0) {
+        $isFullyPaid = $this->getCalculator()->isFullyPaid($this->net_amount, $this->paid_amount);
+
+        if ($this->status === 'paid' || $isFullyPaid) {
             return false;
         }
 

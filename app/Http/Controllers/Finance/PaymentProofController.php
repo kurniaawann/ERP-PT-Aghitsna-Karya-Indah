@@ -7,6 +7,7 @@ use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Report\SalesRecap;
+use App\Services\Finance\InvoiceCalculatorService;
 use App\Services\Finance\PaymentProofService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,10 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentProofController extends Controller
 {
+    public function __construct(
+        protected InvoiceCalculatorService $calculator
+    ) {}
+
     public function index(Request $request)
     {
         $query = PaymentProof::query()->latest();
@@ -142,7 +147,7 @@ class PaymentProofController extends Controller
                 return $errorResponse;
             }
         } else {
-            $amount = $this->getInvoiceNetAmount($invoice);
+            $amount = $this->calculator->getInvoiceNetAmount($invoice);
         }
 
         $storedFile = null;
@@ -221,7 +226,7 @@ class PaymentProofController extends Controller
                 return $errorResponse;
             }
         } else {
-            $amount = $this->getInvoiceNetAmount($invoice);
+            $amount = $this->calculator->getInvoiceNetAmount($invoice);
         }
 
         $storedFile = null;
@@ -378,9 +383,9 @@ class PaymentProofController extends Controller
 
     private function validatePaymentAmount($invoice, int $amount, ?int $excludePaymentProofId = null)
     {
-        $netAmount = $this->getInvoiceNetAmount($invoice);
-        $paidAmount = $this->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
-        $remainingAmount = max(0, $netAmount - $paidAmount);
+        $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
+        $netAmount = $this->calculator->getInvoiceNetAmount($invoice);
+        $remainingAmount = $this->calculator->getRemainingAmountForPayment($netAmount, $paidAmount);
 
         if ($amount > $remainingAmount) {
             return back()
@@ -389,48 +394,6 @@ class PaymentProofController extends Controller
         }
 
         return null;
-    }
-
-    private function getPaidAmountForInvoice($invoice, ?int $excludePaymentProofId = null): int
-    {
-        if ($excludePaymentProofId === null && method_exists($invoice, 'getTotalPaidAmount')) {
-            return (int) $invoice->getTotalPaidAmount();
-        }
-
-        if ($invoice instanceof SalesRecap) {
-            $query = PaymentProof::query()
-                ->where('invoice_type', 'rekap_penjualan')
-                ->where('invoice_number', $invoice->id_sales_recap);
-
-            if ($excludePaymentProofId) {
-                $query->where('id', '!=', $excludePaymentProofId);
-            }
-
-            return (int) $query->sum('amount');
-        }
-
-        $query = PaymentProof::query()
-            ->where('invoice_type', $invoice instanceof InvoiceAlumunium ? 'alumunium' : 'proyek')
-            ->where('invoice_number', $invoice->invoice_number);
-
-        if ($excludePaymentProofId) {
-            $query->where('id', '!=', $excludePaymentProofId);
-        }
-
-        return (int) $query->sum('amount');
-    }
-
-    private function getInvoiceNetAmount($invoice): int
-    {
-        if (method_exists($invoice, 'getNetAmount')) {
-            return (int) $invoice->getNetAmount();
-        }
-
-        if ($invoice instanceof SalesRecap) {
-            return (int) max(0, $invoice->total_selling ?? 0);
-        }
-
-        return (int) max(0, $invoice->total_after_discount ?? $invoice->total_amount ?? 0);
     }
 
     private function syncPaymentStatuses(string $invoiceType, string $invoiceNumber, ?string $salesRecapId = null, ?string $oldSalesRecapId = null): void
@@ -507,9 +470,7 @@ class PaymentProofController extends Controller
             $nextStage = $invoiceType === 'proyek'
                 ? max((int) ($proofMeta->max_stage ?? 0), (int) ($proofMeta->proof_count ?? 0)) + 1
                 : null;
-            $paidAmount = $this->getPaidAmountForInvoice($invoice);
-            $netAmount = $this->getInvoiceNetAmount($invoice);
-            $remainingAmount = max(0, $netAmount - $paidAmount);
+            $calcData = $this->calculator->buildInvoiceOptionData($invoice, $moduleType, $invoiceType);
 
             $label = $invoice instanceof SalesRecap
                 ? $invoice->id_sales_recap . ' - ' . $invoice->name_proyek
@@ -523,19 +484,19 @@ class PaymentProofController extends Controller
                 'value' => $invoiceKey,
                 'label' => $label,
                 'next_stage' => $nextStage,
-                'paid_amount' => $paidAmount,
-                'net_amount' => $netAmount,
-                'remaining_amount' => $remainingAmount,
-                'is_fully_paid' => $remainingAmount <= 0,
+                'paid_amount' => $calcData['paid_amount'],
+                'net_amount' => $calcData['net_amount'],
+                'remaining_amount' => $calcData['remaining_amount'],
+                'is_fully_paid' => $calcData['is_fully_paid'],
             ];
 
             $invoiceLookup[$moduleType][$invoiceType][$invoiceKey] = [
                 'label' => $label,
                 'next_stage' => $nextStage,
-                'paid_amount' => $paidAmount,
-                'net_amount' => $netAmount,
-                'remaining_amount' => $remainingAmount,
-                'is_fully_paid' => $remainingAmount <= 0,
+                'paid_amount' => $calcData['paid_amount'],
+                'net_amount' => $calcData['net_amount'],
+                'remaining_amount' => $calcData['remaining_amount'],
+                'is_fully_paid' => $calcData['is_fully_paid'],
             ];
         }
 
@@ -549,9 +510,7 @@ class PaymentProofController extends Controller
         foreach ($salesRecaps as $salesRecap) {
             $mapKey = $moduleType . '|' . $invoiceType . '|' . $salesRecap->id_sales_recap;
             $proofMeta = $proofStageMap->get($mapKey);
-            $paidAmount = $this->getPaidAmountForInvoice($salesRecap);
-            $netAmount = $this->getInvoiceNetAmount($salesRecap);
-            $remainingAmount = max(0, $netAmount - $paidAmount);
+            $calcData = $this->calculator->buildInvoiceOptionData($salesRecap, $moduleType, $invoiceType);
 
             $label = $salesRecap->id_sales_recap . ' - ' . $salesRecap->name_proyek;
 
@@ -559,19 +518,19 @@ class PaymentProofController extends Controller
                 'value' => $salesRecap->id_sales_recap,
                 'label' => $label,
                 'next_stage' => null,
-                'paid_amount' => $paidAmount,
-                'net_amount' => $netAmount,
-                'remaining_amount' => $remainingAmount,
-                'is_fully_paid' => $remainingAmount <= 0,
+                'paid_amount' => $calcData['paid_amount'],
+                'net_amount' => $calcData['net_amount'],
+                'remaining_amount' => $calcData['remaining_amount'],
+                'is_fully_paid' => $calcData['is_fully_paid'],
             ];
 
             $invoiceLookup[$moduleType][$invoiceType][$salesRecap->id_sales_recap] = [
                 'label' => $label,
                 'next_stage' => null,
-                'paid_amount' => $paidAmount,
-                'net_amount' => $netAmount,
-                'remaining_amount' => $remainingAmount,
-                'is_fully_paid' => $remainingAmount <= 0,
+                'paid_amount' => $calcData['paid_amount'],
+                'net_amount' => $calcData['net_amount'],
+                'remaining_amount' => $calcData['remaining_amount'],
+                'is_fully_paid' => $calcData['is_fully_paid'],
             ];
         }
 

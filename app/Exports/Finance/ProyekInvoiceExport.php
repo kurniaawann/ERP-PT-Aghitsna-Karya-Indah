@@ -3,6 +3,7 @@
 namespace App\Exports\Finance;
 
 use App\Models\Finance\InvoiceProyek;
+use App\Services\Finance\InvoiceCalculatorService;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -217,12 +218,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 // Discount row (if exists)
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
-                    $discountAmount = 0;
-                    if ($invoice->discount_type === 'percentage') {
-                        $discountAmount = ($totalAmount * $invoice->discount_value) / 100;
-                    } else {
-                        $discountAmount = $invoice->discount_value;
-                    }
+                    $discountAmount = $invoice->getDiscountAmount($totalAmount);
                     $totalAfterDiscount = $totalAmount - $discountAmount;
 
                     $currentRow++;
@@ -275,13 +271,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 // DP row (if exists)
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
-                    $baseForDP = $totalAfterDiscount;
-                    $dpAmount = 0;
-                    if ($invoice->dp_type === 'percentage') {
-                        $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
-                    } else {
-                        $dpAmount = $invoice->dp_value;
-                    }
+                    $dpAmount = $invoice->getDpAmount($totalAfterDiscount);
 
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:E{$currentRow}");

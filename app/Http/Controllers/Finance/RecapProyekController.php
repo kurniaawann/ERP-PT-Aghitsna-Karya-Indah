@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Finance;
 use App\Exports\Finance\ProyekRecapExport;
 use App\Http\Controllers\Controller;
 use App\Models\Finance\InvoiceProyek;
+use App\Services\Finance\InvoiceCalculatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class RecapProyekController extends Controller
 {
+    public function __construct(
+        protected InvoiceCalculatorService $calculator
+    ) {}
+
     public function index(Request $request)
     {
         $query = $this->baseQuery($request);
@@ -96,14 +101,7 @@ class RecapProyekController extends Controller
 
     private function buildTotals($invoices): object
     {
-        return (object) [
-            'invoice_count' => $invoices->count(),
-            'total_invoice' => $invoices->sum(fn($invoice) => (int) $invoice->getNetAmount()),
-            'total_paid' => $invoices->sum(fn($invoice) => (int) $invoice->getTotalPaidAmount()),
-            'total_remaining' => $invoices->sum(fn($invoice) => (int) $invoice->getRemainingAmount()),
-            'paid_count' => $invoices->filter(fn($invoice) => $invoice->isFullyPaid())->count(),
-            'unpaid_count' => $invoices->filter(fn($invoice) => !$invoice->isFullyPaid())->count(),
-        ];
+        return $this->calculator->buildProyekTotals($invoices);
     }
 
     private function buildPeriodTitle(Request $request): string

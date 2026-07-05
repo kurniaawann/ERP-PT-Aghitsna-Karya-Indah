@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\Finance\PaymentProof;
+use App\Services\Finance\InvoiceCalculatorService;
 
 class InvoiceProyek extends Model
 {
@@ -54,6 +55,11 @@ class InvoiceProyek extends Model
         return 'invoice_number';
     }
 
+    protected function getCalculator(): InvoiceCalculatorService
+    {
+        return app(InvoiceCalculatorService::class);
+    }
+
     /**
      * Bukti pembayaran untuk invoice proyek.
      */
@@ -69,11 +75,7 @@ class InvoiceProyek extends Model
      */
     public function getTotalPaidAmount(): int
     {
-        $paymentProofs = $this->relationLoaded('paymentProofs')
-            ? $this->paymentProofs
-            : $this->paymentProofs()->get();
-
-        return (int) max(0, $paymentProofs->sum(fn($paymentProof) => (int) ($paymentProof->amount ?? 0)));
+        return $this->getCalculator()->getTotalPaidAmount($this);
     }
 
     /**
@@ -112,17 +114,11 @@ class InvoiceProyek extends Model
      */
     public function getDiscountAmount(float $totalAmount = null): float
     {
-        if (!$this->discount_value || $this->discount_value <= 0) {
-            return 0;
-        }
-
-        $amount = $totalAmount ?? $this->total_amount;
-
-        if ($this->discount_type === 'percentage') {
-            return round(($amount * floatval($this->discount_value)) / 100);
-        }
-
-        return round(floatval($this->discount_value));
+        return $this->getCalculator()->calculateDiscountAmount(
+            $totalAmount ?? (float) ($this->total_amount ?? 0),
+            $this->discount_type,
+            $this->discount_value ? (float) $this->discount_value : null
+        );
     }
 
     /**
@@ -130,17 +126,13 @@ class InvoiceProyek extends Model
      */
     public function getDpAmount(float $baseAmount = null): float
     {
-        if (!$this->dp_value || $this->dp_value <= 0) {
-            return 0;
-        }
-
-        $amount = $baseAmount ?? ($this->total_after_discount ?? $this->total_amount);
-
-        if ($this->dp_type === 'percentage') {
-            return round(($amount * floatval($this->dp_value)) / 100);
-        }
-
-        return round(floatval($this->dp_value));
+        return $this->getCalculator()->calculateDpAmount(
+            (float) ($this->total_amount ?? 0),
+            $this->total_after_discount,
+            $this->dp_type,
+            $this->dp_value ? (float) $this->dp_value : null,
+            $baseAmount
+        );
     }
 
     /**
@@ -148,18 +140,21 @@ class InvoiceProyek extends Model
      */
     public function getNetAmount(): int
     {
-        return (int) max(0, $this->total_after_discount ?? $this->total_amount ?? 0);
+        return $this->getCalculator()->calculateNetAmount(
+            $this->total_after_discount,
+            $this->total_amount
+        );
     }
 
-    /**
-     * Total pembayaran yang sudah masuk (DP + cicilan).
-     */
     /**
      * Sisa pembayaran yang harus dilunasi.
      */
     public function getRemainingAmount(): int
     {
-        return (int) max(0, $this->getNetAmount() - $this->getTotalPaidAmount());
+        return $this->getCalculator()->calculateRemainingAmount(
+            $this->getNetAmount(),
+            $this->getTotalPaidAmount()
+        );
     }
 
     /**
@@ -175,7 +170,10 @@ class InvoiceProyek extends Model
      */
     public function isFullyPaid(): bool
     {
-        return $this->getTotalPaidAmount() >= $this->getNetAmount();
+        return $this->getCalculator()->isFullyPaid(
+            $this->getNetAmount(),
+            $this->getTotalPaidAmount()
+        );
     }
 
     /**

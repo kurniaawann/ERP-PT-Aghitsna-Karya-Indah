@@ -5,10 +5,24 @@ namespace App\Models\Finance;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Finance\PaymentProof;
+use App\Services\Finance\InvoiceCalculatorService;
+use App\Services\Finance\PaymentProofService;
 
 class InvoiceAlumunium extends Model
 {
     use HasFactory;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($invoice) {
+            foreach ($invoice->paymentProofs as $proof) {
+                app(PaymentProofService::class)->delete($proof->file_path);
+                $proof->delete();
+            }
+        });
+    }
 
     protected $table = 'alumunium_invoices';
     protected $primaryKey = 'invoice_number'; // Set primary key to invoice_number
@@ -52,6 +66,11 @@ class InvoiceAlumunium extends Model
         return 'invoice_number';
     }
 
+    protected function getCalculator(): InvoiceCalculatorService
+    {
+        return app(InvoiceCalculatorService::class);
+    }
+
     /**
      * Bukti pembayaran untuk invoice alumunium.
      */
@@ -67,11 +86,7 @@ class InvoiceAlumunium extends Model
      */
     public function getTotalPaidAmount(): int
     {
-        $paymentProofs = $this->relationLoaded('paymentProofs')
-            ? $this->paymentProofs
-            : $this->paymentProofs()->get();
-
-        return (int) max(0, $paymentProofs->sum(fn($paymentProof) => (int) ($paymentProof->amount ?? 0)));
+        return $this->getCalculator()->getTotalPaidAmount($this);
     }
 
     /**
@@ -79,7 +94,10 @@ class InvoiceAlumunium extends Model
      */
     public function getNetAmount(): int
     {
-        return (int) max(0, $this->total_after_discount ?? $this->total_amount ?? 0);
+        return $this->getCalculator()->calculateNetAmount(
+            $this->total_after_discount,
+            $this->total_amount
+        );
     }
 
     /**
@@ -87,7 +105,10 @@ class InvoiceAlumunium extends Model
      */
     public function getRemainingAmount(): int
     {
-        return (int) max(0, $this->getNetAmount() - $this->getTotalPaidAmount());
+        return $this->getCalculator()->calculateRemainingAmount(
+            $this->getNetAmount(),
+            $this->getTotalPaidAmount()
+        );
     }
 
     /**
@@ -95,7 +116,10 @@ class InvoiceAlumunium extends Model
      */
     public function isFullyPaid(): bool
     {
-        return $this->getTotalPaidAmount() >= $this->getNetAmount();
+        return $this->getCalculator()->isFullyPaid(
+            $this->getNetAmount(),
+            $this->getTotalPaidAmount()
+        );
     }
 
     /**
@@ -121,17 +145,11 @@ class InvoiceAlumunium extends Model
      */
     public function getDiscountAmount(float $totalAmount = null): float
     {
-        if (!$this->discount_value || $this->discount_value <= 0) {
-            return 0;
-        }
-
-        $amount = $totalAmount ?? $this->total_amount;
-
-        if ($this->discount_type === 'percentage') {
-            return round(($amount * floatval($this->discount_value)) / 100);
-        }
-
-        return round(floatval($this->discount_value));
+        return $this->getCalculator()->calculateDiscountAmount(
+            $totalAmount ?? (float) ($this->total_amount ?? 0),
+            $this->discount_type,
+            $this->discount_value ? (float) $this->discount_value : null
+        );
     }
 
     /**
@@ -139,16 +157,12 @@ class InvoiceAlumunium extends Model
      */
     public function getDpAmount(float $baseAmount = null): float
     {
-        if (!$this->dp_value || $this->dp_value <= 0) {
-            return 0;
-        }
-
-        $amount = $baseAmount ?? ($this->total_after_discount ?? $this->total_amount);
-
-        if ($this->dp_type === 'percentage') {
-            return round(($amount * floatval($this->dp_value)) / 100);
-        }
-
-        return round(floatval($this->dp_value));
+        return $this->getCalculator()->calculateDpAmount(
+            (float) ($this->total_amount ?? 0),
+            $this->total_after_discount,
+            $this->dp_type,
+            $this->dp_value ? (float) $this->dp_value : null,
+            $baseAmount
+        );
     }
 }

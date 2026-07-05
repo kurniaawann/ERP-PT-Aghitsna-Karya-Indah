@@ -18,7 +18,7 @@ trait HasBulkActions
             return redirect()->back()->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
         }
 
-        $modelClass::whereIn($idColumn, $selectedIds)->delete();
+        $modelClass::whereIn($idColumn, $selectedIds)->get()->each->delete();
 
         $message = count($selectedIds) . ' data terpilih berhasil dihapus.';
 

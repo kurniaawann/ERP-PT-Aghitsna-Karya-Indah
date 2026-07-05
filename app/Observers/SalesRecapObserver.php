@@ -6,6 +6,7 @@ use App\Models\Report\SalesRecap;
 use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
 use App\Models\Inventory\ItemStockOut;
+use App\Services\Finance\PaymentProofService;
 
 class SalesRecapObserver
 {
@@ -61,6 +62,11 @@ class SalesRecapObserver
     public function deleted(SalesRecap $salesRecap): void
     {
         ItemStockOut::where('id_sales_recap', $salesRecap->getKey())->delete();
+
+        foreach ($salesRecap->paymentProofs as $proof) {
+            app(PaymentProofService::class)->delete($proof->file_path);
+            $proof->delete();
+        }
     }
 
     /**

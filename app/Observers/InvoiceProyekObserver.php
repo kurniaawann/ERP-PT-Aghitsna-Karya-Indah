@@ -4,6 +4,8 @@ namespace App\Observers;
 
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Notification\InvoiceProyekReminder;
+use App\Services\Finance\InvoiceCalculatorService;
+use App\Services\Finance\PaymentProofService;
 use Carbon\Carbon;
 
 class InvoiceProyekObserver
@@ -32,6 +34,11 @@ class InvoiceProyekObserver
     public function deleted(InvoiceProyek $invoiceProyek): void
     {
         InvoiceProyekReminder::where('invoice_number', $invoiceProyek->invoice_number)->delete();
+
+        foreach ($invoiceProyek->paymentProofs as $proof) {
+            app(PaymentProofService::class)->delete($proof->file_path);
+            $proof->delete();
+        }
     }
 
     /**
@@ -39,9 +46,10 @@ class InvoiceProyekObserver
      */
     private function syncReminder(InvoiceProyek $invoiceProyek): void
     {
-        $netAmount = $invoiceProyek->getNetAmount();
-        $paidAmount = $invoiceProyek->getTotalPaidAmount();
-        $remainingAmount = max(0, $netAmount - $paidAmount);
+        $calculator = app(InvoiceCalculatorService::class);
+        $netAmount = $calculator->getNetAmount($invoiceProyek);
+        $paidAmount = $calculator->getTotalPaidAmount($invoiceProyek);
+        $remainingAmount = $calculator->getRemainingAmount($invoiceProyek);
         $reminderDate = Carbon::parse($invoiceProyek->invoice_date)->addMonthNoOverflow();
 
         $status = 'pending';

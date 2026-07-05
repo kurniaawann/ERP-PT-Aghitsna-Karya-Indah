@@ -1,289 +1,211 @@
-{{-- Modal Detail Invoice Alumunium --}}
-<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice" :hideFooter="true">
+@php
+    $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
+    $totalAmount = (int) ($invoice->total_amount ?? 0);
+    $netAmount = $invoice->getNetAmount();
+    $totalPaid = $invoice->getTotalPaidAmount();
+    $remaining = $invoice->getRemainingAmount();
+    $isFullyPaid = $invoice->isFullyPaid();
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-            <label class="block text-sm font-semibold text-text-primary mb-1">No Invoice</label>
-            <p class="text-gray-900 font-medium">{{ $invoice->invoice_number }}</p>
+    $discountAmount = (int) $invoice->getDiscountAmount();
+    $dpAmount = (int) $invoice->getDpAmount();
+
+    // Clean display values
+    $discountValueDisplay = rtrim(rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'), ',');
+    $dpValueDisplay = rtrim(rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'), ',');
+@endphp
+
+<x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice" :hideFooter="true" size="4xl">
+
+    {{-- Card A: Informasi Invoice --}}
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500">Informasi Invoice</h3>
+            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $invoice->payment_status_badge_class }}">
+                {{ $invoice->payment_status_label }}
+            </span>
         </div>
-        <div>
-            <label class="block text-sm font-semibold text-text-primary mb-1">Tanggal Invoice</label>
-            <p class="text-gray-900">{{ $invoice->invoice_date->format('d F Y') }}</p>
-        </div>
-        <div>
-            <label class="block text-sm font-semibold text-text-primary mb-1">Kepada</label>
-            <p class="text-gray-900">{{ $invoice->recipient }}</p>
-        </div>
-        <div>
-            <label class="block text-sm font-semibold text-text-primary mb-1">Hal / Regarding</label>
-            <p class="text-gray-900">{{ $invoice->regarding }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+            <div>
+                <p class="text-xs text-gray-400 mb-0.5">No Invoice</p>
+                <p class="font-semibold text-gray-900">{{ $invoice->invoice_number }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 mb-0.5">Tanggal Invoice</p>
+                <p class="text-gray-900">{{ $invoice->invoice_date->format('d F Y') }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 mb-0.5">Kepada</p>
+                <p class="font-medium text-gray-900">{{ $invoice->recipient }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 mb-0.5">Hal / Regarding</p>
+                <p class="text-gray-900">{{ $invoice->regarding ?? '-' }}</p>
+            </div>
+            <div class="md:col-span-2">
+                <p class="text-xs text-gray-400 mb-0.5">Deskripsi Proyek</p>
+                <p class="text-gray-900">{{ $invoice->project_description }}</p>
+            </div>
         </div>
     </div>
 
-    <div class="mb-4">
-        <label class="block text-sm font-semibold text-text-primary mb-1">Deskripsi Proyek</label>
-        <p class="text-gray-900">{{ $invoice->project_description }}</p>
-    </div>
-
-    <div class="mb-4">
-        <label class="block text-sm font-semibold text-text-primary mb-2">Item-Item Invoice</label>
+    {{-- Card B: Item-Item Invoice --}}
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Item-Item Invoice</h3>
         <div class="overflow-x-auto">
-            <table class="w-full border-collapse border border-border-strong">
-                <thead class="bg-surface-hover">
-                    <tr>
-                        <th class="border border-border-strong px-2 py-2 text-left text-sm">No</th>
-                        <th class="border border-border-strong px-2 py-2 text-left text-sm">Keterangan</th>
-                        <th class="border border-border-strong px-2 py-2 text-right text-sm">Volume</th>
-                        <th class="border border-border-strong px-2 py-2 text-left text-sm">Satuan</th>
-                        <th class="border border-border-strong px-2 py-2 text-right text-sm">Harga</th>
-                        <th class="border border-border-strong px-2 py-2 text-right text-sm">Jumlah</th>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="py-2 pr-2 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                        <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                        <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
+                        <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
+                        <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Harga</th>
+                        <th class="py-2 pl-2 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @php
-                        $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
-                    @endphp
+                <tbody class="divide-y divide-gray-100">
                     @foreach ($items as $index => $item)
                         <tr>
-                            <td class="border border-border-strong px-2 py-2 text-sm">{{ $index + 1 }}</td>
-                            <td class="border border-border-strong px-2 py-2 text-sm">
-                                {{ $item['keterangan'] ?? '-' }}
-                            </td>
-                            <td class="border border-border-strong px-2 py-2 text-right text-sm">
-                                {{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
-                            <td class="border border-border-strong px-2 py-2 text-sm">
-                                {{ $item['satuan'] ?? '-' }}</td>
-                            <td class="border border-border-strong px-2 py-2 text-right text-sm">
-                                Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                            <td class="border border-border-strong px-2 py-2 text-right text-sm font-semibold">
-                                Rp
-                                {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}
+                            <td class="py-2 pr-2 text-gray-500">{{ $index + 1 }}</td>
+                            <td class="py-2 px-2 text-gray-900">{{ $item['keterangan'] ?? '-' }}</td>
+                            <td class="py-2 px-2 text-right text-gray-900">{{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
+                            <td class="py-2 px-2 text-gray-900">{{ $item['satuan'] ?? '-' }}</td>
+                            <td class="py-2 px-2 text-right text-gray-900">Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
+                            <td class="py-2 pl-2 text-right font-semibold text-gray-900">
+                                Rp {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}
                             </td>
                         </tr>
                     @endforeach
-                    <tr class="bg-primary/10 font-bold">
-                        <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
-                            TOTAL</td>
-                        <td class="border border-border-strong px-2 py-2 text-right text-sm text-primary">
-                            Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t-2 border-gray-300 font-bold">
+                        <td colspan="5" class="pt-3 pr-2 text-right text-sm text-gray-700">Subtotal</td>
+                        <td class="pt-3 pl-2 text-right text-sm text-gray-900">
+                            Rp {{ number_format($totalAmount, 0, ',', '.') }}
                         </td>
                     </tr>
-
-                    @php
-                        $totalAfterDiscount = $invoice->total_amount;
-                        $discountAmount = 0;
-                        $dpAmount = 0;
-                        $discountValueDisplay = rtrim(
-                            rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'),
-                            ',',
-                        );
-                        $dpValueDisplay = rtrim(
-                            rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'),
-                            ',',
-                        );
-                    @endphp
-
-                    @if ($invoice->discount_value && $invoice->discount_value > 0)
-                        @php
-                            if ($invoice->discount_type === 'percentage') {
-                                $discountAmount = ($invoice->total_amount * $invoice->discount_value) / 100;
-                            } else {
-                                $discountAmount = $invoice->discount_value;
-                            }
-                            $totalAfterDiscount = $invoice->total_amount - $discountAmount;
-                        @endphp
-                        <tr class="bg-red-50 font-semibold">
-                            <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
-                                DISCOUNT
-                                @if ($invoice->discount_type === 'percentage')
-                                    ({{ $discountValueDisplay }}%)
-                                @else
-                                    (Nominal)
-                                @endif
-                            </td>
-                            <td class="border border-border-strong px-2 py-2 text-right text-sm text-red-600">
-                                Rp {{ number_format($discountAmount, 0, ',', '.') }}
-                            </td>
-                        </tr>
-                        <tr class="bg-green-50 font-bold">
-                            <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
-                                TOTAL SETELAH DISCOUNT</td>
-                            <td class="border border-border-strong px-2 py-2 text-right text-sm text-green-600">
-                                Rp {{ number_format($totalAfterDiscount, 0, ',', '.') }}
-                            </td>
-                        </tr>
-                    @endif
-
-                    @if ($invoice->dp_value && $invoice->dp_value > 0)
-                        @php
-                            $baseForDP = $totalAfterDiscount;
-                            if ($invoice->dp_type === 'percentage') {
-                                $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
-                            } else {
-                                $dpAmount = $invoice->dp_value;
-                            }
-                        @endphp
-                        <tr class="bg-blue-50 font-semibold">
-                            <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
-                                DP
-                                @if ($invoice->dp_type === 'percentage')
-                                    ({{ $dpValueDisplay }}%)
-                                @else
-                                    (Nominal)
-                                @endif
-                            </td>
-                            <td class="border border-border-strong px-2 py-2 text-right text-sm text-blue-600">
-                                Rp {{ number_format($dpAmount, 0, ',', '.') }}
-                            </td>
-                        </tr>
-                    @endif
-                </tbody>
+                </tfoot>
             </table>
         </div>
     </div>
 
-    <!-- Discount Section -->
-    @php
-        if (!isset($totalAfterDiscount)) {
-            $totalAfterDiscount = $invoice->total_amount;
-            $discountAmount = 0;
-        }
-    @endphp
+    {{-- Card C: Ringkasan Finansial --}}
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Ringkasan Finansial</h3>
+        <div class="space-y-2.5">
+            {{-- Subtotal --}}
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Subtotal</span>
+                <span class="text-sm font-medium text-gray-900">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
+            </div>
 
-    @if ($invoice->discount_value && $invoice->discount_value > 0)
-        <div class="mb-4 p-3 border rounded bg-yellow-50">
-            <label class="block text-sm font-semibold text-text-primary mb-2">Discount (Opsional)</label>
-            <div class="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Tipe Discount</label>
-                    <p class="text-sm font-medium text-gray-900">
+            {{-- Discount --}}
+            @if ($invoice->discount_value && $invoice->discount_value > 0)
+                <div class="flex justify-between items-center py-1.5 px-3 bg-red-50 rounded-lg">
+                    <span class="text-sm text-red-700">
+                        <i class="fa-solid fa-tag mr-1"></i>Discount
                         @if ($invoice->discount_type === 'percentage')
-                            Persentase (%)
+                            ({{ $discountValueDisplay }}%)
                         @else
-                            Nominal (Rp)
+                            (Nominal)
                         @endif
-                    </p>
+                    </span>
+                    <span class="text-sm font-semibold text-red-600">-Rp {{ number_format($discountAmount, 0, ',', '.') }}</span>
                 </div>
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Nilai Discount</label>
-                    <p class="text-sm font-medium text-gray-900">
-                        @if ($invoice->discount_type === 'percentage')
-                            {{ $discountValueDisplay }}%
-                        @else
-                            Rp {{ number_format($invoice->discount_value, 0, ',', '.') }}
-                        @endif
-                    </p>
+            @else
+                <div class="flex justify-between items-center py-1.5 px-3 bg-gray-50 rounded-lg">
+                    <span class="text-sm text-gray-400"><i class="fa-regular fa-circle-xmark mr-1"></i>Discount</span>
+                    <span class="text-sm text-gray-400 italic">Tidak ada discount</span>
                 </div>
-            </div>
-            <div class="space-y-2 p-2 bg-white rounded">
-                <div class="flex justify-between text-sm">
-                    <span class="text-text-label">Discount:</span>
-                    <span class="font-semibold text-red-600">Rp
-                        {{ number_format($discountAmount, 0, ',', '.') }}</span>
-                </div>
-                <div class="flex justify-between text-sm font-bold">
-                    <span class="text-text-primary">Total Setelah Discount:</span>
-                    <span class="text-green-600">Rp {{ number_format($totalAfterDiscount, 0, ',', '.') }}</span>
-                </div>
-            </div>
-        </div>
-    @else
-        <div class="mb-4 p-3 border rounded bg-yellow-50">
-            <label class="block text-sm font-semibold text-text-primary mb-2">Discount (Opsional)</label>
-            <div class="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Tipe Discount</label>
-                    <p class="text-sm font-medium text-gray-900">Tidak Ada Discount</p>
-                </div>
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Nilai Discount</label>
-                    <p class="text-sm font-medium text-gray-900">0</p>
-                </div>
-            </div>
-            <div class="space-y-2 p-2 bg-white rounded">
-                <div class="flex justify-between text-sm">
-                    <span class="text-text-label">Discount:</span>
-                    <span class="font-semibold text-red-600">Rp 0</span>
-                </div>
-                <div class="flex justify-between text-sm font-bold">
-                    <span class="text-text-primary">Total Setelah Discount:</span>
-                    <span class="text-green-600">Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}</span>
-                </div>
-            </div>
-        </div>
-    @endif
+            @endif
 
-    <!-- DP Section -->
-    @if ($invoice->dp_value && $invoice->dp_value > 0)
-        @php
-            $baseForDP = $totalAfterDiscount;
-            if ($invoice->dp_type === 'percentage') {
-                $dpAmount = ($baseForDP * $invoice->dp_value) / 100;
-            } else {
-                $dpAmount = $invoice->dp_value;
-            }
-        @endphp
-        <div class="mb-4 p-3 border rounded bg-blue-50">
-            <label class="block text-sm font-semibold text-text-primary mb-2">DP / Uang Muka (Opsional)</label>
-            <div class="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Tipe DP</label>
-                    <p class="text-sm font-medium text-gray-900">
-                        @if ($invoice->dp_type === 'percentage')
-                            Persentase (%)
-                        @else
-                            Nominal (Rp)
-                        @endif
-                    </p>
-                </div>
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Nilai DP</label>
-                    <p class="text-sm font-medium text-gray-900">
-                        @if ($invoice->dp_type === 'percentage')
-                            {{ $dpValueDisplay }}%
-                        @else
-                            Rp {{ number_format($invoice->dp_value, 0, ',', '.') }}
-                        @endif
-                    </p>
-                </div>
-            </div>
-            <div class="space-y-2 p-2 bg-white rounded">
-                <div class="flex justify-between text-sm font-bold">
-                    <span class="text-text-primary">Nilai DP:</span>
-                    <span class="text-blue-600">Rp {{ number_format($dpAmount, 0, ',', '.') }}</span>
-                </div>
-            </div>
-        </div>
-    @else
-        <div class="mb-4 p-3 border rounded bg-blue-50">
-            <label class="block text-sm font-semibold text-text-primary mb-2">DP / Uang Muka (Opsional)</label>
-            <div class="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Tipe DP</label>
-                    <p class="text-sm font-medium text-gray-900">Tidak Ada DP</p>
-                </div>
-                <div>
-                    <label class="block text-xs text-text-label mb-1">Nilai DP</label>
-                    <p class="text-sm font-medium text-gray-900">0</p>
-                </div>
-            </div>
-            <div class="space-y-2 p-2 bg-white rounded">
-                <div class="flex justify-between text-sm font-bold">
-                    <span class="text-text-primary">Nilai DP:</span>
-                    <span class="text-blue-600">Rp 0</span>
-                </div>
-            </div>
-        </div>
-    @endif
+            {{-- Separator --}}
+            <hr class="border-gray-200">
 
-    @php
-        if (!isset($terbilangAmount)) {
-            $terbilangAmount = $totalAfterDiscount ?? $invoice->total_amount;
-        }
-    @endphp
-    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <p class="text-sm text-text-primary"><span class="font-semibold">Terbilang:</span> <span
-                class="italic">{{ terbilang($terbilangAmount) }} Rupiah</span></p>
+            {{-- Grand Total (after discount) --}}
+            <div class="flex justify-between items-center">
+                <span class="text-base font-bold text-gray-800">Grand Total</span>
+                <span class="text-base font-bold text-gray-900">Rp {{ number_format($netAmount, 0, ',', '.') }}</span>
+            </div>
+        </div>
+    </div>
+
+    {{-- Card D: Pembayaran --}}
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Pembayaran</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {{-- DP --}}
+            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                <p class="text-xs text-gray-400 mb-1">DP / Uang Muka</p>
+                @if ($invoice->dp_value && $invoice->dp_value > 0)
+                    <p class="text-lg font-bold text-blue-600">Rp {{ number_format($dpAmount, 0, ',', '.') }}</p>
+                    @if ($invoice->dp_type === 'percentage')
+                        <p class="text-xs text-gray-400">({{ $dpValueDisplay }}% dari Grand Total)</p>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-400 italic">Belum ada DP</p>
+                @endif
+            </div>
+
+            {{-- Total Terbayar --}}
+            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                <p class="text-xs text-gray-400 mb-1">Total Terbayar</p>
+                @if ($totalPaid > 0)
+                    <p class="text-lg font-bold text-green-600">Rp {{ number_format($totalPaid, 0, ',', '.') }}</p>
+                @else
+                    <p class="text-sm text-gray-400 italic">Belum ada pembayaran</p>
+                @endif
+            </div>
+
+            {{-- Sisa Pembayaran --}}
+            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                <p class="text-xs text-gray-400 mb-1">Sisa Pembayaran</p>
+                @if ($remaining > 0)
+                    <p class="text-lg font-bold text-red-600">Rp {{ number_format($remaining, 0, ',', '.') }}</p>
+                @else
+                    <p class="text-lg font-bold text-green-600">Rp 0</p>
+                @endif
+            </div>
+        </div>
+
+        {{-- Payment Flow Summary --}}
+        <div class="rounded-lg bg-gray-50 border border-gray-100 p-4 mb-4">
+            <p class="text-xs text-gray-400 mb-2">Ringkasan Perhitungan</p>
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                <span class="font-medium text-gray-700">Grand Total</span>
+                <span class="font-semibold">Rp {{ number_format($netAmount, 0, ',', '.') }}</span>
+
+                @if ($invoice->discount_value > 0)
+                    <span class="text-gray-400">→</span>
+                    <span class="text-red-600 font-medium">Discount</span>
+                    <span class="text-red-600 font-semibold">-Rp {{ number_format($discountAmount, 0, ',', '.') }}</span>
+                @endif
+
+                @if ($dpAmount > 0)
+                    <span class="text-gray-400">→</span>
+                    <span class="text-blue-600 font-medium">DP</span>
+                    <span class="text-blue-600 font-semibold">Rp {{ number_format($dpAmount, 0, ',', '.') }}</span>
+                @endif
+
+                <span class="text-gray-400">→</span>
+                <span class="text-green-600 font-medium">Terbayar</span>
+                <span class="text-green-600 font-semibold">Rp {{ number_format($totalPaid, 0, ',', '.') }}</span>
+
+                <span class="text-gray-400">→</span>
+                <span class="font-medium {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">Sisa</span>
+                <span class="font-semibold {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">Rp {{ number_format($remaining, 0, ',', '.') }}</span>
+            </div>
+        </div>
+
+    </div>
+
+    {{-- Terbilang --}}
+    <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <p class="text-sm text-gray-700">
+            <span class="font-semibold">Terbilang:</span>
+            <span class="italic">{{ terbilang($netAmount) }} Rupiah</span>
+        </p>
     </div>
 
 </x-modal>

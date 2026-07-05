@@ -4,6 +4,7 @@ namespace App\Models\Report;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Finance\PaymentProof;
 
 class SalesRecap extends Model
 {
@@ -32,6 +33,14 @@ class SalesRecap extends Model
         'total_selling' => 'integer',
         'total_profit' => 'integer',
     ];
+
+    /**
+     * Bukti pembayaran untuk rekap penjualan ini.
+     */
+    public function paymentProofs()
+    {
+        return $this->hasMany(PaymentProof::class, 'sales_recap_id', 'id_sales_recap');
+    }
 
     /**
      * Check if status is Lunas

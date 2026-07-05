@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Finance;
 use App\Exports\Finance\AlumuniumRecapExport;
 use App\Http\Controllers\Controller;
 use App\Models\Finance\InvoiceAlumunium;
+use App\Services\Finance\InvoiceCalculatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class RecapAlumuniumController extends Controller
 {
+    public function __construct(
+        protected InvoiceCalculatorService $calculator
+    ) {}
+
     public function index(Request $request)
     {
         $query = $this->baseQuery($request);
@@ -96,16 +101,7 @@ class RecapAlumuniumController extends Controller
 
     private function buildTotals($invoices): object
     {
-        return (object) [
-            'total_invoice' => $invoices->sum(fn($invoice) => (int) $invoice->getNetAmount()),
-            'invoice_count' => $invoices->count(),
-            'paid_count' => $invoices->filter(fn($invoice) => $invoice->isFullyPaid())->count(),
-            "paid_amount" => $invoices->sum(fn($invoice) => (int) $invoice->getTotalPaidAmount()),
-            'remaining_amount' => $invoices->sum(fn($invoice) => (int) $invoice->getRemainingAmount()),
-            // 'remaining_count' => $invoices->filter(fn($invoice) => !$invoice->isFullyPaid())->count(),
-            // 'total_paid' => $invoices->sum(fn($invoice) => (int) $invoice->getTotalPaidAmount()),
-            
-        ];
+        return $this->calculator->buildAlumuniumTotals($invoices);
     }
 
     private function buildPeriodTitle(Request $request): string
