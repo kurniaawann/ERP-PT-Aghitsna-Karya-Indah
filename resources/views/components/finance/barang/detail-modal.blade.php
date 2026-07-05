@@ -72,7 +72,7 @@
                         </td>
                         <td class="border border-border-strong px-2 py-2 text-right text-sm text-red-600">Rp
                             {{ number_format($invoice->total_capital, 0, ',', '.') }}</td>
-                        <td class="border border-border-strong px-2 py-2 text-sm">Profit internal</td>
+
                     </tr>
                     <tr class="bg-green-50 font-semibold">
                         <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">PROFIT</td>
