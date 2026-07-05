@@ -219,7 +219,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 // Discount row (if exists)
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
                     $discountAmount = $invoice->getDiscountAmount($totalAmount);
-                    $totalAfterDiscount = $totalAmount - $discountAmount;
 
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
@@ -244,34 +243,11 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                         ]
                     ]);
                     $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
-                    // Total after discount
-                    $currentRow++;
-                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", 'Total Setelah Discount');
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($totalAfterDiscount, 0, ',', '.'));
-
-                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
-                        'font' => ['bold' => true],
-                        'fill' => [
-                            'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => '90EE90']
-                        ],
-                        'borders' => [
-                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
-                        ],
-                        'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_CENTER
-                        ]
-                    ]);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                } else {
-                    $totalAfterDiscount = $totalAmount;
                 }
 
                 // DP row (if exists)
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
-                    $dpAmount = $invoice->getDpAmount($totalAfterDiscount);
+                    $dpAmount = $invoice->getDpAmount($totalAmount);
 
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
@@ -330,10 +306,9 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 }
 
                 // Terbilang
-                $terbilangAmount = $totalAfterDiscount;
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($terbilangAmount)) . ' rupiah');
+                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($totalAmount)) . ' rupiah');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
 
                 // Payment Information

@@ -80,9 +80,9 @@
             config.amountInput.disabled = true;
             config.amountInput.required = false;
             config.amountInput.removeAttribute('max');
-            config.amountInput.value = selectedOption?.value ? netAmount : '';
+            config.amountInput.value = selectedOption?.value ? remainingAmount : '';
             config.amountHelp.textContent = selectedOption?.value ?
-                `Nominal mengikuti total invoice ${formatCurrency(netAmount)}.` :
+                `Nominal mengikuti sisa tagihan ${formatCurrency(remainingAmount)}.` :
                 'Pilih invoice terlebih dahulu agar nominal otomatis terisi.';
             return;
         }

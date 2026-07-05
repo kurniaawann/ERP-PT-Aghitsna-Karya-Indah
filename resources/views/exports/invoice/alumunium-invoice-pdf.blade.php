@@ -298,7 +298,6 @@
                 @if ($invoice->discount_value && $invoice->discount_value > 0)
                     @php
                         $discountAmount = $invoice->getDiscountAmount($totalAmount);
-                        $finalTotal = $totalAmount - $discountAmount;
                     @endphp
 
                     <!-- Discount Row -->
@@ -310,18 +309,11 @@
                             </strong></td>
                         <td class="right"><strong>Rp {{ number_format($discountAmount, 0, ',', '.') }}</strong></td>
                     </tr>
-
-                    <!-- Total After Discount Row -->
-                    <tr style="background-color: #90EE90;">
-                        <td colspan="5" class="center"><strong>Total Setelah Discount</strong></td>
-                        <td class="right"><strong>Rp {{ number_format($finalTotal, 0, ',', '.') }}</strong></td>
-                    </tr>
                 @endif
 
                 @if ($invoice->dp_value && $invoice->dp_value > 0)
                     @php
-                        $baseForDP = isset($finalTotal) ? $finalTotal : $totalAmount;
-                        $dpAmount = $invoice->getDpAmount($baseForDP);
+                        $dpAmount = $invoice->getDpAmount($totalAmount);
                     @endphp
 
                     <!-- DP Row -->
@@ -338,11 +330,8 @@
         </table>
 
         <!-- Terbilang -->
-        @php
-            $terbilangAmount = isset($finalTotal) ? $finalTotal : $totalAmount;
-        @endphp
         <div class="terbilang">
-            <em>Terbilang : {{ ucwords(terbilang($terbilangAmount)) }} rupiah</em>
+            <em>Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</em>
         </div>
 
         <!-- Payment Information -->

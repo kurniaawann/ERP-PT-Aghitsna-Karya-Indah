@@ -34,22 +34,22 @@ class InvoiceCalculatorService
 
     public function calculateNetAmount(?float $totalAfterDiscount, ?float $totalAmount): int
     {
-        return (int) max(0, $totalAfterDiscount ?? $totalAmount ?? 0);
+        return (int) max(0, $totalAmount ?? 0);
     }
 
-    public function calculateRemainingAmount(int $netAmount, int $totalPaidAmount): int
+    public function calculateRemainingAmount(int $grandTotal, int $discountAmount, int $dpAmount, int $totalPaidAmount): int
     {
-        return (int) max(0, $netAmount - $totalPaidAmount);
+        return (int) max(0, $grandTotal - $discountAmount - $dpAmount - $totalPaidAmount);
     }
 
-    public function isFullyPaid(int $netAmount, int $totalPaidAmount): bool
+    public function isFullyPaid(int $remaining): bool
     {
-        return $totalPaidAmount >= $netAmount;
+        return $remaining <= 0;
     }
 
-    public function calculateProgressPercent(int $netAmount, int $totalPaidAmount): int
+    public function calculateProgressPercent(int $grandTotal, int $totalPaidAmount): int
     {
-        return $netAmount > 0 ? min(100, (int) round(($totalPaidAmount / $netAmount) * 100)) : 0;
+        return $grandTotal > 0 ? min(100, (int) round(($totalPaidAmount / $grandTotal) * 100)) : 0;
     }
 
     public function getDiscountAmount($invoice): float
@@ -73,10 +73,7 @@ class InvoiceCalculatorService
 
     public function getNetAmount($invoice): int
     {
-        return $this->calculateNetAmount(
-            $invoice->total_after_discount,
-            $invoice->total_amount
-        );
+        return (int) max(0, $invoice->total_amount ?? 0);
     }
 
     public function getTotalPaidAmount($invoice): int
@@ -91,23 +88,22 @@ class InvoiceCalculatorService
     public function getRemainingAmount($invoice): int
     {
         return $this->calculateRemainingAmount(
-            $this->getNetAmount($invoice),
+            (int) ($invoice->total_amount ?? 0),
+            (int) $this->getDiscountAmount($invoice),
+            (int) $this->getDpAmount($invoice),
             $this->getTotalPaidAmount($invoice)
         );
     }
 
     public function isFullyPaidForInvoice($invoice): bool
     {
-        return $this->isFullyPaid(
-            $this->getNetAmount($invoice),
-            $this->getTotalPaidAmount($invoice)
-        );
+        return $this->isFullyPaid($this->getRemainingAmount($invoice));
     }
 
     public function getProgressPercent($invoice): int
     {
         return $this->calculateProgressPercent(
-            $this->getNetAmount($invoice),
+            (int) ($invoice->total_amount ?? 0),
             $this->getTotalPaidAmount($invoice)
         );
     }
@@ -147,7 +143,7 @@ class InvoiceCalculatorService
     {
         return (object) [
             'invoice_count' => $invoices->count(),
-            'total_invoice' => $invoices->sum(fn($i) => $this->getNetAmount($i)),
+            'total_invoice' => $invoices->sum(fn($i) => (int) ($i->total_amount ?? 0)),
             'total_paid' => $invoices->sum(fn($i) => $this->getTotalPaidAmount($i)),
             'total_remaining' => $invoices->sum(fn($i) => $this->getRemainingAmount($i)),
             'paid_count' => $invoices->filter(fn($i) => $this->isFullyPaidForInvoice($i))->count(),
@@ -158,7 +154,7 @@ class InvoiceCalculatorService
     public function buildAlumuniumTotals($invoices): object
     {
         return (object) [
-            'total_invoice' => $invoices->sum(fn($i) => $this->getNetAmount($i)),
+            'total_invoice' => $invoices->sum(fn($i) => (int) ($i->total_amount ?? 0)),
             'invoice_count' => $invoices->count(),
             'paid_count' => $invoices->filter(fn($i) => $this->isFullyPaidForInvoice($i))->count(),
             'paid_amount' => $invoices->sum(fn($i) => $this->getTotalPaidAmount($i)),
@@ -171,7 +167,7 @@ class InvoiceCalculatorService
         if ($invoice instanceof SalesRecap) {
             return (int) max(0, $invoice->total_selling ?? 0);
         }
-        return $this->getNetAmount($invoice);
+        return (int) max(0, $invoice->total_amount ?? 0);
     }
 
     public function getPaidAmountForInvoice($invoice, ?int $excludePaymentProofId = null): int
@@ -199,23 +195,26 @@ class InvoiceCalculatorService
         return (int) $query->sum('amount');
     }
 
-    public function getRemainingAmountForPayment(?int $netAmount, ?int $paidAmount): int
+    public function getRemainingAmountForPayment(?int $grandTotal, ?int $paidAmount): int
     {
-        return $this->calculateRemainingAmount(
-            (int) ($netAmount ?? 0),
-            (int) ($paidAmount ?? 0)
-        );
+        return (int) max(0, ($grandTotal ?? 0) - ($paidAmount ?? 0));
     }
 
     public function buildInvoiceOptionData($invoice, string $moduleType, string $invoiceType): array
     {
         $paidAmount = $this->getPaidAmountForInvoice($invoice);
-        $netAmount = $this->getInvoiceNetAmount($invoice);
-        $remainingAmount = $this->getRemainingAmountForPayment($netAmount, $paidAmount);
+
+        if ($invoice instanceof SalesRecap) {
+            $grandTotal = $this->getInvoiceNetAmount($invoice);
+            $remainingAmount = $this->getRemainingAmountForPayment($grandTotal, $paidAmount);
+        } else {
+            $grandTotal = (int) ($invoice->total_amount ?? 0);
+            $remainingAmount = $this->getRemainingAmount($invoice);
+        }
 
         return [
             'paid_amount' => $paidAmount,
-            'net_amount' => $netAmount,
+            'net_amount' => $grandTotal,
             'remaining_amount' => $remainingAmount,
             'is_fully_paid' => $remainingAmount <= 0,
         ];

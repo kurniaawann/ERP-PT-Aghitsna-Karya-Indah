@@ -147,7 +147,7 @@ class PaymentProofController extends Controller
                 return $errorResponse;
             }
         } else {
-            $amount = $this->calculator->getInvoiceNetAmount($invoice);
+            $amount = $this->calculator->getRemainingAmount($invoice);
         }
 
         $storedFile = null;
@@ -226,7 +226,7 @@ class PaymentProofController extends Controller
                 return $errorResponse;
             }
         } else {
-            $amount = $this->calculator->getInvoiceNetAmount($invoice);
+            $amount = $this->calculator->getRemainingAmount($invoice);
         }
 
         $storedFile = null;
@@ -384,8 +384,10 @@ class PaymentProofController extends Controller
     private function validatePaymentAmount($invoice, int $amount, ?int $excludePaymentProofId = null)
     {
         $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
-        $netAmount = $this->calculator->getInvoiceNetAmount($invoice);
-        $remainingAmount = $this->calculator->getRemainingAmountForPayment($netAmount, $paidAmount);
+        $grandTotal = (int) ($invoice->total_amount ?? 0);
+        $dpAmount = (int) $this->calculator->getDpAmount($invoice);
+        $discountAmount = (int) $this->calculator->getDiscountAmount($invoice);
+        $remainingAmount = max(0, $grandTotal - $discountAmount - $dpAmount - $paidAmount);
 
         if ($amount > $remainingAmount) {
             return back()

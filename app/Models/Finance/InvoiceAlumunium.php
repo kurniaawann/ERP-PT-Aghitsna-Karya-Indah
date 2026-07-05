@@ -90,25 +90,19 @@ class InvoiceAlumunium extends Model
     }
 
     /**
-     * Total invoice setelah diskon.
+     * Total keseluruhan invoice (grand total).
      */
     public function getNetAmount(): int
     {
-        return $this->getCalculator()->calculateNetAmount(
-            $this->total_after_discount,
-            $this->total_amount
-        );
+        return $this->getCalculator()->getNetAmount($this);
     }
 
     /**
-     * Sisa pembayaran yang harus dilunasi.
+     * Sisa tagihan: (total_amount - discount) - dp - total_payment.
      */
     public function getRemainingAmount(): int
     {
-        return $this->getCalculator()->calculateRemainingAmount(
-            $this->getNetAmount(),
-            $this->getTotalPaidAmount()
-        );
+        return $this->getCalculator()->getRemainingAmount($this);
     }
 
     /**
@@ -116,10 +110,7 @@ class InvoiceAlumunium extends Model
      */
     public function isFullyPaid(): bool
     {
-        return $this->getCalculator()->isFullyPaid(
-            $this->getNetAmount(),
-            $this->getTotalPaidAmount()
-        );
+        return $this->getCalculator()->isFullyPaidForInvoice($this);
     }
 
     /**

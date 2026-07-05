@@ -197,10 +197,10 @@
         <div class="rounded-lg bg-gray-50 border border-gray-100 p-4 mb-4">
             <p class="text-xs text-gray-400 mb-2">Ringkasan Perhitungan</p>
             <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                <span class="font-medium text-gray-700">Grand Total</span>
-                <span class="font-semibold">Rp {{ number_format($netAmount, 0, ',', '.') }}</span>
+                <span class="font-medium text-gray-700">Total Keseluruhan</span>
+                <span class="font-semibold">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
 
-                @if ($invoice->discount_value > 0)
+                @if ($discountAmount > 0)
                     <span class="text-gray-400">→</span>
                     <span class="text-red-600 font-medium">Discount</span>
                     <span class="text-red-600 font-semibold">-Rp {{ number_format($discountAmount, 0, ',', '.') }}</span>
@@ -209,15 +209,15 @@
                 @if ($dpAmount > 0)
                     <span class="text-gray-400">→</span>
                     <span class="text-blue-600 font-medium">DP</span>
-                    <span class="text-blue-600 font-semibold">Rp {{ number_format($dpAmount, 0, ',', '.') }}</span>
+                    <span class="text-blue-600 font-semibold">-Rp {{ number_format($dpAmount, 0, ',', '.') }}</span>
                 @endif
 
                 <span class="text-gray-400">→</span>
                 <span class="text-green-600 font-medium">Terbayar</span>
-                <span class="text-green-600 font-semibold">Rp {{ number_format($totalPaid, 0, ',', '.') }}</span>
+                <span class="text-green-600 font-semibold">-Rp {{ number_format($totalPaid, 0, ',', '.') }}</span>
 
                 <span class="text-gray-400">→</span>
-                <span class="font-medium {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">Sisa</span>
+                <span class="font-medium {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">Sisa Tagihan</span>
                 <span class="font-semibold {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">Rp {{ number_format($remaining, 0, ',', '.') }}</span>
             </div>
         </div>

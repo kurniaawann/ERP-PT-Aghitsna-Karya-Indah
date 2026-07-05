@@ -833,11 +833,6 @@
 
         // ==========================================
         // INITIALIZE TOTALS ON PAGE LOAD
-
-        const newHargaInput = newItem.querySelector('.item-harga');
-        if (newHargaInput) {
-            bindEditCurrencyInput(newHargaInput);
-        }
         // ==========================================
 
         updateInvoiceTotal();
