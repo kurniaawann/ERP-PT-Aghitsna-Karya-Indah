@@ -143,9 +143,9 @@
 
                 {{-- Submenu --}}
                 @if ($isAdmin)
-                {{-- Admin: Only show Invoice Proyek (renamed to "Invoice") --}}
+                {{-- Admin: Invoice submenu with 4 new items --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('proyek-invoice*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('proyek-invoice*') || request()->is('payment-accounts*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/proyek-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -155,6 +155,72 @@
                                 {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Invoice</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/payment-accounts') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('payment-accounts*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-building-columns w-4 
+                                {{ request()->is('payment-accounts*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Rekening Pembayaran</span>
+                        </a>
+                    </li>
+                    <li>
+                        <button onclick="toggleDropdown('adminRekapDropdown')"
+                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('recap-proyek*') || request()->is('recap-expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <div class="flex items-center">
+                                <i
+                                    class="fas fa-chart-bar w-4
+                                    {{ request()->is('recap-proyek*') || request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                </i>
+                                <span class="ml-3 text-sm font-medium">Rekap</span>
+                            </div>
+
+                            <i id="adminRekapDropdownIcon"
+                                class="fas fa-chevron-down text-xs transition-transform duration-200
+                                {{ request()->is('recap-proyek*') || request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                        </button>
+
+                        <ul id="adminRekapDropdown"
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('recap-proyek*') || request()->is('recap-expense*') ? '' : 'hidden' }}">
+                            <li>
+                                <a href="{{ url('/recap-proyek') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('recap-proyek*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-file-invoice w-4 
+                                        {{ request()->is('recap-proyek*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Rekap Proyek</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/recap-expense') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('recap-expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-money-bill-wave w-4 
+                                        {{ request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Rekap Pengeluaran</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{{ url('/reimburse') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('reimburse*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-receipt w-4 
+                                {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Reimbursement</span>
                         </a>
                     </li>
                 </ul>
