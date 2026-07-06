@@ -211,5 +211,10 @@
                 }
             });
         });
+
+        // Initialize searchable selects
+        if (typeof initSearchableSelects === 'function') {
+            initSearchableSelects();
+        }
     });
 </script>

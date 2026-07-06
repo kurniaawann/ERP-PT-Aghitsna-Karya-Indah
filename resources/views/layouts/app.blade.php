@@ -80,6 +80,10 @@
             if (modal) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
+                // Init searchable selects inside the modal
+                if (typeof initSearchableSelects === 'function') {
+                    initSearchableSelects(modal);
+                }
             }
         }
 

@@ -17,9 +17,9 @@
     function toggleEmployeeSelect(prefix) {
         const kasbonTypeSelect = document.getElementById(prefix + '_kasbon_type');
         const employeeField = document.getElementById(prefix + '_employee_field');
-        const employeeSelect = document.getElementById(prefix + '_employee_id');
+        const employeeHidden = employeeField ? employeeField.querySelector('.searchable-select-hidden') : null;
         const divisionField = document.getElementById(prefix + '_division_field');
-        const divisionSelect = document.getElementById(prefix + '_division');
+        const divisionHidden = divisionField ? divisionField.querySelector('.searchable-select-hidden') : null;
         const limitAlert = document.getElementById(prefix + '_kasbon_limit_alert');
 
         if (kasbonTypeSelect && employeeField && divisionField) {
@@ -29,24 +29,32 @@
                 divisionField.style.display = 'block';
                 if (limitAlert) limitAlert.classList.add('hidden');
 
-                if (employeeSelect) {
-                    employeeSelect.removeAttribute('required');
-                    employeeSelect.value = '';
+                if (employeeHidden) {
+                    employeeHidden.removeAttribute('required');
+                    employeeHidden.value = '';
                 }
-                if (divisionSelect) {
-                    divisionSelect.setAttribute('required', 'required');
+                if (divisionHidden) {
+                    divisionHidden.setAttribute('required', 'required');
+                }
+                // Re-init searchable selects in division field
+                if (typeof initSearchableSelects === 'function') {
+                    initSearchableSelects(divisionField);
                 }
             } else if (kasbonTypeSelect.value === 'personal') {
                 // Show employee field, hide division field
                 employeeField.style.display = 'block';
                 divisionField.style.display = 'none';
 
-                if (employeeSelect) {
-                    employeeSelect.setAttribute('required', 'required');
+                if (employeeHidden) {
+                    employeeHidden.setAttribute('required', 'required');
                 }
-                if (divisionSelect) {
-                    divisionSelect.removeAttribute('required');
-                    divisionSelect.value = '';
+                if (divisionHidden) {
+                    divisionHidden.removeAttribute('required');
+                    divisionHidden.value = '';
+                }
+                // Re-init searchable selects in employee field
+                if (typeof initSearchableSelects === 'function') {
+                    initSearchableSelects(employeeField);
                 }
             } else {
                 // No selection, hide both
@@ -59,7 +67,9 @@
 
     // Check maksimal kasbon berdasarkan kehadiran sampai tanggal kasbon
     async function checkMaxKasbon(prefix) {
-        const employeeSelect = document.getElementById(prefix + '_employee_id');
+        const employeeField = document.getElementById(prefix + '_employee_field');
+        const employeeHidden = employeeField ? employeeField.querySelector('.searchable-select-hidden') : null;
+        const employeeSelect = employeeHidden || document.getElementById(prefix + '_employee_id');
         const monthSelect = document.getElementById(prefix + '_period_month');
         const yearInput = document.getElementById(prefix + '_period_year');
         const kasbonDateInput = document.getElementById(prefix + '_kasbon_date');
@@ -345,6 +355,11 @@
         // Initialize employee field visibility for add modal
         toggleEmployeeSelect('add');
 
+        // Initialize searchable selects
+        if (typeof initSearchableSelects === 'function') {
+            initSearchableSelects();
+        }
+
         document.querySelectorAll('.kasbon-amount-input').forEach(input => {
             if (input.value) {
                 formatCurrencyInput(input);
@@ -355,6 +370,33 @@
                 const prefix = this.id === 'add_amount' ? 'add' :
                     `edit_${this.closest('[id^="editModal"]')?.id.replace('editModal', '') || ''}`;
                 validateKasbonAmount(prefix);
+            });
+        });
+
+        // ==========================================
+        // FORM SUBMIT LOADING STATE
+        // ==========================================
+
+        // Handle Add Modal Submit
+        const addForm = document.querySelector('#addModal form');
+        if (addForm) {
+            addForm.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (!handleFormSubmit(submitBtn)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        // Handle Edit Modal Submits
+        document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (!handleFormSubmit(submitBtn)) {
+                    e.preventDefault();
+                    return false;
+                }
             });
         });
     });

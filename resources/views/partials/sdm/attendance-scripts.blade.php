@@ -30,20 +30,20 @@
     const selectAllEmployees = document.getElementById('selectAllEmployees');
     if (selectAllEmployees) {
         selectAllEmployees.addEventListener('change', function() {
-            const employeeCheckboxes = document.querySelectorAll('.employee-checkbox');
-            employeeCheckboxes.forEach(checkbox => {
+            const visibleCheckboxes = document.querySelectorAll('.employee-item:not([style*=\"display: none\"]) .employee-checkbox');
+            visibleCheckboxes.forEach(checkbox => {
                 checkbox.checked = this.checked;
             });
-            validateDuplicateAttendance(); // Validasi setelah select all
+            validateDuplicateAttendance();
         });
 
         // Update Select All state when individual checkbox changes
         document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                const employeeCheckboxes = document.querySelectorAll('.employee-checkbox');
-                const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
-                selectAllEmployees.checked = employeeCheckboxes.length === checkedEmployees.length;
-                validateDuplicateAttendance(); // Validasi setelah checkbox berubah
+                const visibleCheckboxes = document.querySelectorAll('.employee-item:not([style*=\"display: none\"]) .employee-checkbox');
+                const checkedVisible = document.querySelectorAll('.employee-item:not([style*=\"display: none\"]) .employee-checkbox:checked');
+                selectAllEmployees.checked = visibleCheckboxes.length === checkedVisible.length;
+                validateDuplicateAttendance();
             });
         });
     }
@@ -230,8 +230,27 @@
         });
     }
 
+    // Filter employees in add modal
+    function filterAttendanceEmployees(query) {
+        const items = document.querySelectorAll('#employee-list .employee-item');
+        const searchTerm = query.toLowerCase();
+        items.forEach(function(item) {
+            const searchText = item.dataset.search || '';
+            if (searchText.includes(searchTerm)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
     // Initialize delete button state on page load
     updateDeleteButtonState();
+
+    // Initialize searchable selects
+    if (typeof initSearchableSelects === 'function') {
+        initSearchableSelects();
+    }
 
     // ==========================================
     // ADD/EDIT FORM SUBMIT HANDLERS

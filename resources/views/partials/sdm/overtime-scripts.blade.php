@@ -12,16 +12,16 @@
     const existingAttendance = @json($existingAttendance ?? []);
 
     // Validasi untuk Add Modal
-    const addEmployeeSelect = document.getElementById('add-employee-id');
+    const addEmployeeHidden = document.querySelector('#addModal input[name="employee_id"]');
     const addDateInput = document.getElementById('add-attendance-date');
     const addDuplicateWarning = document.getElementById('add-duplicate-warning');
     const addDuplicateWarningText = document.getElementById('add-duplicate-warning-text');
     const addSubmitBtn = document.querySelector('#addModal button[type="submit"]');
 
     function validateAddOvertime() {
-        if (!addEmployeeSelect || !addDateInput) return true;
+        if (!addEmployeeHidden || !addDateInput) return true;
 
-        const employeeId = addEmployeeSelect.value;
+        const employeeId = addEmployeeHidden.value;
         const date = addDateInput.value;
 
         if (!employeeId || !date) {
@@ -37,7 +37,8 @@
         // Karyawan hanya boleh lembur jika mereka hadir (status: hadir)
         if (existingAttendance[employeeId] && existingAttendance[employeeId][date]) {
             const existing = existingAttendance[employeeId][date];
-            const employeeName = addEmployeeSelect.options[addEmployeeSelect.selectedIndex].text.split(' - ')[0];
+            const employeeInput = document.querySelector('#addModal .searchable-select-input');
+            const employeeName = employeeInput ? employeeInput.value : '';
             const formattedDate = new Date(date).toLocaleDateString('id-ID', {
                 day: '2-digit',
                 month: '2-digit',
@@ -87,8 +88,15 @@
         }
     }
 
-    if (addEmployeeSelect && addDateInput) {
-        addEmployeeSelect.addEventListener('change', validateAddOvertime);
+    if (addEmployeeHidden && addDateInput) {
+        // Watch hidden input changes via MutationObserver (searchable-select updates hidden input)
+        const searchableWrapper = addEmployeeHidden.closest('.searchable-select-wrapper');
+        if (searchableWrapper) {
+            const observer = new MutationObserver(function() {
+                validateAddOvertime();
+            });
+            observer.observe(addEmployeeHidden, { attributes: true, attributeFilter: ['value'] });
+        }
         addDateInput.addEventListener('change', validateAddOvertime);
     }
 
@@ -271,6 +279,11 @@
 
     // Initialize delete button state on page load
     updateDeleteButtonState();
+
+    // Initialize searchable selects
+    if (typeof initSearchableSelects === 'function') {
+        initSearchableSelects();
+    }
 
     // ==========================================
     // ADD/EDIT FORM SUBMIT HANDLERS

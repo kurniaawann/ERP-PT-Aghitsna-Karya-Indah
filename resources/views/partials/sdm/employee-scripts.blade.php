@@ -67,6 +67,11 @@
     // Initialize delete button state on page load
     updateDeleteButtonState();
 
+    // Initialize searchable selects
+    if (typeof initSearchableSelects === 'function') {
+        initSearchableSelects();
+    }
+
     document.querySelectorAll('.daily-wage-input').forEach(input => {
         if (input.value) {
             formatCurrencyInput(input);
