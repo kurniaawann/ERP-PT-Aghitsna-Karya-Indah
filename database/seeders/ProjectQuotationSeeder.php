@@ -36,7 +36,7 @@ class ProjectQuotationSeeder extends Seeder
         // Quotation 1 - Berdasarkan PDF yang diberikan
         // ═══════════════════════════════════════════════════════════════════════════
         $q1 = ProjectQuotation::create([
-            'quotation_number' => '1/1/PT.AKI/25',
+            'quotation_number' => '1/1/ALU/25',
             'sequence_number' => 1,
             'date' => '2025-12-04',
             'subject' => 'Penawaran Harga',
@@ -257,7 +257,7 @@ class ProjectQuotationSeeder extends Seeder
         // Quotation 2 - Simple example
         // ═══════════════════════════════════════════════════════════════════════════
         $q2 = ProjectQuotation::create([
-            'quotation_number' => '1/1/PT.AKI/26',
+            'quotation_number' => '1/1/ALU/26',
             'sequence_number' => 1,
             'date' => now()->format('Y-m-d'),
             'subject' => 'Penawaran Harga',

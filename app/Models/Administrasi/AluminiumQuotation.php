@@ -61,26 +61,26 @@ class AluminiumQuotation extends Model
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Generate next quotation number: {n}/{n}/PT.AKI/{yy}
-     * e.g. 1/1/PT.AKI/26
+     * Generate next quotation number: {n}/{n}/ALU/{yy}
+     * e.g. 1/1/ALU/26
      */
     public static function generateQuotationNumber(): string
     {
         $year = date('y');
 
-        $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
+        $last = self::where('quotation_number', 'like', "%/ALU/{$year}")
             ->orderBy('sequence_number', 'desc')
             ->first();
 
         $next = $last ? ($last->sequence_number + 1) : 1;
 
-        return "{$next}/{$next}/PT.AKI/{$year}";
+        return "{$next}/{$next}/ALU/{$year}";
     }
 
     public static function getNextSequenceNumber(): int
     {
         $year = date('y');
-        $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
+        $last = self::where('quotation_number', 'like', "%/ALU/{$year}")
             ->orderBy('sequence_number', 'desc')
             ->first();
         return $last ? ($last->sequence_number + 1) : 1;

@@ -100,7 +100,7 @@ class ProjectQuotationController extends Controller
         // Auto-generate quotation number
         $seqNumber = ProjectQuotation::getNextSequenceNumber();
         $year = date('y');
-        $quotationNumber = "{$seqNumber}/{$seqNumber}/ALU/{$year}";
+        $quotationNumber = "{$seqNumber}/{$seqNumber}/PT.AKI/{$year}";
 
         // Calculate grand total
         $totalAmount = 0;

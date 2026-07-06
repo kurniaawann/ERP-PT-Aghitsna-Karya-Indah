@@ -69,7 +69,7 @@ class AluminiumQuotationController extends Controller
         // Auto-generate quotation number
         $seqNumber = AluminiumQuotation::getNextSequenceNumber();
         $year = date('y');
-        $quotationNumber = "{$seqNumber}/{$seqNumber}/PT.AKI/{$year}";
+        $quotationNumber = "{$seqNumber}/{$seqNumber}/ALU/{$year}";
 
         // Calculate grand total
         $totalAmount = 0;
