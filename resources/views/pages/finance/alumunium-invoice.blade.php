@@ -29,9 +29,10 @@
         {{-- Table Component --}}
         @include('components.finance.alumunium.table', ['invoices' => $invoices])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$invoices" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$invoices" />
 
     {{-- Modal Tambah Invoice --}}
     @include('components.finance.alumunium.add-modal')

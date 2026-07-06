@@ -29,9 +29,10 @@
         {{-- Table Component --}}
         @include('components.administrasi.delivery-note.table', ['deliveryNotes' => $deliveryNotes])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$deliveryNotes" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$deliveryNotes" />
 
     {{-- Modal Tambah --}}
     @include('components.administrasi.delivery-note.add-modal')

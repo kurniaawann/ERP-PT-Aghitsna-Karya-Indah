@@ -39,9 +39,10 @@
         {{-- Table Component --}}
         @include('components.report.transaction-category.table')
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$categories" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$categories" />
 
     {{-- Modal Tambah --}}
     @include('components.report.transaction-category.add-modal')

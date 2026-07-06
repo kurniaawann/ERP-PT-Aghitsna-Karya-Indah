@@ -42,9 +42,9 @@
         </div>
 
         @include('components.finance.barang.table', ['invoices' => $invoices])
-
-        <x-pagination :paginator="$invoices" />
     </div>
+
+    <x-pagination :paginator="$invoices" />
 
     @include('components.finance.barang.add-modal', ['items' => $items])
 

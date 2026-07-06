@@ -30,9 +30,10 @@
         {{-- Table Component --}}
         @include('components.finance.payment-accounts.table')
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$accounts" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$accounts" />
 
     {{-- Modal Tambah --}}
     @include('components.finance.payment-accounts.add-modal')

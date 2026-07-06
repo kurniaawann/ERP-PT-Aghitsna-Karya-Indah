@@ -39,9 +39,10 @@
             'grandTotals' => $grandTotals,
         ])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$salesRecaps" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$salesRecaps" />
 
     {{-- Modal Tambah --}}
     @include('components.recap-sales.add-modal', ['items' => $items])

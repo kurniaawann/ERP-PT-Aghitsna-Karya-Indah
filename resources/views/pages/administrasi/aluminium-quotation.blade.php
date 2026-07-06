@@ -38,9 +38,10 @@
         {{-- Table --}}
         @include('components.administrasi.aluminium-quotation.table', ['quotations' => $quotations])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$quotations" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$quotations" />
 
     {{-- Add Modal --}}
     @include('components.administrasi.aluminium-quotation.add-modal')

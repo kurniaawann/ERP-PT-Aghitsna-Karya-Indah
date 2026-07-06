@@ -47,9 +47,10 @@
             'totals' => $totals,
         ])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$expenseRecaps" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$expenseRecaps" />
 
     {{-- Modal Tambah --}}
     @include('components.recap-expense.add-modal')

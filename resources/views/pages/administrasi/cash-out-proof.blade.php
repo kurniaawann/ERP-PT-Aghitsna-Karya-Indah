@@ -29,9 +29,10 @@
         {{-- Table Component --}}
         @include('components.administrasi.cash-out-proof.table', ['cashOuts' => $cashOuts])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$cashOuts" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$cashOuts" />
 
     {{-- Modal Tambah --}}
     @include('components.administrasi.cash-out-proof.add-modal')

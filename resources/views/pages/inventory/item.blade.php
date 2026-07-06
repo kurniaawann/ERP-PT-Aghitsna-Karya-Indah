@@ -29,9 +29,10 @@
         {{-- Table Component --}}
         @include('components.inventory.item.table', ['items' => $items])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$items" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$items" />
 
     {{-- Modal Tambah --}}
     @include('components.inventory.item.add-modal')

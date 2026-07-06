@@ -36,9 +36,10 @@
         {{-- Table --}}
         @include('components.inventory.stock-in.table', ['stockIns' => $stockIns])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$stockIns" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$stockIns" />
 
     {{-- Modal Tambah --}}
     @include('components.inventory.stock-in.add-modal', ['items' => $items])

@@ -29,9 +29,10 @@
         {{-- Table Component --}}
         @include('components.administrasi.kwintansi.table', ['kwintansis' => $kwintansis])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$kwintansis" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$kwintansis" />
 
     {{-- Modal Tambah --}}
     @include('components.administrasi.kwintansi.add-modal')

@@ -27,9 +27,10 @@
         {{-- Table Component --}}
         @include('components.sdm.overtime.table', ['overtimes' => $overtimes])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$overtimes" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$overtimes" />
 
     {{-- Modal Tambah --}}
     @include('components.sdm.overtime.add-modal', ['employees' => $employees])

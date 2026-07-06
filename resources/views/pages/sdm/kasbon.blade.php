@@ -59,9 +59,10 @@
         {{-- Table Component --}}
         @include('components.sdm.kasbon.table', ['kasbons' => $kasbons])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$kasbons" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$kasbons" />
 
     {{-- Modal Tambah --}}
     @include('components.sdm.kasbon.add-modal', ['employees' => $employees])

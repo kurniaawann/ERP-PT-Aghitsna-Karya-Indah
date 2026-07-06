@@ -1,23 +1,34 @@
 @props(['paginator'])
 
-<div class="flex mt-4 justify-center">
-    <div class="flex items-center gap-3 bg-surface-base border border-border-strong rounded-lg px-4 py-2 shadow-sm">
-        <a href="{{ $paginator->appends(request()->query())->previousPageUrl() }}"
-            class="flex items-center justify-center w-8 h-8 rounded-md border border-border-strong text-text-label hover:bg-surface-hover transition-colors duration-200
-            {{ $paginator->onFirstPage() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:border-primary' }}">
-            &lt;
-        </a>
+<div class="mt-auto">
+    <div class="flex items-center justify-between bg-surface-base border border-border-strong rounded-lg px-4 py-2 shadow-sm">
+        {{-- Previous --}}
+        @if ($paginator->onFirstPage())
+            <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-tertiary border border-border-strong rounded-md opacity-50 select-none">
+                &laquo; Previous
+            </span>
+        @else
+            <a href="{{ $paginator->appends(request()->query())->previousPageUrl() }}"
+               class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-label border border-border-strong rounded-md hover:bg-surface-hover hover:border-primary transition-colors duration-200">
+                &laquo; Previous
+            </a>
+        @endif
 
-        <span class="text-sm font-medium text-text-primary">
-            {{ $paginator->currentPage() }}
-            <span class="text-text-tertiary">/</span>
-            {{ $paginator->lastPage() }}
+        {{-- Page indicator --}}
+        <span class="text-sm font-medium text-text-primary px-2 select-none">
+            {{ $paginator->currentPage() }}<span class="text-text-tertiary">/</span>{{ $paginator->lastPage() }}
         </span>
 
-        <a href="{{ $paginator->appends(request()->query())->nextPageUrl() }}"
-            class="flex items-center justify-center w-8 h-8 rounded-md border border-border-strong text-text-label hover:bg-surface-hover transition-colors duration-200
-            {{ !$paginator->hasMorePages() ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'hover:border-primary' }}">
-            &gt;
-        </a>
+        {{-- Next --}}
+        @if ($paginator->hasMorePages())
+            <a href="{{ $paginator->appends(request()->query())->nextPageUrl() }}"
+               class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-label border border-border-strong rounded-md hover:bg-surface-hover hover:border-primary transition-colors duration-200">
+                Next &gt;&gt;
+            </a>
+        @else
+            <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-text-tertiary border border-border-strong rounded-md opacity-50 select-none">
+                Next &gt;&gt;
+            </span>
+        @endif
     </div>
 </div>

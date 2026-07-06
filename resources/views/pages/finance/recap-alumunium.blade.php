@@ -107,8 +107,9 @@
             </div>
         </div>
 
-        <x-pagination :paginator="$invoices" />
     </div>
+
+    <x-pagination :paginator="$invoices" />
 
     @foreach ($invoices as $invoice)
         @include('components.finance.alumunium.detail-modal', ['invoice' => $invoice])

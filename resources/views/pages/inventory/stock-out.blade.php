@@ -67,9 +67,10 @@
             </div>
         </div>
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$stockOuts" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$stockOuts" />
 
     {{-- Include Stock Out Scripts --}}
     @include('partials.inventory.stock-out-scripts')

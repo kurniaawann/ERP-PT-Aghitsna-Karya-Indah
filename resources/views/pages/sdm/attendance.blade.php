@@ -27,9 +27,10 @@
         {{-- Table Component --}}
         @include('components.sdm.attendance.table', ['attendances' => $attendances])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$attendances" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$attendances" />
 
     {{-- Modal Tambah --}}
     @include('components.sdm.attendance.add-modal', ['employees' => $employees])

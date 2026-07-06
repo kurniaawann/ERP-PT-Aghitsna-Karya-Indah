@@ -120,10 +120,10 @@
         </div>
 
         @include('components.finance.payment-proofs.table')
+    </div>
 
-        <div class="mt-4">
-            <x-pagination :paginator="$paymentProofs" />
-        </div>
+    <div class="mt-4">
+        <x-pagination :paginator="$paymentProofs" />
     </div>
 
     @include('components.finance.payment-proofs.add-modal')

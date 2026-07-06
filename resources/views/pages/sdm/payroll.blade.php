@@ -63,9 +63,10 @@
         {{-- Table Component --}}
         @include('components.sdm.payroll.table', ['payrolls' => $payrolls])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$payrolls" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$payrolls" />
 
     {{-- Modal Generate Payroll --}}
     @include('components.sdm.payroll.generate-modal')

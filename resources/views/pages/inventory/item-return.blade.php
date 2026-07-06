@@ -114,9 +114,10 @@
             </div>
         </form>
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$returns" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$returns" />
 
     {{-- Modal Tambah --}}
     @include('components.inventory.item-return.add-modal', [

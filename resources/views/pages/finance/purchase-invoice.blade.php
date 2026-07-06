@@ -41,9 +41,10 @@
         {{-- Table Component --}}
         @include('components.finance.pembelian.table', ['invoices' => $invoices])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$invoices" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$invoices" />
 
     {{-- Modal Tambah Faktur --}}
     @include('components.finance.pembelian.add-modal')

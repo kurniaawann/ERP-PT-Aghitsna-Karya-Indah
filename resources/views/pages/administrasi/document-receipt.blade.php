@@ -29,9 +29,10 @@
         {{-- Table Component --}}
         @include('components.administrasi.document-receipt.table', ['documents' => $documents])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$documents" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$documents" />
 
     {{-- Modal Tambah --}}
     @include('components.administrasi.document-receipt.add-modal')

@@ -26,9 +26,10 @@
         {{-- Table --}}
         @include('components.administrasi.project-quotation.table', ['quotations' => $quotations])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$quotations" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$quotations" />
 
     {{-- Add Modal --}}
     @include('components.administrasi.project-quotation.add-modal')

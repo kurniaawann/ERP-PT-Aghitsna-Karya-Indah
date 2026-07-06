@@ -21,9 +21,9 @@
         </div>
 
         @include('components.user-management.table', ['users' => $users])
-
-        <x-pagination :paginator="$users" />
     </div>
+
+    <x-pagination :paginator="$users" />
 
     @include('components.user-management.add-modal')
 

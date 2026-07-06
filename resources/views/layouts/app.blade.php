@@ -25,7 +25,7 @@
         {{-- Main Content --}}
         <div class="flex-1 flex flex-col overflow-hidden">
             {{-- Topbar --}}
-            <header class="bg-surface-base shadow-sm z-10 border-b border-border-light">
+            <header class="bg-surface-base shadow-sm z-10 border-b border-border-light py-1">
                 <div class="flex items-center justify-between p-4">
                     {{-- Toggle Sidebar untuk Mobile --}}
                     <button id="toggleSidebar" type="button"
@@ -64,7 +64,7 @@
             </header>
 
             {{-- Konten Utama --}}
-            <main class="flex-1 overflow-y-auto p-6 bg-surface-secondary">
+            <main class="flex-1 overflow-y-auto p-6 bg-surface-secondary flex flex-col">
                 @yield('content')
             </main>
         </div>

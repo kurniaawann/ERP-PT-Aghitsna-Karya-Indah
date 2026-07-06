@@ -66,9 +66,10 @@
         {{-- Table Component --}}
         @include('components.finance.reimburse.table', ['reimburses' => $reimburses])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$reimburses" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$reimburses" />
 
     {{-- Modal Tambah (Admin only) --}}
     @if (Auth::user()->role === 'admin')

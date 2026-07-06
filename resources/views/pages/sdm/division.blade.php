@@ -27,9 +27,10 @@
         {{-- Table Component --}}
         @include('components.sdm.division.table', ['divisions' => $divisions])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$divisions" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$divisions" />
 
     {{-- Modal Tambah --}}
     @include('components.sdm.division.add-modal')

@@ -29,9 +29,10 @@
         {{-- Table Component --}}
         @include('components.administrasi.nota.table', ['notas' => $notas])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$notas" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$notas" />
 
     {{-- Modal Tambah --}}
     @include('components.administrasi.nota.add-modal')

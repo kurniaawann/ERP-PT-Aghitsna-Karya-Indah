@@ -24,9 +24,10 @@
         {{-- Table --}}
         @include('components.administrasi.rab.table', ['rabs' => $rabs])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$rabs" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$rabs" />
 
     {{-- Add Modal --}}
     @include('components.administrasi.rab.add-modal', ['paymentAccounts' => $paymentAccounts])
