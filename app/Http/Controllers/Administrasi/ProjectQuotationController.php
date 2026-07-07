@@ -249,10 +249,10 @@ class ProjectQuotationController extends Controller
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
+            $date = date('Y-m-d');
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            $date = date('Y-m-d');
             }, "Penawaran_Proyek_{$safeNumber}_{$date}.pdf", [
                 'Content-Type' => 'application/pdf',
             ]);
@@ -322,10 +322,10 @@ class ProjectQuotationController extends Controller
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
+            $date = date('Y-m-d');
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            $date = date('Y-m-d');
             }, "Penawaran_Proyek_{$safeNumber}_{$date}.pdf", [
                 'Content-Type' => 'application/pdf',
             ]);
