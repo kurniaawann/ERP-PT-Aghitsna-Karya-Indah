@@ -9,6 +9,7 @@ class ProyekInvoiceSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::table('proyek_invoices')->delete();
         $invoices = [
             [
                 'invoice_number' => 'P-2026-001',
