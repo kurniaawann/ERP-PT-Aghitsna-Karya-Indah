@@ -359,7 +359,7 @@ Route::middleware('auth')->group(function () {
         // Route Kwintansi
         Route::get('/kwintansi', [KwintansiController::class, 'index'])->name('kwintansi.index');
         Route::post('/kwintansi', [KwintansiController::class, 'store'])->name('kwintansi.store');
-        Route::put('/kwintansi/{kwintansi}', [KwintansiController::class, 'update'])->name('kwintansi.update');
+        Route::put('/kwintansi/{kwintansi}', [KwintansiController::class, 'update'])->name('kwintansi.update')->where('kwintansi', '.*');
         Route::delete('/kwintansi/destroy-selected', [KwintansiController::class, 'destroySelected'])->name('kwintansi.destroySelected');
 
         // Route Kwintansi - Export PDF
@@ -381,7 +381,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/delivery-note', [DeliveryNoteController::class, 'store'])->name('delivery-note.administrasi.store');
         Route::put('/delivery-note/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('delivery-note.administrasi.update')->where('deliveryNote', '.*');
         Route::delete('/delivery-note/destroy-selected', [DeliveryNoteController::class, 'destroySelected'])->name('delivery-note.administrasi.destroySelected');
-        Route::patch('/delivery-note/{deliveryNote}/status', [DeliveryNoteController::class, 'updateStatus'])->name('delivery-note.administrasi.updateStatus')->where('deliveryNote', '.*');
 
         // Route Delivery Note - Export PDF
         Route::get('/delivery-note/export/pdf', [DeliveryNoteController::class, 'exportPdfAll'])->name('delivery-note.administrasi.export.pdf');
