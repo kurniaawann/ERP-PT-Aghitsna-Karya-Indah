@@ -212,7 +212,10 @@
             formatPriceInput(priceInput);
             updateGrandTotal(prefix);
         });
-        volInput.addEventListener('input', () => updateGrandTotal(prefix));
+        volInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9.,]/g, '');
+            updateGrandTotal(prefix);
+        });
 
         itemsContainer.appendChild(itemEl);
 
@@ -355,11 +358,13 @@
         // Set JSON
         jsonInput.value = JSON.stringify(groups);
 
-        // Show loading spinner
+        // Show loading spinner, prevent double submit
         const submitBtn = document.getElementById('submit-btn-addModal');
         if (submitBtn) {
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                return false;
+            }
         }
 
         return true;
@@ -395,11 +400,13 @@
         // Set JSON
         jsonInput.value = JSON.stringify(groups);
 
-        // Show loading spinner
+        // Show loading spinner, prevent double submit
         const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);
         if (submitBtn) {
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                return false;
+            }
         }
 
         return true;

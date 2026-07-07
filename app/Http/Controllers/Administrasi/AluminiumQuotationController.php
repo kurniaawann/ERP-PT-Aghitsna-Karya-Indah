@@ -237,15 +237,11 @@ class AluminiumQuotationController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Groups & items cascade deleted via DB constraint
-        AluminiumQuotation::whereIn('quotation_number', $ids)->each(function ($q) {
-            $q->groups()->each(fn($g) => $g->items()->delete());
-            $q->groups()->delete();
-            $q->delete();
-        });
+        AluminiumQuotation::whereIn('quotation_number', $ids)->get()->each->delete();
 
+        $message = count($ids) . ' data terpilih berhasil dihapus.';
         return redirect()->route('aluminium-quotation.index')
-            ->with('success', 'Penawaran berhasil dihapus!');
+            ->with('success', $message);
     }
 
     // ─── Print single PDF ────────────────────────────────────────────────────
