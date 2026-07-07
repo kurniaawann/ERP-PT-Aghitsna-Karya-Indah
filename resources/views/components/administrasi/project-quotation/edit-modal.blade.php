@@ -36,7 +36,7 @@
                     class="text-error">*</span></label>
             <input type="date" name="date"
                 class="w-full border border-border-strong rounded-lg p-2 text-sm bg-surface-base text-text-input"
-                required value="{{ $quotation->date }}"
+                required value="{{ $quotation->date?->format('Y-m-d') ?? '' }}"
                 oninvalid="this.setCustomValidity('Tanggal penawaran harus diisi')"
                 oninput="this.setCustomValidity('')">
         </div>

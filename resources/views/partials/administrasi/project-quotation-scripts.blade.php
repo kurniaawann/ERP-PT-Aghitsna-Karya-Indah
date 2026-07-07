@@ -35,23 +35,6 @@
         }
     }
 
-    // ─── Set Button Loading State ─────────────────────────────────────────────────
-    function setButtonLoading(buttonId, loading = true) {
-        const button = document.getElementById(buttonId);
-        if (!button) return;
-
-        if (loading) {
-            button.disabled = true;
-            button.dataset.originalText = button.innerHTML;
-            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Memproses...';
-            button.classList.add('opacity-70', 'cursor-not-allowed');
-        } else {
-            button.disabled = false;
-            button.innerHTML = button.dataset.originalText || button.innerHTML;
-            button.classList.remove('opacity-70', 'cursor-not-allowed');
-        }
-    }
-
     // Note: Modal data loading handled by MutationObserver in DOMContentLoaded section below
 
     // ─── Resolve container, grand-total display, and JSON input IDs ───────────────
@@ -253,7 +236,7 @@
                         <div>
                             <label class="block text-xs font-medium text-text-label mb-1">Volume</label>
                             <input type="text" value="${escHtml(item.volume || '')}"
-                                oninput="updateItemField('${prefix}', ${item.id}, 'volume', this.value, false)"
+                                oninput="this.value = this.value.replace(/[^0-9.,]/g, ''); updateItemField('${prefix}', ${item.id}, 'volume', this.value, false)"
                                 onchange="updateItemField('${prefix}', ${item.id}, 'volume', this.value)"
                                 class="w-full border border-border-strong rounded-md p-2 text-sm text-text-input bg-surface-base item-volume"
                                 placeholder="1">
@@ -385,8 +368,14 @@
             jsonInput.value = JSON.stringify(addItemsStore);
         }
 
-        // Set button to loading state
-        setButtonLoading('submit-btn-addModal', true);
+        // Show loading spinner, prevent double submit
+        const submitBtn = document.getElementById('submit-btn-addModal');
+        if (submitBtn) {
+            const originalText = submitBtn.innerHTML;
+            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -422,8 +411,14 @@
             jsonInput.value = JSON.stringify(items);
         }
 
-        // Set button to loading state
-        setButtonLoading('submit-btn-editModal-' + quotNum, true);
+        // Show loading spinner, prevent double submit
+        const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);
+        if (submitBtn) {
+            const originalText = submitBtn.innerHTML;
+            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -436,8 +431,14 @@
             return false;
         }
 
-        // Set delete button to loading state
-        setButtonLoading('confirm-btn-deleteModal', true);
+        // Set delete button to loading state, prevent double click
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        if (deleteBtn) {
+            const originalText = deleteBtn.innerHTML;
+            if (!handleFormSubmit(deleteBtn, originalText, 'Menghapus...')) {
+                return;
+            }
+        }
 
         // Submit form
         setTimeout(() => {

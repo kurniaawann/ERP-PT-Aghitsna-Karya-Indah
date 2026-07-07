@@ -215,14 +215,11 @@ class ProjectQuotationController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Items cascade deleted via DB constraint
-        ProjectQuotation::whereIn('quotation_number', $ids)->each(function ($q) {
-            $q->items()->delete();
-            $q->delete();
-        });
+        ProjectQuotation::whereIn('quotation_number', $ids)->get()->each->delete();
 
+        $message = count($ids) . ' data terpilih berhasil dihapus.';
         return redirect()->route('project-quotation.index')
-            ->with('success', 'Penawaran berhasil dihapus!');
+            ->with('success', $message);
     }
 
     // ─── Print PDF (Single from GET route) ───────────────────────────────────
