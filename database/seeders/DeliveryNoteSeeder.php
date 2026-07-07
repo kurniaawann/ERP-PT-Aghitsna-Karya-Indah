@@ -9,6 +9,7 @@ class DeliveryNoteSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::table('delivery_notes')->delete();
         $deliveries = [
             ['id' => 'DN-001', 'date' => now(), 'shipper' => 'PT. AKI Gudang', 'receiver' => 'PT. Sumber Makmur', 'desc' => 'Profil aluminium Proyek A', 'item' => 'Profil Aluminium 5x130x300', 'qty' => 10, 'driver' => 'Budi', 'vehicle' => 'B 1234 CD'],
             ['id' => 'DN-002', 'date' => now()->subDays(1), 'shipper' => 'PT. AKI Gudang', 'receiver' => 'CV. Mekar Jaya', 'desc' => 'Rangka jendela Proyek B', 'item' => 'Rangka Jendela', 'qty' => 5, 'driver' => 'Slamet', 'vehicle' => 'D 4321 EF'],
@@ -42,7 +43,6 @@ class DeliveryNoteSeeder extends Seeder
                 'vehicle_number' => $dn['vehicle'],
                 'total_quantity' => $dn['qty'],
                 'notes' => null,
-                'status' => 'shipped',
                 'created_at' => $dn['date'],
                 'updated_at' => now(),
             ]);

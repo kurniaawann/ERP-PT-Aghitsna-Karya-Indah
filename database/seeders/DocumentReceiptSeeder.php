@@ -9,6 +9,7 @@ class DocumentReceiptSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::table('document_receipts')->delete();
         $data = [
             ['id_document' => 'DOC-001', 'received_from' => 'Admin Proyek', 'regarding' => 'Kontrak proyek Gedung A', 'form_of' => 'Slip pengiriman dokumen', 'receipt_date' => now(), 'receipt_time' => '09:15:00', 'location' => 'Depok'],
             ['id_document' => 'DOC-002', 'received_from' => 'Supplier', 'regarding' => 'Sertifikat peralatan', 'form_of' => 'Sertifikat', 'receipt_date' => now()->subDays(1), 'receipt_time' => '10:10:00', 'location' => 'Depok'],

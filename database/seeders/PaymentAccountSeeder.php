@@ -29,7 +29,13 @@ class PaymentAccountSeeder extends Seeder
         ];
 
         foreach ($accounts as $account) {
-            PaymentAccount::create($account);
+            PaymentAccount::firstOrCreate(
+                [
+                    'bank_name' => $account['bank_name'],
+                    'account_number' => $account['account_number'],
+                ],
+                $account
+            );
         }
     }
 }
