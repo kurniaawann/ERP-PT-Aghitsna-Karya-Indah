@@ -98,7 +98,7 @@
                             class="w-4 h-4 accent-primary payment-account-checkbox" {{ $loop->first ? 'required' : '' }}
                             oninvalid="this.setCustomValidity('Minimal 1 rekening pembayaran harus dipilih')"
                             oninput="this.setCustomValidity('')"
-                            onchange="document.querySelectorAll('.payment-account-checkbox').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox:checked'))">
+                            onchange="document.querySelectorAll('.payment-account-checkbox').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox:checked')); validatePaymentSelection()">
                         <span class="text-sm">
                             <strong>{{ $account->bank_name }}</strong> /
                             {{ $account->account_number }} a/n {{ $account->account_holder }}

@@ -107,7 +107,9 @@
                 Rekening Pembayaran <span class="text-error">*</span>
             </label>
             @php $selectedIds = $quotation->selected_payment_accounts ?? []; @endphp
-            <div class="space-y-2">
+            <div id="payment-accounts-{{ $quotation->quotation_number }}"
+                class="space-y-2"
+                data-selected-ids="{{ json_encode($selectedIds) }}">
                 @foreach ($paymentAccounts as $account)
                     <label
                         class="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-surface-hover">
@@ -117,7 +119,7 @@
                             {{ in_array($account->id, $selectedIds) ? 'checked' : '' }}
                             oninvalid="this.setCustomValidity('Minimal 1 rekening pembayaran harus dipilih')"
                             oninput="this.setCustomValidity('')"
-                            onchange="document.querySelectorAll('.payment-account-checkbox').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox:checked'))">
+                            onchange="document.querySelectorAll('.payment-account-checkbox').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox:checked')); validatePaymentSelectionEdit('{{ $quotation->quotation_number }}')">
                         <span class="text-sm">
                             <strong>{{ $account->bank_name }}</strong> /
                             {{ $account->account_number }} a/n {{ $account->account_holder }}
