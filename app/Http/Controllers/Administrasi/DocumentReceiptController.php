@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Administrasi\DocumentReceipt;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Traits\HasBulkActions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DocumentReceiptController extends Controller
 {
-    use HasBulkActions;
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -30,6 +30,16 @@ class DocumentReceiptController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi input
+        $request->validate([
+            'received_from' => 'required|string|max:255',
+            'regarding' => 'required|string|max:255',
+            'form_of' => 'required|string|max:255',
+            'receipt_date' => 'required|date',
+            'receipt_time' => 'required|date_format:H:i',
+            'location' => 'nullable|string|max:100',
+        ]);
+
         // Ambil semua input dari form
         $data = $request->all();
 
@@ -49,6 +59,16 @@ class DocumentReceiptController extends Controller
 
     public function update(Request $request, DocumentReceipt $documentReceipt)
     {
+        // Validasi input
+        $request->validate([
+            'received_from' => 'required|string|max:255',
+            'regarding' => 'required|string|max:255',
+            'form_of' => 'required|string|max:255',
+            'receipt_date' => 'required|date',
+            'receipt_time' => 'required|date_format:H:i',
+            'location' => 'nullable|string|max:100',
+        ]);
+
         // Ambil semua input dari form
         $data = $request->all();
 
@@ -65,15 +85,29 @@ class DocumentReceiptController extends Controller
 
     public function destroySelected(Request $request)
     {
-        // Ambil array id_document dari checkbox selection
         $ids = $request->input('ids');
 
-        // Validasi
         if (empty($ids)) {
             return redirect()->route('document-receipt.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        return $this->destroySelectedBy($request, DocumentReceipt::class, 'ids', 'id_document', 'document-receipt.index');
+        DB::beginTransaction();
+        try {
+            DocumentReceipt::whereIn('id_document', $ids)->get()->each->delete();
+
+            DB::commit();
+
+            return redirect()->route('document-receipt.index')
+                ->with('success', count($ids) . ' data berhasil dihapus!');
+        } catch (\Throwable $throwable) {
+            DB::rollBack();
+            Log::error('Document Receipt destroySelected failed', [
+                'error' => $throwable->getMessage(),
+                'trace' => $throwable->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
+        }
     }
 
     /**

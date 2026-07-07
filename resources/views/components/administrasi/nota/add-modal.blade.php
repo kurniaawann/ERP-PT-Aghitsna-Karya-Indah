@@ -80,16 +80,23 @@
                         </div>
                     </div>
 
-                    {{-- Row 2: Harga Satuan and Delete Button --}}
+                    {{-- Row 2: Harga Satuan, Jumlah, and Delete Button --}}
                     <div class="grid grid-cols-12 gap-3">
-                        <div class="col-span-9">
+                        <div class="col-span-4">
                             <label class="block text-xs font-semibold text-text-label mb-1.5">Harga Satuan <span
                                     class="text-error">*</span></label>
                             <input type="text" name="item_harga_satuan[]"
                                 class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right text-text-input price-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                                placeholder="0" required>
+                                placeholder="0" required oninput="formatCurrencyInput(this)">
                         </div>
-                        <div class="col-span-3 flex items-end">
+                        <div class="col-span-3">
+                            <label class="block text-xs font-semibold text-text-label mb-1.5">Jumlah</label>
+                            <div
+                                class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right bg-surface-secondary text-text-input item-total">
+                                0
+                            </div>
+                        </div>
+                        <div class="col-span-5 flex items-end">
                             <button type="button" onclick="removeItemRow(this)" style="display: none;"
                                 class="delete-btn w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-trash"></i>
@@ -105,6 +112,14 @@
             <i class="fa-solid fa-info-circle text-info"></i>
             <span>Klik <strong>"Tambah Item"</strong> untuk menambahkan barang baru ke daftar.</span>
         </p>
+
+        <div class="flex justify-end mt-3">
+            <div class="bg-surface-secondary border border-border-strong rounded-lg px-4 py-2">
+                <span class="text-sm font-semibold text-text-primary">Total Barang: Rp </span>
+                <span id="grandTotal-addModal"
+                    class="text-sm font-bold text-text-heading">0</span>
+            </div>
+        </div>
     </div>
 
     <div class="mb-3">

@@ -57,10 +57,10 @@
         });
     });
 
-    // Update Delete Button and Print Button State
+    // Update Delete Button and Export Selected State
     function updateButtonStates() {
         const deleteButton = document.getElementById('delete-button');
-        const printButton = document.getElementById('printDropdownButton');
+        const printSelectedItem = document.getElementById('printSelectedItem');
         const selectedCountText = document.getElementById('selectedCountText');
         const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
             .disabled);
@@ -81,13 +81,11 @@
             }
         }
 
-        if (printButton) {
+        if (printSelectedItem) {
             if (count > 0) {
-                printButton.disabled = false;
-                printButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                printSelectedItem.classList.remove('hidden');
             } else {
-                printButton.disabled = true;
-                printButton.classList.add('opacity-50', 'cursor-not-allowed');
+                printSelectedItem.classList.add('hidden');
             }
         }
     }

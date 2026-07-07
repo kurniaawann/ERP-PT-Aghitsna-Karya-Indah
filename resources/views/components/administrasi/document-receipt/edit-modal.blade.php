@@ -1,7 +1,6 @@
 {{-- Modal Edit Tanda Terima Dokumen --}}
 <x-modal id="editModal-{{ $document->id_document }}" title="Edit Tanda Terima Dokumen"
-    action="{{ route('document-receipt.update', $document->id_document) }}" method="POST" buttonText="Update">
-    @method('PUT')
+    action="{{ route('document-receipt.update', $document->id_document) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">ID Dokumen</label>

@@ -41,10 +41,10 @@
         });
     });
 
-    // Update Delete Button and Print Button State
+    // Update Delete Button and Export Selected State
     function updateButtonStates() {
         const deleteButton = document.getElementById('delete-button');
-        const printButton = document.getElementById('printDropdownButton');
+        const printSelectedItem = document.getElementById('printSelectedItem');
         const selectedCountText = document.getElementById('selectedCountText');
         const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
         const count = checkedCheckboxes.length;
@@ -60,15 +60,13 @@
             deleteButton.classList.remove('hover:bg-btn-delete-hover');
         }
 
-        // Update print button
-        if (count > 0) {
-            printButton.disabled = false;
-            printButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            printButton.classList.add('hover:bg-primary-hover');
-        } else {
-            printButton.disabled = true;
-            printButton.classList.add('opacity-50', 'cursor-not-allowed');
-            printButton.classList.remove('hover:bg-primary-hover');
+        // Show/hide export selected item
+        if (printSelectedItem) {
+            if (count > 0) {
+                printSelectedItem.classList.remove('hidden');
+            } else {
+                printSelectedItem.classList.add('hidden');
+            }
         }
 
         // Update selected count text
