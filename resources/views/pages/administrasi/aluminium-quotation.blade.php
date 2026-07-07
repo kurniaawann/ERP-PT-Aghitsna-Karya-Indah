@@ -6,12 +6,7 @@
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Penawaran Proyek</h1>
 
-        {{-- Success / Error Alerts --}}
-        @if (session('success'))
-            <div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                {{ session('success') }}
-            </div>
-        @endif
+        {{-- Error Alerts --}}
         @if (session('error'))
             <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
                 {{ session('error') }}

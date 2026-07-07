@@ -66,6 +66,14 @@ class AluminiumQuotationController extends Controller
             return back()->with('error', 'Data kelompok item tidak valid.')->withInput();
         }
 
+        foreach ($groups as $group) {
+            foreach ($group['items'] as $item) {
+                if (isset($item['volume']) && $item['volume'] !== '' && $item['volume'] !== null && !is_numeric($item['volume'])) {
+                    return back()->with('error', 'Volume harus berupa angka.')->withInput();
+                }
+            }
+        }
+
         // Auto-generate quotation number
         $seqNumber = AluminiumQuotation::getNextSequenceNumber();
         $year = date('y');
@@ -125,7 +133,7 @@ class AluminiumQuotationController extends Controller
             }
         });
 
-        return redirect()->route('project-quotation.index')
+        return redirect()->route('aluminium-quotation.index')
             ->with('success', "Penawaran {$quotationNumber} berhasil ditambahkan!");
     }
 
@@ -148,6 +156,14 @@ class AluminiumQuotationController extends Controller
         $groups = json_decode($request->input('groups_json'), true);
         if (!$groups || !is_array($groups) || count($groups) === 0) {
             return back()->with('error', 'Data kelompok item tidak valid.')->withInput();
+        }
+
+        foreach ($groups as $group) {
+            foreach ($group['items'] as $item) {
+                if (isset($item['volume']) && $item['volume'] !== '' && $item['volume'] !== null && !is_numeric($item['volume'])) {
+                    return back()->with('error', 'Volume harus berupa angka.')->withInput();
+                }
+            }
         }
 
         // Calculate grand total
@@ -206,7 +222,7 @@ class AluminiumQuotationController extends Controller
             }
         });
 
-        return redirect()->route('project-quotation.index')
+        return redirect()->route('aluminium-quotation.index')
             ->with('success', 'Penawaran berhasil diperbarui!');
     }
 
@@ -217,7 +233,7 @@ class AluminiumQuotationController extends Controller
         $ids = $request->input('ids', []);
 
         if (empty($ids)) {
-            return redirect()->route('project-quotation.index')
+            return redirect()->route('aluminium-quotation.index')
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
@@ -228,7 +244,7 @@ class AluminiumQuotationController extends Controller
             $q->delete();
         });
 
-        return redirect()->route('project-quotation.index')
+        return redirect()->route('aluminium-quotation.index')
             ->with('success', 'Penawaran berhasil dihapus!');
     }
 
@@ -265,7 +281,7 @@ class AluminiumQuotationController extends Controller
         $ids = $request->input('ids', []);
 
         if (empty($ids)) {
-            return redirect()->route('project-quotation.index')
+            return redirect()->route('aluminium-quotation.index')
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
