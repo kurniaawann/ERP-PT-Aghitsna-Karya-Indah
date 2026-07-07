@@ -31,6 +31,14 @@
     // BULK DELETE FUNCTION
     // ==========================================
 
+    function resetDeleteButton() {
+        const btn = document.getElementById('confirm-btn-deleteModal');
+        if (!btn) return;
+        btn.innerHTML = 'Ya, Hapus';
+        btn.disabled = false;
+        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+    }
+
     function submitDeleteForm() {
         const checkboxes = document.querySelectorAll('.account-checkbox:checked');
 
@@ -48,9 +56,41 @@
         }
 
         const form = document.getElementById('deleteForm');
-        if (form) {
-            form.submit();
+        if (!form) {
+            resetDeleteButton();
+            return;
         }
+
+        // Kirim via AJAX untuk menghindari page flicker
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            closeModal('deleteModal');
+            resetDeleteButton();
+
+            if (data.success) {
+                window.location.reload();
+            } else if (data.type === 'usage_error') {
+                document.getElementById('errorMessage').textContent = data.message;
+                openModal('errorModal');
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(() => {
+            closeModal('deleteModal');
+            resetDeleteButton();
+            showToast('Terjadi kesalahan saat menghapus rekening.', 'error');
+        });
     }
 
     // ==========================================
@@ -135,5 +175,14 @@
                 setTimeout(() => alert.remove(), 500);
             });
         }, 5000);
+
+        // ==========================================
+        // ERROR MODAL (Rekening digunakan)
+        // ==========================================
+
+        @if (session('usage_error'))
+            document.getElementById('errorMessage').textContent = "{{ session('usage_error') }}";
+            openModal('errorModal');
+        @endif
     });
 </script>

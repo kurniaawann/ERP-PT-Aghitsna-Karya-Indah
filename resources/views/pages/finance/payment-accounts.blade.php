@@ -49,6 +49,16 @@
         Apakah kamu yakin ingin menghapus rekening yang dipilih?
     </x-modal>
 
+    {{-- Modal Error Penggunaan --}}
+    <x-modal id="errorModal" title="Tidak Dapat Menghapus" :readonly="true">
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-error-light">
+                <i class="fa-solid fa-triangle-exclamation text-error text-lg"></i>
+            </div>
+            <p class="text-text-primary text-sm leading-relaxed" id="errorMessage"></p>
+        </div>
+    </x-modal>
+
     {{-- JavaScript --}}
     @include('partials.finance.payment-accounts-scripts')
 @endsection

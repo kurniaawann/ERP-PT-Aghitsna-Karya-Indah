@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Models\Finance\PaymentAccount;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentAccountController extends Controller
 {
@@ -64,21 +65,54 @@ class PaymentAccountController extends Controller
 
     public function destroySelected(Request $request)
     {
-
         $selectedIds = $request->selected_accounts;
         $totalAccounts = PaymentAccount::count();
         $selectedCount = count($selectedIds);
+        $isAjax = $request->ajax();
 
-        // Cek apakah akan menghapus semua akun
         if ($selectedCount >= $totalAccounts) {
-            return redirect()->route('payment-accounts.index')
-                ->with('error', 'Tidak dapat menghapus semua rekening pembayaran. Minimal 1 rekening harus tetap ada.');
+            $msg = 'Tidak dapat menghapus semua rekening pembayaran. Minimal 1 rekening harus tetap ada.';
+            return $isAjax
+                ? response()->json(['success' => false, 'message' => $msg])
+                : redirect()->route('payment-accounts.index')->with('error', $msg);
+        }
+
+        // Cek apakah rekening sedang digunakan di data lain
+        $usedIds = [];
+
+        foreach ($selectedIds as $id) {
+            if (
+                DB::table('kwintansi')->where('payment_account_id', $id)->exists()
+                || DB::table('project_quotations')->whereJsonContains('selected_payment_accounts', $id)->exists()
+                || DB::table('aluminium_quotations')->whereJsonContains('selected_payment_accounts', $id)->exists()
+                || DB::table('proyek_invoices')->whereJsonContains('selected_payment_accounts', $id)->exists()
+                || DB::table('alumunium_invoices')->whereJsonContains('selected_payment_accounts', $id)->exists()
+                || DB::table('notas_administrasi')->whereJsonContains('selected_payment_accounts', $id)->exists()
+                || DB::table('rabs')->where('selected_payment_accounts', 'like', '%"'.$id.'"%')->exists()
+            ) {
+                $usedIds[] = $id;
+            }
+        }
+
+        if (!empty($usedIds)) {
+            $usedNames = PaymentAccount::whereIn('id', $usedIds)
+                ->get()
+                ->map(fn($a) => $a->bank_name . ' - ' . $a->account_number)
+                ->implode(', ');
+
+            $msg = "Rekening berikut tidak dapat dihapus karena masih digunakan pada data lain: {$usedNames}. Silahkan hapus atau ubah data yang menggunakan rekening ini terlebih dahulu.";
+
+            return $isAjax
+                ? response()->json(['success' => false, 'message' => $msg, 'type' => 'usage_error'])
+                : redirect()->route('payment-accounts.index')->with('usage_error', $msg);
         }
 
         PaymentAccount::whereIn('id', $selectedIds)->delete();
 
-        return redirect()->route('payment-accounts.index')
-            ->with('success', "{$selectedCount} rekening pembayaran berhasil dihapus!");
+        $msg = "{$selectedCount} rekening pembayaran berhasil dihapus!";
+        return $isAjax
+            ? response()->json(['success' => true, 'message' => $msg])
+            : redirect()->route('payment-accounts.index')->with('success', $msg);
     }
 
     public function destroy(PaymentAccount $paymentAccount)
