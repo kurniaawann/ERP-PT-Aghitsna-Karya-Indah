@@ -13,7 +13,6 @@
                             <th class="p-2 text-left">Penerima</th>
                             <th class="p-2 text-left">Pengirim</th>
                             <th class="p-2 text-center">Total Jumlah</th>
-                            <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Tanggal</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
@@ -23,8 +22,7 @@
                             <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="ids[]" value="{{ $deliveryNote->id_delivery_note }}"
-                                        class="row-checkbox w-4 h-4 accent-primary cursor-pointer"
-                                        {{ $deliveryNote->status === 'delivered' ? 'disabled' : '' }}>
+                                        class="row-checkbox w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
                                 <td class="p-2 font-medium text-primary">{{ $deliveryNote->id_delivery_note }}</td>
@@ -34,14 +32,6 @@
                                 {{-- Total Quantity --}}
                                 <td class="p-2 text-center font-semibold">
                                     {{ $deliveryNote->total_quantity }}
-                                </td>
-
-                                {{-- Status --}}
-                                <td class="p-2 text-center">
-                                    <span
-                                        class="px-3 py-1 rounded-full text-xs font-semibold {{ $deliveryNote->status_color }}">
-                                        {{ $deliveryNote->status_label }}
-                                    </span>
                                 </td>
 
                                 {{-- Date --}}
@@ -65,7 +55,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="p-4 text-center text-gray-500">
+                                <td colspan="7" class="p-4 text-center text-gray-500">
                                     <i class="fa-solid fa-inbox text-2xl mb-2 block opacity-50"></i>
                                     Tidak ada surat jalan ditemukan
                                 </td>

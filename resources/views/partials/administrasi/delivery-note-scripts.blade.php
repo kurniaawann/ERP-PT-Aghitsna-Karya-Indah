@@ -31,25 +31,21 @@
     // SELECT ALL CHECKBOX
     // ==========================================
 
-
-    // Select All Checkbox
     const selectAllEl = document.getElementById('selectAll');
     if (selectAllEl) {
         selectAllEl.addEventListener('change', function() {
             const checkboxes = document.querySelectorAll('.row-checkbox');
             checkboxes.forEach(checkbox => {
-                if (!checkbox.disabled) checkbox.checked = this.checked;
+                checkbox.checked = this.checked;
             });
             updateButtonStates();
         });
     }
 
-    // Individual Checkbox
     document.querySelectorAll('.row-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const selectAll = document.getElementById('selectAll');
-            const checkboxes = Array.from(document.querySelectorAll('.row-checkbox')).filter(cb => !cb
-                .disabled);
+            const checkboxes = document.querySelectorAll('.row-checkbox');
             const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
 
             if (selectAll) selectAll.checked = checkboxes.length === checkedCheckboxes.length;
@@ -57,16 +53,13 @@
         });
     });
 
-    // Update Delete Button and Export Selected State
     function updateButtonStates() {
         const deleteButton = document.getElementById('delete-button');
         const printSelectedItem = document.getElementById('printSelectedItem');
         const selectedCountText = document.getElementById('selectedCountText');
-        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
-            .disabled);
+        const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
         const count = checkedCheckboxes.length;
 
-        // Update selected count text
         if (selectedCountText) {
             selectedCountText.textContent = count;
         }
@@ -90,40 +83,14 @@
         }
     }
 
-    // Initialize button states
     updateButtonStates();
 
     // ==========================================
-    // SUBMIT DELETE FORM
-    // ==========================================
-
-    function submitDeleteForm() {
-        const checkedCheckboxes = Array.from(document.querySelectorAll('.row-checkbox:checked')).filter(cb => !cb
-            .disabled);
-        if (checkedCheckboxes.length === 0) {
-            alert('Tidak ada data yang dipilih!');
-            return;
-        }
-
-        // Update confirm button in modal
-        const confirmBtn = document.getElementById('confirm-btn-deleteModal');
-        if (confirmBtn) {
-            confirmBtn.disabled = true;
-            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            confirmBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        form.submit();
-    }
-
-    // ==========================================
-    // PRINT SELECTED FUNCTION
+    // PRINT SELECTED
     // ==========================================
 
     function printSelected(btn) {
-        return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}', btn,
-            '.row-checkbox:checked:not([disabled])', 'Tidak ada data yang dipilih!');
+        return sharedPrintSelected('{{ route('delivery-note.administrasi.export.pdf.selected') }}', btn);
     }
 
     // ==========================================
@@ -131,16 +98,15 @@
     // ==========================================
 
     function addItemRow(modalId) {
-            const container = document.getElementById(`itemsContainer-${modalId}`);
+        const container = document.getElementById(`itemsContainer-${modalId}`);
 
-            // Get current number of items
-            const itemRows = container.querySelectorAll('.item-row');
-            const newNo = itemRows.length + 1;
+        const itemRows = container.querySelectorAll('.item-row');
+        const newNo = itemRows.length + 1;
 
-            const newRow = document.createElement('div');
-            newRow.className =
-                'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
-            newRow.innerHTML = `
+        const newRow = document.createElement('div');
+        newRow.className =
+            'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+        newRow.innerHTML = `
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-text-label mb-1.5">No</label>
@@ -182,50 +148,85 @@
             </div>
         `;
 
-            container.appendChild(newRow);
+        container.appendChild(newRow);
+        updateDeleteButtonVisibility(modalId);
+    }
 
-            // Update delete button visibility
-            updateDeleteButtonVisibility(modalId);
-        }
+    // ==========================================
+    // REMOVE ITEM ROW
+    // ==========================================
 
-        // ==========================================
-        // REMOVE ITEM ROW
-        // ==========================================
-
-        function removeItemRow(button) {
-            const row = button.closest('.item-row');
-            if (row) {
-                row.remove();
-                // Update the modal ID to ensure delete buttons are properly toggled
-                const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
-                if (modal) {
-                    updateDeleteButtonVisibility(modal.id);
-                }
+    function removeItemRow(button) {
+        const row = button.closest('.item-row');
+        if (row) {
+            row.remove();
+            const modal = button.closest('[id^="addModal"], [id^="editModal-"]');
+            if (modal) {
+                updateDeleteButtonVisibility(modal.id);
             }
         }
+    }
+
+    // ==========================================
+    // UPDATE DELETE BUTTON VISIBILITY
+    // ==========================================
+
+    function updateDeleteButtonVisibility(modalId) {
+        const container = document.getElementById(`itemsContainer-${modalId}`);
+        const itemRows = container.querySelectorAll('.item-row');
+
+        itemRows.forEach((row, index) => {
+            const deleteBtn = row.querySelector('.delete-btn');
+            if (deleteBtn) {
+                deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
+            }
+        });
+    }
+
+    // Initialize delete button visibility on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
+            const modalId = container.id.replace('itemsContainer-', '');
+            updateDeleteButtonVisibility(modalId);
+        });
 
         // ==========================================
-        // UPDATE DELETE BUTTON VISIBILITY
+        // ADD MODAL FORM SUBMISSION (Loading Indicator)
         // ==========================================
 
-        function updateDeleteButtonVisibility(modalId) {
-            const container = document.getElementById(`itemsContainer-${modalId}`);
-            const itemRows = container.querySelectorAll('.item-row');
-
-            itemRows.forEach((row, index) => {
-                const deleteBtn = row.querySelector('.delete-btn');
-                // Show delete button only if there are more than 1 item rows
-                if (deleteBtn) {
-                    deleteBtn.style.display = itemRows.length > 1 ? 'flex' : 'none';
+        const addForm = document.querySelector('#addModal form');
+        if (addForm) {
+            addForm.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn ? submitBtn.innerHTML : '';
+                if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                    e.preventDefault();
+                    return false;
                 }
             });
         }
 
-        // Initialize delete button visibility on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
-                const modalId = container.id.replace('itemsContainer-', '');
-                updateDeleteButtonVisibility(modalId);
+        // ==========================================
+        // EDIT MODAL FORM SUBMISSION (Loading Indicator)
+        // ==========================================
+
+        document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn ? submitBtn.innerHTML : '';
+                if (!handleFormSubmit(submitBtn, originalText, 'Memperbarui...')) {
+                    e.preventDefault();
+                    return false;
+                }
             });
         });
+    });
+
+    // ==========================================
+    // RESET isSubmitting FLAG ON PAGE SHOW
+    // ==========================================
+
+    window.addEventListener('pageshow', function() {
+        resetFormSubmitState();
+    });
 </script>

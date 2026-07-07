@@ -86,7 +86,6 @@ class DeliveryNoteController extends Controller
             'vehicle_number' => $request->input('vehicle_number'),
             'total_quantity' => $totalQuantity,
             'notes' => $request->input('notes'),
-            'status' => $request->input('status', 'draft'),
         ]);
 
         return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil ditambahkan!');
@@ -147,7 +146,6 @@ class DeliveryNoteController extends Controller
             'vehicle_number' => $request->input('vehicle_number'),
             'total_quantity' => $totalQuantity,
             'notes' => $request->input('notes'),
-            'status' => $request->input('status', 'draft'),
         ]);
 
         return redirect()->route('delivery-note.administrasi.index')->with('success', 'Surat Jalan berhasil diperbarui!');
@@ -164,24 +162,6 @@ class DeliveryNoteController extends Controller
         }
 
         return $this->destroySelectedBy($request, DeliveryNote::class, 'ids', 'id_delivery_note', 'delivery-note.administrasi.index');
-    }
-
-    /**
-     * Update status delivery note
-     */
-    public function updateStatus(Request $request, $id)
-    {
-        $deliveryNote = DeliveryNote::findOrFail($id);
-
-        $request->validate([
-            'status' => 'required|in:draft,approved,shipped,delivered,cancelled',
-        ]);
-
-        $deliveryNote->update([
-            'status' => $request->input('status'),
-        ]);
-
-        return redirect()->route('delivery-note.administrasi.index')->with('success', 'Status Surat Jalan berhasil diperbarui!');
     }
 
     /**

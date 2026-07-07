@@ -187,18 +187,6 @@
         </div>
     </div>
 
-    {{-- Status --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Status</label>
-        <select name="status" class="w-full border rounded p-2">
-            <option value="draft" @selected($deliveryNote->status === 'draft')>Draft</option>
-            <option value="approved" @selected($deliveryNote->status === 'approved')>Disetujui</option>
-            <option value="shipped" @selected($deliveryNote->status === 'shipped')>Dikirim</option>
-            <option value="delivered" @selected($deliveryNote->status === 'delivered')>Tiba</option>
-            <option value="cancelled" @selected($deliveryNote->status === 'cancelled')>Dibatalkan</option>
-        </select>
-    </div>
-
     {{-- Additional Notes --}}
     <div>
         <label class="block text-text-primary mb-1">Catatan Tambahan</label>

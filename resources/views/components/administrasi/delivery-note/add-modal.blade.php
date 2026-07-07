@@ -140,9 +140,6 @@
         </div>
     </div>
 
-    {{-- Status (Hidden - always Draft) --}}
-    <input type="hidden" name="status" value="draft">
-
     {{-- Additional Notes --}}
     <div>
         <label class="block text-text-primary mb-1">Catatan Tambahan</label>

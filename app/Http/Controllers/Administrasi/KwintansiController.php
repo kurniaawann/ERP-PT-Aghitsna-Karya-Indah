@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Administrasi;
 use App\Http\Controllers\Controller;
 use App\Models\Administrasi\Kwintansi;
 use App\Models\Finance\PaymentAccount;
+use App\Services\InputNormalizer;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Traits\HasBulkActions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class KwintansiController extends Controller
 {
-    use HasBulkActions;
     public function index(Request $request)
     {
         // Ambil keyword pencarian dari request
@@ -46,6 +47,10 @@ class KwintansiController extends Controller
         // Konversi include_bank checkbox
         $data['include_bank'] = $request->has('include_bank');
 
+        // Normalisasi format rupiah
+        $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
+        $data['remaining'] = InputNormalizer::normalizeCurrency($data['remaining'] ?? 0);
+
         // Insert data kwintansi ke database
         Kwintansi::create($data);
 
@@ -67,6 +72,10 @@ class KwintansiController extends Controller
         // Konversi include_bank checkbox
         $data['include_bank'] = $request->has('include_bank');
 
+        // Normalisasi format rupiah
+        $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
+        $data['remaining'] = InputNormalizer::normalizeCurrency($data['remaining'] ?? 0);
+
         // Update data kwintansi
         $kwintansi->update($data);
 
@@ -75,7 +84,29 @@ class KwintansiController extends Controller
 
     public function destroySelected(Request $request)
     {
-        return $this->destroySelectedBy($request, Kwintansi::class, 'ids', 'id_kwintansi', 'kwintansi.index');
+        $ids = $request->input('ids');
+
+        if (empty($ids)) {
+            return redirect()->route('kwintansi.index')->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        DB::beginTransaction();
+        try {
+            Kwintansi::whereIn('id_kwintansi', $ids)->get()->each->delete();
+
+            DB::commit();
+
+            return redirect()->route('kwintansi.index')
+                ->with('success', count($ids) . ' data berhasil dihapus!');
+        } catch (\Throwable $throwable) {
+            DB::rollBack();
+            Log::error('Kwintansi destroySelected failed', [
+                'error' => $throwable->getMessage(),
+                'trace' => $throwable->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
+        }
     }
 
     /**

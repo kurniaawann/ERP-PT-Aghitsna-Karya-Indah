@@ -248,10 +248,6 @@
                         <span class="info-label">Nomor Dokumen</span>
                         <span class="info-value">: {{ $deliveryNote->document_number }}</span>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Status</span>
-                        <span class="info-value">: {{ $deliveryNote->status_label }}</span>
-                    </div>
                 </div>
                 <div class="doc-info-right">
                     <div class="info-row">
