@@ -21,11 +21,13 @@
                 </a>
 
                 {{-- Export Selected --}}
-                <button type="button" onclick="printSelected(this)"
-                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
-                    <i class="fa-solid fa-check-square text-primary w-4"></i>
-                    <span>Export Dipilih (<span id="selectedCountText">0</span>)</span>
-                </button>
+                <div id="printSelectedItem" class="hidden">
+                    <button type="button" onclick="printSelected(this)"
+                        class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
+                        <i class="fa-solid fa-check-square text-primary w-4"></i>
+                        <span>Export Dipilih (<span id="selectedCountText">0</span>)</span>
+                    </button>
+                </div>
             @endif
         </div>
     </div>
