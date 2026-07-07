@@ -155,6 +155,7 @@ async function handleFormDownload(formOrId, triggerBtn, loadingText = 'Memproses
     }
 }
 
+window.getFilenameFromResponse = getFilenameFromResponse;
 window.handleDownload = handleDownload;
 window.handleFormDownload = handleFormDownload;
 window.setButtonLoading = setButtonLoading;
