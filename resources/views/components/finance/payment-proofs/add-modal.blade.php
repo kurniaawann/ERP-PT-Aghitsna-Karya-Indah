@@ -39,10 +39,11 @@
 
     <div class="mb-3 p-3 border rounded bg-amber-50 hidden" id="payment-proof-amount-wrap-create">
         <label class="block text-text-primary mb-1">Nominal Pembayaran <span class="text-error">*</span></label>
-        <input type="number" name="amount" id="payment-proof-amount-create" min="1" step="1"
-            class="w-full border rounded p-2" placeholder="Masukkan nominal pembayaran" required>
+        <input type="text" name="amount" id="payment-proof-amount-create" inputmode="numeric" value="Rp 0"
+            class="w-full border rounded p-2" placeholder="Rp 0" required>
         <p id="payment-proof-amount-help-create" class="text-xs text-text-secondary mt-1">Pilih invoice terlebih dahulu
             agar sisa tagihan tampil di sini.</p>
+        <p id="payment-proof-amount-warning-create" class="text-error text-sm mt-1 hidden"></p>
         <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek.</p>
     </div>
 

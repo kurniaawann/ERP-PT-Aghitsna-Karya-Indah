@@ -2,6 +2,16 @@
     window.paymentProofInvoiceData = @json($availableInvoices);
     const PAYMENT_PROOF_INVOICE_CHUNK_SIZE = 10;
 
+    function parseCurrencyInput(value) {
+        const rawValue = String(value ?? '').trim();
+        if (!rawValue) return 0;
+        return parseInt(rawValue.replace(/[^0-9-]/g, ''), 10) || 0;
+    }
+
+    function formatRupiah(value) {
+        return 'Rp ' + (Number(value) || 0).toLocaleString('id-ID');
+    }
+
     function getPaymentProofConfig(prefix) {
         return {
             module: document.getElementById(`payment-proof-module-${prefix}`),
@@ -13,6 +23,7 @@
             amountWrap: document.getElementById(`payment-proof-amount-wrap-${prefix}`),
             amountInput: document.getElementById(`payment-proof-amount-${prefix}`),
             amountHelp: document.getElementById(`payment-proof-amount-help-${prefix}`),
+            amountWarning: document.getElementById(`payment-proof-amount-warning-${prefix}`),
         };
     }
 
@@ -73,16 +84,14 @@
 
         const selectedOption = config.invoiceNumber.options[config.invoiceNumber.selectedIndex];
         const remainingAmount = Number(selectedOption?.dataset?.remainingAmount || 0);
-        const netAmount = Number(selectedOption?.dataset?.netAmount || 0);
 
         if (config.invoiceType.value !== 'proyek') {
             config.amountWrap.classList.add('hidden');
             config.amountInput.disabled = true;
             config.amountInput.required = false;
-            config.amountInput.removeAttribute('max');
-            config.amountInput.value = selectedOption?.value ? remainingAmount : '';
+            config.amountInput.value = selectedOption?.value ? formatRupiah(remainingAmount) : '';
             config.amountHelp.textContent = selectedOption?.value ?
-                `Nominal mengikuti sisa tagihan ${formatCurrency(remainingAmount)}.` :
+                `Nominal mengikuti sisa tagihan ${formatRupiah(remainingAmount)}.` :
                 'Pilih invoice terlebih dahulu agar nominal otomatis terisi.';
             return;
         }
@@ -92,17 +101,36 @@
         config.amountInput.required = true;
 
         if (!selectedOption || !selectedOption.value) {
-            config.amountInput.removeAttribute('max');
             config.amountHelp.textContent = 'Pilih invoice terlebih dahulu agar sisa tagihan tampil di sini.';
             return;
         }
 
-        if (remainingAmount > 0) {
-            config.amountInput.max = String(remainingAmount);
-            config.amountHelp.textContent = `Sisa tagihan invoice ini ${formatCurrency(remainingAmount)}.`;
+        config.amountHelp.textContent = remainingAmount > 0
+            ? `Sisa tagihan invoice ini ${formatRupiah(remainingAmount)}.`
+            : 'Invoice ini sudah lunas.';
+    }
+
+    function validatePaymentProofAmount(prefix) {
+        const config = getPaymentProofConfig(prefix);
+        if (!config.amountInput || !config.amountWarning) return true;
+
+        const selectedOption = config.invoiceNumber?.options[config.invoiceNumber.selectedIndex];
+        const remainingAmount = Number(selectedOption?.dataset?.remainingAmount || 0);
+
+        if (config.invoiceType?.value !== 'proyek' || !selectedOption?.value) {
+            config.amountWarning.classList.add('hidden');
+            return true;
+        }
+
+        const amountValue = parseCurrencyInput(config.amountInput.value);
+
+        if (amountValue > remainingAmount && remainingAmount > 0) {
+            config.amountWarning.innerHTML = '<span class="font-semibold">Peringatan:</span> Nominal pembayaran tidak boleh melebihi sisa tagihan sebesar ' + formatRupiah(remainingAmount) + '!';
+            config.amountWarning.classList.remove('hidden');
+            return false;
         } else {
-            config.amountInput.removeAttribute('max');
-            config.amountHelp.textContent = 'Invoice ini sudah lunas.';
+            config.amountWarning.classList.add('hidden');
+            return true;
         }
     }
 
@@ -196,7 +224,7 @@
         updatePaymentProofInvoices(prefix, defaults.invoiceNumber ?? null);
 
         if (defaults.amount && config.amountInput) {
-            config.amountInput.value = defaults.amount;
+            config.amountInput.value = formatRupiah(defaults.amount);
         }
 
         config.module.addEventListener('change', () => updatePaymentProofInvoices(prefix));
@@ -204,11 +232,16 @@
         config.invoiceNumber.addEventListener('change', () => updatePaymentProofStage(prefix));
 
         if (config.amountInput) {
-            config.amountInput.addEventListener('input', () => updatePaymentProofAmountSection(prefix));
+            config.amountInput.addEventListener('input', function() {
+                this.value = formatRupiah(parseCurrencyInput(this.value));
+                updatePaymentProofAmountSection(prefix);
+                validatePaymentProofAmount(prefix);
+            });
         }
 
         updatePaymentProofStage(prefix);
         updatePaymentProofAmountSection(prefix);
+        validatePaymentProofAmount(prefix);
     }
 
     // ==========================================
@@ -239,6 +272,12 @@
         const addForm = document.querySelector('#addModal form');
         if (addForm) {
             addForm.addEventListener('submit', function(e) {
+                if (!validatePaymentProofAmount('create')) {
+                    e.preventDefault();
+                    const warning = document.getElementById('payment-proof-amount-warning-create');
+                    if (warning) warning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
                 const submitBtn = this.querySelector('button[type="submit"]');
                 const originalText = submitBtn.innerHTML;
                 if (!handleFormSubmit(submitBtn, originalText)) {
@@ -251,7 +290,14 @@
         @foreach ($paymentProofs as $paymentProof)
             const editForm_{{ $paymentProof->id }} = document.querySelector('#editModal-{{ $paymentProof->id }} form');
             if (editForm_{{ $paymentProof->id }}) {
+                const prefix_{{ $paymentProof->id }} = 'edit-{{ $paymentProof->id }}';
                 editForm_{{ $paymentProof->id }}.addEventListener('submit', function(e) {
+                    if (!validatePaymentProofAmount(prefix_{{ $paymentProof->id }})) {
+                        e.preventDefault();
+                        const warning = document.getElementById('payment-proof-amount-warning-' + prefix_{{ $paymentProof->id }});
+                        if (warning) warning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return false;
+                    }
                     const submitBtn = this.querySelector('button[type="submit"]');
                     const originalText = submitBtn.innerHTML;
                     if (!handleFormSubmit(submitBtn, originalText)) {

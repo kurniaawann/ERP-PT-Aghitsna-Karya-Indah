@@ -51,7 +51,7 @@
                                 <td class="p-3 text-sm">
                                     <div class="flex flex-col gap-1">
                                         <span
-                                            class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-primary-light text-primary' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-warning-light text-warning' : 'bg-secondary-light text-secondary') }}">
+                                            class="inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-primary-light text-primary' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-warning-light text-warning' : 'bg-secondary-light text-secondary') }}">
                                             {{ $paymentProof->invoice_type === 'proyek' ? (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek') : ($paymentProof->invoice_type === 'alumunium' ? 'Invoice Alumunium' : 'Rekap Penjualan') }}
                                         </span>
                                         <span class="text-xs text-text-label">
@@ -62,7 +62,7 @@
                                 <td class="p-3 text-sm">
                                     @if ($paymentProof->invoice_type === 'proyek')
                                         <span
-                                            class="inline-flex rounded-full bg-success-light px-2.5 py-1 text-xs font-semibold text-success">
+                                            class="inline-flex w-fit items-center rounded-md bg-success-light px-2.5 py-0.5 text-xs font-semibold text-success">
                                             Pembayaran ke {{ $paymentProof->payment_stage ?? '-' }}
                                         </span>
                                     @else

@@ -48,12 +48,13 @@
     <div class="mb-3 p-3 border rounded bg-amber-50 hidden"
         id="payment-proof-amount-wrap-edit-{{ $paymentProof->id }}">
         <label class="block text-text-primary mb-1">Nominal Pembayaran <span class="text-error">*</span></label>
-        <input type="number" name="amount" id="payment-proof-amount-edit-{{ $paymentProof->id }}" min="1"
-            step="1" value="{{ $paymentProof->amount ?? '' }}" class="w-full border rounded p-2"
-            placeholder="Masukkan nominal pembayaran" required>
+        <input type="text" name="amount" id="payment-proof-amount-edit-{{ $paymentProof->id }}" inputmode="numeric"
+            value="Rp {{ number_format($paymentProof->amount ?? 0, 0, ',', '.') }}" class="w-full border rounded p-2"
+            placeholder="Rp 0" required>
         <p id="payment-proof-amount-help-edit-{{ $paymentProof->id }}" class="text-xs text-text-secondary mt-1">
             Nominal akan divalidasi terhadap sisa tagihan invoice yang dipilih.
         </p>
+        <p id="payment-proof-amount-warning-edit-{{ $paymentProof->id }}" class="text-error text-sm mt-1 hidden"></p>
         <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek.</p>
     </div>
 
