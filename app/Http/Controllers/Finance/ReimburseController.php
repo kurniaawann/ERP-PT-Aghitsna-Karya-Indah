@@ -23,6 +23,8 @@ class ReimburseController extends Controller
         // Ambil parameter filter dari request
         $search = $request->input('search');
         $status = $request->input('status');
+        $month = $request->input('month');
+        $year = $request->input('year');
 
         // Query reimburse
         $reimburses = Reimburse::query()
@@ -35,12 +37,20 @@ class ReimburseController extends Controller
             ->when($status, function ($query, $status) {
                 return $query->where('status', $status);
             })
+            // Filter bulan
+            ->when($month, function ($query, $month) {
+                return $query->whereMonth('date', $month);
+            })
+            // Filter tahun
+            ->when($year, function ($query, $year) {
+                return $query->whereYear('date', $year);
+            })
             // Urutkan berdasarkan tanggal terbaru
             ->latest('date')
             ->paginate(15);
 
         // Return view dengan data reimburses
-        return view('pages.finance.reimburse', compact('reimburses', 'search', 'status'));
+        return view('pages.finance.reimburse', compact('reimburses', 'search', 'status', 'month', 'year'));
     }
 
     /**
@@ -150,6 +160,8 @@ class ReimburseController extends Controller
         // Ambil filter dari request
         $search = $request->input('search');
         $status = $request->input('status');
+        $month = $request->input('month');
+        $year = $request->input('year');
 
         // Query reimburse dengan filter yang sama seperti di index
         $reimburses = Reimburse::query()
@@ -159,6 +171,12 @@ class ReimburseController extends Controller
             })
             ->when($status, function ($query, $status) {
                 return $query->where('status', $status);
+            })
+            ->when($month, function ($query, $month) {
+                return $query->whereMonth('date', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->whereYear('date', $year);
             })
             ->latest('date')
             ->get();
@@ -184,6 +202,8 @@ class ReimburseController extends Controller
         // Ambil filter dari request
         $search = $request->input('search');
         $status = $request->input('status');
+        $month = $request->input('month');
+        $year = $request->input('year');
 
         // Query reimburse dengan filter
         $reimburses = Reimburse::query()
@@ -193,6 +213,12 @@ class ReimburseController extends Controller
             })
             ->when($status, function ($query, $status) {
                 return $query->where('status', $status);
+            })
+            ->when($month, function ($query, $month) {
+                return $query->whereMonth('date', $month);
+            })
+            ->when($year, function ($query, $year) {
+                return $query->whereYear('date', $year);
             })
             ->latest('date')
             ->get();

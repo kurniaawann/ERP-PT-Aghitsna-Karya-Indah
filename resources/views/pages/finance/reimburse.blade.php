@@ -11,23 +11,34 @@
             {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('reimburse.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
-                <x-filters.search-input :value="request('search')" placeholder="Cari proyek atau kode reimburse..." />
-
                 {{-- Filter Status --}}
-                <select name="status" onchange="this.form.submit()"
-                    class="border rounded p-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
-                    <option value="">Semua Status</option>
-                    <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Disetujui</option>
-                    <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                </select>
+                <div class="w-full lg:w-auto">
+                    <label for="status-select" class="sr-only">Semua Status</label>
+                    <select name="status" id="status-select" onchange="this.form.requestSubmit()"
+                        class="block w-full lg:w-40 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input 
+                               focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                        <option value="">Semua Status</option>
+                        <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Disetujui</option>
+                        <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                    </select>
+                </div>
+
+                {{-- Filter Bulan --}}
+                <x-filters.month-filter name="month" :value="request('month')" />
+
+                {{-- Filter Tahun --}}
+                <x-filters.year-filter name="year" :value="request('year')" />
+
+                {{-- Search --}}
+                <x-filters.search-input :value="request('search')" placeholder="Cari proyek atau kode reimburse..." />
             </form>
 
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     {{-- Print Dropdown --}}
-                    <x-buttons.print-dropdown :excelRoute="route('reimburse.export.excel')" :pdfRoute="route('reimburse.export.pdf')" :queryParams="['search' => request('search'), 'status' => request('status')]" />
+                    <x-buttons.print-dropdown :excelRoute="route('reimburse.export.excel')" :pdfRoute="route('reimburse.export.pdf')" :queryParams="['search' => request('search'), 'status' => request('status'), 'month' => request('month'), 'year' => request('year')]" />
 
                     @if (Auth::user()->role === 'admin')
                         {{-- Admin can add new reimburse --}}
@@ -35,18 +46,31 @@
                     @endif
 
                     @if (Auth::user()->role === 'superadmin')
-                        {{-- Super Admin can approve/reject --}}
-                        <button type="button" id="approve-button" disabled onclick="openModal('approveModal')"
-                            class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
-                            <i class="fa-solid fa-check"></i>
-                            Setujui
-                        </button>
+                        {{-- Super Admin Approval Dropdown --}}
+                        <div class="relative inline-block text-left w-full sm:w-auto">
+                            <button type="button" id="approval-dropdown-button" disabled
+                                class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed">
+                                <i class="fa-solid fa-check-circle"></i>
+                                <span>Aksi Persetujuan</span>
+                                <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>
+                            </button>
 
-                        <button type="button" id="reject-button" disabled onclick="openModal('rejectModal')"
-                            class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
-                            <i class="fa-solid fa-times"></i>
-                            Tolak
-                        </button>
+                            <div id="approval-dropdown-menu"
+                                class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-48 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
+                                <div class="py-1" role="menu">
+                                    <button type="button" onclick="openModal('approveModal')"
+                                        class="flex items-center gap-3 w-full px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
+                                        <i class="fa-solid fa-check text-success w-4"></i>
+                                        <span>Setujui</span>
+                                    </button>
+                                    <button type="button" onclick="openModal('rejectModal')"
+                                        class="flex items-center gap-3 w-full px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
+                                        <i class="fa-solid fa-times text-error w-4"></i>
+                                        <span>Tolak</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     @endif
 
                     <x-buttons.delete-button modalId="deleteModal" />

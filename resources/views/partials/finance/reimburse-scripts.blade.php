@@ -44,8 +44,7 @@
 
     function updateButtonStates() {
         const deleteButton = document.getElementById('delete-button');
-        const approveButton = document.getElementById('approve-button');
-        const rejectButton = document.getElementById('reject-button');
+        const approvalButton = document.getElementById('approval-dropdown-button');
         const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
 
         // Delete button
@@ -61,20 +60,14 @@
             }
         }
 
-        // Approve/Reject buttons (Super Admin only)
-        if (approveButton && rejectButton) {
+        // Approval dropdown button (Super Admin only)
+        if (approvalButton) {
             if (checkedCheckboxes.length > 0) {
-                approveButton.disabled = false;
-                approveButton.classList.remove('opacity-50', 'cursor-not-allowed');
-
-                rejectButton.disabled = false;
-                rejectButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                approvalButton.disabled = false;
+                approvalButton.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
-                approveButton.disabled = true;
-                approveButton.classList.add('opacity-50', 'cursor-not-allowed');
-
-                rejectButton.disabled = true;
-                rejectButton.classList.add('opacity-50', 'cursor-not-allowed');
+                approvalButton.disabled = true;
+                approvalButton.classList.add('opacity-50', 'cursor-not-allowed');
             }
         }
     }
@@ -243,4 +236,32 @@
 
     updateButtonStates();
     updateSelectedInfo();
+
+    // ==========================================
+    // APPROVAL DROPDOWN TOGGLE
+    // ==========================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const approvalButton = document.getElementById('approval-dropdown-button');
+        const approvalMenu = document.getElementById('approval-dropdown-menu');
+
+        if (approvalButton && approvalMenu) {
+            approvalButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (!this.disabled) {
+                    approvalMenu.classList.toggle('hidden');
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!approvalButton.contains(e.target) && !approvalMenu.contains(e.target)) {
+                    approvalMenu.classList.add('hidden');
+                }
+            });
+
+            approvalMenu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    });
 </script>
