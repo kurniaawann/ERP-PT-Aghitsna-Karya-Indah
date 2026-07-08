@@ -3,13 +3,11 @@
     method="POST" buttonText="Update">
     @method('PUT')
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Karyawan</label>
-        <input type="text"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary"
-            value="{{ $overtime->employee->name }}" disabled>
-        <input type="hidden" name="employee_id" value="{{ $overtime->employee_id }}">
-    </div>
+    <x-forms.searchable-select name="employee_id"
+        id="edit-employee_id-{{ $overtime->id }}" label="Karyawan" :required="true"
+        placeholder="Cari karyawan..."
+        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()"
+        selected="{{ $overtime->employee_id }}" />
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>

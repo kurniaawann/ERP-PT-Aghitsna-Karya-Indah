@@ -1,18 +1,9 @@
 {{-- Modal Tambah Lembur (Single Select) --}}
 <x-modal id="addModal" title="Tambah Lembur" action="{{ route('overtime.store') }}" method="POST" buttonText="Simpan">
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Pilih Karyawan <span class="text-error">*</span></label>
-        <select name="employee_id" id="add-employee-id"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-            oninvalid="this.setCustomValidity('Karyawan tidak boleh kosong')" oninput="this.setCustomValidity('')">
-            <option value="">Pilih Karyawan</option>
-            @foreach ($employees as $employee)
-                <option value="{{ $employee->employee_code }}">{{ $employee->name }} - {{ $employee->employee_code }}
-                </option>
-            @endforeach
-        </select>
-    </div>
+    <x-forms.searchable-select name="employee_id" label="Pilih Karyawan" :required="true"
+        placeholder="Cari karyawan..."
+        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>

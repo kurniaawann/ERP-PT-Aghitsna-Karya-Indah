@@ -12,7 +12,7 @@
     const existingAttendance = @json($existingAttendance ?? []);
 
     // Validasi untuk Add Modal
-    const addEmployeeHidden = document.querySelector('#addModal input[name="employee_id"]');
+    const addEmployeeHidden = document.querySelector('#addModal .searchable-select-hidden');
     const addDateInput = document.getElementById('add-attendance-date');
     const addDuplicateWarning = document.getElementById('add-duplicate-warning');
     const addDuplicateWarningText = document.getElementById('add-duplicate-warning-text');
