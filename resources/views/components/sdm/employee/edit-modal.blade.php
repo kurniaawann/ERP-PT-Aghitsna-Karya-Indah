@@ -23,6 +23,11 @@
             oninvalid="this.setCustomValidity('Upah per hari tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
+    <x-forms.searchable-select name="division" label="Divisi" :required="true"
+        placeholder="Cari divisi..."
+        :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
+        selected="{{ $employee->division ?? '' }}" />
+
     <div class="mb-3">
         <label class="block text-text-primary mb-1">No. Telepon <span class="text-error">*</span></label>
         <input type="text" name="phone" class="w-full border rounded p-2" placeholder="Masukkan no. telepon"
