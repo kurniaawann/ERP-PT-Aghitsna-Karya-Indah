@@ -3,21 +3,35 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Pilih Karyawan <span class="text-error">*</span></label>
-        <div class="border rounded p-3 max-h-48 overflow-y-auto bg-surface-secondary">
-            <div class="mb-2">
-                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
-                    <input type="checkbox" id="selectAllEmployees" class="w-4 h-4 accent-primary">
-                    <span class="font-semibold">Pilih Semua</span>
-                </label>
+        <div class="border rounded p-3 bg-surface-secondary">
+            <div class="relative mb-2">
+                <input type="text" id="employee-search"
+                    class="w-full border rounded p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
+                    placeholder="Cari karyawan..." autocomplete="off"
+                    oninput="filterAttendanceEmployees(this.value)">
+                <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
             </div>
-            <hr class="my-2">
-            @foreach ($employees as $employee)
-                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
-                    <input type="checkbox" name="employee_ids[]" value="{{ $employee->employee_code }}"
-                        class="w-4 h-4 accent-primary employee-checkbox">
-                    <span>{{ $employee->name }} - {{ $employee->employee_code }}</span>
-                </label>
-            @endforeach
+            <div id="employee-list" class="max-h-48 overflow-y-auto">
+                <div class="mb-2">
+                    <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
+                        <input type="checkbox" id="selectAllEmployees" class="w-4 h-4 accent-primary">
+                        <span class="font-semibold">Pilih Semua</span>
+                    </label>
+                </div>
+                <hr class="my-2">
+                @foreach ($employees as $employee)
+                    <label class="employee-item flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded"
+                        data-search="{{ strtolower($employee->name . ' - ' . $employee->employee_code) }}">
+                        <input type="checkbox" name="employee_ids[]" value="{{ $employee->employee_code }}"
+                            class="w-4 h-4 accent-primary employee-checkbox">
+                        <span>{{ $employee->name }} - {{ $employee->employee_code }}</span>
+                    </label>
+                @endforeach
+            </div>
+            <div id="employee-no-results" class="hidden p-4 text-center text-sm text-text-secondary">
+                <i class="fa-solid fa-search mb-2 text-2xl text-text-placeholder"></i>
+                <p>Tidak ada data ditemukan</p>
+            </div>
         </div>
         <p class="text-xs text-text-secondary mt-1">Pilih satu atau lebih karyawan</p>
         <p id="employee-error" class="text-xs text-red-600 mt-1 hidden">Silakan pilih minimal 1 karyawan!</p>

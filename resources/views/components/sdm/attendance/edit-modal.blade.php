@@ -3,12 +3,11 @@
     action="{{ route('attendance.update', $attendance->id) }}" method="POST" buttonText="Update">
     @method('PUT')
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Karyawan</label>
-        <input type="text" class="w-full border rounded p-2 bg-surface-hover" value="{{ $attendance->employee->name }}"
-            disabled>
-        <input type="hidden" name="employee_id" value="{{ $attendance->employee_id }}">
-    </div>
+    <x-forms.searchable-select name="employee_id"
+        id="edit-employee_id-{{ $attendance->id }}" label="Karyawan" :required="true"
+        placeholder="Cari karyawan..."
+        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()"
+        selected="{{ $attendance->employee_id }}" />
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>

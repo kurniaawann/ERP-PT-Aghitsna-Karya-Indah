@@ -233,15 +233,25 @@
     // Filter employees in add modal
     function filterAttendanceEmployees(query) {
         const items = document.querySelectorAll('#employee-list .employee-item');
+        const noResults = document.getElementById('employee-no-results');
         const searchTerm = query.toLowerCase();
+        let hasVisible = false;
+
         items.forEach(function(item) {
             const searchText = item.dataset.search || '';
             if (searchText.includes(searchTerm)) {
                 item.style.display = '';
+                hasVisible = true;
             } else {
                 item.style.display = 'none';
             }
         });
+
+        if (searchTerm && !hasVisible) {
+            noResults.classList.remove('hidden');
+        } else {
+            noResults.classList.add('hidden');
+        }
     }
 
     // Initialize delete button state on page load
