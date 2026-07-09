@@ -108,6 +108,8 @@ class InvoiceProyekReminder extends Model
     {
         return $this->getCalculator()->calculateRemainingAmount(
             $this->net_amount,
+            0,
+            0,
             $this->paid_amount
         );
     }
