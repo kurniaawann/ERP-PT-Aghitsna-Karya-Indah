@@ -87,6 +87,10 @@ class InvoiceCalculatorService
 
     public function getRemainingAmount($invoice): int
     {
+        if ($invoice instanceof SalesRecap) {
+            return (int) max(0, ($invoice->total_selling ?? 0) - $this->getTotalPaidAmount($invoice));
+        }
+
         return $this->calculateRemainingAmount(
             (int) ($invoice->total_amount ?? 0),
             (int) $this->getDiscountAmount($invoice),

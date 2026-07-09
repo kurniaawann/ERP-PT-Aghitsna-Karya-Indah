@@ -412,7 +412,7 @@ class PaymentProofController extends Controller
             if ($oldSalesRecapId && $oldSalesRecapId !== $salesRecapId) {
                 $this->syncSalesRecapStatus($invoice, $oldSalesRecapId);
             }
-        } elseif ($invoiceType === 'rekap_penjualan' && $invoice instanceof SalesRecap) {
+        } elseif ($invoiceType === 'rekap_penjualan') {
             $this->syncSalesRecapProofStatus($invoice);
         }
     }
