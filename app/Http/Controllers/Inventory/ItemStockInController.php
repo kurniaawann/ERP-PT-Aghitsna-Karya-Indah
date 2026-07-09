@@ -44,8 +44,8 @@ class ItemStockInController extends Controller
     {
         $validated = $request->validate([
             'items' => 'required|json',
-            'tanggal' => 'required|date',
-            'keterangan' => 'nullable|string|max:500',
+            'date' => 'required|date',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $items = json_decode($request->items, true);
@@ -101,8 +101,8 @@ class ItemStockInController extends Controller
                     'id_item' => $item->id_item,
                     'quantity' => $quantity,
                     'capital_price' => $capitalPrice,
-                    'keterangan' => $request->keterangan,
-                    'tanggal' => $request->tanggal,
+                    'notes' => $request->notes,
+                    'date' => $request->date,
                 ]);
             }
 
@@ -133,12 +133,12 @@ class ItemStockInController extends Controller
                 });
             })
             ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
+                $query->whereMonth('date', $month);
             })
             ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
+                $query->whereYear('date', $year);
             })
-            ->orderBy('tanggal', 'desc')
+            ->orderBy('date', 'desc')
             ->orderBy('id_stock_in', 'desc');
     }
 
@@ -146,8 +146,8 @@ class ItemStockInController extends Controller
     {
         $validated = $request->validate([
             'items' => 'required|json',
-            'tanggal' => 'required|date',
-            'keterangan' => 'nullable|string|max:500',
+            'date' => 'required|date',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $newItems = json_decode($request->items, true);
@@ -245,8 +245,8 @@ class ItemStockInController extends Controller
             $stockIn->update([
                 'quantity' => $newQuantity,
                 'capital_price' => $newCapitalPrice,
-                'keterangan' => $request->keterangan,
-                'tanggal' => $request->tanggal,
+                'notes' => $request->notes,
+                'date' => $request->date,
             ]);
 
             DB::commit();

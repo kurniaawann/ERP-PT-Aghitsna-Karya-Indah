@@ -167,7 +167,7 @@
                         <td class="text-center">{{ $record->quantity }}</td>
                         <td class="text-right">Rp {{ number_format($record->capital_price, 0, ',', '.') }}</td>
                         <td class="text-right">Rp {{ number_format($record->total_capital, 0, ',', '.') }}</td>
-                        <td class="text-center">{{ $record->tanggal->format('d M Y') }}</td>
+                        <td class="text-center">{{ $record->date->format('d M Y') }}</td>
                     </tr>
                     @php
                         $totalOverall += $record->total_capital;

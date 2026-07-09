@@ -87,7 +87,7 @@ class SalesRecapObserver
                         'id_item' => $item['id_item'],
                         'quantity' => $item['quantity'] ?? 0,
                         'id_sales_recap' => $salesRecapId,
-                        'tanggal' => $salesRecap->date ?? now(),
+                        'date' => $salesRecap->date ?? now(),
                         'project_name' => $salesRecap->name_proyek,
                     ]);
                 }

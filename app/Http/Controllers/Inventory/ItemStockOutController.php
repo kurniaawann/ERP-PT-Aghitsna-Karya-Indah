@@ -26,12 +26,12 @@ class ItemStockOutController extends Controller
                     });
             })
             ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
+                $query->whereMonth('date', $month);
             })
             ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
+                $query->whereYear('date', $year);
             })
-            ->orderBy('tanggal', 'desc')
+            ->orderBy('date', 'desc')
             ->orderBy('id_stock_out', 'desc');
     }
 

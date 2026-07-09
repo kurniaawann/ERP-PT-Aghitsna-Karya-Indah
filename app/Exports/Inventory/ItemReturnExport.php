@@ -47,12 +47,12 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
                 $query->where('return_type', $returnType);
             })
             ->when($this->month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
+                $query->whereMonth('date', $month);
             })
             ->when($this->year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
+                $query->whereYear('date', $year);
             })
-            ->orderBy('tanggal', 'desc')
+            ->orderBy('date', 'desc')
             ->orderBy('id_return', 'desc')
             ->get();
 
@@ -87,8 +87,8 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
             $record->item->name_item ?? '-',
             $record->quantity,
             ucfirst($record->return_type),
-            $record->alasan ?? '-',
-            $record->tanggal->format('d-m-Y'),
+            $record->reason ?? '-',
+            $record->date->format('d-m-Y'),
         ];
     }
 

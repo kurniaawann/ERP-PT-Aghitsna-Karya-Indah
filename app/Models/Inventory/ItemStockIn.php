@@ -19,12 +19,12 @@ class ItemStockIn extends Model
         'id_item',
         'quantity',
         'capital_price',
-        'keterangan',
-        'tanggal',
+        'notes',
+        'date',
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
+        'date' => 'date',
         'quantity' => 'integer',
         'capital_price' => 'integer',
     ];

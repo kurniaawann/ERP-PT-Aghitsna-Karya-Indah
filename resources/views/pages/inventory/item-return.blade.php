@@ -79,7 +79,7 @@
                                         <td class="p-2">{{ $record->id_item }}</td>
                                         <td class="p-2">{{ $record->item->name_item ?? '-' }}</td>
                                         <td class="p-2 text-center">{{ $record->quantity }}</td>
-                                        <td class="p-2 text-sm">{{ $record->alasan ?? '-' }}</td>
+                                        <td class="p-2 text-sm">{{ $record->reason ?? '-' }}</td>
                                         <td class="p-2 text-center">
                                             @if ($record->return_type === 'masuk')
                                                 <span
@@ -89,7 +89,7 @@
                                                     class="bg-surface-secondary text-text-primary px-2 py-1 rounded text-xs font-medium">Keluar</span>
                                             @endif
                                         </td>
-                                        <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
+                                        <td class="p-2">{{ $record->date->format('d M Y') }}</td>
                                         <td class="p-2 text-center">
                                             <div class="flex justify-center gap-2">
                                                 <button type="button"

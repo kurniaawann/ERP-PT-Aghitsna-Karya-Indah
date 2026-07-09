@@ -36,20 +36,20 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Alasan Return</label>
-        <input type="text" name="alasan" value="{{ old('alasan') }}"
+        <input type="text" name="reason" value="{{ old('reason') }}"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             placeholder="Rusak, Tidak sesuai, dll">
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}"
+        <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required>
     </div>
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="keterangan" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            rows="3" placeholder="Masukkan keterangan...">{{ old('keterangan') }}</textarea>
+        <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            rows="3" placeholder="Masukkan keterangan...">{{ old('notes') }}</textarea>
     </div>
 </x-modal>

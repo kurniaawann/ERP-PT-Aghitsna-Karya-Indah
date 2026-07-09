@@ -37,8 +37,8 @@ class ItemStockInSeeder extends Seeder
                 'id_item' => $item['item'],
                 'quantity' => $item['qty'],
                 'capital_price' => $item['price'],
-                'tanggal' => $item['date'],
-                'keterangan' => $item['notes'],
+                'date' => $item['date'],
+                'notes' => $item['notes'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -42,12 +42,12 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
                     });
             })
             ->when($this->month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
+                $query->whereMonth('date', $month);
             })
             ->when($this->year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
+                $query->whereYear('date', $year);
             })
-            ->orderBy('tanggal', 'desc')
+            ->orderBy('date', 'desc')
             ->orderBy('id_stock_out', 'desc')
             ->get();
 
@@ -82,7 +82,7 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
             $record->item->name_item ?? '-',
             $record->quantity,
             $record->remaining_quantity ?? '-',
-            $record->tanggal->format('d-m-Y'),
+            $record->date->format('d-m-Y'),
             $record->project_name ?? '-',
         ];
     }

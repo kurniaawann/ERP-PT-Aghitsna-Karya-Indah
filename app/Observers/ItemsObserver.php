@@ -14,8 +14,8 @@ class ItemsObserver
     public function created(Items $item): void
     {
         $alreadyExists = ItemStockIn::where('id_item', $item->id_item)
-            ->whereDate('tanggal', self::OPENING_STOCK_DATE)
-            ->where('keterangan', self::OPENING_STOCK_DESCRIPTION)
+            ->whereDate('date', self::OPENING_STOCK_DATE)
+            ->where('notes', self::OPENING_STOCK_DESCRIPTION)
             ->exists();
 
         if ($alreadyExists) {
@@ -34,8 +34,8 @@ class ItemsObserver
             'id_item' => $item->id_item,
             'quantity' => $qty,
             'capital_price' => (int) ($item->capital_price ?? 0),
-            'keterangan' => self::OPENING_STOCK_DESCRIPTION,
-            'tanggal' => self::OPENING_STOCK_DATE,
+            'notes' => self::OPENING_STOCK_DESCRIPTION,
+            'date' => self::OPENING_STOCK_DATE,
         ]);
     }
 }

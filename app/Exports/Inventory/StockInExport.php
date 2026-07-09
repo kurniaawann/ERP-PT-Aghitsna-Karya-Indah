@@ -46,10 +46,10 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
                 });
             })
             ->when($this->month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
+                $query->whereMonth('date', $month);
             })
             ->when($this->year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
+                $query->whereYear('date', $year);
             });
 
         $this->totalQuantity = (clone $query)->sum('quantity');
@@ -70,12 +70,12 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
                 });
             })
             ->when($this->month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
+                $query->whereMonth('date', $month);
             })
             ->when($this->year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
+                $query->whereYear('date', $year);
             })
-            ->orderBy('tanggal', 'desc')
+            ->orderBy('date', 'desc')
             ->orderBy('id_stock_in', 'desc');
     }
 
@@ -106,7 +106,7 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             $record->quantity,
             $record->capital_price,
             $record->total_capital,
-            $record->tanggal->format('d-m-Y'),
+            $record->date->format('d-m-Y'),
         ];
     }
 

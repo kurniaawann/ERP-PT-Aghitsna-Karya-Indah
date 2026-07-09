@@ -20,12 +20,12 @@ class ItemStockOut extends Model
         'id_item',
         'quantity',
         'id_sales_recap',
-        'tanggal',
+        'date',
         'project_name',
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
+        'date' => 'date',
         'quantity' => 'integer',
     ];
 

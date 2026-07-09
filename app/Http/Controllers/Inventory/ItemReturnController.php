@@ -51,12 +51,12 @@ class ItemReturnController extends Controller
                 $query->where('return_type', $returnType);
             })
             ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
+                $query->whereMonth('date', $month);
             })
             ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
+                $query->whereYear('date', $year);
             })
-            ->orderBy('tanggal', 'desc')
+            ->orderBy('date', 'desc')
             ->orderBy('id_return', 'desc');
     }
 
@@ -78,9 +78,9 @@ class ItemReturnController extends Controller
         $rules = [
             'id_item' => 'required|exists:items,id_item',
             'quantity' => 'required|integer|min:1',
-            'alasan' => 'nullable|string|max:255',
-            'tanggal' => 'required|date',
-            'keterangan' => 'nullable|string|max:500',
+            'reason' => 'nullable|string|max:255',
+            'date' => 'required|date',
+            'notes' => 'nullable|string|max:500',
         ];
 
         if ($returnType === 'masuk') {
@@ -115,10 +115,10 @@ class ItemReturnController extends Controller
                     'id_item' => $request->id_item,
                     'id_stock_in' => $request->id_stock_in,
                     'quantity' => $request->quantity,
-                    'alasan' => $request->alasan,
-                    'keterangan' => $request->keterangan,
+                    'reason' => $request->reason,
+                    'notes' => $request->notes,
                     'return_type' => 'masuk',
-                    'tanggal' => $request->tanggal,
+                    'date' => $request->date,
                 ]);
 
                 $item->quantity -= $request->quantity;
@@ -157,10 +157,10 @@ class ItemReturnController extends Controller
                     'id_item' => $request->id_item,
                     'id_stock_out' => $request->id_stock_out,
                     'quantity' => $request->quantity,
-                    'alasan' => $request->alasan,
-                    'keterangan' => $request->keterangan,
+                    'reason' => $request->reason,
+                    'notes' => $request->notes,
                     'return_type' => 'keluar',
-                    'tanggal' => $request->tanggal,
+                    'date' => $request->date,
                 ]);
 
                 $item->quantity += $request->quantity;
@@ -189,9 +189,9 @@ class ItemReturnController extends Controller
     {
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
-            'alasan' => 'nullable|string|max:255',
-            'tanggal' => 'required|date',
-            'keterangan' => 'nullable|string|max:500',
+            'reason' => 'nullable|string|max:255',
+            'date' => 'required|date',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         DB::beginTransaction();
@@ -263,9 +263,9 @@ class ItemReturnController extends Controller
 
             $return->update([
                 'quantity' => $request->quantity,
-                'alasan' => $request->alasan,
-                'keterangan' => $request->keterangan,
-                'tanggal' => $request->tanggal,
+                'reason' => $request->reason,
+                'notes' => $request->notes,
+                'date' => $request->date,
             ]);
 
             DB::commit();

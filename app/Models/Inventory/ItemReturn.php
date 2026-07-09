@@ -20,14 +20,14 @@ class ItemReturn extends Model
         'id_stock_out',
         'id_stock_in',
         'quantity',
-        'alasan',
-        'keterangan',
+        'reason',
+        'notes',
         'return_type',
-        'tanggal',
+        'date',
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
+        'date' => 'date',
         'quantity' => 'integer',
     ];
 

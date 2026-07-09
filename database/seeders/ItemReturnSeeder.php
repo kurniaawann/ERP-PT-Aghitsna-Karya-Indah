@@ -32,8 +32,7 @@ class ItemReturnSeeder extends Seeder
         $counter = 1;
 
         // item_returns schema (migration):
-        // id_return, id_item, id_stock_out (nullable), quantity, alasan (nullable), keterangan (nullable), tanggal
-        // Seeder sebelumnya menggunakan nama kolom yang berbeda (item_id, return_reason, return_date, notes) -> error.
+        // id_return, id_item, id_stock_out (nullable), quantity, reason (nullable), notes (nullable), date
         foreach ($data as $item) {
             DB::table('item_returns')->insert([
                 'id_return' => 'RTN-' . $today . '-' . str_pad($counter, 4, '0', STR_PAD_LEFT),
@@ -46,9 +45,9 @@ class ItemReturnSeeder extends Seeder
                 'id_stock_out' => DB::table('item_stock_outs')->value('id_stock_out'),
 
                 'quantity' => $item['qty'],
-                'alasan' => $item['reason'],
-                'keterangan' => $item['notes'],
-                'tanggal' => $item['date'],
+                'reason' => $item['reason'],
+                'notes' => $item['notes'],
+                'date' => $item['date'],
 
                 'created_at' => now(),
                 'updated_at' => now(),

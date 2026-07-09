@@ -51,7 +51,7 @@
                                     <td class="p-2">{{ $record->item->name_item ?? '-' }}</td>
                                     <td class="p-2 text-center">{{ $record->quantity }}</td>
                                     <td class="p-2 text-center">{{ $record->remaining_quantity ?? '-' }}</td>
-                                    <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
+                                    <td class="p-2">{{ $record->date->format('d M Y') }}</td>
                                     <td class="p-2">{{ $record->project_name ?? '-' }}</td>
                                 </tr>
                             @empty

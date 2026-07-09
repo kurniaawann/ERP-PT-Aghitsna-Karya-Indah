@@ -23,37 +23,37 @@ class StockReportService
         }
         $items = $query->get();
 
-        $stockInsBefore = ItemStockIn::where('tanggal', '<', $start)
+        $stockInsBefore = ItemStockIn::where('date', '<', $start)
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
             ->select('id_item', DB::raw('SUM(quantity) as total'))
             ->pluck('total', 'id_item');
 
-        $stockOutsBefore = ItemStockOut::where('tanggal', '<', $start)
+        $stockOutsBefore = ItemStockOut::where('date', '<', $start)
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
             ->select('id_item', DB::raw('SUM(quantity) as total'))
             ->pluck('total', 'id_item');
 
-        $returnsBefore = ItemReturn::where('tanggal', '<', $start)
+        $returnsBefore = ItemReturn::where('date', '<', $start)
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
             ->select('id_item', DB::raw('SUM(quantity) as total'))
             ->pluck('total', 'id_item');
 
-        $stockInsPeriod = ItemStockIn::whereBetween('tanggal', [$start, $end])
+        $stockInsPeriod = ItemStockIn::whereBetween('date', [$start, $end])
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
             ->select('id_item', DB::raw('SUM(quantity) as total'))
             ->pluck('total', 'id_item');
 
-        $stockOutsPeriod = ItemStockOut::whereBetween('tanggal', [$start, $end])
+        $stockOutsPeriod = ItemStockOut::whereBetween('date', [$start, $end])
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
             ->select('id_item', DB::raw('SUM(quantity) as total'))
             ->pluck('total', 'id_item');
 
-        $returnsPeriod = ItemReturn::whereBetween('tanggal', [$start, $end])
+        $returnsPeriod = ItemReturn::whereBetween('date', [$start, $end])
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
             ->select('id_item', DB::raw('SUM(quantity) as total'))

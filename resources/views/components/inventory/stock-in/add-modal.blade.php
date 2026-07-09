@@ -4,7 +4,7 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="tanggal" class="w-full border rounded p-2" required
+        <input type="date" name="date" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')"
             value="{{ date('Y-m-d') }}">
     </div>
@@ -85,7 +85,7 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="keterangan" class="w-full border rounded p-2" rows="3" placeholder="Masukkan keterangan..."></textarea>
+        <textarea name="notes" class="w-full border rounded p-2" rows="3" placeholder="Masukkan keterangan..."></textarea>
     </div>
 
     <input type="hidden" name="items" id="items-json" value="[]">

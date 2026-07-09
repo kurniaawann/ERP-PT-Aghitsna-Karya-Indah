@@ -37,9 +37,9 @@
                                 </td>
                                 <td class="p-2 text-right font-semibold">Rp
                                     {{ number_format($record->total_capital, 0, ',', '.') }}</td>
-                                <td class="p-2">{{ $record->tanggal->format('d M Y') }}</td>
-                                <td class="p-2 max-w-xs truncate" title="{{ $record->keterangan ?? '-' }}">
-                                    {{ $record->keterangan ?? '-' }}
+                                <td class="p-2">{{ $record->date->format('d M Y') }}</td>
+                                <td class="p-2 max-w-xs truncate" title="{{ $record->notes ?? '-' }}">
+                                    {{ $record->notes ?? '-' }}
                                 </td>
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-2">

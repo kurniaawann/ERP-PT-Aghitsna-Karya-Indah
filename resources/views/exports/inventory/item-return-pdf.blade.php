@@ -173,8 +173,8 @@
                         <td>{{ $record->item->name_item ?? '-' }}</td>
                         <td class="text-center">{{ $record->quantity }}</td>
                         <td class="text-center">{{ ucfirst($record->return_type) }}</td>
-                        <td>{{ $record->alasan ?? '-' }}</td>
-                        <td class="text-center">{{ $record->tanggal->format('d M Y') }}</td>
+                        <td>{{ $record->reason ?? '-' }}</td>
+                        <td class="text-center">{{ $record->date->format('d M Y') }}</td>
                     </tr>
                     @php
                         $totalQuantity += $record->quantity;

@@ -157,7 +157,7 @@
                         <td>{{ $record->item->name_item ?? '-' }}</td>
                         <td class="text-center">{{ $record->quantity }}</td>
                         <td class="text-center">{{ $record->remaining_quantity ?? '-' }}</td>
-                        <td class="text-center">{{ $record->tanggal->format('d M Y') }}</td>
+                        <td class="text-center">{{ $record->date->format('d M Y') }}</td>
                         <td>{{ $record->project_name ?? '-' }}</td>
                     </tr>
                     @php

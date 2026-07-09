@@ -49,21 +49,21 @@
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Alasan Return</label>
-            <input type="text" name="alasan" value="{{ $item->alasan }}"
+            <input type="text" name="reason" value="{{ $item->reason }}"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
                 placeholder="Rusak, Tidak sesuai, dll">
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-            <input type="date" name="tanggal" value="{{ $item->tanggal->format('Y-m-d') }}"
+            <input type="date" name="date" value="{{ $item->date->format('Y-m-d') }}"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Keterangan</label>
-            <textarea name="keterangan" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                rows="3">{{ $item->keterangan }}</textarea>
+            <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                rows="3">{{ $item->notes }}</textarea>
         </div>
     </x-modal>
 @endforeach

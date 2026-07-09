@@ -46,7 +46,7 @@ class ItemStockOutSeeder extends Seeder
                 'id_item' => $item['item'],
                 'quantity' => $item['qty'],
                 'id_sales_recap' => SalesRecap::where('id_sales_recap', $item['ref'])->value('id_sales_recap'),
-                'tanggal' => $item['date']->toDateString(),
+                'date' => $item['date']->toDateString(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
