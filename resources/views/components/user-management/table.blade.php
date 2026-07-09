@@ -28,21 +28,21 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 @endif
                             </td>
-                            <td class="p-2 font-medium">
+                            <td class="p-2 font-medium text-black">
                                 {{ $user->name }}
                                 @if ($user->id === auth()->id())
                                     <span class="ml-1 text-xs text-primary font-normal">(Anda)</span>
                                 @endif
                             </td>
-                            <td class="p-2 text-text-label">{{ $user->email }}</td>
+                            <td class="p-2 text-black">{{ $user->email }}</td>
                             <td class="p-2 text-center">
                                 @php
                                     $roleColors = [
-                                        'superadmin' => 'bg-secondary-light text-secondary',
-                                        'admin' => 'bg-primary-light text-primary',
-                                        'general_manager' => 'bg-warning-light text-warning',
+                                        'superadmin' => 'bg-secondary-light text-black',
+                                        'admin' => 'bg-primary-light text-black',
+                                        'general_manager' => 'bg-warning-light text-black',
                                     ];
-                                    $color = $roleColors[$user->role] ?? 'bg-button-cancel text-button-inactive';
+                                    $color = $roleColors[$user->role] ?? 'bg-button-cancel text-black';
                                 @endphp
                                 <span class="px-2 py-1 {{ $color }} text-xs rounded-full font-medium">
                                     {{ $user->role_label }}
