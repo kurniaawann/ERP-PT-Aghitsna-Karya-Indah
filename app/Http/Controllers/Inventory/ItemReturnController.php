@@ -3,63 +3,59 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\StoreItemReturnRequest;
+use App\Http\Requests\Inventory\UpdateItemReturnRequest;
 use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockOut;
 use App\Models\Inventory\ItemStockIn;
 use App\Models\Inventory\ItemReturn;
+use App\Services\Inventory\ItemReturnService;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\StockService;
 
+/**
+ * Controller untuk halaman Pengembalian Barang (Item Return).
+ *
+ * Menangani:
+ * - CRUD pengembalian barang (tipe masuk & keluar)
+ * - Export PDF & Excel
+ * - Penyesuaian stok dan capital price
+ */
 class ItemReturnController extends Controller
 {
     public function __construct(
+        private ItemReturnService $returnService,
         private StockService $stockService
     ) {}
-    private function generateIdReturn()
-    {
-        $lastRecord = ItemReturn::orderBy('id_return', 'desc')->first();
 
-        if (!$lastRecord) {
-            return 'RTN-' . date('Ymd') . '-0001';
-        }
-
-        $lastNumber = (int) substr($lastRecord->id_return, -4);
-        return 'RTN-' . date('Ymd') . '-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-    }
-
+    /**
+     * Membangun query dasar untuk daftar pengembalian barang.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
     private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-        $returnType = $request->input('return_type');
-
         return ItemReturn::query()
             ->with(['item', 'stockOut', 'stockIn'])
-            ->when($search, function ($query, $search) {
-                $query->where('id_return', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($returnType, function ($query, $returnType) {
-                $query->where('return_type', $returnType);
-            })
-            ->when($month, function ($query, $month) {
-                $query->whereMonth('date', $month);
-            })
-            ->when($year, function ($query, $year) {
-                $query->whereYear('date', $year);
-            })
+            ->search($request->input('search'))
+            ->filterReturnType($request->input('return_type'))
+            ->filterMonth($request->input('month'))
+            ->filterYear($request->input('year'))
             ->orderBy('date', 'desc')
             ->orderBy('id_return', 'desc');
     }
 
+    /**
+     * Menampilkan halaman daftar pengembalian barang.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
         $returns = $this->baseQuery($request)->paginate(15);
@@ -68,234 +64,125 @@ class ItemReturnController extends Controller
         $stockOuts = ItemStockOut::orderBy('id_stock_out', 'desc')->get();
         $stockIns = ItemStockIn::orderBy('id_stock_in', 'desc')->get();
 
-        return view('pages.inventory.item-return', compact('returns', 'items', 'stockOuts', 'stockIns'));
+        $maxQuantities = $this->computeMaxQuantities($returns, $stockIns, $stockOuts);
+
+        return view('pages.inventory.item-return', compact('returns', 'items', 'stockOuts', 'stockIns', 'maxQuantities'));
     }
 
-    public function store(Request $request)
+    /**
+     * Menghitung max quantity yang bisa di-return untuk setiap record.
+     *
+     * Menghindari N+1 query dengan pre-computing di controller.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection $returns
+     * @param  \Illuminate\Database\Eloquent\Collection $stockIns
+     * @param  \Illuminate\Database\Eloquent\Collection $stockOuts
+     * @return array<string, int>
+     */
+    private function computeMaxQuantities($returns, $stockIns, $stockOuts): array
     {
-        $returnType = $request->input('return_type', 'keluar');
+        $maxQuantities = [];
 
-        $rules = [
-            'id_item' => 'required|exists:items,id_item',
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'nullable|string|max:255',
-            'date' => 'required|date',
-            'notes' => 'nullable|string|max:500',
-        ];
-
-        if ($returnType === 'masuk') {
-            $rules['id_stock_in'] = 'required|exists:item_stock_ins,id_stock_in';
-        } else {
-            $rules['id_stock_out'] = 'required|exists:item_stock_outs,id_stock_out';
+        foreach ($returns as $record) {
+            if ($record->return_type === 'masuk') {
+                $stockIn = $stockIns->firstWhere('id_stock_in', $record->id_stock_in);
+                $maxQuantities[$record->id_return] = $stockIn ? $stockIn->quantity + $record->quantity : 0;
+            } else {
+                $stockOut = $stockOuts->firstWhere('id_stock_out', $record->id_stock_out);
+                $maxQuantities[$record->id_return] = $stockOut ? $stockOut->quantity + $record->quantity : 0;
+            }
         }
 
-        $validated = $request->validate($rules);
+        return $maxQuantities;
+    }
 
-        DB::beginTransaction();
+    /**
+     * Menyimpan pengembalian baru.
+     *
+     * @param  \App\Http\Requests\Inventory\StoreItemReturnRequest $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StoreItemReturnRequest $request)
+    {
         try {
-            $item = Items::lockForUpdate()->findOrFail($request->id_item);
+            $this->returnService->createReturn($request->validated());
 
-            if ($returnType === 'masuk') {
-                $stockIn = ItemStockIn::lockForUpdate()->findOrFail($request->id_stock_in);
-
-                $totalReturned = ItemReturn::where('id_stock_in', $request->id_stock_in)
-                    ->where('return_type', 'masuk')
-                    ->lockForUpdate()
-                    ->sum('quantity');
-
-                if ($totalReturned + $request->quantity > $stockIn->quantity) {
-                    DB::rollBack();
-                    return back()->withErrors([
-                        'quantity' => "Jumlah return melebihi jumlah barang masuk! (Tersedia: " . ($stockIn->quantity - $totalReturned) . ")"
-                    ])->withInput();
-                }
-
-                ItemReturn::create([
-                    'id_return' => $this->generateIdReturn(),
-                    'id_item' => $request->id_item,
-                    'id_stock_in' => $request->id_stock_in,
-                    'quantity' => $request->quantity,
-                    'reason' => $request->reason,
-                    'notes' => $request->notes,
-                    'return_type' => 'masuk',
-                    'date' => $request->date,
-                ]);
-
-                $item->quantity -= $request->quantity;
-                if ($item->quantity < 0) {
-                    $item->quantity = 0;
-                }
-
-                $stockIn->quantity -= $request->quantity;
-                if ($stockIn->quantity < 0) {
-                    $stockIn->quantity = 0;
-                }
-
-                $currentItemValue = (($item->quantity + $request->quantity) * $item->capital_price);
-                $returnedValue = $request->quantity * $stockIn->capital_price;
-                $newValue = $currentItemValue - $returnedValue;
-
-                $item->capital_price = $item->quantity > 0 ? (int) round($newValue / $item->quantity) : 0;
-                $stockIn->save();
-            } else {
-                $stockOut = ItemStockOut::lockForUpdate()->findOrFail($request->id_stock_out);
-
-                $totalReturned = ItemReturn::where('id_stock_out', $request->id_stock_out)
-                    ->where('return_type', 'keluar')
-                    ->lockForUpdate()
-                    ->sum('quantity');
-
-                if ($totalReturned + $request->quantity > $stockOut->quantity) {
-                    DB::rollBack();
-                    return back()->withErrors([
-                        'quantity' => "Jumlah return melebihi jumlah barang keluar! (Tersedia: " . ($stockOut->quantity - $totalReturned) . ")"
-                    ])->withInput();
-                }
-
-                ItemReturn::create([
-                    'id_return' => $this->generateIdReturn(),
-                    'id_item' => $request->id_item,
-                    'id_stock_out' => $request->id_stock_out,
-                    'quantity' => $request->quantity,
-                    'reason' => $request->reason,
-                    'notes' => $request->notes,
-                    'return_type' => 'keluar',
-                    'date' => $request->date,
-                ]);
-
-                $item->quantity += $request->quantity;
-
-                $stockOut->quantity -= $request->quantity;
-                if ($stockOut->quantity < 0) {
-                    $stockOut->quantity = 0;
-                }
-                $stockOut->save();
-            }
-
-            $item->save();
-
-            DB::commit();
             return redirect()->route('item-return.index')->with('success', 'Data return barang berhasil ditambahkan!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Item Return store failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        } catch (\RuntimeException $e) {
             return back()->withErrors([
-                'error' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.'
+                'quantity' => $e->getMessage(),
             ])->withInput();
-        }
-    }
-
-    public function update(Request $request, string $id_return)
-    {
-        $validated = $request->validate([
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'nullable|string|max:255',
-            'date' => 'required|date',
-            'notes' => 'nullable|string|max:500',
-        ]);
-
-        DB::beginTransaction();
-        try {
-            $return = ItemReturn::lockForUpdate()->findOrFail($id_return);
-            $item = Items::lockForUpdate()->findOrFail($return->id_item);
-
-            if ($return->return_type === 'masuk') {
-                $stockIn = ItemStockIn::lockForUpdate()->findOrFail($return->id_stock_in);
-
-                $otherReturns = ItemReturn::where('id_stock_in', $return->id_stock_in)
-                    ->where('id_return', '!=', $id_return)
-                    ->where('return_type', 'masuk')
-                    ->lockForUpdate()
-                    ->sum('quantity');
-
-                if ($otherReturns + $request->quantity > $stockIn->quantity) {
-                    DB::rollBack();
-                    return back()->withErrors([
-                        'quantity' => "Jumlah return melebihi jumlah barang masuk! (Tersedia: " . ($stockIn->quantity - $otherReturns) . ")"
-                    ])->withInput();
-                }
-
-                $qtyDifference = $request->quantity - $return->quantity;
-
-                $item->quantity -= $qtyDifference;
-                if ($item->quantity < 0) {
-                    $item->quantity = 0;
-                }
-
-                $stockIn->quantity -= $qtyDifference;
-                if ($stockIn->quantity < 0) {
-                    $stockIn->quantity = 0;
-                }
-
-                $currentItemValue = (($item->quantity + $qtyDifference) * $item->capital_price);
-                $adjustedValue = $qtyDifference * $stockIn->capital_price;
-                $newValue = $currentItemValue - $adjustedValue;
-
-                $item->capital_price = $item->quantity > 0 ? (int) round($newValue / $item->quantity) : 0;
-                $stockIn->save();
-            } else {
-                $stockOut = ItemStockOut::lockForUpdate()->findOrFail($return->id_stock_out);
-
-                $otherReturns = ItemReturn::where('id_stock_out', $return->id_stock_out)
-                    ->where('id_return', '!=', $id_return)
-                    ->where('return_type', 'keluar')
-                    ->lockForUpdate()
-                    ->sum('quantity');
-
-                if ($otherReturns + $request->quantity > $stockOut->quantity) {
-                    DB::rollBack();
-                    return back()->withErrors([
-                        'quantity' => "Jumlah return melebihi jumlah barang keluar! (Tersedia: " . ($stockOut->quantity - $otherReturns) . ")"
-                    ])->withInput();
-                }
-
-                $qtyDifference = $request->quantity - $return->quantity;
-                $item->quantity += $qtyDifference;
-
-                $stockOut->quantity -= $qtyDifference;
-                if ($stockOut->quantity < 0) {
-                    $stockOut->quantity = 0;
-                }
-                $stockOut->save();
-            }
-
-            $item->save();
-
-            $return->update([
-                'quantity' => $request->quantity,
-                'reason' => $request->reason,
-                'notes' => $request->notes,
-                'date' => $request->date,
+        } catch (\Exception $e) {
+            Log::error('Item Return store failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-
-            DB::commit();
-            return redirect()->route('item-return.index')->with('success', 'Data return barang berhasil diupdate!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Item Return update failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->withErrors([
-                'error' => 'Terjadi kesalahan saat mengupdate data. Silakan coba lagi.'
+                'error' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.',
             ])->withInput();
         }
     }
 
+    /**
+     * Memperbarui pengembalian yang sudah ada.
+     *
+     * @param  \App\Http\Requests\Inventory\UpdateItemReturnRequest $request
+     * @param  string $id_return
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(UpdateItemReturnRequest $request, string $id_return)
+    {
+        try {
+            $return = ItemReturn::findOrFail($id_return);
+            $this->returnService->updateReturn($return, $request->validated());
+
+            return redirect()->route('item-return.index')->with('success', 'Data return barang berhasil diupdate!');
+        } catch (\RuntimeException $e) {
+            return back()->withErrors([
+                'quantity' => $e->getMessage(),
+            ])->withInput();
+        } catch (\Exception $e) {
+            Log::error('Item Return update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan saat mengupdate data. Silakan coba lagi.',
+            ])->withInput();
+        }
+    }
+
+    /**
+     * Menghapus satu record pengembalian.
+     *
+     * @param  string $id_return
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(string $id_return)
     {
         DB::beginTransaction();
         try {
             $return = ItemReturn::findOrFail($id_return);
-
             $this->stockService->processReturnDeletion($return);
 
             DB::commit();
             return redirect()->back()->with('success', 'Data return barang berhasil dihapus!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Item Return destroy failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error('Item Return destroy failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
         }
     }
 
+    /**
+     * Menghapus beberapa record pengembalian sekaligus.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function bulkDelete(Request $request)
     {
         $ids = $request->input('selected_returns', []);
@@ -316,11 +203,20 @@ class ItemReturnController extends Controller
             return redirect()->back()->with('success', 'Berhasil menghapus ' . count($returns) . ' data return barang!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Item Return bulkDelete failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error('Item Return bulkDelete failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
         }
     }
 
+    /**
+     * Mengunduh laporan pengembalian barang dalam format PDF.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportPdf(Request $request)
     {
         $returns = $this->baseQuery($request)->get();
@@ -329,15 +225,21 @@ class ItemReturnController extends Controller
         return $pdf->download('Retur_Barang_' . date('Y-m-d') . '.pdf');
     }
 
+    /**
+     * Mengunduh laporan pengembalian barang dalam format Excel.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportExcel(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-        $returnType = $request->input('return_type');
-
         return Excel::download(
-            new \App\Exports\Inventory\ItemReturnExport($search, $month, $year, $returnType),
+            new \App\Exports\Inventory\ItemReturnExport(
+                $request->input('search'),
+                $request->input('month'),
+                $request->input('year'),
+                $request->input('return_type')
+            ),
             'Retur_Barang_' . date('Y-m-d') . '.xlsx'
         );
     }

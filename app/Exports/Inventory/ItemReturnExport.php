@@ -16,14 +16,35 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
+/**
+ * Export data Pengembalian Barang ke Excel.
+ *
+ * Menghasilkan file Excel (.xlsx) dengan header perusahaan,
+ * data pengembalian, dan ringkasan total kuantitas.
+ */
 class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths, WithEvents
 {
+    /** @var string|null Kata kunci pencarian */
     protected $search;
+
+    /** @var string|int|null Bulan filter (1-12) */
     protected $month;
+
+    /** @var string|int|null Tahun filter */
     protected $year;
+
+    /** @var string|null Tipe return filter (masuk/keluar) */
     protected $returnType;
+
+    /** @var int Total kuantitas seluruh data (untuk summary) */
     protected $totalQuantity = 0;
 
+    /**
+     * @param  string|null $search     Kata kunci pencarian
+     * @param  string|int|null $month   Bulan filter (1-12)
+     * @param  string|int|null $year    Tahun filter
+     * @param  string|null $returnType  Tipe return (masuk/keluar)
+     */
     public function __construct($search = null, $month = null, $year = null, $returnType = null)
     {
         $this->search = $search;
@@ -32,26 +53,21 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
         $this->returnType = $returnType;
     }
 
+    /**
+     * Mengambil koleksi data untuk di-export.
+     *
+     * Menggunakan Model scopes untuk filtering, sama dengan controller.
+     *
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $returns = ItemReturn::query()
             ->with('item')
-            ->when($this->search, function ($query, $search) {
-                $query->where('id_return', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($this->returnType, function ($query, $returnType) {
-                $query->where('return_type', $returnType);
-            })
-            ->when($this->month, function ($query, $month) {
-                $query->whereMonth('date', $month);
-            })
-            ->when($this->year, function ($query, $year) {
-                $query->whereYear('date', $year);
-            })
+            ->search($this->search)
+            ->filterReturnType($this->returnType)
+            ->filterMonth($this->month)
+            ->filterYear($this->year)
             ->orderBy('date', 'desc')
             ->orderBy('id_return', 'desc')
             ->get();
@@ -61,6 +77,11 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
         return $returns;
     }
 
+    /**
+     * Header baris pertama (judul laporan).
+     *
+     * @return array
+     */
     public function headings(): array
     {
         $monthName = $this->month ? \DateTime::createFromFormat('!m', $this->month)->format('F') : '';
@@ -72,10 +93,16 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
             ['LAPORAN PENGEMBALIAN BARANG'],
             [$period],
             [],
-            ['No', 'ID Return', 'Nama Barang', 'Jumlah', 'Tipe', 'Alasan', 'Tanggal']
+            ['No', 'ID Return', 'Nama Barang', 'Jumlah', 'Tipe', 'Alasan', 'Tanggal'],
         ];
     }
 
+    /**
+     * Mapping data per baris.
+     *
+     * @param  \App\Models\Inventory\ItemReturn $record
+     * @return array
+     */
     public function map($record): array
     {
         static $number = 0;
@@ -92,6 +119,12 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
         ];
     }
 
+    /**
+     * Styling header, judul, dan border.
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @return array
+     */
     public function styles(Worksheet $sheet)
     {
         $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(12);
@@ -118,6 +151,11 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
         $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
     }
 
+    /**
+     * Lebar kolom Excel.
+     *
+     * @return array<string, int>
+     */
     public function columnWidths(): array
     {
         return [
@@ -131,6 +169,11 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
         ];
     }
 
+    /**
+     * Event setelah sheet dibuat — menambahkan baris ringkasan total.
+     *
+     * @return array
+     */
     public function registerEvents(): array
     {
         return [
@@ -148,6 +191,11 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
         ];
     }
 
+    /**
+     * Nama sheet tab di Excel.
+     *
+     * @return string
+     */
     public function title(): string
     {
         return 'Retur_Barang';
