@@ -76,11 +76,9 @@
         .summary {
             margin-top: 10px;
             padding: 5px;
-            /* Further reduced padding for a smaller background */
             border: 1px solid #ddd;
             background-color: #f9f9f9;
             width: 25%;
-            /* Further reduced width for a smaller size */
             float: right;
         }
 
@@ -117,11 +115,13 @@
 </head>
 
 <body>
+    {{-- Header Laporan --}}
     <div class="header">
         <h1>PT AGHITSNA KARYA INDAH</h1>
         <p>Laporan Barang Masuk</p>
     </div>
 
+    {{-- Info Cetak & Filter --}}
     <table class="info">
         <tr>
             <td style="width: 120px;"><strong>Tanggal Cetak</strong></td>
@@ -141,6 +141,7 @@
         </tr>
     </table>
 
+    {{-- Tabel Data Barang Masuk --}}
     <div class="content">
         <table>
             <thead>
@@ -181,6 +182,7 @@
             </tbody>
         </table>
 
+        {{-- Ringkasan Total --}}
         <div class="clearfix">
             <div class="summary">
                 <div class="summary-item">
@@ -193,10 +195,9 @@
                 </div>
             </div>
         </div>
-
-
     </div>
 
+    {{-- Footer Laporan --}}
     <div class="footer">
         Laporan ini dibuat secara otomatis oleh sistem ERP PT Aghitsna Karya Indah.
     </div>

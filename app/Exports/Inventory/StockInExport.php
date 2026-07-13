@@ -16,14 +16,47 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
+/**
+ * Export Barang Masuk ke format Excel (.xlsx).
+ *
+ * Menghasilkan file Excel dengan header "LAPORAN BARANG MASUK"
+ * berisi daftar barang masuk beserta jumlah, harga modal, total, dan tanggal.
+ * Mendukung filter pencarian, bulan, dan tahun.
+ */
 class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths, WithEvents
 {
+    /**
+     * @var string|null Kata kunci pencarian
+     */
     protected $search;
+
+    /**
+     * @var string|int|null Filter bulan
+     */
     protected $month;
+
+    /**
+     * @var string|int|null Filter tahun
+     */
     protected $year;
+
+    /**
+     * @var int Total keseluruhan (quantity x capital_price)
+     */
     protected $totalOverall = 0;
+
+    /**
+     * @var int Total kuantitas
+     */
     protected $totalQuantity = 0;
 
+    /**
+     * Konstruktor - menerima filter dan menghitung totals.
+     *
+     * @param  string|null  $search
+     * @param  string|null  $month
+     * @param  string|null  $year
+     */
     public function __construct($search = null, $month = null, $year = null)
     {
         $this->search = $search;
@@ -33,52 +66,49 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         $this->calculateTotals();
     }
 
+    /**
+     * Menghitung total kuantitas dan total keseluruhan.
+     *
+     * Menggunakan scope Model untuk filter yang konsisten.
+     *
+     * @return void
+     */
     private function calculateTotals(): void
     {
         $query = ItemStockIn::query()
-            ->when($this->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('id_stock_in', 'like', "%{$search}%")
-                        ->orWhere('id_item', 'like', "%{$search}%")
-                        ->orWhereHas('item', function ($sub) use ($search) {
-                            $sub->where('name_item', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->when($this->month, function ($query, $month) {
-                $query->whereMonth('date', $month);
-            })
-            ->when($this->year, function ($query, $year) {
-                $query->whereYear('date', $year);
-            });
+            ->search($this->search)
+            ->filterMonth($this->month)
+            ->filterYear($this->year);
 
         $this->totalQuantity = (clone $query)->sum('quantity');
-        $this->totalOverall = (clone $query)->selectRaw('COALESCE(SUM(quantity * capital_price), 0) as total')->value('total') ?? 0;
+        $this->totalOverall = (clone $query)
+            ->selectRaw('COALESCE(SUM(quantity * capital_price), 0) as total')
+            ->value('total') ?? 0;
     }
 
+    /**
+     * Query data yang akan di-export.
+     *
+     * Menggunakan scope Model untuk filter dan eager loading relasi.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
     public function query()
     {
         return ItemStockIn::query()
             ->with('item')
-            ->when($this->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('id_stock_in', 'like', "%{$search}%")
-                        ->orWhere('id_item', 'like', "%{$search}%")
-                        ->orWhereHas('item', function ($sub) use ($search) {
-                            $sub->where('name_item', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->when($this->month, function ($query, $month) {
-                $query->whereMonth('date', $month);
-            })
-            ->when($this->year, function ($query, $year) {
-                $query->whereYear('date', $year);
-            })
+            ->search($this->search)
+            ->filterMonth($this->month)
+            ->filterYear($this->year)
             ->orderBy('date', 'desc')
             ->orderBy('id_stock_in', 'desc');
     }
 
+    /**
+     * Header kolom Excel.
+     *
+     * @return array
+     */
     public function headings(): array
     {
         $monthName = $this->month ? \DateTime::createFromFormat('!m', $this->month)->format('F') : '';
@@ -94,6 +124,12 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         ];
     }
 
+    /**
+     * Mapping data setiap baris record Barang Masuk.
+     *
+     * @param  ItemStockIn  $record
+     * @return array
+     */
     public function map($record): array
     {
         static $number = 0;
@@ -110,6 +146,11 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         ];
     }
 
+    /**
+     * Lebar kolom Excel.
+     *
+     * @return array<string, int>
+     */
     public function columnWidths(): array
     {
         return [
@@ -123,10 +164,17 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         ];
     }
 
+    /**
+     * Style header, border, dan format angka.
+     *
+     * @param  Worksheet  $sheet
+     * @return array
+     */
     public function styles(Worksheet $sheet)
     {
         $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(12);
 
+        // Style header utama
         $sheet->getStyle('A1:G1')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A2:G2')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A3:G3')->getFont()->setItalic(true)->setSize(12);
@@ -136,6 +184,7 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         $sheet->mergeCells('A3:G3');
         $sheet->getStyle('A1:G3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+        // Style header kolom
         $sheet->getStyle('A5:G5')->applyFromArray([
             'font' => ['bold' => true],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EAEAEA']],
@@ -143,14 +192,21 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
 
+        // Border untuk seluruh data
         $lastRow = $sheet->getHighestRow();
         $sheet->getStyle('A6:G' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $sheet->getStyle('D:G')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+        // Format Rupiah
         $sheet->getStyle('E6:F' . $lastRow)->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"??_);_(@_)');
     }
 
+    /**
+     * Event setelah sheet dibuat - menambahkan summary rows.
+     *
+     * @return array
+     */
     public function registerEvents(): array
     {
         return [
@@ -159,12 +215,15 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
                 $lastRow = $sheet->getHighestRow();
                 $summaryStartRow = $lastRow + 2;
 
+                // Total Kuantitas
                 $sheet->setCellValue("E{$summaryStartRow}", 'Total Kuantitas:');
                 $sheet->setCellValue("F{$summaryStartRow}", $this->totalQuantity);
 
+                // Total Keseluruhan
                 $sheet->setCellValue("E" . ($summaryStartRow + 1), 'Total Keseluruhan:');
                 $sheet->setCellValue("F" . ($summaryStartRow + 1), $this->totalOverall);
 
+                // Style summary
                 $sheet->getStyle("E{$summaryStartRow}:F" . ($summaryStartRow + 1))->getFont()->setBold(true);
                 $sheet->getStyle("F" . ($summaryStartRow + 1))->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"??_);_(@_)');
                 $sheet->getStyle("E{$summaryStartRow}:E" . ($summaryStartRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -172,6 +231,11 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         ];
     }
 
+    /**
+     * Judul sheet Excel.
+     *
+     * @return string
+     */
     public function title(): string
     {
         return 'Barang_Masuk';
