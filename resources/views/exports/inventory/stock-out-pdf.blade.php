@@ -109,11 +109,13 @@
 </head>
 
 <body>
+    {{-- Header Laporan --}}
     <div class="header">
         <h1>PT AGHITSNA KARYA INDAH</h1>
         <p>Laporan Barang Keluar</p>
     </div>
 
+    {{-- Info Cetak & Filter --}}
     <table class="info">
         <tr>
             <td style="width: 120px;"><strong>Tanggal Cetak</strong></td>
@@ -133,6 +135,7 @@
         </tr>
     </table>
 
+    {{-- Tabel Data Barang Keluar --}}
     <div class="content">
         <table>
             <thead>
@@ -147,9 +150,6 @@
                 </tr>
             </thead>
             <tbody>
-                @php
-                    $totalQuantity = 0;
-                @endphp
                 @forelse($stockOuts as $index => $record)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
@@ -160,9 +160,6 @@
                         <td class="text-center">{{ $record->date->format('d M Y') }}</td>
                         <td>{{ $record->project_name ?? '-' }}</td>
                     </tr>
-                    @php
-                        $totalQuantity += $record->quantity;
-                    @endphp
                 @empty
                     <tr>
                         <td colspan="7" class="text-center">Tidak ada data untuk periode yang dipilih.</td>
@@ -171,19 +168,18 @@
             </tbody>
         </table>
 
+        {{-- Ringkasan Total --}}
         <div class="clearfix">
             <div class="summary">
                 <div class="summary-item">
                     <span>Total Kuantitas: </span>
-                    <span class="text-right"><strong>{{ number_format($totalQuantity, 0, ',', '.') }}</strong></span>
+                    <span class="text-right"><strong>{{ number_format($stockOuts->sum('quantity'), 0, ',', '.') }}</strong></span>
                 </div>
             </div>
         </div>
-
     </div>
 
-
-
+    {{-- Footer Laporan --}}
     <div class="footer">
         Laporan ini dibuat secara otomatis oleh sistem ERP PT Aghitsna Karya Indah.
     </div>

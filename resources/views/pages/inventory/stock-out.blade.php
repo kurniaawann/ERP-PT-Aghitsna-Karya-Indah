@@ -4,10 +4,14 @@
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
+
+        {{-- Header Halaman --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Barang Keluar</h1>
 
+        {{-- Toolbar: Filter & Pencarian --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            {{-- Form Pencarian dan Filter --}}
+
+            {{-- Form Filter & Pencarian --}}
             <form method="GET" action="{{ route('stock-out.index') }}" id="filterForm"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
@@ -17,21 +21,26 @@
                 {{-- Filter Tahun --}}
                 <x-filters.year-filter :value="request('year')" onchange="document.getElementById('filterForm').submit()" />
 
-                {{-- Search Input --}}
+                {{-- Input Pencarian --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari barang keluar..." />
             </form>
 
-            {{-- Aksi di Kanan --}}
+            {{-- Tombol Export --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <x-buttons.print-dropdown :excelRoute="route('stock-out.export.excel')" :pdfRoute="route('stock-out.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
+                <x-buttons.print-dropdown
+                    :excelRoute="route('stock-out.export.excel')"
+                    :pdfRoute="route('stock-out.export.pdf')"
+                    :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
             </div>
         </div>
 
-        {{-- Table --}}
+        {{-- Tabel Data Barang Keluar --}}
         <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <div class="inline-block min-w-full align-middle">
                 <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                     <table class="min-w-full divide-y divide-gray-200">
+
+                        {{-- Header Tabel --}}
                         <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                             <tr>
                                 <th class="p-2 text-left">ID Keluar</th>
@@ -43,6 +52,8 @@
                                 <th class="p-2 text-left">Proyek</th>
                             </tr>
                         </thead>
+
+                        {{-- Body Tabel --}}
                         <tbody>
                             @forelse($stockOuts as $record)
                                 <tr class="border-t hover:bg-surface-secondary">
@@ -55,6 +66,7 @@
                                     <td class="p-2">{{ $record->project_name ?? '-' }}</td>
                                 </tr>
                             @empty
+                                {{-- Pesan jika data kosong --}}
                                 <tr>
                                     <td colspan="7" class="text-center p-4 text-text-secondary">
                                         Data tidak ditemukan.
@@ -72,6 +84,8 @@
     {{-- Pagination --}}
     <x-pagination :paginator="$stockOuts" />
 
-    {{-- Include Stock Out Scripts --}}
-    @include('partials.inventory.stock-out-scripts')
+    {{-- JavaScript --}}
+    @push('scripts')
+        @vite('resources/js/pages/inventory/outgoing-items/index.js')
+    @endpush
 @endsection

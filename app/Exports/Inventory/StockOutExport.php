@@ -16,13 +16,31 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
+/**
+ * Export data Barang Keluar ke Excel.
+ *
+ * Menghasilkan file Excel (.xlsx) dengan header perusahaan,
+ * data barang keluar, dan ringkasan total kuantitas.
+ */
 class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths, WithEvents
 {
+    /** @var string|null Kata kunci pencarian */
     protected $search;
+
+    /** @var string|int|null Bulan filter (1-12) */
     protected $month;
+
+    /** @var string|int|null Tahun filter */
     protected $year;
+
+    /** @var int Total kuantitas seluruh data (untuk summary) */
     protected $totalQuantity = 0;
 
+    /**
+     * @param  string|null $search  Kata kunci pencarian
+     * @param  string|int|null $month Bulan filter (1-12)
+     * @param  string|int|null $year  Tahun filter
+     */
     public function __construct($search = null, $month = null, $year = null)
     {
         $this->search = $search;
@@ -30,23 +48,20 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
         $this->year = $year;
     }
 
+    /**
+     * Mengambil koleksi data untuk di-export.
+     *
+     * Menggunakan Model scopes untuk filtering, sama dengan controller.
+     *
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $stockOuts = ItemStockOut::query()
             ->with(['item', 'returns'])
-            ->when($this->search, function ($query, $search) {
-                $query->where('id_stock_out', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($this->month, function ($query, $month) {
-                $query->whereMonth('date', $month);
-            })
-            ->when($this->year, function ($query, $year) {
-                $query->whereYear('date', $year);
-            })
+            ->search($this->search)
+            ->filterMonth($this->month)
+            ->filterYear($this->year)
             ->orderBy('date', 'desc')
             ->orderBy('id_stock_out', 'desc')
             ->get();
@@ -56,6 +71,11 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
         return $stockOuts;
     }
 
+    /**
+     * Header baris pertama (judul laporan).
+     *
+     * @return array
+     */
     public function headings(): array
     {
         $monthName = $this->month ? \DateTime::createFromFormat('!m', $this->month)->format('F') : '';
@@ -67,10 +87,16 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
             ['LAPORAN BARANG KELUAR'],
             [$period],
             [],
-            ['No', 'ID Keluar', 'Nama Barang', 'Jumlah', 'Sisa Barang', 'Tanggal', 'Proyek']
+            ['No', 'ID Keluar', 'Nama Barang', 'Jumlah', 'Sisa Barang', 'Tanggal', 'Proyek'],
         ];
     }
 
+    /**
+     * Mapping data per baris.
+     *
+     * @param  \App\Models\Inventory\ItemStockOut $record
+     * @return array
+     */
     public function map($record): array
     {
         static $number = 0;
@@ -87,6 +113,11 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
         ];
     }
 
+    /**
+     * Lebar kolom Excel.
+     *
+     * @return array<string, int>
+     */
     public function columnWidths(): array
     {
         return [
@@ -100,6 +131,12 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
         ];
     }
 
+    /**
+     * Styling header, judul, dan border.
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @return array
+     */
     public function styles(Worksheet $sheet)
     {
         $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(12);
@@ -126,6 +163,11 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
         $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
     }
 
+    /**
+     * Event setelah sheet dibuat — menambahkan baris ringkasan total.
+     *
+     * @return array
+     */
     public function registerEvents(): array
     {
         return [
@@ -143,6 +185,11 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping, WithS
         ];
     }
 
+    /**
+     * Nama sheet tab di Excel.
+     *
+     * @return string
+     */
     public function title(): string
     {
         return 'Barang_Keluar';
