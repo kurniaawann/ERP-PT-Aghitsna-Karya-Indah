@@ -1,10 +1,15 @@
 /**
- * Data Barang - Page JavaScript
+ * Data Barang - Index Page JavaScript
  *
- * Handles: price validation, bulk delete, select-all, print dropdown.
+ * Modul ini menangani:
+ * - Validasi harga modal < harga jual
+ * - Format input currency Rupiah
+ * - Select all checkbox
+ * - Bulk delete button state
+ * - Print dropdown toggle
  */
 
-/* global submitDeleteForm is called from inline onclick via Blade modal */
+/* global submitDeleteForm - dipanggil dari inline onclick pada Blade modal */
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
     if (deleteBtn) {
@@ -19,6 +24,16 @@ window.submitDeleteForm = function () {
     }
 };
 
+/**
+ * Memvalidasi pasangan harga modal dan harga jual.
+ * Harga modal tidak boleh lebih besar atau sama dengan harga jual.
+ *
+ * @param {HTMLInputElement} capitalInput
+ * @param {HTMLInputElement} sellingInput
+ * @param {HTMLElement}      warningEl
+ * @param {HTMLElement|null} submitBtn
+ * @returns {boolean} true jika valid
+ */
 function validatePricePair(capitalInput, sellingInput, warningEl, submitBtn) {
     const capitalPrice = parseCurrencyInput(capitalInput.value);
     const sellingPrice = parseCurrencyInput(sellingInput.value);
@@ -41,12 +56,26 @@ function validatePricePair(capitalInput, sellingInput, warningEl, submitBtn) {
     return !isInvalid;
 }
 
+/**
+ * Mengikat event listener untuk format currency pada input.
+ *
+ * @param {HTMLInputElement} input
+ */
 function bindCurrencyInput(input) {
     input.addEventListener('input', function () {
         this.value = formatRupiah(parseCurrencyInput(this.value));
     });
 }
 
+/**
+ * Mengikat validasi harga dan format currency pada pasangan input.
+ *
+ * @param {HTMLInputElement} capitalInput
+ * @param {HTMLInputElement} sellingInput
+ * @param {HTMLElement}      warningEl
+ * @param {HTMLElement|null} submitBtn
+ * @param {HTMLFormElement|null} form
+ */
 function bindPriceValidation(capitalInput, sellingInput, warningEl, submitBtn, form) {
     bindCurrencyInput(capitalInput);
     bindCurrencyInput(sellingInput);
@@ -79,7 +108,8 @@ function bindPriceValidation(capitalInput, sellingInput, warningEl, submitBtn, f
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    // --- Add Modal Price Validation ---
+
+    // ─── Validasi Harga pada Modal Tambah ───────────────────────────────
     const addCapitalPrice = document.getElementById('add-capital-price');
     const addSellingPrice = document.getElementById('add-selling-price');
     const addPriceWarning = document.getElementById('add-price-warning');
@@ -90,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
         bindPriceValidation(addCapitalPrice, addSellingPrice, addPriceWarning, addSubmitBtn, addForm);
     }
 
-    // --- Edit Modal Price Validation ---
+    // ─── Validasi Harga pada Modal Edit (per item) ─────────────────────
     const editCapitalPriceInputs = document.querySelectorAll('[id^="edit-capital-price-"]');
 
     editCapitalPriceInputs.forEach(function (capitalInput) {
@@ -105,11 +135,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // --- Select All Checkbox ---
+    // ─── Select All Checkbox ────────────────────────────────────────────
     const selectAllCheckbox = document.getElementById('selectAll');
     const itemCheckboxes = document.querySelectorAll('input[name="selected_items[]"]');
     const deleteButton = document.getElementById('delete-button');
 
+    /**
+     * Mengupdate status tombol hapus berdasarkan checkbox yang dipilih.
+     */
     function updateDeleteButtonState() {
         const anyChecked = Array.from(itemCheckboxes).some(function (cb) {
             return cb.checked;
@@ -144,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateDeleteButtonState();
 
-    // --- Print Dropdown ---
+    // ─── Print Dropdown ─────────────────────────────────────────────────
     const printDropdownButton = document.getElementById('printDropdownButton');
     const printDropdownMenu = document.getElementById('printDropdownMenu');
 

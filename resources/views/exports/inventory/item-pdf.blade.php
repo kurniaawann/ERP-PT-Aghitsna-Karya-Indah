@@ -51,10 +51,12 @@
 </head>
 
 <body>
+    {{-- Header PDF --}}
     <div class="header">
         STOCK HOLLOW DI GI
     </div>
 
+    {{-- Tabel Data Barang --}}
     <table>
         <thead>
             <tr>

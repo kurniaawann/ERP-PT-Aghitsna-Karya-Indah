@@ -6,11 +6,33 @@ use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
 use Illuminate\Support\Str;
 
+/**
+ * Observer untuk Model Items.
+ *
+ * Menangani event created untuk membuat catatan stok awal
+ * (opening stock) secara otomatis ketika barang baru ditambahkan.
+ */
 class ItemsObserver
 {
+    /**
+     * Tanggal stok awal (1970-01-01) sebagai penanda data inisial.
+     */
     const OPENING_STOCK_DATE = '1970-01-01';
+
+    /**
+     * Deskripsi/catatan untuk stok awal.
+     */
     const OPENING_STOCK_DESCRIPTION = 'Opening stock (auto)';
 
+    /**
+     * Dipanggil saat barang baru berhasil dibuat.
+     *
+     * Membuat catatan ItemStockIn dengan ID awalan OPN- sebagai
+     * stok awal barang, asalkan belum ada catatan serupa.
+     *
+     * @param  Items  $item
+     * @return void
+     */
     public function created(Items $item): void
     {
         $alreadyExists = ItemStockIn::where('id_item', $item->id_item)

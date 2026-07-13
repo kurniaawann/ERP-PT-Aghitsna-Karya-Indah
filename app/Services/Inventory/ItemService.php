@@ -5,28 +5,59 @@ namespace App\Services\Inventory;
 use App\Models\Inventory\Items;
 use App\Repositories\Inventory\ItemRepository;
 use App\Services\InputNormalizer;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * Service untuk mengelola business logic Data Barang.
+ *
+ * Service ini bertanggung jawab atas operasi CRUD,
+ * normalisasi input harga, dan generasi ID otomatis.
+ */
 class ItemService
 {
     public function __construct(
         private readonly ItemRepository $repository
     ) {}
 
-    public function getPaginatedSearch(?string $search): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    /**
+     * Mendapatkan daftar barang dengan paginasi dan pencarian.
+     *
+     * @param  string|null  $search  Kata kunci pencarian (nama atau ID barang)
+     * @return LengthAwarePaginator
+     */
+    public function getPaginatedSearch(?string $search): LengthAwarePaginator
     {
         return $this->repository->search($search);
     }
 
-    public function getAll(): \Illuminate\Database\Eloquent\Collection
+    /**
+     * Mendapatkan seluruh data barang diurutkan berdasarkan ID.
+     *
+     * @return Collection
+     */
+    public function getAll(): Collection
     {
         return $this->repository->getAllOrderedById();
     }
 
+    /**
+     * Mencari barang berdasarkan ID.
+     *
+     * @param  string     $idItem
+     * @return Items|null
+     */
     public function findById(string $idItem): ?Items
     {
         return $this->repository->findById($idItem);
     }
 
+    /**
+     * Menyimpan barang baru dengan ID otomatis dan normalisasi harga.
+     *
+     * @param  array   $data  Data yang sudah divalidasi
+     * @return Items
+     */
     public function store(array $data): Items
     {
         return $this->repository->create([
@@ -38,6 +69,13 @@ class ItemService
         ]);
     }
 
+    /**
+     * Memperbarui data barang yang sudah ada.
+     *
+     * @param  Items  $item  Model barang yang akan diperbarui
+     * @param  array  $data  Data yang sudah divalidasi
+     * @return bool
+     */
     public function update(Items $item, array $data): bool
     {
         return $this->repository->update($item, [
@@ -48,6 +86,11 @@ class ItemService
         ]);
     }
 
+    /**
+     * Generate ID barang berikutnya.
+     *
+     * @return string
+     */
     private function generateNextId(): string
     {
         return Items::generateNextId();

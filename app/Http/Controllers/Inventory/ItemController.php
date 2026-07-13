@@ -13,6 +13,12 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Controller untuk mengelola Data Barang.
+ *
+ * Controller ini hanya menangani request dan response HTTP.
+ * Business logic didelegasikan ke ItemService.
+ */
 class ItemController extends Controller
 {
     use HasBulkActions;
@@ -21,6 +27,12 @@ class ItemController extends Controller
         private readonly ItemService $itemService
     ) {}
 
+    /**
+     * Menampilkan daftar Data Barang dengan paginasi dan pencarian.
+     *
+     * @param  Request  $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
         $items = $this->itemService->getPaginatedSearch($request->input('search'));
@@ -28,6 +40,12 @@ class ItemController extends Controller
         return view('pages.inventory.item', compact('items'));
     }
 
+    /**
+     * Menyimpan Data Barang baru.
+     *
+     * @param  StoreItemRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(StoreItemRequest $request)
     {
         $this->itemService->store($request->validated());
@@ -35,6 +53,13 @@ class ItemController extends Controller
         return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
     }
 
+    /**
+     * Memperbarui Data Barang yang sudah ada.
+     *
+     * @param  UpdateItemRequest  $request
+     * @param  string             $id_item
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(UpdateItemRequest $request, string $id_item)
     {
         $item = $this->itemService->findById($id_item);
@@ -48,11 +73,22 @@ class ItemController extends Controller
         return redirect()->back()->with('success', 'Data berhasil diupdate!');
     }
 
+    /**
+     * Menghapus beberapa Data Barang sekaligus (bulk delete).
+     *
+     * @param  Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroySelected(Request $request)
     {
         return $this->destroySelectedBy($request, Items::class, 'selected_items', 'id_item');
     }
 
+    /**
+     * Export Data Barang ke format PDF.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportPdf()
     {
         $items = $this->itemService->getAll();
@@ -62,6 +98,11 @@ class ItemController extends Controller
         return $pdf->download('Stock_Hollow_' . date('Y-m-d') . '.pdf');
     }
 
+    /**
+     * Export Data Barang ke format Excel.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportExcel()
     {
         return Excel::download(new ItemsExport, 'Stock_Hollow_' . date('Y-m-d') . '.xlsx');
