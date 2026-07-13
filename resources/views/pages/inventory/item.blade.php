@@ -49,5 +49,7 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.inventory.item-scripts')
+    @push('scripts')
+        @vite('resources/js/pages/item.js')
+    @endpush
 @endsection

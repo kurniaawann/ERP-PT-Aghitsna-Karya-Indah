@@ -4,58 +4,46 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreItemRequest;
+use App\Http\Requests\Inventory\UpdateItemRequest;
 use App\Models\Inventory\Items;
-use App\Services\InputNormalizer;
+use App\Services\Inventory\ItemService;
 use App\Exports\Inventory\ItemsExport;
-use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Traits\HasBulkActions;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ItemController extends Controller
 {
     use HasBulkActions;
 
+    public function __construct(
+        private readonly ItemService $itemService
+    ) {}
+
     public function index(Request $request)
     {
-        $search = $request->input('search');
-
-        $items = Items::query()
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name_item', 'like', "%{$search}%")
-                      ->orWhere('id_item', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('id_item', 'desc')
-            ->paginate(15);
+        $items = $this->itemService->getPaginatedSearch($request->input('search'));
 
         return view('pages.inventory.item', compact('items'));
     }
 
     public function store(StoreItemRequest $request)
     {
-        Items::create([
-            'id_item' => Items::generateNextId(),
-            'name_item' => $request->name_item,
-            'quantity' => $request->quantity,
-            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
-            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
-        ]);
+        $this->itemService->store($request->validated());
 
         return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
     }
 
-    public function update(StoreItemRequest $request, string $id_item)
+    public function update(UpdateItemRequest $request, string $id_item)
     {
-        $item = Items::where('id_item', $id_item)->firstOrFail();
+        $item = $this->itemService->findById($id_item);
 
-        $item->update([
-            'name_item' => $request->name_item,
-            'quantity' => $request->quantity,
-            'capital_price' => InputNormalizer::normalizeCurrency($request->capital_price),
-            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
-        ]);
+        if (!$item) {
+            abort(404);
+        }
+
+        $this->itemService->update($item, $request->validated());
 
         return redirect()->back()->with('success', 'Data berhasil diupdate!');
     }
@@ -67,7 +55,7 @@ class ItemController extends Controller
 
     public function exportPdf()
     {
-        $items = Items::orderBy('id_item', 'asc')->get();
+        $items = $this->itemService->getAll();
 
         $pdf = Pdf::loadView('exports.inventory.item-pdf', compact('items'));
 
