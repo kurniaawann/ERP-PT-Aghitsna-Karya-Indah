@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ItemStockInController;
 use App\Http\Controllers\Inventory\ItemStockOutController;
@@ -82,6 +83,10 @@ Route::get('/', function () {
 // Website pages
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
+
+    // ─── Profile Routes (Semua role) ───
+    Route::get('/change-password', [ProfileController::class, 'showChangePassword'])->name('profile.change-password');
+    Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('profile.change-password.update');
 
     // ─── Routes tanpa middleware tambahan (Super Admin + Legacy roles only) ───
 
