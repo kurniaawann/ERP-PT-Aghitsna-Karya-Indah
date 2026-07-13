@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Invoice Item')
+@section('title', 'PT Aghitsna Karya Indah - Invoice Barang')
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Item</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Barang</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <form method="GET" action="{{ route('item-invoice.index') }}"
@@ -16,8 +16,6 @@
 
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <!-- Print button removed -->
-
                     <x-buttons.delete-button modalId="deleteModal" />
 
                     <x-buttons.add-button modalId="addModal" text="Tambah Invoice" />
@@ -41,16 +39,16 @@
             </div>
         </div>
 
-        @include('components.finance.barang.table', ['invoices' => $invoices])
+        <x-finance.product-invoices.table :invoices="$invoices" />
     </div>
 
     <x-pagination :paginator="$invoices" />
 
-    @include('components.finance.barang.add-modal', ['items' => $items])
+    <x-finance.product-invoices.add-modal :items="$items" />
 
     @foreach ($invoices as $invoice)
-        @include('components.finance.barang.edit-modal', ['invoice' => $invoice, 'items' => $items])
-        @include('components.finance.barang.detail-modal', ['invoice' => $invoice])
+        <x-finance.product-invoices.edit-modal :invoice="$invoice" :items="$items" />
+        <x-finance.product-invoices.detail-modal :invoice="$invoice" />
     @endforeach
 
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
@@ -58,6 +56,9 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
-    @include('partials.finance.barang-scripts', ['items' => $items])
     @include('partials.shared.print-dropdown-script')
 @endsection
+
+@push('scripts')
+    @vite(['resources/js/pages/finance/product-invoices/index.js'])
+@endpush

@@ -1,5 +1,5 @@
-{{-- Modal Tambah Invoice Item --}}
-<x-modal id="addModal" title="Tambah Invoice Item" action="{{ route('item-invoice.store') }}" method="POST"
+{{-- Modal Tambah Invoice Barang --}}
+<x-modal id="addModal" title="Tambah Invoice Barang" action="{{ route('item-invoice.store') }}" method="POST"
     buttonText="Simpan">
 
     <div class="mb-3">
@@ -93,12 +93,12 @@
                 </div>
 
                 <p class="barang-stock-warning text-error text-sm mt-2 hidden">
-                    <span class="font-semibold">⚠️ Peringatan Stok:</span> <span class="barang-stock-warning-text">Stok
+                    <span class="font-semibold">Peringatan Stok:</span> <span class="barang-stock-warning-text">Stok
                         Barang Tidak Cukup! Silahkan Sesuaikan Dengan Stok Yang Tersedia.</span>
                 </p>
 
                 <p class="barang-price-warning text-error text-sm mt-2 hidden">
-                    <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
+                    <span class="font-semibold">Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
                     dengan harga jual!
                 </p>
 

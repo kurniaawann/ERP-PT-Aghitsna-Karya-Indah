@@ -1,5 +1,5 @@
-{{-- Modal Edit Invoice Item --}}
-<x-modal id="editModal-{{ $invoice->invoice_number }}" title="Edit Invoice Item"
+{{-- Modal Edit Invoice Barang --}}
+<x-modal id="editModal-{{ $invoice->invoice_number }}" title="Edit Invoice Barang"
     action="{{ route('item-invoice.update', $invoice->invoice_number) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">
@@ -122,13 +122,13 @@
                     </div>
 
                     <p class="barang-stock-warning-edit text-error text-sm mt-2 hidden">
-                        <span class="font-semibold">⚠️ Peringatan Stok:</span> <span
+                        <span class="font-semibold">Peringatan Stok:</span> <span
                             class="barang-stock-warning-text-edit">Stok Barang Tidak Cukup! Silahkan Sesuaikan Dengan
                             Stok Yang Tersedia.</span>
                     </p>
 
                     <p class="barang-price-warning-edit text-error text-sm mt-2 hidden">
-                        <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
+                        <span class="font-semibold">Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
                         dengan harga jual!
                     </p>
 
