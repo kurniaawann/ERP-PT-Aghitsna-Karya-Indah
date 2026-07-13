@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Inventory;
 
 use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
@@ -10,19 +10,58 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Service untuk mengelola business logic Laporan Stok Barang.
+ *
+ * Service ini bertanggung jawab atas:
+ * - Generasi data laporan stok berdasarkan periode tertentu
+ * - Perhitungan stok awal, stok masuk, stok keluar, retur, dan stok akhir
+ * - Perhitungan nilai stok berdasarkan harga modal
+ * - Aggregasi summary laporan
+ *
+ * Business logic perhitungan stok:
+ * - Stok Awal = (Total Stock In sebelum periode) - (Total Stock Out sebelum periode) - (Total Return sebelum periode)
+ * - Stok Akhir = Stok Awal + Stok Masuk - Stok Keluar - Retur
+ * - Nilai Stok = Stok Akhir x Harga Modal
+ */
 class StockReportService
 {
+    /**
+     * Menghasilkan data laporan stok untuk periode tertentu.
+     *
+     * Method ini menghitung stok awal (sebelum periode), stok masuk/keluar/retur
+     * (selama periode), dan stok akhir untuk setiap barang. Jika $itemId diberikan,
+     * hanya barang tersebut yang diproses.
+     *
+     * Query yang dijalankan:
+     * 1. Query Items (1 query)
+     * 2. Agregasi Stock In sebelum periode (1 query)
+     * 3. Agregasi Stock Out sebelum periode (1 query)
+     * 4. Agregasi Return sebelum periode (1 query)
+     * 5. Agregasi Stock In selama periode (1 query)
+     * 6. Agregasi Stock Out selama periode (1 query)
+     * 7. Agregasi Return selama periode (1 query)
+     *
+     * Total: 7 query — sudah optimal, tidak ada N+1.
+     *
+     * @param  string       $startDate  Tanggal mulai laporan (format Y-m-d)
+     * @param  string       $endDate    Tanggal akhir laporan (format Y-m-d)
+     * @param  string|null  $itemId     ID barang spesifik (opsional, null untuk semua barang)
+     * @return Collection   Collection of array berisi data laporan per barang
+     */
     public function generateReport(string $startDate, string $endDate, ?string $itemId = null): Collection
     {
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
+        // Ambil data barang (dengan filter item jika ada)
         $query = Items::query();
         if ($itemId) {
             $query->where('id_item', $itemId);
         }
         $items = $query->get();
 
+        // ─── Agregasi Stok Sebelum Periode (untuk Stok Awal) ────────
         $stockInsBefore = ItemStockIn::where('date', '<', $start)
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
@@ -41,6 +80,7 @@ class StockReportService
             ->select('id_item', DB::raw('SUM(quantity) as total'))
             ->pluck('total', 'id_item');
 
+        // ─── Agregasi Stok Selama Periode ──────────────────────────
         $stockInsPeriod = ItemStockIn::whereBetween('date', [$start, $end])
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
@@ -59,6 +99,7 @@ class StockReportService
             ->select('id_item', DB::raw('SUM(quantity) as total'))
             ->pluck('total', 'id_item');
 
+        // ─── Komputasi Data Laporan per Barang ─────────────────────
         $reportData = collect();
 
         foreach ($items as $item) {
@@ -92,6 +133,21 @@ class StockReportService
         return $reportData;
     }
 
+    /**
+     * Menghitung summary (aggregasi) dari data laporan stok.
+     *
+     * Summary mencakup:
+     * - total_items: Jumlah barang
+     * - total_beginning_stock: Total stok awal
+     * - total_stock_in: Total stok masuk selama periode
+     * - total_stock_out: Total stok keluar selama periode
+     * - total_returns: Total retur selama periode
+     * - total_ending_stock: Total stok akhir
+     * - total_stock_value: Total nilai stok (rupiah)
+     *
+     * @param  Collection  $reportData  Data laporan dari method generateReport()
+     * @return array       Array berisi summary dengan kunci-kunci di atas
+     */
     public function getSummary(Collection $reportData): array
     {
         return [
