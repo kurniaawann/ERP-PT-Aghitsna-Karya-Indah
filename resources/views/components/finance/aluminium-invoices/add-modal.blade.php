@@ -40,9 +40,8 @@
                         required oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
                     <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
-                        placeholder="Volume *" required oninput="calculateRowTotal(this)"
-                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
-                        oninput="calculateRowTotal(this); this.setCustomValidity('')">
+                        placeholder="Volume *" required oninput="calculateRowTotal(this); this.setCustomValidity('')"
+                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <input type="text" class="item-satuan border rounded p-2 w-full"
@@ -51,9 +50,8 @@
                         oninput="this.setCustomValidity('')">
                     <input type="text" inputmode="numeric" min="0"
                         class="item-harga border rounded p-2 w-full" placeholder="Harga *" required
-                        oninput="formatCurrencyInput(this); calculateRowTotal(this)"
-                        oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                        oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')">
+                        oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')"
+                        oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                     <div class="flex items-center">
                         <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                     </div>

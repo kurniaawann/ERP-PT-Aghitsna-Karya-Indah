@@ -54,9 +54,8 @@
                             oninput="this.setCustomValidity('')">
                         <input type="number" step="0.01" min="0" name="items[{{ $index }}][volume]"
                             value="{{ $item['volume'] ?? 0 }}" class="item-volume border rounded p-2 w-full"
-                            placeholder="Volume" required oninput="calculateEditRowTotal(this)"
-                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
-                            oninput="calculateEditRowTotal(this); this.setCustomValidity('')">
+                            placeholder="Volume" required oninput="calculateEditRowTotal(this); this.setCustomValidity('')"
+                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <input type="text" name="items[{{ $index }}][satuan]"
@@ -68,9 +67,8 @@
                             name="items[{{ $index }}][harga]"
                             value="{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
                             class="item-harga border rounded p-2 w-full" placeholder="Harga" required
-                            oninput="calculateEditRowTotal(this, '{{ $invoice->invoice_number }}')"
-                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                            oninput="calculateEditRowTotal(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')">
+                            oninput="calculateEditRowTotal(this); formatCurrencyInput(this); this.setCustomValidity('')"
+                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">
                                 Rp {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}
@@ -183,7 +181,6 @@
                 $selectedAccounts = is_string($invoice->selected_payment_accounts)
                     ? json_decode($invoice->selected_payment_accounts, true)
                     : $invoice->selected_payment_accounts ?? [];
-                $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
             @endphp
             @if ($paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)

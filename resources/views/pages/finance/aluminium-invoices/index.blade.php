@@ -20,14 +20,13 @@
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <x-buttons.delete-button modalId="deleteModal" />
-
                     <x-buttons.add-button modalId="addModal" text="Tambah Invoice" />
                 </div>
             </div>
         </div>
 
         {{-- Table Component --}}
-        @include('components.finance.alumunium.table', ['invoices' => $invoices])
+        <x-finance.aluminium-invoices.table :invoices="$invoices" />
 
     </div>
 
@@ -35,12 +34,12 @@
     <x-pagination :paginator="$invoices" />
 
     {{-- Modal Tambah Invoice --}}
-    @include('components.finance.alumunium.add-modal')
+    <x-finance.aluminium-invoices.add-modal :paymentAccounts="$paymentAccounts" />
 
     {{-- Modal Edit & Detail untuk setiap invoice --}}
     @foreach ($invoices as $invoice)
-        @include('components.finance.alumunium.edit-modal', ['invoice' => $invoice])
-        @include('components.finance.alumunium.detail-modal', ['invoice' => $invoice])
+        <x-finance.aluminium-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" />
+        <x-finance.aluminium-invoices.detail-modal :invoice="$invoice" />
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}
@@ -50,6 +49,6 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.finance.alumunium-scripts')
+    @vite('resources/js/pages/finance/aluminium-invoices/index.js')
     @include('partials.shared.print-dropdown-script')
 @endsection
