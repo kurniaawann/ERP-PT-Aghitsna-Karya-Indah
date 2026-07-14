@@ -141,12 +141,14 @@
                     <td class="text-left">{{ $invoice->recipient }}</td>
                     <td class="text-left">{{ $invoice->project_description ?? '-' }}</td>
                     <td class="text-right">Rp {{ number_format($invoice->getNetAmount(), 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($invoice->getTotalPaidAmount(), 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($invoice->getRemainingAmount(), 0, ',', '.') }}</td>
                     <td class="status-{{ $invoice->isFullyPaid() ? 'paid' : 'unpaid' }}">
                         {{ $invoice->payment_status_label }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">Tidak ada data rekap alumunium</td>
+                    <td colspan="9" class="text-center">Tidak ada data rekap alumunium</td>
                 </tr>
             @endforelse
 
@@ -154,6 +156,8 @@
                 <tr class="total-row">
                     <td colspan="5" class="text-center">TOTAL</td>
                     <td class="text-right">Rp {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($totals->paid_amount ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($totals->remaining_amount ?? 0, 0, ',', '.') }}</td>
                     <td></td>
                 </tr>
             @endif
@@ -164,7 +168,9 @@
         <h3>Ringkasan:</h3>
         <p>Total Data: {{ $totals->invoice_count ?? 0 }} invoice</p>
         <p>Total Invoice: Rp {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</p>
-        <p>Lunas: {{ $totals->paid_count ?? 0 }}</p>
+        <p>Sudah Dibayar: Rp {{ number_format($totals->paid_amount ?? 0, 0, ',', '.') }}</p>
+        <p>Sisa Pembayaran: Rp {{ number_format($totals->remaining_amount ?? 0, 0, ',', '.') }}</p>
+        <p>Lunas: {{ $totals->paid_count ?? 0 }} invoice</p>
     </div>
 </body>
 

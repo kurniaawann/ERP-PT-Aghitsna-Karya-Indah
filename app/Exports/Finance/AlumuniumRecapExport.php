@@ -2,7 +2,7 @@
 
 namespace App\Exports\Finance;
 
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -15,20 +15,58 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
+/**
+ * Export class untuk Rekap Invoice Aluminium ke format Excel (XLSX).
+ *
+ * Menghasilkan file Excel dengan:
+ * - Header perusahaan dan judul laporan
+ * - Data invoice aluminium dengan format rupiah
+ * - Baris total ringkasan
+ * - Formatting selengkap Excel
+ */
 class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
 {
-    protected $invoices;
-    protected $totals;
-    protected $periodTitle;
+    /**
+     * Koleksi invoice aluminium.
+     *
+     * @var \Illuminate\Support\Collection
+     */
+    protected Collection $invoices;
 
-    public function __construct($invoices, $totals, $periodTitle)
+    /**
+     * Ringkasan total rekap.
+     *
+     * @var object
+     */
+    protected object $totals;
+
+    /**
+     * Judul periode laporan.
+     *
+     * @var string
+     */
+    protected string $periodTitle;
+
+    /**
+     * Constructor.
+     *
+     * @param  \Illuminate\Support\Collection  $invoices  Koleksi invoice
+     * @param  object  $totals  Ringkasan total
+     * @param  string  $periodTitle  Judul periode
+     */
+    public function __construct(Collection $invoices, object $totals, string $periodTitle)
     {
         $this->invoices = $invoices;
         $this->totals = $totals;
         $this->periodTitle = $periodTitle;
     }
 
-    public function collection()
+    /**
+     * Data collection untuk di-export.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function collection(): Collection
     {
         $data = [];
         $no = 1;
@@ -47,9 +85,6 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
             ];
         }
 
-
-        Log::debug('Masuk sini pak eko', ['totals' => $this->totals]);
-
         $data[] = [
             'no' => '',
             'invoice_number' => '',
@@ -65,6 +100,11 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
         return collect($data);
     }
 
+    /**
+     * Header kolom Excel.
+     *
+     * @return array<int, array<int, string>>
+     */
     public function headings(): array
     {
         return [
@@ -85,30 +125,39 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
         ];
     }
 
-    public function styles(Worksheet $sheet)
+    /**
+     * Formatting seluruh worksheet.
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet  $sheet
+     * @return array<int, array>
+     */
+    public function styles(Worksheet $sheet): array
     {
         $highestRow = $sheet->getHighestRow();
 
+        // Header perusahaan
         $sheet->mergeCells('A1:I1');
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
+        // Judul laporan
         $sheet->mergeCells('A2:I2');
         $sheet->getStyle('A2')->applyFromArray([
             'font' => ['bold' => true, 'size' => 12],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
+        // Periode
         $sheet->mergeCells('A3:I3');
         $sheet->getStyle('A3')->applyFromArray([
             'font' => ['bold' => true, 'size' => 11],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
-
         $sheet->getRowDimension(3)->setRowHeight(18);
 
+        // Header kolom
         $sheet->getStyle('A4:I4')->applyFromArray([
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -120,9 +169,9 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
             ],
         ]);
-
         $sheet->getRowDimension(4)->setRowHeight(30);
 
+        // Data rows — border dan alignment
         $sheet->getStyle('A5:I' . $highestRow)->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
@@ -138,6 +187,7 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
         $sheet->getStyle('F5:H' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getStyle('I5:I' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+        // Baris total
         $sheet->getStyle('A' . $highestRow . ':I' . $highestRow)->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
@@ -149,6 +199,11 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
         return [];
     }
 
+    /**
+     * Lebar kolom Excel.
+     *
+     * @return array<string, int>
+     */
     public function columnWidths(): array
     {
         return [
@@ -164,17 +219,26 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
         ];
     }
 
+    /**
+     * Nama sheet Excel.
+     *
+     * @return string
+     */
     public function title(): string
     {
         return 'Rekap_Alumunium';
     }
 
+    /**
+     * Event handler setelah sheet dibuat.
+     *
+     * @return array<class-string, callable>
+     */
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $highestRow = $event->sheet->getDelegate()->getHighestRow();
-
                 $event->sheet->getDelegate()->getStyle('E5:E' . $highestRow)->getAlignment()->setWrapText(true);
             },
         ];

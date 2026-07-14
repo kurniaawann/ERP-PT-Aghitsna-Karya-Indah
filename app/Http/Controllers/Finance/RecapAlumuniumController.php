@@ -4,69 +4,74 @@ namespace App\Http\Controllers\Finance;
 
 use App\Exports\Finance\AlumuniumRecapExport;
 use App\Http\Controllers\Controller;
-use App\Models\Finance\InvoiceAlumunium;
-use App\Services\Finance\InvoiceCalculatorService;
+use App\Services\Finance\RecapAlumuniumService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Controller untuk Rekap Aluminium.
+ *
+ * Menangani request untuk menampilkan rekap invoice aluminium,
+ * termasuk export ke Excel dan PDF.
+ *
+ * Business logic didelegasikan ke RecapAlumuniumService.
+ */
 class RecapAlumuniumController extends Controller
 {
     public function __construct(
-        protected InvoiceCalculatorService $calculator
+        protected RecapAlumuniumService $service
     ) {}
 
+    /**
+     * Menampilkan daftar rekap invoice aluminium dengan filter dan pagination.
+     *
+     * @param  \Illuminate\Http\Request  $request  Filter: search, month, year
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
-        $query = $this->baseQuery($request);
+        $query = $this->service->buildBaseQuery($request);
 
-        $invoices = (clone $query)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('created_at')
-            ->paginate(10)
-            ->appends($request->all());
+        $invoices = $this->service->getPaginatedInvoices($query, $request);
+        $totals = $this->service->buildTotals($this->service->getAllInvoices($query));
+        $periodTitle = $this->service->buildPeriodTitle($request);
 
-        $summaryInvoices = (clone $query)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('created_at')
-            ->get();
-
-        $totals = $this->buildTotals($summaryInvoices);
-        $periodTitle = $this->buildPeriodTitle($request);
-
-        return view('pages.finance.recap-alumunium', compact('invoices', 'totals', 'periodTitle'));
+        return view('pages.finance.aluminium-recaps.index', compact('invoices', 'totals', 'periodTitle'));
     }
 
+    /**
+     * Export rekap invoice aluminium ke Excel (XLSX).
+     *
+     * @param  \Illuminate\Http\Request  $request  Filter: search, month, year
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportExcel(Request $request)
     {
-        $query = $this->baseQuery($request);
+        $query = $this->service->buildBaseQuery($request);
+        $invoices = $this->service->getAllInvoices($query);
+        $totals = $this->service->buildTotals($invoices);
+        $periodTitle = $this->service->buildPeriodTitle($request);
 
-        $invoices = (clone $query)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('created_at')
-            ->get();
-
-        $totals = $this->buildTotals($invoices);
-        $periodTitle = $this->buildPeriodTitle($request);
         $filename = 'Rekap_Alumunium_' . date('Y-m-d') . '.xlsx';
 
         return Excel::download(new AlumuniumRecapExport($invoices, $totals, $periodTitle), $filename);
     }
 
+    /**
+     * Export rekap invoice aluminium ke PDF.
+     *
+     * @param  \Illuminate\Http\Request  $request  Filter: search, month, year
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportPdf(Request $request)
     {
-        $query = $this->baseQuery($request);
+        $query = $this->service->buildBaseQuery($request);
+        $invoices = $this->service->getAllInvoices($query);
+        $totals = $this->service->buildTotals($invoices);
+        $periodTitle = $this->service->buildPeriodTitle($request);
 
-        $invoices = (clone $query)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('created_at')
-            ->get();
-
-        $totals = $this->buildTotals($invoices);
-        $periodTitle = $this->buildPeriodTitle($request);
-
-        $pdf = Pdf::loadView('exports.finance.recap-alumunium-pdf', [
+        $pdf = Pdf::loadView('exports.finance.aluminium-recaps-pdf', [
             'invoices' => $invoices,
             'totals' => $totals,
             'periodTitle' => $periodTitle,
@@ -75,56 +80,5 @@ class RecapAlumuniumController extends Controller
         $filename = 'Rekap_Alumunium_' . date('Y-m-d') . '.pdf';
 
         return $pdf->download($filename);
-    }
-
-    private function baseQuery(Request $request)
-    {
-        return InvoiceAlumunium::query()
-            ->with('paymentProofs')
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = $request->search;
-
-                $query->where(function ($searchQuery) use ($search) {
-                    $searchQuery->where('invoice_number', 'like', "%{$search}%")
-                        ->orWhere('recipient', 'like', "%{$search}%")
-                        ->orWhere('regarding', 'like', "%{$search}%")
-                        ->orWhere('project_description', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->filled('month'), function ($query) use ($request) {
-                $query->whereMonth('invoice_date', $request->month);
-            })
-            ->when($request->filled('year'), function ($query) use ($request) {
-                $query->whereYear('invoice_date', $request->year);
-            });
-    }
-
-    private function buildTotals($invoices): object
-    {
-        return $this->calculator->buildAlumuniumTotals($invoices);
-    }
-
-    private function buildPeriodTitle(Request $request): string
-    {
-        $month = $request->get('month');
-        $year = $request->get('year');
-
-        if ($month && $year) {
-            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
-
-            return strtoupper($monthName) . ' ' . $year;
-        }
-
-        if ($month) {
-            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
-
-            return 'BULAN ' . strtoupper($monthName);
-        }
-
-        if ($year) {
-            return 'TAHUN ' . $year;
-        }
-
-        return 'SEMUA PERIODE';
     }
 }
