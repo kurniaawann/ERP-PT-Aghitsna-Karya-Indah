@@ -130,6 +130,8 @@ function updateEditInvoiceTotal(input) {
     if (totalPreview) {
         totalPreview.textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
     }
+
+    calculateDiscountEdit(invoiceId);
 }
 
 // ==========================================
