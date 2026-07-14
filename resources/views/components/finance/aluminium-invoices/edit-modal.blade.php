@@ -120,7 +120,6 @@
                 <input type="text" inputmode="decimal" name="discount_value"
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
-                    {{ !$invoice->discount_type ? 'disabled' : '' }}
                     oninput="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
             </div>
         </div>
@@ -157,7 +156,7 @@
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
                 <input type="text" inputmode="decimal" name="dp_value"
                     id="dp-value-edit-{{ $invoice->invoice_number }}" value="{{ $invoice->dp_value ?? 0 }}"
-                    class="w-full border rounded p-2" placeholder="0" {{ !$invoice->dp_type ? 'disabled' : '' }}
+                    class="w-full border rounded p-2" placeholder="0"
                     oninput="calculateDPEdit('{{ $invoice->invoice_number }}')">
             </div>
         </div>

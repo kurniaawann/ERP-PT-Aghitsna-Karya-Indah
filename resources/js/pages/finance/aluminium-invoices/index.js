@@ -146,11 +146,8 @@ function calculateDiscount() {
 
     if (discountValueInput) {
         if (!discountType) {
-            discountValueInput.disabled = true;
             discountValueInput.value = '';
             discountValue = 0;
-        } else {
-            discountValueInput.disabled = false;
         }
     }
 
@@ -198,11 +195,8 @@ function calculateDP() {
 
     if (dpValueInput) {
         if (!dpType) {
-            dpValueInput.disabled = true;
             dpValueInput.value = '';
             dpValue = 0;
-        } else {
-            dpValueInput.disabled = false;
         }
     }
 
@@ -260,11 +254,8 @@ function calculateDiscountEdit(invoiceNumber) {
 
     if (valueEl) {
         if (!discountType) {
-            valueEl.disabled = true;
             valueEl.value = 0;
             discountValue = 0;
-        } else {
-            valueEl.disabled = false;
         }
     }
 
@@ -309,11 +300,8 @@ function calculateDPEdit(invoiceNumber) {
 
     if (valueEl) {
         if (!dpType) {
-            valueEl.disabled = true;
             valueEl.value = 0;
             dpValue = 0;
-        } else {
-            valueEl.disabled = false;
         }
     }
 

@@ -129,8 +129,7 @@
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}"
                     class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
-                    placeholder="{{ $invoice->discount_type ? '0' : 'Pilih tipe dulu' }}"
-                    {{ !$invoice->discount_type ? 'disabled' : '' }}
+                    placeholder="0"
                     oninput="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
             </div>
         </div>
@@ -169,8 +168,7 @@
                 <input type="text" inputmode="decimal" name="dp_value"
                     id="dp-value-edit-{{ $invoice->invoice_number }}" value="{{ $invoice->dp_value ?? 0 }}"
                     class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
-                    placeholder="{{ $invoice->dp_type ? '0' : 'Pilih tipe dulu' }}"
-                    {{ !$invoice->dp_type ? 'disabled' : '' }}
+                    placeholder="0"
                     oninput="calculateDPEdit('{{ $invoice->invoice_number }}')">
             </div>
         </div>

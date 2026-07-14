@@ -96,7 +96,7 @@
                 <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
                 <input type="text" inputmode="decimal" name="discount_value" id="discount-value"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="Pilih tipe dulu" disabled oninput="calculateDiscount()">
+                    placeholder="0" oninput="calculateDiscount()">
                 <small class="text-xs text-text-secondary" id="discount-helper">Maksimal 100% untuk persentase. Boleh
                     pakai koma, contoh 1,5</small>
                 <div id="discount-error"
@@ -134,7 +134,7 @@
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
                 <input type="text" inputmode="decimal" name="dp_value" id="dp-value"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="Pilih tipe dulu" disabled oninput="calculateDP()">
+                    placeholder="0" oninput="calculateDP()">
                 <small class="text-xs text-text-secondary" id="dp-helper">Maksimal 100% untuk persentase. Boleh pakai
                     koma, contoh 1,5</small>
                 <div id="dp-error"

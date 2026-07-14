@@ -186,11 +186,8 @@ function calculateDiscount() {
     // Enable/disable based on type
     if (discountValueInput) {
         if (!discountType) {
-            discountValueInput.disabled = true;
             discountValueInput.value = '';
             discountValue = 0;
-        } else {
-            discountValueInput.disabled = false;
         }
     }
 
@@ -248,11 +245,8 @@ function calculateDP() {
     // Enable/disable based on type
     if (dpValueInput) {
         if (!dpType) {
-            dpValueInput.disabled = true;
             dpValueInput.value = '';
             dpValue = 0;
-        } else {
-            dpValueInput.disabled = false;
         }
     }
 
@@ -317,11 +311,8 @@ function calculateDiscountEdit(invoiceNumber) {
     // Enable/disable based on type
     if (discountValueInput) {
         if (!discountType) {
-            discountValueInput.disabled = true;
             discountValueInput.value = 0;
             discountValue = 0;
-        } else {
-            discountValueInput.disabled = false;
         }
     }
 
@@ -372,11 +363,8 @@ function calculateDPEdit(invoiceNumber) {
     // Enable/disable based on type
     if (dpValueInput) {
         if (!dpType) {
-            dpValueInput.disabled = true;
             dpValueInput.value = 0;
             dpValue = 0;
-        } else {
-            dpValueInput.disabled = false;
         }
     }
 

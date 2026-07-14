@@ -175,14 +175,14 @@ class ProyekInvoiceService
             'project_description' => $data['project_description'],
             'items' => json_encode($items),
             'total_amount' => $totalAmount,
-            'discount_type' => $data['discount_type'],
-            'discount_value' => $data['discount_value'],
+            'discount_type' => $data['discount_type'] ?? null,
+            'discount_value' => $data['discount_value'] ?? null,
             'total_after_discount' => $calculations['totalAfterDiscount'] > 0
                 && $calculations['totalAfterDiscount'] != $totalAmount
                 ? $calculations['totalAfterDiscount']
                 : null,
-            'dp_type' => $data['dp_type'],
-            'dp_value' => $data['dp_value'],
+            'dp_type' => $data['dp_type'] ?? null,
+            'dp_value' => $data['dp_value'] ?? null,
             'dp_amount' => $calculations['dpAmount'] > 0
                 ? $calculations['dpAmount']
                 : null,
