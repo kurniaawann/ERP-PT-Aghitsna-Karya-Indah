@@ -15,41 +15,51 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
+/**
+ * Export class untuk Faktur Pembelian ke Excel.
+ *
+ * Mendukung filter search, month, year jika $request diberikan.
+ * Format: headers, styling, dan column widths sudah dikonfigurasi.
+ */
 class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithEvents
 {
+    /**
+     * Request untuk filter data (opsional).
+     *
+     * @var Request|null
+     */
     protected $request;
 
+    /**
+     * @param  Request|null $request  Request berisi filter search/month/year
+     */
     public function __construct($request = null)
     {
         $this->request = $request;
     }
 
+    /**
+     * Query data faktur pembelian untuk export.
+     *
+     * Menggunakan model scopes untuk filter agar tidak duplikasi logic.
+     *
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $query = PurchaseInvoice::query();
 
-        // Filter pencarian
         if ($this->request) {
             $search = $this->request->input('search');
-            $month = $this->request->input('month');
-            $year = $this->request->input('year');
+            $month  = $this->request->input('month');
+            $year   = $this->request->input('year');
 
-            $query->when($search, function ($q, $search) {
-                $q->where('material_name', 'like', "%{$search}%")
-                    ->orWhere('item_name', 'like', "%{$search}%")
-                    ->orWhere('npwp', 'like', "%{$search}%");
-            });
-
-            $query->when($month, function ($q, $month) {
-                $q->whereMonth('date', $month);
-            });
-
-            $query->when($year, function ($q, $year) {
-                $q->whereYear('date', $year);
-            });
+            $query->search($search)
+                ->filterByMonth($month)
+                ->filterByYear($year);
         }
 
-        return $query->orderBy('date', 'desc')
+        return $query->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($invoice, $index) {
                 return [
@@ -67,6 +77,11 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
             });
     }
 
+    /**
+     * Header kolom Excel.
+     *
+     * @return array<int, string>
+     */
     public function headings(): array
     {
         return [
@@ -83,6 +98,11 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
         ];
     }
 
+    /**
+     * Lebar kolom Excel.
+     *
+     * @return array<string, int>
+     */
     public function columnWidths(): array
     {
         return [
@@ -99,6 +119,12 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
         ];
     }
 
+    /**
+     * Styling header row.
+     *
+     * @param  Worksheet $sheet
+     * @return array
+     */
     public function styles(Worksheet $sheet)
     {
         return [
@@ -111,13 +137,18 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
         ];
     }
 
+    /**
+     * Event setelah sheet dibuat: apply borders dan alignment.
+     *
+     * @return array<string, callable>
+     */
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
-                // Apply borders to all data rows
+                // Apply borders ke semua data rows
                 $highestRow = $sheet->getHighestRow();
                 for ($row = 2; $row <= $highestRow; $row++) {
                     for ($col = 'A'; $col <= 'J'; $col++) {
@@ -128,7 +159,7 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
                     }
                 }
 
-                // Center align NO and TANGGAL columns
+                // Center align kolom NO dan TANGGAL
                 $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('B2:B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             },

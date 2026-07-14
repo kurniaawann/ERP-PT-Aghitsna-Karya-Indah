@@ -1,13 +1,15 @@
-{{-- Modal Tambah Faktur Pembelian --}}
+{{-- ==================== Modal Tambah Faktur Pembelian ==================== --}}
 <x-modal id="addModal" title="Tambah Faktur Pembelian" action="{{ route('purchase-invoice.store') }}" method="POST"
     buttonText="Simpan">
 
+    {{-- Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="date" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Nama Material --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Material <span class="text-error">*</span></label>
         <input type="text" name="material_name" class="w-full border rounded p-2"
@@ -15,6 +17,7 @@
             oninvalid="this.setCustomValidity('Nama material tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- NPWP --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">NPWP <span class="text-error">*</span></label>
         <input type="text" name="npwp" class="w-full border rounded p-2"
@@ -22,6 +25,7 @@
             oninvalid="this.setCustomValidity('NPWP tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Kode Nomor Seri Pajak --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Kode Nomor Seri Pajak <span class="text-error">*</span></label>
         <input type="text" name="tax_number_code" class="w-full border rounded p-2"
@@ -30,6 +34,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Nama Barang --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Barang <span class="text-error">*</span></label>
         <input type="text" name="item_name" class="w-full border rounded p-2" placeholder="Contoh: SEMEN 40 KG"
@@ -37,6 +42,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Harga Jual --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Harga Jual (Rp) <span class="text-error">*</span></label>
         <input type="text" id="addSellingPrice" name="selling_price" inputmode="numeric"
@@ -44,6 +50,7 @@
             oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Persentase PPN --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Persentase PPN (%) <span class="text-error">*</span></label>
         <input type="text" id="addPpnPercentage" name="ppn_percentage" inputmode="decimal"
@@ -53,6 +60,7 @@
         <p class="text-xs text-text-secondary mt-1">Default: 10%. Boleh pakai koma, contoh 10,5</p>
     </div>
 
+    {{-- PPN Pengenaan Pajak (Auto-calculated) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">PPN Pengenaan Pajak (Rp) <span class="text-error">*</span></label>
         <input type="text" id="addPpnTax" name="ppn_tax"
@@ -60,9 +68,11 @@
         <p class="text-xs text-text-secondary mt-1">Dihitung otomatis dari harga jual × persentase PPN</p>
     </div>
 
+    {{-- Keterangan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="notes" class="w-full border rounded p-2" rows="2" placeholder="Keterangan tambahan (opsional)"></textarea>
+        <textarea name="notes" class="w-full border rounded p-2" rows="2"
+            placeholder="Keterangan tambahan (opsional)"></textarea>
     </div>
 
 </x-modal>

@@ -5,109 +5,100 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Models\Finance\PurchaseInvoice;
 use App\Exports\Finance\PurchaseInvoiceExport;
+use App\Http\Requests\Finance\StorePurchaseInvoiceRequest;
+use App\Http\Requests\Finance\UpdatePurchaseInvoiceRequest;
+use App\Services\Finance\PurchaseInvoiceService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Services\InputNormalizer;
 use App\Traits\HasBulkActions;
 
+/**
+ * Controller untuk sub modul Faktur Pembelian.
+ *
+ * Menangani operasi CRUD, cetak PDF, dan export Excel
+ * untuk data faktur pembelian.
+ */
 class PurchaseInvoiceController extends Controller
 {
     use HasBulkActions;
+
+    /**
+     * Halaman index: menampilkan daftar faktur pembelian dengan filter.
+     *
+     * @param  Request $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
+        $invoices = PurchaseInvoiceService::buildFilteredQuery($request)
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-        $query = PurchaseInvoice::query();
-
-        // Filter pencarian
-        $query->when($search, function ($q, $search) {
-            $q->where('material_name', 'like', "%{$search}%")
-                ->orWhere('item_name', 'like', "%{$search}%")
-                ->orWhere('npwp', 'like', "%{$search}%");
-        });
-
-        // Filter bulan
-        $query->when($month, function ($q, $month) {
-            $q->whereMonth('date', $month);
-        });
-
-        // Filter tahun
-        $query->when($year, function ($q, $year) {
-            $q->whereYear('date', $year);
-        });
-
-        $invoices = $query->orderBy('date', 'desc')->paginate(15);
-
-        return view('pages.finance.purchase-invoice', compact('invoices'));
+        return view('pages.finance.purchase-invoices.index', compact('invoices'));
     }
 
-    public function store(Request $request)
+    /**
+     * Simpan faktur pembelian baru.
+     *
+     * @param  StorePurchaseInvoiceRequest $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StorePurchaseInvoiceRequest $request)
     {
-        $request->merge([
-            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
-            'ppn_percentage' => InputNormalizer::normalizeDecimal($request->ppn_percentage),
-        ]);
+        $validated = $request->validated();
 
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'material_name' => 'required|string|max:255',
-            'npwp' => 'required|string|max:50',
-            'tax_number_code' => 'required|string|max:50',
-            'item_name' => 'required|string|max:255',
-            'selling_price' => 'required|numeric|min:0',
-            'ppn_percentage' => 'required|numeric|min:0|max:100',
-            'notes' => 'nullable|string',
-        ]);
-
-        // Calculate PPN tax based on percentage
-        $validated['ppn_tax'] = (int) ($validated['selling_price'] * $validated['ppn_percentage'] / 100);
-
-        PurchaseInvoice::create($validated);
+        PurchaseInvoiceService::createInvoice($validated);
 
         return redirect()->route('purchase-invoice.index')
             ->with('success', 'Faktur pembelian berhasil ditambahkan!');
     }
 
+    /**
+     * Tampilkan detail faktur pembelian (JSON).
+     *
+     * @param  PurchaseInvoice $purchase_invoice
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(PurchaseInvoice $purchase_invoice)
     {
         return response()->json($purchase_invoice);
     }
 
+    /**
+     * Form edit faktur pembelian (JSON).
+     *
+     * @param  PurchaseInvoice $purchase_invoice
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function edit(PurchaseInvoice $purchase_invoice)
     {
         return response()->json($purchase_invoice);
     }
 
-    public function update(Request $request, PurchaseInvoice $purchase_invoice)
+    /**
+     * Update faktur pembelian.
+     *
+     * @param  UpdatePurchaseInvoiceRequest $request
+     * @param  PurchaseInvoice              $purchase_invoice
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(UpdatePurchaseInvoiceRequest $request, PurchaseInvoice $purchase_invoice)
     {
-        $request->merge([
-            'selling_price' => InputNormalizer::normalizeCurrency($request->selling_price),
-            'ppn_percentage' => InputNormalizer::normalizeDecimal($request->ppn_percentage),
-        ]);
+        $validated = $request->validated();
 
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'material_name' => 'required|string|max:255',
-            'npwp' => 'required|string|max:50',
-            'tax_number_code' => 'required|string|max:50',
-            'item_name' => 'required|string|max:255',
-            'selling_price' => 'required|numeric|min:0',
-            'ppn_percentage' => 'required|numeric|min:0|max:100',
-            'notes' => 'nullable|string',
-        ]);
-
-        // Calculate PPN tax based on percentage
-        $validated['ppn_tax'] = (int) ($validated['selling_price'] * $validated['ppn_percentage'] / 100);
-
-        $purchase_invoice->update($validated);
+        PurchaseInvoiceService::updateInvoice($purchase_invoice, $validated);
 
         return redirect()->route('purchase-invoice.index')
             ->with('success', 'Faktur pembelian berhasil diupdate!');
     }
 
+    /**
+     * Hapus faktur pembelian.
+     *
+     * @param  PurchaseInvoice $purchase_invoice
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(PurchaseInvoice $purchase_invoice)
     {
         $purchase_invoice->delete();
@@ -116,29 +107,55 @@ class PurchaseInvoiceController extends Controller
             ->with('success', 'Faktur pembelian berhasil dihapus!');
     }
 
+    /**
+     * Hapus beberapa faktur pembelian sekaligus (bulk delete).
+     *
+     * @param  Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroySelected(Request $request)
     {
-        return $this->destroySelectedBy($request, PurchaseInvoice::class, 'selected_invoices', 'id', 'purchase-invoice.index');
+        return $this->destroySelectedBy(
+            $request,
+            PurchaseInvoice::class,
+            'selected_invoices',
+            'id',
+            'purchase-invoice.index'
+        );
     }
 
+    /**
+     * Cetak PDF untuk satu faktur pembelian.
+     *
+     * @param  int $id
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function printPdf($id)
     {
         $invoice = PurchaseInvoice::findOrFail($id);
 
-        $pdf = Pdf::loadView('exports.finance.purchase-invoice-pdf', compact('invoice'));
+        $pdf = Pdf::loadView('exports.finance.purchase-invoices.single-pdf', compact('invoice'));
         $pdf->setPaper('a4', 'portrait');
 
         $date = date('Y-m-d');
         return $pdf->download("Faktur_Pembelian_{$invoice->id}_{$date}.pdf");
     }
 
+    /**
+     * Export seluruh data ke Excel (tanpa filter).
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function printExcel()
     {
         return Excel::download(new PurchaseInvoiceExport(), 'Faktur_Pembelian_' . date('Y-m-d') . '.xlsx');
     }
 
     /**
-     * Export seluruh data ke Excel dengan support filter
+     * Export data ke Excel dengan support filter.
+     *
+     * @param  Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function exportExcel(Request $request)
     {
@@ -146,40 +163,20 @@ class PurchaseInvoiceController extends Controller
     }
 
     /**
-     * Export seluruh data ke PDF dengan support filter
+     * Export data ke PDF dengan support filter.
+     *
+     * @param  Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function exportPdf(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
+        $invoices = PurchaseInvoiceService::buildFilteredQuery($request)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        $query = PurchaseInvoice::query();
-
-        // Filter pencarian
-        $query->when($search, function ($q, $search) {
-            $q->where('material_name', 'like', "%{$search}%")
-                ->orWhere('item_name', 'like', "%{$search}%")
-                ->orWhere('npwp', 'like', "%{$search}%");
-        });
-
-        // Filter bulan
-        $query->when($month, function ($q, $month) {
-            $q->whereMonth('date', $month);
-        });
-
-        // Filter tahun
-        $query->when($year, function ($q, $year) {
-            $q->whereYear('date', $year);
-        });
-
-        $invoices = $query->orderBy('date', 'desc')->get();
-
-        $pdf = Pdf::loadView('exports.finance.purchase-invoices-pdf', compact('invoices'));
+        $pdf = Pdf::loadView('exports.finance.purchase-invoices.bulk-pdf', compact('invoices'));
         $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download('Faktur_Pembelian_' . date('Y-m-d') . '.pdf');
     }
-
-
 }

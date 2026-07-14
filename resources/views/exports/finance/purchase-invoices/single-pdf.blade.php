@@ -1,3 +1,17 @@
+@php
+    /**
+     * PDF Template: Faktur Pembelian (Single Invoice)
+     *
+     * Variables: $invoice (PurchaseInvoice model)
+     *
+     * Sections:
+     * - HTML/CSS: Inline styles untuk PDF rendering
+     * - Header: Judul, nomor faktur, tanggal
+     * - Detail Tabel: Material, NPWP, barang, harga, PPN
+     * - Total: Harga jual, PPN, total
+     * - Footer: Info pencetakan
+     */
+@endphp
 <!DOCTYPE html>
 <html>
 
@@ -165,14 +179,14 @@
 
 <body>
     <div class="container">
-        <!-- Header -->
+        {{-- ==================== Header ==================== --}}
         <div class="header">
             <h1>FAKTUR PEMBELIAN</h1>
             <p>Nomor: {{ $invoice->id }}</p>
             <p>Tanggal: {{ $invoice->date->format('d/m/Y') }}</p>
         </div>
 
-        <!-- Detail Information -->
+        {{-- ==================== Detail Tabel ==================== --}}
         <div class="content">
             <h2>DETAIL FAKTUR</h2>
             <table>
@@ -206,7 +220,7 @@
             @endif
         </div>
 
-        <!-- Total Section -->
+        {{-- ==================== Total Section ==================== --}}
         <div class="total-section">
             <div class="total-right">
                 <table class="total-table">
@@ -227,7 +241,7 @@
             </div>
         </div>
 
-        <!-- Footer -->
+        {{-- ==================== Footer ==================== --}}
         <div class="footer">
             <p>Dokumen ini dicetak dari sistem ERP PT Aghitsna Karya Indah</p>
             <p>Tanggal Cetak: {{ now()->format('d/m/Y H:i:s') }}</p>

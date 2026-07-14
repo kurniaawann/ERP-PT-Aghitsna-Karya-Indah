@@ -1,3 +1,16 @@
+@php
+    /**
+     * PDF Template: Daftar Faktur Pembelian (Bulk/Export)
+     *
+     * Variables: $invoices (Collection of PurchaseInvoice)
+     *
+     * Sections:
+     * - HTML/CSS: Inline styles untuk PDF rendering
+     * - Header: Judul, nama perusahaan, tanggal cetak
+     * - Tabel: Daftar semua faktur dengan nomor, tanggal, material, NPWP, barang, harga, PPN
+     * - Footer: Info pencetakan
+     */
+@endphp
 <!DOCTYPE html>
 <html>
 
@@ -93,14 +106,14 @@
 
 <body>
     <div class="container">
-        <!-- Header -->
+        {{-- ==================== Header ==================== --}}
         <div class="header">
             <h1>DAFTAR FAKTUR PEMBELIAN</h1>
             <p>PT Aghitsna Karya Indah</p>
             <p>Tanggal Cetak: {{ now()->format('d/m/Y H:i:s') }}</p>
         </div>
 
-        <!-- Table -->
+        {{-- ==================== Tabel Data ==================== --}}
         <table>
             <thead>
                 <tr>
@@ -132,7 +145,7 @@
             </tbody>
         </table>
 
-        <!-- Footer -->
+        {{-- ==================== Footer ==================== --}}
         <div class="footer">
             <p>Dokumen ini dicetak dari sistem ERP PT Aghitsna Karya Indah</p>
         </div>

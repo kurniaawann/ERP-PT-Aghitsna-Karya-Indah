@@ -1,4 +1,4 @@
-{{-- Purchase Invoice Table Component --}}
+{{-- ==================== Tabel Faktur Pembelian ==================== --}}
 <form id="deleteForm" method="POST" action="{{ route('purchase-invoice.destroy-selected') }}">
     @csrf
     @method('DELETE')
@@ -22,28 +22,40 @@
                     <tbody>
                         @forelse($invoices as $invoice)
                             <tr class="border-t hover:bg-surface-secondary">
+                                {{-- Checkbox --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_invoices[]" value="{{ $invoice->id }}"
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
+                                {{-- Tanggal --}}
                                 <td class="p-2 text-sm">{{ $invoice->date->format('d-m-Y') }}</td>
+
+                                {{-- Nama Material --}}
                                 <td class="p-2">{{ $invoice->material_name }}</td>
+
+                                {{-- NPWP --}}
                                 <td class="p-2 text-sm text-text-label">{{ $invoice->npwp }}</td>
+
+                                {{-- Nama Barang --}}
                                 <td class="p-2 font-medium">{{ $invoice->item_name }}</td>
 
+                                {{-- Harga Jual --}}
                                 <td class="p-2 text-right font-medium">
                                     {{ 'Rp ' . number_format($invoice->selling_price, 0, ',', '.') }}
                                 </td>
 
+                                {{-- PPN Pajak --}}
                                 <td class="p-2 text-right">
                                     {{ 'Rp ' . number_format($invoice->ppn_tax, 0, ',', '.') }}
                                 </td>
 
+                                {{-- Total --}}
                                 <td class="p-2 text-right font-medium">
                                     {{ 'Rp ' . number_format($invoice->selling_price + $invoice->ppn_tax, 0, ',', '.') }}
                                 </td>
 
+                                {{-- Aksi --}}
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
                                         <button type="button" onclick="openModal('editModal-{{ $invoice->id }}')"
@@ -52,8 +64,6 @@
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
                                             Edit
                                         </button>
-
-                                        {{-- PDF action removed as requested --}}
                                     </div>
                                 </td>
                             </tr>
