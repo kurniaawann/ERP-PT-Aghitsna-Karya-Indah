@@ -1,3 +1,22 @@
+@php
+    /**
+     * PDF Invoice Proyek Template
+     *
+     * Renders the PDF for a project invoice.
+     * Variables: $invoice (InvoiceProyek model)
+     *
+     * Sections:
+     * - HTML/CSS: Inline styles for PDF rendering compatibility
+     * - Header: Company logo, name, address, invoice metadata
+     * - Recipient: Client name and address
+     * - Description: Project description
+     * - Items Table: Line items with volume, unit, price, subtotal
+     * - Financial Summary: Subtotal, discount, DP, payment installments
+     * - Terbilang: Indonesian number-to-words
+     * - Payment Info: Bank account details for transfer
+     * - Signature: Closing and company signature
+     */
+@endphp
 <!DOCTYPE html>
 <html>
 
@@ -203,7 +222,7 @@
 
 <body>
     <div class="container">
-        <!-- Header -->
+        {{-- ==================== Header ==================== --}}
         <div class="header">
             <div class="header-left">
                 <div class="logo">
@@ -244,19 +263,19 @@
             </div>
         </div>
 
-        <!-- Recipient -->
+        {{-- ==================== Recipient ==================== --}}
         <div class="recipient">
             <div class="recipient-label">Kepada Yth :</div>
             <div class="recipient-name">{{ $invoice->recipient }}</div>
         </div>
 
-        <!-- Description -->
+        {{-- ==================== Description ==================== --}}
         <div class="description">
             <strong>Ditempat</strong><br>
             {{ $invoice->project_description }}
         </div>
 
-        <!-- Items Table -->
+        {{-- ==================== Items Table ==================== --}}
         <table class="items-table">
             <thead>
                 <tr>
@@ -289,18 +308,18 @@
                     </tr>
                 @endforeach
 
-                <!-- Total Row -->
+                {{-- ==================== Subtotal Row ==================== --}}
                 <tr class="total-row">
                     <td colspan="5" class="center"><strong>Jumlah</strong></td>
                     <td class="right"><strong>Rp {{ number_format($totalAmount, 0, ',', '.') }}</strong></td>
                 </tr>
 
+                {{-- ==================== Discount Row ==================== --}}
                 @if ($invoice->discount_value && $invoice->discount_value > 0)
                     @php
                         $discountAmount = $invoice->getDiscountAmount($totalAmount);
                     @endphp
 
-                    <!-- Discount Row -->
                     <tr style="background-color: #FFE6E6;">
                         <td colspan="5" class="center"><strong>Discount
                                 @if ($invoice->discount_type === 'percentage')
@@ -311,12 +330,12 @@
                     </tr>
                 @endif
 
+                {{-- ==================== DP Row ==================== --}}
                 @if ($invoice->dp_value && $invoice->dp_value > 0)
                     @php
                         $dpAmount = $invoice->getDpAmount($totalAmount);
                     @endphp
 
-                    <!-- DP Row -->
                     <tr style="background-color: #ADD8E6;">
                         <td colspan="5" class="center"><strong>DP
                                 @if ($invoice->dp_type === 'percentage')
@@ -327,6 +346,7 @@
                     </tr>
                 @endif
 
+                {{-- ==================== Payment Installments ==================== --}}
                 @if ($invoice->payment_installments)
                     @php
                         $paymentInstallments = is_string($invoice->payment_installments)
@@ -336,7 +356,6 @@
 
                     @if (is_array($paymentInstallments) && count($paymentInstallments) > 0)
                         @foreach ($paymentInstallments as $index => $payment)
-                            <!-- Payment Installment Row -->
                             <tr style="background-color: #E9D5FF;">
                                 <td colspan="5" class="center">
                                     <strong>{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</strong>
@@ -350,12 +369,12 @@
             </tbody>
         </table>
 
-        <!-- Terbilang -->
+        {{-- ==================== Terbilang ==================== --}}
         <div class="terbilang">
             <em>Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</em>
         </div>
 
-        <!-- Payment Information -->
+        {{-- ==================== Payment Information ==================== --}}
         <div class="payment-info">
             Pembayaran dapat ditransfer melalui nomor rekening<br>
             @php
@@ -381,12 +400,12 @@
             @endif
         </div>
 
-        <!-- Closing -->
+        {{-- ==================== Closing ==================== --}}
         <div class="closing">
             Demikian Invoice ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.
         </div>
 
-        <!-- Signature -->
+        {{-- ==================== Signature ==================== --}}
         <div class="signature">
             <div>Hormat Kami,</div>
             <div class="signature-line">PT AGHITSNA KARYA INDAH</div>

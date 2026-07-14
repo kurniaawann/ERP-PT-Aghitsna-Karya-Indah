@@ -150,7 +150,7 @@
     <x-pagination :paginator="$invoices" />
 
     @foreach ($invoices as $invoice)
-        @include('components.finance.proyek.detail-modal', ['invoice' => $invoice])
+        @include('components.finance.project-invoices.detail-modal', ['invoice' => $invoice])
     @endforeach
 
     @include('partials.shared.print-dropdown-script')

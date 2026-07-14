@@ -7,8 +7,29 @@ use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Report\SalesRecap;
 
+/**
+ * Service untuk perhitungan finansial invoice.
+ *
+ * Menyediakan method-method kalkulasi yang digunakan oleh berbagai model invoice
+ * (InvoiceProyek, InvoiceAlumunium, SalesRecap) untuk menghitung:
+ * - Discount amount
+ * - DP amount
+ * - Net amount
+ * - Remaining amount
+ * - Total paid amount
+ * - Progress percentage
+ * - Payment status
+ */
 class InvoiceCalculatorService
 {
+    /**
+     * Menghitung jumlah diskon berdasarkan tipe dan nilai.
+     *
+     * @param  float  $totalAmount  Total amount sebelum diskon
+     * @param  string|null  $discountType  Tipe diskon: 'percentage' atau 'amount'
+     * @param  float|null  $discountValue  Nilai diskon
+     * @return float  Jumlah diskon
+     */
     public function calculateDiscountAmount(float $totalAmount, ?string $discountType, ?float $discountValue): float
     {
         if (!$discountValue || $discountValue <= 0) {
@@ -20,6 +41,16 @@ class InvoiceCalculatorService
         return round($discountValue);
     }
 
+    /**
+     * Menghitung jumlah DP berdasarkan tipe dan nilai.
+     *
+     * @param  float  $totalAmount  Total amount asli
+     * @param  float|int|null  $totalAfterDiscount  Total setelah diskon
+     * @param  string|null  $dpType  Tipe DP: 'percentage' atau 'amount'
+     * @param  float|null  $dpValue  Nilai DP
+     * @param  float|null  $baseAmount  Base amount untuk perhitungan (opsional)
+     * @return float  Jumlah DP
+     */
     public function calculateDpAmount(float $totalAmount, float|int|null $totalAfterDiscount, ?string $dpType, ?float $dpValue, ?float $baseAmount = null): float
     {
         if (!$dpValue || $dpValue <= 0) {
@@ -32,26 +63,61 @@ class InvoiceCalculatorService
         return round($dpValue);
     }
 
+    /**
+     * Menghitung net amount (grand total).
+     *
+     * @param  float|null  $totalAfterDiscount  Total setelah diskon (tidak digunakan, dipertahankan untuk kompatibilitas)
+     * @param  float|null  $totalAmount  Total amount
+     * @return int  Net amount
+     */
     public function calculateNetAmount(?float $totalAfterDiscount, ?float $totalAmount): int
     {
         return (int) max(0, $totalAmount ?? 0);
     }
 
+    /**
+     * Menghitung sisa tagihan.
+     *
+     * @param  int  $grandTotal  Grand total
+     * @param  int  $discountAmount  Jumlah diskon
+     * @param  int  $dpAmount  Jumlah DP
+     * @param  int  $totalPaidAmount  Total yang sudah dibayar
+     * @return int  Sisa tagihan (tidak pernah negatif)
+     */
     public function calculateRemainingAmount(int $grandTotal, int $discountAmount, int $dpAmount, int $totalPaidAmount): int
     {
         return (int) max(0, $grandTotal - $discountAmount - $dpAmount - $totalPaidAmount);
     }
 
+    /**
+     * Mengecek apakah sisa tagihan sudah lunas.
+     *
+     * @param  int  $remaining  Sisa tagihan
+     * @return bool
+     */
     public function isFullyPaid(int $remaining): bool
     {
         return $remaining <= 0;
     }
 
+    /**
+     * Menghitung progress pembayaran dalam persentase.
+     *
+     * @param  int  $grandTotal  Grand total
+     * @param  int  $totalPaidAmount  Total yang sudah dibayar
+     * @return int  Persentase 0-100
+     */
     public function calculateProgressPercent(int $grandTotal, int $totalPaidAmount): int
     {
         return $grandTotal > 0 ? min(100, (int) round(($totalPaidAmount / $grandTotal) * 100)) : 0;
     }
 
+    /**
+     * Mendapatkan jumlah diskon dari model invoice.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return float
+     */
     public function getDiscountAmount($invoice): float
     {
         return $this->calculateDiscountAmount(
@@ -61,6 +127,12 @@ class InvoiceCalculatorService
         );
     }
 
+    /**
+     * Mendapatkan jumlah DP dari model invoice.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return float
+     */
     public function getDpAmount($invoice): float
     {
         return $this->calculateDpAmount(
@@ -71,11 +143,23 @@ class InvoiceCalculatorService
         );
     }
 
+    /**
+     * Mendapatkan net amount dari model invoice.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return int
+     */
     public function getNetAmount($invoice): int
     {
         return (int) max(0, $invoice->total_amount ?? 0);
     }
 
+    /**
+     * Mendapatkan total pembayaran yang sudah masuk dari relasi paymentProofs.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return int  Total nominal pembayaran
+     */
     public function getTotalPaidAmount($invoice): int
     {
         $paymentProofs = $invoice->relationLoaded('paymentProofs')
@@ -85,6 +169,12 @@ class InvoiceCalculatorService
         return (int) max(0, $paymentProofs->sum(fn($paymentProof) => (int) ($paymentProof->amount ?? 0)));
     }
 
+    /**
+     * Mendapatkan sisa tagihan dari model invoice.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return int  Sisa tagihan
+     */
     public function getRemainingAmount($invoice): int
     {
         if ($invoice instanceof SalesRecap) {
@@ -99,11 +189,23 @@ class InvoiceCalculatorService
         );
     }
 
+    /**
+     * Mengecek apakah invoice sudah lunas.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return bool
+     */
     public function isFullyPaidForInvoice($invoice): bool
     {
         return $this->isFullyPaid($this->getRemainingAmount($invoice));
     }
 
+    /**
+     * Mendapatkan progress pembayaran dari model invoice.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return int  Persentase 0-100
+     */
     public function getProgressPercent($invoice): int
     {
         return $this->calculateProgressPercent(
@@ -112,6 +214,13 @@ class InvoiceCalculatorService
         );
     }
 
+    /**
+     * Menghitung diskon dan DP dari request data.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  float  $totalAmount  Total amount sebelum diskon
+     * @return array{discountAmount: float, totalAfterDiscount: float, dpAmount: float}
+     */
     public function calculateFromRequest($request, float $totalAmount): array
     {
         $discountAmount = 0;
@@ -143,6 +252,12 @@ class InvoiceCalculatorService
         ];
     }
 
+    /**
+     * Membangun ringkasan total untuk invoice proyek.
+     *
+     * @param  \Illuminate\Support\Collection  $invoices  Koleksi invoice proyek
+     * @return object  Objek berisi: invoice_count, total_invoice, total_paid, total_remaining, paid_count, unpaid_count
+     */
     public function buildProyekTotals($invoices): object
     {
         return (object) [
@@ -155,6 +270,12 @@ class InvoiceCalculatorService
         ];
     }
 
+    /**
+     * Membangun ringkasan total untuk invoice alumunium.
+     *
+     * @param  \Illuminate\Support\Collection  $invoices  Koleksi invoice alumunium
+     * @return object  Objek berisi: total_invoice, invoice_count, paid_count, paid_amount, remaining_amount
+     */
     public function buildAlumuniumTotals($invoices): object
     {
         return (object) [
@@ -166,6 +287,12 @@ class InvoiceCalculatorService
         ];
     }
 
+    /**
+     * Mendapatkan net amount dari invoice (atau total_selling untuk SalesRecap).
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @return int
+     */
     public function getInvoiceNetAmount($invoice): int
     {
         if ($invoice instanceof SalesRecap) {
@@ -174,6 +301,13 @@ class InvoiceCalculatorService
         return (int) max(0, $invoice->total_amount ?? 0);
     }
 
+    /**
+     * Mendapatkan total pembayaran untuk invoice, dengan opsi exclude payment proof tertentu.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @param  int|null  $excludePaymentProofId  ID PaymentProof yang dikecualikan
+     * @return int  Total nominal pembayaran
+     */
     public function getPaidAmountForInvoice($invoice, ?int $excludePaymentProofId = null): int
     {
         if ($excludePaymentProofId === null && !($invoice instanceof SalesRecap)) {
@@ -199,11 +333,26 @@ class InvoiceCalculatorService
         return (int) $query->sum('amount');
     }
 
+    /**
+     * Menghitung sisa pembayaran untuk keperluan pembayaran.
+     *
+     * @param  int|null  $grandTotal  Grand total
+     * @param  int|null  $paidAmount  Total yang sudah dibayar
+     * @return int  Sisa pembayaran
+     */
     public function getRemainingAmountForPayment(?int $grandTotal, ?int $paidAmount): int
     {
         return (int) max(0, ($grandTotal ?? 0) - ($paidAmount ?? 0));
     }
 
+    /**
+     * Membangun data opsi invoice untuk keperluan pemilihan invoice.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @param  string  $moduleType  Tipe modul
+     * @param  string  $invoiceType  Tipe invoice
+     * @return array  Data: paid_amount, net_amount, remaining_amount, is_fully_paid
+     */
     public function buildInvoiceOptionData($invoice, string $moduleType, string $invoiceType): array
     {
         $paidAmount = $this->getPaidAmountForInvoice($invoice);

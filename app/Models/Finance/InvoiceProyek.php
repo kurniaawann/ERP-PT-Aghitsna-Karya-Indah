@@ -8,14 +8,21 @@ use Carbon\Carbon;
 use App\Models\Finance\PaymentProof;
 use App\Services\Finance\InvoiceCalculatorService;
 
+/**
+ * Model untuk Invoice Proyek.
+ *
+ * Mengelola data invoice proyek dengan primary key berupa string (invoice_number).
+ * Menghitung total, diskon, DP, sisa tagihan, dan status pembayaran
+ * melalui relasi PaymentProof dan InvoiceCalculatorService.
+ */
 class InvoiceProyek extends Model
 {
     use HasFactory;
 
     protected $table = 'proyek_invoices';
-    protected $primaryKey = 'invoice_number'; // Set primary key to invoice_number
-    public $incrementing = false; // Non-incrementing primary key
-    protected $keyType = 'string'; // Primary key is string type
+    protected $primaryKey = 'invoice_number';
+    public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = true;
 
     protected $fillable = [
@@ -48,20 +55,31 @@ class InvoiceProyek extends Model
     ];
 
     /**
-     * Get the route key for the model.
+     * Mendapatkan route key name untuk model binding.
+     *
+     * @return string
      */
     public function getRouteKeyName()
     {
         return 'invoice_number';
     }
 
+    /**
+     * Mendapatkan instance InvoiceCalculatorService dari service container.
+     *
+     * @return \App\Services\Finance\InvoiceCalculatorService
+     */
     protected function getCalculator(): InvoiceCalculatorService
     {
         return app(InvoiceCalculatorService::class);
     }
 
     /**
-     * Bukti pembayaran untuk invoice proyek.
+     * Relasi ke bukti pembayaran (PaymentProof) untuk invoice ini.
+     *
+     * Filter hanya untuk tipe 'proyek' dan urutkan berdasarkan.created_at descending.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function paymentProofs()
     {
@@ -71,7 +89,9 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Total pembayaran dari bukti pembayaran yang sudah masuk.
+     * Mendapatkan total pembayaran yang sudah masuk dari bukti pembayaran.
+     *
+     * @return int  Total nominal yang sudah dibayar
      */
     public function getTotalPaidAmount(): int
     {
@@ -79,7 +99,13 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Tahap pembayaran yang disusun dari bukti pembayaran.
+     * Accessor untuk payment_installments.
+     *
+     * Mengambil data cicilan pembayaran dari relasi paymentProofs.
+     * Jika tidak ada bukti pembayaran, fallback ke data JSON yang tersimpan.
+     *
+     * @param  mixed  $value  Value dari database
+     * @return array  Daftar cicilan pembayaran
      */
     public function getPaymentInstallmentsAttribute($value): array
     {
@@ -110,7 +136,10 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Calculate discount amount based on total amount
+     * Menghitung jumlah diskon berdasarkan total amount.
+     *
+     * @param  float|null  $totalAmount  Total amount (opsional, default: total_amount model)
+     * @return float  Jumlah diskon
      */
     public function getDiscountAmount(float $totalAmount = null): float
     {
@@ -122,7 +151,10 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Calculate DP amount based on total after discount
+     * Menghitung jumlah DP berdasarkan total setelah diskon.
+     *
+     * @param  float|null  $baseAmount  Base amount untuk perhitungan DP (opsional)
+     * @return float  Jumlah DP
      */
     public function getDpAmount(float $baseAmount = null): float
     {
@@ -136,7 +168,9 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Total keseluruhan invoice (grand total).
+     * Mendapatkan grand total invoice (total_amount).
+     *
+     * @return int  Grand total
      */
     public function getNetAmount(): int
     {
@@ -144,7 +178,9 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Sisa tagihan: (total_amount - discount) - dp - total_payment.
+     * Menghitung sisa tagihan: (total_amount - discount) - dp - total_payment.
+     *
+     * @return int  Sisa tagihan (tidak pernah negatif)
      */
     public function getRemainingAmount(): int
     {
@@ -152,7 +188,9 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Tanggal jatuh tempo invoice proyek.
+     * Mendapatkan tanggal jatuh tempo (1 bulan dari tanggal invoice).
+     *
+     * @return \Carbon\Carbon
      */
     public function getDueDate(): Carbon
     {
@@ -160,7 +198,9 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Cek apakah invoice sudah lunas.
+     * Mengecek apakah invoice sudah lunas.
+     *
+     * @return bool
      */
     public function isFullyPaid(): bool
     {
@@ -168,7 +208,9 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Label status pembayaran invoice proyek.
+     * Accessor untuk label status pembayaran.
+     *
+     * @return string  'Lunas' atau 'Belum Lunas'
      */
     public function getPaymentStatusLabelAttribute(): string
     {
@@ -176,7 +218,9 @@ class InvoiceProyek extends Model
     }
 
     /**
-     * Badge class untuk status pembayaran invoice proyek.
+     * Accessor untuk CSS badge class status pembayaran.
+     *
+     * @return string  Tailwind CSS class
      */
     public function getPaymentStatusBadgeClassAttribute(): string
     {

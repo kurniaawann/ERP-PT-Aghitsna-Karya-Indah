@@ -1,4 +1,4 @@
-{{-- Modal Delete Invoice Proyek --}}
+{{-- Modal Hapus Invoice Proyek --}}
 <div id="deleteModal-{{ $invoice->invoice_number }}"
     class="hidden fixed inset-0 z-50 bg-surface-overlay items-center justify-center px-4">
     <div class="bg-surface-base rounded-xl shadow-lg w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">

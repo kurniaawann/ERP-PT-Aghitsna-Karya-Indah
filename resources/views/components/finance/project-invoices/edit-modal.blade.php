@@ -2,6 +2,7 @@
 <x-modal id="editModal-{{ $invoice->invoice_number }}" title="{{ auth()->user()->isAdmin() ? 'Edit Invoice' : 'Edit Invoice Proyek' }}"
     action="{{ route('proyek-invoice.update', $invoice->invoice_number) }}" method="PUT" buttonText="Update">
 
+    {{-- Nomor Invoice (Read-only) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">No Invoice</label>
         <input type="text" value="{{ $invoice->invoice_number }}"
@@ -10,6 +11,7 @@
         <p class="text-xs text-text-secondary mt-1">No Invoice tidak dapat diubah</p>
     </div>
 
+    {{-- Informasi Invoice --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
         <input type="date" name="invoice_date" value="{{ $invoice->invoice_date->format('Y-m-d') }}"
@@ -39,6 +41,7 @@
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
+    {{-- Detail Item Invoice --}}
     <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
         <label class="block text-text-primary font-semibold mb-2">Item-Item Invoice <span
                 class="text-error">*</span></label>
@@ -93,7 +96,7 @@
         </button>
     </div>
 
-    <!-- Live Total Preview -->
+    {{-- Live Total Preview --}}
     <div class="mb-4 p-4 bg-primary-light rounded-lg border-2 border-primary-light">
         <div class="flex justify-between items-center">
             <span class="text-text-primary font-semibold">Total Invoice:</span>
@@ -103,7 +106,7 @@
         </div>
     </div>
 
-    <!-- Discount Section -->
+    {{-- Discount Section --}}
     <div class="mb-3 p-3 border border-warning-light rounded-lg bg-warning-light">
         <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -145,7 +148,7 @@
         </div>
     </div>
 
-    <!-- DP Section -->
+    {{-- DP / Uang Muka Section --}}
     <div class="mb-3 p-3 border border-info-light rounded-lg bg-info-light">
         <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -180,7 +183,7 @@
         </div>
     </div>
 
-    <!-- Payment Accounts Selection -->
+    {{-- Pilihan Rekening Pembayaran --}}
     <div class="mb-3 p-3 border border-success-light rounded-lg bg-success-light">
         <label class="block text-text-primary font-semibold mb-2">
             Pilih Rekening Pembayaran <span class="text-error">*</span>

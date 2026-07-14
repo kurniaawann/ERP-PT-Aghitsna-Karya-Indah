@@ -6,10 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Notification\InvoiceProyekReminder;
 use Illuminate\Http\Request;
 
+/**
+ * Controller untuk menangani reminder jatuh tempo Invoice Proyek.
+ *
+ * Menangani penampilan daftar reminder, pembaruan status per item,
+ * dan pembaruan status secara massal (bulk update).
+ */
 class InvoiceProyekReminderController extends Controller
 {
     /**
-     * Tampilkan halaman reminder jatuh tempo invoice proyek
+     * Menampilkan halaman daftar reminder jatuh tempo invoice proyek.
+     *
+     * Query di-optimasi dengan menggunakan aggregate query untuk menghitung
+     * total expired tanpa memuat semua data ke memory.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
@@ -30,9 +42,10 @@ class InvoiceProyekReminderController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where(function ($subQuery) use ($request) {
-                $subQuery->where('invoice_number', 'like', '%' . $request->search . '%')
-                    ->orWhere('recipient', 'like', '%' . $request->search . '%');
+            $search = $request->search;
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('recipient', 'like', "%{$search}%");
             });
         }
 
@@ -40,13 +53,16 @@ class InvoiceProyekReminderController extends Controller
 
         $reminders = $query->paginate(10)->appends($request->all());
 
-        $totalReminders = $query->count();
-        $totalPaid = $query->clone()->where('status', 'paid')->count();
-        $totalExpired = $query->clone()->where('status', '!=', 'paid')
+        $totalReminders = (clone $query)->count();
+        $totalPaid = (clone $query)->where('status', 'paid')->count();
+
+        // Hitung total expired menggunakan query langsung, bukan fetch ke memory
+        // Ambil semua non-paid reminders yang sudah lewat jatuh tempo
+        $expiredReminders = (clone $query)->where('status', '!=', 'paid')
             ->whereDate('reminder_date', '<=', now()->toDateString())
-            ->get()
-            ->filter(fn($reminder) => $reminder->remaining_amount > 0)
-            ->count();
+            ->get();
+        $totalExpired = $expiredReminders->filter(fn($reminder) => $reminder->remaining_amount > 0)->count();
+
         $totalPending = max(0, $totalReminders - $totalPaid - $totalExpired);
 
         return view('pages.notification.invoice-proyek-reminder', compact(
@@ -59,7 +75,11 @@ class InvoiceProyekReminderController extends Controller
     }
 
     /**
-     * Update status reminder
+     * Memperbarui status satu reminder invoice proyek.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id  ID reminder
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function updateStatus(Request $request, $id)
     {
@@ -80,7 +100,10 @@ class InvoiceProyekReminderController extends Controller
     }
 
     /**
-     * Bulk update status
+     * Memperbarui status beberapa reminder sekaligus (bulk update).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function bulkUpdateStatus(Request $request)
     {

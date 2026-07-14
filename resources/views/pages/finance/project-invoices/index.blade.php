@@ -3,6 +3,7 @@
 @section('title', 'PT Aghitsna Karya Indah - ' . (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek'))
 
 @section('content')
+    {{-- Header Invoice Proyek --}}
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">{{ auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek' }}</h1>
 
@@ -20,28 +21,26 @@
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <x-buttons.delete-button modalId="deleteModal" />
-
                     <x-buttons.add-button modalId="addModal" text="Tambah Invoice" />
                 </div>
             </div>
         </div>
 
         {{-- Table Component --}}
-        @include('components.finance.proyek.table', ['invoices' => $invoices])
-
+        <x-finance.project-invoices.table :invoices="$invoices" />
     </div>
 
     {{-- Pagination --}}
     <x-pagination :paginator="$invoices" />
 
     {{-- Modal Tambah Invoice --}}
-    @include('components.finance.proyek.add-modal')
+    <x-finance.project-invoices.add-modal :paymentAccounts="$paymentAccounts" />
 
     {{-- Modal Edit & Detail untuk setiap invoice --}}
     @foreach ($invoices as $invoice)
-        @include('components.finance.proyek.edit-modal', ['invoice' => $invoice])
-        @include('components.finance.proyek.detail-modal', ['invoice' => $invoice])
-        @include('components.finance.proyek.delete-modal', ['invoice' => $invoice])
+        <x-finance.project-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" />
+        <x-finance.project-invoices.detail-modal :invoice="$invoice" />
+        <x-finance.project-invoices.delete-modal :invoice="$invoice" />
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}
@@ -51,6 +50,6 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.finance.proyek-scripts')
+    @vite('resources/js/pages/finance/project-invoices/index.js')
     @include('partials.shared.print-dropdown-script')
 @endsection

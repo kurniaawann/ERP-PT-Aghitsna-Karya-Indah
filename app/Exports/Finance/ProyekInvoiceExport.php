@@ -17,20 +17,49 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
+/**
+ * Export class untuk Invoice Proyek ke format Excel (.xlsx).
+ *
+ * Membuat file Excel dengan layout:
+ * - Header perusahaan (logo, nama, alamat)
+ * - Informasi invoice (nomor, tanggal, hal)
+ * - Data penerima dan deskripsi proyek
+ * - Tabel item-item invoice
+ * - Baris discount, DP, dan cicilan pembayaran
+ * - Informasi rekening pembayaran
+ * - Tanda tangan
+ */
 class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
+    /** @var \App\Models\Finance\InvoiceProyek */
     protected $invoice;
 
+    /**
+     * Inisialisasi export dengan nomor invoice.
+     *
+     * @param  string  $invoiceNumber  Nomor invoice proyek
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException  Jika invoice tidak ditemukan
+     */
     public function __construct($invoiceNumber)
     {
         $this->invoice = InvoiceProyek::where('invoice_number', $invoiceNumber)->firstOrFail();
     }
 
+    /**
+     * Data collection untuk export (kosong karena menggunakan custom rendering).
+     *
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         return collect([]);
     }
 
+    /**
+     * Judul sheet Excel.
+     *
+     * @return string
+     */
     public function title(): string
     {
         return 'Invoice_Proyek_' . $this->invoice->invoice_number;

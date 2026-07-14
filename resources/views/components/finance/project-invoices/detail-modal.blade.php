@@ -10,11 +10,9 @@
     $dpAmount = (int) $invoice->getDpAmount();
     $progressPercent = $netAmount > 0 ? min(100, (int) round(($totalPaid / $netAmount) * 100)) : 0;
 
-    // Clean display values
     $discountValueDisplay = rtrim(rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'), ',');
     $dpValueDisplay = rtrim(rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'), ',');
 
-    // Payment installments from payment proofs
     $paymentProofs = $invoice->relationLoaded('paymentProofs')
         ? $invoice->paymentProofs
         : $invoice->paymentProofs()->get();
@@ -24,7 +22,6 @@
         ->sortBy(fn($p) => sprintf('%06d', (int) ($p->payment_stage ?? 999999)))
         ->values();
 
-    // Fallback to stored payment_installments JSON if no payment proofs
     $storedInstallments = [];
     if (!$hasInstallments) {
         $rawInstallments = $invoice->payment_installments;
@@ -117,13 +114,11 @@
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Ringkasan Finansial</h3>
         <div class="space-y-2.5">
-            {{-- Subtotal --}}
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">Subtotal</span>
                 <span class="text-sm font-medium text-gray-900">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
             </div>
 
-            {{-- Discount --}}
             @if ($invoice->discount_value && $invoice->discount_value > 0)
                 <div class="flex justify-between items-center py-1.5 px-3 bg-red-50 rounded-lg">
                     <span class="text-sm text-red-700">
@@ -143,10 +138,8 @@
                 </div>
             @endif
 
-            {{-- Separator --}}
             <hr class="border-gray-200">
 
-            {{-- Grand Total --}}
             <div class="flex justify-between items-center">
                 <span class="text-base font-bold text-gray-800">Grand Total</span>
                 <span class="text-base font-bold text-gray-900">Rp {{ number_format($netAmount, 0, ',', '.') }}</span>
@@ -159,7 +152,6 @@
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Pembayaran</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {{-- DP --}}
             <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
                 <p class="text-xs text-gray-400 mb-1">DP / Uang Muka</p>
                 @if ($invoice->dp_value && $invoice->dp_value > 0)
@@ -172,7 +164,6 @@
                 @endif
             </div>
 
-            {{-- Total Terbayar --}}
             <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
                 <p class="text-xs text-gray-400 mb-1">Total Terbayar</p>
                 @if ($totalPaid > 0)
@@ -182,7 +173,6 @@
                 @endif
             </div>
 
-            {{-- Sisa Pembayaran --}}
             <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
                 <p class="text-xs text-gray-400 mb-1">Sisa Pembayaran</p>
                 @if ($remaining > 0)
@@ -193,7 +183,7 @@
             </div>
         </div>
 
-        {{-- Payment Flow Summary --}}
+        {{-- Ringkasan Perhitungan --}}
         <div class="rounded-lg bg-gray-50 border border-gray-100 p-4 mb-4">
             <p class="text-xs text-gray-400 mb-2">Ringkasan Perhitungan</p>
             <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
@@ -249,19 +239,15 @@
         </div>
     </div>
 
-    {{-- Card E: Pembayaran Bertahap (hanya untuk Invoice Proyek) --}}
+    {{-- Card E: Pembayaran Bertahap --}}
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Pembayaran Bertahap</h3>
 
         @if ($hasInstallments || !empty($storedInstallments))
             @php
                 $installmentCount = $hasInstallments ? $installmentProofs->count() : count($storedInstallments);
-                $paidCount = $hasInstallments
-                    ? $installmentProofs->sum(fn($p) => (int) ($p->amount ?? 0))
-                    : collect($storedInstallments)->sum('amount');
             @endphp
 
-            {{-- Installment progress indicator --}}
             <div class="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
                 <div class="flex-1">
                     <p class="text-xs text-gray-500 mb-1">Tahap Pembayaran</p>
@@ -277,14 +263,11 @@
                 </div>
             </div>
 
-            {{-- Timeline --}}
             <div class="relative">
-                {{-- Vertical line --}}
                 <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200"></div>
 
                 <div class="space-y-0">
                     @if ($hasInstallments)
-                        {{-- From payment proofs --}}
                         @foreach ($installmentProofs as $proofIndex => $proof)
                             @php
                                 $stageNumber = $proofIndex + 1;
@@ -294,7 +277,6 @@
                                 $isInstallmentPaid = $proofAmount > 0;
                             @endphp
                             <div class="relative flex items-start gap-4 pb-6 {{ $isLast ? '' : '' }}">
-                                {{-- Circle indicator --}}
                                 <div class="relative z-10 flex-shrink-0 w-[30px] h-[30px] rounded-full flex items-center justify-center text-xs font-bold
                                     {{ $isInstallmentPaid ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400' }}">
                                     @if ($isInstallmentPaid)
@@ -303,7 +285,6 @@
                                         {{ $stageNumber }}
                                     @endif
                                 </div>
-                                {{-- Content --}}
                                 <div class="flex-1 min-w-0 pt-0.5">
                                     <div class="flex items-center justify-between">
                                         <p class="text-sm font-semibold {{ $isInstallmentPaid ? 'text-gray-900' : 'text-gray-500' }}">
@@ -329,7 +310,6 @@
                             </div>
                         @endforeach
                     @else
-                        {{-- Fallback to stored payment_installments JSON --}}
                         @foreach ($storedInstallments as $instIndex => $installment)
                             @php
                                 $isLast = $instIndex === count($storedInstallments) - 1;
@@ -373,7 +353,6 @@
                 </div>
             </div>
         @else
-            {{-- Empty state --}}
             <div class="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                 <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
                     <i class="fa-solid fa-clock text-gray-300 text-lg"></i>

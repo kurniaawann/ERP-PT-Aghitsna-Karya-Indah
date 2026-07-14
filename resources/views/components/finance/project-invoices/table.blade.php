@@ -1,4 +1,4 @@
-{{-- Proyek Invoice Table Component --}}
+{{-- Table Component: Daftar Invoice Proyek --}}
 <form id="deleteForm" method="POST" action="{{ route('proyek-invoice.destroySelected') }}">
     @csrf
     @method('DELETE')

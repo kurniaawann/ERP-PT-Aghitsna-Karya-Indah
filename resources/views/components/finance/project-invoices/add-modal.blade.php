@@ -2,6 +2,7 @@
 <x-modal id="addModal" title="{{ auth()->user()->isAdmin() ? 'Tambah Invoice' : 'Tambah Invoice Proyek' }}" action="{{ route('proyek-invoice.store') }}" method="POST"
     buttonText="Simpan">
 
+    {{-- Informasi Invoice --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
         <input type="date" name="invoice_date" class="w-full border rounded p-2" required
@@ -30,6 +31,7 @@
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
+    {{-- Detail Item Invoice --}}
     <div id="items-container" class="mb-4">
         <label class="block text-text-primary font-semibold mb-2">Item-Item Invoice <span
                 class="text-error">*</span></label>
@@ -68,7 +70,7 @@
         </button>
     </div>
 
-    <!-- Live Total Preview -->
+    {{-- Live Total Preview --}}
     <div class="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
         <div class="flex justify-between items-center">
             <span class="text-text-primary font-semibold">Total Invoice:</span>
@@ -77,7 +79,7 @@
         <div class="text-xs text-text-secondary mt-1" id="invoice-total-words"></div>
     </div>
 
-    <!-- Discount Section -->
+    {{-- Discount Section --}}
     <div class="mb-3 p-3 border rounded bg-yellow-50">
         <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -116,7 +118,7 @@
         </div>
     </div>
 
-    <!-- DP Section -->
+    {{-- DP / Uang Muka Section --}}
     <div class="mb-3 p-3 border rounded bg-blue-50">
         <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -150,7 +152,7 @@
         </div>
     </div>
 
-    <!-- Payment Accounts Selection -->
+    {{-- Pilihan Rekening Pembayaran --}}
     <div class="mb-3 p-3 border rounded bg-green-50">
         <label class="block text-text-primary font-semibold mb-2">
             Pilih Rekening Pembayaran <span class="text-error">*</span>
