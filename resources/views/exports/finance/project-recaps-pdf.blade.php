@@ -122,6 +122,7 @@
 </head>
 
 <body>
+    {{-- ==================== Header Laporan ==================== --}}
     <div class="header">
         <h1>LAPORAN REKAP INVOICE PROYEK</h1>
         <h2>PT AGHITSNA KARYA INDAH</h2>
@@ -129,6 +130,7 @@
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
     </div>
 
+    {{-- ==================== Tabel Rekap ==================== --}}
     <table>
         <thead>
             <tr>
@@ -180,6 +182,7 @@
                 </tr>
             @endforelse
 
+            {{-- ==================== Baris Total ==================== --}}
             @if ($invoices->count() > 0)
                 <tr class="total-row">
                     <td colspan="5" class="text-center">TOTAL</td>
@@ -193,6 +196,7 @@
         </tbody>
     </table>
 
+    {{-- ==================== Ringkasan ==================== --}}
     <div class="summary">
         <h3>Ringkasan:</h3>
         <p>Total Data: {{ $totals->invoice_count ?? 0 }} invoice</p>
