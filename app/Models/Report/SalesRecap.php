@@ -6,6 +6,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Finance\PaymentProof;
 
+/**
+ * Model untuk tabel sales_recaps.
+ *
+ * Menyimpan data rekap penjualan dengan multiple items per sales.
+ * Menggunakan string primary key (id_sales_recap, format: SR-xxxxx).
+ *
+ * Relasi:
+ * - paymentProofs() → PaymentProof (hasMany via sales_recap_id)
+ *
+ * Casts:
+ * - items → json (array of {id_item, name_item, quantity, capital_price, selling_price, from_stock})
+ * - date → date
+ * - total_capital, total_selling, total_profit → integer
+ */
 class SalesRecap extends Model
 {
     use HasFactory;
@@ -36,6 +50,8 @@ class SalesRecap extends Model
 
     /**
      * Bukti pembayaran untuk rekap penjualan ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function paymentProofs()
     {
@@ -43,68 +59,22 @@ class SalesRecap extends Model
     }
 
     /**
-     * Check if status is Lunas
+     * Cek apakah status sudah Lunas.
+     *
+     * @return bool
      */
-    public function isLunas()
+    public function isLunas(): bool
     {
         return $this->status === 'Lunas';
     }
 
     /**
-     * Check if can be edited (not Lunas)
+     * Cek apakah rekap ini masih bisa diedit (belum Lunas).
+     *
+     * @return bool
      */
-    public function canBeEdited()
+    public function canBeEdited(): bool
     {
         return !$this->isLunas();
-    }
-
-    /**
-     * Calculate totals from items
-     */
-    public function calculateTotals()
-    {
-        $items = is_string($this->items) ? json_decode($this->items, true) : $this->items;
-
-        $totalCapital = 0;
-        $totalSelling = 0;
-
-        foreach ($items as $item) {
-            $totalCapital += $this->normalizeCurrencyInput($item['capital_price'] ?? 0) * (int) ($item['quantity'] ?? 0);
-            $totalSelling += $this->normalizeCurrencyInput($item['selling_price'] ?? 0) * (int) ($item['quantity'] ?? 0);
-        }
-
-        $this->total_capital = $totalCapital;
-        $this->total_selling = $totalSelling;
-        $this->total_profit = $totalSelling - $totalCapital;
-    }
-
-    /**
-     * Normalisasi harga agar string rupiah tidak memutus perhitungan.
-     */
-    private function normalizeCurrencyInput($value): float
-    {
-        if ($value === null || $value === '') {
-            return 0.0;
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return (float) $value;
-        }
-
-        $value = (string) $value;
-        $value = preg_replace('/[^0-9,\.\-]/', '', $value);
-
-        if ($value === '' || $value === null) {
-            return 0.0;
-        }
-
-        if (str_contains($value, ',')) {
-            $value = str_replace('.', '', $value);
-            $value = str_replace(',', '.', $value);
-        } else {
-            $value = str_replace('.', '', $value);
-        }
-
-        return (float) $value;
     }
 }

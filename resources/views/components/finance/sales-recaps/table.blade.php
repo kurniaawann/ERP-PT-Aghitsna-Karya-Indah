@@ -1,4 +1,4 @@
-{{-- Sales Report Table Component --}}
+{{-- ==================== Tabel Rekap Penjualan ==================== --}}
 <form id="deleteForm" method="POST" action="{{ route('recap-sales.destroySelected') }}">
     @csrf
     @method('DELETE')
@@ -6,6 +6,8 @@
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
+
+                    {{-- ==================== Header Tabel ==================== --}}
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
@@ -21,6 +23,8 @@
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
+
+                    {{-- ==================== Body Tabel ==================== --}}
                     <tbody>
                         @forelse($salesRecaps as $index => $sale)
                             @php
@@ -32,6 +36,8 @@
                             @foreach ($saleItems as $itemIndex => $saleItem)
                                 <tr
                                     class="{{ $itemIndex === 0 ? 'border-t-2 border-primary/40' : 'border-t border-border' }} transition-colors duration-150 hover:bg-surface-hover">
+
+                                    {{-- Kolom rowspan (hanya di baris pertama item) --}}
                                     @if ($itemIndex === 0)
                                         <td class="p-2 text-center {{ $verticalAlign }}" rowspan="{{ $itemCount }}">
                                             <input type="checkbox" name="selected_sales[]"
@@ -76,8 +82,9 @@
                                         </div>
                                     </td>
 
+                                    {{-- Kolom rowspan kedua (hanya di baris pertama item) --}}
                                     @if ($itemIndex === 0)
-                                        {{-- Profit (untuk seluruh proyek) --}}
+                                        {{-- Profit --}}
                                         <td class="p-2 text-center font-medium text-success {{ $verticalAlign }}"
                                             rowspan="{{ $itemCount }}">
                                             Rp
@@ -131,7 +138,7 @@
                             </tr>
                         @endforelse
 
-                        {{-- Grand Total Row --}}
+                        {{-- ==================== Grand Total Row ==================== --}}
                         @if ($salesRecaps->isNotEmpty())
                             <tr
                                 class="bg-gradient-to-r from-primary/20 to-primary/10 border-t-4 border-primary font-bold text-base">

@@ -8,11 +8,23 @@ use App\Models\Report\TransactionCategory;
 use App\Models\Inventory\ItemStockOut;
 use App\Services\Finance\PaymentProofService;
 
+/**
+ * Observer untuk model SalesRecap.
+ *
+ * Menangani auto-management data terkait saat event SalesRecap fire:
+ * - created: Buat ItemStockOut records
+ * - updated: Recreate stock outs + auto-create ExpenseRecap saat status Lunas
+ * - deleted: Hapus stock out records + hapus file payment proof
+ */
 class SalesRecapObserver
 {
     /**
      * Handle the SalesRecap "created" event.
-     * Auto-create stock out records
+     *
+     * Membuat stock out records untuk setiap item yang dari stock.
+     *
+     * @param  \App\Models\Report\SalesRecap $salesRecap
+     * @return void
      */
     public function created(SalesRecap $salesRecap): void
     {
@@ -21,43 +33,31 @@ class SalesRecapObserver
 
     /**
      * Handle the SalesRecap "updated" event.
-     * Update stock out records and auto-create expense recap when status becomes LUNAS.
-     * Always recreate stock outs to ensure consistency.
+     *
+     * Recreate stock outs untuk menjaga konsistensi, dan auto-create
+     * ExpenseRecap saat status berubah menjadi Lunas.
+     *
+     * @param  \App\Models\Report\SalesRecap $salesRecap
+     * @return void
      */
     public function updated(SalesRecap $salesRecap): void
     {
-        // Always recreate stock outs whenever SalesRecap is updated
-        // This ensures that even if only date/name_proyek changed, stock outs are synced
+        // Selalu recreate stock outs untuk menjaga konsistensi
         $this->createStockOuts($salesRecap);
 
+        // Auto-create expense recap saat status berubah ke Lunas
         if ($salesRecap->wasChanged('status') && $salesRecap->status === 'Lunas') {
-            $salesRecapId = $salesRecap->getKey();
-
-            $existingExpenseRecap = ExpenseRecap::where('sales_recap_id', $salesRecapId)->first();
-
-            if (!$existingExpenseRecap) {
-                $incomeCategory = TransactionCategory::where('code', 'UANG_MASUK')->first();
-
-                if ($incomeCategory) {
-                    ExpenseRecap::create([
-                        'transaction_category_id' => $incomeCategory->id,
-                        'invoice_number' => $salesRecapId,
-                        'transaction_date' => $salesRecap->date ?? now(),
-                        'description' => $salesRecap->name_proyek ?? 'Penjualan - ' . $salesRecapId,
-                        'income_amount' => $salesRecap->total_selling,
-                        'expense_amount' => null,
-                        'money_source' => null,
-                        'sales_recap_id' => $salesRecapId,
-                        'notes' => 'Auto-generated from sales recap',
-                    ]);
-                }
-            }
+            $this->createExpenseRecap($salesRecap);
         }
     }
 
     /**
      * Handle the SalesRecap "deleted" event.
-     * Auto-delete stock out records
+     *
+     * Menghapus stock out records dan file payment proof terkait.
+     *
+     * @param  \App\Models\Report\SalesRecap $salesRecap
+     * @return void
      */
     public function deleted(SalesRecap $salesRecap): void
     {
@@ -70,7 +70,10 @@ class SalesRecapObserver
     }
 
     /**
-     * Create stock out records from sales recap items
+     * Membuat stock out records dari items rekap penjualan.
+     *
+     * @param  \App\Models\Report\SalesRecap $salesRecap
+     * @return void
      */
     private function createStockOuts(SalesRecap $salesRecap): void
     {
@@ -96,7 +99,40 @@ class SalesRecapObserver
     }
 
     /**
-     * Generate unique stock out ID
+     * Auto-create ExpenseRecap saat status Lunas.
+     *
+     * @param  \App\Models\Report\SalesRecap $salesRecap
+     * @return void
+     */
+    private function createExpenseRecap(SalesRecap $salesRecap): void
+    {
+        $salesRecapId = $salesRecap->getKey();
+
+        $existingExpenseRecap = ExpenseRecap::where('sales_recap_id', $salesRecapId)->first();
+
+        if (!$existingExpenseRecap) {
+            $incomeCategory = TransactionCategory::where('code', 'UANG_MASUK')->first();
+
+            if ($incomeCategory) {
+                ExpenseRecap::create([
+                    'transaction_category_id' => $incomeCategory->id,
+                    'invoice_number' => $salesRecapId,
+                    'transaction_date' => $salesRecap->date ?? now(),
+                    'description' => $salesRecap->name_proyek ?? 'Penjualan - ' . $salesRecapId,
+                    'income_amount' => $salesRecap->total_selling,
+                    'expense_amount' => null,
+                    'money_source' => null,
+                    'sales_recap_id' => $salesRecapId,
+                    'notes' => 'Auto-generated from sales recap',
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Generate unique stock out ID (format: SOUT-YYYYMMDD-XXXX).
+     *
+     * @return string
      */
     private function generateStockOutId(): string
     {
@@ -112,9 +148,14 @@ class SalesRecapObserver
         return $id;
     }
 
+    /**
+     * Cek apakah item berasal dari stock.
+     *
+     * @param  mixed $value
+     * @return bool
+     */
     private function isFromStock($value): bool
     {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
-
 }

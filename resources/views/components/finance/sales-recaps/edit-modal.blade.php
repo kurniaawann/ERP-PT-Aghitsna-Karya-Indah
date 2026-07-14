@@ -1,15 +1,15 @@
-{{-- Edit Modal for Sales Report - Component for individual sale --}}
-{{-- Usage: @include('components.recap-sales.edit-modal', ['sale' => $sale, 'items' => $items]) --}}
-
+{{-- ==================== Modal Edit Rekap Penjualan ==================== --}}
 <x-modal id="editModal-{{ $sale->id_sales_recap }}" title="Edit Rekap Penjualan"
     action="{{ route('recap-sales.update', $sale->id_sales_recap) }}" method="PUT" buttonText="Update">
 
+    {{-- ID Laporan (readonly) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">ID Laporan</label>
         <input type="text" value="{{ $sale->id_sales_recap }}"
             class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" readonly>
     </div>
 
+    {{-- Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="date" value="{{ $sale->date->format('Y-m-d') }}"
@@ -17,6 +17,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Nama Proyek --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Proyek <span class="text-error">*</span></label>
         <input type="text" name="name_proyek" value="{{ $sale->name_proyek }}" class="w-full border rounded p-2"
@@ -24,6 +25,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Daftar Item --}}
     <div id="items-container-edit-{{ $sale->id_sales_recap }}" class="mb-4">
         <label class="block text-text-primary font-semibold mb-2">Item-Item Barang</label>
         <div id="items-list-edit-{{ $sale->id_sales_recap }}">
@@ -31,24 +33,32 @@
                 $existingItems = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
             @endphp
             @foreach ($existingItems as $index => $item)
+                @php
+                    $isFromStock = !empty($item['from_stock']) && $item['from_stock'] !== 'false';
+                    $displayName = $item['name_item'] ?? '';
+                    if ($isFromStock && empty($displayName) && !empty($item['id_item'])) {
+                        $stockItem = $items->firstWhere('id_item', $item['id_item']);
+                        $displayName = $stockItem ? $stockItem->name_item : '';
+                    }
+                @endphp
                 <div class="item-row-edit mb-3 p-3 border rounded bg-surface-secondary"
                     data-index="{{ $index }}">
                     {{-- Checkbox Dari Stok --}}
                     <div class="flex items-center gap-2 mb-2">
                         <label class="flex items-center gap-2">
                             <input type="checkbox" class="item-from-stock-edit accent-primary"
-                                {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'checked' : '' }}>
+                                {{ $isFromStock ? 'checked' : '' }}>
                             <span class="text-sm">Dari Stok</span>
                         </label>
                     </div>
 
-                    {{-- Custom Searchable Dropdown --}}
-                    <div class="relative mb-2 item-select-wrapper-edit"
-                        style="display: {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'block' : 'none' }};">
-                        <input type="text"
-                            class="item-search-input-edit w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
-                            placeholder="Cari barang..." autocomplete="off"
-                            value="{{ !empty($item['id_item']) ? $item['name_item'] : '' }}">
+                {{-- Searchable Dropdown --}}
+                <div class="relative mb-2 item-select-wrapper-edit"
+                    style="display: {{ $isFromStock ? 'block' : 'none' }};">
+                    <input type="text"
+                        class="item-search-input-edit w-full border rounded-lg p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light"
+                        placeholder="Cari barang..." autocomplete="off"
+                        value="{{ $displayName }}">
                         <i class="fa-solid fa-search absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>
 
                         <div
@@ -85,14 +95,17 @@
 
                     <input type="hidden" class="item-select-hidden-edit" value="{{ $item['id_item'] ?? '' }}">
 
-                    {{-- Input Nama Barang --}}
+                    {{-- Nama Barang --}}
                     <input type="text" name="items[{{ $index }}][name_item]"
-                        value="{{ $item['name_item'] ?? '' }}" class="item-name-edit w-full border rounded p-2 mb-2"
+                        value="{{ $displayName }}" class="item-name-edit w-full border rounded p-2 mb-2"
                         placeholder="Nama Barang *"
-                        {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }} required
+                        style="display: {{ $isFromStock ? 'none' : 'block' }};"
+                        {{ $isFromStock ? 'readonly' : '' }}
+                        {{ $isFromStock ? '' : 'required' }}
                         oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
 
+                    {{-- Qty, Harga Modal, Harga Jual --}}
                     <div class="grid grid-cols-3 gap-2">
                         <input type="number" name="items[{{ $index }}][quantity]"
                             value="{{ $item['quantity'] ?? 0 }}" class="item-qty-edit border rounded p-2"
@@ -102,35 +115,37 @@
                         <input type="text" inputmode="numeric" name="items[{{ $index }}][capital_price]"
                             value="Rp {{ number_format($item['capital_price'] ?? 0, 0, ',', '.') }}"
                             class="item-capital-edit border rounded p-2" placeholder="Rp 0"
-                            {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                            {{ $isFromStock ? 'readonly' : '' }}
                             required oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
                             oninput="formatCurrencyInput(this); this.setCustomValidity('')">
                         <input type="text" inputmode="numeric" name="items[{{ $index }}][selling_price]"
                             value="Rp {{ number_format($item['selling_price'] ?? 0, 0, ',', '.') }}"
                             class="item-selling-edit border rounded p-2" placeholder="Rp 0"
-                            {{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'readonly' : '' }}
+                            {{ $isFromStock ? 'readonly' : '' }}
                             required oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')"
                             oninput="formatCurrencyInput(this); this.setCustomValidity('')">
                     </div>
 
                     {{-- Stock Warning --}}
                     <p class="stock-warning-edit text-error text-sm mt-2 hidden">
-                        <span class="font-semibold">⚠️ Peringatan Stok:</span> <span
+                        <span class="font-semibold">Peringatan Stok:</span> <span
                             class="stock-warning-text-edit">Stok Barang Tidak Cukup! Silahkan Sesuaikan Dengan Stok
                             Yang Tersedia.</span>
                     </p>
 
                     {{-- Price Warning --}}
                     <p class="price-warning-edit text-error text-sm mt-2 hidden">
-                        <span class="font-semibold">⚠️ Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
+                        <span class="font-semibold">Peringatan:</span> Harga modal tidak boleh lebih besar atau sama
                         dengan harga jual!
                     </p>
 
+                    {{-- Hidden fields --}}
                     <input type="hidden" name="items[{{ $index }}][from_stock]" class="from-stock-hidden"
-                        value="{{ !empty($item['from_stock']) && $item['from_stock'] !== 'false' ? 'true' : 'false' }}">
+                        value="{{ $isFromStock ? 'true' : 'false' }}">
                     <input type="hidden" name="items[{{ $index }}][id_item]" class="id-item-hidden"
                         value="{{ $item['id_item'] ?? '' }}">
 
+                    {{-- Tombol Hapus Item --}}
                     <button type="button"
                         class="remove-item-edit mt-2 bg-btn-delete text-white px-3 py-1 rounded hover:bg-btn-delete-hover w-full">
                         <i class="fa-solid fa-trash"></i> Hapus Item
@@ -138,6 +153,8 @@
                 </div>
             @endforeach
         </div>
+
+        {{-- Tombol Tambah Item --}}
         <button type="button"
             class="add-item-edit bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover w-full"
             data-sale-id="{{ $sale->id_sales_recap }}">

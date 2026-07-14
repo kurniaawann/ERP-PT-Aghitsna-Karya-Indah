@@ -4,58 +4,41 @@ namespace App\Http\Controllers\Report;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report\SalesRecap;
+use App\Services\Finance\RecapSalesService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Controller untuk Laporan Penjualan (Sales Report).
+ *
+ * Hanya bisa diakses oleh General Manager.
+ * Menampilkan dashboard ringkasan, trend bulanan, distribusi status, top proyek, dan detail transaksi.
+ */
 class SalesReportController extends Controller
 {
+    public function __construct(
+        private RecapSalesService $recapSalesService
+    ) {}
+
+    /**
+     * Menampilkan halaman laporan penjualan.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
-        $query = SalesRecap::query();
-
-        // Filter berdasarkan bulan
-        if ($request->filled('month')) {
-            $query->whereMonth('date', $request->month);
-        }
-
-        // Filter berdasarkan tahun
-        if ($request->filled('year')) {
-            $query->whereYear('date', $request->year);
-        } else {
-            // Default tahun saat ini
-            $query->whereYear('date', date('Y'));
-        }
-
-        // Filter berdasarkan status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Search
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('id_sales_recap', 'like', '%' . $request->search . '%')
-                    ->orWhere('name_proyek', 'like', '%' . $request->search . '%');
-            });
-        }
+        $query = $this->buildBaseQuery($request);
 
         // Sorting
-        $sortBy = $request->get('sort_by', 'date');
+        $sortBy = $this->recapSalesService->getAllowedSortColumn($request->get('sort_by', 'date'));
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
         $salesRecaps = $query->paginate(10)->appends($request->all());
 
-        // Calculate summary statistics
         $summary = $this->calculateSummary($request);
-
-        // Get monthly trend
         $monthlyTrend = $this->getMonthlyTrend($request);
-
-        // Get status distribution
         $statusDistribution = $this->getStatusDistribution($request);
-
-        // Top projects
         $topProjects = $this->getTopProjects($request);
 
         return view('pages.report.sales-report', compact(
@@ -67,7 +50,13 @@ class SalesReportController extends Controller
         ));
     }
 
-    private function calculateSummary(Request $request)
+    /**
+     * Membangun query dasar dengan filter dari request.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function buildBaseQuery(Request $request)
     {
         $query = SalesRecap::query();
 
@@ -92,23 +81,33 @@ class SalesReportController extends Controller
             });
         }
 
-        $summary = $query->selectRaw('
-            COUNT(*) as total_transactions,
-            SUM(total_capital) as total_capital,
-            SUM(total_selling) as total_selling,
-            SUM(total_profit) as total_profit,
-            SUM(CASE WHEN status = "Lunas" THEN 1 ELSE 0 END) as paid_count,
-            SUM(CASE WHEN status = "Belum Lunas" THEN 1 ELSE 0 END) as unpaid_count,
-            SUM(CASE WHEN status = "Lunas" THEN total_selling ELSE 0 END) as paid_amount,
-            SUM(CASE WHEN status = "Belum Lunas" THEN total_selling ELSE 0 END) as unpaid_amount
-        ')->first();
+        return $query;
+    }
 
-        // Calculate profit margin
+    /**
+     * Menghitung ringkasan statistik (summary cards).
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return array<string, mixed>
+     */
+    private function calculateSummary(Request $request): array
+    {
+        $summary = $this->buildBaseQuery($request)
+            ->selectRaw('
+                COUNT(*) as total_transactions,
+                SUM(total_capital) as total_capital,
+                SUM(total_selling) as total_selling,
+                SUM(total_profit) as total_profit,
+                SUM(CASE WHEN status = "Lunas" THEN 1 ELSE 0 END) as paid_count,
+                SUM(CASE WHEN status = "Belum Lunas" THEN 1 ELSE 0 END) as unpaid_count,
+                SUM(CASE WHEN status = "Lunas" THEN total_selling ELSE 0 END) as paid_amount,
+                SUM(CASE WHEN status = "Belum Lunas" THEN total_selling ELSE 0 END) as unpaid_amount
+            ')->first();
+
         $profitMargin = $summary->total_selling > 0
             ? ($summary->total_profit / $summary->total_selling) * 100
             : 0;
 
-        // Calculate average transaction value
         $avgTransaction = $summary->total_transactions > 0
             ? $summary->total_selling / $summary->total_transactions
             : 0;
@@ -127,7 +126,13 @@ class SalesReportController extends Controller
         ];
     }
 
-    private function getMonthlyTrend(Request $request)
+    /**
+     * Mendapatkan data trend bulanan untuk chart.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return array<int, array<string, mixed>>
+     */
+    private function getMonthlyTrend(Request $request): array
     {
         $year = $request->get('year', date('Y'));
 
@@ -147,7 +152,6 @@ class SalesReportController extends Controller
             ->get()
             ->keyBy('month');
 
-        // Fill missing months with zeros
         $result = [];
         for ($i = 1; $i <= 12; $i++) {
             $result[] = [
@@ -163,48 +167,35 @@ class SalesReportController extends Controller
         return $result;
     }
 
+    /**
+     * Mendapatkan distribusi status (Lunas/Belum Lunas).
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Support\Collection
+     */
     private function getStatusDistribution(Request $request)
     {
-        $query = SalesRecap::query();
-
-        if ($request->filled('month')) {
-            $query->whereMonth('date', $request->month);
-        }
-
-        if ($request->filled('year')) {
-            $query->whereYear('date', $request->year);
-        } else {
-            $query->whereYear('date', date('Y'));
-        }
-
-        return $query->selectRaw('
-            status,
-            COUNT(*) as count,
-            SUM(total_selling) as amount
-        ')
+        return $this->buildBaseQuery($request)
+            ->selectRaw('
+                status,
+                COUNT(*) as count,
+                SUM(total_selling) as amount
+            ')
             ->groupBy('status')
             ->get();
     }
 
+    /**
+     * Mendapatkan top proyek berdasarkan profit.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @param  int                      $limit  Jumlah proyek yang ditampilkan
+     * @return \Illuminate\Support\Collection
+     */
     private function getTopProjects(Request $request, $limit = 5)
     {
-        $query = SalesRecap::query();
-
-        if ($request->filled('month')) {
-            $query->whereMonth('date', $request->month);
-        }
-
-        if ($request->filled('year')) {
-            $query->whereYear('date', $request->year);
-        } else {
-            $query->whereYear('date', date('Y'));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        return $query->orderBy('total_profit', 'desc')
+        return $this->buildBaseQuery($request)
+            ->orderBy('total_profit', 'desc')
             ->limit($limit)
             ->get();
     }
