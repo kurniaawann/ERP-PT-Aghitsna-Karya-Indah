@@ -4,16 +4,19 @@
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
+
+        {{-- ==================== Header & Toolbar ==================== --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Rekening Pembayaran</h1>
 
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <!-- Form Pencarian -->
+
+            {{-- Form Pencarian --}}
             <form method="GET" action="{{ route('payment-accounts.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
                 <x-filters.search-input :value="request('search')" placeholder="Cari rekening..." />
             </form>
 
-            <!-- Aksi di Kanan -->
+            {{-- Tombol Aksi --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <button type="button" id="delete-button" onclick="openModal('deleteModal')" disabled
@@ -27,29 +30,29 @@
             </div>
         </div>
 
-        {{-- Table Component --}}
+        {{-- ==================== Tabel Rekening ==================== --}}
         @include('components.finance.payment-accounts.table')
 
     </div>
 
-    {{-- Pagination --}}
+    {{-- ==================== Pagination ==================== --}}
     <x-pagination :paginator="$accounts" />
 
-    {{-- Modal Tambah --}}
+    {{-- ==================== Modal Tambah ==================== --}}
     @include('components.finance.payment-accounts.add-modal')
 
-    {{-- Modal Edit untuk setiap account --}}
+    {{-- ==================== Modal Edit (per baris) ==================== --}}
     @foreach ($accounts as $account)
         @include('components.finance.payment-accounts.edit-modal', ['account' => $account])
     @endforeach
 
-    {{-- Modal Konfirmasi Bulk Delete --}}
+    {{-- ==================== Modal Konfirmasi Bulk Delete ==================== --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus rekening yang dipilih?
     </x-modal>
 
-    {{-- Modal Error Penggunaan --}}
+    {{-- ==================== Modal Error Penggunaan ==================== --}}
     <x-modal id="errorModal" title="Tidak Dapat Menghapus" :readonly="true">
         <div class="flex items-start gap-3">
             <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-error-light">
@@ -59,6 +62,11 @@
         </div>
     </x-modal>
 
-    {{-- JavaScript --}}
-    @include('partials.finance.payment-accounts-scripts')
+    {{-- ==================== Session Data untuk JavaScript ==================== --}}
+    @if (session('usage_error'))
+        <div id="usageErrorData" data-message="{{ session('usage_error') }}" class="hidden"></div>
+    @endif
+
+    {{-- ==================== JavaScript ==================== --}}
+    @vite('resources/js/pages/finance/payment-accounts/index.js')
 @endsection

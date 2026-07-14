@@ -1,7 +1,8 @@
-{{-- Modal Edit Rekening Pembayaran --}}
+{{-- ==================== Modal Edit Rekening Pembayaran ==================== --}}
 <x-modal id="editModal-{{ $account->id }}" title="Edit Rekening Pembayaran"
     action="{{ route('payment-accounts.update', $account->id) }}" method="PUT" buttonText="Update">
 
+    {{-- ID Rekening (Read-only) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">ID Rekening</label>
         <input type="text" value="{{ $account->id }}" class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed"
@@ -9,6 +10,7 @@
         <p class="text-xs text-text-secondary mt-1">ID Rekening tidak dapat diubah</p>
     </div>
 
+    {{-- Nama Bank --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Bank <span class="text-error">*</span></label>
         <input type="text" name="bank_name" value="{{ $account->bank_name }}" class="w-full border rounded p-2"
@@ -16,6 +18,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Nomor Rekening --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nomor Rekening <span class="text-error">*</span></label>
         <input type="text" name="account_number" value="{{ $account->account_number }}"
@@ -23,6 +26,7 @@
             oninvalid="this.setCustomValidity('Nomor rekening wajib diisi')" oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Nama Pemilik Rekening --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Pemilik Rekening <span class="text-error">*</span></label>
         <input type="text" name="account_holder" value="{{ $account->account_holder }}"

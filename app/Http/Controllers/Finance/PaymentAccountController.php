@@ -3,73 +3,116 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\StorePaymentAccountRequest;
+use App\Http\Requests\Finance\UpdatePaymentAccountRequest;
 use App\Models\Finance\PaymentAccount;
+use App\Services\Finance\PaymentAccountService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Controller untuk sub modul Rekening Pembayaran (Finance).
+ *
+ * Menangani operasi CRUD rekening pembayaran, toggle status aktif,
+ * dan bulk delete dengan pengecekan penggunaan di tabel lain.
+ */
 class PaymentAccountController extends Controller
 {
+    public function __construct(
+        private PaymentAccountService $service
+    ) {}
+
+    /**
+     * Halaman index: menampilkan daftar rekening pembayaran dengan filter pencarian.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
-        $query = PaymentAccount::query();
+        $accounts = $this->service->buildFilteredQuery($request)
+            ->orderBy('id')
+            ->paginate(15);
 
-        // Search functionality
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('bank_name', 'like', "%{$search}%")
-                    ->orWhere('account_number', 'like', "%{$search}%")
-                    ->orWhere('account_holder', 'like', "%{$search}%");
-            });
-        }
-
-        $accounts = $query->orderBy('id')->paginate(15);
-        return view('pages.finance.payment-accounts', compact('accounts'));
+        return view('pages.finance.payment-accounts.index', compact('accounts'));
     }
 
-    public function store(Request $request)
+    /**
+     * Simpan rekening pembayaran baru.
+     *
+     * @param  StorePaymentAccountRequest $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StorePaymentAccountRequest $request)
     {
-        PaymentAccount::create([
-            'bank_name' => $request->bank_name,
-            'account_number' => $request->account_number,
-            'account_holder' => $request->account_holder,
-            'is_active' => true,
-        ]);
+        $this->service->createAccount($request->validated());
 
         return redirect()->route('payment-accounts.index')
             ->with('success', 'Rekening pembayaran berhasil ditambahkan!');
     }
 
-    public function update(Request $request, PaymentAccount $paymentAccount)
+    /**
+     * Update rekening pembayaran.
+     *
+     * @param  UpdatePaymentAccountRequest $request
+     * @param  PaymentAccount              $paymentAccount
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(UpdatePaymentAccountRequest $request, PaymentAccount $paymentAccount)
     {
-        $paymentAccount->update([
-            'bank_name' => $request->bank_name,
-            'account_number' => $request->account_number,
-            'account_holder' => $request->account_holder,
-        ]);
+        $this->service->updateAccount($paymentAccount, $request->validated());
 
         return redirect()->route('payment-accounts.index')
             ->with('success', 'Rekening pembayaran berhasil diupdate!');
     }
 
+    /**
+     * Toggle status aktif/nonaktif rekening pembayaran.
+     *
+     * Selalu diizinkan (soft approach). Saat nonaktif:
+     * - Data lama (invoice, quotation, dll) tidak terpengaruh.
+     * - Dropdown dokumen baru hanya menampilkan rekening aktif.
+     *
+     * @param  PaymentAccount $paymentAccount
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function toggleActive(PaymentAccount $paymentAccount)
     {
-        $paymentAccount->update([
-            'is_active' => !$paymentAccount->is_active,
-        ]);
+        $this->service->toggleActive($paymentAccount);
 
+        $paymentAccount->refresh();
         $status = $paymentAccount->is_active ? 'diaktifkan' : 'dinonaktifkan';
-        return redirect()->route('payment-accounts.index')
-            ->with('success', "Rekening pembayaran berhasil {$status}!");
+        $msg = "Rekening pembayaran berhasil {$status}!";
+
+        // Beri info jika menonaktifkan rekening yang masih dipakai
+        if (!$paymentAccount->is_active) {
+            $summary = $this->service->getUsageSummary($paymentAccount);
+
+            if (!empty($summary)) {
+                $details = collect($summary)->map(fn($s) => "{$s['table']} ({$s['count']})")->implode(', ');
+                $msg .= " Rekening ini masih digunakan pada: {$details}. Data yang sudah ada tidak akan terpengaruh.";
+            }
+        }
+
+        return redirect()->route('payment-accounts.index')->with('success', $msg);
     }
 
+    /**
+     * Hapus beberapa rekening pembayaran sekaligus (bulk delete).
+     *
+     * Mencek penggunaan rekening di tabel lain sebelum menghapus.
+     * Mendukung response AJAX dan redirect biasa.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
     public function destroySelected(Request $request)
     {
-        $selectedIds = $request->selected_accounts;
+        $selectedIds = $request->input('selected_accounts', []);
         $totalAccounts = PaymentAccount::count();
         $selectedCount = count($selectedIds);
         $isAjax = $request->ajax();
 
+        // Guard: tidak boleh menghapus semua rekening
         if ($selectedCount >= $totalAccounts) {
             $msg = 'Tidak dapat menghapus semua rekening pembayaran. Minimal 1 rekening harus tetap ada.';
             return $isAjax
@@ -77,29 +120,11 @@ class PaymentAccountController extends Controller
                 : redirect()->route('payment-accounts.index')->with('error', $msg);
         }
 
-        // Cek apakah rekening sedang digunakan di data lain
-        $usedIds = [];
-
-        foreach ($selectedIds as $id) {
-            if (
-                DB::table('kwintansi')->where('payment_account_id', $id)->exists()
-                || DB::table('project_quotations')->whereJsonContains('selected_payment_accounts', $id)->exists()
-                || DB::table('aluminium_quotations')->whereJsonContains('selected_payment_accounts', $id)->exists()
-                || DB::table('proyek_invoices')->whereJsonContains('selected_payment_accounts', $id)->exists()
-                || DB::table('alumunium_invoices')->whereJsonContains('selected_payment_accounts', $id)->exists()
-                || DB::table('notas_administrasi')->whereJsonContains('selected_payment_accounts', $id)->exists()
-                || DB::table('rabs')->where('selected_payment_accounts', 'like', '%"'.$id.'"%')->exists()
-            ) {
-                $usedIds[] = $id;
-            }
-        }
+        // Cek penggunaan rekening di tabel lain (batch query)
+        $usedIds = $this->service->findUsedAccountIds($selectedIds);
 
         if (!empty($usedIds)) {
-            $usedNames = PaymentAccount::whereIn('id', $usedIds)
-                ->get()
-                ->map(fn($a) => $a->bank_name . ' - ' . $a->account_number)
-                ->implode(', ');
-
+            $usedNames = $this->service->getAccountLabels($usedIds);
             $msg = "Rekening berikut tidak dapat dihapus karena masih digunakan pada data lain: {$usedNames}. Silahkan hapus atau ubah data yang menggunakan rekening ini terlebih dahulu.";
 
             return $isAjax
@@ -107,7 +132,7 @@ class PaymentAccountController extends Controller
                 : redirect()->route('payment-accounts.index')->with('usage_error', $msg);
         }
 
-        PaymentAccount::whereIn('id', $selectedIds)->delete();
+        $this->service->bulkDelete($selectedIds);
 
         $msg = "{$selectedCount} rekening pembayaran berhasil dihapus!";
         return $isAjax
@@ -115,16 +140,32 @@ class PaymentAccountController extends Controller
             : redirect()->route('payment-accounts.index')->with('success', $msg);
     }
 
+    /**
+     * Hapus satu rekening pembayaran.
+     *
+     * Guard:
+     * 1. Minimal 1 rekening harus tetap ada.
+     * 2. Rekening tidak boleh masih digunakan di tabel lain (kwintansi, invoice, quotation, dll).
+     *
+     * @param  PaymentAccount $paymentAccount
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(PaymentAccount $paymentAccount)
     {
-        // Cek apakah ini satu-satunya rekening
-        $totalAccounts = PaymentAccount::count();
-        if ($totalAccounts <= 1) {
+        if (!$this->service->canDelete()) {
             return redirect()->route('payment-accounts.index')
                 ->with('error', 'Tidak dapat menghapus rekening terakhir. Minimal 1 rekening harus tetap ada.');
         }
 
-        $paymentAccount->delete();
+        if ($this->service->isAccountUsed($paymentAccount)) {
+            $summary = $this->service->getUsageSummary($paymentAccount);
+            $details = collect($summary)->map(fn($s) => "{$s['table']} ({$s['count']})")->implode(', ');
+
+            return redirect()->route('payment-accounts.index')
+                ->with('error', "Rekening \"{$paymentAccount->bank_name} - {$paymentAccount->account_number}\" tidak dapat dihapus karena masih digunakan pada: {$details}. Nonaktifkan rekening ini atau hapus data yang menggunakannya terlebih dahulu.");
+        }
+
+        $this->service->deleteAccount($paymentAccount);
 
         return redirect()->route('payment-accounts.index')
             ->with('success', 'Rekening pembayaran berhasil dihapus!');

@@ -1,11 +1,14 @@
-{{-- Table Rekening Pembayaran --}}
+{{-- ==================== Tabel Rekening Pembayaran ==================== --}}
 <form id="deleteForm" method="POST" action="{{ route('payment-accounts.destroySelected') }}">
     @csrf
     @method('DELETE')
+
     <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
+
+                    {{-- ==================== Header Tabel ==================== --}}
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
@@ -16,9 +19,12 @@
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
+
+                    {{-- ==================== Body Tabel ==================== --}}
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($accounts as $index => $account)
                             <tr class="hover:bg-surface-secondary transition-colors duration-150">
+
                                 {{-- Checkbox --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_accounts[]" value="{{ $account->id }}"
@@ -46,18 +52,18 @@
                                     {{ $account->account_holder }}
                                 </td>
 
-                                {{-- Status --}}
+                                {{-- Status Toggle --}}
                                 <td class="p-2 text-center">
                                     <button type="button" onclick="toggleActive({{ $account->id }})"
                                         class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-lg gap-1 transition-colors duration-200
-                                    {{ $account->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-button-cancel text-button-inactive hover:bg-button-cancel-hover hover:text-text-heading' }}">
+                                    {{ $account->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-button-cancel text-text-primary hover:bg-button-cancel-hover hover:text-text-heading' }}">
                                         <i
                                             class="fa-solid {{ $account->is_active ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
                                         {{ $account->is_active ? 'Aktif' : 'Nonaktif' }}
                                     </button>
                                 </td>
 
-                                {{-- Aksi --}}
+                                {{-- Tombol Edit --}}
                                 <td class="p-2 text-center">
                                     <button type="button" onclick="openModal('editModal-{{ $account->id }}')"
                                         class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 mx-auto">
@@ -66,10 +72,11 @@
                                     </button>
                                 </td>
                             </tr>
+
+                        {{-- ==================== Empty State ==================== --}}
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center p-4 text-text-secondary">Data tidak ditemukan.
-                                </td>
+                                <td colspan="6" class="text-center p-4 text-text-secondary">Data tidak ditemukan.</td>
                             </tr>
                         @endforelse
                     </tbody>
