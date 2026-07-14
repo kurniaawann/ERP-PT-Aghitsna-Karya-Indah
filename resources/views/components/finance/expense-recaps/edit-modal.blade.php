@@ -1,7 +1,8 @@
-{{-- Modal Edit Expense Report --}}
+{{-- Modal Edit Rekap Pengeluaran --}}
 <x-modal id="editModal-{{ $expense->id }}" title="Edit Rekap Pengeluaran"
     action="{{ route('recap-expense.update', $expense->id) }}" method="PUT" buttonText="Update">
 
+    {{-- Kategori Pengeluaran --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Kategori Pengeluaran <span class="text-error">*</span></label>
         <select name="transaction_category_id" class="w-full border rounded p-2" required
@@ -17,6 +18,7 @@
         </select>
     </div>
 
+    {{-- Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="transaction_date" class="w-full border rounded p-2"
@@ -25,12 +27,14 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Keterangan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan <span class="text-error">*</span></label>
         <textarea name="description" class="w-full border rounded p-2" rows="3" required maxlength="1000"
             oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $expense->description }}</textarea>
     </div>
 
+    {{-- Jumlah Pengeluaran --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Pengeluaran <span class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="expense_amount"
@@ -39,18 +43,21 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Nomor Faktur --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">No. Faktur (Opsional)</label>
         <input type="text" name="invoice_number" class="w-full border rounded p-2"
             value="{{ $expense->invoice_number }}" maxlength="100">
     </div>
 
+    {{-- Sumber Uang --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Sumber Uang (Opsional)</label>
         <input type="text" name="money_source" class="w-full border rounded p-2" value="{{ $expense->money_source }}"
             maxlength="255">
     </div>
 
+    {{-- Catatan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan (Opsional)</label>
         <textarea name="notes" class="w-full border rounded p-2" rows="2">{{ $expense->notes }}</textarea>

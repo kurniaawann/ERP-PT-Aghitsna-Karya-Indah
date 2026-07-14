@@ -108,9 +108,9 @@ class SalesRecapObserver
     {
         $salesRecapId = $salesRecap->getKey();
 
-        $existingExpenseRecap = ExpenseRecap::where('sales_recap_id', $salesRecapId)->first();
+        $exists = ExpenseRecap::where('sales_recap_id', $salesRecapId)->exists();
 
-        if (!$existingExpenseRecap) {
+        if (!$exists) {
             $incomeCategory = TransactionCategory::where('code', 'UANG_MASUK')->first();
 
             if ($incomeCategory) {

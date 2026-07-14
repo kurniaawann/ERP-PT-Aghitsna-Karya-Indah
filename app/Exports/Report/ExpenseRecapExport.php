@@ -16,13 +16,41 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use App\Models\Report\ExpenseRecap;
 use Carbon\Carbon;
 
+/**
+ * Export class untuk rekap pengeluaran ke Excel.
+ *
+ * Menghasilkan file Excel dengan format:
+ * - Header: PT. AGHITSNA KARYA INDAH / LAPORAN PENGELUARAN / PERIODE
+ * - Data: Grouped by kategori dengan subtotal per kategori
+ * - Grand Total: Jumlah keseluruhan
+ * - Rekapitulasi: Ringkasan uang masuk, uang keluar, saldo
+ * - Tanda tangan: Dibuat/Diperiksa & Direktur
+ *
+ * @property \Illuminate\Database\Eloquent\Collection $expenseRecaps
+ * @property string                                   $periodTitle
+ * @property object                                   $totals
+ */
 class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
 {
+    /** @var \Illuminate\Database\Eloquent\Collection Data rekap pengeluaran */
     protected $expenseRecaps;
+
+    /** @var string Judul periode untuk header */
     protected $periodTitle;
+
+    /** @var object Total income, expense, dan balance */
     protected $totals;
+
+    /** @var array Info merge cells (unused) */
     protected $mergeInfo = [];
 
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection $expenseRecaps  Data rekap pengeluaran
+     * @param  int|null                                 $month           Filter bulan
+     * @param  int|null                                 $year            Filter tahun
+     * @param  string|null                              $categoryName    Nama kategori (unused)
+     * @param  object|null                              $totals          Total income, expense, balance
+     */
     public function __construct($expenseRecaps, $month = null, $year = null, $categoryName = null, $totals = null)
     {
         $this->expenseRecaps = $expenseRecaps;
