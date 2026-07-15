@@ -3,227 +3,191 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\StoreReimburseRequest;
+use App\Http\Requests\Finance\UpdateReimburseRequest;
 use App\Models\Finance\Reimburse;
 use App\Exports\Finance\ReimburseExport;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Services\Finance\ReimburseService;
 use App\Traits\HasBulkActions;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Controller untuk modul Reimbursement.
+ *
+ * Menangani HTTP request untuk operasi CRUD, persetujuan,
+ * penolakan, dan ekspor data reimbursement.
+ *
+ * Seluruh business logic didelegasikan ke ReimburseService.
+ */
 class ReimburseController extends Controller
 {
     use HasBulkActions;
+
+    public function __construct(
+        private ReimburseService $reimburseService
+    ) {}
+
     /**
-     * Display a listing of the resource.
-     * Menampilkan halaman index reimburse dengan filter & search
+     * Menampilkan halaman index reimburse dengan filter & search.
+     *
+     * @param  \Illuminate\Http\Request $request  Request dengan parameter filter
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        // Ambil parameter filter dari request
+        $reimburses = $this->reimburseService
+            ->buildFilteredQuery($request)
+            ->paginate(15)
+            ->withQueryString();
+
         $search = $request->input('search');
         $status = $request->input('status');
         $month = $request->input('month');
         $year = $request->input('year');
 
-        // Query reimburse
-        $reimburses = Reimburse::query()
-            // Filter pencarian (project name atau reimburse code)
-            ->when($search, function ($query, $search) {
-                return $query->where('project_name', 'like', "%{$search}%")
-                    ->orWhere('reimburse_code', 'like', "%{$search}%");
-            })
-            // Filter status
-            ->when($status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            // Filter bulan
-            ->when($month, function ($query, $month) {
-                return $query->whereMonth('date', $month);
-            })
-            // Filter tahun
-            ->when($year, function ($query, $year) {
-                return $query->whereYear('date', $year);
-            })
-            // Urutkan berdasarkan tanggal terbaru
-            ->latest('date')
-            ->paginate(15);
-
-        // Return view dengan data reimburses
-        return view('pages.finance.reimburse', compact('reimburses', 'search', 'status', 'month', 'year'));
+        return view('pages.finance.reimburse.index', compact('reimburses', 'search', 'status', 'month', 'year'));
     }
 
     /**
-     * Store a newly created resource in storage.
-     * Menyimpan data reimburse baru (role admin)
+     * Menyimpan data reimburse baru.
+     *
+     * @param  \App\Http\Requests\Finance\StoreReimburseRequest $request
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request)
+    public function store(StoreReimburseRequest $request)
     {
-        // Ambil semua data dari form
-        $data = $request->all();
+        $this->reimburseService->storeReimburse($request->validated());
 
-        // Auto-generate reimburse code
-        $data['reimburse_code'] = Reimburse::generateReimburseCode();
-
-        // Set default status = draft
-        $data['status'] = 'draft';
-
-        // Insert data reimburse ke database
-        Reimburse::create($data);
-
-        // Redirect dengan success message
-        return redirect()->route('reimburse.index')->with('success', 'Pengajuan reimburse berhasil ditambahkan!');
+        return redirect()
+            ->route('reimburse.index')
+            ->with('success', 'Pengajuan reimburse berhasil ditambahkan!');
     }
 
     /**
-     * Update the specified resource in storage.
-     * Update data reimburse (hanya jika status masih draft)
+     * Memperbarui data reimburse.
+     *
+     * Hanya data dengan status 'draft' yang dapat diperbarui.
+     *
+     * @param  \App\Http\Requests\Finance\UpdateReimburseRequest $request
+     * @param  \App\Models\Finance\Reimburse                     $reimburse
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, Reimburse $reimburse)
+    public function update(UpdateReimburseRequest $request, Reimburse $reimburse)
     {
-        // Cek apakah status masih draft (hanya draft yang bisa di-edit)
-        if ($reimburse->status !== 'draft') {
-            return redirect()->route('reimburse.index')->with('error', 'Reimburse yang sudah disetujui/ditolak tidak dapat diubah!');
+        try {
+            $this->reimburseService->updateReimburse($reimburse, $request->validated());
+
+            return redirect()
+                ->route('reimburse.index')
+                ->with('success', 'Data reimburse berhasil diperbarui!');
+        } catch (\RuntimeException $e) {
+            return redirect()
+                ->route('reimburse.index')
+                ->with('error', $e->getMessage());
         }
-
-        // Update data reimburse
-        $reimburse->update($request->all());
-
-        // Redirect dengan success message
-        return redirect()->route('reimburse.index')->with('success', 'Data reimburse berhasil diperbarui!');
     }
 
     /**
-     * Remove the specified resource from storage.
-     * Bulk delete reimburse yang dipilih
+     * Bulk delete reimburse yang dipilih.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request)
     {
-        return $this->destroySelectedBy($request, Reimburse::class, 'ids', 'reimburse_code', 'reimburse.index');
+        return $this->destroySelectedBy(
+            $request,
+            Reimburse::class,
+            'ids',
+            'reimburse_code',
+            'reimburse.index'
+        );
     }
 
     /**
-     * Approve reimburse (role super admin)
-     * Menyetujui reimburse yang dipilih
+     * Approve reimburse yang dipilih (role super admin).
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function approve(Request $request)
     {
-        // Ambil array reimburse_code yang dipilih
         $ids = $request->input('ids');
 
-        // Validasi: cek apakah ada data yang dipilih
         if (empty($ids)) {
-            return redirect()->route('reimburse.index')->with('error', 'Tidak ada reimburse yang dipilih!');
+            return redirect()
+                ->route('reimburse.index')
+                ->with('error', 'Tidak ada reimburse yang dipilih!');
         }
 
-        // Update status menjadi approved untuk semua reimburse yang dipilih
-        Reimburse::whereIn('reimburse_code', $ids)
-            ->where('status', 'draft') // Hanya yang statusnya draft
-            ->update([
-                'status' => 'approved',
-                'status_changed_at' => now(), // Waktu approval
-            ]);
+        $this->reimburseService->bulkApprove($ids);
 
-        return redirect()->route('reimburse.index')->with('success', 'Reimburse berhasil disetujui!');
+        return redirect()
+            ->route('reimburse.index')
+            ->with('success', 'Reimburse berhasil disetujui!');
     }
 
     /**
-     * Reject reimburse (role super admin)
-     * Menolak reimburse yang dipilih
+     * Reject reimburse yang dipilih (role super admin).
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function reject(Request $request)
     {
-        // Ambil array reimburse_code yang dipilih
         $ids = $request->input('ids');
 
-        // Validasi: cek apakah ada data yang dipilih
         if (empty($ids)) {
-            return redirect()->route('reimburse.index')->with('error', 'Tidak ada reimburse yang dipilih!');
+            return redirect()
+                ->route('reimburse.index')
+                ->with('error', 'Tidak ada reimburse yang dipilih!');
         }
 
-        // Update status menjadi rejected
-        Reimburse::whereIn('reimburse_code', $ids)
-            ->where('status', 'draft') // Hanya yang statusnya draft
-            ->update([
-                'status' => 'rejected',
-                'status_changed_at' => now(), // Waktu rejection
-            ]);
+        $this->reimburseService->bulkReject($ids);
 
-        return redirect()->route('reimburse.index')->with('success', 'Reimburse berhasil ditolak!');
+        return redirect()
+            ->route('reimburse.index')
+            ->with('success', 'Reimburse berhasil ditolak!');
     }
 
     /**
-     * Export reimburse to PDF
+     * Export reimburse ke PDF.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function exportPdf(Request $request)
     {
-        // Ambil filter dari request
-        $search = $request->input('search');
-        $status = $request->input('status');
-        $month = $request->input('month');
-        $year = $request->input('year');
+        $reimburses = $this->reimburseService->getExportData($request);
+        $summary = $this->reimburseService->getStatusSummary($reimburses);
 
-        // Query reimburse dengan filter yang sama seperti di index
-        $reimburses = Reimburse::query()
-            ->when($search, function ($query, $search) {
-                return $query->where('project_name', 'like', "%{$search}%")
-                    ->orWhere('reimburse_code', 'like', "%{$search}%");
-            })
-            ->when($status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->when($month, function ($query, $month) {
-                return $query->whereMonth('date', $month);
-            })
-            ->when($year, function ($query, $year) {
-                return $query->whereYear('date', $year);
-            })
-            ->latest('date')
-            ->get();
+        $pdf = Pdf::loadView('exports.finance.reimburse-pdf', [
+            'reimburses'     => $reimburses,
+            'totalAmount'    => $summary['total_amount'],
+            'draftCount'     => $summary['draft_count'],
+            'approvedCount'  => $summary['approved_count'],
+            'rejectedCount'  => $summary['rejected_count'],
+            'status'         => $request->input('status'),
+        ]);
 
-        // Hitung total amount
-        $totalAmount = $reimburses->sum('total_amount');
-
-        // Load view PDF
-        $pdf = Pdf::loadView('exports.finance.reimburse-pdf', compact('reimburses', 'totalAmount', 'status'));
-
-        // Set paper size dan orientation
         $pdf->setPaper('a4', 'landscape');
 
-        // Download PDF
         return $pdf->download('Reimburse_' . date('Y-m-d') . '.pdf');
     }
 
     /**
-     * Export reimburse to Excel
+     * Export reimburse ke Excel.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Symfony\BinaryFileResponse
      */
     public function exportExcel(Request $request)
     {
-        // Ambil filter dari request
-        $search = $request->input('search');
+        $reimburses = $this->reimburseService->getExportData($request);
         $status = $request->input('status');
-        $month = $request->input('month');
-        $year = $request->input('year');
 
-        // Query reimburse dengan filter
-        $reimburses = Reimburse::query()
-            ->when($search, function ($query, $search) {
-                return $query->where('project_name', 'like', "%{$search}%")
-                    ->orWhere('reimburse_code', 'like', "%{$search}%");
-            })
-            ->when($status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->when($month, function ($query, $month) {
-                return $query->whereMonth('date', $month);
-            })
-            ->when($year, function ($query, $year) {
-                return $query->whereYear('date', $year);
-            })
-            ->latest('date')
-            ->get();
-
-        // Export ke Excel
         return Excel::download(
             new ReimburseExport($reimburses, $status),
             'Reimburse_' . date('Y-m-d') . '.xlsx'
@@ -231,8 +195,12 @@ class ReimburseController extends Controller
     }
 
     /**
-     * Get selected reimburses total (for super admin to see total before approving)
-     * API endpoint untuk menghitung total dari reimburse yang dipilih
+     * Menghitung total amount dari reimburse yang dipilih.
+     *
+     * API endpoint JSON untuk keperluan UI.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getSelectedTotal(Request $request)
     {
@@ -242,12 +210,8 @@ class ReimburseController extends Controller
             return response()->json(['total' => 0]);
         }
 
-        // Hitung total amount dari reimburse yang dipilih
-        $total = Reimburse::whereIn('reimburse_code', $ids)->sum('total_amount');
-
-        return response()->json([
-            'total' => $total,
-            'formatted_total' => 'Rp ' . number_format($total, 0, ',', '.')
-        ]);
+        return response()->json(
+            $this->reimburseService->getSelectedTotal($ids)
+        );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Exports\Finance;
 
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -14,24 +15,54 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Events\AfterSheet;
 
+/**
+ * Export class untuk data Reimbursement ke Excel.
+ *
+ * Menghasilkan file Excel dengan:
+ * - Header "LAPORAN REIMBURSEMENT"
+ * - Sub-header status filter
+ * - Tabel data reimburse
+ * - Baris total di akhir
+ * - Styling: border, warna header biru, bold total
+ */
 class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
 {
+    /**
+     * Data reimburse yang akan di-export.
+     *
+     * @var \Illuminate\Support\Collection
+     */
     protected $reimburses;
+
+    /**
+     * Filter status yang diterapkan.
+     *
+     * @var string|null
+     */
     protected $statusFilter;
 
     /**
-     * Constructor untuk menerima data reimburses dan filter status
+     * Constructor untuk menerima data reimburses dan filter status.
+     *
+     * @param  \Illuminate\Support\Collection $reimburses   Data reimburse
+     * @param  string|null                    $statusFilter Filter status (draft/approved/rejected)
      */
-    public function __construct($reimburses, $statusFilter = null)
+    public function __construct(Collection $reimburses, ?string $statusFilter = null)
     {
         $this->reimburses = $reimburses;
         $this->statusFilter = $statusFilter;
     }
 
     /**
-     * Return collection data untuk export
+     * Return collection data untuk export.
+     *
+     * Setiap baris berisi: no, kode, tanggal, nama proyek, keterangan belanja,
+     * total, due date, status, tanggal perubahan status, catatan.
+     * Baris terakhir adalah total.
+     *
+     * @return \Illuminate\Support\Collection
      */
-    public function collection()
+    public function collection(): Collection
     {
         $data = [];
         $no = 1;
@@ -72,7 +103,11 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
     }
 
     /**
-     * Headings untuk Excel
+     * Headings untuk Excel.
+     *
+     * Mengembalikan 4 baris: judul, sub-judul status, baris kosong, header kolom.
+     *
+     * @return array<int, array<int, string>>
      */
     public function headings(): array
     {
@@ -106,9 +141,14 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
     }
 
     /**
-     * Styling untuk Excel
+     * Styling untuk Excel.
+     *
+     * Mengatur: merge sel judul, warna header, border, alignment, bold total.
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @return array
      */
-    public function styles(Worksheet $sheet)
+    public function styles(Worksheet $sheet): array
     {
         $highestRow = $sheet->getHighestRow();
 
@@ -156,19 +196,19 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
-        // Align columns
-        $sheet->getStyle('A5:A' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // NO
-        $sheet->getStyle('B5:B' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // KODE
-        $sheet->getStyle('C5:C' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // TANGGAL
-        $sheet->getStyle('D5:D' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // NAMA PROYEK
-        $sheet->getStyle('E5:E' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // KETERANGAN
-        $sheet->getStyle('F5:F' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT); // TOTAL
-        $sheet->getStyle('G5:G' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // TGL TEMPO
-        $sheet->getStyle('H5:H' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // STATUS
-        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // TGL PERUBAHAN STATUS
-        $sheet->getStyle('J5:J' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // CATATAN
+        // Alignment per kolom
+        $sheet->getStyle('A5:A' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('B5:B' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C5:C' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('D5:D' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('E5:E' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('F5:F' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('G5:G' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('H5:H' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('J5:J' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-        // Bold untuk baris total (row terakhir)
+        // Bold + background untuk baris total (row terakhir)
         $sheet->getStyle('A' . $highestRow . ':J' . $highestRow)->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
@@ -181,26 +221,30 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
     }
 
     /**
-     * Column widths
+     * Column widths.
+     *
+     * @return array<string, int>
      */
     public function columnWidths(): array
     {
         return [
-            'A' => 6,   // NO
-            'B' => 12,  // KODE
-            'C' => 12,  // TANGGAL
-            'D' => 25,  // NAMA PROYEK
-            'E' => 40,  // KETERANGAN BELANJA
-            'F' => 18,  // TOTAL
-            'G' => 14,  // TGL JATUH TEMPO
-            'H' => 12,  // STATUS
-            'I' => 18,  // TGL PERUBAHAN STATUS
-            'J' => 30,  // CATATAN
+            'A' => 6,
+            'B' => 12,
+            'C' => 12,
+            'D' => 25,
+            'E' => 40,
+            'F' => 18,
+            'G' => 14,
+            'H' => 12,
+            'I' => 18,
+            'J' => 30,
         ];
     }
 
     /**
-     * Sheet title
+     * Sheet title.
+     *
+     * @return string
      */
     public function title(): string
     {
@@ -208,7 +252,11 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
     }
 
     /**
-     * Register events
+     * Register events.
+     *
+     * Mengatur auto-wrap text untuk kolom keterangan dan catatan.
+     *
+     * @return array
      */
     public function registerEvents(): array
     {
@@ -216,7 +264,6 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
             AfterSheet::class => function (AfterSheet $event) {
                 $highestRow = $event->sheet->getDelegate()->getHighestRow();
 
-                // Auto-wrap text untuk kolom keterangan dan catatan
                 $event->sheet->getDelegate()->getStyle('E5:E' . $highestRow)->getAlignment()->setWrapText(true);
                 $event->sheet->getDelegate()->getStyle('J5:J' . $highestRow)->getAlignment()->setWrapText(true);
             },

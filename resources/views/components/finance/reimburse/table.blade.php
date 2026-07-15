@@ -1,4 +1,10 @@
-{{-- Reimburse Table Component --}}
+{{-- ═══════════════════════════════════════════════════════════════════════════
+     KOMPONEN TABEL REIMBURSEMENT
+     Menampilkan daftar reimbursement dalam tabel dengan checkbox,
+     kolom data, badge status, dan tombol aksi.
+     ═══════════════════════════════════════════════════════════════════════════ --}}
+
+{{-- ─── Form Hapus Bulk ────────────────────────────────────────────────────── --}}
 <form id="deleteForm" method="POST" action="{{ route('reimburse.destroy') }}">
     @csrf
     @method('DELETE')
@@ -7,6 +13,8 @@
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
+
+                    {{-- ─── Header Tabel ───────────────────────────────────────── --}}
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
@@ -24,22 +32,25 @@
                             @endif
                         </tr>
                     </thead>
+
+                    {{-- ─── Body Tabel ──────────────────────────────────────────── --}}
                     <tbody>
                         @forelse($reimburses as $reimburse)
                             <tr class="border-t hover:bg-surface-secondary">
+
+                                {{-- Checkbox: Super Admin hanya bisa pilih draft --}}
                                 <td class="p-2 text-center">
                                     @if (Auth::user()->role === 'superadmin' && $reimburse->status === 'draft')
-                                        {{-- Super admin can select draft items --}}
                                         <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
                                             class="reimburse-checkbox w-4 h-4 accent-primary cursor-pointer"
                                             data-amount="{{ $reimburse->total_amount }}">
                                     @elseif (Auth::user()->role === 'admin')
-                                        {{-- Admin can select all items --}}
                                         <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
                                             class="w-4 h-4 accent-primary cursor-pointer">
                                     @endif
                                 </td>
 
+                                {{-- Kolom Data --}}
                                 <td class="p-2 font-medium text-primary">{{ $reimburse->reimburse_code }}</td>
                                 <td class="p-2">{{ $reimburse->formatted_date }}</td>
                                 <td class="p-2">{{ $reimburse->project_name }}</td>
@@ -47,7 +58,7 @@
                                 <td class="p-2 text-right font-semibold">{{ $reimburse->formatted_total_amount }}</td>
                                 <td class="p-2 text-center">{{ $reimburse->formatted_due_date }}</td>
 
-                                {{-- Status Badge --}}
+                                {{-- Badge Status --}}
                                 <td class="p-2 text-center">
                                     <span
                                         class="px-2 py-1 rounded-full text-xs font-semibold {{ $reimburse->status_badge_class }}">
@@ -60,9 +71,10 @@
                                     {{ $reimburse->formatted_status_changed_at }}
                                 </td>
 
+                                {{-- Catatan --}}
                                 <td class="p-2 text-sm">{{ Str::limit($reimburse->notes ?? '-', 30) }}</td>
 
-                                {{-- Aksi (Admin only, only for draft) --}}
+                                {{-- Tombol Aksi (Admin only, draft only) --}}
                                 @if (Auth::user()->role === 'admin')
                                     <td class="p-2 text-center">
                                         @if ($reimburse->status === 'draft')
@@ -82,6 +94,8 @@
                                 @endif
                             </tr>
                         @empty
+
+                            {{-- ─── Empty State ─────────────────────────────────── --}}
                             <tr>
                                 <td colspan="{{ Auth::user()->role === 'admin' ? '11' : '10' }}"
                                     class="text-center p-4 text-text-secondary">

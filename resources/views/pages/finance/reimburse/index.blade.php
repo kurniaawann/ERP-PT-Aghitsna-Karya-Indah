@@ -1,16 +1,25 @@
+{{-- ═══════════════════════════════════════════════════════════════════════════
+     HALAMAN INDEX REIMBURSEMENT
+     Menampilkan daftar reimbursement dengan filter, search, aksi CRUD,
+     persetujuan (approve/reject), dan export.
+     ═══════════════════════════════════════════════════════════════════════════ --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Reimbursement')
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
+
+        {{-- ─── Header Halaman ────────────────────────────────────────────────── --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Reimbursement</h1>
 
-        {{-- Search & Action Buttons --}}
+        {{-- ─── Toolbar: Search, Filter, dan Tombol Aksi ─────────────────────── --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
+
             {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('reimburse.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+
                 {{-- Filter Status --}}
                 <div class="w-full lg:w-auto">
                     <label for="status-select" class="sr-only">Semua Status</label>
@@ -30,23 +39,32 @@
                 {{-- Filter Tahun --}}
                 <x-filters.year-filter name="year" :value="request('year')" />
 
-                {{-- Search --}}
+                {{-- Input Pencarian --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari proyek atau kode reimburse..." />
             </form>
 
-            {{-- Aksi di Kanan --}}
+            {{-- Tombol Aksi (Kanan) --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    {{-- Print Dropdown --}}
-                    <x-buttons.print-dropdown :excelRoute="route('reimburse.export.excel')" :pdfRoute="route('reimburse.export.pdf')" :queryParams="['search' => request('search'), 'status' => request('status'), 'month' => request('month'), 'year' => request('year')]" />
 
+                    {{-- Tombol Print/Export --}}
+                    <x-buttons.print-dropdown
+                        :excelRoute="route('reimburse.export.excel')"
+                        :pdfRoute="route('reimburse.export.pdf')"
+                        :queryParams="[
+                            'search' => request('search'),
+                            'status' => request('status'),
+                            'month'  => request('month'),
+                            'year'   => request('year'),
+                        ]" />
+
+                    {{-- Tombol Tambah (Admin only) --}}
                     @if (Auth::user()->role === 'admin')
-                        {{-- Admin can add new reimburse --}}
                         <x-buttons.add-button modalId="addModal" text="Tambah Reimburse" />
                     @endif
 
+                    {{-- Dropdown Persetujuan (Super Admin only) --}}
                     @if (Auth::user()->role === 'superadmin')
-                        {{-- Super Admin Approval Dropdown --}}
                         <div class="relative inline-block text-left w-full sm:w-auto">
                             <button type="button" id="approval-dropdown-button" disabled
                                 class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed">
@@ -73,12 +91,13 @@
                         </div>
                     @endif
 
+                    {{-- Tombol Hapus --}}
                     <x-buttons.delete-button modalId="deleteModal" />
                 </div>
             </div>
         </div>
 
-        {{-- Total Info untuk Super Admin --}}
+        {{-- ─── Ringkasan Data Terpilih (Super Admin) ────────────────────────── --}}
         @if (Auth::user()->role === 'superadmin')
             <div id="selected-info" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p class="text-sm text-text-primary">
@@ -87,39 +106,39 @@
             </div>
         @endif
 
-        {{-- Table Component --}}
+        {{-- ─── Tabel Reimbursement ─────────────────────────────────────────── --}}
         @include('components.finance.reimburse.table', ['reimburses' => $reimburses])
 
     </div>
 
-    {{-- Pagination --}}
+    {{-- ─── Pagination ───────────────────────────────────────────────────────── --}}
     <x-pagination :paginator="$reimburses" />
 
-    {{-- Modal Tambah (Admin only) --}}
+    {{-- ─── Modal Tambah (Admin only) ────────────────────────────────────────── --}}
     @if (Auth::user()->role === 'admin')
         @include('components.finance.reimburse.add-modal')
     @endif
 
-    {{-- Modal Edit untuk setiap reimburse (only for draft) --}}
+    {{-- ─── Modal Edit per baris (Admin only, status draft) ─────────────────── --}}
     @foreach ($reimburses as $reimburse)
         @if ($reimburse->status === 'draft' && Auth::user()->role === 'admin')
             @include('components.finance.reimburse.edit-modal', ['reimburse' => $reimburse])
         @endif
     @endforeach
 
-    {{-- Modal Konfirmasi Approve (Super Admin) --}}
+    {{-- ─── Modal Konfirmasi Approve (Super Admin) ─────────────────────────── --}}
     @if (Auth::user()->role === 'superadmin')
         @include('components.finance.reimburse.approve-modal')
         @include('components.finance.reimburse.reject-modal')
     @endif
 
-    {{-- Modal Konfirmasi Bulk Delete --}}
+    {{-- ─── Modal Konfirmasi Hapus ──────────────────────────────────────────── --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah Anda yakin ingin menghapus reimburse yang dipilih?
     </x-modal>
 
-    {{-- JavaScript --}}
-    @include('partials.finance.reimburse-scripts')
+    {{-- ─── JavaScript Module ───────────────────────────────────────────────── --}}
+    @vite('resources/js/pages/finance/reimburse/index.js')
     @include('partials.shared.print-dropdown-script')
 @endsection
