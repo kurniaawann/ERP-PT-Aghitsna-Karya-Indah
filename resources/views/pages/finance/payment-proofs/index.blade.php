@@ -4,6 +4,7 @@
 
 @section('content')
     <div class="space-y-4">
+        {{-- Section: Header --}}
         <div
             class="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-5 sm:p-6 text-white shadow-xl overflow-hidden relative">
             <div class="absolute inset-0 opacity-20"
@@ -27,6 +28,7 @@
             </div>
         </div>
 
+        {{-- Section: Summary Cards --}}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div
                 class="group rounded-2xl border border-border-strong bg-surface-base p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
@@ -89,6 +91,7 @@
             </div>
         </div>
 
+        {{-- Section: Filter --}}
         <div class="rounded-xl border border-border-strong bg-surface-base p-4 shadow-sm">
             <form method="GET" action="{{ route('payment-proofs.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -119,13 +122,16 @@
             </form>
         </div>
 
+        {{-- Section: Table --}}
         @include('components.finance.payment-proofs.table')
     </div>
 
+    {{-- Section: Pagination --}}
     <div class="mt-4">
         <x-pagination :paginator="$paymentProofs" />
     </div>
 
+    {{-- Section: Modals --}}
     @include('components.finance.payment-proofs.add-modal')
 
     @foreach ($paymentProofs as $paymentProof)
@@ -136,6 +142,31 @@
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
-
-    @include('partials.finance.payment-proofs-scripts')
 @endsection
+
+@push('scripts')
+    <script>
+        /* global handleFormSubmit, parseCurrencyInput, formatRupiah, bindPaymentProofForm, validatePaymentProofAmount */
+        window.paymentProofInvoiceData = @json($availableInvoices);
+    </script>
+    @vite('resources/js/pages/finance/payment-proofs/index.js')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            @foreach ($paymentProofs as $paymentProof)
+                (function () {
+                    var editForm = document.querySelector('#editModal-{{ $paymentProof->id }} form');
+                    if (editForm) {
+                        editForm.addEventListener('submit', function (e) {
+                            var submitBtn = this.querySelector('button[type="submit"]');
+                            var originalText = submitBtn.innerHTML;
+                            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                                e.preventDefault();
+                                return false;
+                            }
+                        });
+                    }
+                })();
+            @endforeach
+        });
+    </script>
+@endpush

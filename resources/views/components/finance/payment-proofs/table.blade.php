@@ -1,3 +1,4 @@
+{{-- Section: Payment Proof Table --}}
 <form id="deleteForm" method="POST" action="{{ route('payment-proofs.destroySelected') }}">
     @csrf
     @method('DELETE')
@@ -5,6 +6,7 @@
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-border-light">
+                    {{-- Section: Table Header --}}
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-3 text-center text-xs font-semibold uppercase tracking-wide text-text-label">
@@ -26,6 +28,7 @@
                                 Aksi</th>
                         </tr>
                     </thead>
+                    {{-- Section: Table Body --}}
                     <tbody>
                         @forelse($paymentProofs as $paymentProof)
                             @php
@@ -86,7 +89,6 @@
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
                                             Edit
                                         </button>
-
                                     </div>
                                 </td>
                             </tr>

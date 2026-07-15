@@ -1,73 +1,59 @@
+@php
+    $moduleLabel = collect($moduleOptions)->firstWhere('value', $paymentProof->module_type)['label'] ?? $paymentProof->module_type;
+    $invoiceTypeLabel = collect($invoiceTypeOptions)->firstWhere('value', $paymentProof->invoice_type)['label'] ?? $paymentProof->invoice_type;
+    $lookup = data_get($invoiceLookup, $paymentProof->module_type . '.' . $paymentProof->invoice_type . '.' . $paymentProof->invoice_number, []);
+    $invoiceLabel = $lookup['label'] ?? $paymentProof->invoice_number;
+@endphp
+
+{{-- Section: Edit Payment Proof Modal --}}
 <x-modal id="editModal-{{ $paymentProof->id }}" title="Edit Bukti Pembayaran"
     action="{{ route('payment-proofs.update', $paymentProof->id) }}" method="PUT" buttonText="Update"
     enctype="multipart/form-data">
 
+    {{-- Section: Module (read-only) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Modul <span class="text-error">*</span></label>
-        <select name="module_type" id="payment-proof-module-edit-{{ $paymentProof->id }}"
-            class="w-full border rounded p-2" required>
-            @foreach ($moduleOptions as $module)
-                <option value="{{ $module['value'] }}"
-                    {{ $paymentProof->module_type === $module['value'] ? 'selected' : '' }}>{{ $module['label'] }}
-                </option>
-            @endforeach
-        </select>
+        <label class="block text-text-primary mb-1">Modul</label>
+        <input type="text" value="{{ $moduleLabel }}" class="w-full border rounded p-2 bg-gray-100" readonly>
     </div>
 
+    {{-- Section: Invoice Type (read-only) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kategori Bukti <span class="text-error">*</span></label>
-        <select name="invoice_type" id="payment-proof-invoice-type-edit-{{ $paymentProof->id }}"
-            class="w-full border rounded p-2" required>
-            @foreach ($invoiceTypeOptions as $invoiceType)
-                <option value="{{ $invoiceType['value'] }}"
-                    {{ $paymentProof->invoice_type === $invoiceType['value'] ? 'selected' : '' }}>
-                    {{ $invoiceType['label'] }}</option>
-            @endforeach
-        </select>
+        <label class="block text-text-primary mb-1">Kategori Bukti</label>
+        <input type="text" value="{{ $invoiceTypeLabel }}" class="w-full border rounded p-2 bg-gray-100" readonly>
     </div>
 
+    {{-- Section: Invoice Number (read-only) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Invoice <span class="text-error">*</span></label>
-        <select name="invoice_number" id="payment-proof-invoice-number-edit-{{ $paymentProof->id }}"
-            class="w-full border rounded p-2" required onfocus="this.size=8" onchange="this.size=1; this.blur()" onblur="this.size=1">
-            <option value="">Pilih kategori</option>
-        </select>
-        <p class="text-xs text-text-secondary mt-1">Gulir daftar invoice untuk menampilkan data berikutnya.</p>
+        <label class="block text-text-primary mb-1">Invoice</label>
+        <input type="text" value="{{ $invoiceLabel }}" class="w-full border rounded p-2 bg-gray-100" readonly>
     </div>
 
+    {{-- Section: Payment Stage (read-only) --}}
     <div class="mb-3 p-3 bg-surface-secondary rounded border">
-        <div id="payment-proof-stage-wrap-edit-{{ $paymentProof->id }}">
-            <label class="block text-text-primary mb-1">Tahap Pembayaran</label>
-            <p id="payment-proof-stage-edit-{{ $paymentProof->id }}" class="font-semibold text-primary">Pembayaran ke
-                {{ $paymentProof->payment_stage ?? '-' }}</p>
-        </div>
-        <input type="hidden" name="payment_stage" id="payment-proof-stage-input-edit-{{ $paymentProof->id }}"
-            value="{{ $paymentProof->payment_stage }}">
+        <label class="block text-text-primary mb-1">Tahap Pembayaran</label>
+        <p class="font-semibold text-primary">Pembayaran ke {{ $paymentProof->payment_stage ?? '-' }}</p>
     </div>
 
-    <div class="mb-3 p-3 border rounded bg-amber-50 hidden"
-        id="payment-proof-amount-wrap-edit-{{ $paymentProof->id }}">
-        <label class="block text-text-primary mb-1">Nominal Pembayaran <span class="text-error">*</span></label>
-        <input type="text" name="amount" id="payment-proof-amount-edit-{{ $paymentProof->id }}" inputmode="numeric"
-            value="Rp {{ number_format($paymentProof->amount ?? 0, 0, ',', '.') }}" class="w-full border rounded p-2"
-            placeholder="Rp 0" required>
-        <p id="payment-proof-amount-help-edit-{{ $paymentProof->id }}" class="text-xs text-text-secondary mt-1">
-            Nominal akan divalidasi terhadap sisa tagihan invoice yang dipilih.
-        </p>
-        <p id="payment-proof-amount-warning-edit-{{ $paymentProof->id }}" class="text-error text-sm mt-1 hidden"></p>
-        <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek.</p>
+    {{-- Section: Amount (read-only) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Nominal Pembayaran</label>
+        <input type="text"
+            value="Rp {{ number_format($paymentProof->amount ?? 0, 0, ',', '.') }}"
+            class="w-full border rounded p-2 bg-gray-100" readonly>
     </div>
 
+    {{-- Section: Current File --}}
     <div class="mb-3 p-3 border rounded bg-blue-50">
         <label class="block text-text-primary mb-1">File Saat Ini</label>
         <a href="{{ asset($paymentProof->file_path) }}" target="_blank"
-            class="text-blue-600 hover:underline text-sm">Lihat gambar</a>
+            class="text-blue-600 hover:underline text-sm">{{ $paymentProof->file_name }}</a>
     </div>
 
+    {{-- Section: Replace File --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Ganti Gambar (Opsional)</label>
+        <label class="block text-text-primary mb-1">Ganti Gambar <span class="text-error">*</span></label>
         <input type="file" name="proof_image" accept="image/jpeg,image/png,image/gif,image/webp"
-            class="w-full border rounded p-2">
-        <p class="text-xs text-text-secondary mt-1">Kosongkan jika tidak ingin mengganti file.</p>
+            class="w-full border rounded p-2" required>
+        <p class="text-xs text-text-secondary mt-1">Format: JPG, PNG, GIF, WEBP. Maksimal 5 MB.</p>
     </div>
 </x-modal>
