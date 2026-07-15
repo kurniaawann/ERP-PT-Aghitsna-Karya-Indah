@@ -11,15 +11,15 @@ use Illuminate\Database\Eloquent\Model;
  * Menggunakan reimburse_code sebagai primary key (bukan auto-increment ID).
  * Format kode: RMB001, RMB002, RMB003, dst.
  *
- * @property string $reimburse_code
- * @property string $date
- * @property string $project_name
- * @property string $expense_description
- * @property int    $total_amount
- * @property string $due_date
- * @property string $status           draft|approved|rejected
- * @property string|null $notes
- * @property string|null $status_changed_at
+ * @property string                    $reimburse_code
+ * @property \Carbon\Carbon            $date
+ * @property string                    $project_name
+ * @property string                    $expense_description
+ * @property int                       $total_amount
+ * @property \Carbon\Carbon            $due_date
+ * @property string                    $status           draft|approved|rejected
+ * @property string|null               $notes
+ * @property \Carbon\Carbon|null       $status_changed_at
  */
 class Reimburse extends Model
 {
