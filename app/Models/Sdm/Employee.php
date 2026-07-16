@@ -2,17 +2,65 @@
 
 namespace App\Models\Sdm;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Model for the employees table.
+ *
+ * Uses employee_code (string) as the primary key.
+ * Each employee has relations to Attendance, Payroll, and Kasbon.
+ *
+ * @property string $employee_code
+ * @property string $name
+ * @property string|null $position
+ * @property string|null $phone
+ * @property string|null $email
+ * @property string|null $address
+ * @property string|null $division
+ * @property int|null $base_salary
+ * @property int|null $daily_wage
+ * @property Carbon|null $join_date
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ *
+ * @property-read int $effective_wage
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Sdm\Attendance[] $attendances
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Sdm\Payroll[] $payrolls
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Sdm\Kasbon[] $kasbons
+ */
 class Employee extends Model
 {
     use HasFactory;
 
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
     protected $primaryKey = 'employee_code';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
     public $incrementing = false;
+
+    /**
+     * The "type" of the auto-incrementing ID.
+     *
+     * @var string
+     */
     protected $keyType = 'string';
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'employee_code',
         'name',
@@ -26,6 +74,11 @@ class Employee extends Model
         'join_date',
     ];
 
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'join_date' => 'date',
         'base_salary' => 'integer',
@@ -33,9 +86,13 @@ class Employee extends Model
     ];
 
     /**
-     * Generate kode employee berikutnya (EMP001, EMP002, dst)
+     * Generate the next employee code in sequence.
+     *
+     * The format is EMP001, EMP002, ..., EMPnnn.
+     *
+     * @return string
      */
-    public static function generateEmployeeCode()
+    public static function generateEmployeeCode(): string
     {
         $lastEmployee = self::orderBy('employee_code', 'desc')->first();
 
@@ -43,75 +100,91 @@ class Employee extends Model
             return 'EMP001';
         }
 
-        // Ambil nomor dari kode terakhir (contoh: EMP001 -> 001)
         $lastNumber = (int) substr($lastEmployee->employee_code, 3);
         $newNumber = $lastNumber + 1;
 
-        // Format dengan 3 digit (001, 002, ..., 999, 1000, dst)
         return 'EMP' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
     /**
-     * Relasi ke Attendance
+     * Get the attendances for the employee.
+     *
+     * @return HasMany
      */
-    public function attendances()
+    public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'employee_id', 'employee_code');
     }
 
     /**
-     * Relasi ke Payroll
+     * Get the payrolls for the employee.
+     *
+     * @return HasMany
      */
-    public function payrolls()
+    public function payrolls(): HasMany
     {
         return $this->hasMany(Payroll::class, 'employee_id', 'employee_code');
     }
 
     /**
-     * Relasi ke Kasbon
+     * Get the kasbons for the employee.
+     *
+     * @return HasMany
      */
-    public function kasbons()
+    public function kasbons(): HasMany
     {
         return $this->hasMany(Kasbon::class, 'employee_id', 'employee_code');
     }
 
     /**
-     * Get upah yang digunakan (prioritas: daily_wage, jika tidak ada gunakan base_salary)
+     * Get the effective wage (daily_wage or base_salary as fallback).
+     *
+     * @return int|null
      */
-    public function getEffectiveWageAttribute()
+    public function getEffectiveWageAttribute(): int|null
     {
         return $this->daily_wage ?? $this->base_salary;
     }
 
     /**
-     * Calculate total upah berdasarkan hari masuk
+     * Calculate total wage based on the number of days worked.
+     *
+     * @param  int  $daysWorked
+     * @return int
      */
-    public function calculateWage($daysWorked)
+    public function calculateWage(int $daysWorked): int
     {
         return $this->effective_wage * $daysWorked;
     }
 
     /**
-     * Deteksi minggu ke berapa dari tanggal (1-4)
-     * Minggu 1: 1-7, Minggu 2: 8-14, Minggu 3: 15-21, Minggu 4: 22-akhir bulan
+     * Detect the week number (1-4) for a given date.
+     *
+     * Weeks are defined as: 1-7 days, 8-14 days, 15-21 days, 22-end.
+     *
+     * @param  \Carbon\Carbon|string  $date
+     * @return int
      */
-    public static function detectWeekNumber($date)
+    public static function detectWeekNumber($date): int
     {
-        $day = \Carbon\Carbon::parse($date)->day;
+        $day = Carbon::parse($date)->day;
 
-        if ($day >= 1 && $day <= 7)
-            return 1;
-        if ($day >= 8 && $day <= 14)
-            return 2;
-        if ($day >= 15 && $day <= 21)
-            return 3;
-        return 4; // 22-akhir bulan
+        if ($day >= 1 && $day <= 7) return 1;
+        if ($day >= 8 && $day <= 14) return 2;
+        if ($day >= 15 && $day <= 21) return 3;
+
+        return 4;
     }
 
     /**
-     * Cek apakah payroll minggu tertentu sudah paid
+     * Check if the payroll for a specific week is already paid.
+     *
+     * @param  int  $month
+     * @param  int  $year
+     * @param  int  $weekNumber
+     * @return bool
      */
-    public function isPayrollPaid($month, $year, $weekNumber)
+    public function isPayrollPaid(int $month, int $year, int $weekNumber): bool
     {
         return $this->payrolls()
             ->where('period_month', $month)
@@ -122,18 +195,20 @@ class Employee extends Model
     }
 
     /**
-     * Hitung total hari kehadiran dari awal minggu sampai tanggal kasbon (hanya minggu tersebut)
+     * Count attendance days up to the given kasbon date.
+     *
+     * @param  int  $month
+     * @param  int  $year
+     * @param  int  $weekNumber
+     * @param  \Carbon\Carbon|string  $kasbonDate
+     * @return int
      */
-    public function getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate)
+    public function getAttendanceUpToDate(int $month, int $year, int $weekNumber, $kasbonDate): int
     {
         $startDay = (($weekNumber - 1) * 7) + 1;
-        $startDate = \Carbon\Carbon::create($year, $month, $startDay)->format('Y-m-d');
+        $startDate = Carbon::create($year, $month, $startDay)->format('Y-m-d');
+        $endDate = Carbon::parse($kasbonDate)->format('Y-m-d');
 
-        // Tanggal akhir = tanggal kasbon (pastikan format Y-m-d)
-        $endDate = \Carbon\Carbon::parse($kasbonDate)->format('Y-m-d');
-
-        // Hitung jumlah hari hadir (semua status kecuali absent/alpha)
-        // Status yang dihitung: present, overtime, permission, sick, leave
         $count = $this->attendances()
             ->whereDate('attendance_date', '>=', $startDate)
             ->whereDate('attendance_date', '<=', $endDate)
@@ -144,21 +219,34 @@ class Employee extends Model
     }
 
     /**
-     * Hitung maksimal kasbon berdasarkan kehadiran sampai tanggal kasbon
-     * Formula: Gaji per hari × Total hari hadir sampai tanggal kasbon
+     * Calculate the maximum kasbon allowed up to the given date.
+     *
+     * This is based on the daily wage and number of attendance days.
+     *
+     * @param  int  $month
+     * @param  int  $year
+     * @param  int  $weekNumber
+     * @param  \Carbon\Carbon|string  $kasbonDate
+     * @return int
      */
-    public function getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate)
+    public function getMaxKasbonUpToDate(int $month, int $year, int $weekNumber, $kasbonDate): int
     {
         $daysWorked = $this->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
         $dailyWage = $this->daily_wage ?? $this->base_salary;
-
         return $dailyWage * $daysWorked;
     }
 
     /**
-     * Cek apakah jumlah kasbon melebihi batas maksimal
+     * Determine if the given amount can be taken as kasbon.
+     *
+     * @param  int  $amount
+     * @param  int  $month
+     * @param  int  $year
+     * @param  int  $weekNumber
+     * @param  \Carbon\Carbon|string  $kasbonDate
+     * @return bool
      */
-    public function canTakeKasbon($amount, $month, $year, $weekNumber, $kasbonDate)
+    public function canTakeKasbon(int $amount, int $month, int $year, int $weekNumber, $kasbonDate): bool
     {
         $maxKasbon = $this->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
         return $amount <= $maxKasbon;

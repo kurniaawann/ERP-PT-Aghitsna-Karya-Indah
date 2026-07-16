@@ -1,4 +1,5 @@
 {{-- Employee Table Component --}}
+{{-- Displays employee data in a table with bulk-select checkboxes and edit action buttons --}}
 <form id="deleteForm" method="POST" action="{{ route('employee.destroy') }}">
     @csrf
     @method('DELETE')
@@ -25,24 +26,18 @@
                                     <input type="checkbox" name="ids[]" value="{{ $employee->employee_code }}"
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
-
                                 <td class="p-2 font-medium text-primary">{{ $employee->employee_code }}</td>
                                 <td class="p-2">{{ $employee->name }}</td>
-
-                                {{-- Upah Per Hari --}}
                                 <td class="p-2 text-center">
                                     {{ 'Rp ' . number_format($employee->daily_wage ?? 0, 0, ',', '.') }}
                                 </td>
-
                                 <td class="p-2">
                                     <span class="px-2 py-1 bg-primary-light text-primary text-xs rounded-full">
                                         {{ $employee->division ?? '-' }}
                                     </span>
                                 </td>
-
                                 <td class="p-2">{{ $employee->phone ?? '-' }}</td>
                                 <td class="p-2">{{ $employee->address ?? '-' }}</td>
-
                                 <td class="p-2 text-center">
                                     <button type="button"
                                         onclick="openModal('editModal-{{ $employee->employee_code }}')"
