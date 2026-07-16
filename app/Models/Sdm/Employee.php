@@ -2,6 +2,7 @@
 
 namespace App\Models\Sdm;
 
+use App\Services\Sdm\PayrollService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -158,26 +159,58 @@ class Employee extends Model
     }
 
     /**
-     * Detect the week number (1-4) for a given date.
+     * Detect the week number for a given date using Monday-Saturday weeks.
      *
-     * Weeks are defined as: 1-7 days, 8-14 days, 15-21 days, 22-end.
+     * Each week runs from Monday to Saturday. If the month does not start
+     * on Monday, the days before the first Monday form a partial "Week 1".
+     * Sunday is always excluded as a non-working day.
+     *
+     * Example for July 2026 (1 Jul = Wednesday):
+     *   Week 1: Jul 1-4   (Wed-Sat)
+     *   Week 2: Jul 6-11  (Mon-Sat)
+     *   Week 5: Jul 27-31 (Mon-Fri)
      *
      * @param  \Carbon\Carbon|string  $date
-     * @return int
+     * @return int  Week number (1-N, depends on month)
      */
     public static function detectWeekNumber($date): int
     {
-        $day = Carbon::parse($date)->day;
+        $parsed = Carbon::parse($date);
+        $weeks = PayrollService::getWeeksInMonth($parsed->year, $parsed->month);
 
-        if ($day >= 1 && $day <= 7) return 1;
-        if ($day >= 8 && $day <= 14) return 2;
-        if ($day >= 15 && $day <= 21) return 3;
+        foreach ($weeks as $week) {
+            if ($parsed->gte($week['start']) && $parsed->lte($week['end'])) {
+                return $week['week_number'];
+            }
+        }
 
-        return 4;
+        // Fallback: if date is not in any week (e.g. Sunday at month boundary),
+        // return the last week number
+        return end($weeks)['week_number'] ?? 1;
     }
 
     /**
-     * Check if the payroll for a specific week is already paid.
+     * Check if the payroll for a specific period (by start date) is already paid.
+     *
+     * @param  Carbon|string  $periodStartDate
+     * @return bool
+     */
+    public function isPayrollPaidByStartDate($periodStartDate): bool
+    {
+        $startDate = $periodStartDate instanceof \Carbon\Carbon
+            ? $periodStartDate->format('Y-m-d')
+            : $periodStartDate;
+
+        return $this->payrolls()
+            ->where('period_start_date', $startDate)
+            ->where('status', 'paid')
+            ->exists();
+    }
+
+    /**
+     * Check if the payroll for a specific week is already paid (legacy method).
+     *
+     * @deprecated Use isPayrollPaidByStartDate() instead
      *
      * @param  int  $month
      * @param  int  $year
@@ -195,18 +228,17 @@ class Employee extends Model
     }
 
     /**
-     * Count attendance days up to the given kasbon date.
+     * Count attendance days from period start to the given kasbon date.
      *
-     * @param  int  $month
-     * @param  int  $year
-     * @param  int  $weekNumber
-     * @param  \Carbon\Carbon|string  $kasbonDate
+     * @param  Carbon|string  $periodStart  Start date of the pay period
+     * @param  Carbon|string  $kasbonDate   Date of the kasbon
      * @return int
      */
-    public function getAttendanceUpToDate(int $month, int $year, int $weekNumber, $kasbonDate): int
+    public function getAttendanceUpToDate($periodStart, $kasbonDate): int
     {
-        $startDay = (($weekNumber - 1) * 7) + 1;
-        $startDate = Carbon::create($year, $month, $startDay)->format('Y-m-d');
+        $startDate = $periodStart instanceof \Carbon\Carbon
+            ? $periodStart->format('Y-m-d')
+            : $periodStart;
         $endDate = Carbon::parse($kasbonDate)->format('Y-m-d');
 
         $count = $this->attendances()
@@ -221,17 +253,13 @@ class Employee extends Model
     /**
      * Calculate the maximum kasbon allowed up to the given date.
      *
-     * This is based on the daily wage and number of attendance days.
-     *
-     * @param  int  $month
-     * @param  int  $year
-     * @param  int  $weekNumber
-     * @param  \Carbon\Carbon|string  $kasbonDate
+     * @param  Carbon|string  $periodStart  Start date of the pay period
+     * @param  Carbon|string  $kasbonDate   Date of the kasbon
      * @return int
      */
-    public function getMaxKasbonUpToDate(int $month, int $year, int $weekNumber, $kasbonDate): int
+    public function getMaxKasbonUpToDate($periodStart, $kasbonDate): int
     {
-        $daysWorked = $this->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
+        $daysWorked = $this->getAttendanceUpToDate($periodStart, $kasbonDate);
         $dailyWage = $this->daily_wage ?? $this->base_salary;
         return $dailyWage * $daysWorked;
     }
@@ -239,16 +267,14 @@ class Employee extends Model
     /**
      * Determine if the given amount can be taken as kasbon.
      *
-     * @param  int  $amount
-     * @param  int  $month
-     * @param  int  $year
-     * @param  int  $weekNumber
-     * @param  \Carbon\Carbon|string  $kasbonDate
+     * @param  int            $amount
+     * @param  Carbon|string  $periodStart  Start date of the pay period
+     * @param  Carbon|string  $kasbonDate   Date of the kasbon
      * @return bool
      */
-    public function canTakeKasbon(int $amount, int $month, int $year, int $weekNumber, $kasbonDate): bool
+    public function canTakeKasbon(int $amount, $periodStart, $kasbonDate): bool
     {
-        $maxKasbon = $this->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
+        $maxKasbon = $this->getMaxKasbonUpToDate($periodStart, $kasbonDate);
         return $amount <= $maxKasbon;
     }
 }

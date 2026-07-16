@@ -79,6 +79,12 @@
         </div>
     </div>
 
+    {{-- Hidden inputs for period date range --}}
+    <input type="hidden" name="period_start_date"
+        value="{{ $kasbon->period_start_date ? $kasbon->period_start_date->format('Y-m-d') : '' }}">
+    <input type="hidden" name="period_end_date"
+        value="{{ $kasbon->period_end_date ? $kasbon->period_end_date->format('Y-m-d') : '' }}">
+
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
         <textarea name="notes" class="w-full border rounded p-2" rows="3" maxlength="500">{{ $kasbon->notes }}</textarea>

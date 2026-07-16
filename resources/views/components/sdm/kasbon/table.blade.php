@@ -66,9 +66,21 @@
                                 <td class="p-2 text-center text-sm text-text-label">
                                     {{ $kasbon->kasbon_date->format('d M Y') }}</td>
                                 <td class="p-2 text-center text-sm text-text-label">
-                                    {{ $kasbon->period_month }}/{{ $kasbon->period_year }}@if ($kasbon->week_number)
-                                        <span class="text-xs text-text-label"> - Minggu
-                                            {{ $kasbon->week_number }}</span>
+                                    @if ($kasbon->period_start_date && $kasbon->period_end_date)
+                                        @php
+                                            $start = \Carbon\Carbon::parse($kasbon->period_start_date);
+                                            $end = \Carbon\Carbon::parse($kasbon->period_end_date);
+                                        @endphp
+                                        @if ($start->month === $end->month)
+                                            {{ $start->format('d') }}-{{ $end->format('d M Y') }}
+                                        @else
+                                            {{ $start->format('d M') }} - {{ $end->format('d M Y') }}
+                                        @endif
+                                    @else
+                                        {{ $kasbon->period_month }}/{{ $kasbon->period_year }}@if ($kasbon->week_number)
+                                            <span class="text-xs text-text-label"> - Minggu
+                                                {{ $kasbon->week_number }}</span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="p-2 text-center">

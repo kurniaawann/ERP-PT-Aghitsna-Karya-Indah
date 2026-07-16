@@ -13,36 +13,69 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Events\AfterSheet;
-use Carbon\Carbon;
 
+/**
+ * Export class for generating payroll Excel reports.
+ *
+ * Generates a formatted Excel (.xlsx) report with:
+ * - Header section with company name, project, period, and print date
+ * - Data table with attendance summary and salary breakdown
+ * - Summary section with additional expenses and fund recap
+ * - Grand total row
+ *
+ * Uses Maatwebsite Excel with PhpSpreadsheet for formatting.
+ */
 class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
 {
+    /**
+     * Payroll collection to export.
+     *
+     * @var \Illuminate\Support\Collection
+     */
     protected $payrolls;
+
+    /**
+     * Formatted period text for the report header.
+     *
+     * @var string
+     */
     protected $periodText;
+
+    /**
+     * Project name for the report header.
+     *
+     * @var string|null
+     */
     protected $projectName;
+
+    /**
+     * Calculated totals for the summary section.
+     *
+     * @var array|null
+     */
     protected $totals;
 
+    /**
+     * Create a new PayrollExport instance.
+     *
+     * @param  \Illuminate\Support\Collection  $payrolls   Payroll data with employee relation loaded
+     * @param  int|null                        $month      Filter by month (optional)
+     * @param  int|null                        $year       Filter by year (optional)
+     * @param  string|null                     $projectName  Project name for header (optional)
+     */
     public function __construct($payrolls, $month = null, $year = null, $projectName = null)
     {
         $this->payrolls = $payrolls;
         $this->projectName = $projectName;
 
-        // Format periode untuk header
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
         if ($month && $year) {
-            $monthNames = [
-                1 => 'Januari',
-                2 => 'Februari',
-                3 => 'Maret',
-                4 => 'April',
-                5 => 'Mei',
-                6 => 'Juni',
-                7 => 'Juli',
-                8 => 'Agustus',
-                9 => 'September',
-                10 => 'Oktober',
-                11 => 'November',
-                12 => 'Desember'
-            ];
             $this->periodText = $monthNames[$month] . ' ' . $year;
         } elseif ($year) {
             $this->periodText = 'Tahun ' . $year;
@@ -51,6 +84,14 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
         }
     }
 
+    /**
+     * Generate the data collection for export.
+     *
+     * Iterates through all payrolls, calculates totals, and
+     * prepares expense details for the summary section.
+     *
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $data = [];
@@ -82,7 +123,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             $totalNetSalary += $payroll->net_salary;
         }
 
-        // Simpan totals dan detail expenses untuk digunakan di registerEvents
+        // Aggregate all expense items from JSON notes
         $allExpenses = [];
         foreach ($this->payrolls as $payroll) {
             if ($payroll->additional_expenses_notes) {
@@ -108,42 +149,42 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             'net_salary' => $totalNetSalary,
             'total_expenses' => $totalExpenses,
             'expenses_details' => $allExpenses,
-            'grand_total' => $totalNetSalary + $totalExpenses - $totalKasbon // Note: net_salary in loop already includes kasbon deduction subtraction? Wait.
+            'grand_total' => $totalNetSalary + $totalExpenses - $totalKasbon,
         ];
-
-        // Match PDF logic exactly
-        $this->totals['grand_total'] = $totalNetSalary + $totalExpenses - $totalKasbon;
 
         return collect($data);
     }
 
+    /**
+     * Get the header rows for the Excel sheet.
+     *
+     * Includes company name, report title, metadata, and column headers.
+     *
+     * @return array<int, array<int|string>>
+     */
     public function headings(): array
     {
-        // Sesuaikan header dengan PDF
         return [
             ['PT. AGHITSNA KARYA INDAH'],
             ['DAFTAR ABSENSI & PENGGAJIAN PEKERJA'],
-            [''], // Spasi
+            [''],
             ['PROYEK', ':', $this->projectName ?? 'Semua Proyek'],
             ['PERIODE', ':', $this->periodText],
             ['TANGGAL CETAK', ':', date('d/m/Y H:i')],
-            [''], // Spasi sebelum tabel
+            [''],
             [
-                'NO',
-                'NAMA PEKERJA',
-                'HADIR',
-                'LEMBUR',
-                'IZIN',
-                'SAKIT',
-                'CUTI',
-                'UPAH HARIAN',
-                'BONUS LEMBUR',
-                'KASBON',
-                'DITERIMA'
-            ]
+                'NO', 'NAMA PEKERJA', 'HADIR', 'LEMBUR', 'IZIN',
+                'SAKIT', 'CUTI', 'UPAH HARIAN', 'BONUS LEMBUR', 'KASBON', 'DITERIMA',
+            ],
         ];
     }
 
+    /**
+     * Apply styles to the worksheet (header formatting).
+     *
+     * @param  Worksheet  $sheet
+     * @return array
+     */
     public function styles(Worksheet $sheet)
     {
         $sheet->getStyle('A1')->applyFromArray([
@@ -158,31 +199,36 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
         ]);
         $sheet->mergeCells('A2:K2');
 
-        // Metadata styling - Merge Cells for Label and Value to ensure visibility
-        $sheet->mergeCells('A4:B4'); // Label PROYEK
-        $sheet->mergeCells('C4:K4'); // Value PROYEK
-        $sheet->mergeCells('A5:B5'); // Label PERIODE
-        $sheet->mergeCells('C5:K5'); // Value PERIODE
-        $sheet->mergeCells('A6:B6'); // Label TANGGAL
-        $sheet->mergeCells('C6:K6'); // Value TANGGAL
+        $sheet->mergeCells('A4:B4');
+        $sheet->mergeCells('C4:K4');
+        $sheet->mergeCells('A5:B5');
+        $sheet->mergeCells('C5:K5');
+        $sheet->mergeCells('A6:B6');
+        $sheet->mergeCells('C6:K6');
 
         $sheet->getStyle('A4:A6')->applyFromArray(['font' => ['bold' => true]]);
         $sheet->getStyle('A4:C6')->applyFromArray(['alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT]]);
 
-        // Table Header Styling
         $headerRow = 8;
         $sheet->getStyle("A{$headerRow}:K{$headerRow}")->applyFromArray([
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F4F4F4']],
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
-        // Set height for header row
         $sheet->getRowDimension($headerRow)->setRowHeight(25);
 
         return [];
     }
 
+    /**
+     * Register Excel events for post-sheet processing.
+     *
+     * Handles data row formatting, summary section with expenses
+     * and fund recap, grand total, and footer.
+     *
+     * @return array<string, callable>
+     */
     public function registerEvents(): array
     {
         return [
@@ -191,26 +237,25 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 $lastRow = $sheet->getHighestRow();
                 $dataStartRow = 9;
 
-                // Format Data Rows
+                // Format data rows
                 $sheet->getStyle("A{$dataStartRow}:K{$lastRow}")->applyFromArray([
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                 ]);
 
-                // Alignment
-                $sheet->getStyle("A{$dataStartRow}:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // No
-                $sheet->getStyle("C{$dataStartRow}:G{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // Days
-                $sheet->getStyle("H{$dataStartRow}:K{$lastRow}")->getNumberFormat()->setFormatCode('#,##0'); // Currency
-    
-                // Font Bold untuk Nama & Total
+                $sheet->getStyle("A{$dataStartRow}:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("C{$dataStartRow}:G{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("H{$dataStartRow}:K{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+
                 $sheet->getStyle("B{$dataStartRow}:B{$lastRow}")->getFont()->setBold(true);
 
-                // Warna Merah untuk Kasbon
-                $sheet->getStyle("J{$dataStartRow}:J{$lastRow}")->getFont()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED));
+                $sheet->getStyle("J{$dataStartRow}:J{$lastRow}")->getFont()->setColor(
+                    new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
+                );
 
-                // --- SUMMARY SECTION (PENGELUARAN TAMBAHAN & REKAP DANA) ---
+                // === SUMMARY SECTION ===
                 $startSummaryRow = $lastRow + 2;
 
-                // Left Column: Pengeluaran Tambahan
+                // Left: Additional Expenses
                 $sheet->setCellValue("B{$startSummaryRow}", "PENGELUARAN TAMBAHAN (OPERASIONAL)");
                 $sheet->getStyle("B{$startSummaryRow}")->getFont()->setBold(true);
 
@@ -222,7 +267,6 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                         $sheet->getStyle("C{$currentRow}")->getNumberFormat()->setFormatCode('#,##0');
                         $currentRow++;
                     }
-                    // Total Additional
                     $sheet->setCellValue("B{$currentRow}", "Total Tambahan");
                     $sheet->setCellValue("C{$currentRow}", $this->totals['total_expenses']);
                     $sheet->getStyle("B{$currentRow}")->getFont()->setBold(true);
@@ -234,35 +278,34 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                     $sheet->getStyle("B{$currentRow}")->getFont()->setItalic(true);
                 }
 
-                // Right Column: Rekapitulasi Dana
-                // We'll place this around column H-K
+                // Right: Fund Recap
                 $sheet->setCellValue("H{$startSummaryRow}", "REKAPITULASI DANA");
                 $sheet->getStyle("H{$startSummaryRow}")->getFont()->setBold(true);
 
                 $rekapRow = $startSummaryRow + 1;
 
-                // Total Upah
                 $sheet->setCellValue("H{$rekapRow}", "Total Upah Pekerja");
                 $sheet->setCellValue("K{$rekapRow}", $this->totals['net_salary']);
                 $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
 
-                // Total Pengeluaran
                 $sheet->setCellValue("H{$rekapRow}", "Total Pengeluaran Tambahan");
                 $sheet->setCellValue("K{$rekapRow}", $this->totals['total_expenses']);
                 $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
 
-                // Total Potongan Kasbon
                 $sheet->setCellValue("H{$rekapRow}", "Total Potongan Kasbon");
-                $sheet->setCellValue("K{$rekapRow}", $this->totals['kasbon_deduction']); // Display positive value, but formatted usually in parens if negative context
-                // PDF says: (100.000) in red.
-                $sheet->getStyle("H{$rekapRow}")->getFont()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED));
-                $sheet->getStyle("K{$rekapRow}")->getFont()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED));
-                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('(#,##0)'); // Helper to show brackets
+                $sheet->setCellValue("K{$rekapRow}", $this->totals['kasbon_deduction']);
+                $sheet->getStyle("H{$rekapRow}")->getFont()->setColor(
+                    new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
+                );
+                $sheet->getStyle("K{$rekapRow}")->getFont()->setColor(
+                    new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
+                );
+                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('(#,##0)');
                 $rekapRow++;
 
-                // Grand Total Box
+                // Grand Total
                 $grandTotalRow = max($currentRow, $rekapRow) + 1;
                 $sheet->mergeCells("A{$grandTotalRow}:K{$grandTotalRow}");
                 $sheet->setCellValue("A{$grandTotalRow}", "TOTAL DIBAYARKAN: Rp " . number_format($this->totals['grand_total'], 0, ',', '.'));
@@ -273,7 +316,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E0E0E0']],
                 ]);
 
-                // Footer Timestamp
+                // Footer
                 $footerRow = $grandTotalRow + 2;
                 $sheet->mergeCells("A{$footerRow}:K{$footerRow}");
                 $sheet->setCellValue("A{$footerRow}", "Dicetak otomatis oleh Sistem ERP PT. Aghitsna Karya Indah pada " . date('d/m/Y H:i'));
@@ -285,23 +328,33 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
         ];
     }
 
+    /**
+     * Get column widths for the worksheet.
+     *
+     * @return array<string, int>
+     */
     public function columnWidths(): array
     {
         return [
             'A' => 6,    // NO
-            'B' => 35,   // NAMA PEKERJA (Lebarkan agar muat nama panjang)
+            'B' => 35,   // NAMA PEKERJA
             'C' => 10,   // HADIR
             'D' => 10,   // LEMBUR
             'E' => 10,   // IZIN
             'F' => 10,   // SAKIT
             'G' => 10,   // CUTI
-            'H' => 18,   // UPAH HARIAN (Lebarkan untuk angka jutaan)
+            'H' => 18,   // UPAH HARIAN
             'I' => 18,   // BONUS LEMBUR
             'J' => 18,   // KASBON
-            'K' => 22,   // DITERIMA (Lebarkan untuk total)
+            'K' => 22,   // DITERIMA
         ];
     }
 
+    /**
+     * Get the worksheet title.
+     *
+     * @return string
+     */
     public function title(): string
     {
         return 'Laporan_Payroll';

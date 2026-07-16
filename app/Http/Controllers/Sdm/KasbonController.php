@@ -35,10 +35,10 @@ class KasbonController extends Controller
                 });
             })
             ->when($month, function ($query, $month) {
-                return $query->where('period_month', $month);
+                return $query->whereMonth('period_start_date', $month);
             })
             ->when($year, function ($query, $year) {
-                return $query->where('period_year', $year);
+                return $query->whereYear('period_start_date', $year);
             })
             ->when($status, function ($query, $status) {
                 return $query->where('status', $status);
@@ -73,9 +73,10 @@ class KasbonController extends Controller
             'division' => 'required_if:kasbon_type,team|nullable|string|max:100',
             'amount' => 'required|integer|min:1000',
             'kasbon_date' => 'required|date',
-            'week_number' => 'nullable|integer|min:1|max:4',
             'period_month' => 'required|integer|min:1|max:12',
             'period_year' => 'required|integer|min:2020',
+            'period_start_date' => 'required|date',
+            'period_end_date' => 'required|date|after_or_equal:period_start_date',
             'notes' => 'nullable|string|max:500',
         ], [
             'kasbon_type.required' => 'Jenis kasbon harus dipilih',
@@ -86,48 +87,44 @@ class KasbonController extends Controller
             'kasbon_date.required' => 'Tanggal kasbon harus diisi',
             'period_month.required' => 'Bulan periode harus diisi',
             'period_year.required' => 'Tahun periode harus diisi',
+            'period_start_date.required' => 'Tanggal mulai periode harus diisi',
+            'period_end_date.required' => 'Tanggal akhir periode harus diisi',
+            'period_end_date.after_or_equal' => 'Tanggal akhir harus setelah atau sama dengan tanggal mulai',
         ]);
 
-        // Auto-detect minggu dari tanggal kasbon
-        $weekNumber = Employee::detectWeekNumber($validated['kasbon_date']);
-        $validated['week_number'] = $weekNumber;
+        // Auto-detect week_number dari period_start_date
+        $validated['week_number'] = Carbon::parse($validated['period_start_date'])->weekOfMonth;
 
         // Validasi kasbon personal berdasarkan kehadiran dan status payroll
         if ($validated['kasbon_type'] === 'personal') {
             $employee = Employee::findOrFail($validated['employee_id']);
-            $month = $validated['period_month'];
-            $year = $validated['period_year'];
+            $periodStartDate = Carbon::parse($validated['period_start_date']);
             $kasbonDate = $validated['kasbon_date'];
 
             // Cek apakah payroll minggu ini sudah paid
-            if ($employee->isPayrollPaid($month, $year, $weekNumber)) {
+            if ($employee->isPayrollPaidByStartDate($periodStartDate)) {
                 return redirect()->back()
                     ->withInput()
                     ->with('error', sprintf(
-                        'Tidak dapat melakukan kasbon! Payroll minggu ke-%d bulan %d/%d untuk %s sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
-                        $weekNumber,
-                        $month,
-                        $year,
-                        $employee->name
+                        'Tidak dapat melakukan kasbon! Payroll periode %s sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
+                        $periodStartDate->format('d M Y')
                     ));
             }
 
             // Hitung maksimal kasbon berdasarkan kehadiran
-            $daysWorked = $employee->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
-            $maxKasbon = $employee->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
+            $daysWorked = $employee->getAttendanceUpToDate($periodStartDate, $kasbonDate);
+            $maxKasbon = $employee->getMaxKasbonUpToDate($periodStartDate, $kasbonDate);
 
             // VALIDASI PENTING: Jika belum ada kehadiran sama sekali, tidak bisa kasbon!
             if ($daysWorked == 0) {
+                $periodEndDate = Carbon::parse($validated['period_end_date']);
                 return redirect()->back()
                     ->withInput()
                     ->with('error', sprintf(
-                        'Tidak dapat melakukan kasbon! %s belum memiliki catatan kehadiran di minggu ke-%d (tanggal %d-%d %s %d). Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
+                        'Tidak dapat melakukan kasbon! %s belum memiliki catatan kehadiran periode %s - %s. Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
                         $employee->name,
-                        $weekNumber,
-                        (($weekNumber - 1) * 7) + 1,
-                        min($weekNumber * 7, \Carbon\Carbon::create($year, $month)->endOfMonth()->day),
-                        \Carbon\Carbon::create($year, $month)->translatedFormat('F'),
-                        $year
+                        $periodStartDate->format('d M'),
+                        $periodEndDate->format('d M Y')
                     ));
             }
 
@@ -184,32 +181,30 @@ class KasbonController extends Controller
             'division' => 'required_if:kasbon_type,team|nullable|string|max:100',
             'amount' => 'required|integer|min:1000',
             'kasbon_date' => 'required|date',
-            'week_number' => 'nullable|integer|min:1|max:4',
             'period_month' => 'required|integer|min:1|max:12',
             'period_year' => 'required|integer|min:2020',
+            'period_start_date' => 'required|date',
+            'period_end_date' => 'required|date|after_or_equal:period_start_date',
             'notes' => 'nullable|string|max:500',
         ]);
 
         // Validasi kasbon personal berdasarkan kehadiran
-        if ($validated['kasbon_type'] === 'personal' && $validated['week_number']) {
+        if ($validated['kasbon_type'] === 'personal' && !empty($validated['period_start_date'])) {
             $employee = Employee::findOrFail($validated['employee_id']);
-            $month = $validated['period_month'];
-            $year = $validated['period_year'];
-            $weekNumber = $validated['week_number'];
+            $periodStartDate = Carbon::parse($validated['period_start_date']);
             $kasbonDate = $validated['kasbon_date'];
 
-            $daysWorked = $employee->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
-            $maxKasbon = $employee->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
+            $daysWorked = $employee->getAttendanceUpToDate($periodStartDate, $kasbonDate);
+            $maxKasbon = $employee->getMaxKasbonUpToDate($periodStartDate, $kasbonDate);
             $dailyWage = $employee->daily_wage ?? $employee->base_salary;
 
-            if (!$employee->canTakeKasbon($validated['amount'], $month, $year, $weekNumber, $kasbonDate)) {
+            if (!$employee->canTakeKasbon($validated['amount'], $periodStartDate, $kasbonDate)) {
                 return redirect()->back()
                     ->withInput()
                     ->with('error', sprintf(
-                        'Kasbon melebihi batas maksimal! %s hanya masuk %d hari pada minggu ke-%d sampai tanggal %s. Maksimal kasbon: Rp %s (Rp %s × %d hari)',
+                        'Kasbon melebihi batas maksimal! %s hanya masuk %d hari pada periode ini sampai tanggal %s. Maksimal kasbon: Rp %s (Rp %s × %d hari)',
                         $employee->name,
                         $daysWorked,
-                        $weekNumber,
                         \Carbon\Carbon::parse($kasbonDate)->format('d/m/Y'),
                         number_format($maxKasbon, 0, ',', '.'),
                         number_format($dailyWage, 0, ',', '.'),
@@ -278,20 +273,21 @@ class KasbonController extends Controller
      */
     public function getTotalForPeriod(Request $request)
     {
-        $month = $request->period_month;
-        $year = $request->period_year;
-        $weekNumber = $request->week_number;
+        $periodStartDate = $request->period_start_date;
         $employeeId = $request->employee_id;
 
-        if ($employeeId) {
-            // Get kasbon personal untuk employee tertentu
-            $personalKasbon = Kasbon::getTotalForEmployee($employeeId, $month, $year, $weekNumber);
+        if ($periodStartDate) {
+            if ($employeeId) {
+                $personalKasbon = Kasbon::getTotalForEmployee($employeeId, $periodStartDate);
+            } else {
+                $personalKasbon = 0;
+            }
+
+            $teamKasbon = Kasbon::getTotalTeamKasbon($periodStartDate);
         } else {
             $personalKasbon = 0;
+            $teamKasbon = 0;
         }
-
-        // Get kasbon team untuk periode ini
-        $teamKasbon = Kasbon::getTotalTeamKasbon($month, $year, $weekNumber);
 
         return response()->json([
             'personal_kasbon' => $personalKasbon,
@@ -306,14 +302,13 @@ class KasbonController extends Controller
     public function checkMaxKasbon(Request $request)
     {
         $employeeId = $request->input('employee_id');
-        $month = $request->input('period_month');
-        $year = $request->input('period_year');
+        $periodStartDate = $request->input('period_start_date');
         $kasbonDate = $request->input('kasbon_date');
 
-        if (!$employeeId || !$month || !$year || !$kasbonDate) {
+        if (!$employeeId || !$periodStartDate || !$kasbonDate) {
             return response()->json([
                 'success' => false,
-                'message' => 'Parameter tidak lengkap. Pastikan karyawan, bulan, tahun, dan tanggal kasbon sudah dipilih.'
+                'message' => 'Parameter tidak lengkap. Pastikan karyawan, periode, dan tanggal kasbon sudah dipilih.'
             ], 400);
         }
 
@@ -325,24 +320,22 @@ class KasbonController extends Controller
             ], 404);
         }
 
-        // Auto-detect minggu dari tanggal kasbon
-        $weekNumber = Employee::detectWeekNumber($kasbonDate);
+        $periodStartDateCarbon = Carbon::parse($periodStartDate);
 
         // Cek apakah payroll minggu ini sudah paid
-        if ($employee->isPayrollPaid($month, $year, $weekNumber)) {
+        if ($employee->isPayrollPaidByStartDate($periodStartDateCarbon)) {
             return response()->json([
                 'success' => false,
                 'payroll_paid' => true,
-                'week_number' => $weekNumber,
                 'message' => sprintf(
-                    'Payroll minggu ke-%d sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
-                    $weekNumber
+                    'Payroll periode %s sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
+                    $periodStartDateCarbon->format('d M Y')
                 )
             ], 400);
         }
 
-        $daysWorked = $employee->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
-        $maxKasbon = $employee->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
+        $daysWorked = $employee->getAttendanceUpToDate($periodStartDateCarbon, $kasbonDate);
+        $maxKasbon = $employee->getMaxKasbonUpToDate($periodStartDateCarbon, $kasbonDate);
         $dailyWage = $employee->daily_wage ?? $employee->base_salary;
 
         // Jika belum ada kehadiran sama sekali, return dengan max kasbon 0
@@ -352,12 +345,10 @@ class KasbonController extends Controller
                 'employee_name' => $employee->name,
                 'days_worked' => 0,
                 'max_kasbon' => 0,
-                'week_number' => $weekNumber,
                 'no_attendance' => true,
                 'message' => sprintf(
-                    '%s belum memiliki catatan kehadiran di minggu ke-%d. Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
-                    $employee->name,
-                    $weekNumber
+                    '%s belum memiliki catatan kehadiran pada periode ini. Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
+                    $employee->name
                 )
             ], 400);
         }
@@ -368,19 +359,16 @@ class KasbonController extends Controller
             'days_worked' => $daysWorked,
             'daily_wage' => $dailyWage,
             'max_kasbon' => $maxKasbon,
-            'week_number' => $weekNumber,
             'payroll_paid' => false,
             'no_attendance' => false,
             'max_kasbon_formatted' => 'Rp ' . number_format($maxKasbon, 0, ',', '.'),
             'message' => sprintf(
-                '%s sudah masuk %d hari pada minggu ke-%d sampai %s. Maksimal kasbon: Rp %s',
+                '%s sudah masuk %d hari sampai %s. Maksimal kasbon: Rp %s',
                 $employee->name,
                 $daysWorked,
-                $weekNumber,
                 \Carbon\Carbon::parse($kasbonDate)->format('d/m/Y'),
                 number_format($maxKasbon, 0, ',', '.')
             )
         ]);
     }
 }
-

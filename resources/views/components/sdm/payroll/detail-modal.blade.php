@@ -1,3 +1,21 @@
+{{--
+    Detail Payroll Modal
+
+    Read-only modal displaying complete payroll information for a single employee.
+
+    Sections:
+    1. Employee Info - Name, code, position, period, project
+    2. Attendance Summary - Total work days, present, permission, sick, leave, overtime
+    3. Salary Calculation - Daily wage, present days, total wage, overtime, kasbon, net salary
+    4. Additional Expenses (if any) - Parsed from JSON additional_expenses_notes
+    5. Payment Info (if paid) - Payment date and status
+
+    Business logic: Payroll model accessors (formatted_period, total_payment)
+    Format: Rupiah (Rp X.XXX)
+
+    Included from: pages/sdm/payroll.blade.php (inside @foreach loop)
+--}}
+
 {{-- Modal Detail Payroll --}}
 <div id="detailModal-{{ $payroll->id }}" class="modal-overlay hidden">
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -32,9 +50,17 @@
                         <div>
                             <p class="text-text-label">Periode:</p>
                             <p class="font-semibold">
-                                {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('F Y') }}
-                                @if ($payroll->week_number)
-                                    - Minggu {{ $payroll->week_number }}
+                                @if ($payroll->period_start_date && $payroll->period_end_date)
+                                    @php
+                                        $start = \Carbon\Carbon::parse($payroll->period_start_date);
+                                        $end = \Carbon\Carbon::parse($payroll->period_end_date);
+                                    @endphp
+                                    {{ $start->format('d M Y') }} - {{ $end->format('d M Y') }}
+                                @else
+                                    {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('F Y') }}
+                                    @if ($payroll->week_number)
+                                        - Minggu {{ $payroll->week_number }}
+                                    @endif
                                 @endif
                             </p>
                         </div>

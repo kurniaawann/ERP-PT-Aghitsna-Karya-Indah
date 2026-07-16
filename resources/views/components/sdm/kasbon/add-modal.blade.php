@@ -104,6 +104,10 @@
     {{-- Hidden field untuk week_number (auto-detected dari tanggal) --}}
     <input type="hidden" name="week_number" id="add_week_number" value="">
 
+    {{-- Hidden fields untuk period date range (auto-resolved dari month/year/kasbon_date) --}}
+    <input type="hidden" name="period_start_date" id="add_period_start_date" value="">
+    <input type="hidden" name="period_end_date" id="add_period_end_date" value="">
+
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
         <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"

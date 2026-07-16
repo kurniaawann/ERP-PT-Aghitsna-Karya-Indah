@@ -65,13 +65,59 @@
         }
     }
 
+    /**
+     * Resolve period_start_date from month, year, and kasbon_date.
+     * Finds the week whose date range contains the kasbon_date.
+     */
+    async function resolvePeriodStartDate(prefix) {
+        const monthSelect = document.getElementById(prefix + '_period_month');
+        const yearInput = document.getElementById(prefix + '_period_year');
+        const kasbonDateInput = document.getElementById(prefix + '_kasbon_date');
+
+        const month = monthSelect ? monthSelect.value : '';
+        const year = yearInput ? yearInput.value : '';
+        const kasbonDate = kasbonDateInput ? kasbonDateInput.value : '';
+
+        if (!month || !year || !kasbonDate) return null;
+
+        try {
+            const response = await fetch(`{{ route("payroll.get-weeks") }}?month=${month}&year=${year}`);
+            const data = await response.json();
+            const weeks = data.weeks || [];
+
+            // Find the week that contains the kasbon_date
+            for (const week of weeks) {
+                if (kasbonDate >= week.start_date && kasbonDate <= week.end_date) {
+                    return {
+                        start_date: week.start_date,
+                        end_date: week.end_date,
+                        week_number: week.week_number
+                    };
+                }
+            }
+
+            // If kasbon_date doesn't fall in any week (e.g. Sunday), use the last week of the month
+            if (weeks.length > 0) {
+                const lastWeek = weeks[weeks.length - 1];
+                return {
+                    start_date: lastWeek.start_date,
+                    end_date: lastWeek.end_date,
+                    week_number: lastWeek.week_number
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error resolving period start date:', error);
+            return null;
+        }
+    }
+
     // Check maksimal kasbon berdasarkan kehadiran sampai tanggal kasbon
     async function checkMaxKasbon(prefix) {
         const employeeField = document.getElementById(prefix + '_employee_field');
         const employeeHidden = employeeField ? employeeField.querySelector('.searchable-select-hidden') : null;
         const employeeSelect = employeeHidden || document.getElementById(prefix + '_employee_id');
-        const monthSelect = document.getElementById(prefix + '_period_month');
-        const yearInput = document.getElementById(prefix + '_period_year');
         const kasbonDateInput = document.getElementById(prefix + '_kasbon_date');
         const limitAlert = document.getElementById(prefix + '_kasbon_limit_alert');
         const limitMessage = document.getElementById(prefix + '_kasbon_limit_message');
@@ -85,11 +131,11 @@
             return;
         }
 
-        const month = monthSelect ? monthSelect.value : '';
-        const year = yearInput ? yearInput.value : '';
         const kasbonDate = kasbonDateInput ? kasbonDateInput.value : '';
 
-        if (!month || !year || !kasbonDate) {
+        // Resolve period_start_date from month/year/kasbon_date
+        const periodInfo = await resolvePeriodStartDate(prefix);
+        if (!periodInfo) {
             if (limitAlert && limitMessage) {
                 limitMessage.textContent =
                     'Silakan lengkapi Bulan, Tahun, dan Tanggal Kasbon terlebih dahulu';
@@ -105,6 +151,11 @@
             return;
         }
 
+        // Set hidden week_number
+        if (weekNumberInput) {
+            weekNumberInput.value = periodInfo.week_number;
+        }
+
         try {
             const response = await fetch('{{ route('kasbon.check-max') }}', {
                 method: 'POST',
@@ -114,8 +165,7 @@
                 },
                 body: JSON.stringify({
                     employee_id: employeeSelect.value,
-                    period_month: month,
-                    period_year: year,
+                    period_start_date: periodInfo.start_date,
                     kasbon_date: kasbonDate
                 })
             });
@@ -123,11 +173,6 @@
             const data = await response.json();
 
             if (data.success) {
-                // Auto-fill week number jika ada hidden input
-                if (weekNumberInput && data.week_number) {
-                    weekNumberInput.value = data.week_number;
-                }
-
                 // Simpan data kasbon maksimal
                 maxKasbonData[prefix] = data;
 
@@ -156,11 +201,6 @@
             } else {
                 // Handle berbagai error: payroll_paid, no_attendance, atau error lain
                 maxKasbonData[prefix] = null;
-
-                // Auto-fill week number jika ada
-                if (weekNumberInput && data.week_number) {
-                    weekNumberInput.value = data.week_number;
-                }
 
                 if (limitAlert && limitMessage) {
                     limitMessage.textContent = data.message || 'Gagal mengecek maksimal kasbon';

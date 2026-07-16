@@ -315,6 +315,7 @@ Route::middleware('auth')->group(function () {
 
         // Route Payroll (Penggajian)
         Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+        Route::get('/payroll/weeks', [PayrollController::class, 'getWeeks'])->name('payroll.get-weeks');
         Route::get('/payroll/export/excel', [PayrollController::class, 'exportExcel'])->name('payroll.export.excel');
         Route::get('/payroll/export/pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export.pdf');
         Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');

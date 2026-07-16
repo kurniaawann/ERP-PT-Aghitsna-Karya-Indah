@@ -1,5 +1,93 @@
+{{--
+    Payroll Scripts (JavaScript)
+
+    Frontend logic for payroll management.
+
+    Modules:
+    1. Attendance Auto-Check
+       - Triggers when user changes month/year/week in generate modal
+       - Calls PayrollController@checkAttendanceCompleteness via AJAX
+       - Displays validation results (complete/incomplete/already generated)
+       - Enables/disables Generate button based on can_generate flag
+
+    2. Select All Checkbox
+       - Handles "select all" checkbox in table header
+       - Updates individual checkbox states
+       - Toggles bulk action buttons (Delete, Pay)
+
+    3. Bulk Operations
+       - submitDeleteForm(): Collects selected IDs, submits DELETE form
+       - submitBulkPayForm(): Collects selected IDs + payment date, submits PATCH form
+       - Shows loading state during submission
+
+    4. Form Validation
+       - validatePayrollEditNotes(): Ensures notes are provided when expenses > 0
+       - Used by edit modal forms
+
+    5. Dynamic Expense Items
+       - addExpenseItem(): Adds new expense item row to generate modal
+       - removeExpenseItem(): Removes expense item row
+       - updateExpenseData(): Recalculates totals and updates hidden inputs
+       - Expense items stored as JSON in additional_expenses_notes
+
+    Dependencies:
+    - resources/js/shared/form-submit.js (handleFormSubmit helper)
+    - x-modal component (openModal/closeModal functions)
+    - modalClosed event listener for cleanup
+--}}
+
 <script>
     // Shared helper is loaded from resources/js/shared/form-submit.js
+
+    // ==========================================
+    // DYNAMIC WEEK LOADING (Monday-Saturday weeks)
+    // ==========================================
+
+    const GET_WEEKS_URL = '{{ route("payroll.get-weeks") }}';
+
+    /**
+     * Fetch week options from the server for a given month/year.
+     * Returns array of { week_number, label, start, end }.
+     */
+    async function fetchWeeks(month, year) {
+        if (!month || !year || month < 1 || month > 12 || year < 2000) {
+            return [];
+        }
+
+        try {
+            const response = await fetch(`${GET_WEEKS_URL}?month=${month}&year=${year}`);
+            const data = await response.json();
+            return data.weeks || [];
+        } catch (error) {
+            console.error('Error fetching weeks:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Populate a <select> element with week options.
+     * Preserves the current selection if it still exists in the new options.
+     */
+    function populateWeekDropdown(selectEl, weeks, selectedValue) {
+        selectEl.innerHTML = '<option value="">Pilih</option>';
+
+        weeks.forEach(function(week) {
+            const option = document.createElement('option');
+            option.value = week.week_number;
+            option.textContent = week.label;
+
+            if (selectedValue && parseInt(selectedValue) === week.week_number) {
+                option.selected = true;
+            }
+
+            selectEl.appendChild(option);
+        });
+
+        // If previous selection no longer exists, clear it
+        if (selectedValue && !weeks.some(w => w.week_number === parseInt(selectedValue))) {
+            selectEl.value = '';
+        }
+    }
 
     // ==========================================
     // AUTO-CHECK ATTENDANCE SAAT PILIH BULAN/TAHUN/MINGGU
@@ -8,6 +96,8 @@
     const periodMonthSelect = document.getElementById('period_month');
     const periodYearInput = document.getElementById('period_year');
     const weekNumberSelect = document.getElementById('week_number');
+    const periodStartDateInput = document.getElementById('period_start_date');
+    const periodEndDateInput = document.getElementById('period_end_date');
     const checkingLoader = document.getElementById('checking-loader');
     const allCompleteDiv = document.getElementById('all-complete');
     const incompleteWarningDiv = document.getElementById('incomplete-warning');
@@ -19,6 +109,50 @@
     const generateSubmitBtn = document.querySelector('#generateModal button[type="submit"]');
 
     let checkTimeout = null;
+    let cachedWeeksData = [];
+
+    /**
+     * Load week options for the generate modal based on selected month/year.
+     */
+    async function loadGenerateWeeks() {
+        const month = periodMonthSelect.value;
+        const year = periodYearInput.value;
+
+        if (!month || !year) {
+            weekNumberSelect.innerHTML = '<option value="">Pilih bulan & tahun terlebih dahulu</option>';
+            cachedWeeksData = [];
+            periodStartDateInput.value = '';
+            periodEndDateInput.value = '';
+            return;
+        }
+
+        const currentWeek = weekNumberSelect.value;
+        const weeks = await fetchWeeks(month, year);
+        cachedWeeksData = weeks;
+        populateWeekDropdown(weekNumberSelect, weeks, currentWeek);
+        updatePeriodDateInputs();
+    }
+
+    /**
+     * Populate hidden inputs period_start_date / period_end_date based on selected week.
+     */
+    function updatePeriodDateInputs() {
+        const selectedWeekNum = parseInt(weekNumberSelect.value);
+        if (!selectedWeekNum) {
+            periodStartDateInput.value = '';
+            periodEndDateInput.value = '';
+            return;
+        }
+
+        const selectedWeek = cachedWeeksData.find(w => w.week_number === selectedWeekNum);
+        if (selectedWeek) {
+            periodStartDateInput.value = selectedWeek.start_date;
+            periodEndDateInput.value = selectedWeek.end_date;
+        } else {
+            periodStartDateInput.value = '';
+            periodEndDateInput.value = '';
+        }
+    }
 
     async function checkAttendanceData() {
         const month = periodMonthSelect.value;
@@ -32,7 +166,22 @@
         alreadyGeneratedWarningDiv.classList.add('hidden');
 
         if (!month || !year || !weekNumber) {
-            // Disable button if no period selected
+            if (generateSubmitBtn) {
+                generateSubmitBtn.disabled = true;
+                generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            periodStartDateInput.value = '';
+            periodEndDateInput.value = '';
+            return;
+        }
+
+        // Update hidden date inputs before checking
+        updatePeriodDateInputs();
+
+        const startDate = periodStartDateInput.value;
+        const endDate = periodEndDateInput.value;
+
+        if (!startDate || !endDate) {
             if (generateSubmitBtn) {
                 generateSubmitBtn.disabled = true;
                 generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -51,9 +200,8 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({
-                    period_month: month,
-                    period_year: year,
-                    week_number: weekNumber
+                    period_start_date: startDate,
+                    period_end_date: endDate
                 })
             });
 
@@ -215,25 +363,26 @@
         }
     }
 
-    // Auto-check saat pilih bulan
+    // Load weeks when month or year changes in generate modal
     if (periodMonthSelect) {
         periodMonthSelect.addEventListener('change', function() {
+            loadGenerateWeeks();
             clearTimeout(checkTimeout);
-            checkTimeout = setTimeout(checkAttendanceData, 300);
+            checkTimeout = setTimeout(checkAttendanceData, 400);
         });
     }
 
-    // Auto-check saat ubah tahun
     if (periodYearInput) {
         periodYearInput.addEventListener('input', function() {
+            loadGenerateWeeks();
             clearTimeout(checkTimeout);
-            checkTimeout = setTimeout(checkAttendanceData, 500);
+            checkTimeout = setTimeout(checkAttendanceData, 600);
         });
     }
 
-    // Auto-check saat pilih minggu
     if (weekNumberSelect) {
         weekNumberSelect.addEventListener('change', function() {
+            updatePeriodDateInputs();
             clearTimeout(checkTimeout);
             checkTimeout = setTimeout(checkAttendanceData, 300);
         });
@@ -255,6 +404,10 @@
             checkingLoader.classList.add('hidden');
             periodMonthSelect.value = '';
             periodYearInput.value = '{{ date('Y') }}';
+            weekNumberSelect.innerHTML = '<option value="">Pilih bulan & tahun terlebih dahulu</option>';
+            cachedWeeksData = [];
+            periodStartDateInput.value = '';
+            periodEndDateInput.value = '';
 
             // Reset button state
             if (generateSubmitBtn) {
@@ -265,6 +418,60 @@
             }
         }
     });
+
+    // ==========================================
+    // FILTER WEEK DROPDOWN (Index Page)
+    // ==========================================
+
+    const filterMonthSelect = document.querySelector('select[name="month"]');
+    const filterYearInput = document.querySelector('input[name="year"]');
+    const filterWeekSelect = document.getElementById('filter_week_number');
+    const currentFilterWeek = '{{ request("week_number") }}';
+    const currentFilterMonth = '{{ request("month") }}';
+    const currentFilterYear = '{{ request("year") }}';
+
+    async function loadFilterWeeks() {
+        if (!filterMonthSelect || !filterYearInput || !filterWeekSelect) return;
+
+        const month = filterMonthSelect.value;
+        const year = filterYearInput.value;
+
+        if (!month || !year) {
+            filterWeekSelect.innerHTML = '<option value="">Semua Minggu</option>';
+            return;
+        }
+
+        const weeks = await fetchWeeks(month, year);
+        filterWeekSelect.innerHTML = '<option value="">Semua Minggu</option>';
+
+        weeks.forEach(function(week) {
+            const option = document.createElement('option');
+            option.value = week.week_number;
+            option.textContent = week.label;
+
+            if (currentFilterWeek && parseInt(currentFilterWeek) === week.week_number &&
+                currentFilterMonth == month && currentFilterYear == year) {
+                option.selected = true;
+            }
+
+            filterWeekSelect.appendChild(option);
+        });
+    }
+
+    if (filterMonthSelect) {
+        filterMonthSelect.addEventListener('change', loadFilterWeeks);
+    }
+    if (filterYearInput) {
+        filterYearInput.addEventListener('input', function() {
+            clearTimeout(checkTimeout);
+            checkTimeout = setTimeout(loadFilterWeeks, 500);
+        });
+    }
+
+    // Load filter weeks on page load if month/year are set
+    if (currentFilterMonth && currentFilterYear) {
+        loadFilterWeeks();
+    }
 
     // ==========================================
     // SELECT ALL CHECKBOX
@@ -400,27 +607,6 @@
 
     // Initialize button states on page load
     updateButtonStates();
-
-    // ==========================================
-    // PRINT DROPDOWN FUNCTIONALITY
-    // ==========================================
-
-    const printDropdownButton = document.getElementById('printDropdownButton');
-    const printDropdownMenu = document.getElementById('printDropdownMenu');
-
-    if (printDropdownButton && printDropdownMenu) {
-        printDropdownButton.addEventListener('click', function(e) {
-            e.stopPropagation();
-            printDropdownMenu.classList.toggle('hidden');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!printDropdownButton.contains(e.target) && !printDropdownMenu.contains(e.target)) {
-                printDropdownMenu.classList.add('hidden');
-            }
-        });
-    }
 
     // ==========================================
     // GENERATE PAYROLL FORM SUBMIT HANDLER

@@ -1,3 +1,28 @@
+{{--
+    Edit Payroll Draft Modal
+
+    Modal form for editing draft payroll records.
+    Only available for payroll with status 'draft'.
+
+    Editable fields:
+    - project_name (required)
+    - additional_expenses (required, must be >= 0)
+    - additional_expenses_notes (required if additional_expenses > 0)
+    - notes (optional)
+
+    Read-only fields:
+    - Employee name
+    - Period
+    - Daily wage
+    - Net salary
+
+    Validation:
+    - Uses UpdatePayrollRequest for server-side validation
+    - Client-side validation via validatePayrollEditNotes() in payroll-scripts.blade.php
+
+    Included from: pages/sdm/payroll.blade.php (inside @foreach loop)
+--}}
+
 {{-- Modal Edit Payroll --}}
 <x-modal id="editModal-{{ $payroll->id }}" title="Edit Payroll Draft" action="{{ route('payroll.update', $payroll->id) }}"
     method="PUT" buttonText="Update" size="xl">

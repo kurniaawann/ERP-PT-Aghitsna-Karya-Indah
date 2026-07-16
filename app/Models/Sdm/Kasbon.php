@@ -23,6 +23,8 @@ class Kasbon extends Model
         'week_number',
         'period_month',
         'period_year',
+        'period_start_date',
+        'period_end_date',
         'status',
         'deducted_in_payroll_id',
         'notes',
@@ -33,6 +35,8 @@ class Kasbon extends Model
         'week_number' => 'integer',
         'period_month' => 'integer',
         'period_year' => 'integer',
+        'period_start_date' => 'date',
+        'period_end_date' => 'date',
         'kasbon_date' => 'date',
     ];
 
@@ -88,18 +92,22 @@ class Kasbon extends Model
     }
 
     /**
-     * Scope untuk filter berdasarkan periode
+     * Scope untuk filter berdasarkan periode menggunakan period_start_date
      */
-    public function scopeForPeriod($query, $month, $year, $weekNumber = null)
+    public function scopeForPeriod($query, $month, $year)
     {
-        $query->where('period_month', $month)
-            ->where('period_year', $year);
+        return $query->whereMonth('period_start_date', $month)
+            ->whereYear('period_start_date', $year);
+    }
 
-        if ($weekNumber !== null) {
-            $query->where('week_number', $weekNumber);
-        }
-
-        return $query;
+    /**
+     * Scope untuk filter berdasarkan period_start_date
+     */
+    public function scopeForStartDate($query, $startDate)
+    {
+        return $query->where('period_start_date', $startDate instanceof \Carbon\Carbon
+            ? $startDate->format('Y-m-d')
+            : $startDate);
     }
 
     /**
@@ -121,35 +129,31 @@ class Kasbon extends Model
     /**
      * Get total kasbon untuk employee tertentu dalam periode tertentu
      */
-    public static function getTotalForEmployee($employeeId, $month, $year, $weekNumber = null)
+    public static function getTotalForEmployee($employeeId, $periodStartDate)
     {
-        $query = self::where('employee_id', $employeeId)
-            ->where('period_month', $month)
-            ->where('period_year', $year)
-            ->pending();
+        $startDate = $periodStartDate instanceof \Carbon\Carbon
+            ? $periodStartDate->format('Y-m-d')
+            : $periodStartDate;
 
-        if ($weekNumber !== null) {
-            $query->where('week_number', $weekNumber);
-        }
-
-        return $query->sum('amount');
+        return self::where('employee_id', $employeeId)
+            ->where('period_start_date', $startDate)
+            ->pending()
+            ->sum('amount');
     }
 
     /**
      * Get total kasbon team dalam periode tertentu
      */
-    public static function getTotalTeamKasbon($month, $year, $weekNumber = null)
+    public static function getTotalTeamKasbon($periodStartDate)
     {
-        $query = self::where('kasbon_type', 'team')
-            ->where('period_month', $month)
-            ->where('period_year', $year)
-            ->pending();
+        $startDate = $periodStartDate instanceof \Carbon\Carbon
+            ? $periodStartDate->format('Y-m-d')
+            : $periodStartDate;
 
-        if ($weekNumber !== null) {
-            $query->where('week_number', $weekNumber);
-        }
-
-        return $query->sum('amount');
+        return self::where('kasbon_type', 'team')
+            ->where('period_start_date', $startDate)
+            ->pending()
+            ->sum('amount');
     }
 
     /**

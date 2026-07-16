@@ -1,3 +1,24 @@
+{{--
+    Payroll Index Page
+
+    Main page for managing employee payroll.
+    Displays a paginated list of payroll records with:
+    - Search by employee name or code
+    - Filter by month, year, and week number
+    - Bulk actions: Pay selected, Delete selected, Generate new
+
+    Business logic: PayrollService
+    Controller: PayrollController@index
+
+    Flow:
+    1. Generate payroll via modal (validates attendance first)
+    2. Edit draft payroll (project name, additional expenses only)
+    3. View detail (read-only)
+    4. Bulk pay selected draft records
+    5. Delete selected draft records
+    6. Export to Excel or PDF
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Data Payroll')
@@ -19,13 +40,9 @@
                 <x-filters.year-filter :value="request('year')" />
 
                 {{-- Filter Minggu --}}
-                <select name="week_number"
+                <select name="week_number" id="filter_week_number"
                     class="border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="">Semua Minggu</option>
-                    <option value="1" {{ request('week_number') == 1 ? 'selected' : '' }}>Minggu 1</option>
-                    <option value="2" {{ request('week_number') == 2 ? 'selected' : '' }}>Minggu 2</option>
-                    <option value="3" {{ request('week_number') == 3 ? 'selected' : '' }}>Minggu 3</option>
-                    <option value="4" {{ request('week_number') == 4 ? 'selected' : '' }}>Minggu 4</option>
                 </select>
 
                 {{-- Search Input --}}
