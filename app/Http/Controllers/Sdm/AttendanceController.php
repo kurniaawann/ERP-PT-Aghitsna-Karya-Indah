@@ -10,10 +10,10 @@ use App\Services\Sdm\AttendanceService;
 use Illuminate\Http\Request;
 
 /**
- * Controller for managing employee attendance records.
+ * Controller untuk mengelola data absensi karyawan.
  *
- * Handles listing, bulk creation, single update, and bulk deletion
- * of attendance records. All business logic is delegated to AttendanceService.
+ * Menangani penampilan daftar, pembuatan massal, pembaruan tunggal,
+ * dan penghapusan massal data absensi. Seluruh logika bisnis didelegasikan ke AttendanceService.
  */
 class AttendanceController extends Controller
 {
@@ -22,9 +22,9 @@ class AttendanceController extends Controller
     ) {}
 
     /**
-     * Display a paginated list of attendance records.
+     * Menampilkan daftar data absensi dengan paginasi.
      *
-     * @param  Request  $request  Incoming request with optional 'search' query parameter
+     * @param  Request  $request  Permintaan masuk dengan parameter query 'search' opsional
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
@@ -39,12 +39,12 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Store bulk attendance records for multiple employees across a date range.
+     * Menyimpan data absensi massal untuk beberapa karyawan dalam rentang tanggal.
      *
-     * Validates input via StoreAttendanceRequest, checks for duplicates,
-     * and creates attendance records if no duplicates exist.
+     * Memvalidasi input melalui StoreAttendanceRequest, memeriksa duplikat,
+     * dan membuat data absensi jika tidak ada duplikat.
      *
-     * @param  StoreAttendanceRequest  $request  Validated store request
+     * @param  StoreAttendanceRequest  $request  Permintaan penyimpanan yang sudah divalidasi
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreAttendanceRequest $request)
@@ -79,13 +79,13 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Update a single attendance record.
+     * Memperbarui satu data absensi.
      *
-     * Uses Route Model Binding to resolve the Attendance instance.
-     * Validates input via UpdateAttendanceRequest.
+     * Menggunakan Route Model Binding untuk menyelesaikan instance Attendance.
+     * Memvalidasi input melalui UpdateAttendanceRequest.
      *
-     * @param  UpdateAttendanceRequest  $request    Validated update request
-     * @param  Attendance               $attendance Attendance model instance from route binding
+     * @param  UpdateAttendanceRequest  $request    Permintaan pembaruan yang sudah divalidasi
+     * @param  Attendance               $attendance Instance model Attendance dari route binding
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateAttendanceRequest $request, Attendance $attendance)
@@ -96,9 +96,9 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Bulk delete attendance records by their IDs.
+     * Menghapus data absensi secara massal berdasarkan ID.
      *
-     * @param  Request  $request  Request containing 'ids' array
+     * @param  Request  $request  Permintaan yang berisi array 'ids'
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request)

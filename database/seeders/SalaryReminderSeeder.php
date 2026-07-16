@@ -19,7 +19,7 @@ class SalaryReminderSeeder extends Seeder
                 'period_month' => 5,
                 'period_year' => 2026,
                 'reminder_date' => now()->addDays(rand(1, 10))->format('Y-m-d'),
-                // enum salary_reminders.status (see migration 2026_05_01_000000_update_salary_reminders_status):
+                // enum status salary_reminders (lihat migration 2026_05_01_000000_update_salary_reminders_status):
                 // ['draft', 'paid'] DEFAULT 'draft'
                 'status' => 'draft',
                 'created_at' => now(),

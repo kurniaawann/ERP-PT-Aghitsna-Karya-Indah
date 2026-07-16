@@ -1,21 +1,21 @@
 /**
- * Employee (Data Karyawan) page logic.
+ * Logika halaman Karyawan (Data Karyawan).
  *
- * Handles:
- * - Select All / Deselect All checkboxes
- * - Individual checkbox state management and delete button
- * - Bulk delete form submission with loading state
- * - Daily wage currency formatting on input
- * - Add/Edit form submit handling with double-submit prevention
+ * Menangani:
+ * - Checkbox Pilih Semua / Batalkan Pilih Semua
+ * - Manajemen status checkbox individu dan tombol hapus
+ * - Pengiriman formulir hapus massal dengan status memuat
+ * - Format mata uang upah harian pada input
+ * - Penanganan pengiriman formulir Tambah/Edit dengan pencegahan pengiriman ganda
  */
 
 // ==========================================
-// Currency Formatting for Daily Wage Input
+// Format Mata Uang untuk Input Upah Harian
 // ==========================================
 
 /**
- * Format an input field value as IDR currency (e.g., 150000 -> "150.000").
- * Strips all non-digit characters and re-formats.
+ * Memformat nilai input field sebagai mata uang IDR (misalnya, 150000 -> "150.000").
+ * Menghapus semua karakter non-digit dan memformat ulang.
  */
 function formatCurrencyInput(input) {
     if (!input) return;
@@ -25,11 +25,11 @@ function formatCurrencyInput(input) {
 }
 
 // ==========================================
-// Select All / Individual Checkboxes
+// Pilih Semua / Checkbox Individu
 // ==========================================
 
 /**
- * Enable or disable the delete button based on how many checkboxes are selected.
+ * Mengaktifkan atau menonaktifkan tombol hapus berdasarkan jumlah checkbox yang dipilih.
  */
 function updateDeleteButtonState() {
     const deleteButton = document.getElementById('delete-button');
@@ -47,7 +47,7 @@ function updateDeleteButtonState() {
 }
 
 /**
- * Submit the bulk delete form with a loading spinner on the confirm button.
+ * Mengirim formulir hapus massal dengan spinner memuat pada tombol konfirmasi.
  */
 function submitDeleteForm() {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -60,13 +60,13 @@ function submitDeleteForm() {
 }
 
 // ==========================================
-// Event Listeners
+// Pendengar Event
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function () {
     window.submitDeleteForm = submitDeleteForm;
 
-    // Select All Checkbox
+    // Checkbox Pilih Semua
     var selectAll = document.getElementById('selectAll');
     if (selectAll) {
         selectAll.addEventListener('change', function () {

@@ -6,17 +6,17 @@ use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for storing a new employee.
+ * Form request untuk penyimpanan data karyawan baru.
  *
- * Ensures all required fields are present with proper types and bounds
- * before the employee data is persisted to the database.
+ * Memastikan semua kolom yang diperlukan tersedia dengan tipe dan batasan yang tepat
+ * sebelum data karyawan disimpan ke basis data.
  */
 class StoreEmployeeRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
-     * Authorization is handled at the route level via middleware middleware('role:admin').
+     * Otorisasi ditangani di level route melalui middleware middleware('role:admin').
      *
      * @return bool
      */
@@ -26,7 +26,7 @@ class StoreEmployeeRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, string>
      */
@@ -42,10 +42,10 @@ class StoreEmployeeRequest extends FormRequest
     }
 
     /**
-     * Prepare the data before validation.
+     * Mempersiapkan data sebelum validasi.
      *
-     * Normalizes daily_wage from a currency string format (e.g. "150.000")
-     * to an integer (e.g. 150000) before validation rules are applied.
+     * Menormalisasi daily_wage dari format string mata uang (misalnya "150.000")
+     * menjadi integer (misalnya 150000) sebelum aturan validasi diterapkan.
      */
     protected function prepareForValidation(): void
     {

@@ -6,17 +6,17 @@ use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for storing a new overtime record.
+ * Form request untuk penyimpanan data lembur baru.
  *
- * Validates employee selection, date, overtime hours, rate, and notes
- * before the overtime data is persisted to the database.
+ * Memvalidasi pemilihan karyawan, tanggal, jam lembur, tarif, dan catatan
+ * sebelum data lembur disimpan ke basis data.
  */
 class StoreOvertimeRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
-     * Authorization is handled at the route level via middleware('role:admin').
+     * Otorisasi ditangani di level route melalui middleware('role:admin').
      *
      * @return bool
      */
@@ -26,7 +26,7 @@ class StoreOvertimeRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, mixed>
      */
@@ -42,7 +42,7 @@ class StoreOvertimeRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */
@@ -65,10 +65,10 @@ class StoreOvertimeRequest extends FormRequest
     }
 
     /**
-     * Prepare the data before validation.
+     * Mempersiapkan data sebelum validasi.
      *
-     * Normalizes overtime_rate from a currency string format (e.g. "15.000")
-     * to an integer (e.g. 15000) before validation rules are applied.
+     * Menormalisasi tarif lembur dari format string mata uang (misalnya "15.000")
+     * menjadi integer (misalnya 15000) sebelum aturan validasi diterapkan.
      */
     protected function prepareForValidation(): void
     {

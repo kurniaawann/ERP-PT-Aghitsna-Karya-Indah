@@ -7,7 +7,7 @@ use Illuminate\Database\Seeder;
 class SdmSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Seed basis data aplikasi.
      */
     public function run(): void
     {

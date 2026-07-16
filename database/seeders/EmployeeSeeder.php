@@ -9,7 +9,7 @@ use Carbon\Carbon;
 class EmployeeSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Jalankan seed basis data.
      */
     public function run(): void
     {
@@ -36,7 +36,7 @@ class EmployeeSeeder extends Seeder
 
         $divisions = ['Produksi', 'Keuangan', 'SDM', 'Operasional', 'Marketing'];
 
-        // Generate 14 employees (EMP001-EMP014) untuk kebutuhan AttendanceSeeder
+        // Buat 14 data karyawan (EMP001-EMP014) untuk kebutuhan AttendanceSeeder
         for ($i = 1; $i <= 14; $i++) {
             $empCode = 'EMP' . str_pad($i, 3, '0', STR_PAD_LEFT);
             $name = $names[$i - 1] ?? "Karyawan $i";

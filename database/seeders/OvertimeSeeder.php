@@ -9,7 +9,7 @@ use Carbon\Carbon;
 class OvertimeSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Jalankan seed basis data.
      */
     public function run(): void
     {

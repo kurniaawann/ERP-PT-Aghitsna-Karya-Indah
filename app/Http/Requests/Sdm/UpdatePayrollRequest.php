@@ -5,19 +5,19 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for updating an existing payroll draft.
+ * Form request untuk pembaruan data payroll draft.
  *
- * Only draft payroll can be updated. The validation ensures
- * that project_name is always provided and additional_expenses
- * is a non-negative integer. If additional_expenses > 0,
- * additional_expenses_notes is required.
+ * Hanya data payroll draft yang dapat diperbarui. Validasi memastikan
+ * bahwa project_name selalu diberikan dan additional_expenses
+ * berupa integer non-negatif. Jika additional_expenses > 0,
+ * additional_expenses_notes wajib diisi.
  */
 class UpdatePayrollRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
-     * Authorization is handled at the route level via middleware('role:admin').
+     * Otorisasi ditangani di level route melalui middleware('role:admin').
      *
      * @return bool
      */
@@ -27,7 +27,7 @@ class UpdatePayrollRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, string>
      */
@@ -42,7 +42,7 @@ class UpdatePayrollRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */
@@ -63,9 +63,9 @@ class UpdatePayrollRequest extends FormRequest
     }
 
     /**
-     * Prepare the data for validation.
+     * Mempersiapkan data untuk validasi.
      *
-     * Trim additional_expenses_notes and normalize empty strings to null.
+     * Memotong spasi pada additional_expenses_notes dan menormalisasi string kosong menjadi null.
      *
      * @return void
      */

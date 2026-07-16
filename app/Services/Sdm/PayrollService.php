@@ -12,22 +12,22 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 /**
- * Service for managing payroll business logic.
+ * Service untuk mengelola bisnis logika payroll.
  *
- * Handles payroll listing, attendance validation, generation,
- * bulk payment, deletion, and export data preparation.
- * All salary calculation logic is centralized here.
+ * Menangani daftar payroll, validasi absensi, pembuatan,
+ * pembayaran massal, penghapusan, dan persiapan data ekspor.
+ * Semua logika perhitungan gaji dipusatkan di sini.
  *
- * Period identification uses period_start_date as the primary key.
- * Weeks run Monday-Saturday and are NOT cut at month boundaries.
+ * Identifikasi periode menggunakan period_start_date sebagai kunci utama.
+ * Minggu berjalan dari Senin-Sabtu dan TIDAK dipotong di batas bulan.
  */
 class PayrollService
 {
     /**
-     * Get paginated list of payrolls with employee relation.
+     * Mendapatkan daftar payroll dengan paginasi dan relasi karyawan.
      *
-     * Supports filtering by search (name/code), month, year.
-     * Results are sorted by newest period first.
+     * Mendukung filter berdasarkan pencarian (nama/kode), bulan, tahun.
+     * Hasil diurutkan berdasarkan periode terbaru terlebih dahulu.
      *
      * @param  string|null  $search
      * @param  int|null     $month
@@ -56,19 +56,19 @@ class PayrollService
     }
 
     /**
-     * Validate attendance completeness for all employees in a given week period.
+     * Memvalidasi kelengkapan absensi untuk semua karyawan dalam periode minggu tertentu.
      *
-     * Checks:
-     * 1. Which employees already have payroll for this period
-     * 2. Which employees have incomplete attendance (missing days)
-     * 3. Which employees have personal kasbon exceeding max salary
-     * 4. Which divisions have team kasbon exceeding total division salary
+     * Pemeriksaan:
+     * 1. Karyawan mana yang sudah memiliki payroll untuk periode ini
+     * 2. Karyawan mana yang memiliki absensi tidak lengkap (hari yang kurang)
+     * 3. Karyawan mana yang memiliki kasbon personal melebihi gaji maksimal
+     * 4. Divisi mana yang memiliki kasbon team melebihi total gaji divisi
      *
-     * Returns a comprehensive status report used by the frontend to
-     * determine whether generation is allowed.
+     * Mengembalikan laporan status komprehensif yang digunakan oleh frontend
+     * untuk menentukan apakah pembuatan payroll diperbolehkan.
      *
-     * Query optimization: Batch-loads all existing payrolls and attendance
-     * records upfront instead of per-employee queries (N+1 fix).
+     * Optimasi query: Mengambil semua data payroll dan absensi yang sudah ada
+     * secara batch di awal alih-alih per karyawan (perbaikan N+1).
      *
      * @param  Carbon  $periodStartDate
      * @param  Carbon  $periodEndDate
@@ -81,10 +81,10 @@ class PayrollService
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
 
-        // working_days = Mon-Sat calendar days (Sundays excluded by loop)
+        // working_days = hari kalender Senin-Sabtu (Minggu dikecualikan oleh loop)
         $workingDays = $this->countWorkingDays($startDate, $endDate);
 
-        // === BATCH QUERIES (N+1 fix) ===
+        // === QUERY BATCH (perbaikan N+1) ===
         $existingPayrollEmployeeIds = Payroll::where('period_start_date', $startDate->format('Y-m-d'))
             ->pluck('employee_id')
             ->toArray();
@@ -104,7 +104,7 @@ class PayrollService
             ->where('period_start_date', $startDate->format('Y-m-d'))
             ->where('status', 'pending')
             ->get();
-        // === END BATCH QUERIES ===
+        // === AKHIR QUERY BATCH ===
 
         $incompleteEmployees = [];
         $completeEmployees = [];
@@ -175,7 +175,7 @@ class PayrollService
 
         $hasNewEmployees = count($newEmployees) > 0;
 
-        // === KASBON VALIDATION ===
+        // === VALIDASI KASBON ===
         $kasbonIssues = [];
         $divisionTotals = [];
 
@@ -253,15 +253,15 @@ class PayrollService
     }
 
     /**
-     * Generate weekly payroll for daily workers.
+     * Membuat payroll mingguan untuk pekerja harian.
      *
-     * Calculation process:
-     * 1. Validate attendance completeness (reject if incomplete)
-     * 2. Calculate team kasbon per division
-     * 3. For each employee: daily_wage x present_days + overtime - kasbon
-     * 4. Create payroll record with status 'draft'
-     * 5. Create SalaryReminder record
-     * 6. Mark personal and team kasbons as deducted
+     * Proses perhitungan:
+     * 1. Validasi kelengkapan absensi (tolak jika tidak lengkap)
+     * 2. Hitung kasbon team per divisi
+     * 3. Untuk setiap karyawan: gaji harian × hari hadir + lembur - kasbon
+     * 4. Buat data payroll dengan status 'draft'
+     * 5. Buat data SalaryReminder
+     * 6. Tandai kasbon personal dan team sebagai sudah dipotong
      *
      * @param  Carbon        $periodStartDate
      * @param  Carbon        $periodEndDate
@@ -285,7 +285,7 @@ class PayrollService
         $periodMonth = $startDate->month;
         $periodYear = $startDate->year;
 
-        // Detect week_number from getWeeksInMonth
+        // Mendeteksi week_number dari getWeeksInMonth
         $weeks = static::getWeeksInMonth($periodYear, $periodMonth);
         $weekNumber = 1;
         foreach ($weeks as $index => $week) {
@@ -295,7 +295,7 @@ class PayrollService
             }
         }
 
-        // === ATTENDANCE VALIDATION ===
+        // === VALIDASI ABSENSI ===
         $employees = Employee::all();
         $incompleteEmployees = [];
 
@@ -371,7 +371,7 @@ class PayrollService
             return ['success' => false, 'message' => $errorMessage];
         }
 
-        // === CALCULATE TEAM KASBON PER DIVISION ===
+        // === HITUNG KASBON TEAM PER DIVISI ===
         $divisionGroups = $employees->groupBy('division');
 
         $allTeamKasbons = Kasbon::where('kasbon_type', 'team')
@@ -397,7 +397,7 @@ class PayrollService
             ->get()
             ->groupBy('employee_id');
 
-        // === GENERATE PAYROLL PER EMPLOYEE ===
+        // === BUAT PAYROLL PER KARYAWAN ===
         $payrolls = [];
         $personalKasbonIdsToMark = [];
 
@@ -479,14 +479,14 @@ class PayrollService
             $personalKasbonIdsToMark = array_merge($personalKasbonIdsToMark, $employeeKasbonIds);
         }
 
-        // Mark personal kasbons as deducted (batch update)
+        // Tandai kasbon personal sebagai sudah dipotong (update batch)
         if (!empty($personalKasbonIdsToMark)) {
             Kasbon::whereIn('id', $personalKasbonIdsToMark)->update([
                 'status' => 'deducted',
             ]);
         }
 
-        // Mark team kasbons as deducted
+        // Tandai kasbon team sebagai sudah dipotong
         if (!empty($payrolls)) {
             $payrollCollection = collect($payrolls);
             $processedDivisions = [];
@@ -515,13 +515,13 @@ class PayrollService
     }
 
     /**
-     * Bulk pay multiple payroll records.
+     * Membayar beberapa data payroll secara massal.
      *
-     * Updates status from 'draft' to 'paid' and sets the payment date.
-     * Also syncs SalaryReminder status for the paid payrolls.
+     * Memperbarui status dari 'draft' menjadi 'paid' dan mengatur tanggal pembayaran.
+     * Juga menyinkronkan status SalaryReminder untuk payroll yang sudah dibayar.
      *
-     * @param  array   $ids     Array of payroll IDs
-     * @param  string  $paymentDate  Payment date (Y-m-d)
+     * @param  array   $ids     Array ID payroll
+     * @param  string  $paymentDate  Tanggal pembayaran (Y-m-d)
      * @return array   ['success' => bool, 'message' => string, 'count' => int]
      */
     public function bulkPayPayrolls(array $ids, string $paymentDate): array
@@ -554,12 +554,12 @@ class PayrollService
     }
 
     /**
-     * Delete draft payroll records in bulk.
+     * Menghapus data payroll draft secara massal.
      *
-     * Only payroll with status 'draft' can be deleted.
-     * Paid payroll is protected from deletion.
+     * Hanya payroll dengan status 'draft' yang bisa dihapus.
+     * Payroll yang sudah dibayar dilindungi dari penghapusan.
      *
-     * @param  array  $ids  Array of payroll IDs
+     * @param  array  $ids  Array ID payroll
      * @return array  ['success' => bool, 'message' => string]
      */
     public function deleteDraftPayrolls(array $ids): array
@@ -574,14 +574,14 @@ class PayrollService
     }
 
     /**
-     * Get payrolls collection for Excel/PDF export.
+     * Mendapatkan koleksi payroll untuk ekspor Excel/PDF.
      *
-     * Supports filtering by month and year.
-     * Includes employee relationship to avoid N+1 in export.
+     * Mendukung filter berdasarkan bulan dan tahun.
+     * Termasuk relasi karyawan untuk menghindari N+1 saat ekspor.
      *
      * @param  int|null  $month
      * @param  int|null  $year
-     * @return Collection|null  Null if no data found
+     * @return Collection|null  Null jika tidak ada data ditemukan
      */
     public function getPayrollsForExport(?int $month, ?int $year): ?Collection
     {
@@ -596,7 +596,7 @@ class PayrollService
     }
 
     /**
-     * Get payrolls for export filtered by a specific date range.
+     * Mendapatkan payroll untuk ekspor yang difilter berdasarkan rentang tanggal tertentu.
      *
      * @param  Carbon  $periodStartDate
      * @param  Carbon  $periodEndDate
@@ -613,23 +613,23 @@ class PayrollService
     }
 
     /**
-     * Get all weeks in a month using Monday-Saturday week system.
+     * Mendapatkan semua minggu dalam sebulan menggunakan sistem minggu Senin-Sabtu.
      *
-     * Each week runs from Monday to Saturday (6 working days).
-     * Weeks are NOT cut at month boundaries — a week that starts in
-     * February and ends in March is treated as a single period.
+     * Setiap minggu berjalan dari Senin hingga Sabtu (6 hari kerja).
+     * Minggu TIDAK dipotong di batas bulan — minggu yang dimulai di
+     * Februari dan berakhir di Maret diperlakukan sebagai satu periode.
      *
-     * If the month does not start on Monday, the days before the first
-     * Monday form a partial "Week 1" (e.g. Wed-Sat = 4 days).
+     * Jika bulan tidak dimulai pada hari Senin, hari-hari sebelum Senin
+     * pertama membentuk "Minggu 1" parsial (contoh: Rabu-Sabtu = 4 hari).
      *
-     * Example for February 2028 (1 Feb = Wednesday):
-     *   Week 1: Feb 1-4   (Wed-Sat) = 4 days
-     *   Week 2: Feb 6-11  (Mon-Sat) = 6 days
-     *   Week 3: Feb 13-18 (Mon-Sat) = 6 days
-     *   Week 4: Feb 20-25 (Mon-Sat) = 6 days
-     *   Week 5: Feb 27 - Mar 4 (Mon-Sat) = 6 days (cross-month)
+     * Contoh untuk Februari 2028 (1 Februari = hari Rabu):
+     *   Minggu 1: Feb 1-4   (Rabu-Sabtu) = 4 hari
+     *   Minggu 2: Feb 6-11  (Senin-Sabtu) = 6 hari
+     *   Minggu 3: Feb 13-18 (Senin-Sabtu) = 6 hari
+     *   Minggu 4: Feb 20-25 (Senin-Sabtu) = 6 hari
+     *   Minggu 5: Feb 27 - Mar 4 (Senin-Sabtu) = 6 hari (lintas bulan)
      *
-     * Sunday is always excluded as a non-working day.
+     * Minggu selalu dikecualikan sebagai hari non-kerja.
      *
      * @param  int  $year
      * @param  int  $month
@@ -644,7 +644,7 @@ class PayrollService
         $currentDate = $firstDayOfMonth->copy();
 
         while (true) {
-            // Skip Sundays — they are never a week start
+            // Lewati hari Minggu — tidak pernah menjadi awal minggu
             if ($currentDate->dayOfWeek === Carbon::SUNDAY) {
                 $currentDate->addDay();
                 if ($currentDate->month !== $month || $currentDate->year !== $year) {
@@ -655,13 +655,13 @@ class PayrollService
 
             $weekStart = $currentDate->copy();
 
-            // Find the Saturday of this week
+            // Cari hari Sabtu dari minggu ini
             $weekEnd = $weekStart->copy();
             while ($weekEnd->dayOfWeek !== Carbon::SATURDAY) {
                 $weekEnd->addDay();
             }
 
-            // Only include weeks that START in this month
+            // Hanya sertakan minggu yang DIMULAI di bulan ini
             if ($weekStart->month === $month && $weekStart->year === $year) {
                 $weeks[] = [
                     'week_number' => $weekNumber,
@@ -671,10 +671,10 @@ class PayrollService
                 $weekNumber++;
             }
 
-            // Move to next Monday (Saturday + 2 days)
+            // Pindah ke Senin berikutnya (Sabtu + 2 hari)
             $currentDate = $weekEnd->copy()->addDays(2);
 
-            // Stop if we've moved past the target month
+            // Berhenti jika sudah melampaui bulan yang dituju
             if ($currentDate->month !== $month || $currentDate->year !== $year) {
                 break;
             }
@@ -684,11 +684,11 @@ class PayrollService
     }
 
     /**
-     * Calculate range dates for a specific week in a month.
+     * Menghitung rentang tanggal untuk minggu tertentu dalam sebulan.
      *
      * @param  int  $year
      * @param  int  $month
-     * @param  int  $weekNumber  1-N (depends on month)
+     * @param  int  $weekNumber  1-N (tergantung bulan)
      * @return array ['start' => Carbon, 'end' => Carbon, 'working_days' => int]
      *
      * @throws \InvalidArgumentException
@@ -718,7 +718,7 @@ class PayrollService
     }
 
     /**
-     * Count working days (Mon-Sat) between two dates inclusive.
+     * Menghitung hari kerja (Senin-Sabtu) antara dua tanggal secara inklusif.
      *
      * @param  Carbon  $startDate
      * @param  Carbon  $endDate
@@ -740,10 +740,10 @@ class PayrollService
     }
 
     /**
-     * Validate additional expenses JSON from frontend.
+     * Memvalidasi JSON pengeluaran tambahan dari frontend.
      *
-     * Ensures the JSON is valid and recalculates total server-side
-     * for security (prevents tampered totals from frontend).
+     * Memastikan JSON valid dan menghitung ulang total di sisi server
+     * demi keamanan (mencegah total yang dimanipulasi dari frontend).
      *
      * @param  int|null  $frontendTotal
      * @param  string|null  $notesJson

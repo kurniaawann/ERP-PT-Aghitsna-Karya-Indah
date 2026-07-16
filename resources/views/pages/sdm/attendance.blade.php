@@ -22,7 +22,7 @@
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Absensi</h1>
 
-        {{-- Search & Action Buttons --}}
+        {{-- Pencarian & Tombol Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian --}}
             <form method="GET" action="{{ route('attendance.index') }}"
@@ -39,22 +39,22 @@
             </div>
         </div>
 
-        {{-- Table Component --}}
+        {{-- Komponen Tabel --}}
         @include('components.sdm.attendance.table', ['attendances' => $attendances])
     </div>
 
-    {{-- Pagination --}}
+    {{-- Paginasi --}}
     <x-pagination :paginator="$attendances" />
 
     {{-- Modal Tambah --}}
     @include('components.sdm.attendance.add-modal', ['employees' => $employees])
 
-    {{-- Modal Edit untuk setiap attendance --}}
+    {{-- Modal Edit untuk setiap data absensi --}}
     @foreach ($attendances as $attendance)
         @include('components.sdm.attendance.edit-modal', ['attendance' => $attendance, 'employees' => $employees])
     @endforeach
 
-    {{-- Modal Konfirmasi Bulk Delete --}}
+    {{-- Modal Konfirmasi Hapus Massal --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?

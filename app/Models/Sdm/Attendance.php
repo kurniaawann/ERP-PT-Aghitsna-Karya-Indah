@@ -8,20 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Model for the attendances table.
+ * Model untuk tabel attendances.
  *
- * Represents employee attendance records including daily attendance,
- * overtime, and leave. Each record is unique per employee per date
- * (enforced by a unique constraint on employee_id + attendance_date).
+ * Mewakili data absensi karyawan termasuk absensi harian,
+ * lembur, dan cuti. Setiap data unik per karyawan per tanggal
+ * (dijalankan oleh unique constraint pada employee_id + attendance_date).
  *
  * @property int    $id
- * @property string $employee_id      FK to employees.employee_code
- * @property string $attendance_date  Date of attendance
+ * @property string $employee_id      FK ke employees.employee_code
+ * @property string $attendance_date  Tanggal absensi
  * @property string $status           Status: hadir|izin|sakit|cuti|lembur
- * @property float|null $overtime_hours  Overtime hours (for lembur status)
- * @property int|null   $overtime_rate   Rate per hour (for lembur status)
- * @property int|null   $overtime_total  Total overtime pay (hours x rate)
- * @property string|null $notes        Optional notes
+ * @property float|null $overtime_hours  Jam lembur (untuk status lembur)
+ * @property int|null   $overtime_rate   Tarif per jam (untuk status lembur)
+ * @property int|null   $overtime_total  Total pembayaran lembur (jam x tarif)
+ * @property string|null $notes        Catatan opsional
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  *
@@ -32,7 +32,7 @@ class Attendance extends Model
     use HasFactory;
 
     /**
-     * The attributes that are mass assignable.
+     * Atribut yang dapat diisi secara massal.
      *
      * @var array<int, string>
      */
@@ -47,7 +47,7 @@ class Attendance extends Model
     ];
 
     /**
-     * The attributes that should be cast to native types.
+     * Atribut yang harus di-cast ke tipe data native.
      *
      * @var array<string, string>
      */
@@ -59,7 +59,7 @@ class Attendance extends Model
     ];
 
     /**
-     * Get the employee that owns this attendance record.
+     * Mendapatkan karyawan yang memiliki data absensi ini.
      *
      * @return BelongsTo
      */
@@ -69,7 +69,7 @@ class Attendance extends Model
     }
 
     /**
-     * Check if this attendance record has overtime.
+     * Mengecek apakah data absensi ini memiliki lembur.
      *
      * @return bool
      */
@@ -79,7 +79,7 @@ class Attendance extends Model
     }
 
     /**
-     * Check if this attendance record requires a deduction (izin, sakit, or cuti).
+     * Mengecek apakah data absensi ini memerlukan potongan (izin, sakit, atau cuti).
      *
      * @return bool
      */
@@ -89,10 +89,10 @@ class Attendance extends Model
     }
 
     /**
-     * Scope: filter attendance records by status.
+     * Scope: memfilter data absensi berdasarkan status.
      *
-     * @param  Builder  $query   Eloquent query builder
-     * @param  string   $status  Status value to filter by
+     * @param  Builder  $query   Query builder Eloquent
+     * @param  string   $status  Nilai status untuk difilter
      * @return Builder
      */
     public function scopeOfStatus(Builder $query, string $status): Builder
@@ -101,10 +101,10 @@ class Attendance extends Model
     }
 
     /**
-     * Scope: filter attendance records by employee code.
+     * Scope: memfilter data absensi berdasarkan kode karyawan.
      *
-     * @param  Builder  $query         Eloquent query builder
-     * @param  string   $employeeCode  Employee code to filter by
+     * @param  Builder  $query         Query builder Eloquent
+     * @param  string   $employeeCode  Kode karyawan untuk difilter
      * @return Builder
      */
     public function scopeForEmployee(Builder $query, string $employeeCode): Builder
@@ -113,11 +113,11 @@ class Attendance extends Model
     }
 
     /**
-     * Scope: filter attendance records by date range (inclusive).
+     * Scope: memfilter data absensi berdasarkan rentang tanggal (inklusif).
      *
-     * @param  Builder  $query      Eloquent query builder
-     * @param  string   $startDate  Start date (Y-m-d)
-     * @param  string   $endDate    End date (Y-m-d)
+     * @param  Builder  $query      Query builder Eloquent
+     * @param  string   $startDate  Tanggal mulai (Y-m-d)
+     * @param  string   $endDate    Tanggal akhir (Y-m-d)
      * @return Builder
      */
     public function scopeBetweenDates(Builder $query, string $startDate, string $endDate): Builder

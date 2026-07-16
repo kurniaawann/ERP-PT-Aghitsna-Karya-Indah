@@ -1,5 +1,5 @@
-{{-- Employee Table Component --}}
-{{-- Displays employee data in a table with bulk-select checkboxes and edit action buttons --}}
+{{-- Komponen Tabel Karyawan --}}
+{{-- Menampilkan data karyawan dalam tabel dengan kotak centang pilih semua dan tombol aksi edit --}}
 <form id="deleteForm" method="POST" action="{{ route('employee.destroy') }}">
     @csrf
     @method('DELETE')

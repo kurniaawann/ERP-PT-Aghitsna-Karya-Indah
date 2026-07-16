@@ -1,4 +1,4 @@
-{{-- Edit Employee Modal --}}
+{{-- Modal Edit Karyawan --}}
 <x-modal id="editModal-{{ $employee->employee_code }}" title="Edit Karyawan"
     action="{{ route('employee.update', $employee->employee_code) }}" method="POST" buttonText="Update">
     @method('PUT')

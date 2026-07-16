@@ -1,7 +1,7 @@
 {{-- ═══════════════════════════════════════════════════════════════════════
-     Kasbon Data Table Component
-     Displays the list of cash advances with checkboxes, status badges,
-     employee info, and edit actions for pending records.
+     Komponen Tabel Data Kasbon
+     Menampilkan daftar kasbon dengan kotak centang, lencana status,
+     informasi karyawan, dan aksi edit untuk data yang tertunda.
      ═══════════════════════════════════════════════════════════════════════ --}}
 <form id="deleteForm" method="POST" action="{{ route('kasbon.destroySelected') }}">
     @csrf
@@ -10,7 +10,7 @@
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-border-light">
-                    {{-- Table Header --}}
+                    {{-- Tabel Header --}}
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center">
@@ -28,21 +28,21 @@
                         </tr>
                     </thead>
 
-                    {{-- Table Body --}}
+                    {{-- Badan Tabel --}}
                     <tbody class="bg-surface-base">
                         @forelse($kasbons as $kasbon)
                             <tr class="border-t hover:bg-surface-secondary">
-                                {{-- Checkbox --}}
+                                {{-- Kotak Centang --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_kasbons[]" value="{{ $kasbon->kasbon_code }}"
                                         class="row-checkbox w-4 h-4 accent-primary cursor-pointer"
                                         {{ $kasbon->status === 'deducted' ? 'disabled' : '' }}>
                                 </td>
 
-                                {{-- Kasbon Code --}}
+                                {{-- Kode Kasbon --}}
                                 <td class="p-2 text-sm font-medium text-text-primary">{{ $kasbon->kasbon_code }}</td>
 
-                                {{-- Employee / Division Info --}}
+                                {{-- Informasi Karyawan / Divisi --}}
                                 <td class="p-2 text-sm text-text-label">
                                     @if ($kasbon->kasbon_type === 'personal' && $kasbon->employee)
                                         <div>
@@ -59,24 +59,24 @@
                                     @endif
                                 </td>
 
-                                {{-- Kasbon Type Badge --}}
+                                {{-- Lencana Jenis Kasbon --}}
                                 <td class="p-2 text-center">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->kasbon_type === 'personal' ? 'bg-primary-light text-primary' : 'bg-secondary-light text-secondary' }}">
                                         {{ $kasbon->kasbon_type_label }}
                                     </span>
                                 </td>
 
-                                {{-- Amount --}}
+                                {{-- Jumlah --}}
                                 <td class="p-2 text-right text-sm font-medium text-text-primary">
                                     {{ $kasbon->formatted_amount }}
                                 </td>
 
-                                {{-- Kasbon Date --}}
+                                {{-- Tanggal Kasbon --}}
                                 <td class="p-2 text-center text-sm text-text-label">
                                     {{ $kasbon->kasbon_date->format('d M Y') }}
                                 </td>
 
-                                {{-- Period Range --}}
+                                {{-- Rentang Periode --}}
                                 <td class="p-2 text-center text-sm text-text-label">
                                     @if ($kasbon->period_start_date && $kasbon->period_end_date)
                                         @php
@@ -95,14 +95,14 @@
                                     @endif
                                 </td>
 
-                                {{-- Status Badge --}}
+                                {{-- Lencana Status --}}
                                 <td class="p-2 text-center">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status === 'pending' ? 'bg-warning-light text-warning' : 'bg-success-light text-success' }}">
                                         {{ $kasbon->status_label }}
                                     </span>
                                 </td>
 
-                                {{-- Action Button --}}
+                                {{-- Tombol Aksi --}}
                                 <td class="p-2 text-center text-sm">
                                     @if ($kasbon->status === 'pending')
                                         <div class="flex justify-center gap-2">

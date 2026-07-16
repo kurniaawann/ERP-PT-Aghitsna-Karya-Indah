@@ -1,12 +1,12 @@
 {{-- ═══════════════════════════════════════════════════════════════════════
-     Add Kasbon Modal Component
-     Form for creating a new personal or team cash advance.
-     Includes type toggle, employee/division selection,
-     amount validation, and period date resolution.
+     Komponen Modal Tambah Kasbon
+     Formulir untuk membuat kasbon personal atau tim baru.
+     Termasuk toggle jenis, pemilihan karyawan/divisi,
+     validasi jumlah, dan resolusi tanggal periode.
      ═══════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="addModal" title="Tambah Kasbon" action="{{ route('kasbon.store') }}" method="POST" buttonText="Simpan">
 
-    {{-- Information Box --}}
+    {{-- Kotak Informasi --}}
     <div class="mb-4 p-4 bg-primary-light border border-primary rounded-lg">
         <div class="flex gap-2">
             <i class="fa-solid fa-info-circle text-primary mt-1"></i>
@@ -21,7 +21,7 @@
         </div>
     </div>
 
-    {{-- Max Kasbon Limit Alert --}}
+    {{-- Peringatan Batas Maksimal Kasbon --}}
     <div id="add_kasbon_limit_alert" class="mb-4 p-4 bg-warning-light border border-warning rounded-lg hidden">
         <div class="flex gap-2">
             <i class="fa-solid fa-exclamation-triangle text-warning mt-1"></i>
@@ -32,7 +32,7 @@
         </div>
     </div>
 
-    {{-- Kasbon Type Selection --}}
+    {{-- Pilihan Jenis Kasbon --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jenis Kasbon <span class="text-error">*</span></label>
         <select name="kasbon_type" id="add_kasbon_type"
@@ -45,7 +45,7 @@
         </select>
     </div>
 
-    {{-- Employee Selection (Personal) --}}
+    {{-- Pilihan Karyawan (Personal) --}}
     <div class="mb-3" id="add_employee_field">
         <label class="block text-text-primary mb-1">Karyawan <span class="text-error">*</span></label>
         <select name="employee_id" id="add_employee_id"
@@ -58,7 +58,7 @@
         </select>
     </div>
 
-    {{-- Division Selection (Team) --}}
+    {{-- Pilihan Divisi (Tim) --}}
     <div class="mb-3" id="add_division_field" style="display: none;">
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
         <select name="division" id="add_division"
@@ -70,7 +70,7 @@
         </select>
     </div>
 
-    {{-- Amount Input --}}
+    {{-- Input Jumlah --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="amount" id="add_amount"
@@ -79,7 +79,7 @@
             oninput="validateKasbonAmount('add')">
     </div>
 
-    {{-- Kasbon Date --}}
+    {{-- Tanggal Kasbon --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
         <input type="date" name="kasbon_date" id="add_kasbon_date"
@@ -88,7 +88,7 @@
             oninput="this.setCustomValidity('')" onchange="checkMaxKasbon('add')">
     </div>
 
-    {{-- Period Month & Year --}}
+    {{-- Periode Bulan & Tahun --}}
     <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
@@ -111,12 +111,12 @@
         </div>
     </div>
 
-    {{-- Hidden Fields (auto-resolved from period dates) --}}
+    {{-- Bidang Tersembunyi (dihapus otomatis dari tanggal periode) --}}
     <input type="hidden" name="week_number" id="add_week_number" value="">
     <input type="hidden" name="period_start_date" id="add_period_start_date" value="">
     <input type="hidden" name="period_end_date" id="add_period_end_date" value="">
 
-    {{-- Notes --}}
+    {{-- Catatan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
         <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"

@@ -5,17 +5,17 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for storing bulk attendance records.
+ * Form request untuk penyimpanan data absensi secara bulk.
  *
- * Validates employee selection, date range, status, and notes
- * before the attendance data is persisted to the database.
+ * Memvalidasi pemilihan karyawan, rentang tanggal, status, dan catatan
+ * sebelum data absensi disimpan ke basis data.
  */
 class StoreAttendanceRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
-     * Authorization is handled at the route level via middleware('role:admin').
+     * Otorisasi ditangani di level route melalui middleware('role:admin').
      *
      * @return bool
      */
@@ -25,7 +25,7 @@ class StoreAttendanceRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, mixed>
      */
@@ -42,7 +42,7 @@ class StoreAttendanceRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */

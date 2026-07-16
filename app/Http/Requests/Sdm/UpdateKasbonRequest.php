@@ -6,18 +6,18 @@ use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for updating an existing kasbon record.
+ * Form request untuk pembaruan data kasbon.
  *
- * Validates kasbon type, employee/division selection, amount,
- * dates, and period information before update.
+ * Memvalidasi jenis kasbon, pemilihan karyawan/divisi, jumlah,
+ * tanggal, dan informasi periode sebelum pembaruan.
  *
- * Authorization is handled at the route level via middleware('role:admin').
- * Additional status-based authorization is checked in the controller/service.
+ * Otorisasi ditangani di level route melalui middleware('role:admin').
+ * Otorisasi berdasarkan status diperiksa di controller/service.
  */
 class UpdateKasbonRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
      * @return bool
      */
@@ -27,7 +27,7 @@ class UpdateKasbonRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, mixed>
      */
@@ -48,7 +48,7 @@ class UpdateKasbonRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */
@@ -73,10 +73,10 @@ class UpdateKasbonRequest extends FormRequest
     }
 
     /**
-     * Prepare the data before validation.
+     * Mempersiapkan data sebelum validasi.
      *
-     * Normalizes amount from a currency string format (e.g. "15.000")
-     * to an integer (e.g. 15000) before validation rules are applied.
+     * Menormalisasi jumlah dari format string mata uang (misalnya "15.000")
+     * menjadi integer (misalnya 15000) sebelum aturan validasi diterapkan.
      */
     protected function prepareForValidation(): void
     {

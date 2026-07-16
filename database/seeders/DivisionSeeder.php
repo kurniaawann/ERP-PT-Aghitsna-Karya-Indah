@@ -7,7 +7,7 @@ use Illuminate\Database\Seeder;
 class DivisionSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Jalankan seed basis data.
      */
     public function run(): void
     {

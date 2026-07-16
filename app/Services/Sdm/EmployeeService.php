@@ -8,15 +8,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 /**
- * Service for managing employee business logic.
+ * Service untuk mengelola bisnis logika karyawan.
  *
- * Handles employee listing, creation, updating, deletion, and
- * all business logic that does not belong in the model or controller.
+ * Menangani daftar karyawan, pembuatan, pembaruan, penghapusan, dan
+ * semua bisnis logika yang bukan bagian dari model atau controller.
  */
 class EmployeeService
 {
     /**
-     * Get paginated list of employees with optional search.
+     * Mendapatkan daftar karyawan dengan paginasi dan pencarian opsional.
      *
      * @param  string|null  $search
      * @param  int          $perPage
@@ -35,7 +35,7 @@ class EmployeeService
     }
 
     /**
-     * Get all divisions ordered by name.
+     * Mendapatkan semua divisi yang diurutkan berdasarkan nama.
      *
      * @return \Illuminate\Support\Collection
      */
@@ -45,9 +45,9 @@ class EmployeeService
     }
 
     /**
-     * Create a new employee with auto-generated employee code.
+     * Membuat karyawan baru dengan kode karyawan yang dihasilkan secara otomatis.
      *
-     * @param  array  $data  Validated employee data
+     * @param  array  $data  Data karyawan yang sudah divalidasi
      * @return \App\Models\Sdm\Employee
      */
     public function createEmployee(array $data): Employee
@@ -57,10 +57,10 @@ class EmployeeService
     }
 
     /**
-     * Update an existing employee.
+     * Memperbarui karyawan yang sudah ada.
      *
      * @param  \App\Models\Sdm\Employee  $employee
-     * @param  array  $data  Validated employee data
+     * @param  array  $data  Data karyawan yang sudah divalidasi
      * @return bool
      */
     public function updateEmployee(Employee $employee, array $data): bool
@@ -69,10 +69,10 @@ class EmployeeService
     }
 
     /**
-     * Delete employees by their employee codes.
+     * Menghapus karyawan berdasarkan kode karyawannya.
      *
      * @param  array  $employeeCodes
-     * @return int  Number of deleted records
+     * @return int  Jumlah data yang dihapus
      */
     public function deleteEmployees(array $employeeCodes): int
     {

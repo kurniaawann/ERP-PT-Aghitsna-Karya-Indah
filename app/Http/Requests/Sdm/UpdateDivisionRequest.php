@@ -5,17 +5,17 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for updating an existing division.
+ * Form request untuk pembaruan data divisi.
  *
- * The division is identified via route model binding.
- * The unique validation rule excludes the current division's ID.
+ * Divisi diidentifikasi melalui route model binding.
+ * Aturan validasi unik mengecualikan ID divisi saat ini.
  */
 class UpdateDivisionRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
-     * Authorization is handled at the route level via middleware('role:admin').
+     * Otorisasi ditangani di level route melalui middleware('role:admin').
      *
      * @return bool
      */
@@ -25,7 +25,7 @@ class UpdateDivisionRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, string>
      */
@@ -38,7 +38,7 @@ class UpdateDivisionRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */

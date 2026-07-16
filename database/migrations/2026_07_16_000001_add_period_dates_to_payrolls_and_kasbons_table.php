@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration {
     public function up(): void
     {
-        // === PAYROLLS TABLE ===
+        // === TABEL PAYROLLS ===
         Schema::table('payrolls', function (Blueprint $table) {
             $table->date('period_start_date')->nullable()->after('week_number');
             $table->date('period_end_date')->nullable()->after('period_start_date');
         });
 
-        // Drop old unique constraint and add new one based on period_start_date
+        // Hapus unique constraint lama dan tambahkan yang baru berdasarkan period_start_date
         Schema::table('payrolls', function (Blueprint $table) {
             $table->dropForeign(['employee_id']);
             $table->dropUnique('payrolls_unique_constraint');
@@ -25,13 +25,13 @@ return new class extends Migration {
             $table->foreign('employee_id')->references('employee_code')->on('employees')->onDelete('cascade');
         });
 
-        // === KASBONS TABLE ===
+        // === TABEL KASBONS ===
         Schema::table('kasbons', function (Blueprint $table) {
             $table->date('period_start_date')->nullable()->after('week_number');
             $table->date('period_end_date')->nullable()->after('period_start_date');
         });
 
-        // === DATA MIGRATION: Populate period_start_date & period_end_date for existing records ===
+        // === MIGRASI DATA: Mengisi period_start_date & period_end_date untuk data yang sudah ada ===
         $this->migrateExistingPayrollData();
     }
 

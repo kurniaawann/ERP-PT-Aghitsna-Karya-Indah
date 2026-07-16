@@ -1,24 +1,24 @@
 /**
- * Cash Advances (Kasbon) Index Page - JavaScript Module
+ * Halaman Indeks Kasbon - Modul JavaScript
  *
- * Handles all interactive functionality for the Data Kasbon page:
- * - Type toggle (personal/team)
- * - Max kasbon check via AJAX
- * - Period date resolution via AJAX
- * - Amount validation against max limit
- * - Currency formatting
- * - Select All checkbox logic
- * - Bulk delete with loading state
- * - Form submit handlers with loading states
+ * Menangani semua fungsionalitas interaktif untuk halaman Data Kasbon:
+ * - Toggle jenis (pribadi/tim)
+ * - Pengecekan kasbon maksimal melalui AJAX
+ * - Penyelesaian tanggal periode melalui AJAX
+ * - Validasi jumlah terhadap batas maksimal
+ * - Format mata uang
+ * - Logika checkbox Pilih Semua
+ * - Hapus massal dengan status memuat
+ * - Penanganan pengiriman formulir dengan status memuat
  */
 
 // ==========================================
-// CONFIGURATION
+// KONFIGURASI
 // ==========================================
 
 /**
- * Read CSRF token and route URLs from data attributes on the page container.
- * These are set by the Blade template to avoid hardcoding URLs in JS.
+ * Membaca token CSRF dan URL rute dari atribut data pada container halaman.
+ * Ini diatur oleh template Blade untuk menghindari hardcoding URL di JS.
  */
 const pageContainer = document.getElementById('kasbon-page');
 const CSRF_TOKEN = pageContainer ? pageContainer.dataset.csrfToken : '';
@@ -26,34 +26,34 @@ const CHECK_MAX_URL = pageContainer ? pageUrl('kasbon.check-max') : '';
 const GET_WEEKS_URL = pageUrl('payroll.get-weeks');
 
 /**
- * Store max kasbon data for each form prefix (add/edit_KSB001).
- * Used by validateKasbonAmount to check against the limit.
+ * Menyimpan data kasbon maksimal untuk setiap awalan formulir (add/edit_KSB001).
+ * Digunakan oleh validateKasbonAmount untuk memeriksa terhadap batas.
  */
 let maxKasbonData = {};
 
 // ==========================================
-// CURRENCY HELPERS
+// HELPER MATA UANG
 // ==========================================
 
 /**
- * Parse a formatted currency string back to a raw integer.
- * Handles Indonesian format with dots as thousands separator.
+ * Mengurai string mata uang yang sudah diformat menjadi integer mentah.
+ * Menangani format Indonesia dengan titik sebagai pemisah ribuan.
  *
- * @param  {string} value - Formatted currency string (e.g., "15.000")
- * @returns {number} Raw integer value (e.g., 15000)
+ * @param  {string} value - String mata uang yang sudah diformat (misalnya, "15.000")
+ * @returns {number} Nilai integer mentah (misalnya, 15000)
  */
 function parseCurrencyInput(value) {
     return parseInt(String(value || '').replace(/[^\d]/g, ''), 10) || 0;
 }
 
 /**
- * Format an input field value as IDR currency (e.g., 15000 -> "15.000").
- * Strips all non-digit characters and re-formats with Indonesian locale.
+ * Memformat nilai input field sebagai mata uang IDR (misalnya, 15000 -> "15.000").
+ * Menghapus semua karakter non-digit dan memformat ulang dengan lokal Indonesia.
  *
- * Assigned to window because it's called from inline oninput attributes
- * in the Blade templates (Vite loads JS as ES module, not global).
+ * Ditugaskan ke window karena dipanggil dari atribut oninput inline
+ * di template Blade (Vite memuat JS sebagai ES module, bukan global).
  *
- * @param {HTMLInputElement} input - The input element to format
+ * @param {HTMLInputElement} input - Element input yang akan diformat
  */
 window.formatCurrencyInput = function (input) {
     if (!input) return;
@@ -63,19 +63,19 @@ window.formatCurrencyInput = function (input) {
 };
 
 // ==========================================
-// TYPE TOGGLE (Personal / Team)
+// TOGGLE JENIS (Pribadi / Tim)
 // ==========================================
 
 /**
- * Toggle employee and division field visibility based on kasbon type.
+ * Mengubah visibilitas field karyawan dan divisi berdasarkan jenis kasbon.
  *
- * For 'personal': shows employee select, hides division select.
- * For 'team': shows division select, hides employee select.
- * For empty: hides both.
+ * Untuk 'pribadi': menampilkan select karyawan, menyembunyikan select divisi.
+ * Untuk 'tim': menampilkan select divisi, menyembunyikan select karyawan.
+ * Untuk kosong: menyembunyikan keduanya.
  *
- * Assigned to window because it's called from inline onchange attributes.
+ * Ditugaskan ke window karena dipanggil dari atribut onchange inline.
  *
- * @param {string} prefix - Form prefix ('add' or 'edit_KSB001')
+ * @param {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
  */
 window.toggleEmployeeSelect = function (prefix) {
     const kasbonTypeSelect = document.getElementById(prefix + '_kasbon_type');
@@ -124,16 +124,16 @@ window.toggleEmployeeSelect = function (prefix) {
 };
 
 // ==========================================
-// PERIOD DATE RESOLUTION (AJAX)
+// PENYELESAIAN TANGGAL PERIODE (AJAX)
 // ==========================================
 
 /**
- * Resolve period_start_date and period_end_date from month, year, and kasbon_date.
+ * Menyelesaikan period_start_date dan period_end_date dari bulan, tahun, dan kasbon_date.
  *
- * Fetches available weeks from the Payroll endpoint and finds the week
- * whose date range contains the kasbon_date.
+ * Mengambil minggu yang tersedia dari endpoint Payroll dan menemukan minggu
+ * yang rentang tanggalnya mengandung kasbon_date.
  *
- * @param  {string} prefix - Form prefix ('add' or 'edit_KSB001')
+ * @param  {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
  * @returns {Promise<{start_date: string, end_date: string, week_number: number}|null>}
  */
 async function resolvePeriodStartDate(prefix) {
@@ -179,19 +179,19 @@ async function resolvePeriodStartDate(prefix) {
 }
 
 // ==========================================
-// MAX KASBON CHECK (AJAX)
+// PENGECEKAN KASBON MAKSIMAL (AJAX)
 // ==========================================
 
 /**
- * Check maximum kasbon allowed for the selected employee based on attendance.
+ * Memeriksa kasbon maksimal yang diizinkan untuk karyawan yang dipilih berdasarkan absensi.
  *
- * Resolves the period start date first, then calls the check-max endpoint.
- * Updates the limit alert UI and stores the result in maxKasbonData.
- * Disables submit button if payroll is paid or no attendance.
+ * Menyelesaikan tanggal awal periode terlebih dahulu, lalu memanggil endpoint check-max.
+ * Memperbarui UI peringatan batas dan menyimpan hasil di maxKasbonData.
+ * Menonaktifkan tombol kirim jika payroll sudah dibayar atau tidak ada absensi.
  *
- * Assigned to window because it's called from inline onchange attributes.
+ * Ditugaskan ke window karena dipanggil dari atribut onchange inline.
  *
- * @param {string} prefix - Form prefix ('add' or 'edit_KSB001')
+ * @param {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
  */
 window.checkMaxKasbon = async function (prefix) {
     const employeeField = document.getElementById(prefix + '_employee_field');
@@ -279,18 +279,18 @@ window.checkMaxKasbon = async function (prefix) {
 };
 
 // ==========================================
-// AMOUNT VALIDATION
+// VALIDASI JUMLAH
 // ==========================================
 
 /**
- * Validate kasbon amount against the max allowed limit.
+ * Memvalidasi jumlah kasbon terhadap batas maksimal yang diizinkan.
  *
- * If amount exceeds max, disables submit button and shows error alert.
- * If amount is valid, enables submit button and shows warning (info) alert.
+ * Jika jumlah melebihi maksimal, menonaktifkan tombol kirim dan menampilkan peringatan error.
+ * Jika jumlah valid, mengaktifkan tombol kirim dan menampilkan peringatan info.
  *
- * Assigned to window because it's called from inline oninput attributes.
+ * Ditugaskan ke window karena dipanggil dari atribut oninput inline.
  *
- * @param {string} prefix - Form prefix ('add' or 'edit_KSB001')
+ * @param {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
  */
 window.validateKasbonAmount = function (prefix) {
     const amountInput = document.getElementById(prefix + '_amount');
@@ -331,15 +331,15 @@ window.validateKasbonAmount = function (prefix) {
 };
 
 // ==========================================
-// BULK DELETE
+// HAPUS MASSAL
 // ==========================================
 
 /**
- * Submit the bulk delete form with loading state.
- * Shows a spinner on the confirm button while submitting.
+ * Mengirim formulir hapus massal dengan status memuat.
+ * Menampilkan spinner pada tombol konfirmasi saat mengirim.
  *
- * Assigned to window because it's called from an inline onclick attribute
- * in the delete confirmation modal.
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline
+ * di modal konfirmasi hapus.
  */
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -356,12 +356,12 @@ window.submitDeleteForm = function () {
 };
 
 // ==========================================
-// SELECT ALL CHECKBOX
+// CHECKBOX PILIH SEMUA
 // ==========================================
 
 /**
- * Initialize select-all checkbox and individual checkbox listeners.
- * Updates delete button state based on selection.
+ * Menginisialisasi checkbox pilih semua dan pendengar checkbox individu.
+ * Memperbarui status tombol hapus berdasarkan pilihan.
  */
 function initSelectAllCheckbox() {
     const selectAll = document.getElementById('select-all');
@@ -398,7 +398,7 @@ function initSelectAllCheckbox() {
 }
 
 /**
- * Update the delete button state based on checkbox selection.
+ * Memperbarui status tombol hapus berdasarkan pilihan checkbox.
  */
 function updateDeleteButtonState() {
     const deleteButton = document.getElementById('delete-button')
@@ -419,12 +419,12 @@ function updateDeleteButtonState() {
 }
 
 // ==========================================
-// FORM SUBMIT HANDLERS
+// PENANGANAN PENGIRIMAN FORMULIR
 // ==========================================
 
 /**
- * Initialize form submit handlers for add and edit modals.
- * Handles loading state via handleFormSubmit() from shared module.
+ * Menginisialisasi penanganan pengiriman formulir untuk modal tambah dan edit.
+ * Menangani status memuat melalui handleFormSubmit() dari modul bersama.
  */
 function initFormSubmitHandlers() {
     const addForm = document.querySelector('#addModal form');
@@ -450,11 +450,11 @@ function initFormSubmitHandlers() {
 }
 
 // ==========================================
-// AMOUNT INPUT FORMATTING
+// FORMAT INPUT JUMLAH
 // ==========================================
 
 /**
- * Initialize currency formatting on all kasbon amount inputs.
+ * Menginisialisasi format mata uang pada semua input jumlah kasbon.
  */
 function initAmountFormatting() {
     document.querySelectorAll('.kasbon-amount-input').forEach(input => {
@@ -472,14 +472,14 @@ function initAmountFormatting() {
 }
 
 // ==========================================
-// UI HELPERS
+// HELPER UI
 // ==========================================
 
 /**
- * Set the alert style (warning/error) for the limit alert element.
+ * Mengatur gaya peringatan (warning/error) untuk elemen peringatan batas.
  *
- * @param {HTMLElement} alertEl  The alert container element
- * @param {string}      style    'warning' or 'error'
+ * @param {HTMLElement} alertEl  Element container peringatan
+ * @param {string}      style    'warning' atau 'error'
  */
 function setAlertStyle(alertEl, style) {
     alertEl.classList.remove('hidden');
@@ -513,10 +513,10 @@ function setAlertStyle(alertEl, style) {
 }
 
 /**
- * Enable or disable the submit button for a given form prefix.
+ * Mengaktifkan atau menonaktifkan tombol kirim untuk awalan formulir tertentu.
  *
- * @param {string}  prefix   Form prefix ('add' or 'edit_KSB001')
- * @param {boolean} disable  true to disable, false to enable
+ * @param {string}  prefix   Awalan formulir ('add' atau 'edit_KSB001')
+ * @param {boolean} disable  true untuk menonaktifkan, false untuk mengaktifkan
  */
 function disableSubmitButton(prefix, disable) {
     let modalId;
@@ -538,11 +538,11 @@ function disableSubmitButton(prefix, disable) {
 }
 
 /**
- * Get the URL for a named route from data attributes.
- * Falls back to reading from meta tags or window configuration.
+ * Mendapatkan URL untuk rute bernama dari atribut data.
+ * Fallback ke pembacaan dari tag meta atau konfigurasi window.
  *
- * @param  {string} routeName  Laravel route name
- * @returns {string} The route URL
+ * @param  {string} routeName  Nama rute Laravel
+ * @returns {string} URL rute
  */
 function pageUrl(routeName) {
     const urlMap = {
@@ -553,11 +553,11 @@ function pageUrl(routeName) {
 }
 
 // ==========================================
-// INITIALIZATION
+// INISIALISASI
 // ==========================================
 
 /**
- * Initialize all kasbon page functionality on DOM ready.
+ * Menginisialisasi semua fungsionalitas halaman kasbon saat DOM siap.
  */
 document.addEventListener('DOMContentLoaded', function () {
     initSelectAllCheckbox();

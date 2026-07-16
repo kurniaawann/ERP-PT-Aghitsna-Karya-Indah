@@ -6,18 +6,18 @@ use App\Models\Sdm\Division;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 /**
- * Service for managing division business logic.
+ * Service untuk mengelola bisnis logika divisi.
  *
- * Handles division listing, creation, updating, deletion,
- * and all business logic that does not belong in the model or controller.
+ * Menangani daftar divisi, pembuatan, pembaruan, penghapusan,
+ * dan semua bisnis logika yang bukan bagian dari model atau controller.
  */
 class DivisionService
 {
     /**
-     * Get paginated list of divisions with employee count and optional search.
+     * Mendapatkan daftar divisi dengan paginasi, jumlah karyawan, dan pencarian opsional.
      *
-     * Uses withCount to avoid N+1 queries when displaying employee counts.
-     * Search is scoped to name and description fields with proper grouping.
+     * Menggunakan withCount untuk menghindari query N+1 saat menampilkan jumlah karyawan.
+     * Pencarian dibatasi pada kolom name dan description dengan pengelompokan yang tepat.
      *
      * @param  string|null  $search
      * @param  int          $perPage
@@ -37,9 +37,9 @@ class DivisionService
     }
 
     /**
-     * Create a new division.
+     * Membuat divisi baru.
      *
-     * @param  array  $data  Validated division data (name, description)
+     * @param  array  $data  Data divisi yang sudah divalidasi (name, description)
      * @return Division
      */
     public function createDivision(array $data): Division
@@ -48,10 +48,10 @@ class DivisionService
     }
 
     /**
-     * Update an existing division.
+     * Memperbarui divisi yang sudah ada.
      *
      * @param  Division  $division
-     * @param  array     $data  Validated division data (name, description)
+     * @param  array     $data  Data divisi yang sudah divalidasi (name, description)
      * @return bool
      */
     public function updateDivision(Division $division, array $data): bool
@@ -60,13 +60,13 @@ class DivisionService
     }
 
     /**
-     * Check if any of the given divisions have associated employees.
+     * Memeriksa apakah ada divisi yang memiliki karyawan terkait.
      *
-     * Returns the names of divisions that still have employees,
-     * allowing the caller to display a user-friendly error message.
+     * Mengembalikan nama divisi yang masih memiliki karyawan,
+     * sehingga pemanggil dapat menampilkan pesan kesalahan yang mudah dipahami.
      *
-     * @param  array<int>  $ids  Division IDs to check
-     * @return array<string>  Names of divisions that have employees
+     * @param  array<int>  $ids  ID divisi yang akan diperiksa
+     * @return array<string>  Nama divisi yang memiliki karyawan
      */
     public function getDivisionsWithEmployees(array $ids): array
     {
@@ -77,10 +77,10 @@ class DivisionService
     }
 
     /**
-     * Delete divisions by their IDs.
+     * Menghapus divisi berdasarkan ID-nya.
      *
      * @param  array<int>  $ids
-     * @return int  Number of deleted records
+     * @return int  Jumlah data yang dihapus
      */
     public function deleteDivisions(array $ids): int
     {

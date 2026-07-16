@@ -5,17 +5,17 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for storing a new division.
+ * Form request untuk penyimpanan data divisi baru.
  *
- * Ensures the division name is unique and within the allowed length
- * before the data is persisted to the database.
+ * Memastikan nama divisi unik dan sesuai dengan panjang yang diizinkan
+ * sebelum data disimpan ke basis data.
  */
 class StoreDivisionRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
-     * Authorization is handled at the route level via middleware('role:admin').
+     * Otorisasi ditangani di level route melalui middleware('role:admin').
      *
      * @return bool
      */
@@ -25,7 +25,7 @@ class StoreDivisionRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, string>
      */
@@ -38,7 +38,7 @@ class StoreDivisionRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */

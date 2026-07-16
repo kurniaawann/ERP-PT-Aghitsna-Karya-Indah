@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     /**
-     * Run the migrations.
+     * Jalankan migrasi.
      */
     public function up(): void
     {
@@ -26,14 +26,14 @@ return new class extends Migration {
             $table->unique(['employee_id', 'period_month', 'period_year', 'week_number'], 'payrolls_unique_constraint');
         });
 
-        // Restore foreign key
+        // Kembalikan foreign key
         Schema::table('payrolls', function (Blueprint $table) {
             $table->foreign('employee_id')->references('employee_code')->on('employees')->onDelete('cascade');
         });
     }
 
     /**
-     * Reverse the migrations.
+     * Balikkan migrasi.
      */
     public function down(): void
     {
@@ -52,7 +52,7 @@ return new class extends Migration {
             $table->unique(['employee_id', 'period_month', 'period_year']);
         });
 
-        // Restore foreign key
+        // Kembalikan foreign key
         Schema::table('payrolls', function (Blueprint $table) {
             $table->foreign('employee_id')->references('employee_code')->on('employees')->onDelete('cascade');
         });

@@ -5,17 +5,17 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for bulk deleting kasbon records.
+ * Form request untuk penghapusan data kasbon secara bulk.
  *
- * Validates that at least one kasbon code is selected
- * before processing the delete operation.
+ * Memvalidasi bahwa setidaknya satu kode kasbon dipilih
+ * sebelum memproses operasi hapus.
  *
- * Authorization is handled at the route level via middleware('role:admin').
+ * Otorisasi ditangani di level route melalui middleware('role:admin').
  */
 class DestroySelectedKasbonRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
      * @return bool
      */
@@ -25,7 +25,7 @@ class DestroySelectedKasbonRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, mixed>
      */
@@ -38,7 +38,7 @@ class DestroySelectedKasbonRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */

@@ -10,11 +10,11 @@ use App\Services\Sdm\OvertimeService;
 use Illuminate\Http\Request;
 
 /**
- * Controller for managing employee overtime records.
+ * Controller untuk mengelola data lembur karyawan.
  *
- * Handles listing, creation, update, and bulk deletion of overtime records.
- * All business logic is delegated to OvertimeService.
- * Overtime data is stored in the attendances table with status = 'lembur'.
+ * Menangani penampilan daftar, pembuatan, pembaruan, dan penghapusan massal data lembur.
+ * Seluruh logika bisnis didelegasikan ke OvertimeService.
+ * Data lembur disimpan di tabel attendances dengan status = 'lembur'.
  */
 class OvertimeController extends Controller
 {
@@ -23,14 +23,14 @@ class OvertimeController extends Controller
     ) {}
 
     /**
-     * Display a paginated list of overtime records.
+     * Menampilkan daftar data lembur dengan paginasi.
      *
-     * Provides data for the overtime index page including:
-     * - Paginated overtime records (status = 'lembur')
-     * - Employee list for the add/edit forms (searchable select)
-     * - Existing attendance data for client-side duplicate validation
+     * Menyediakan data untuk halaman indeks lembur meliputi:
+     * - Data lembur berpaginasi (status = 'lembur')
+     * - Daftar karyawan untuk formulir tambah/edit (select yang dapat dicari)
+     * - Data absensi yang sudah ada untuk validasi duplikat di sisi klien
      *
-     * @param  Request  $request  Incoming request with optional 'search' query parameter
+     * @param  Request  $request  Permintaan masuk dengan parameter query 'search' opsional
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
@@ -45,14 +45,14 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Store a new overtime record.
+     * Menyimpan data lembur baru.
      *
-     * Validates input via StoreOvertimeRequest, then delegates to OvertimeService.
-     * The service handles the create-or-update logic: if an attendance record
-     * already exists for the same employee + date, it updates it with overtime data.
-     * Otherwise, it creates a new record with status 'lembur'.
+     * Memvalidasi input melalui StoreOvertimeRequest, kemudian mendelegasikan ke OvertimeService.
+     * Service menangani logika buat-atau-perbarui: jika data absensi sudah ada
+     * untuk karyawan + tanggal yang sama, maka akan diperbarui dengan data lembur.
+     * Jika tidak, maka akan dibuat data baru dengan status 'lembur'.
      *
-     * @param  StoreOvertimeRequest  $request  Validated store request
+     * @param  StoreOvertimeRequest  $request  Permintaan penyimpanan yang sudah divalidasi
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreOvertimeRequest $request)
@@ -63,14 +63,14 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Update an existing overtime record.
+     * Memperbarui data lembur yang sudah ada.
      *
-     * Uses Route Model Binding to resolve the Attendance instance.
-     * Validates input via UpdateOvertimeRequest.
-     * The service recalculates overtime_total server-side.
+     * Menggunakan Route Model Binding untuk menyelesaikan instance Attendance.
+     * Memvalidasi input melalui UpdateOvertimeRequest.
+     * Service menghitung ulang total_lembur di sisi server.
      *
-     * @param  UpdateOvertimeRequest  $request   Validated update request
-     * @param  Attendance             $overtime  Attendance model instance from route binding
+     * @param  UpdateOvertimeRequest  $request   Permintaan pembaruan yang sudah divalidasi
+     * @param  Attendance             $overtime  Instance model Attendance dari route binding
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateOvertimeRequest $request, Attendance $overtime)
@@ -81,9 +81,9 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Bulk delete overtime records by their IDs.
+     * Menghapus data lembur secara massal berdasarkan ID.
      *
-     * @param  Request  $request  Request containing 'ids' array of attendance IDs
+     * @param  Request  $request  Permintaan yang berisi array 'ids' berisi ID absensi
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request)

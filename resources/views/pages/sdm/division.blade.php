@@ -11,7 +11,7 @@
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Divisi</h1>
 
-        {{-- Search & Action Buttons --}}
+        {{-- Pencarian & Tombol Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian --}}
             <form method="GET" action="{{ route('division.index') }}"
@@ -38,7 +38,7 @@
 
     </div>
 
-    {{-- Pagination --}}
+    {{-- Paginasi --}}
     <x-pagination :paginator="$divisions" />
 
     {{-- ============================================================

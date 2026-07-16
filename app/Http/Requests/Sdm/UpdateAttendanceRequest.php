@@ -5,17 +5,17 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for updating a single attendance record.
+ * Form request untuk pembaruan data absensi.
  *
- * Validates employee, date, status, and notes before the attendance
- * data is updated in the database.
+ * Memvalidasi karyawan, tanggal, status, dan catatan sebelum data absensi
+ * diperbarui di basis data.
  */
 class UpdateAttendanceRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna berwenang melakukan permintaan ini.
      *
-     * Authorization is handled at the route level via middleware('role:admin').
+     * Otorisasi ditangani di level route melalui middleware('role:admin').
      *
      * @return bool
      */
@@ -25,7 +25,7 @@ class UpdateAttendanceRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk permintaan ini.
      *
      * @return array<string, mixed>
      */
@@ -40,7 +40,7 @@ class UpdateAttendanceRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Mendapatkan pesan validasi kustom.
      *
      * @return array<string, string>
      */

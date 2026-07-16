@@ -11,27 +11,27 @@ use App\Services\Sdm\KasbonService;
 use Illuminate\Http\Request;
 
 /**
- * Controller for managing cash advance (kasbon) operations.
+ * Controller untuk mengelola operasi kasbon (cash advance).
  *
- * Handles HTTP requests for kasbon CRUD, search, filtering,
- * max kasbon check, and total calculation.
+ * Menangani permintaan HTTP untuk CRUD kasbon, pencarian, penyaringan,
+ * pemeriksaan kasbon maksimum, dan perhitungan total.
  *
- * Business logic is delegated to KasbonService.
- * Validation is handled by dedicated FormRequest classes.
+ * Logika bisnis didelegasikan ke KasbonService.
+ * Validasi ditangani oleh kelas FormRequest yang dedikasi.
  */
 class KasbonController extends Controller
 {
     /**
-     * The kasbon service instance.
+     * Instance layanan kasbon.
      *
      * @var KasbonService
      */
     protected KasbonService $kasbonService;
 
     /**
-     * Create a new controller instance.
+     * Membuat instance controller baru.
      *
-     * @param  KasbonService  $kasbonService  The kasbon service
+     * @param  KasbonService  $kasbonService  Layanan kasbon
      */
     public function __construct(KasbonService $kasbonService)
     {
@@ -39,9 +39,9 @@ class KasbonController extends Controller
     }
 
     /**
-     * Display the kasbon listing page with search and filters.
+     * Menampilkan halaman daftar kasbon dengan pencarian dan penyaringan.
      *
-     * @param  Request  $request  HTTP request with optional filter parameters
+     * @param  Request  $request  Permintaan HTTP dengan parameter penyaringan opsional
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
@@ -61,19 +61,19 @@ class KasbonController extends Controller
     }
 
     /**
-     * Store a new kasbon record.
+     * Menyimpan data kasbon baru.
      *
-     * Validates input via StoreKasbonRequest, then delegates
-     * creation and attendance-based validation to KasbonService.
+     * Memvalidasi input melalui StoreKasbonRequest, kemudian mendelegasikan
+     * pembuatan dan validasi berbasis absensi ke KasbonService.
      *
-     * @param  StoreKasbonRequest  $request  Validated kasbon data
+     * @param  StoreKasbonRequest  $request  Data kasbon yang sudah divalidasi
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreKasbonRequest $request)
     {
         $validated = $request->validated();
 
-        // Validate attendance-based kasbon limit for personal kasbon
+        // Validasi batas kasbon berbasis absensi untuk kasbon personal
         if ($validated['kasbon_type'] === 'personal') {
             $validation = $this->kasbonService->validatePersonalKasbonLimit(
                 $validated['employee_id'],
@@ -93,13 +93,13 @@ class KasbonController extends Controller
     }
 
     /**
-     * Update an existing kasbon record.
+     * Memperbarui data kasbon yang sudah ada.
      *
-     * Only pending kasbons can be updated. Validates input via
-     * UpdateKasbonRequest, then delegates to KasbonService.
+     * Hanya kasbon yang masih menunggu yang dapat diperbarui. Memvalidasi input melalui
+     * UpdateKasbonRequest, kemudian mendelegasikan ke KasbonService.
      *
-     * @param  UpdateKasbonRequest  $request     Validated kasbon data
-     * @param  string               $kasbonCode  The kasbon code to update
+     * @param  UpdateKasbonRequest  $request     Data kasbon yang sudah divalidasi
+     * @param  string               $kasbonCode  Kode kasbon yang akan diperbarui
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateKasbonRequest $request, string $kasbonCode)
@@ -112,7 +112,7 @@ class KasbonController extends Controller
 
         $validated = $request->validated();
 
-        // Validate attendance-based kasbon limit for personal kasbon
+        // Validasi batas kasbon berbasis absensi untuk kasbon personal
         if ($validated['kasbon_type'] === 'personal' && !empty($validated['period_start_date'])) {
             $validation = $this->kasbonService->validatePersonalKasbonUpdate(
                 $validated['employee_id'],
@@ -132,11 +132,11 @@ class KasbonController extends Controller
     }
 
     /**
-     * Bulk delete selected kasbon records.
+     * Menghapus data kasbon yang dipilih secara massal.
      *
-     * Only pending kasbons can be deleted. Deducted kasbons are skipped.
+     * Hanya kasbon yang masih menunggu yang dapat dihapus. Kasbon yang sudah dipotong dilewati.
      *
-     * @param  DestroySelectedKasbonRequest  $request  Validated selection data
+     * @param  DestroySelectedKasbonRequest  $request  Data pilihan yang sudah divalidasi
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroySelected(DestroySelectedKasbonRequest $request)
@@ -153,12 +153,12 @@ class KasbonController extends Controller
     }
 
     /**
-     * Get total kasbon for a specific period (AJAX endpoint).
+     * Mendapatkan total kasbon untuk periode tertentu (endpoint AJAX).
      *
-     * Returns personal and team kasbon totals for a given period.
-     * Used by the payroll generate modal.
+     * Mengembalikan total kasbon personal dan tim untuk periode yang diberikan.
+     * Digunakan oleh modal pembuatan payroll.
      *
-     * @param  Request  $request  HTTP request with period_start_date and employee_id
+     * @param  Request  $request  Permintaan HTTP dengan period_start_date dan employee_id
      * @return \Illuminate\Http\JsonResponse
      */
     public function getTotalForPeriod(Request $request)
@@ -185,12 +185,12 @@ class KasbonController extends Controller
     }
 
     /**
-     * Check maximum allowed kasbon based on attendance (AJAX endpoint).
+     * Memeriksa kasbon maksimum yang diperbolehkan berdasarkan absensi (endpoint AJAX).
      *
-     * Returns employee attendance info, max kasbon limit, and
-     * whether the payroll for the period is already paid.
+     * Mengembalikan informasi absensi karyawan, batas kasbon maksimum, dan
+     * apakah payroll untuk periode tersebut sudah dibayar.
      *
-     * @param  Request  $request  HTTP request with employee_id, period_start_date, kasbon_date
+     * @param  Request  $request  Permintaan HTTP dengan employee_id, period_start_date, kasbon_date
      * @return \Illuminate\Http\JsonResponse
      */
     public function checkMaxKasbon(Request $request)
@@ -208,7 +208,7 @@ class KasbonController extends Controller
 
         $result = $this->kasbonService->checkMaxKasbon($employeeId, $periodStartDate, $kasbonDate);
 
-        // Determine appropriate HTTP status code based on result
+        // Menentukan kode status HTTP yang sesuai berdasarkan hasil
         if ($result['success']) {
             $statusCode = 200;
         } elseif ($result['message'] === 'Karyawan tidak ditemukan') {

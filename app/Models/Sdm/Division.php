@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Model for the divisions table.
+ * Model untuk tabel divisions.
  *
- * Stores company division/department data.
- * Uses a string-based relationship with Employee via the `division` column
- * (matching division name) rather than a traditional foreign key.
+ * Menyimpan data divisi/departemen perusahaan.
+ * Menggunakan relasi berbasis string dengan Employee melalui kolom `division`
+ * (mencocokkan nama divisi) bukan foreign key tradisional.
  *
  * @property int    $id
  * @property string $name
@@ -27,7 +27,7 @@ class Division extends Model
     use HasFactory;
 
     /**
-     * The attributes that are mass assignable.
+     * Atribut yang dapat diisi secara massal.
      *
      * @var array<int, string>
      */
@@ -37,9 +37,9 @@ class Division extends Model
     ];
 
     /**
-     * Get the employees belonging to this division.
+     * Mendapatkan karyawan yang termasuk dalam divisi ini.
      *
-     * Uses a string-based relationship: employees.division = divisions.name.
+     * Menggunakan relasi berbasis string: employees.division = divisions.name.
      *
      * @return HasMany
      */

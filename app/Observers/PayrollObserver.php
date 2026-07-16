@@ -6,19 +6,19 @@ use App\Models\Sdm\Payroll;
 use App\Models\Notification\SalaryReminder;
 
 /**
- * Observer for Payroll model events.
+ * Observer untuk event model Payroll.
  *
- * Syncs payroll status changes with SalaryReminder records
- * to keep the notification system in sync with payroll state.
+ * Menyinkronkan perubahan status payroll dengan data SalaryReminder
+ * agar sistem notifikasi tetap sinkron dengan status payroll.
  *
- * Status transitions handled:
- * - draft → paid:  Updates SalaryReminder status to 'paid'
- * - paid → draft:  Reverts SalaryReminder status to 'draft'
+ * Transisi status yang ditangani:
+ * - draft → paid:   Memperbarui status SalaryReminder menjadi 'paid'
+ * - paid → draft:   Mengembalikan status SalaryReminder menjadi 'draft'
  */
 class PayrollObserver
 {
     /**
-     * Handle the Payroll "created" event.
+     * Tangani event "created" pada Payroll.
      *
      * @param  Payroll  $payroll
      * @return void
@@ -29,11 +29,11 @@ class PayrollObserver
     }
 
     /**
-     * Handle the Payroll "updated" event.
+     * Tangani event "updated" pada Payroll.
      *
-     * Syncs status changes to SalaryReminder:
-     * - draft → paid: Mark reminder as paid and set notification timestamp
-     * - paid → draft: Revert reminder status and clear notification timestamp
+     * Menyinkronkan perubahan status ke SalaryReminder:
+     * - draft → paid: Menandai pengingat sebagai sudah dibayar dan mengatur timestamp notifikasi
+     * - paid → draft: Mengembalikan status pengingat dan mengosongkan timestamp notifikasi
      *
      * @param  Payroll  $payroll
      * @return void
@@ -61,7 +61,7 @@ class PayrollObserver
     }
 
     /**
-     * Handle the Payroll "deleted" event.
+     * Tangani event "deleted" pada Payroll.
      *
      * @param  Payroll  $payroll
      * @return void
@@ -72,7 +72,7 @@ class PayrollObserver
     }
 
     /**
-     * Handle the Payroll "restored" event.
+     * Tangani event "restored" pada Payroll.
      *
      * @param  Payroll  $payroll
      * @return void
@@ -83,7 +83,7 @@ class PayrollObserver
     }
 
     /**
-     * Handle the Payroll "force deleted" event.
+     * Tangani event "force deleted" pada Payroll.
      *
      * @param  Payroll  $payroll
      * @return void

@@ -12,22 +12,22 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Controller for managing division data.
+ * Controller untuk mengelola data divisi.
  *
- * Handles HTTP requests and responses for division CRUD operations.
- * Business logic is delegated to DivisionService.
+ * Menangani permintaan dan respons HTTP untuk operasi CRUD divisi.
+ * Logika bisnis didelegasikan ke DivisionService.
  */
 class DivisionController extends Controller
 {
     /**
-     * The division service instance.
+     * Instance layanan divisi.
      *
      * @var DivisionService
      */
     protected DivisionService $divisionService;
 
     /**
-     * Create a new controller instance.
+     * Membuat instance controller baru.
      *
      * @param  DivisionService  $divisionService
      */
@@ -37,7 +37,7 @@ class DivisionController extends Controller
     }
 
     /**
-     * Display a paginated list of divisions with optional search.
+     * Menampilkan daftar divisi dengan paginasi dan pencarian opsional.
      *
      * @param  Request  $request
      * @return View
@@ -51,7 +51,7 @@ class DivisionController extends Controller
     }
 
     /**
-     * Store a newly created division in storage.
+     * Menyimpan data divisi baru.
      *
      * @param  StoreDivisionRequest  $request
      * @return RedirectResponse
@@ -65,7 +65,7 @@ class DivisionController extends Controller
     }
 
     /**
-     * Update the specified division in storage.
+     * Memperbarui data divisi yang ditentukan.
      *
      * @param  UpdateDivisionRequest  $request
      * @param  Division               $division
@@ -80,10 +80,10 @@ class DivisionController extends Controller
     }
 
     /**
-     * Remove the specified divisions from storage (bulk delete).
+     * Menghapus divisi yang ditentukan secara massal.
      *
-     * Checks if any selected division still has employees before deletion.
-     * Returns an error message listing the divisions that cannot be deleted.
+     * Memeriksa apakah ada divisi yang dipilih masih memiliki karyawan sebelum penghapusan.
+     * Mengembalikan pesan kesalahan yang mencantumkan divisi yang tidak dapat dihapus.
      *
      * @param  Request  $request
      * @return RedirectResponse

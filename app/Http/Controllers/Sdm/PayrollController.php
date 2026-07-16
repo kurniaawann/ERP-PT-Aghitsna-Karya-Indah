@@ -13,13 +13,13 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
- * Controller for managing employee payroll.
+ * Controller untuk mengelola payroll karyawan.
  *
- * Handles HTTP requests for payroll listing, attendance validation,
- * generation, bulk payment, deletion, and export (Excel/PDF).
+ * Menangani permintaan HTTP untuk daftar payroll, validasi absensi,
+ * pembuatan, pembayaran massal, penghapusan, dan ekspor (Excel/PDF).
  *
- * All business logic is delegated to PayrollService.
- * Validation for update is handled by UpdatePayrollRequest.
+ * Seluruh logika bisnis didelegasikan ke PayrollService.
+ * Validasi untuk pembaruan ditangani oleh UpdatePayrollRequest.
  */
 class PayrollController extends Controller
 {
@@ -38,7 +38,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Display paginated payroll list with search and filter.
+     * Menampilkan daftar payroll dengan paginasi, pencarian, dan penyaringan.
      */
     public function index(Request $request)
     {
@@ -56,10 +56,10 @@ class PayrollController extends Controller
     }
 
     /**
-     * Get week options for a given month and year.
+     * Mendapatkan opsi minggu untuk bulan dan tahun tertentu.
      *
-     * Returns JSON array of week objects with week_number, label, start, end,
-     * start_date, end_date. Used by frontend to populate the week dropdown.
+     * Mengembalikan array JSON objek minggu dengan week_number, label, start, end,
+     * start_date, end_date. Digunakan oleh frontend untuk mengisi dropdown minggu.
      */
     public function getWeeks(Request $request)
     {
@@ -103,7 +103,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Update a draft payroll record.
+     * Memperbarui data payroll draft.
      */
     public function update(UpdatePayrollRequest $request, Payroll $payroll)
     {
@@ -134,9 +134,9 @@ class PayrollController extends Controller
     }
 
     /**
-     * Validate attendance completeness for a given period.
+     * Memvalidasi kelengkapan absensi untuk periode tertentu.
      *
-     * Accepts period_start_date and period_end_date from frontend.
+     * Menerima period_start_date dan period_end_date dari frontend.
      */
     public function checkAttendanceCompleteness(Request $request)
     {
@@ -149,9 +149,9 @@ class PayrollController extends Controller
     }
 
     /**
-     * Generate weekly payroll for daily workers.
+     * Membuat payroll mingguan untuk pekerja harian.
      *
-     * Accepts period_start_date and period_end_date from frontend.
+     * Menerima period_start_date dan period_end_date dari frontend.
      */
     public function generate(Request $request)
     {
@@ -179,7 +179,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Bulk pay multiple selected payroll records.
+     * Membayar beberapa data payroll yang dipilih secara massal.
      */
     public function bulkPay(Request $request)
     {
@@ -196,7 +196,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Delete selected draft payroll records in bulk.
+     * Menghapus data payroll draft yang dipilih secara massal.
      */
     public function destroy(Request $request)
     {
@@ -212,7 +212,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Export payroll data to Excel (.xlsx).
+     * Mengekspor data payroll ke Excel (.xlsx).
      */
     public function exportExcel(Request $request)
     {
@@ -235,10 +235,10 @@ class PayrollController extends Controller
     }
 
     /**
-     * Export payroll data to PDF (landscape A4).
+     * Mengekspor data payroll ke PDF (landscape A4).
      *
-     * Uses period_start_date from the first payroll record to determine
-     * the date range for attendance details.
+     * Menggunakan period_start_date dari data payroll pertama untuk menentukan
+     * rentang tanggal detail absensi.
      */
     public function exportPdf(Request $request)
     {
@@ -252,7 +252,7 @@ class PayrollController extends Controller
                 ->with('error', 'Tidak ada data payroll untuk diexport!');
         }
 
-        // Format period text
+        // Memformat teks periode
         if ($month && $year) {
             $periodText = $this->monthNames[$month] . ' ' . $year;
         } elseif ($year) {
@@ -263,7 +263,7 @@ class PayrollController extends Controller
 
         $projectName = $payrolls->first()->project_name ?? null;
 
-        // Load attendance data using period_start_date from payroll records
+        // Memuat data absensi menggunakan period_start_date dari data payroll
         $dateRange = '';
         $weekDays = [];
 
@@ -273,7 +273,7 @@ class PayrollController extends Controller
             $endDate = Carbon::parse($firstPayroll->period_end_date);
             $dateRange = $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y');
 
-            // Build week days array for column headers (Mon-Sat only)
+            // Membuat array hari minggu untuk header kolom (Senin-Sabtu saja)
             $current = $startDate->copy();
             while ($current->lte($endDate)) {
                 if ($current->dayOfWeek !== Carbon::SUNDAY) {

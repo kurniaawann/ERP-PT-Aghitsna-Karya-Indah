@@ -1,4 +1,4 @@
-{{-- Add Employee Modal --}}
+{{-- Modal Tambah Karyawan --}}
 <x-modal id="addModal" title="Tambah Karyawan" action="{{ route('employee.store') }}" method="POST" buttonText="Simpan">
 
     <div class="mb-3">

@@ -9,18 +9,18 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 
 /**
- * Service for managing attendance business logic.
+ * Service untuk mengelola bisnis logika absensi.
  *
- * Handles attendance listing, bulk creation, updating, deletion,
- * duplicate detection, and all business rules related to employee attendance.
+ * Menangani daftar absensi, pembuatan massal, pembaruan, penghapusan,
+ * deteksi duplikat, dan semua aturan bisnis terkait absensi karyawan.
  */
 class AttendanceService
 {
     /**
-     * Get paginated list of attendances with search and eager loading.
+     * Mendapatkan daftar absensi dengan paginasi, pencarian, dan eager loading.
      *
-     * @param  string|null  $search     Search keyword (employee name, code, or date)
-     * @param  int          $perPage    Number of records per page
+     * @param  string|null  $search     Kata kunci pencarian (nama karyawan, kode, atau tanggal)
+     * @param  int          $perPage    Jumlah data per halaman
      * @return LengthAwarePaginator
      */
     public function getPaginatedAttendances(?string $search, int $perPage = 15): LengthAwarePaginator
@@ -39,7 +39,7 @@ class AttendanceService
     }
 
     /**
-     * Get all employees ordered by name for form selects.
+     * Mendapatkan semua karyawan yang diurutkan berdasarkan nama untuk pilihan formulir.
      *
      * @return Collection<int, Employee>
      */
@@ -49,9 +49,10 @@ class AttendanceService
     }
 
     /**
-     * Get existing attendance grouped by employee_id for client-side duplicate validation.
+     * Mendapatkan data absensi yang sudah ada, dikelompokkan berdasarkan employee_id
+     * untuk validasi duplikat di sisi klien.
      *
-     * Returns an associative array: ['EMP001' => ['2025-01-01', '2025-01-02'], ...]
+     * Mengembalikan array asosiatif: ['EMP001' => ['2025-01-01', '2025-01-02'], ...]
      *
      * @return array<string, array<int, string>>
      */
@@ -69,15 +70,15 @@ class AttendanceService
     }
 
     /**
-     * Find duplicate attendance records for given employees and date range.
+     * Mencari data absensi duplikat untuk karyawan dan rentang tanggal tertentu.
      *
-     * Performs a single query to fetch all existing records in the range,
-     * then checks each employee+date combination against the results.
+     * Melakukan satu query untuk mengambil semua data yang sudah ada dalam rentang,
+     * kemudian memeriksa setiap kombinasi karyawan+tanggal terhadap hasil tersebut.
      *
-     * @param  array<int, string>  $employeeIds  Array of employee_code values
-     * @param  Carbon              $startDate    Start date (inclusive)
-     * @param  Carbon              $endDate      End date (inclusive)
-     * @return array<int, string>  Array of human-readable duplicate descriptions
+     * @param  array<int, string>  $employeeIds  Array nilai employee_code
+     * @param  Carbon              $startDate    Tanggal mulai (inklusif)
+     * @param  Carbon              $endDate      Tanggal akhir (inklusif)
+     * @return array<int, string>  Array deskripsi duplikat yang mudah dibaca
      */
     public function findDuplicates(array $employeeIds, Carbon $startDate, Carbon $endDate): array
     {
@@ -118,14 +119,14 @@ class AttendanceService
     }
 
     /**
-     * Bulk create attendance records for multiple employees across a date range.
+     * Membuat data absensi secara massal untuk beberapa karyawan dalam rentang tanggal.
      *
-     * @param  array<int, string>  $employeeIds  Array of employee_code values
-     * @param  Carbon              $startDate    Start date (inclusive)
-     * @param  Carbon              $endDate      End date (inclusive)
-     * @param  string              $status       Attendance status (hadir|izin|sakit|cuti)
-     * @param  string|null         $notes        Optional notes
-     * @return int                 Number of records inserted
+     * @param  array<int, string>  $employeeIds  Array nilai employee_code
+     * @param  Carbon              $startDate    Tanggal mulai (inklusif)
+     * @param  Carbon              $endDate      Tanggal akhir (inklusif)
+     * @param  string              $status       Status absensi (hadir|izin|sakit|cuti)
+     * @param  string|null         $notes        Catatan opsional
+     * @return int                 Jumlah data yang dimasukkan
      */
     public function bulkCreate(array $employeeIds, Carbon $startDate, Carbon $endDate, string $status, ?string $notes): int
     {
@@ -150,10 +151,10 @@ class AttendanceService
     }
 
     /**
-     * Update a single attendance record.
+     * Memperbarui satu data absensi.
      *
-     * @param  Attendance  $attendance  The attendance model instance
-     * @param  array       $data        Validated update data
+     * @param  Attendance  $attendance  Instance model absensi
+     * @param  array       $data        Data pembaruan yang sudah divalidasi
      * @return bool
      */
     public function updateAttendance(Attendance $attendance, array $data): bool
@@ -162,10 +163,10 @@ class AttendanceService
     }
 
     /**
-     * Delete attendance records by their IDs.
+     * Menghapus data absensi berdasarkan ID-nya.
      *
-     * @param  array<int, int>  $ids  Array of attendance IDs
-     * @return int                    Number of deleted records
+     * @param  array<int, int>  $ids  Array ID absensi
+     * @return int                    Jumlah data yang dihapus
      */
     public function deleteAttendances(array $ids): int
     {
@@ -177,12 +178,12 @@ class AttendanceService
     }
 
     /**
-     * Build a human-readable success message for bulk creation.
+     * Membuat pesan sukses yang mudah dibaca untuk pembuatan massal.
      *
-     * @param  int     $totalInserted  Number of records inserted
-     * @param  int     $employeeCount  Number of employees
-     * @param  Carbon  $startDate      Start date
-     * @param  Carbon  $endDate        End date
+     * @param  int     $totalInserted  Jumlah data yang dimasukkan
+     * @param  int     $employeeCount  Jumlah karyawan
+     * @param  Carbon  $startDate      Tanggal mulai
+     * @param  Carbon  $endDate        Tanggal akhir
      * @return string
      */
     public function buildBulkCreateMessage(int $totalInserted, int $employeeCount, Carbon $startDate, Carbon $endDate): string
@@ -200,11 +201,11 @@ class AttendanceService
     }
 
     /**
-     * Build a human-readable error message for duplicate records.
+     * Membuat pesan kesalahan yang mudah dibaca untuk data duplikat.
      *
-     * Limits display to the first 5 duplicates and adds a count of remaining items.
+     * Membatasi tampilan hingga 5 duplikat pertama dan menambahkan jumlah item yang tersisa.
      *
-     * @param  array<int, string>  $duplicates  Array of duplicate descriptions
+     * @param  array<int, string>  $duplicates  Array deskripsi duplikat
      * @return string
      */
     public function buildDuplicateErrorMessage(array $duplicates): string

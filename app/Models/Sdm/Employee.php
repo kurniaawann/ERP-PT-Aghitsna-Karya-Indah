@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Model for the employees table.
+ * Model untuk tabel employees.
  *
- * Uses employee_code (string) as the primary key.
- * Each employee has relations to Attendance, Payroll, and Kasbon.
+ * Menggunakan employee_code (string) sebagai primary key.
+ * Setiap karyawan memiliki relasi ke Attendance, Payroll, dan Kasbon.
  *
  * @property string $employee_code
  * @property string $name
@@ -37,28 +37,28 @@ class Employee extends Model
     use HasFactory;
 
     /**
-     * The primary key for the model.
+     * Primary key untuk model ini.
      *
      * @var string
      */
     protected $primaryKey = 'employee_code';
 
     /**
-     * Indicates if the IDs are auto-incrementing.
+     * Menunjukkan apakah ID menggunakan auto-increment.
      *
      * @var bool
      */
     public $incrementing = false;
 
     /**
-     * The "type" of the auto-incrementing ID.
+     * Tipe data dari auto-incrementing ID.
      *
      * @var string
      */
     protected $keyType = 'string';
 
     /**
-     * The attributes that are mass assignable.
+     * Atribut yang dapat diisi secara massal.
      *
      * @var array<int, string>
      */
@@ -76,7 +76,7 @@ class Employee extends Model
     ];
 
     /**
-     * The attributes that should be cast to native types.
+     * Atribut yang harus di-cast ke tipe data native.
      *
      * @var array<string, string>
      */
@@ -87,9 +87,9 @@ class Employee extends Model
     ];
 
     /**
-     * Generate the next employee code in sequence.
+     * Membuat kode karyawan berikutnya secara berurutan.
      *
-     * The format is EMP001, EMP002, ..., EMPnnn.
+     * Format: EMP001, EMP002, ..., EMPnnn.
      *
      * @return string
      */
@@ -108,7 +108,7 @@ class Employee extends Model
     }
 
     /**
-     * Get the attendances for the employee.
+     * Mendapatkan data absensi untuk karyawan ini.
      *
      * @return HasMany
      */
@@ -118,7 +118,7 @@ class Employee extends Model
     }
 
     /**
-     * Get the payrolls for the employee.
+     * Mendapatkan data payroll untuk karyawan ini.
      *
      * @return HasMany
      */
@@ -128,7 +128,7 @@ class Employee extends Model
     }
 
     /**
-     * Get the kasbons for the employee.
+     * Mendapatkan data kasbon untuk karyawan ini.
      *
      * @return HasMany
      */
@@ -138,7 +138,7 @@ class Employee extends Model
     }
 
     /**
-     * Get the effective wage (daily_wage or base_salary as fallback).
+     * Mendapatkan upah efektif (daily_wage atau base_salary sebagai cadangan).
      *
      * @return int|null
      */
@@ -148,7 +148,7 @@ class Employee extends Model
     }
 
     /**
-     * Calculate total wage based on the number of days worked.
+     * Menghitung total upah berdasarkan jumlah hari kerja.
      *
      * @param  int  $daysWorked
      * @return int
@@ -159,19 +159,19 @@ class Employee extends Model
     }
 
     /**
-     * Detect the week number for a given date using Monday-Saturday weeks.
+     * Mendeteksi nomor minggu untuk tanggal tertentu menggunakan minggu Senin-Sabtu.
      *
-     * Each week runs from Monday to Saturday. If the month does not start
-     * on Monday, the days before the first Monday form a partial "Week 1".
-     * Sunday is always excluded as a non-working day.
+     * Setiap minggu berjalan dari Senin sampai Sabtu. Jika bulan tidak dimulai
+     * pada hari Senin, hari-hari sebelum Senin pertama membentuk "Minggu 1" parsial.
+     * Minggu selalu dikecualikan sebagai hari non-kerja.
      *
-     * Example for July 2026 (1 Jul = Wednesday):
-     *   Week 1: Jul 1-4   (Wed-Sat)
-     *   Week 2: Jul 6-11  (Mon-Sat)
-     *   Week 5: Jul 27-31 (Mon-Fri)
+     * Contoh untuk Juli 2026 (1 Jul = Rabu):
+     *   Minggu 1: Jul 1-4   (Rab-Sab)
+     *   Minggu 2: Jul 6-11  (Sen-Sab)
+     *   Minggu 5: Jul 27-31 (Sen-Jum)
      *
      * @param  \Carbon\Carbon|string  $date
-     * @return int  Week number (1-N, depends on month)
+     * @return int  Nomor minggu (1-N, tergantung bulan)
      */
     public static function detectWeekNumber($date): int
     {
@@ -184,13 +184,13 @@ class Employee extends Model
             }
         }
 
-        // Fallback: if date is not in any week (e.g. Sunday at month boundary),
-        // return the last week number
+        // Cadangan: jika tanggal tidak ada dalam minggu mana pun (misalnya Minggu di batas bulan),
+        // kembalikan nomor minggu terakhir
         return end($weeks)['week_number'] ?? 1;
     }
 
     /**
-     * Check if the payroll for a specific period (by start date) is already paid.
+     * Mengecek apakah payroll untuk periode tertentu (berdasarkan tanggal mulai) sudah dibayar.
      *
      * @param  Carbon|string  $periodStartDate
      * @return bool
@@ -208,9 +208,9 @@ class Employee extends Model
     }
 
     /**
-     * Check if the payroll for a specific week is already paid (legacy method).
+     * Mengecek apakah payroll untuk minggu tertentu sudah dibayar (metode lama).
      *
-     * @deprecated Use isPayrollPaidByStartDate() instead
+     * @deprecated Gunakan isPayrollPaidByStartDate() sebagai pengganti
      *
      * @param  int  $month
      * @param  int  $year

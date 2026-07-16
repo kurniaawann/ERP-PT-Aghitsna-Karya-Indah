@@ -9,24 +9,24 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 
 /**
- * Service for managing overtime business logic.
+ * Service untuk mengelola bisnis logika lembur.
  *
- * Handles overtime listing, creation, updating, deletion,
- * duplicate detection, and all business rules related to employee overtime.
+ * Menangani daftar lembur, pembuatan, pembaruan, penghapusan,
+ * deteksi duplikat, dan semua aturan bisnis terkait lembur karyawan.
  *
- * Overtime data is stored in the attendances table with status = 'lembur'.
+ * Data lembur disimpan di tabel absensi dengan status = 'lembur'.
  */
 class OvertimeService
 {
     /**
-     * Get paginated list of overtime records with search and eager loading.
+     * Mendapatkan daftar data lembur dengan paginasi, pencarian, dan eager loading.
      *
-     * Fetches only attendance records with status 'lembur', eager-loads
-     * the employee relation to avoid N+1 queries, and applies optional
-     * search filter on employee name or code.
+     * Hanya mengambil data absensi dengan status 'lembur', eager-loading
+     * relasi karyawan untuk menghindari query N+1, dan menerapkan filter
+     * pencarian opsional pada nama atau kode karyawan.
      *
-     * @param  string|null  $search   Search keyword (employee name or code)
-     * @param  int          $perPage  Number of records per page
+     * @param  string|null  $search   Kata kunci pencarian (nama atau kode karyawan)
+     * @param  int          $perPage  Jumlah data per halaman
      * @return LengthAwarePaginator
      */
     public function getPaginatedOvertimes(?string $search, int $perPage = 15): LengthAwarePaginator
@@ -45,10 +45,10 @@ class OvertimeService
     }
 
     /**
-     * Get all employees ordered by name for dropdown selects.
+     * Mendapatkan semua karyawan yang diurutkan berdasarkan nama untuk dropdown pilihan.
      *
-     * Only fetches the columns needed for the searchable select component
-     * (employee_code and name) to avoid over-fetching.
+     * Hanya mengambil kolom yang dibutuhkan untuk komponen pilihan yang dapat dicari
+     * (employee_code dan name) agar tidak mengambil data yang berlebihan.
      *
      * @return Collection<int, Employee>
      */
@@ -58,14 +58,15 @@ class OvertimeService
     }
 
     /**
-     * Get existing attendance grouped by employee_id for client-side duplicate validation.
+     * Mendapatkan data absensi yang sudah ada, dikelompokkan berdasarkan employee_id
+     * untuk validasi duplikat di sisi klien.
      *
-     * Returns an associative array structured as:
+     * Mengembalikan array asosiatif dengan struktur:
      * ['EMP001' => ['2025-01-01' => ['id' => 1, 'status' => 'hadir'], ...], ...]
      *
-     * This data is used by the frontend JavaScript to prevent:
-     * - Duplicate overtime records (same employee + same date)
-     * - Adding overtime for employees with status izin/sakit/cuti
+     * Data ini digunakan oleh JavaScript frontend untuk mencegah:
+     * - Data lembur duplikat (karyawan yang sama + tanggal yang sama)
+     * - Penambahan lembur untuk karyawan dengan status izin/sakit/cuti
      *
      * @return array<string, array<string, array{id: int, status: string}>>
      */
@@ -88,16 +89,16 @@ class OvertimeService
     }
 
     /**
-     * Store a new overtime record or update an existing attendance record.
+     * Menyimpan data lembur baru atau memperbarui data absensi yang sudah ada.
      *
-     * Business Logic:
-     * - If an attendance record already exists for the same employee + date,
-     *   update it with overtime data (change status to 'lembur').
-     * - If no record exists, create a new attendance with status 'lembur'.
-     * - overtime_total is always calculated server-side: hours × rate.
+     * Bisnis Logika:
+     * - Jika data absensi sudah ada untuk karyawan + tanggal yang sama,
+     *   perbarui dengan data lembur (ubah status menjadi 'lembur').
+     * - Jika tidak ada data, buat absensi baru dengan status 'lembur'.
+     * - overtime_total selalu dihitung di sisi server: jam × tarif.
      *
-     * @param  array{employee_id: string, attendance_date: string, overtime_hours: float, overtime_rate: int, notes: string|null}  $data  Validated input data
-     * @return Attendance  The created or updated attendance record
+     * @param  array{employee_id: string, attendance_date: string, overtime_hours: float, overtime_rate: int, notes: string|null}  $data  Data input yang sudah divalidasi
+     * @return Attendance  Data absensi yang dibuat atau diperbarui
      */
     public function storeOvertime(array $data): Attendance
     {
@@ -131,13 +132,13 @@ class OvertimeService
     }
 
     /**
-     * Update an overtime record with recalculated total.
+     * Memperbarui data lembur dengan menghitung ulang total.
      *
-     * overtime_total is always recalculated server-side to prevent
-     * tampering with the total value from the client.
+     * overtime_total selalu dihitung ulang di sisi server untuk mencegah
+     * manipulasi nilai total dari klien.
      *
-     * @param  Attendance  $overtime  The attendance model instance to update
-     * @param  array       $data      Validated update data
+     * @param  Attendance  $overtime  Instance model absensi yang akan diperbarui
+     * @param  array       $data      Data pembaruan yang sudah divalidasi
      * @return bool
      */
     public function updateOvertime(Attendance $overtime, array $data): bool
@@ -148,10 +149,10 @@ class OvertimeService
     }
 
     /**
-     * Delete overtime records by their IDs.
+     * Menghapus data lembur berdasarkan ID-nya.
      *
-     * @param  array<int, int>  $ids  Array of attendance IDs to delete
-     * @return int                    Number of deleted records
+     * @param  array<int, int>  $ids  Array ID absensi yang akan dihapus
+     * @return int                    Jumlah data yang dihapus
      */
     public function deleteOvertimes(array $ids): int
     {
