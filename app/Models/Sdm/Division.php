@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * Menyimpan data divisi/departemen perusahaan.
  * Relasi ke Employee menggunakan kolom `division` (nama divisi)
- *而不是 foreign key.
+ * foreign key.
  *
  * @property int $id
  * @property string $name

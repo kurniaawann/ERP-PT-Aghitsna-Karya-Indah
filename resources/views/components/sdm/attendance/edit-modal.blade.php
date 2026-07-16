@@ -1,14 +1,25 @@
-{{-- Modal Edit Absensi --}}
+{{--
+    Modal Edit Absensi
+    Allows editing a single attendance record with employee selection (searchable select),
+    date, status, and notes fields.
+    Uses $employees variable passed from the parent attendance page.
+--}}
+@php
+    $employeesForEdit = $employees ?? collect();
+@endphp
+
 <x-modal id="editModal-{{ $attendance->id }}" title="Edit Absensi"
     action="{{ route('attendance.update', $attendance->id) }}" method="POST" buttonText="Update">
     @method('PUT')
 
+    {{-- Pilih Karyawan (Searchable Select) --}}
     <x-forms.searchable-select name="employee_id"
         id="edit-employee_id-{{ $attendance->id }}" label="Karyawan" :required="true"
         placeholder="Cari karyawan..."
-        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()"
+        :options="$employeesForEdit->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()"
         selected="{{ $attendance->employee_id }}" />
 
+    {{-- Tanggal Absensi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="attendance_date" class="w-full border rounded p-2"
@@ -17,6 +28,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Status Absensi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Status <span class="text-error">*</span></label>
         <select name="status" class="w-full border rounded p-2" required
@@ -29,6 +41,7 @@
         </select>
     </div>
 
+    {{-- Keterangan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
         <textarea name="notes" class="w-full border rounded p-2" placeholder="Masukkan keterangan (opsional)" rows="3">{{ $attendance->notes }}</textarea>

@@ -1,6 +1,7 @@
 import './bootstrap';
 import './shared/form-submit';
 import './shared/searchable-select';
+import './shared/searchable-multi-select';
 import './shared/currency';
 import './shared/debounce';
 

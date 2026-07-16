@@ -1,57 +1,39 @@
 <script>
-    // Shared helper is loaded from resources/js/shared/form-submit.js
-
     // ==========================================
-    // SELECT ALL CHECKBOX
+    // SELECT ALL ROW CHECKBOXES (Bulk Delete)
     // ==========================================
 
-    // Select All Checkbox
+    /**
+     * Select All checkbox - toggles all row checkboxes for bulk delete
+     */
     document.getElementById('selectAll').addEventListener('change', function() {
         const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-        checkboxes.forEach(checkbox => {
+        checkboxes.forEach(function(checkbox) {
             checkbox.checked = this.checked;
-        });
+        }.bind(this));
         updateDeleteButtonState();
     });
 
-    // Individual Checkbox
-    document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
+    /**
+     * Individual row checkbox - updates Select All state and delete button
+     */
+    document.querySelectorAll('input[name="ids[]"]').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-
+            var selectAll = document.getElementById('selectAll');
+            var checkboxes = document.querySelectorAll('input[name="ids[]"]');
+            var checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
             selectAll.checked = checkboxes.length === checkedCheckboxes.length;
             updateDeleteButtonState();
         });
     });
 
-    // Select All Employees in Add Modal
-    const selectAllEmployees = document.getElementById('selectAllEmployees');
-    if (selectAllEmployees) {
-        selectAllEmployees.addEventListener('change', function() {
-            const visibleCheckboxes = document.querySelectorAll('.employee-item:not([style*=\"display: none\"]) .employee-checkbox');
-            visibleCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-            validateDuplicateAttendance();
-        });
-
-        // Update Select All state when individual checkbox changes
-        document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const visibleCheckboxes = document.querySelectorAll('.employee-item:not([style*=\"display: none\"]) .employee-checkbox');
-                const checkedVisible = document.querySelectorAll('.employee-item:not([style*=\"display: none\"]) .employee-checkbox:checked');
-                selectAllEmployees.checked = visibleCheckboxes.length === checkedVisible.length;
-                validateDuplicateAttendance();
-            });
-        });
-    }
-
-    // Update Delete Button State
+    /**
+     * Update delete button state based on number of checked row checkboxes.
+     * Enables the button only when at least one row is selected.
+     */
     function updateDeleteButtonState() {
-        const deleteButton = document.getElementById('delete-button');
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        var deleteButton = document.getElementById('delete-button');
+        var checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
 
         if (checkedCheckboxes.length > 0) {
             deleteButton.disabled = false;
@@ -64,9 +46,11 @@
         }
     }
 
-    // Submit Delete Form
+    /**
+     * Submit the bulk delete form with loading state on the confirm button.
+     */
     function submitDeleteForm() {
-        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        var deleteBtn = document.getElementById('confirm-btn-deleteModal');
         if (deleteBtn) {
             deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
             deleteBtn.disabled = true;
@@ -79,17 +63,27 @@
     // VALIDASI DUPLIKAT ABSENSI (CLIENT-SIDE)
     // ==========================================
 
-    const existingAttendance = @json($existingAttendance ?? []);
-    const duplicateWarning = document.getElementById('duplicate-warning');
-    const duplicateWarningText = document.getElementById('duplicate-warning-text');
-    const addSubmitBtn = document.querySelector('#addModal button[type="submit"]');
+    var existingAttendance = @json($existingAttendance ?? []);
+    var duplicateWarning = document.getElementById('duplicate-warning');
+    var duplicateWarningText = document.getElementById('duplicate-warning-text');
+    var addSubmitBtn = document.querySelector('#addModal button[type="submit"]');
 
+    /**
+     * Validate selected employees + date range against existing attendance data.
+     * Shows a warning and disables submit if duplicates are found.
+     *
+     * @returns {boolean} true if no duplicates, false otherwise
+     */
     function validateDuplicateAttendance() {
-        const startDateInput = document.getElementById('start_date');
-        const endDateInput = document.getElementById('end_date');
-        const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
+        var startDateInput = document.getElementById('start_date');
+        var endDateInput = document.getElementById('end_date');
 
-        if (!startDateInput.value || !endDateInput.value || checkedEmployees.length === 0) {
+        // Get selected employee IDs from the multi-select hidden inputs
+        var hiddenInputsContainer = document.querySelector('.searchable-multi-hidden-inputs');
+        var hiddenInputs = hiddenInputsContainer ? hiddenInputsContainer.querySelectorAll('input[type="hidden"]') : [];
+        var employeeIds = Array.from(hiddenInputs).map(function(input) { return input.value; });
+
+        if (!startDateInput.value || !endDateInput.value || employeeIds.length === 0) {
             duplicateWarning.classList.add('hidden');
             if (addSubmitBtn) {
                 addSubmitBtn.disabled = false;
@@ -98,28 +92,35 @@
             return true;
         }
 
-        const startDate = new Date(startDateInput.value);
-        const endDate = new Date(endDateInput.value);
+        var startDate = new Date(startDateInput.value);
+        var endDate = new Date(endDateInput.value);
+        var duplicates = [];
 
-        const duplicates = [];
+        // Get employee labels from the multi-select wrapper for error messages
+        var wrapper = document.querySelector('.searchable-multi-select-wrapper');
+        var optionElements = wrapper ? wrapper.querySelectorAll('.searchable-multi-options .searchable-multi-option') : [];
 
-        checkedEmployees.forEach(checkbox => {
-            const employeeId = checkbox.value;
-            const employeeName = checkbox.closest('label').textContent.trim().split(' - ')[0];
+        employeeIds.forEach(function(employeeId) {
+            // Find the label for this employee
+            var employeeName = employeeId;
+            optionElements.forEach(function(opt) {
+                if (opt.dataset.value === employeeId) {
+                    employeeName = opt.dataset.label.split(' - ')[0];
+                }
+            });
 
             if (existingAttendance[employeeId]) {
-                // Loop through date range
-                let currentDate = new Date(startDate);
+                var currentDate = new Date(startDate);
                 while (currentDate <= endDate) {
-                    const dateStr = currentDate.toISOString().split('T')[0];
+                    var dateStr = currentDate.toISOString().split('T')[0];
 
-                    if (existingAttendance[employeeId].includes(dateStr)) {
-                        const formattedDate = new Date(dateStr).toLocaleDateString('id-ID', {
+                    if (existingAttendance[employeeId].indexOf(dateStr) !== -1) {
+                        var formattedDate = new Date(dateStr).toLocaleDateString('id-ID', {
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric'
                         });
-                        duplicates.push(`${employeeName} pada tanggal ${formattedDate}`);
+                        duplicates.push(employeeName + ' pada tanggal ' + formattedDate);
                     }
 
                     currentDate.setDate(currentDate.getDate() + 1);
@@ -128,11 +129,11 @@
         });
 
         if (duplicates.length > 0) {
-            const displayDuplicates = duplicates.slice(0, 5);
-            let message = 'Karyawan berikut sudah memiliki absensi: ' + displayDuplicates.join('; ');
+            var displayDuplicates = duplicates.slice(0, 5);
+            var message = 'Karyawan berikut sudah memiliki absensi: ' + displayDuplicates.join('; ');
 
             if (duplicates.length > 5) {
-                message += ` dan ${duplicates.length - 5} lainnya`;
+                message += ' dan ' + (duplicates.length - 5) + ' lainnya';
             }
 
             message += '. Silakan hapus atau edit data yang sudah ada.';
@@ -155,65 +156,88 @@
         }
     }
 
-    // Validasi form add modal - minimal 1 karyawan dipilih
-    const addModalForm = document.querySelector('#addModal form');
-    const employeeError = document.getElementById('employee-error');
+    // ==========================================
+    // FORM VALIDATION
+    // ==========================================
 
+    var addModalForm = document.querySelector('#addModal form');
+
+    /**
+     * Add form submit handler - validates employee selection and duplicate attendance
+     * before allowing form submission.
+     */
     if (addModalForm) {
         addModalForm.addEventListener('submit', function(e) {
-            const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
-            if (checkedEmployees.length === 0) {
+            // Validate at least 1 employee is selected
+            var hiddenInputsContainer = document.querySelector('.searchable-multi-hidden-inputs');
+            var hiddenInputs = hiddenInputsContainer ? hiddenInputsContainer.querySelectorAll('input[type="hidden"]') : [];
+
+            if (hiddenInputs.length === 0) {
                 e.preventDefault();
-                if (employeeError) {
-                    employeeError.classList.remove('hidden');
+                var multiSelectError = document.querySelector('.searchable-multi-error');
+                if (multiSelectError) {
+                    multiSelectError.classList.remove('hidden');
                 }
                 return false;
             }
 
-            // Validasi duplikat sebelum submit
+            // Validate no duplicate attendance
             if (!validateDuplicateAttendance()) {
                 e.preventDefault();
                 return false;
             }
-        });
 
-        // Hide error message when checkbox is clicked
-        document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
-                if (checkedEmployees.length > 0 && employeeError) {
-                    employeeError.classList.add('hidden');
-                }
-            });
+            // Apply loading state to submit button
+            var submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
         });
     }
 
-    // Validasi tanggal: end_date >= start_date dan tidak boleh masa depan
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
+    // Hide multi-select error when employee is selected
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('searchable-multi-checkbox') || e.target.classList.contains('searchable-multi-select-all')) {
+            var hiddenInputsContainer = document.querySelector('.searchable-multi-hidden-inputs');
+            var hiddenInputs = hiddenInputsContainer ? hiddenInputsContainer.querySelectorAll('input[type="hidden"]') : [];
+            var multiSelectError = document.querySelector('.searchable-multi-error');
 
+            if (hiddenInputs.length > 0 && multiSelectError) {
+                multiSelectError.classList.add('hidden');
+            }
+        }
+    });
+
+    // ==========================================
+    // DATE VALIDATION
+    // ==========================================
+
+    var startDateInput = document.getElementById('start_date');
+    var endDateInput = document.getElementById('end_date');
+
+    /**
+     * Date range validation:
+     * - end_date minimum is set to start_date
+     * - If end_date < start_date, auto-correct
+     * - Re-validates duplicate attendance after date change
+     */
     if (startDateInput && endDateInput) {
         startDateInput.addEventListener('change', function() {
-            const dateError = document.getElementById('date-error');
-            // Set minimum end_date sama dengan start_date
+            var dateError = document.getElementById('date-error');
             endDateInput.min = this.value;
 
-            // Jika end_date sudah terisi tapi lebih kecil dari start_date, reset
             if (endDateInput.value && endDateInput.value < this.value) {
                 endDateInput.value = this.value;
             }
-            // Hide error saat start_date berubah
             if (dateError) {
                 dateError.classList.add('hidden');
             }
-
-            // Validasi duplikat setelah tanggal berubah
             validateDuplicateAttendance();
         });
 
         endDateInput.addEventListener('change', function() {
-            const dateError = document.getElementById('date-error');
-            // Validasi end_date tidak boleh lebih kecil dari start_date
+            var dateError = document.getElementById('date-error');
             if (startDateInput.value && this.value < startDateInput.value) {
                 if (dateError) {
                     dateError.classList.remove('hidden');
@@ -224,74 +248,36 @@
                     dateError.classList.add('hidden');
                 }
             }
-
-            // Validasi duplikat setelah tanggal berubah
             validateDuplicateAttendance();
         });
     }
 
-    // Filter employees in add modal
-    function filterAttendanceEmployees(query) {
-        const items = document.querySelectorAll('#employee-list .employee-item');
-        const noResults = document.getElementById('employee-no-results');
-        const searchTerm = query.toLowerCase();
-        let hasVisible = false;
-
-        items.forEach(function(item) {
-            const searchText = item.dataset.search || '';
-            if (searchText.includes(searchTerm)) {
-                item.style.display = '';
-                hasVisible = true;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-
-        if (searchTerm && !hasVisible) {
-            noResults.classList.remove('hidden');
-        } else {
-            noResults.classList.add('hidden');
-        }
-    }
-
-    // Initialize delete button state on page load
-    updateDeleteButtonState();
-
-    // Initialize searchable selects
-    if (typeof initSearchableSelects === 'function') {
-        initSearchableSelects();
-    }
-
     // ==========================================
-    // ADD/EDIT FORM SUBMIT HANDLERS
+    // EDIT MODAL FORM HANDLERS
     // ==========================================
 
-    // Handle Add Modal Submit
-    const addForm = document.querySelector('#addModal form');
-    if (addForm) {
-        addForm.addEventListener('submit', function(e) {
-            // Validasi sudah dilakukan di atas, jika lolos baru tambahkan loading
-            if (!validateDuplicateAttendance()) {
-                e.preventDefault();
-                return false;
-            }
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (!handleFormSubmit(submitBtn)) {
-                e.preventDefault();
-                return false;
-            }
-        });
-    }
-
-    // Handle Edit Modal Submits
-    document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
+    /**
+     * Edit form submit handlers - applies loading state during form submission.
+     */
+    document.querySelectorAll('[id^="editModal-"] form').forEach(function(form) {
         form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
+            var submitBtn = this.querySelector('button[type="submit"]');
             if (!handleFormSubmit(submitBtn)) {
                 e.preventDefault();
                 return false;
             }
         });
     });
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+
+    // Initialize delete button state on page load
+    updateDeleteButtonState();
+
+    // Initialize searchable single-select components (used in edit modal)
+    if (typeof initSearchableSelects === 'function') {
+        initSearchableSelects();
+    }
 </script>

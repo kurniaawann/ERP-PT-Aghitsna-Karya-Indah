@@ -103,6 +103,10 @@
                 if (typeof initSearchableSelects === 'function') {
                     initSearchableSelects(modal);
                 }
+                // Init searchable multi-selects inside the modal
+                if (typeof initSearchableMultiSelects === 'function') {
+                    initSearchableMultiSelects(modal);
+                }
             }
         }
 

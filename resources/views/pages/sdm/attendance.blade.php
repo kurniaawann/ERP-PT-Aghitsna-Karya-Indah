@@ -1,3 +1,19 @@
+{{--
+    Halaman Data Absensi
+
+    Menampilkan daftar absensi karyawan dengan fitur:
+    - Pencarian (nama karyawan, kode, atau tanggal)
+    - Tambah data (bulk create untuk multiple karyawan)
+    - Edit data (single record)
+    - Hapus data (bulk delete)
+    - Pagination
+
+    Variables:
+    - $attendances: LengthAwarePaginator attendance records
+    - $employees: Collection of all employees for form selects
+    - $search: Current search keyword (nullable)
+    - $existingAttendance: Array of existing attendance for duplicate validation
+--}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Data Absensi')
@@ -14,11 +30,10 @@
                 <x-filters.search-input :value="request('search')" placeholder="Cari absensi..." />
             </form>
 
-            {{-- Aksi di Kanan --}}
+            {{-- Aksi: Hapus & Tambah --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <x-buttons.delete-button modalId="deleteModal" />
-
                     <x-buttons.add-button modalId="addModal" text="Tambah Data" />
                 </div>
             </div>
@@ -26,7 +41,6 @@
 
         {{-- Table Component --}}
         @include('components.sdm.attendance.table', ['attendances' => $attendances])
-
     </div>
 
     {{-- Pagination --}}
@@ -37,7 +51,7 @@
 
     {{-- Modal Edit untuk setiap attendance --}}
     @foreach ($attendances as $attendance)
-        @include('components.sdm.attendance.edit-modal', ['attendance' => $attendance])
+        @include('components.sdm.attendance.edit-modal', ['attendance' => $attendance, 'employees' => $employees])
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}
