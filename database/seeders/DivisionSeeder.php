@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB; // Sudah di-import dengan benar
 
 class DivisionSeeder extends Seeder
 {
@@ -31,7 +32,8 @@ class DivisionSeeder extends Seeder
 
         // divisions.name punya unique constraint, jadi buat idempotent
         foreach ($divisions as $division) {
-            \DB::table('divisions')->updateOrInsert(
+            // BACKSLASH (\) DIHAPUS: Sekarang menggunakan namespace yang di-import di atas
+            DB::table('divisions')->updateOrInsert(
                 ['name' => $division['name']],
                 [
                     'description' => $division['description'],
