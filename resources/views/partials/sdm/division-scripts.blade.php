@@ -1,4 +1,14 @@
 <script>
+    /**
+     * Division (Divisi) page JavaScript module.
+     *
+     * Handles:
+     * - Select All / Deselect All checkboxes
+     * - Individual checkbox state management and delete button enable/disable
+     * - Bulk delete form submission with loading state
+     * - Add/Edit form submit handling with double-submit prevention
+     */
+
     // ==========================================
     // PREVENT DOUBLE SUBMIT & LOADING STATE
     // ==========================================
@@ -9,7 +19,11 @@
     // SELECT ALL CHECKBOX
     // ==========================================
 
-    // Select All Checkbox
+    /**
+     * Select All Checkbox
+     * Ketika checkbox "Pilih Semua" diklik, centang/batalkan semua
+     * checkbox individu dan perbarui status tombol hapus.
+     */
     document.getElementById('selectAll').addEventListener('change', function() {
         const checkboxes = document.querySelectorAll('input[name="ids[]"]');
         checkboxes.forEach(checkbox => {
@@ -18,7 +32,11 @@
         updateDeleteButtonState();
     });
 
-    // Individual Checkbox
+    /**
+     * Individual Checkbox
+     * Ketika checkbox individu diklik, perbarui status checkbox "Pilih Semua"
+     * (centang semua jika semua tercentang, batalkan jika ada yang belum).
+     */
     document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const selectAll = document.getElementById('selectAll');
@@ -30,7 +48,11 @@
         });
     });
 
-    // Update Delete Button State
+    /**
+     * Update Delete Button State
+     * Aktifkan/nonaktifkan tombol hapus berdasarkan jumlah checkbox yang dipilih.
+     * Jika tidak ada yang dipilih, tombol disabled dengan opacity rendah.
+     */
     function updateDeleteButtonState() {
         const deleteButton = document.getElementById('delete-button');
         const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
@@ -46,7 +68,14 @@
         }
     }
 
-    // Submit Delete Form
+    // ==========================================
+    // BULK DELETE CONFIRMATION
+    // ==========================================
+
+    /**
+     * Submit Delete Form
+     * Menampilkan loading spinner pada tombol konfirmasi lalu submit form hapus.
+     */
     function submitDeleteForm() {
         const deleteBtn = document.getElementById('confirm-btn-deleteModal');
         if (deleteBtn) {
@@ -64,7 +93,10 @@
     // ADD/EDIT FORM SUBMIT HANDLERS
     // ==========================================
 
-    // Handle Add Modal Submit
+    /**
+     * Handle Add Modal Submit
+     * Mencegah double submit pada form tambah divisi.
+     */
     const addForm = document.querySelector('#addModal form');
     if (addForm) {
         addForm.addEventListener('submit', function(e) {
@@ -76,7 +108,10 @@
         });
     }
 
-    // Handle Edit Modal Submits
+    /**
+     * Handle Edit Modal Submits
+     * Mencegah double submit pada semua form edit divisi.
+     */
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
         form.addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');

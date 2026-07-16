@@ -28,6 +28,7 @@ use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
 use App\Http\Controllers\Sdm\KasbonController;
+use App\Http\Controllers\Sdm\DivisionController;
 use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
@@ -331,11 +332,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');
         Route::post('/kasbon/check-max', [KasbonController::class, 'checkMaxKasbon'])->name('kasbon.check-max');
 
-        // Route Division
-        Route::get('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'index'])->name('division.index');
-        Route::post('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'store'])->name('division.store');
-        Route::put('/division/{division}', [\App\Http\Controllers\Sdm\DivisionController::class, 'update'])->name('division.update');
-        Route::delete('/division', [\App\Http\Controllers\Sdm\DivisionController::class, 'destroy'])->name('division.destroy');
+        // Route Division (Divisi)
+        Route::get('/division', [DivisionController::class, 'index'])->name('division.index');
+        Route::post('/division', [DivisionController::class, 'store'])->name('division.store');
+        Route::put('/division/{division}', [DivisionController::class, 'update'])->name('division.update');
+        Route::delete('/division', [DivisionController::class, 'destroy'])->name('division.destroy');
 
         // ============================================
         // Administrasi Routes

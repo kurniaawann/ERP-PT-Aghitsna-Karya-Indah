@@ -3,6 +3,11 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Divisi')
 
 @section('content')
+    {{-- ============================================================
+         Header Divisi
+         Berisi judul halaman, form pencarian, dan tombol aksi
+         (Tambah Data dan Hapus).
+         ============================================================ --}}
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Divisi</h1>
 
@@ -24,7 +29,11 @@
             </div>
         </div>
 
-        {{-- Table Component --}}
+        {{-- ============================================================
+             Tabel Divisi
+             Menampilkan daftar divisi dengan jumlah karyawan dan aksi edit.
+             Menggunakan component terpisah untuk reusability.
+             ============================================================ --}}
         @include('components.sdm.division.table', ['divisions' => $divisions])
 
     </div>
@@ -32,15 +41,25 @@
     {{-- Pagination --}}
     <x-pagination :paginator="$divisions" />
 
-    {{-- Modal Tambah --}}
+    {{-- ============================================================
+         Modal Tambah Divisi
+         Form untuk menambah data divisi baru.
+         ============================================================ --}}
     @include('components.sdm.division.add-modal')
 
-    {{-- Modal Edit untuk setiap division --}}
+    {{-- ============================================================
+         Modal Edit Divisi
+         Satu modal edit untuk setiap divisi pada halaman saat ini.
+         Menggunakan loop untuk membuat modal dengan ID unik.
+         ============================================================ --}}
     @foreach ($divisions as $division)
         @include('components.sdm.division.edit-modal', ['division' => $division])
     @endforeach
 
-    {{-- Modal Konfirmasi Bulk Delete --}}
+    {{-- ============================================================
+         Modal Konfirmasi Bulk Delete
+         Konfirmasi pengaman sebelum menghapus data yang dipilih.
+         ============================================================ --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
