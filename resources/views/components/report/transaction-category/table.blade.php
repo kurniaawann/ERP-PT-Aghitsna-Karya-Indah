@@ -1,4 +1,7 @@
-{{-- Table Kategori Transaksi --}}
+{{-- ============================================================
+     Table Kategori Transaksi
+     Menampilkan daftar kategori dengan kolom: checkbox, no, nama, kode, tipe, urutan, status, aksi
+     ============================================================ --}}
 <form id="deleteForm" method="POST" action="{{ route('transaction-category.destroySelected') }}">
     @csrf
     @method('DELETE')
@@ -29,7 +32,7 @@
                                         class="w-4 h-4 accent-primary cursor-pointer category-checkbox">
                                 </td>
 
-                                {{-- No --}}
+                                {{-- Nomor urut --}}
                                 <td class="p-2 text-center font-medium text-primary">
                                     {{ $categories->firstItem() + $index }}
                                 </td>
@@ -47,7 +50,7 @@
                                     </span>
                                 </td>
 
-                                {{-- Tipe --}}
+                                {{-- Tipe (Pemasukan/Pengeluaran) --}}
                                 <td class="p-2 text-center">
                                     @if ($category->type == 'INCOME')
                                         <span
@@ -69,18 +72,18 @@
                                     {{ $category->sort_order }}
                                 </td>
 
-                                {{-- Status --}}
+                                {{-- Status Aktif/Nonaktif --}}
                                 <td class="p-2 text-center">
                                     <button type="button" onclick="toggleStatus({{ $category->id }})"
                                         class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-lg gap-1 transition-colors duration-200
-                                    {{ $category->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-button-cancel text-button-inactive hover:bg-button-cancel-hover hover:text-text-heading' }}">
+                                    {{ $category->is_active ? 'bg-success-light text-success hover:bg-success hover:text-white' : 'bg-button-cancel text-text-primary hover:bg-button-cancel-hover hover:text-text-heading' }}">
                                         <i
                                             class="fa-solid {{ $category->is_active ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
                                         {{ $category->is_active ? 'Aktif' : 'Nonaktif' }}
                                     </button>
                                 </td>
 
-                                {{-- Aksi --}}
+                                {{-- Aksi (Edit) --}}
                                 <td class="p-2 text-center">
                                     <button type="button" onclick="openModal('editModal-{{ $category->id }}')"
                                         class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 mx-auto">

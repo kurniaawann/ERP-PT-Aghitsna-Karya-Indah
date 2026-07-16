@@ -3,26 +3,29 @@
 @section('title', 'PT Aghitsna Karya Indah - Kategori Transaksi')
 
 @section('content')
+    {{-- Container utama halaman Kategori Transaksi --}}
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
+        {{-- Header --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Kategori Transaksi</h1>
 
+        {{-- Toolbar: Filter + Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <!-- Form Pencarian dan Filter -->
+            {{-- Form Filter Tipe dan Pencarian --}}
             <form method="GET" action="{{ route('transaction-category.index') }}" id="filterForm"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
 
-                <!-- Filter Tipe -->
+                {{-- Filter Tipe (Pemasukan/Pengeluaran) --}}
                 <x-filters.select-filter name="type" :value="request('type')" :options="collect([
                     (object) ['id' => 'INCOME', 'name' => 'Pemasukan'],
                     (object) ['id' => 'EXPENSE', 'name' => 'Pengeluaran'],
                 ])" placeholder="Semua Tipe"
                     :autoSubmit="true" />
 
-                <!-- Search Input -->
+                {{-- Input Pencarian --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari kategori..." />
             </form>
 
-            <!-- Aksi di Kanan -->
+            {{-- Tombol Aksi --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <button type="button" id="delete-button" onclick="checkAndDelete()" disabled
@@ -36,15 +39,14 @@
             </div>
         </div>
 
-        {{-- Table Component --}}
+        {{-- Tabel Kategori Transaksi --}}
         @include('components.report.transaction-category.table')
-
     </div>
 
     {{-- Pagination --}}
     <x-pagination :paginator="$categories" />
 
-    {{-- Modal Tambah --}}
+    {{-- Modal Tambah Kategori --}}
     @include('components.report.transaction-category.add-modal')
 
     {{-- Modal Edit untuk setiap kategori --}}
@@ -60,7 +62,7 @@
         </p>
     </x-modal>
 
-    {{-- Modal Peringatan Kategori Digunakan --}}
+    {{-- Modal Peringatan Kategori Sedang Digunakan --}}
     <div id="warningUsedModal"
         class="fixed inset-0 bg-surface-hover bg-opacity-50 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
         <div
@@ -83,7 +85,7 @@
 
                 <div class="bg-error-light border-2 border-error rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
                     <ul id="usedCategoriesList" class="list-disc list-inside space-y-1 text-sm text-error">
-                        {{-- Will be populated by JavaScript --}}
+                        {{-- Daftar kategori akan diisi oleh JavaScript --}}
                     </ul>
                 </div>
 
@@ -103,5 +105,13 @@
         </div>
     </div>
 
-    @include('partials.report.transaction-category-scripts')
+    {{-- Data untuk JavaScript --}}
+    <script>
+        window.csrfToken = '{{ csrf_token() }}';
+        window.existingCodes = @json(array_values($existingCodes ?? []));
+        window.existingCodesWithId = @json($existingCodes ?? []);
+    </script>
+
+    {{-- Modular JavaScript --}}
+    @vite('resources/js/pages/report/transaction-categories/index.js')
 @endsection
