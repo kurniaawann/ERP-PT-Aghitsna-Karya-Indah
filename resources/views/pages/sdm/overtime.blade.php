@@ -3,18 +3,19 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Lembur')
 
 @section('content')
+    {{-- Page Header --}}
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Lembur</h1>
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            {{-- Form Pencarian --}}
+            {{-- Search Form --}}
             <form method="GET" action="{{ route('overtime.index') }}"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
                 <x-filters.search-input :value="request('search')" placeholder="Cari lembur..." />
             </form>
 
-            {{-- Aksi di Kanan --}}
+            {{-- Action Buttons --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
                 <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <x-buttons.delete-button modalId="deleteModal" />
@@ -24,7 +25,7 @@
             </div>
         </div>
 
-        {{-- Table Component --}}
+        {{-- Overtime Table Component --}}
         @include('components.sdm.overtime.table', ['overtimes' => $overtimes])
 
     </div>
@@ -32,20 +33,25 @@
     {{-- Pagination --}}
     <x-pagination :paginator="$overtimes" />
 
-    {{-- Modal Tambah --}}
+    {{-- Add Modal --}}
     @include('components.sdm.overtime.add-modal', ['employees' => $employees])
 
-    {{-- Modal Edit untuk setiap overtime --}}
+    {{-- Edit Modals (one per overtime record on current page) --}}
     @foreach ($overtimes as $overtime)
         @include('components.sdm.overtime.edit-modal', ['overtime' => $overtime])
     @endforeach
 
-    {{-- Modal Konfirmasi Bulk Delete --}}
+    {{-- Bulk Delete Confirmation Modal --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
+    {{-- Pass existing attendance data to JavaScript for client-side duplicate validation --}}
+    <script>
+        window.overtimeExistingAttendance = @json($existingAttendance ?? []);
+    </script>
+
     {{-- JavaScript --}}
-    @include('partials.sdm.overtime-scripts')
+    @vite('resources/js/pages/sdm/overtime/index.js')
 @endsection

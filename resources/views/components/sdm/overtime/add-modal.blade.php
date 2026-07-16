@@ -1,10 +1,29 @@
-{{-- Modal Tambah Lembur (Single Select) --}}
+{{--
+    Add Overtime Modal Component
+
+    Displays a modal form for adding a new overtime record.
+    Uses <x-forms.searchable-select> for employee selection with search capability.
+
+    Sections:
+    - Searchable Select: Employee picker with search filtering
+    - Attendance Date: Date picker (defaults to today)
+    - Duplicate Warning: Client-side validation for existing attendance
+    - Overtime Hours: Numeric input (0.5 - 24)
+    - Overtime Rate: Rate per hour in Rupiah
+    - Total Lembur: Auto-calculated (hours × rate), readonly
+    - Notes: Optional notes textarea
+
+    Variables:
+    - $employees: Collection of Employee models with employee_code and name
+--}}
 <x-modal id="addModal" title="Tambah Lembur" action="{{ route('overtime.store') }}" method="POST" buttonText="Simpan">
 
+    {{-- Searchable Select: Pilih Karyawan --}}
     <x-forms.searchable-select name="employee_id" label="Pilih Karyawan" :required="true"
         placeholder="Cari karyawan..."
         :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
 
+    {{-- Tanggal Lembur --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="attendance_date" id="add-attendance-date"
@@ -12,7 +31,7 @@
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
-    {{-- Error Message untuk Duplicate Overtime --}}
+    {{-- Duplicate Warning: client-side validation --}}
     <div id="add-duplicate-warning" class="hidden mb-3 p-3 bg-error-light border-l-4 border-error rounded">
         <div class="flex items-start">
             <svg class="w-5 h-5 text-error mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -27,31 +46,37 @@
         </div>
     </div>
 
+    {{-- Jam Lembur --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jam Lembur <span class="text-error">*</span></label>
         <input type="number" name="overtime_hours"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             placeholder="Contoh: 2.5" required min="0.01" max="24" step="0.01" id="add-overtime-hours"
-            oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')" oninput="this.setCustomValidity('')">
+            oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')"
+            oninput="calculateAddOvertimeTotal(); this.setCustomValidity('')">
         <p class="text-xs text-text-secondary mt-1">Maksimal 24 jam</p>
     </div>
 
+    {{-- Tarif per Jam (Rupiah currency format) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tarif per Jam <span class="text-error">*</span></label>
-        <input type="number" name="overtime_rate" value="0"
+        <input type="text" inputmode="numeric" name="overtime_rate" value="0"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             placeholder="Masukkan tarif per jam" required min="0" id="add-overtime-rate"
-            oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')" oninput="this.setCustomValidity('')">
+            oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
+            oninput="formatCurrencyInput(this); calculateAddOvertimeTotal(); this.setCustomValidity('')">
     </div>
 
+    {{-- Total Lembur (Auto-calculated) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Total Lembur</label>
         <input type="text" id="add-overtime-total"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary" readonly
+            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-input" readonly
             value="Rp 0">
         <p class="text-xs text-text-secondary mt-1">Otomatis dihitung: Jam Lembur × Tarif</p>
     </div>
 
+    {{-- Keterangan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
         <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
