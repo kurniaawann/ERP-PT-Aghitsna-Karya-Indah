@@ -1,7 +1,6 @@
 {{-- Modal Edit Kwintansi --}}
 <x-modal id="editModal-{{ $kwintansi->id_kwintansi }}" title="Edit Kwintansi"
-    action="{{ route('kwintansi.update', $kwintansi->id_kwintansi) }}" method="POST" buttonText="Update">
-    @method('PUT')
+    action="{{ route('kwintansi.update', $kwintansi->id_kwintansi) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">No. Kwintansi</label>
