@@ -29,10 +29,7 @@ class DivisionSeeder extends Seeder
             ['name' => 'Keselamatan Kerja', 'description' => 'Divisi yang menangani K3 dan keselamatan kerja'],
             ['name' => 'Training & Development', 'description' => 'Divisi yang menangani pelatihan dan pengembangan SDM'],
         ];
-
-        // divisions.name punya unique constraint, jadi buat idempotent
         foreach ($divisions as $division) {
-            // BACKSLASH (\) DIHAPUS: Sekarang menggunakan namespace yang di-import di atas
             DB::table('divisions')->updateOrInsert(
                 ['name' => $division['name']],
                 [
