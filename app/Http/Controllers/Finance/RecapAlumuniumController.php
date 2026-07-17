@@ -37,7 +37,7 @@ class RecapAlumuniumController extends Controller
         $totals = $this->service->buildTotals($this->service->getAllInvoices($query));
         $periodTitle = $this->service->buildPeriodTitle($request);
 
-        return view('pages.finance.aluminium-recaps.index', compact('invoices', 'totals', 'periodTitle'));
+        return view('pages.finance.aluminium-recaps', compact('invoices', 'totals', 'periodTitle'));
     }
 
     /**

@@ -33,7 +33,7 @@ class PaymentAccountController extends Controller
             ->orderBy('id')
             ->paginate(15);
 
-        return view('pages.finance.payment-accounts.index', compact('accounts'));
+        return view('pages.finance.payment-accounts', compact('accounts'));
     }
 
     /**

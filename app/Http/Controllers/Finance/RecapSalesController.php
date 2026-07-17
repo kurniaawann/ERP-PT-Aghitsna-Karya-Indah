@@ -49,7 +49,7 @@ class RecapSalesController extends Controller
 
         $grandTotals = $this->service->getGrandTotals($request);
 
-        return view('pages.finance.sales-recaps.index', compact('salesRecaps', 'items', 'grandTotals'));
+        return view('pages.finance.sales-recaps', compact('salesRecaps', 'items', 'grandTotals'));
     }
 
     /**

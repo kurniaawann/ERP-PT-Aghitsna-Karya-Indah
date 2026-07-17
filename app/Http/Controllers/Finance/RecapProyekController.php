@@ -37,7 +37,7 @@ class RecapProyekController extends Controller
         $totals = $this->service->buildTotals($this->service->getAllInvoices($query));
         $periodTitle = $this->service->buildPeriodTitle($request);
 
-        return view('pages.finance.project-recaps.index', compact('invoices', 'totals', 'periodTitle'));
+        return view('pages.finance.project-recaps', compact('invoices', 'totals', 'periodTitle'));
     }
 
     /**

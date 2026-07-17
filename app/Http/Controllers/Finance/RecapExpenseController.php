@@ -49,7 +49,7 @@ class RecapExpenseController extends Controller
 
         $totals = $this->service->getGrandTotals($request);
 
-        return view('pages.finance.expense-recaps.index', compact('expenseRecaps', 'categories', 'totals'));
+        return view('pages.finance.expense-recaps', compact('expenseRecaps', 'categories', 'totals'));
     }
 
     /**

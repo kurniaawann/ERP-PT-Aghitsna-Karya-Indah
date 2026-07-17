@@ -35,7 +35,7 @@ class PurchaseInvoiceController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        return view('pages.finance.purchase-invoices.index', compact('invoices'));
+        return view('pages.finance.purchase-invoices', compact('invoices'));
     }
 
     /**

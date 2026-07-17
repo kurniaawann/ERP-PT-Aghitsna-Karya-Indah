@@ -54,7 +54,7 @@ class ProyekInvoiceController extends Controller
         $invoices = $this->service->baseQuery($request)->paginate(15);
         $paymentAccounts = PaymentAccount::active()->get();
 
-        return view('pages.finance.project-invoices.index', compact('invoices', 'paymentAccounts'));
+        return view('pages.finance.project-invoices', compact('invoices', 'paymentAccounts'));
     }
 
     /**

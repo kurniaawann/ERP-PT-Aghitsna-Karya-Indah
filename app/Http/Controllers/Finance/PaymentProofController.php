@@ -103,7 +103,7 @@ class PaymentProofController extends Controller
             ],
         ];
 
-        return view('pages.finance.payment-proofs.index', compact(
+        return view('pages.finance.payment-proofs', compact(
             'paymentProofs',
             'totalProofs',
             'projectProofs',

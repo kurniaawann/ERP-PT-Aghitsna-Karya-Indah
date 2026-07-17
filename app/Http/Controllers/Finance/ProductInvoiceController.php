@@ -43,7 +43,7 @@ class ProductInvoiceController extends Controller
         $totals = $this->service->buildTotals($summaryInvoices);
         $items = Items::query()->orderBy('name_item')->get();
 
-        return view('pages.finance.product-invoices.index', compact('invoices', 'totals', 'items'));
+        return view('pages.finance.product-invoices', compact('invoices', 'totals', 'items'));
     }
 
     /**

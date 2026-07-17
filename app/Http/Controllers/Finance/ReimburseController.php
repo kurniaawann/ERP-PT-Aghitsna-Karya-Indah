@@ -40,14 +40,14 @@ class ReimburseController extends Controller
         $reimburses = $this->reimburseService
             ->buildFilteredQuery($request)
             ->paginate(15)
-            ->withQueryString();
+            ->appends($request->query());
 
         $search = $request->input('search');
         $status = $request->input('status');
         $month = $request->input('month');
         $year = $request->input('year');
 
-        return view('pages.finance.reimburse.index', compact('reimburses', 'search', 'status', 'month', 'year'));
+        return view('pages.finance.reimburse', compact('reimburses', 'search', 'status', 'month', 'year'));
     }
 
     /**
@@ -181,7 +181,6 @@ class ReimburseController extends Controller
      * Export reimburse ke Excel.
      *
      * @param  \Illuminate\Http\Request $request
-     * @return \Symfony\BinaryFileResponse
      */
     public function exportExcel(Request $request)
     {

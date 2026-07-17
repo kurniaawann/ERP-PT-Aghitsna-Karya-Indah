@@ -40,7 +40,7 @@ class AlumuniumInvoiceController extends Controller
         $invoices = $this->service->baseQuery($request)->paginate(15);
         $paymentAccounts = PaymentAccount::active()->get();
 
-        return view('pages.finance.aluminium-invoices.index', compact('invoices', 'paymentAccounts'));
+        return view('pages.finance.aluminium-invoices', compact('invoices', 'paymentAccounts'));
     }
 
     /**
