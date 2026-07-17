@@ -1,3 +1,35 @@
+{{-- ============================================================
+     TEMPLATE PDF BUKTI KAS KELUAR
+     ============================================================
+
+     Template ini digunakan untuk export PDF bukti kas keluar.
+     Mendukung dua jenis template:
+
+     1. STANDARD (template_type = 'standard')
+        - Header dengan logo perusahaan
+        - Judul "BUKTI KAS KELUAR"
+        - Informasi BKK No, Cek No, Tanggal
+        - Form fields: Dibayarkan Kepada, Jumlah Dibayar, Keterangan
+        - Box jumlah dalam Rupiah
+        - Tanda tangan: Direktur, Kabag Keuangan, Diterima Oleh
+
+     2. HOLLOW (template_type = 'hollow')
+        - Header dengan logo + info perusahaan "DESIGN AND BUILD PT. AGHITSNA KARYA INDAH"
+        - Label "HOLLOW" + Judul "BUKTI KAS KELUAR"
+        - Informasi BKK No, Cek No, Tanggal
+        - Form fields dalam box border: Dibayarkan Kepada, Jumlah Dibayar, Keterangan
+        - Box jumlah dalam Rupiah
+        - Tanda tangan: Manager, Kabag Keuangan, Diterima Oleh
+
+     Layout:
+     - 2 form per halaman (page break setiap 2 record)
+     - Ukuran kertas: A4 Portrait
+     - Margin: 5mm
+     - Font: Times New Roman
+
+     Variabel yang digunakan:
+     - $cashOuts: Koleksi model CashOutProof yang akan dicetak
+============================================================ --}}
 <!DOCTYPE html>
 <html>
 
@@ -24,7 +56,9 @@
             margin-bottom: 20px;
         }
 
-        /* STANDARD TEMPLATE STYLES */
+        {{-- ==========================================
+             STYLE: Template Standard
+             ========================================== --}}
         .standard .header {
             display: table;
             width: 100%;
@@ -86,7 +120,9 @@
             margin-top: 25px;
         }
 
-        /* HOLLOW TEMPLATE STYLES */
+        {{-- ==========================================
+             STYLE: Template Hollow
+             ========================================== --}}
         .hollow .header {
             display: table;
             width: 100%;
@@ -170,8 +206,9 @@
             margin-top: 20px;
         }
 
-        /* COMMON STYLES */
-
+        {{-- ==========================================
+             STYLE: Komponen Form (Digunakan Kedua Template)
+             ========================================== --}}
         .form-row {
             margin-bottom: 8px;
             display: table;
@@ -234,14 +271,22 @@
 </head>
 
 <body>
+    {{-- Iterasi setiap data bukti kas keluar --}}
     @foreach ($cashOuts as $index => $cashOut)
+
+        {{-- Page break setiap 2 record (2 form per halaman) --}}
         @if ($index > 0 && $index % 2 == 0)
             <div style="page-break-before: always;"></div>
         @endif
 
         <div class="container {{ $cashOut->template_type ?? 'standard' }}">
+
+            {{-- ==========================================
+                 TEMPLATE: HOLLOW
+                 ========================================== --}}
             @if (($cashOut->template_type ?? 'standard') == 'hollow')
-                {{-- HOLLOW TEMPLATE --}}
+
+                {{-- Header: Logo + Info Perusahaan + Judul + Info BKK --}}
                 <div class="header">
                     <div class="header-left">
                         <div class="logo-container">
@@ -266,6 +311,7 @@
                     </div>
                 </div>
 
+                {{-- Form Fields --}}
                 <div style="border: 2px solid #000; padding: 8px; margin-top: 10px;">
                     <div class="form-row">
                         <div class="form-label">Dibayarkan Kepada</div>
@@ -285,6 +331,7 @@
                         <div class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</div>
                     </div>
 
+                    {{-- Box Jumlah dalam Rupiah --}}
                     <div class="amount-section">
                         <div class="amount-box">
                             <strong>Rp.</strong> {{ number_format($cashOut->amount, 0, ',', '.') }}
@@ -292,6 +339,7 @@
                     </div>
                 </div>
 
+                {{-- Tanda Tangan: Manager, Kabag Keuangan, Diterima Oleh --}}
                 <div class="signature-section">
                     <div class="signature-col">
                         <div class="signature-title">
@@ -314,8 +362,13 @@
                         <div class="signature-name">( _________________ )</div>
                     </div>
                 </div>
+
+            {{-- ==========================================
+                 TEMPLATE: STANDARD
+                 ========================================== --}}
             @else
-                {{-- STANDARD TEMPLATE --}}
+
+                {{-- Header: Logo + Judul + Info BKK --}}
                 <div class="header">
                     <div class="header-left">
                         <div class="logo-container">
@@ -333,6 +386,7 @@
                     </div>
                 </div>
 
+                {{-- Form Fields --}}
                 <div class="form-row">
                     <div class="form-label">Dibayarkan Kepada</div>
                     <div class="form-separator">:</div>
@@ -351,12 +405,14 @@
                     <div class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</div>
                 </div>
 
+                {{-- Box Jumlah dalam Rupiah --}}
                 <div class="amount-section">
                     <div class="amount-box">
                         <strong>Rp.</strong> {{ number_format($cashOut->amount, 0, ',', '.') }}
                     </div>
                 </div>
 
+                {{-- Tanda Tangan: Direktur, Kabag Keuangan, Diterima Oleh --}}
                 <div class="signature-section">
                     <div class="signature-col">
                         <div class="signature-title">DIREKTUR,</div>
@@ -371,6 +427,7 @@
                         <div class="signature-name">( _________________ )</div>
                     </div>
                 </div>
+
             @endif
         </div>
     @endforeach
