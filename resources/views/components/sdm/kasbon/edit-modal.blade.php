@@ -1,7 +1,13 @@
-{{-- Modal Edit Kasbon --}}
+{{-- ═══════════════════════════════════════════════════════════════════════
+     Komponen Modal Edit Kasbon
+     Modal per-baris untuk mengedit kasbon yang tertunda.
+     Mengisi formulir dengan data kasbon saat ini dan menginisialisasi
+     visibilitas bidang karyawan/divisi berdasarkan jenis kasbon.
+     ═══════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="editModal{{ $kasbon->kasbon_code }}" title="Edit Kasbon"
     action="{{ route('kasbon.update', $kasbon->kasbon_code) }}" method="PUT" buttonText="Update">
 
+    {{-- Pilihan Jenis Kasbon --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jenis Kasbon <span class="text-error">*</span></label>
         <select name="kasbon_type" id="edit_kasbon_type_{{ $kasbon->kasbon_code }}" class="w-full border rounded p-2"
@@ -12,6 +18,7 @@
         </select>
     </div>
 
+    {{-- Pilihan Karyawan (Personal) --}}
     <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_employee_field">
         <label class="block text-text-primary mb-1">Karyawan <span class="text-error">*</span></label>
         <select name="employee_id" id="edit_{{ $kasbon->kasbon_code }}_employee_id" class="w-full border rounded p-2">
@@ -25,6 +32,7 @@
         </select>
     </div>
 
+    {{-- Pilihan Divisi (Tim) --}}
     <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_division_field" style="display: none;">
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
         <select name="division" id="edit_{{ $kasbon->kasbon_code }}_division" class="w-full border rounded p-2">
@@ -37,18 +45,21 @@
         </select>
     </div>
 
+    {{-- Input Jumlah --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="amount" class="w-full border rounded p-2 kasbon-amount-input"
             value="{{ $kasbon->amount }}" required min="1000" step="1000">
     </div>
 
+    {{-- Tanggal Kasbon --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
         <input type="date" name="kasbon_date" class="w-full border rounded p-2"
             value="{{ $kasbon->kasbon_date->format('Y-m-d') }}" required>
     </div>
 
+    {{-- Periode Bulan, Tahun, Minggu --}}
     <div class="grid grid-cols-3 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
@@ -60,13 +71,11 @@
                 @endfor
             </select>
         </div>
-
         <div>
             <label class="block text-text-primary mb-1">Tahun <span class="text-error">*</span></label>
             <input type="number" name="period_year" class="w-full border rounded p-2"
                 value="{{ $kasbon->period_year }}" required min="2020" max="2100">
         </div>
-
         <div>
             <label class="block text-text-primary mb-1">Minggu</label>
             <select name="week_number" class="w-full border rounded p-2">
@@ -79,20 +88,21 @@
         </div>
     </div>
 
-    {{-- Hidden inputs for period date range --}}
+    {{-- Bidang Tersembunyi untuk Rentang Tanggal Periode --}}
     <input type="hidden" name="period_start_date"
         value="{{ $kasbon->period_start_date ? $kasbon->period_start_date->format('Y-m-d') : '' }}">
     <input type="hidden" name="period_end_date"
         value="{{ $kasbon->period_end_date ? $kasbon->period_end_date->format('Y-m-d') : '' }}">
 
+    {{-- Catatan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
         <textarea name="notes" class="w-full border rounded p-2" rows="3" maxlength="500">{{ $kasbon->notes }}</textarea>
     </div>
 </x-modal>
 
+{{-- Inisialisasi visibilitas bidang karyawan saat halaman dimuat --}}
 <script>
-    // Initialize employee field visibility on page load
     document.addEventListener('DOMContentLoaded', function() {
         toggleEmployeeSelect('edit_{{ $kasbon->kasbon_code }}');
     });

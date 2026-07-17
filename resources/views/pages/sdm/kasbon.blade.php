@@ -59,18 +59,18 @@
         </div>
 
         {{-- Tabel Data --}}
-        @include('components.human-resource.cash-advances.table', ['kasbons' => $kasbons])
+        @include('components.sdm.kasbon.table', ['kasbons' => $kasbons])
     </div>
 
     {{-- Paginasi --}}
     <x-pagination :paginator="$kasbons" />
 
     {{-- Modal Tambah Kasbon --}}
-    @include('components.human-resource.cash-advances.add-modal', ['employees' => $employees])
+    @include('components.sdm.kasbon.add-modal', ['employees' => $employees])
 
     {{-- Modal Edit Kasbon (satu per baris) --}}
     @foreach ($kasbons as $kasbon)
-        @include('components.human-resource.cash-advances.edit-modal', [
+        @include('components.sdm.kasbon.edit-modal', [
             'kasbon' => $kasbon,
             'employees' => $employees,
             'divisions' => $divisions,
@@ -93,5 +93,5 @@
     </div>
 
     {{-- Modul JavaScript (dimuat melalui Vite) --}}
-    @vite('resources/js/pages/human-resource/cash-advances/index.js')
+    @vite('resources/js/pages/sdm/kasbon/index.js')
 @endsection

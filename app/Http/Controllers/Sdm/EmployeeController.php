@@ -48,7 +48,7 @@ class EmployeeController extends Controller
         $employees = $this->employeeService->getPaginatedEmployees($search);
         $divisions = $this->employeeService->getAllDivisions();
 
-        return view('pages.human-resource.employees.index', compact('employees', 'search', 'divisions'));
+        return view('pages.sdm.employee', compact('employees', 'search', 'divisions'));
     }
 
     /**

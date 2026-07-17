@@ -25,18 +25,18 @@
         </div>
 
         {{-- Employee Table Component --}}
-        @include('components.human-resource.employees.table', ['employees' => $employees])
+        @include('components.sdm.employee.table', ['employees' => $employees])
     </div>
 
     {{-- Pagination --}}
     <x-pagination :paginator="$employees" />
 
     {{-- Add Modal --}}
-    @include('components.human-resource.employees.add-modal')
+    @include('components.sdm.employee.add-modal')
 
     {{-- Edit Modals --}}
     @foreach ($employees as $employee)
-        @include('components.human-resource.employees.edit-modal', ['employee' => $employee])
+        @include('components.sdm.employee.edit-modal', ['employee' => $employee])
     @endforeach
 
     {{-- Bulk Delete Confirmation Modal --}}
@@ -46,5 +46,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @vite('resources/js/pages/human-resource/employees/index.js')
+    @vite('resources/js/pages/sdm/employee/index.js')
 @endsection

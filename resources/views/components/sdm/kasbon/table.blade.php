@@ -1,4 +1,8 @@
-{{-- Table Kasbon --}}
+{{-- ═══════════════════════════════════════════════════════════════════════
+     Komponen Tabel Data Kasbon
+     Menampilkan daftar kasbon dengan kotak centang, lencana status,
+     informasi karyawan, dan aksi edit untuk data yang tertunda.
+     ═══════════════════════════════════════════════════════════════════════ --}}
 <form id="deleteForm" method="POST" action="{{ route('kasbon.destroySelected') }}">
     @csrf
     @method('DELETE')
@@ -6,65 +10,73 @@
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-border-light">
+                    {{-- Tabel Header --}}
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center">
                                 <input type="checkbox" id="select-all"
                                     class="rounded border-border text-primary focus:ring-primary">
                             </th>
-                            <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Kode
-                            </th>
-                            <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">
-                                Karyawan</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">
-                                Jenis</th>
-                            <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">
-                                Jumlah</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">
-                                Tanggal</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">
-                                Periode</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">
-                                Status</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">
-                                Aksi</th>
+                            <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Kode</th>
+                            <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Karyawan</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Jenis</th>
+                            <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Jumlah</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Tanggal</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Periode</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Status</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
+
+                    {{-- Badan Tabel --}}
                     <tbody class="bg-surface-base">
                         @forelse($kasbons as $kasbon)
                             <tr class="border-t hover:bg-surface-secondary">
+                                {{-- Kotak Centang --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_kasbons[]" value="{{ $kasbon->kasbon_code }}"
                                         class="row-checkbox w-4 h-4 accent-primary cursor-pointer"
                                         {{ $kasbon->status === 'deducted' ? 'disabled' : '' }}>
                                 </td>
+
+                                {{-- Kode Kasbon --}}
                                 <td class="p-2 text-sm font-medium text-text-primary">{{ $kasbon->kasbon_code }}</td>
+
+                                {{-- Informasi Karyawan / Divisi --}}
                                 <td class="p-2 text-sm text-text-label">
                                     @if ($kasbon->kasbon_type === 'personal' && $kasbon->employee)
                                         <div>
-                                            <div class="font-medium text-text-primary">{{ $kasbon->employee->name }}
-                                            </div>
-                                            <div class="text-xs text-text-label">{{ $kasbon->employee->employee_code }}
-                                            </div>
+                                            <div class="font-medium text-text-primary">{{ $kasbon->employee->name }}</div>
+                                            <div class="text-xs text-text-label">{{ $kasbon->employee->employee_code }}</div>
                                         </div>
                                     @elseif ($kasbon->kasbon_type === 'team' && $kasbon->division)
                                         <div>
-                                            <div class="font-medium text-secondary">Divisi {{ $kasbon->division }}
-                                            </div>
+                                            <div class="font-medium text-secondary">Divisi {{ $kasbon->division }}</div>
                                             <div class="text-xs text-text-label">Kasbon Tim</div>
                                         </div>
                                     @else
                                         <span class="text-text-label italic">-</span>
                                     @endif
                                 </td>
+
+                                {{-- Lencana Jenis Kasbon --}}
                                 <td class="p-2 text-center">
-                                    <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->kasbon_type === 'personal' ? 'bg-primary-light text-primary' : 'bg-secondary-light text-secondary' }}">{{ $kasbon->kasbon_type_label }}</span>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->kasbon_type === 'personal' ? 'bg-primary-light text-primary' : 'bg-secondary-light text-secondary' }}">
+                                        {{ $kasbon->kasbon_type_label }}
+                                    </span>
                                 </td>
+
+                                {{-- Jumlah --}}
                                 <td class="p-2 text-right text-sm font-medium text-text-primary">
-                                    {{ $kasbon->formatted_amount }}</td>
+                                    {{ $kasbon->formatted_amount }}
+                                </td>
+
+                                {{-- Tanggal Kasbon --}}
                                 <td class="p-2 text-center text-sm text-text-label">
-                                    {{ $kasbon->kasbon_date->format('d M Y') }}</td>
+                                    {{ $kasbon->kasbon_date->format('d M Y') }}
+                                </td>
+
+                                {{-- Rentang Periode --}}
                                 <td class="p-2 text-center text-sm text-text-label">
                                     @if ($kasbon->period_start_date && $kasbon->period_end_date)
                                         @php
@@ -78,15 +90,19 @@
                                         @endif
                                     @else
                                         {{ $kasbon->period_month }}/{{ $kasbon->period_year }}@if ($kasbon->week_number)
-                                            <span class="text-xs text-text-label"> - Minggu
-                                                {{ $kasbon->week_number }}</span>
+                                            <span class="text-xs text-text-label"> - Minggu {{ $kasbon->week_number }}</span>
                                         @endif
                                     @endif
                                 </td>
+
+                                {{-- Lencana Status --}}
                                 <td class="p-2 text-center">
-                                    <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status === 'pending' ? 'bg-warning-light text-warning' : 'bg-success-light text-success' }}">{{ $kasbon->status_label }}</span>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status === 'pending' ? 'bg-warning-light text-warning' : 'bg-success-light text-success' }}">
+                                        {{ $kasbon->status_label }}
+                                    </span>
                                 </td>
+
+                                {{-- Tombol Aksi --}}
                                 <td class="p-2 text-center text-sm">
                                     @if ($kasbon->status === 'pending')
                                         <div class="flex justify-center gap-2">
@@ -103,16 +119,17 @@
                                     @endif
                                 </td>
                             </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="px-6 py-8 text-center text-text-label">
-                                        <i class="fa-solid fa-inbox text-4xl mb-2 text-border"></i>
-                                        <p>Tidak ada data kasbon</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="px-6 py-8 text-center text-text-label">
+                                    <i class="fa-solid fa-inbox text-4xl mb-2 text-border"></i>
+                                    <p>Tidak ada data kasbon</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-    </form>
+        </div>
+    </div>
+</form>
