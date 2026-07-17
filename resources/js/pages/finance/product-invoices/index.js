@@ -22,6 +22,25 @@ function formatCurrencyInput(input) {
 }
 window.formatCurrencyInput = formatCurrencyInput;
 
+// ─── Item Options Builder ─────────────────────────────────────────────────
+
+function buildBarangOptionsHtml(prefix) {
+    const items = window._itemsData || [];
+    if (!Array.isArray(items) || items.length === 0) return '';
+
+    const optionClass = prefix === '-edit' ? 'barang-option-edit' : 'barang-option';
+
+    return items.map(function (item) {
+        return '<div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light ' + optionClass + '" ' +
+            'data-value="' + item.id_item + '" data-name="' + item.name_item + '" ' +
+            'data-capital="' + item.capital_price + '" data-selling="' + item.selling_price + '" ' +
+            'data-stock="' + item.quantity + '" data-search="' + String(item.name_item).toLowerCase() + '">' +
+            '<div class="font-medium text-text-heading">' + item.name_item + '</div>' +
+            '<div class="text-xs text-text-secondary mt-1">Stok: <span class="font-semibold text-primary">' + item.quantity + '</span> unit</div>' +
+        '</div>';
+    }).join('');
+}
+
 // ─── Submit Delete Form ──────────────────────────────────────────────────────
 
 window.submitDeleteForm = function () {
@@ -545,17 +564,7 @@ function initAddItemButton() {
                 '<div class="barang-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">' +
                     '<div class="barang-options">' +
                         '<div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b" data-value="">-- Pilih Barang --</div>' +
-                        document.querySelector('.barang-options')?.querySelectorAll('.barang-option').length
-                            ? Array.from(document.querySelector('.barang-options').querySelectorAll('.barang-option')).map(function (opt) {
-                                return '<div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light barang-option" ' +
-                                    'data-value="' + opt.dataset.value + '" data-name="' + opt.dataset.name + '" ' +
-                                    'data-capital="' + opt.dataset.capital + '" data-selling="' + opt.dataset.selling + '" ' +
-                                    'data-stock="' + opt.dataset.stock + '" data-search="' + opt.dataset.search + '">' +
-                                    '<div class="font-medium text-text-heading">' + opt.dataset.name + '</div>' +
-                                    '<div class="text-xs text-text-secondary mt-1">Stok: <span class="font-semibold text-primary">' + opt.dataset.stock + '</span> unit</div>' +
-                                '</div>';
-                            }).join('')
-                            : '' +
+                        buildBarangOptionsHtml('') +
                     '</div>' +
                     '<div class="barang-no-results p-4 text-center text-sm text-text-secondary hidden">' +
                         '<i class="fa-solid fa-search mb-2 text-2xl text-text-placeholder"></i>' +
@@ -683,19 +692,7 @@ function initEditItemButtons() {
                     '<div class="barang-dropdown-edit absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">' +
                         '<div class="barang-options-edit">' +
                             '<div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b" data-value="">-- Pilih Barang --</div>' +
-                            (function () {
-                                var firstDropdown = document.querySelector('.barang-options-edit');
-                                if (!firstDropdown) return '';
-                                return Array.from(firstDropdown.querySelectorAll('.barang-option-edit')).map(function (opt) {
-                                    return '<div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light barang-option-edit" ' +
-                                        'data-value="' + opt.dataset.value + '" data-name="' + opt.dataset.name + '" ' +
-                                        'data-capital="' + opt.dataset.capital + '" data-selling="' + opt.dataset.selling + '" ' +
-                                        'data-stock="' + opt.dataset.stock + '" data-search="' + opt.dataset.search + '">' +
-                                        '<div class="font-medium text-text-heading">' + opt.dataset.name + '</div>' +
-                                        '<div class="text-xs text-text-secondary mt-1">Stok: <span class="font-semibold text-primary">' + opt.dataset.stock + '</span> unit</div>' +
-                                    '</div>';
-                                }).join('');
-                            })() +
+                            buildBarangOptionsHtml('-edit') +
                         '</div>' +
                         '<div class="barang-no-results-edit p-4 text-center text-sm text-text-secondary hidden">' +
                             '<i class="fa-solid fa-search mb-2 text-2xl text-text-placeholder"></i>' +

@@ -57,6 +57,16 @@
     </x-modal>
 
     @include('partials.shared.print-dropdown-script')
+
+    <script>
+        window._itemsData = {!! json_encode($items->map(fn($item) => [
+            'id_item' => $item->id_item,
+            'name_item' => $item->name_item,
+            'capital_price' => $item->capital_price,
+            'selling_price' => $item->selling_price,
+            'quantity' => $item->quantity,
+        ])->values()) !!};
+    </script>
 @endsection
 
 @push('scripts')
