@@ -3,166 +3,149 @@
 namespace App\Http\Controllers\Administrasi;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Administrasi\StoreDocumentReceiptRequest;
+use App\Http\Requests\Administrasi\UpdateDocumentReceiptRequest;
 use App\Models\Administrasi\DocumentReceipt;
-use Illuminate\Http\Request;
+use App\Services\Administrasi\DocumentReceiptService;
+use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
+/**
+ * Controller untuk modul Tanda Terima Dokumen (Document Receipt).
+ *
+ * Controller ini hanya menangani Request dan Response.
+ * Seluruh business logic telah dipindahkan ke DocumentReceiptService.
+ */
 class DocumentReceiptController extends Controller
 {
+    use HasBulkActions;
+
+    /**
+     * Konstruktor - dependency injection DocumentReceiptService.
+     *
+     * @param  DocumentReceiptService  $service  Service layer untuk modul tanda terima dokumen
+     */
+    public function __construct(
+        private readonly DocumentReceiptService $service
+    ) {}
+
+    /**
+     * Menampilkan daftar tanda terima dokumen dengan filter pencarian dan paginasi.
+     *
+     * @param  Request  $request  Request HTTP (search parameter)
+     * @return \Illuminate\View\View Halaman daftar tanda terima dokumen
+     */
     public function index(Request $request)
     {
-        // Ambil keyword pencarian dari request
         $search = $request->input('search');
-
-        // Query data dokumen dengan filter pencarian
-        $documents = DocumentReceipt::when($search, function ($query, $search) {
-            return $query->where('id_document', 'like', "%{$search}%")
-                ->orWhere('received_from', 'like', "%{$search}%")
-                ->orWhere('regarding', 'like', "%{$search}%");
-        })
-            ->latest('created_at')
-            ->paginate(15);
+        $documents = $this->service->getPaginated($search);
 
         return view('pages.administrasi.document-receipt', compact('documents', 'search'));
     }
 
-    public function store(Request $request)
+    /**
+     * Menyimpan data tanda terima dokumen baru ke database.
+     *
+     * @param  StoreDocumentReceiptRequest  $request  Request yang sudah divalidasi
+     * @return \Illuminate\Http\RedirectResponse Redirect ke halaman index dengan pesan sukses
+     */
+    public function store(StoreDocumentReceiptRequest $request)
     {
-        // Validasi input
-        $request->validate([
-            'received_from' => 'required|string|max:255',
-            'regarding' => 'required|string|max:255',
-            'form_of' => 'required|string|max:255',
-            'receipt_date' => 'required|date',
-            'receipt_time' => 'required|date_format:H:i',
-            'location' => 'nullable|string|max:100',
-        ]);
+        $this->service->create($request->validated());
 
-        // Ambil semua input dari form
-        $data = $request->all();
-
-        // Auto-generate kode dokumen
-        $data['id_document'] = DocumentReceipt::generateDocumentCode();
-
-        // Set default lokasi jika kosong
-        if (empty($data['location'])) {
-            $data['location'] = 'Depok';
-        }
-
-        // Insert data dokumen ke database
-        DocumentReceipt::create($data);
-
-        return redirect()->route('document-receipt.index')->with('success', 'Tanda terima dokumen berhasil ditambahkan!');
+        return redirect()
+            ->route('document-receipt.index')
+            ->with('success', 'Tanda terima dokumen berhasil ditambahkan!');
     }
 
-    public function update(Request $request, DocumentReceipt $documentReceipt)
+    /**
+     * Memperbarui data tanda terima dokumen yang sudah ada.
+     *
+     * @param  UpdateDocumentReceiptRequest  $request  Request yang sudah divalidasi
+     * @param  DocumentReceipt  $documentReceipt  Model tanda terima dokumen (route model binding by id_document)
+     * @return \Illuminate\Http\RedirectResponse Redirect ke halaman index dengan pesan sukses
+     */
+    public function update(UpdateDocumentReceiptRequest $request, DocumentReceipt $documentReceipt)
     {
-        // Validasi input
-        $request->validate([
-            'received_from' => 'required|string|max:255',
-            'regarding' => 'required|string|max:255',
-            'form_of' => 'required|string|max:255',
-            'receipt_date' => 'required|date',
-            'receipt_time' => 'required|date_format:H:i',
-            'location' => 'nullable|string|max:100',
-        ]);
+        $this->service->update($documentReceipt, $request->validated());
 
-        // Ambil semua input dari form
-        $data = $request->all();
-
-        // Set default lokasi jika kosong
-        if (empty($data['location'])) {
-            $data['location'] = 'Depok';
-        }
-
-        // Update data dokumen
-        $documentReceipt->update($data);
-
-        return redirect()->route('document-receipt.index')->with('success', 'Tanda terima dokumen berhasil diperbarui!');
+        return redirect()
+            ->route('document-receipt.index')
+            ->with('success', 'Tanda terima dokumen berhasil diperbarui!');
     }
 
+    /**
+     * Menghapus beberapa data tanda terima dokumen sekaligus (bulk delete).
+     *
+     * @param  Request  $request  Request HTTP (ids parameter berisi array id_document)
+     * @return \Illuminate\Http\RedirectResponse Redirect ke halaman index dengan pesan sukses/error
+     */
     public function destroySelected(Request $request)
     {
         $ids = $request->input('ids');
 
         if (empty($ids)) {
-            return redirect()->route('document-receipt.index')->with('error', 'Tidak ada data yang dipilih!');
+            return redirect()
+                ->route('document-receipt.index')
+                ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        DB::beginTransaction();
-        try {
-            DocumentReceipt::whereIn('id_document', $ids)->get()->each->delete();
-
-            DB::commit();
-
-            return redirect()->route('document-receipt.index')
-                ->with('success', count($ids) . ' data berhasil dihapus!');
-        } catch (\Throwable $throwable) {
-            DB::rollBack();
-            Log::error('Document Receipt destroySelected failed', [
-                'error' => $throwable->getMessage(),
-                'trace' => $throwable->getTraceAsString(),
-            ]);
-
-            return back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
-        }
+        return $this->destroySelectedBy(
+            $request,
+            DocumentReceipt::class,
+            'ids',
+            'id_document',
+            'document-receipt.index'
+        );
     }
 
     /**
-     * Export all documents to PDF
+     * Mengekspor seluruh data tanda terima dokumen ke format PDF.
+     *
+     * @param  Request  $request  Request HTTP (search parameter untuk filter)
+     * @return \Symfony\Component\HttpFoundation\Response Response PDF download
      */
     public function exportPdfAll(Request $request)
     {
-        // Ambil filter dari request
         $search = $request->input('search');
+        $documents = $this->service->getAllForExport($search);
 
-        // Query dokumen dengan filter yang sama seperti di index
-        $documents = DocumentReceipt::query()
-            ->when($search, function ($query, $search) {
-                return $query->where('id_document', 'like', "%{$search}%")
-                    ->orWhere('received_from', 'like', "%{$search}%")
-                    ->orWhere('regarding', 'like', "%{$search}%");
-            })
-            ->latest('created_at')
-            ->get();
-
-        // Load view PDF - gunakan template yang sama untuk semua kondisi
-        $pdf = Pdf::loadView('exports.administrasi.document-receipt-pdf', compact('documents'));
-
-        // Set paper size dan orientation
-        $pdf->setPaper('a4', 'portrait');
-
-        // Download PDF
-        return $pdf->download('Tanda_Terima_Dokumen_' . date('Y-m-d') . '.pdf');
+        return $this->generatePdfResponse($documents);
     }
 
     /**
-     * Export selected documents to PDF
+     * Mengekspor data tanda terima dokumen yang dipilih ke format PDF.
+     *
+     * @param  Request  $request  Request HTTP (ids parameter berisi array id_document)
+     * @return \Symfony\Component\HttpFoundation\Response Response PDF download
      */
     public function exportPdfSelected(Request $request)
     {
-        // Ambil array id_document dari request
         $ids = $request->input('ids');
 
-        // Validasi
         if (empty($ids)) {
-            return redirect()->route('document-receipt.index')->with('error', 'Tidak ada data yang dipilih!');
+            return redirect()
+                ->route('document-receipt.index')
+                ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Query dokumen berdasarkan id yang dipilih
-        $documents = DocumentReceipt::whereIn('id_document', $ids)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $documents = $this->service->getByIds($ids);
 
-        // Load view PDF
+        return $this->generatePdfResponse($documents);
+    }
+
+    /**
+     * Membuat response PDF dari koleksi data tanda terima dokumen.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection  $documents  Koleksi data tanda terima dokumen
+     * @return \Symfony\Component\HttpFoundation\Response Response PDF download
+     */
+    private function generatePdfResponse($documents)
+    {
         $pdf = Pdf::loadView('exports.administrasi.document-receipt-pdf', compact('documents'));
-
-        // Set paper size dan orientation
         $pdf->setPaper('a4', 'portrait');
 
-        // Download PDF
-        return $pdf->download('Tanda_Terima_Dokumen_' . date('Y-m-d') . '.pdf');
+        return $pdf->download('Tanda_Terima_Dokumen_'.date('Y-m-d').'.pdf');
     }
 }
