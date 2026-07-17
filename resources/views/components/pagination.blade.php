@@ -1,6 +1,6 @@
 @props(['paginator'])
 
-<div class="mt-auto">
+<div class="mt-4">
     <div class="flex items-center justify-between bg-surface-base border border-border-strong rounded-lg px-4 py-2 shadow-sm">
         {{-- Previous --}}
         @if ($paginator->onFirstPage())
