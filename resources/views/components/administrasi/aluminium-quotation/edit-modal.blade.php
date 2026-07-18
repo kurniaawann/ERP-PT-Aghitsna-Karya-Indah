@@ -1,13 +1,25 @@
-{{-- Modal Edit Penawaran Proyek --}}
-<x-modal id="editModal-{{ $quotation->quotation_number }}" title="Edit Penawaran — {{ $quotation->quotation_number }}"
-    action="{{ route('aluminium-quotation.update', $quotation->quotation_number) }}" method="PUT" buttonText="Update"
+{{-- =====================================================================
+     Komponen Modal Edit Penawaran Aluminium (Aluminium Quotation)
+
+     Form edit penawaran yang sudah ada dengan:
+     - Data terisi otomatis dari penawaran yang dipilih
+     - Kelompok Item (dynamic via JS, pre-populated dari data existing)
+     - Grand Total
+     - Rekening Pembayaran yang sudah dipilih otomatis checked
+     - Ditandatangani Oleh, Divisi
+     ===================================================================== --}}
+
+<x-modal id="editModal-{{ $quotation->quotation_number }}"
+    title="Edit Penawaran — {{ $quotation->quotation_number }}"
+    action="{{ route('aluminium-quotation.update', $quotation->quotation_number) }}" method="PUT"
+    buttonText="Update"
     formId="editQuotationForm-{{ $quotation->quotation_number }}"
     onsubmit="return prepareEditSubmit('{{ $quotation->quotation_number }}')">
 
-    {{-- Hidden JSON input --}}
+    {{-- Hidden JSON input untuk data groups --}}
     <input type="hidden" name="groups_json" id="editGroupsJson-{{ $quotation->quotation_number }}">
 
-    {{-- Error Message Area --}}
+    {{-- Area pesan error --}}
     <div id="editModal-{{ $quotation->quotation_number }}ModalError"
         class="hidden mb-4 p-3 bg-error-light border border-error text-error rounded">
         <div class="flex items-center gap-2">
@@ -58,7 +70,7 @@
                 oninvalid="this.setCustomValidity('Alamat maksimal 255 karakter')" oninput="this.setCustomValidity('')">
         </div>
 
-        {{-- ═══ GROUPS SECTION ═════════════════════════════════════════════════════ --}}
+        {{-- ═══ SEKSI KELOMPOK ITEM ═══════════════════════════════════════════ --}}
         <div>
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-bold text-text-primary uppercase tracking-wide">
@@ -74,24 +86,24 @@
             <div id="editGroupsContainer-{{ $quotation->quotation_number }}" class="space-y-4"
                 data-existing-groups="{{ json_encode(
                     $quotation->groups->map(function ($g) {
-                            return [
-                                'name' => $g->name,
-                                'items' => $g->items->map(function ($i) {
-                                        return [
-                                            'description' => $i->description,
-                                            'volume' => $i->volume,
-                                            'unit' => $i->unit,
-                                            'unit_price' => $i->unit_price,
-                                            'total_price' => $i->total_price,
-                                        ];
-                                    })->toArray(),
-                            ];
-                        })->toArray(),
+                        return [
+                            'name' => $g->name,
+                            'items' => $g->items->map(function ($i) {
+                                return [
+                                    'description' => $i->description,
+                                    'volume' => $i->volume,
+                                    'unit' => $i->unit,
+                                    'unit_price' => $i->unit_price,
+                                    'total_price' => $i->total_price,
+                                ];
+                            })->toArray(),
+                        ];
+                    })->toArray(),
                 ) }}">
             </div>
 
             <div class="mt-4 flex justify-end">
-                <div class="bg-warning-light border border-warning-light rounded px-5 py-3 text-right min-w-[220px]">
+                <div class="bg-warning-light border border-warning rounded px-5 py-3 text-right min-w-[220px]">
                     <p class="text-xs text-text-secondary mb-1">Grand Total</p>
                     <p class="text-lg font-bold text-text-heading"
                         id="editGrandTotal-{{ $quotation->quotation_number }}">
@@ -101,25 +113,19 @@
             </div>
         </div>
 
-        {{-- Rekening Pembayaran --}}
+        {{-- ═══ REKENING PEMBAYARAN (wajib minimal 1, pre-selected) ═════════ --}}
         <div>
             <label class="block text-text-primary mb-2 text-sm font-medium">
                 Rekening Pembayaran <span class="text-error">*</span>
             </label>
             @php $selectedIds = $quotation->selected_payment_accounts ?? []; @endphp
-            <div id="payment-accounts-{{ $quotation->quotation_number }}"
-                class="space-y-2"
-                data-selected-ids="{{ json_encode($selectedIds) }}">
+            <div id="editPaymentAccounts-{{ $quotation->quotation_number }}" class="space-y-2">
                 @foreach ($paymentAccounts as $account)
-                    <label
-                        class="flex items-center gap-3 p-3 border border-border-strong rounded cursor-pointer hover:bg-surface-hover">
+                    <label class="flex items-center gap-3 p-3 border border-border-strong rounded cursor-pointer hover:bg-surface-hover">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
                             class="w-4 h-4 accent-primary payment-account-checkbox"
-                            {{ $loop->first ? 'required' : '' }}
-                            {{ in_array($account->id, $selectedIds) ? 'checked' : '' }}
-                            oninvalid="this.setCustomValidity('Minimal 1 rekening pembayaran harus dipilih')"
-                            oninput="this.setCustomValidity('')"
-                            onchange="document.querySelectorAll('.payment-account-checkbox').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox:checked')); validatePaymentSelectionEdit('{{ $quotation->quotation_number }}')">
+                            data-modal="editModal-{{ $quotation->quotation_number }}"
+                            {{ in_array($account->id, $selectedIds) ? 'checked' : '' }}>
                         <span class="text-sm">
                             <strong>{{ $account->bank_name }}</strong> /
                             {{ $account->account_number }} a/n {{ $account->account_holder }}
@@ -150,10 +156,9 @@
         </div>
 
     </div>{{-- end space-y-5 --}}
-
 </x-modal>
 
-{{-- Pre-populate existing groups via inline script --}}
+{{-- Pre-populate groups existing via inline script --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const containerId = 'editGroupsContainer-{{ $quotation->quotation_number }}';
