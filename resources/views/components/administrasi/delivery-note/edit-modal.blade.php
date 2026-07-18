@@ -1,8 +1,15 @@
-{{-- Modal Edit Surat Jalan --}}
+{{-- =====================================================================
+     Komponen Modal Edit Surat Jalan (Delivery Note)
+
+     Form edit surat jalan yang sudah ada. Satu modal per data.
+     Field yang sama dengan form tambah, namun sudah terisi data existing.
+     ===================================================================== --}}
+
 <x-modal id="editModal-{{ $deliveryNote->id_delivery_note }}" title="Edit Surat Jalan"
     action="{{ route('delivery-note.administrasi.update', $deliveryNote->id_delivery_note) }}" method="PUT"
     buttonText="Perbarui">
 
+    {{-- Nomor Dokumen & Tanggal Pengiriman --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Nomor Dokumen <span class="text-error">*</span></label>
@@ -20,7 +27,7 @@
         </div>
     </div>
 
-    {{-- Shipper Info --}}
+    {{-- Informasi Pengirim --}}
     <fieldset class="border border-border-strong rounded p-3 mb-3">
         <legend class="text-sm font-semibold text-text-primary px-2">Informasi Pengirim</legend>
 
@@ -40,7 +47,7 @@
         </div>
     </fieldset>
 
-    {{-- Receiver Info --}}
+    {{-- Informasi Penerima --}}
     <fieldset class="border border-border-strong rounded p-3 mb-3">
         <legend class="text-sm font-semibold text-text-primary px-2">Informasi Penerima</legend>
 
@@ -61,25 +68,28 @@
         </div>
     </fieldset>
 
-    {{-- Description --}}
+    {{-- Deskripsi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Deskripsi</label>
         <textarea name="description" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             placeholder="Masukkan deskripsi" rows="2">{{ $deliveryNote->description }}</textarea>
     </div>
 
-    {{-- Items Section --}}
+    {{-- Section Daftar Barang --}}
     <div class="mb-4">
         <div class="flex items-center justify-between mb-3">
             <label class="block text-text-primary font-semibold text-base">Barang <span
                     class="text-error">*</span></label>
+            {{-- Tombol Tambah Barang --}}
             <button type="button" onclick="addItemRow('editModal-{{ $deliveryNote->id_delivery_note }}')"
                 class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded text-sm font-medium shadow-sm transition-all duration-200">
                 <i class="fa-solid fa-plus mr-1"></i> Tambah Barang
             </button>
         </div>
 
+        {{-- Container Item Rows --}}
         <div id="itemsContainer-editModal-{{ $deliveryNote->id_delivery_note }}" class="space-y-3">
+            {{-- Looping item yang sudah ada --}}
             @forelse($deliveryNote->items as $key => $item)
                 <div
                     class="item-row bg-surface-base border-2 border-border-strong rounded p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -118,6 +128,7 @@
                                 class="w-full border border-border-strong rounded px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 placeholder="Masukkan catatan..." value="{{ data_get($item, 'notes', '') }}">
                         </div>
+                        {{-- Tombol Hapus Item --}}
                         <button type="button" onclick="removeItemRow(this)"
                             class="delete-btn w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2.5 rounded text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-trash"></i>
@@ -126,6 +137,7 @@
                     </div>
                 </div>
             @empty
+                {{-- Tampilan saat tidak ada item --}}
                 <div
                     class="item-row bg-surface-base border-2 border-border-strong rounded p-4 shadow-sm hover:shadow-md transition-shadow">
                     <div class="space-y-3">
@@ -161,6 +173,7 @@
                                 class="w-full border border-border-strong rounded px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 placeholder="Masukkan catatan...">
                         </div>
+                        {{-- Tombol Hapus Item (tersembunyi jika hanya 1 item) --}}
                         <button type="button" onclick="removeItemRow(this)" style="display: none;"
                             class="delete-btn w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2.5 rounded text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-trash"></i>
@@ -172,7 +185,7 @@
         </div>
     </div>
 
-    {{-- Driver & Vehicle Info --}}
+    {{-- Nama Sopir & Nomor Kendaraan --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Nama Sopir</label>
@@ -187,7 +200,7 @@
         </div>
     </div>
 
-    {{-- Additional Notes --}}
+    {{-- Catatan Tambahan --}}
     <div>
         <label class="block text-text-primary mb-1">Catatan Tambahan</label>
         <textarea name="notes" class="w-full border rounded p-2" placeholder="Masukkan catatan tambahan" rows="2">{{ $deliveryNote->notes }}</textarea>

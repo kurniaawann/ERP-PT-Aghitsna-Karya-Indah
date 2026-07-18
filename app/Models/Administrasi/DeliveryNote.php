@@ -5,15 +5,35 @@ namespace App\Models\Administrasi;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model untuk entitas Surat Jalan (Delivery Note).
+ *
+ * Menyimpan data pengiriman barang meliputi informasi
+ * pengirim, penerima, daftar barang, sopir, dan kendaraan.
+ *
+ * @package App\Models\Administrasi
+ */
 class DeliveryNote extends Model
 {
     use HasFactory;
 
+    /** @var string Nama tabel database */
     protected $table = 'delivery_notes';
+
+    /** @var string Kolom primary key */
     protected $primaryKey = 'id_delivery_note';
+
+    /** @var bool Primary key bukan auto-increment */
     public $incrementing = false;
+
+    /** @var string Tipe data primary key */
     protected $keyType = 'string';
 
+    /**
+     * Kolom yang boleh diisi secara massal (mass assignment).
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'id_delivery_note',
         'document_number',
@@ -30,6 +50,11 @@ class DeliveryNote extends Model
         'notes',
     ];
 
+    /**
+     * Konversi tipe data kolom secara otomatis.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'delivery_date' => 'date',
         'items' => 'array',
@@ -37,7 +62,14 @@ class DeliveryNote extends Model
     ];
 
     /**
-     * Generate Delivery Note ID
+     * Generate ID unik untuk surat jalan baru.
+     *
+     * Format: DN-YYYYMMDD-XXXX
+     * - DN: prefix Delivery Note
+     * - YYYYMMDD: tanggal pembuatan
+     * - XXXX: nomor urut 4 digit (0001, 0002, dst.)
+     *
+     * @return string ID surat jalan yang dihasilkan
      */
     public static function generateDeliveryNoteId()
     {

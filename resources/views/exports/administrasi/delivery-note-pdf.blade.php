@@ -1,3 +1,20 @@
+{{-- =====================================================================
+     Template PDF Surat Jalan (Delivery Note)
+
+     Template ini digunakan oleh DomPDF untuk menghasilkan file PDF
+     surat jalan. Mendukung multiple delivery notes dengan page break.
+
+     Struktur dokumen:
+     - Header: Nama perusahaan
+     - Judul: SURAT JALAN
+     - Info Dokumen: No. Dokumen, Tanggal, Total
+     - Pengirim & Penerima
+     - Deskripsi
+     - Tabel Barang
+     - Info Pengiriman: Sopir, Kendaraan
+     - Catatan Tambahan
+     - Tanda Tangan: Pengirim & Penerima
+     ===================================================================== --}}
 <!DOCTYPE html>
 <html lang="en">
 
