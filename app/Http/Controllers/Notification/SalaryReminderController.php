@@ -3,116 +3,54 @@
 namespace App\Http\Controllers\Notification;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification\SalaryReminder;
-use App\Models\Sdm\Employee;
-use App\Models\Sdm\Payroll;
-use App\Models\Sdm\Attendance;
+use App\Services\Notification\SalaryReminderService;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
+/**
+ * Controller untuk mengelola halaman Reminder Gaji Karyawan.
+ *
+ * Controller ini hanya menangani request dan response HTTP.
+ * Business logic didelegasikan ke SalaryReminderService.
+ * Halaman ini bersifat read-only (hanya menampilkan data).
+ */
 class SalaryReminderController extends Controller
 {
+    public function __construct(
+        private readonly SalaryReminderService $service
+    ) {}
+
     /**
-     * Tampilkan halaman laporan reminder gaji
+     * Menampilkan halaman laporan reminder gaji karyawan.
+     *
+     * Menampilkan dua jenis data:
+     * 1. Salary Reminder - data dari tabel salary_reminders (payroll sudah dibuat)
+     * 2. Attendance Reminder - karyawan yang sudah absen minggu 1-4 tapi payroll belum dibuat
+     *
+     * @param  Request  $request
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        $query = SalaryReminder::with(['employee', 'payroll']);
+        // Ambil parameter filter
+        $filters = $request->only(['month', 'year', 'status', 'search']);
 
-        // Filter berdasarkan bulan
-        if ($request->filled('month')) {
-            $query->where('period_month', $request->month);
-        }
+        // Mendapatkan data salary reminder dengan paginasi
+        $reminders = $this->service->getPaginatedReminders($filters);
 
-        // Filter berdasarkan tahun
-        if ($request->filled('year')) {
-            $query->where('period_year', $request->year);
-        } else {
-            // Default tahun saat ini
-            $query->where('period_year', date('Y'));
-        }
+        // Mendapatkan statistik ringkasan
+        $stats = $this->service->getSummaryStats($filters);
 
-        // Filter berdasarkan status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        // Mendapatkan attendance reminders (karyawan tanpa payroll)
+        $filterMonth = $this->service->getDefaultMonth($filters);
+        $filterYear = $this->service->getDefaultYear($filters);
+        $attendanceReminders = $this->service->getAttendanceReminders($filterMonth, $filterYear);
 
-        // Search berdasarkan nama karyawan atau employee_id
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('employee_id', 'like', '%' . $request->search . '%')
-                    ->orWhereHas('employee', function ($subq) use ($request) {
-                        $subq->where('name', 'like', '%' . $request->search . '%');
-                    });
-            });
-        }
-
-        // Sorting selalu by created_at DESC (data terbaru dulu)
-        $query->orderBy('created_at', 'desc');
-
-        $reminders = $query->paginate(10)->appends($request->all());
-
-        // Calculate summary statistics berdasarkan data yang sudah di-filter (sebelum paginate)
-        $totalReminders = $query->count();
-        $totalDraft = $query->clone()->byStatus('draft')->count();
-        $totalPaid = $query->clone()->byStatus('paid')->count();
-
-        /**
-         * Attendance Reminders - Untuk karyawan yang sudah absen minggu 1-4 tapi payroll belum dibuat
-         * 
-         * Queries:
-         * 1. Ambil attendance untuk minggu 1-4 yang sudah ada
-         * 2. Group by employee, bulan, tahun
-         * 3. Filter yang belum ada payroll
-         */
-        $attendanceReminders = [];
-
-        // Ambil bulan dan tahun yang sedang difilter (atau current month/year)
-        $filterMonth = $request->filled('month') ? (int) $request->month : (int) date('m');
-        $filterYear = $request->filled('year') ? (int) $request->year : (int) date('Y');
-
-        // Query untuk attendance yang sudah ada di minggu 1-4
-        $attendanceData = Attendance::with('employee')
-            ->selectRaw('employee_id, MONTH(attendance_date) as month, YEAR(attendance_date) as year, MIN(attendance_date) as first_date, MAX(attendance_date) as last_date, COUNT(*) as total_attendance')
-            ->whereRaw('DAY(attendance_date) BETWEEN 1 AND 28') // Minggu 1-4
-            ->whereRaw('YEAR(attendance_date) = ?', [$filterYear])
-            ->when($filterMonth > 0, function ($q) use ($filterMonth) {
-                $q->whereRaw('MONTH(attendance_date) = ?', [$filterMonth]);
-            })
-            ->groupByRaw('employee_id, MONTH(attendance_date), YEAR(attendance_date)')
-            ->get();
-
-        // Filter attendance yang belum ada payroll
-        foreach ($attendanceData as $attendance) {
-            $payrollExists = Payroll::where('employee_id', $attendance->employee_id)
-                ->where('period_month', $attendance->month)
-                ->where('period_year', $attendance->year)
-                ->exists();
-
-            // Jika attendance ada tapi payroll belum dibuat
-            if (!$payrollExists) {
-                $employee = Employee::where('employee_code', $attendance->employee_id)->first();
-
-                if ($employee) {
-                    // Hitung minggu berdasarkan tanggal
-                    $dayOfMonth = Carbon::parse($attendance->first_date)->day;
-                    $week = ceil($dayOfMonth / 7);
-
-                    $attendanceReminders[] = (object) [
-                        'employee_id' => $attendance->employee_id,
-                        'employee_name' => $employee->name,
-                        'period_month' => $attendance->month,
-                        'period_year' => $attendance->year,
-                        'week_number' => $week,
-                        'first_attendance_date' => Carbon::parse($attendance->first_date),
-                        'last_attendance_date' => Carbon::parse($attendance->last_date),
-                        'employee' => $employee,
-                    ];
-                }
-            }
-        }
-
-        return view('pages.notification.salary-reminder', compact('reminders', 'totalReminders', 'totalDraft', 'totalPaid', 'attendanceReminders'));
+        return view('pages.notification.salary-reminder', [
+            'reminders' => $reminders,
+            'totalReminders' => $stats['total'],
+            'totalDraft' => $stats['draft'],
+            'totalPaid' => $stats['paid'],
+            'attendanceReminders' => $attendanceReminders,
+        ]);
     }
 }
-

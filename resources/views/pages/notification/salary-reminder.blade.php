@@ -1,20 +1,21 @@
 @extends('layouts.app')
 
+{{-- Judul Halaman --}}
 @section('title', 'PT Aghitsna Karya Indah - Reminder Gaji Karyawan')
 
 @section('content')
     <div class="space-y-6">
 
-        {{-- Filter Section --}}
+        {{-- Form Filter: Bulan, Tahun, Status, Pencarian --}}
         <div class="bg-surface-base p-6 rounded-xl shadow">
             <form id="filterForm" method="GET" action="{{ route('notification.salary-reminder') }}" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
                     {{-- Filter Bulan --}}
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Bulan</label>
                         <select id="month-select" name="month"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            onchange="document.getElementById('filterForm').submit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                             <option value="">Semua Bulan</option>
                             @for ($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" {{ request('month') == $i ? 'selected' : '' }}>
@@ -28,8 +29,7 @@
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Tahun</label>
                         <select id="year-select" name="year"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            onchange="document.getElementById('filterForm').submit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                             @for ($i = date('Y'); $i >= date('Y') - 5; $i--)
                                 <option value="{{ $i }}"
                                     {{ request('year', date('Y')) == $i ? 'selected' : '' }}>
@@ -43,24 +43,23 @@
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Status</label>
                         <select id="status-select" name="status"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            onchange="document.getElementById('filterForm').submit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                             <option value="">Semua Status</option>
                             <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
                         </select>
                     </div>
 
-                    {{-- Filter Search --}}
+                    {{-- Pencarian Karyawan --}}
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Cari Karyawan</label>
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="ID atau Nama Karyawan"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            oninput="this.form.requestSubmit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                     </div>
                 </div>
 
+                {{-- Tombol Reset Filter --}}
                 <div class="flex gap-2">
                     <a href="{{ route('notification.salary-reminder') }}"
                         class="px-4 py-2 bg-surface-secondary text-text-primary rounded-lg hover:bg-surface-hover transition">
@@ -70,8 +69,9 @@
             </form>
         </div>
 
-        {{-- Summary Cards --}}
+        {{-- Kartu Ringkasan: Total, Draft, Paid --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {{-- Total Reminder --}}
             <div class="bg-surface-base p-6 rounded-xl shadow border border-border-light">
                 <div class="flex items-center justify-between">
                     <div>
@@ -88,6 +88,7 @@
                 </div>
             </div>
 
+            {{-- Draft (Belum Dibayar) --}}
             <div class="bg-surface-base p-6 rounded-xl shadow border border-border-light">
                 <div class="flex items-center justify-between">
                     <div>
@@ -103,6 +104,7 @@
                 </div>
             </div>
 
+            {{-- Paid --}}
             <div class="bg-surface-base p-6 rounded-xl shadow border border-border-light">
                 <div class="flex items-center justify-between">
                     <div>
@@ -119,10 +121,11 @@
             </div>
         </div>
 
-        {{-- Table Section --}}
+        {{-- Tabel Data Salary Reminder --}}
         <div class="bg-surface-base rounded-xl shadow overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
+                    {{-- Header Tabel --}}
                     <thead class="bg-surface-secondary border-b border-border-light">
                         <tr>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">ID Karyawan</th>
@@ -134,16 +137,25 @@
                             <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">Tanggal Perubahan</th>
                         </tr>
                     </thead>
+
+                    {{-- Baris Data --}}
                     <tbody class="divide-y divide-border-light">
                         @forelse($reminders as $reminder)
                             <tr class="hover:bg-surface-secondary transition">
+                                {{-- ID Karyawan --}}
                                 <td class="px-6 py-3 text-sm text-text-secondary">{{ $reminder->employee_id }}</td>
+
+                                {{-- Nama Karyawan --}}
                                 <td class="px-6 py-3 text-sm font-medium text-text-primary">
                                     {{ $reminder->employee->name ?? 'N/A' }}
                                 </td>
+
+                                {{-- Periode --}}
                                 <td class="px-6 py-3 text-sm text-text-secondary">
                                     {{ date('F Y', mktime(0, 0, 0, $reminder->period_month, 1, $reminder->period_year)) }}
                                 </td>
+
+                                {{-- Gaji --}}
                                 <td class="px-6 py-3 text-sm text-text-secondary">
                                     @if ($reminder->payroll)
                                         Rp {{ number_format($reminder->payroll->base_salary, 0, ',', '.') }}
@@ -154,9 +166,13 @@
                                         N/A
                                     @endif
                                 </td>
+
+                                {{-- Tanggal Reminder --}}
                                 <td class="px-6 py-3 text-sm text-text-secondary">
                                     {{ $reminder->reminder_date->format('d/m/Y') }}
                                 </td>
+
+                                {{-- Status (Badge) --}}
                                 <td class="px-6 py-3 text-sm">
                                     @if ($reminder->status === 'draft')
                                         <span
@@ -170,6 +186,8 @@
                                         </span>
                                     @endif
                                 </td>
+
+                                {{-- Tanggal Perubahan --}}
                                 <td class="px-6 py-3 text-sm text-text-secondary">
                                     @if ($reminder->notification_sent_at)
                                         {{ $reminder->notification_sent_at->format('d/m/Y H:i') }}
@@ -179,6 +197,7 @@
                                 </td>
                             </tr>
                         @empty
+                            {{-- Pesan jika tidak ada data --}}
                             <tr>
                                 <td colspan="7" class="px-6 py-8 text-center text-text-secondary">
                                     <div class="flex flex-col items-center gap-2">
@@ -203,9 +222,10 @@
             </div>
         </div>
 
-        {{-- Attendance Reminder Section --}}
+        {{-- Section: Pengingat Payroll Belum Dibuat --}}
         @if (count($attendanceReminders) > 0)
             <div class="space-y-4 mt-6">
+                {{-- Header Section --}}
                 <div class="flex items-center gap-2">
                     <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -214,13 +234,16 @@
                     <h3 class="text-lg font-semibold text-text-primary">Pengingat Payroll Belum Dibuat</h3>
                 </div>
 
+                {{-- Deskripsi --}}
                 <p class="text-sm text-text-secondary">Karyawan berikut sudah memiliki absensi minggu 1-4 namun payroll
                     belum
                     dibuatkan:</p>
 
+                {{-- Tabel Attendance Reminder --}}
                 <div class="bg-surface-base rounded-xl shadow overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full">
+                            {{-- Header Tabel --}}
                             <thead class="bg-surface-secondary border-b border-border-light">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">ID Karyawan
@@ -236,27 +259,40 @@
                                     <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">Status</th>
                                 </tr>
                             </thead>
+
+                            {{-- Baris Data --}}
                             <tbody class="divide-y divide-border-light">
                                 @forelse($attendanceReminders as $reminder)
                                     <tr class="hover:bg-surface-secondary transition">
+                                        {{-- ID Karyawan --}}
                                         <td class="px-6 py-3 text-sm text-text-secondary">{{ $reminder->employee_id }}
                                         </td>
+
+                                        {{-- Nama Karyawan --}}
                                         <td class="px-6 py-3 text-sm font-medium text-text-primary">
                                             {{ $reminder->employee_name }}
                                         </td>
+
+                                        {{-- Periode --}}
                                         <td class="px-6 py-3 text-sm text-text-secondary">
                                             {{ date('F Y', mktime(0, 0, 0, $reminder->period_month, 1, $reminder->period_year)) }}
                                         </td>
+
+                                        {{-- Minggu Ke --}}
                                         <td class="px-6 py-3 text-sm">
                                             <span
                                                 class="px-3 py-1 bg-warning-light text-warning rounded-full text-xs font-semibold">
                                                 Minggu {{ $reminder->week_number }}
                                             </span>
                                         </td>
+
+                                        {{-- Tanggal Absensi --}}
                                         <td class="px-6 py-3 text-sm text-text-secondary">
                                             {{ $reminder->first_attendance_date->format('d/m/Y') }} -
                                             {{ $reminder->last_attendance_date->format('d/m/Y') }}
                                         </td>
+
+                                        {{-- Status --}}
                                         <td class="px-6 py-3 text-sm">
                                             <span
                                                 class="px-3 py-1 bg-error-light text-error rounded-full text-xs font-semibold">
@@ -265,6 +301,7 @@
                                         </td>
                                     </tr>
                                 @empty
+                                    {{-- Pesan jika semua payroll sudah dibuat --}}
                                     <tr>
                                         <td colspan="6" class="px-6 py-8 text-center text-text-secondary">
                                             <p>Semua payroll untuk absensi sudah dibuat</p>
@@ -279,4 +316,9 @@
         @endif
 
     </div>
+
+    {{-- JavaScript Modular --}}
+    @push('scripts')
+        @vite('resources/js/pages/notification/salary-reminder/index.js')
+    @endpush
 @endsection
