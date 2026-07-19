@@ -1,5 +1,7 @@
+{{-- Modal Tambah User --}}
 <x-modal id="addModal" title="Tambah User" action="{{ route('user-management.store') }}" method="POST" buttonText="Simpan">
 
+    {{-- Input: Nama Lengkap --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Lengkap <span class="text-error">*</span></label>
         <input type="text" name="name" class="w-full border rounded p-2" placeholder="Masukkan nama lengkap"
@@ -7,6 +9,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Input: Email --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Email <span class="text-error">*</span></label>
         <input type="email" name="email" class="w-full border rounded p-2" placeholder="Masukkan email" required
@@ -14,6 +17,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Input: Password --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Password <span class="text-error">*</span></label>
         <input type="password" name="password" class="w-full border rounded p-2" placeholder="Minimal 8 karakter"
@@ -21,6 +25,15 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Input: Konfirmasi Password --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Konfirmasi Password <span class="text-error">*</span></label>
+        <input type="password" name="password_confirmation" class="w-full border rounded p-2"
+            placeholder="Ulangi password" required oninvalid="this.setCustomValidity('Konfirmasi password wajib diisi')"
+            oninput="this.setCustomValidity('')">
+    </div>
+
+    {{-- Select: Role --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Role <span class="text-error">*</span></label>
         <select name="role" class="w-full border rounded p-2" required

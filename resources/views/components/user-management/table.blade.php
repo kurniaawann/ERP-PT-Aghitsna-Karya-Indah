@@ -1,26 +1,34 @@
+{{-- Tabel Data User --}}
 {{-- Delete form standalone (tidak boleh nested di dalam form lain) --}}
 <form id="deleteForm" method="POST" action="{{ route('user-management.destroy') }}">
     @csrf
     @method('DELETE')
 </form>
 
-{{-- Table tanpa nested form --}}
+{{-- Tabel tanpa nested form --}}
 <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
     <div class="inline-block min-w-full align-middle">
         <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
             <table class="min-w-full divide-y divide-gray-200">
+                {{-- Header Tabel --}}
                 <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                        <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
+                        <th class="p-2 text-center">
+                            {{-- Checkbox Select All --}}
+                            <input type="checkbox" id="selectAll">
+                        </th>
                         <th class="p-2 text-left">Nama</th>
                         <th class="p-2 text-left">Email</th>
                         <th class="p-2 text-center">Role</th>
                         <th class="p-2 text-center">Aksi</th>
                     </tr>
                 </thead>
+
+                {{-- Baris Data --}}
                 <tbody>
                     @forelse($users as $user)
                         <tr class="border-t hover:bg-surface-secondary">
+                            {{-- Checkbox (user sendiri tidak bisa dipilih untuk dihapus) --}}
                             <td class="p-2 text-center">
                                 @if ($user->id !== auth()->id())
                                     {{-- form="deleteForm" mengaitkan checkbox ke deleteForm meski berada di luar form --}}
@@ -28,13 +36,19 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 @endif
                             </td>
+
+                            {{-- Nama User --}}
                             <td class="p-2 font-medium text-black">
                                 {{ $user->name }}
                                 @if ($user->id === auth()->id())
                                     <span class="ml-1 text-xs text-primary font-normal">(Anda)</span>
                                 @endif
                             </td>
+
+                            {{-- Email User --}}
                             <td class="p-2 text-black">{{ $user->email }}</td>
+
+                            {{-- Role dengan Badge --}}
                             <td class="p-2 text-center">
                                 @php
                                     $roleColors = [
@@ -48,6 +62,8 @@
                                     {{ $user->role_label }}
                                 </span>
                             </td>
+
+                            {{-- Tombol Aksi --}}
                             <td class="p-2 text-center">
                                 <button type="button" onclick="openModal('editModal-{{ $user->id }}')"
                                     class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs mx-auto"
@@ -58,6 +74,7 @@
                             </td>
                         </tr>
                     @empty
+                        {{-- Pesan jika tidak ada data --}}
                         <tr>
                             <td colspan="5" class="text-center p-4 text-text-secondary">
                                 Data tidak ditemukan.

@@ -71,6 +71,23 @@ class User extends Authenticatable
         return self::ROLES[$this->role] ?? $this->role;
     }
 
+    /**
+     * Scope pencarian berdasarkan nama atau email.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string|null                             $search
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, ?string $search)
+    {
+        if (!$search) {
+            return $query;
+        }
+
+        return $query->where('name', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%");
+    }
+
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));
