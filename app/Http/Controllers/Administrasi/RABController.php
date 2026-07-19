@@ -4,40 +4,51 @@ namespace App\Http\Controllers\Administrasi;
 
 use App\Http\Controllers\Controller;
 use App\Models\Administrasi\RAB;
-use App\Models\Administrasi\RABCategory;
-use App\Models\Administrasi\RABSubCategory;
-use App\Models\Administrasi\RABItem;
-use App\Models\Administrasi\RABMiscellaneousCost;
 use App\Models\Finance\PaymentAccount;
+use App\Services\Administrasi\RABService;
+use App\Http\Requests\Administrasi\RABStoreRequest;
+use App\Http\Requests\Administrasi\RABUpdateRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Exports\Administrasi\RABExport;
 use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * RAB Controller
+ *
+ * Controller untuk modul Rencana Anggaran Biaya (RAB).
+ * Hanya menangani HTTP Request/Response, redirect, return view.
+ * Business logic didelegasikan ke RABService.
+ */
 class RABController extends Controller
 {
-    // ─── Index ────────────────────────────────────────────────────────────────
+    protected RABService $rabService;
 
+    public function __construct(RABService $rabService)
+    {
+        $this->rabService = $rabService;
+    }
+
+    /**
+     * Menampilkan daftar RAB dengan pagination dan search.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
         $search = $request->input('search');
-
-        $rabs = RAB::with(['categories'])
-            ->when($search, function ($query, $search) {
-                return $query->where('rab_number', 'like', "%{$search}%")
-                    ->orWhere('recipient', 'like', "%{$search}%");
-            })
-            ->orderBy('sequence_number', 'desc')
-            ->paginate(15);
-
+        $rabs = $this->rabService->getPaginatedRABs($search);
         $paymentAccounts = PaymentAccount::active()->get();
 
-        return view('pages.administrasi.rab', compact('rabs', 'paymentAccounts', 'search'));
+        return view('pages.administrasi.RAB', compact('rabs', 'paymentAccounts', 'search'));
     }
 
-    // ─── Get Next Number (AJAX) ───────────────────────────────────────────────
-
+    /**
+     * AJAX: mendapatkan nomor RAB berikutnya.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getNextRABNumber()
     {
         return response()->json([
@@ -45,384 +56,100 @@ class RABController extends Controller
         ]);
     }
 
-    // ─── Show Detail ──────────────────────────────────────────────────────────
-
+    /**
+     * Menampilkan detail RAB secara lengkap.
+     *
+     * @param string $rabNumber
+     * @return \Illuminate\View\View
+     */
     public function show(string $rabNumber)
     {
-        $rab = RAB::with(['categories.subcategories.items', 'miscellaneousCosts'])
-            ->where('rab_number', $rabNumber)
-            ->firstOrFail();
+        $rab = $this->rabService->getRABWithDetails($rabNumber);
+        $paymentAccounts = PaymentAccount::active()->get();
 
-        return view('pages.administrasi.rab-detail', compact('rab'));
+        return view('components.administrasi.RAB.RABDetail', compact('rab', 'paymentAccounts'));
     }
 
-    // ─── Show for Edit (AJAX) ────────────────────────────────────────────────
-
+    /**
+     * AJAX: mendapatkan data RAB untuk form edit.
+     *
+     * @param string $rabNumber
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function edit(string $rabNumber)
     {
-        $rab = RAB::with(['categories.subcategories.items', 'miscellaneousCosts'])
-            ->where('rab_number', $rabNumber)
-            ->firstOrFail();
-
-        $data = [
-            'rab_number' => $rab->rab_number,
-            'date' => $rab->date->format('Y-m-d'),
-            'recipient' => $rab->recipient,
-            'recipient_address' => $rab->recipient_address,
-            'intro_text' => $rab->intro_text,
-            'total_amount' => $rab->total_amount,
-            'amount_in_words' => $rab->amount_in_words,
-            'selected_payment_accounts' => is_string($rab->selected_payment_accounts)
-                ? json_decode($rab->selected_payment_accounts, true)
-                : $rab->selected_payment_accounts,
-            'signed_by' => $rab->signed_by,
-            'division' => $rab->division,
-            'categories' => $rab->categories->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'roman_order' => $category->roman_order,
-                    'category_name' => $category->category_name,
-                    'subcategories' => $category->subcategories->map(function ($subcategory) {
-                        $legacySubtotal = (int) ($subcategory->sub_harga ?? 0);
-                        $legacyVolume = $subcategory->volume;
-                        $legacyUnit = $subcategory->unit;
-                        $legacyUnitPrice = $subcategory->unit_price;
-
-                        return [
-                            'id' => $subcategory->id,
-                            'number_order' => $subcategory->number_order,
-                            'subcategory_name' => $subcategory->subcategory_name,
-                            'items' => $subcategory->items->values()->map(function ($item, $index) use ($legacyVolume, $legacyUnit, $legacyUnitPrice, $legacySubtotal) {
-                                $hasItemPricing = $item->volume !== null
-                                    || $item->unit !== null
-                                    || $item->unit_price !== null
-                                    || $item->sub_harga !== null;
-
-                                $useLegacyPricing = !$hasItemPricing && $index === 0;
-
-                                return [
-                                    'id' => $item->id,
-                                    'letter_order' => $item->letter_order,
-                                    'item_description' => $item->item_description,
-                                    'volume' => $hasItemPricing ? $item->volume : ($useLegacyPricing ? $legacyVolume : null),
-                                    'unit' => $hasItemPricing ? $item->unit : ($useLegacyPricing ? $legacyUnit : null),
-                                    'unit_price' => $hasItemPricing ? $item->unit_price : ($useLegacyPricing ? $legacyUnitPrice : null),
-                                    'sub_harga' => $hasItemPricing ? $item->sub_harga : ($useLegacyPricing ? $legacySubtotal : 0),
-                                ];
-                            })->toArray(),
-                            'sub_harga' => $subcategory->items->sum(function ($item) {
-                                return (int) ($item->sub_harga ?? 0);
-                            }) ?: $legacySubtotal,
-                        ];
-                    })->toArray(),
-                ];
-            })->toArray(),
-            'miscellaneous_costs' => $rab->miscellaneousCosts->map(function ($misc) {
-                return [
-                    'id' => $misc->id,
-                    'item_order' => $misc->item_order,
-                    'item_name' => $misc->item_name,
-                    'amount' => $misc->amount,
-                ];
-            })->toArray(),
-        ];
+        $data = $this->rabService->getRABEditData($rabNumber);
 
         return response()->json($data);
     }
 
-    // ─── Store ────────────────────────────────────────────────────────────────
-
-    public function store(Request $request)
+    /**
+     * Menyimpan RAB baru.
+     *
+     * @param RABStoreRequest $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(RABStoreRequest $request)
     {
-        $request->validate([
-            'recipient' => 'required|string|max:255',
-            'date' => 'required|date',
-            'intro_text' => 'required|string',
-            'rab_data' => 'required|string',
-        ]);
-
-        if (empty($request->input('selected_payment_accounts', []))) {
-            return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih.')->withInput();
-        }
-
-        // Parse RAB data JSON
         $rabData = json_decode($request->input('rab_data'), true);
         if (!$rabData || !is_array($rabData) || count($rabData) === 0) {
-            return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')->withInput();
+            return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')
+                ->withInput();
         }
 
-        // Parse miscellaneous costs JSON
         $miscCostsData = [];
         if ($request->input('misc_costs_data')) {
             $miscCostsData = json_decode($request->input('misc_costs_data'), true) ?? [];
         }
 
-        // Auto-generate RAB number
-        $seqNumber = RAB::getNextSequenceNumber();
-        $month = (int) date('n');
-        $romanMonth = $this->arabicToRoman($month);
-        $year = date('Y');
-        $rabNumber = "{$seqNumber}/RAB/{$romanMonth}/{$year}";
+        $rab = $this->rabService->storeRAB(
+            $request->validated(),
+            $rabData,
+            $miscCostsData
+        );
 
-        // Calculate grand total (main categories)
-        $totalAmount = 0;
-        foreach ($rabData as $category) {
-            foreach ($category['subcategories'] ?? [] as $subcategory) {
-                $subcategoryTotal = 0;
-
-                foreach ($subcategory['items'] ?? [] as $itemData) {
-                    $volume = (float) ($itemData['volume'] ?? 0);
-                    $unitPrice = (int) ($itemData['unit_price'] ?? 0);
-                    $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
-                    $subcategoryTotal += $itemTotal;
-                }
-
-                if ($subcategoryTotal === 0) {
-                    $subcategoryTotal = (int) ($subcategory['sub_harga'] ?? 0);
-                }
-
-                $totalAmount += $subcategoryTotal;
-            }
-        }
-
-        // Calculate misc costs total
-        $miscCostsTotal = 0;
-        foreach ($miscCostsData as $miscCost) {
-            $miscCostsTotal += (int) ($miscCost['amount'] ?? 0);
-        }
-
-        // Total anggaran biaya (tanpa PPN)
-        $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
-
-        DB::transaction(function () use ($request, $rabNumber, $seqNumber, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
-            // Create RAB header
-            $rab = RAB::create([
-                'rab_number' => $rabNumber,
-                'sequence_number' => $seqNumber,
-                'date' => $request->input('date'),
-                'recipient' => $request->input('recipient'),
-                'recipient_address' => $request->input('recipient_address', 'Ditempat'),
-                'intro_text' => $request->input('intro_text'),
-                'total_amount' => $totalAmount,
-                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
-                'selected_payment_accounts' => $request->input('selected_payment_accounts', []),
-                'signed_by' => $request->input('signed_by'),
-                'division' => $request->input('division'),
-            ]);
-
-            // Create categories and their data
-            foreach ($rabData as $categoryIndex => $categoryData) {
-                $category = RABCategory::create([
-                    'rab_number' => $rabNumber,
-                    'roman_order' => $categoryIndex + 1,
-                    'category_name' => $categoryData['category_name'],
-                    'order' => $categoryIndex,
-                ]);
-
-                // Create subcategories
-                foreach ($categoryData['subcategories'] ?? [] as $subcategoryIndex => $subcategoryData) {
-                    $subcategoryTotal = 0;
-
-                    foreach ($subcategoryData['items'] ?? [] as $itemData) {
-                        $volume = (float) ($itemData['volume'] ?? 0);
-                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
-                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
-                        $subcategoryTotal += $itemTotal;
-                    }
-
-                    if ($subcategoryTotal === 0) {
-                        $subcategoryTotal = (int) ($subcategoryData['sub_harga'] ?? 0);
-                    }
-
-                    $subcategory = RABSubCategory::create([
-                        'rab_category_id' => $category->id,
-                        'number_order' => $subcategoryIndex + 1,
-                        'subcategory_name' => $subcategoryData['subcategory_name'],
-                        'sub_harga' => $subcategoryTotal,
-                        'order' => $subcategoryIndex,
-                    ]);
-
-                    // Create items
-                    foreach ($subcategoryData['items'] ?? [] as $itemIndex => $itemData) {
-                        $volume = (float) ($itemData['volume'] ?? 0);
-                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
-                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
-
-                        RABItem::create([
-                            'rab_subcategory_id' => $subcategory->id,
-                            'letter_order' => $itemIndex + 1,
-                            'item_description' => $itemData['item_description'],
-                            'volume' => $volume ?: null,
-                            'unit' => $itemData['unit'] ?? null,
-                            'unit_price' => $unitPrice ?: null,
-                            'sub_harga' => $itemTotal,
-                            'order' => $itemIndex,
-                        ]);
-                    }
-                }
-            }
-
-            // Create miscellaneous costs
-            foreach ($miscCostsData as $itemIndex => $miscCost) {
-                RABMiscellaneousCost::create([
-                    'rab_number' => $rabNumber,
-                    'item_order' => $itemIndex + 1,
-                    'item_name' => $miscCost['item_name'],
-                    'amount' => (int) ($miscCost['amount'] ?? 0),
-                    'order' => $itemIndex,
-                ]);
-            }
-        });
-
+        $checkNumber = $rab->rab_number ?? '';
         return redirect()->route('rab.index')
-            ->with('success', "RAB {$rabNumber} berhasil ditambahkan!");
+            ->with('success', "RAB {$checkNumber} berhasil ditambahkan!");
     }
 
-    // ─── Update ───────────────────────────────────────────────────────────────
-
-    public function update(Request $request, string $rabNumber)
+    /**
+     * Memperbarui RAB yang sudah ada.
+     *
+     * @param RABUpdateRequest $request
+     * @param string $rabNumber
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(RABUpdateRequest $request, string $rabNumber)
     {
-        $rab = RAB::where('rab_number', $rabNumber)->firstOrFail();
-
-        $request->validate([
-            'recipient' => 'required|string|max:255',
-            'date' => 'required|date',
-            'intro_text' => 'required|string',
-            'rab_data' => 'required|string',
-        ]);
-
-        if (empty($request->input('selected_payment_accounts', []))) {
-            return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih.')->withInput();
-        }
-
-        // Parse RAB data JSON
         $rabData = json_decode($request->input('rab_data'), true);
         if (!$rabData || !is_array($rabData) || count($rabData) === 0) {
-            return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')->withInput();
+            return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')
+                ->withInput();
         }
 
-        // Parse miscellaneous costs JSON
         $miscCostsData = [];
         if ($request->input('misc_costs_data')) {
             $miscCostsData = json_decode($request->input('misc_costs_data'), true) ?? [];
         }
 
-        // Calculate grand total
-        $totalAmount = 0;
-        foreach ($rabData as $category) {
-            foreach ($category['subcategories'] ?? [] as $subcategory) {
-                $subcategoryTotal = 0;
-
-                foreach ($subcategory['items'] ?? [] as $itemData) {
-                    $volume = (float) ($itemData['volume'] ?? 0);
-                    $unitPrice = (int) ($itemData['unit_price'] ?? 0);
-                    $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
-                    $subcategoryTotal += $itemTotal;
-                }
-
-                if ($subcategoryTotal === 0) {
-                    $subcategoryTotal = (int) ($subcategory['sub_harga'] ?? 0);
-                }
-
-                $totalAmount += $subcategoryTotal;
-            }
-        }
-
-        // Calculate misc costs total
-        $miscCostsTotal = 0;
-        foreach ($miscCostsData as $miscCost) {
-            $miscCostsTotal += (int) ($miscCost['amount'] ?? 0);
-        }
-
-        // Total anggaran biaya (tanpa PPN)
-        $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
-
-        DB::transaction(function () use ($request, $rab, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
-            // Update RAB header
-            $rab->update([
-                'date' => $request->input('date'),
-                'recipient' => $request->input('recipient'),
-                'recipient_address' => $request->input('recipient_address', 'Ditempat'),
-                'intro_text' => $request->input('intro_text'),
-                'total_amount' => $totalAmount,
-                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
-                'selected_payment_accounts' => $request->input('selected_payment_accounts', []),
-                'signed_by' => $request->input('signed_by'),
-                'division' => $request->input('division'),
-            ]);
-
-            // Delete existing categories and recreate them
-            $rab->categories()->delete();
-
-            foreach ($rabData as $categoryIndex => $categoryData) {
-                $category = RABCategory::create([
-                    'rab_number' => $rab->rab_number,
-                    'roman_order' => $categoryIndex + 1,
-                    'category_name' => $categoryData['category_name'],
-                    'order' => $categoryIndex,
-                ]);
-
-                foreach ($categoryData['subcategories'] ?? [] as $subcategoryIndex => $subcategoryData) {
-                    $subcategoryTotal = 0;
-
-                    foreach ($subcategoryData['items'] ?? [] as $itemData) {
-                        $volume = (float) ($itemData['volume'] ?? 0);
-                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
-                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
-                        $subcategoryTotal += $itemTotal;
-                    }
-
-                    if ($subcategoryTotal === 0) {
-                        $subcategoryTotal = (int) ($subcategoryData['sub_harga'] ?? 0);
-                    }
-
-                    $subcategory = RABSubCategory::create([
-                        'rab_category_id' => $category->id,
-                        'number_order' => $subcategoryIndex + 1,
-                        'subcategory_name' => $subcategoryData['subcategory_name'],
-                        'sub_harga' => $subcategoryTotal,
-                        'order' => $subcategoryIndex,
-                    ]);
-
-                    foreach ($subcategoryData['items'] ?? [] as $itemIndex => $itemData) {
-                        $volume = (float) ($itemData['volume'] ?? 0);
-                        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
-                        $itemTotal = (int) ($itemData['sub_harga'] ?? round($volume * $unitPrice));
-
-                        RABItem::create([
-                            'rab_subcategory_id' => $subcategory->id,
-                            'letter_order' => $itemIndex + 1,
-                            'item_description' => $itemData['item_description'],
-                            'volume' => $volume ?: null,
-                            'unit' => $itemData['unit'] ?? null,
-                            'unit_price' => $unitPrice ?: null,
-                            'sub_harga' => $itemTotal,
-                            'order' => $itemIndex,
-                        ]);
-                    }
-                }
-            }
-
-            // Delete existing miscellaneous costs and recreate them
-            $rab->miscellaneousCosts()->delete();
-
-            foreach ($miscCostsData as $itemIndex => $miscCost) {
-                RABMiscellaneousCost::create([
-                    'rab_number' => $rab->rab_number,
-                    'item_order' => $itemIndex + 1,
-                    'item_name' => $miscCost['item_name'],
-                    'amount' => (int) ($miscCost['amount'] ?? 0),
-                    'order' => $itemIndex,
-                ]);
-            }
-        });
+        $rab = $this->rabService->updateRAB(
+            $rabNumber,
+            $request->validated(),
+            $rabData,
+            $miscCostsData
+        );
 
         return redirect()->route('rab.index')
             ->with('success', "RAB {$rab->rab_number} berhasil diperbarui!");
     }
 
-    // ─── Delete ───────────────────────────────────────────────────────────────
-
+    /**
+     * Menghapus RAB yang dipilih.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(Request $request)
     {
         $rabNumbers = $request->input('selected_items', []);
@@ -431,24 +158,20 @@ class RABController extends Controller
             return back()->with('error', 'Pilih minimal 1 RAB untuk dihapus.');
         }
 
-        DB::transaction(function () use ($rabNumbers) {
-            foreach ($rabNumbers as $rabNumber) {
-                RAB::where('rab_number', $rabNumber)->delete();
-            }
-        });
+        $count = $this->rabService->destroyRABs($rabNumbers);
 
-        return back()->with('success', count($rabNumbers) . ' RAB berhasil dihapus.');
+        return back()->with('success', "{$count} RAB berhasil dihapus.");
     }
 
-    // ─── Export PDF ───────────────────────────────────────────────────────────
-
+    /**
+     * Export PDF RAB.
+     *
+     * @param string $rabNumber
+     * @return \Illuminate\Http\Response
+     */
     public function exportPDF(string $rabNumber)
     {
-        $rab = RAB::with(['categories.subcategories.items', 'miscellaneousCosts'])
-            ->where('rab_number', $rabNumber)
-            ->firstOrFail();
-
-        // Buat nama file yang aman (tanpa karakter /)
+        $rab = $this->rabService->getRABWithDetails($rabNumber);
         $safeFileName = str_replace('/', '-', $rabNumber);
 
         $pdf = Pdf::loadView('exports.administrasi.rab-pdf', [
@@ -459,8 +182,12 @@ class RABController extends Controller
         return $pdf->download("RAB_{$safeFileName}_{$date}.pdf");
     }
 
-    // ─── Export Excel ─────────────────────────────────────────────────────────
-
+    /**
+     * Export Excel RAB.
+     *
+     * @param string $rabNumber
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportExcel(string $rabNumber)
     {
         $rab = RAB::where('rab_number', $rabNumber)->firstOrFail();
@@ -468,20 +195,5 @@ class RABController extends Controller
         $date = date('Y-m-d');
 
         return Excel::download(new RABExport($rab->rab_number), "RAB_{$safeFileName}_{$date}.xlsx");
-    }
-
-    // ─── Helper: Convert Arabic to Roman ───────────────────────────────────────
-
-    private function arabicToRoman($num)
-    {
-        $romanMap = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-        return $romanMap[$num] ?? '';
-    }
-
-    // ─── Helper: Convert number to letter ──────────────────────────────────────
-
-    private function numberToLetter($num)
-    {
-        return chr(96 + $num);
     }
 }

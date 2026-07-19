@@ -4,7 +4,8 @@
 
 @section('content')
     <div class="bg-surface-base p-6 rounded-xl shadow">
-        <!-- Header -->
+
+        {{-- Header Detail --}}
         <div class="mb-6 flex justify-between items-start">
             <div>
                 <h1 class="text-3xl font-bold text-text-primary mb-2">RANCANGAN ANGGARAN BIAYA</h1>
@@ -16,20 +17,24 @@
             </div>
         </div>
 
-        <!-- Penerima -->
+        {{-- Informasi Penerima --}}
         <div class="mb-6 p-4 border border-gray-300 rounded">
             <p class="mb-2"><strong>Kepada:</strong></p>
             <p class="text-text-primary">{{ $rab->recipient }}</p>
             <p class="text-text-primary">{{ $rab->recipient_address }}</p>
         </div>
 
-        <!-- Intro Text -->
+        {{-- Teks Pengantar --}}
         <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
             <p class="text-text-primary whitespace-pre-wrap">{{ $rab->intro_text }}</p>
         </div>
 
-        <!-- RAB Details Table -->
+        {{-- Detail Tabel RAB --}}
         <div class="mb-6 overflow-x-auto">
+            @php
+                $grandTotal = 0;
+            @endphp
+
             <table class="w-full border-collapse border border-gray-400 text-sm">
                 <thead>
                     <tr class="bg-yellow-300">
@@ -42,18 +47,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php
-                        $grandTotal = 0;
-                    @endphp
-
-                    @foreach ($rab->categories()->orderBy('roman_order')->get() as $category)
+                    @foreach ($rab->categories as $category)
                         <tr class="bg-yellow-200">
                             <td colspan="6" class="border border-gray-400 px-3 py-2 font-bold">
                                 {{ $category->getRomanNumeral() }} {{ $category->category_name }}
                             </td>
                         </tr>
 
-                        @foreach ($category->subcategories()->orderBy('number_order')->get() as $subcategory)
+                        @foreach ($category->subcategories as $subcategory)
                             <tr class="bg-blue-50">
                                 <td colspan="6" class="border border-gray-400 px-3 py-2 font-semibold">
                                     {{ $subcategory->number_order }}. {{ $subcategory->subcategory_name }}
@@ -64,7 +65,7 @@
                                 $subTotal = 0;
                             @endphp
 
-                            @foreach ($subcategory->items()->orderBy('letter_order')->get() as $item)
+                            @foreach ($subcategory->items as $item)
                                 @php
                                     $itemVolume = $item->volume ?? ($subcategory->volume ?? 0);
                                     $itemUnit = $item->unit ?? ($subcategory->unit ?? '-');
@@ -86,11 +87,11 @@
                                 </tr>
                             @endforeach
 
-                            @if ($subTotal === 0)
-                                @php
+                            @php
+                                if ($subTotal === 0) {
                                     $subTotal = (int) ($subcategory->sub_harga ?? 0);
-                                @endphp
-                            @endif
+                                }
+                            @endphp
 
                             <tr class="bg-yellow-100">
                                 <td colspan="5" class="border border-gray-400 px-3 py-2 text-right font-bold">
@@ -106,7 +107,7 @@
                         @endforeach
                     @endforeach
 
-                    <!-- Grand Total -->
+                    {{-- Grand Total --}}
                     <tr class="bg-yellow-300 font-bold text-lg">
                         <td colspan="5" class="border border-gray-400 px-3 py-2 text-right">JUMLAH ANGGARAN BANGUNAN</td>
                         <td class="border border-gray-400 px-3 py-2 text-right">
@@ -117,9 +118,8 @@
             </table>
         </div>
 
-        <!-- Summary -->
+        {{-- Summary --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Left Column - Additional Info -->
             <div>
                 <div class="mb-4 p-3 bg-surface-secondary border border-border rounded">
                     <p class="text-text-primary">
@@ -129,7 +129,7 @@
                 </div>
             </div>
 
-            <!-- Right Column - Payment Methods -->
+            {{-- Rekening Pembayaran --}}
             <div>
                 @if ($rab->selected_payment_accounts && count($rab->selected_payment_accounts) > 0)
                     <div class="p-3 bg-surface-secondary border border-border rounded">
@@ -154,7 +154,7 @@
             </div>
         </div>
 
-        <!-- Signature & Notes -->
+        {{-- Signature & Notes --}}
         <div class="mt-8 pt-6 border-t border-gray-300">
             <div class="grid grid-cols-2 gap-8 text-center">
                 <div>
@@ -178,7 +178,7 @@
             </div>
         </div>
 
-        <!-- Action Buttons -->
+        {{-- Tombol Aksi --}}
         <div class="mt-8 flex gap-2 justify-end">
             <button type="button" class="btn btn-secondary" onclick="window.print()">
                 <i class="fas fa-print mr-2"></i>Cetak
