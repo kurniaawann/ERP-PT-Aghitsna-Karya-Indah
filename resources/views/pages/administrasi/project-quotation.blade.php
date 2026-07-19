@@ -45,7 +45,12 @@
         Apakah kamu yakin ingin menghapus penawaran yang dipilih?
     </x-modal>
 
-    {{-- Scripts --}}
-    @include('partials.administrasi.project-quotation-scripts')
+    {{-- Print Dropdown Script --}}
     @include('partials.shared.print-dropdown-script')
+
+    {{-- ═══ JAVASCRIPT: Load via Vite (modular) ═══ --}}
+    @push('scripts')
+        <meta name="project-quotation-get-next-number" content="{{ route('project-quotation.getNextNumber') }}">
+        @vite('resources/js/pages/administrasi/project-quotation/index.js')
+    @endpush
 @endsection

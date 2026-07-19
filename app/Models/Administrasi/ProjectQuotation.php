@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Finance\PaymentAccount;
 
+/**
+ * Model untuk data Penawaran Proyek (Project Quotation).
+ *
+ * Model ini menyimpan data header penawaran proyek,
+ * termasuk nomor penawaran, tanggal, penerima, total, dan relasi ke items.
+ *
+ * Primary key: quotation_number (string, bukan auto-increment)
+ */
 class ProjectQuotation extends Model
 {
     use HasFactory;
@@ -43,12 +51,22 @@ class ProjectQuotation extends Model
 
     // ─── Relationships ────────────────────────────────────────────────────────
 
+    /**
+     * Relasi ke items penawaran.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function items()
     {
         return $this->hasMany(ProjectQuotationItem::class, 'quotation_number', 'quotation_number')
             ->orderBy('order_number');
     }
 
+    /**
+     * Mendapatkan rekening pembayaran berdasarkan selected_payment_accounts.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
     public function paymentAccounts()
     {
         $ids = $this->selected_payment_accounts ?? [];
@@ -61,8 +79,10 @@ class ProjectQuotation extends Model
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Generate next quotation number: {n}/{n}/PT.AKI/{yy}
-     * e.g. 1/1/PT.AKI/25
+     * Generate nomor penawaran berikutnya: {n}/{n}/PT.AKI/{yy}
+     * Contoh: 1/1/PT.AKI/25
+     *
+     * @return string  Nomor penawaran yang sudah di-generate
      */
     public static function generateQuotationNumber(): string
     {
@@ -77,6 +97,11 @@ class ProjectQuotation extends Model
         return "{$next}/{$next}/PT.AKI/{$year}";
     }
 
+    /**
+     * Mendapatkan nomor urut (sequence) berikutnya untuk tahun berjalan.
+     *
+     * @return int  Nomor urut berikutnya
+     */
     public static function getNextSequenceNumber(): int
     {
         $year = date('y');

@@ -111,12 +111,11 @@
                     <label
                         class="flex items-center gap-3 p-3 border border-border-strong rounded cursor-pointer hover:bg-surface-hover">
                         <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
-                            class="w-4 h-4 accent-primary payment-account-checkbox-{{ $quotNum }}"
+                            class="w-4 h-4 accent-primary payment-account-checkbox"
                             {{ in_array($account->id, $selectedAccounts) ? 'checked' : '' }}
                             {{ $loop->first ? 'required' : '' }}
                             oninvalid="this.setCustomValidity('Minimal 1 rekening pembayaran harus dipilih')"
-                            oninput="this.setCustomValidity('')"
-                            onchange="document.querySelectorAll('.payment-account-checkbox-{{ $quotNum }}').forEach(cb => cb.required = !document.querySelector('.payment-account-checkbox-{{ $quotNum }}:checked'))">
+                            onchange="this.setCustomValidity('')">
                         <span class="text-sm">
                             <strong>{{ $account->bank_name }}</strong> /
                             {{ $account->account_number }} a/n {{ $account->account_holder }}
@@ -150,12 +149,12 @@
 </x-modal>
 
 <script>
-    // Initialize edit modal data when document ready
+    // Inisialisasi data edit modal saat document ready
     (function() {
         const quotNum = '{{ $quotNum }}';
         const quotationData = @json($quotation);
 
-        // Store items for this quotation
+        // Simpan items untuk quotation ini
         if (!window.editItemsStore) {
             window.editItemsStore = {};
         }
@@ -170,7 +169,7 @@
             total_price: item.total_price
         }));
 
-        // Initialize next item ID
+        // Inisialisasi next item ID
         if (!window.editNextItemId) {
             window.editNextItemId = {};
         }
