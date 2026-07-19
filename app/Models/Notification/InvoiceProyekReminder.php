@@ -135,6 +135,21 @@ class InvoiceProyekReminder extends Model
     }
 
     /**
+     * Scope untuk pencarian berdasarkan nomor invoice atau nama penerima.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $search
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, string $search)
+    {
+        return $query->where(function ($subQuery) use ($search) {
+            $subQuery->where('invoice_number', 'like', "%{$search}%")
+                ->orWhere('recipient', 'like', "%{$search}%");
+        });
+    }
+
+    /**
      * Accessor untuk sisa pembayaran.
      *
      * @return int
