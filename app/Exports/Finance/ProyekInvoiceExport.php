@@ -17,49 +17,20 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-/**
- * Export class untuk Invoice Proyek ke format Excel (.xlsx).
- *
- * Membuat file Excel dengan layout:
- * - Header perusahaan (logo, nama, alamat)
- * - Informasi invoice (nomor, tanggal, hal)
- * - Data penerima dan deskripsi proyek
- * - Tabel item-item invoice
- * - Baris discount, DP, dan cicilan pembayaran
- * - Informasi rekening pembayaran
- * - Tanda tangan
- */
 class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
-    /** @var \App\Models\Finance\InvoiceProyek */
     protected $invoice;
 
-    /**
-     * Inisialisasi export dengan nomor invoice.
-     *
-     * @param  string  $invoiceNumber  Nomor invoice proyek
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException  Jika invoice tidak ditemukan
-     */
     public function __construct($invoiceNumber)
     {
         $this->invoice = InvoiceProyek::where('invoice_number', $invoiceNumber)->firstOrFail();
     }
 
-    /**
-     * Data collection untuk export (kosong karena menggunakan custom rendering).
-     *
-     * @return \Illuminate\Support\Collection
-     */
     public function collection()
     {
         return collect([]);
     }
 
-    /**
-     * Judul sheet Excel.
-     *
-     * @return string
-     */
     public function title(): string
     {
         return 'Invoice_Proyek_' . $this->invoice->invoice_number;
@@ -68,12 +39,12 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
     public function columnWidths(): array
     {
         return [
-            'A' => 5,   // No
-            'B' => 35,  // Keterangan
-            'C' => 12,  // Volume
-            'D' => 10,  // Satuan
-            'E' => 18,  // Harga
-            'F' => 20,  // Jumlah
+            'A' => 5,
+            'B' => 35,
+            'C' => 12,
+            'D' => 10,
+            'E' => 18,
+            'F' => 20,
         ];
     }
 
@@ -84,76 +55,71 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet = $event->sheet->getDelegate();
                 $invoice = $this->invoice;
 
-                // Set row heights
                 $sheet->getRowDimension(1)->setRowHeight(60);
                 $sheet->getRowDimension(2)->setRowHeight(15);
 
-                // Add logo image
                 $drawing = new Drawing();
                 $drawing->setName('Logo');
                 $drawing->setDescription('Company Logo');
                 $drawing->setPath(public_path('images/logo.jpeg'));
-                $drawing->setHeight(60);
+                $drawing->setHeight(55);
                 $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(10);
-                $drawing->setOffsetY(5);
+                $drawing->setOffsetX(5);
+                $drawing->setOffsetY(3);
                 $drawing->setWorksheet($sheet);
 
-                // Merge cells for header
-                $sheet->mergeCells('A1:D1');
-                $sheet->mergeCells('E1:F1');
+                $sheet->mergeCells('B1:F1');
+                $sheet->setCellValue('B1', 'INVOICE PROYEK');
+                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
+                $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Company Name & Info (Row 2-5)
                 $sheet->mergeCells('A2:D2');
-                $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF6600'));
+                $sheet->setCellValue('A2', 'JL. CEMARA RT 02 RW 07, KEL. GROGOL');
+                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A3:D3');
-                $sheet->setCellValue('A3', 'AGHITSNA ALUMUNIUM DAN BAJA RINGAN');
+                $sheet->setCellValue('A3', 'KEC. LIMO KOTA DEPOK');
+                $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A4:D4');
-                $sheet->setCellValue('A4', 'JL. CEMARA RT 02 RW 07, KEL, GROGOL');
+                $sheet->setCellValue('A4', 'Telp. 0882 1303 1263 / 0882 1303 1264');
+                $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A5:D5');
-                $sheet->setCellValue('A5', 'KEC. LIMO KOTA DEPOK');
+                $sheet->setCellValue('A5', 'Email : Design@aghitsna.id');
+                $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->mergeCells('A6:D6');
-                $sheet->setCellValue('A6', 'Telp. 0882 1303 1263 / 0882 1303 1264 | Email: Design@aghitsna.id');
-
-                // Invoice Title (Right side)
-                $sheet->mergeCells('E1:F1');
-                $sheet->setCellValue('E1', 'INVOICE');
-                $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(24)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
-                $sheet->getStyle('E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle('E1')->getFill()->setFillType(Fill::FILL_NONE);
-
-                // Invoice Information
                 $invoiceDate = \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
 
                 $sheet->setCellValue('E2', 'No');
                 $sheet->setCellValue('F2', ': ' . $invoice->invoice_number);
+                $sheet->getStyle('E2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->setCellValue('E3', 'Tanggal');
                 $sheet->setCellValue('F3', ': ' . $invoiceDate);
+                $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->setCellValue('E4', 'Hal');
-                $sheet->setCellValue('F4', ': ' . $invoice->regarding);
+                $sheet->setCellValue('E4', 'Kepada');
+                $sheet->setCellValue('F4', ': ' . $invoice->recipient);
+                $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                // Border for header
-                $sheet->getStyle('A1:F6')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THICK);
+                $sheet->setCellValue('E5', 'Hal');
+                $sheet->setCellValue('F5', ': ' . $invoice->regarding);
+                $sheet->getStyle('E5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                // Recipient (Row 8)
-                $currentRow = 8;
+                $currentRow = 7;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
-                // Recipient Name (Row 8)
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", '            ' . $invoice->recipient);
 
-                // Description (Row 10-11)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Ditempat');
@@ -163,7 +129,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", $invoice->project_description);
 
-                // Table Header (Row 15)
                 $currentRow += 2;
                 $tableHeaderRow = $currentRow;
 
@@ -174,7 +139,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->setCellValue("E{$currentRow}", 'Harga');
                 $sheet->setCellValue("F{$currentRow}", 'Jumlah');
 
-                // Style table header
                 $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
@@ -190,7 +154,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     ]
                 ]);
 
-                // Items data
                 $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
                 $totalAmount = 0;
                 $itemStartRow = $currentRow + 1;
@@ -207,7 +170,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'], 0, ',', '.'));
                     $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
 
-                    // Style alignment
                     $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                     $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -217,14 +179,12 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 $itemEndRow = $currentRow;
 
-                // Apply borders to all items
                 $sheet->getStyle("A{$itemStartRow}:F{$itemEndRow}")->applyFromArray([
                     'borders' => [
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ]
                 ]);
 
-                // Total row
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Jumlah');
@@ -245,7 +205,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 ]);
                 $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-                // Discount row (if exists)
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
                     $discountAmount = $invoice->getDiscountAmount($totalAmount);
 
@@ -274,7 +233,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
-                // DP row (if exists)
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
                     $dpAmount = $invoice->getDpAmount($totalAmount);
 
@@ -303,7 +261,6 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
-                // Payment installments rows (if exists)
                 if ($invoice->payment_installments) {
                     $paymentInstallments = is_string($invoice->payment_installments)
                         ? json_decode($invoice->payment_installments, true)
@@ -334,18 +291,15 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     }
                 }
 
-                // Terbilang
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($totalAmount)) . ' rupiah');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
 
-                // Payment Information
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Pembayaran dapat ditransfer melalui nomor rekening');
 
-                // Get selected payment accounts from invoice
                 $selectedAccountIds = is_string($invoice->selected_payment_accounts)
                     ? json_decode($invoice->selected_payment_accounts, true)
                     : ($invoice->selected_payment_accounts ?? []);
@@ -355,11 +309,9 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                         ->orderBy('id')
                         ->get();
                 } else {
-                    // Fallback ke semua rekening aktif jika tidak ada yang dipilih
                     $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
                 }
 
-                // Helper to sanitize Excel cell values to prevent formula injection
                 $sanitizeForExcel = function ($value) {
                     if (is_string($value) && preg_match('/^[=+\-@]/', $value)) {
                         return "'" . $value;
@@ -377,13 +329,11 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
                 }
 
-                // Closing
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Demikian Invoice ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
 
-                // Signature
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Hormat Kami,');

@@ -12,74 +12,61 @@
             box-sizing: border-box;
         }
 
+       
         body {
             font-family: 'Times New Roman', Times, serif;
             font-size: 11px;
             line-height: 1.4;
-            padding: 20px;
+            padding: 15mm 15mm 15mm 15mm;
         }
+       
 
         .container {
             max-width: 210mm;
             margin: 0 auto;
         }
 
-        /* Header Section */
         .header {
-            display: table;
             width: 100%;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
 
-        .header-left {
-            display: table-cell;
-            width: 60%;
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            border: none;
+            padding: 0;
+        }
+
+        .logo-cell {
+            width: 100px;
             vertical-align: top;
+            padding-right: 10px;
         }
 
-        .header-right {
-            display: table-cell;
-            width: 40%;
-            vertical-align: top;
-            text-align: right;
-        }
-
-        .logo {
+        .logo-cell img {
+            display: block;
             width: 80px;
-            height: 80px;
-            float: left;
-            margin-right: 10px;
+            height: 60px;
             object-fit: contain;
         }
 
-        .logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .company-info {
-            margin-left: 90px;
-        }
-
-        .company-name {
-            font-size: 14px;
-            font-weight: bold;
-            color: #FF6600;
-            margin-bottom: 5px;
-        }
-
-        .company-address {
-            font-size: 10px;
-            line-height: 1.6;
+        .title-cell {
+            text-align: center;
+            vertical-align: middle;
         }
 
         .invoice-title {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
+        }
+
+        .company-address {
+            font-size: 10px;
+            line-height: 1.8;
         }
 
         .invoice-info {
@@ -88,7 +75,8 @@
         }
 
         .invoice-info table {
-            width: 100%;
+            margin-left: 0;
+            /* margin-right: 15px; */
         }
 
         .invoice-info td {
@@ -96,16 +84,15 @@
         }
 
         .invoice-info td:first-child {
-            width: 60px;
+            width: 65px;
         }
 
         .invoice-info td:nth-child(2) {
             width: 10px;
         }
 
-        /* Recipient Section */
         .recipient {
-            margin: 20px 0;
+            margin: 5px 0;
         }
 
         .recipient-label {
@@ -118,17 +105,15 @@
             margin-bottom: 10px;
         }
 
-        /* Description Section */
         .description {
-            margin: 15px 0;
+            margin: 5px 0;
             text-align: justify;
         }
 
-        /* Table Section */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 5px 0;
         }
 
         .items-table th {
@@ -163,25 +148,24 @@
             font-weight: bold;
         }
 
-        /* Footer Section */
         .terbilang {
             font-style: italic;
-            margin: 10px 0;
+            margin: 5px 0;
             font-size: 10px;
         }
 
         .payment-info {
-            margin: 20px 0;
+            margin: 5px 0;
             line-height: 1.8;
         }
 
         .closing {
-            margin: 20px 0;
+            margin: 5px 0;
             text-align: justify;
         }
 
         .signature {
-            margin-top: 30px;
+            margin-top: 5px;
             text-align: left;
         }
 
@@ -190,7 +174,6 @@
             font-weight: bold;
         }
 
-        /* Utilities */
         .bold {
             font-weight: bold;
         }
@@ -203,47 +186,69 @@
 
 <body>
     <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-left">
-                <div class="logo">
-                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
+            <!-- Header -->
+    <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
+        
+        <tr>
+            <td width="45%" valign="top" style="padding-bottom: 15px;">
+                <div class="logo-cell">
+                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
                 </div>
-                <div class="company-info">
-                    <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
-                    <div class="company-address">
-                        AGHITSNA ALUMUNIUM DAN BAJA RINGAN<br>
-                        JL. CEMARA RT 02 RW 07, KEL, GROGOL<br>
-                        KEC. LIMO KOTA DEPOK<br>
-                        Telp. 0882 1303 1263 / 0882 1303 1264<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Email: Design@aghitsna.id
-                    </div>
+            </td>
+            
+            <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
+                <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
+                    INVOICE ALUMINIUM
                 </div>
-            </div>
-            <div class="header-right">
-                <div class="invoice-title">INVOICE</div>
-                <div class="invoice-info">
-                    <table>
+            </td>
+            
+            <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
+        </tr>
+
+        <tr>
+            <td valign="top">
+                <div class="company-address" style="font-size: 12px; line-height: 1.4;">
+                    <strong>AGHITSNA ALUMUNIUM DAN BAJA RINGAN</strong><br>
+                    JL. CEMARA RT 02 RW 07, KEL. GROGOL<br>
+                    KEC. LIMO KOTA DEPOK<br>
+                    Telp. 0882 1303 1263 / 0882 1303 1264<br>
+                    Email : Design@aghitsna.id
+                </div>
+            </td>
+
+            <!-- Tengah: Dikosongkan -->
+            <td valign="top"></td>
+
+            <td valign="top">
+                <div class="invoice-info" style="font-size: 12px;">
+                    <table cellpadding="0" cellspacing="0" border="0" align="right">
                         <tr>
-                            <td>No</td>
-                            <td>:</td>
-                            <td>{{ $invoice->invoice_number }}</td>
+                            <td style="padding-right: 5px;" valign="top">No</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                            <td valign="top">{{ $invoice->invoice_number }}</td>
                         </tr>
                         <tr>
-                            <td>Tanggal</td>
-                            <td>:</td>
-                            <td>{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
+                            <td style="padding-right: 5px;" valign="top">Tanggal</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                            <td valign="top">{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
                         </tr>
                         <tr>
-                            <td>Hal</td>
-                            <td>:</td>
-                            <td>{{ $invoice->regarding }}</td>
+                            <td style="padding-right: 5px;" valign="top">Kepada</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                            <td valign="top"><strong>{{ $invoice->recipient }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding-right: 5px;" valign="top">Hal</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                            <td valign="top">{{ $invoice->regarding }}</td>
                         </tr>
                     </table>
                 </div>
-            </div>
-        </div>
+            </td>
+        </tr>
 
+    </table>
+</div>
         <!-- Recipient -->
         <div class="recipient">
             <div class="recipient-label">Kepada Yth :</div>
@@ -347,7 +352,6 @@
                         ->orderBy('id')
                         ->get();
                 } else {
-                    // Fallback ke semua rekening aktif jika tidak ada yang dipilih
                     $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
                 }
             @endphp
