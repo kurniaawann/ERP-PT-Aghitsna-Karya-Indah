@@ -78,8 +78,11 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
         $globalNo = 1; // Nomor urut global
         $currentRow = 5; // Start from row 5 (after header)
 
-        // Group by category
-        $categoryGroups = $this->expenseRecaps->groupBy('transaction_category_id');
+        // Group by category, sorted by sort_order
+        $categoryGroups = $this->expenseRecaps->groupBy('transaction_category_id')
+            ->sortBy(function ($expenses) {
+                return $expenses->first()->category->sort_order ?? 999;
+            });
 
         foreach ($categoryGroups as $categoryId => $expenses) {
             $category = $expenses->first()->category;
@@ -331,8 +334,14 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                         !str_contains($cellD, 'Rekapitulasi')
                     ) {
 
-                        // Merge A to D for category header (hanya sampai kolom KETERANGAN)
+                        // Simpan value sebelum merge (merge menghapus value non-first cell)
+                        $categoryName = $sheet->getCell('D' . $row)->getValue();
+
+                        // Merge A to D for category header
                         $sheet->mergeCells('A' . $row . ':D' . $row);
+
+                        // Set value kembali setelah merge
+                        $sheet->setCellValue('A' . $row, $categoryName);
 
                         // Background hijau hanya untuk kolom A sampai D (sampai KETERANGAN)
                         $sheet->getStyle('A' . $row . ':D' . $row)->applyFromArray([
@@ -379,8 +388,14 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
 
                     // Jumlah (Grand Total) row
                     if ($cellD === 'Jumlah') {
+                        // Simpan value sebelum merge
+                        $jumlahText = $sheet->getCell('D' . $row)->getValue();
+
                         // Merge A to D for "Jumlah" text
                         $sheet->mergeCells('A' . $row . ':D' . $row);
+
+                        // Set value kembali setelah merge
+                        $sheet->setCellValue('A' . $row, $jumlahText);
 
                         $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'fill' => [
