@@ -21,7 +21,7 @@ class AluminiumQuotation extends Model
         'date',
         'subject',
         'recipient',
-        'recipient_address',
+        'project_description',
         'total_amount',
         'amount_in_words',
         'selected_payment_accounts',

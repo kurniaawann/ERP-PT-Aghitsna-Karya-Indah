@@ -85,17 +85,12 @@
             font-size: 10px;
         }
 
-        .recipient-inline {
-            margin-bottom: 3px;
-        }
-
-        .recipient-inline strong {
-            display: inline;
+        .recipient-label {
+            margin-bottom: 5px;
         }
 
         .recipient-name {
-            display: inline;
-            margin-left: 5px;
+            margin-left: 80px;
         }
 
         /* ── Opening text ───────────────────────────────────── */
@@ -273,17 +268,16 @@
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <div class="recipient-inline">
+        <div class="recipient-label">
             <strong>Kepada Yth :</strong>
-            <span class="recipient-name">{{ $q->recipient }}</span>
         </div>
-        <div>
-            <strong>{{ $q->recipient_address }}</strong>
+        <div class="recipient-name">
+            {{ $q->recipient }}
         </div>
     </div>
 
     <div class="opening">
-        Dengan ini kami sampaikan Penawaran Harga, sebagai berikut :
+        Dengan ini kami sampaikan {{ $q->project_description }}
     </div>
 
     {{-- ═══ ITEMS TABLE ═════════════════════════════════════════════════════════════ --}}

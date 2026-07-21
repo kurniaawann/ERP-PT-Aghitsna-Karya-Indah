@@ -89,7 +89,7 @@ class ProjectQuotationController extends Controller
             'date' => $quotation->date,
             'subject' => $quotation->subject,
             'recipient' => $quotation->recipient,
-            'recipient_address' => $quotation->recipient_address,
+                'project_description' => $quotation->project_description,
             'total_amount' => $quotation->total_amount,
             'amount_in_words' => $quotation->amount_in_words,
             'selected_payment_accounts' => is_string($quotation->selected_payment_accounts)

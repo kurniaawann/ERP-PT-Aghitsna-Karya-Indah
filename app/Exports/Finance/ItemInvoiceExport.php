@@ -115,12 +115,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Ditempat');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
-
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", $invoice->project_description);
+                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan ' . ($invoice->project_description ?? ''));
 
                 $currentRow += 2;
                 $sheet->setCellValue("A{$currentRow}", 'No');

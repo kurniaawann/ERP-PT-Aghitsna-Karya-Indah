@@ -20,10 +20,10 @@
         </div>
     </div>
 
-    @if ($quotation->recipient_address)
+    @if ($quotation->project_description)
         <div class="mb-4">
-            <label class="block text-sm font-semibold text-text-primary mb-1">Alamat</label>
-            <p class="text-gray-900">{{ $quotation->recipient_address }}</p>
+            <label class="block text-sm font-semibold text-text-primary mb-1">Deskripsi Proyek</label>
+            <p class="text-gray-900">{{ $quotation->project_description }}</p>
         </div>
     @endif
 

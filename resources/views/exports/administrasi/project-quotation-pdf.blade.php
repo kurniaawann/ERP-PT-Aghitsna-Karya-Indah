@@ -284,12 +284,8 @@
         </div>
     </div>
 
-    <div class="ditempat">
-        <strong>Ditempat</strong>
-    </div>
-
     <div class="opening">
-        Dengan ini kami sampaikan Penawaran Harga, sebagai berikut :
+        Dengan ini kami sampaikan {{ $q->project_description }}
     </div>
 
     {{-- ═══ ITEMS TABLE (FLAT - NO GROUPING) ═══════════════════════════════════════ --}}

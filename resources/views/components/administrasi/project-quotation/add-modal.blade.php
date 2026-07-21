@@ -56,12 +56,13 @@
                 oninvalid="this.setCustomValidity('Nama penerima harus diisi')" oninput="this.setCustomValidity('')">
         </div>
 
-        {{-- Alamat --}}
+        {{-- Deskripsi Proyek --}}
         <div>
-            <label class="block text-text-primary mb-1 text-sm font-medium">Alamat</label>
-            <input type="text" name="recipient_address"
+            <label class="block text-text-primary mb-1 text-sm font-medium">Deskripsi Proyek</label>
+            <input type="text" name="project_description"
                 class="w-full border border-border-strong rounded p-2 text-sm bg-surface-base text-text-input"
-                value="Ditempat" maxlength="255" oninvalid="this.setCustomValidity('Alamat maksimal 255 karakter')"
+                placeholder="Deskripsi proyek" maxlength="255"
+                oninvalid="this.setCustomValidity('Deskripsi proyek maksimal 255 karakter')"
                 oninput="this.setCustomValidity('')">
         </div>
 

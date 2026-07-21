@@ -124,16 +124,10 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", '            ' . $quotation->recipient);
 
-                // Ditempat (Row 11)
+                // Opening text (Row 11)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Ditempat');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
-
-                // Opening text (Row 13)
-                $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan Penawaran Harga, sebagai berikut :');
+                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan ' . ($quotation->project_description ?? ''));
 
                 // Table Header (Row 15)
                 $currentRow += 2;

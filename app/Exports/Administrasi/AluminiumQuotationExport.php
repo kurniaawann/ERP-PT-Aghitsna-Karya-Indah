@@ -124,15 +124,10 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", '            ' . $quotation->recipient);
 
-                // Recipient Address (Row 10)
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", '            ' . $quotation->recipient_address);
-
-                // Opening text (Row 12)
+                // Opening text (Row 11)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan Penawaran Harga, sebagai berikut :');
+                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan ' . ($quotation->project_description ?? ''));
 
                 // Table Header (Row 14)
                 $currentRow += 2;

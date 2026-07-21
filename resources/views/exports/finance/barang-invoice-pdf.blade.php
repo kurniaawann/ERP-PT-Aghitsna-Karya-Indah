@@ -231,8 +231,7 @@
         </div>
 
         <div class="description">
-            <strong>Ditempat</strong><br>
-            {{ $invoice->project_description }}
+            Dengan ini kami sampaikan {{ $invoice->project_description }}
         </div>
 
         <table class="items-table">

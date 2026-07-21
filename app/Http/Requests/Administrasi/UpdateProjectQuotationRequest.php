@@ -36,7 +36,7 @@ class UpdateProjectQuotationRequest extends FormRequest
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',
-            'recipient_address' => 'nullable|string|max:255',
+            'project_description' => 'nullable|string|max:255',
             'signed_by' => 'nullable|string|max:255',
             'division' => 'nullable|string|max:255',
         ];
@@ -62,7 +62,7 @@ class UpdateProjectQuotationRequest extends FormRequest
             'selected_payment_accounts.*.integer' => 'ID rekening pembayaran tidak valid.',
             'selected_payment_accounts.*.exists' => 'Rekening pembayaran yang dipilih tidak ditemukan.',
             'subject.max' => 'Perihal maksimal 255 karakter.',
-            'recipient_address.max' => 'Alamat maksimal 255 karakter.',
+            'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
             'signed_by.max' => 'Nama penandatangan maksimal 255 karakter.',
             'division.max' => 'Nama divisi maksimal 255 karakter.',
         ];
