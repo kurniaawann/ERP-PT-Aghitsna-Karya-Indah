@@ -3,12 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Penawaran {{ $quotation->quotation_number }}</title>
+    <title>Penawaran Proyek</title>
     <style>
-        @page {
+        /* @page {
             size: A4;
-            margin: 0;
-        }
+            margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+        } */
 
         * {
             margin: 0;
@@ -21,78 +21,62 @@
             font-size: 11px;
             line-height: 1.5;
             color: #000;
-            padding: 1cm 1cm 0.5cm 1cm;
+            padding: 15mm 15mm 15mm 15mm;
         }
 
-        /* ── Header (3 Column Layout) ───────────────────────── */
-        .header {
-            display: table;
+        /* ── Header (Table Layout) ──────────────────────────── */
+        .header-table {
             width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .header-row {
-            display: table-row;
-        }
-
-        .header-logo {
-            display: table-cell;
-            width: 25%;
-            vertical-align: top;
-        }
-
-        .header-logo img {
-            width: 90px;
-            height: auto;
-            display: block;
-        }
-
-        .header-title {
-            display: table-cell;
-            width: 40%;
-            vertical-align: top;
-            text-align: center;
-            padding-top: 10px;
-        }
-
-        .title-penawaran {
-            font-size: 28px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .header-docinfo {
-            display: table-cell;
-            width: 35%;
-            vertical-align: top;
-            text-align: right;
-        }
-
-        .company-info {
-            margin-top: 8px;
-            font-size: 9px;
-            line-height: 1.6;
-        }
-
-        .company-name {
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-
-        .doc-info-table {
-            width: auto;
-            margin-left: auto;
             border-collapse: collapse;
         }
 
-        .doc-info-table td {
-            padding: 2px 5px;
-            font-size: 10px;
+        .header-table td {
+            border: none;
+            padding: 0;
         }
 
-        .doc-info-table td:first-child {
-            white-space: nowrap;
+        .logo-cell {
+            width: 100px;
+            vertical-align: top;
+            padding-right: 10px;
+        }
+
+        .logo-cell img {
+            display: block;
+            width: 80px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .company-address {
+            font-size: 10px;
+            line-height: 1.8;
+        }
+
+        .invoice-info {
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .invoice-info table {
+            margin-left: 0;
+        }
+
+        .invoice-info td {
+            padding: 2px 0;
+        }
+
+        .invoice-info td:first-child {
+            width: 65px;
+        }
+
+        .invoice-info td:nth-child(2) {
+            width: 10px;
         }
 
         /* ── Recipient ──────────────────────────────────────── */
@@ -206,50 +190,89 @@
         .signature-division {
             font-size: 10px;
         }
+
+        .page-break {
+            page-break-after: always;
+        }
     </style>
 </head>
 
 <body>
 
-    {{-- ═══ HEADER (3 COLUMN LAYOUT) ═════════════════════════════════════════════ --}}
-    <div class="header">
-        <div class="header-row">
-            <div class="header-logo">
-                <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
-            </div>
-            <div class="header-title">
-                <div class="title-penawaran">PENAWARAN</div>
-            </div>
-            <div class="header-docinfo">
-                <table class="doc-info-table">
-                    <tr>
-                        <td>No</td>
-                        <td>:</td>
-                        <td><strong>{{ $quotation->quotation_number }}</strong></td>
-                    </tr>
-                    <tr>
-                        <td>Tanggal</td>
-                        <td>:</td>
-                        <td>{{ \Carbon\Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Hal</td>
-                        <td>:</td>
-                        <td>{{ $quotation->subject }}</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
+    @php
+        if (isset($quotations)) {
+            $quotationList = $quotations;
+        } else {
+            $quotationList = collect([$quotation]);
+        }
+    @endphp
 
-    {{-- ═══ COMPANY INFO ═══════════════════════════════════════════════════════════ --}}
-    <div class="company-info">
-        <div class="company-name">PT.AGHITSNA KARYA INDAH</div>
-        <div>JL. TANAH BARU RAYA PERTIWI RT.01/05</div>
-        <div>BEJI, DEPOK, JAWA BARAT</div>
-        <div>Telp. 021-29034923 - 0812.9596.552</div>
-        <div>Email : Design@aghitsna.id</div>
-    </div>
+    @foreach ($quotationList as $index => $q)
+        @if ($index > 0)
+            <div class="page-break"></div>
+        @endif
+        @php
+            $items = $q->items()->orderBy('order_number')->get();
+            $selectedAccountIds = is_string($q->selected_payment_accounts)
+                ? json_decode($q->selected_payment_accounts, true)
+                : ($q->selected_payment_accounts ?? []);
+            if (!empty($selectedAccountIds)) {
+                $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    ->orderBy('id')
+                    ->get();
+            } else {
+                $paymentAccounts = \App\Models\Finance\PaymentAccount::where('is_active', true)->get();
+            }
+        @endphp
+
+    {{-- ═══ HEADER (TABLE LAYOUT) ══════════════════════════════════════════════════ --}}
+    <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+            <td width="45%" valign="top" style="padding-bottom: 15px;">
+                <div class="logo-cell">
+                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
+                </div>
+            </td>
+            <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
+                <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
+                    PENAWARAN PROYEK
+                </div>
+            </td>
+            <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
+        </tr>
+        <tr>
+            <td valign="top">
+                <div class="company-address" style="font-size: 12px; line-height: 1.4;">
+                    JL. TANAH BARU RAYA PERTIWI RT.01/05<br>
+                    BEJI, DEPOK, JAWA BARAT<br>
+                    Telp. 021-29034923 - 0812.9596.552<br>
+                    Email : Design@aghitsna.id
+                </div>
+            </td>
+            <td valign="top"></td>
+            <td valign="top">
+                <div class="invoice-info" style="font-size: 12px;">
+                    <table cellpadding="0" cellspacing="0" border="0" align="right">
+                        <tr>
+                            <td style="padding-right: 5px;" valign="top">No</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                                <td valign="top">{{ $q->quotation_number }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-right: 5px;" valign="top">Tanggal</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                                <td valign="top">{{ \Carbon\Carbon::parse($q->date)->isoFormat('DD MMMM YYYY') }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-right: 5px;" valign="top">Hal</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                                <td valign="top">{{ $q->subject }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
@@ -257,7 +280,7 @@
             <strong>Kepada Yth :</strong>
         </div>
         <div class="recipient-name">
-            {{ $quotation->recipient }}
+            {{ $q->recipient }}
         </div>
     </div>
 
@@ -297,7 +320,7 @@
             <tr class="row-grand-total">
                 <td colspan="3" class="empty-cell"></td>
                 <td colspan="2" class="c yellow-cell">Jumlah</td>
-                <td class="r yellow-cell">Rp &nbsp;{{ number_format($quotation->total_amount, 0, ',', '.') }}</td>
+                <td class="r yellow-cell">Rp &nbsp;{{ number_format($q->total_amount, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
@@ -305,7 +328,7 @@
     {{-- ═══ FOOTER ══════════════════════════════════════════════════════════════════ --}}
     <div class="terbilang">
         <em>Terbilang :
-            {{ $quotation->amount_in_words ?? ucwords(terbilang($quotation->total_amount)) . ' rupiah' }}</em>
+            {{ $q->amount_in_words ?? ucwords(terbilang($q->total_amount)) . ' rupiah' }}</em>
     </div>
 
     <div class="payment-info">
@@ -323,9 +346,10 @@
     </div>
 
     <div class="signature">
-        <div class="signature-line">{{ $quotation->signed_by ?? 'Akhmad Khaidir' }}</div>
-        <div class="signature-division">{{ $quotation->division ?? 'Divisi Alumunium' }}</div>
+        <div class="signature-line">{{ $q->signed_by ?? 'Akhmad Khaidir' }}</div>
+        <div class="signature-division">{{ $q->division ?? 'Divisi Alumunium' }}</div>
     </div>
+    @endforeach
 
 </body>
 

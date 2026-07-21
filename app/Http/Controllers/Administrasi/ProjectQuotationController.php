@@ -198,7 +198,7 @@ class ProjectQuotationController extends Controller
 
             $items = $quotation->items()->orderBy('order_number')->get();
 
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation', 'items', 'paymentAccounts'))
+            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
@@ -277,10 +277,8 @@ class ProjectQuotationController extends Controller
         // Single PDF view or bulk view
         if (count($quotationNumbers) === 1) {
             $quotation = $quotations->first();
-            $items = $quotation->items;
-            $paymentAccounts = $quotation->paymentAccounts;
 
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation', 'items', 'paymentAccounts'))
+            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
@@ -293,7 +291,7 @@ class ProjectQuotationController extends Controller
             ]);
         } else {
             // Multiple quotations - create separate pages
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf-bulk', compact('quotations'))
+            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotations'))
                 ->setPaper('a4', 'portrait');
 
             return response()->streamDownload(function () use ($pdf) {

@@ -62,54 +62,56 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $drawing->setName('Logo');
                 $drawing->setDescription('Company Logo');
                 $drawing->setPath(public_path('images/logo.jpeg'));
-                $drawing->setHeight(60);
+                $drawing->setHeight(55);
                 $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(10);
-                $drawing->setOffsetY(5);
+                $drawing->setOffsetX(5);
+                $drawing->setOffsetY(3);
                 $drawing->setWorksheet($sheet);
 
-                // Merge cells for header
-                $sheet->mergeCells('A1:D1');
-                $sheet->mergeCells('E1:F1');
+                // Title (centered)
+                $sheet->mergeCells('B1:F1');
+                $sheet->setCellValue('B1', 'PENAWARAN ALUMUNIUM');
+                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
+                $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Company Name & Info (Row 2-5)
+                // Company Name & Info (Row 2-6)
                 $sheet->mergeCells('A2:D2');
-                $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF6600'));
+                $sheet->setCellValue('A2', 'AGHITSNA ALUMUNIUM DAN BAJA RINGAN');
+                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A3:D3');
                 $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT.01/05');
+                $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A4:D4');
                 $sheet->setCellValue('A4', 'BEJI, DEPOK, JAWA BARAT');
+                $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A5:D5');
-                $sheet->setCellValue('A5', 'Telp. 021-29034923 - 0812,9596,552');
+                $sheet->setCellValue('A5', 'Telp. 021-29034923 - 0812.9596.552');
+                $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A6:D6');
-                $sheet->setCellValue('A6', 'Email: Design@aghitsna.id');
+                $sheet->setCellValue('A6', 'Email : Design@aghitsna.id');
+                $sheet->getStyle('A6')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                // Penawaran Title (Right side)
-                $sheet->mergeCells('E1:F1');
-                $sheet->setCellValue('E1', 'PENAWARAN');
-                $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(24)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
-                $sheet->getStyle('E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle('E1')->getFill()->setFillType(Fill::FILL_NONE);
-
-                // Quotation Information
+                // Quotation Information (right side)
                 $quotationDate = \Carbon\Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY');
 
                 $sheet->setCellValue('E2', 'No');
                 $sheet->setCellValue('F2', ': ' . $quotation->quotation_number);
+                $sheet->getStyle('E2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->setCellValue('E3', 'Tanggal');
                 $sheet->setCellValue('F3', ': ' . $quotationDate);
+                $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->setCellValue('E4', 'Hal');
                 $sheet->setCellValue('F4', ': ' . $quotation->subject);
-
-                // Border for header
-                $sheet->getStyle('A1:F6')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THICK);
+                $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 // Recipient (Row 8)
                 $currentRow = 8;
@@ -191,27 +193,6 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                         $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                     }
 
-                    // Group subtotal row
-                    $currentRow++;
-                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", 'Jumlah');
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($group->subtotal, 0, ',', '.'));
-
-                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
-                        'font' => ['bold' => true],
-                        'fill' => [
-                            'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'FFFF99']
-                        ],
-                        'borders' => [
-                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
-                        ],
-                        'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_CENTER
-                        ]
-                    ]);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
                     $grandTotal += $group->subtotal;
                 }
 
@@ -224,13 +205,28 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     ]
                 ]);
 
-                // Grand Total row
+                // Grand Total row - match PDF layout: empty 4 cols + "Total" in E + amount in F
                 $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Total');
+
+                // Empty cells for No, Keterangan, Volume, Satuan (no background, no border)
+                $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", '');
+
+                // "Total" label in Harga column
+                $sheet->setCellValue("E{$currentRow}", 'Total');
+
+                // Amount
                 $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($grandTotal, 0, ',', '.'));
 
-                $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                // Style empty cells (no border)
+                $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                    'borders' => [
+                        'outline' => ['borderStyle' => Border::BORDER_NONE]
+                    ]
+                ]);
+
+                // Style yellow cells (E-F)
+                $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true, 'size' => 12],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
@@ -238,11 +234,10 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     ],
                     'borders' => [
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
-                    ],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER
                     ]
                 ]);
+
+                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 // Terbilang

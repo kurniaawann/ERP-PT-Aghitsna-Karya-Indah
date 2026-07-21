@@ -171,7 +171,7 @@ class AluminiumQuotationController extends Controller
 
         $quotations = $this->quotationService->getByIds($ids);
 
-        $pdf = Pdf::loadView('exports.administrasi.aluminium-quotation-pdf-bulk', compact('quotations'))
+        $pdf = Pdf::loadView('exports.administrasi.aluminium-quotation-pdf', compact('quotations'))
             ->setPaper('a4', 'portrait');
 
         if (count($ids) === 1) {
