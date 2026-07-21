@@ -7,7 +7,7 @@
     <title>Rekap Invoice Item</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 10px;
             padding: 18px;
         }

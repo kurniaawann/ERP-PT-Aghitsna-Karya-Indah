@@ -186,11 +186,23 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 ]);
 
                 $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Jumlah');
+                $sheet->setCellValue("A{$currentRow}", '');
+                $sheet->setCellValue("B{$currentRow}", '');
+                $sheet->setCellValue("C{$currentRow}", '');
+                $sheet->setCellValue("D{$currentRow}", '');
+                $sheet->setCellValue("E{$currentRow}", 'Jumlah');
                 $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($totalAmount, 0, ',', '.'));
 
-                $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFFFFF']
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_NONE]
+                    ]
+                ]);
+                $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
@@ -200,24 +212,35 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ],
                     'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER
+                        'horizontal' => Alignment::HORIZONTAL_RIGHT
                     ]
                 ]);
-                $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
                     $discountAmount = $invoice->getDiscountAmount($totalAmount);
 
                     $currentRow++;
-                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                     $discountLabel = 'Discount';
                     if ($invoice->discount_type === 'percentage') {
                         $discountLabel .= ' (' . number_format((float) $invoice->discount_value, 0) . '%)';
                     }
-                    $sheet->setCellValue("A{$currentRow}", $discountLabel);
+                    $sheet->setCellValue("A{$currentRow}", '');
+                    $sheet->setCellValue("B{$currentRow}", '');
+                    $sheet->setCellValue("C{$currentRow}", '');
+                    $sheet->setCellValue("D{$currentRow}", '');
+                    $sheet->setCellValue("E{$currentRow}", $discountLabel);
                     $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($discountAmount, 0, ',', '.'));
 
-                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                    $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FFFFFF']
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_NONE]
+                        ]
+                    ]);
+                    $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
@@ -227,25 +250,36 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],
                         'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_CENTER
+                            'horizontal' => Alignment::HORIZONTAL_RIGHT
                         ]
                     ]);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
                     $dpAmount = $invoice->getDpAmount($totalAmount);
 
                     $currentRow++;
-                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                     $dpLabel = 'DP';
                     if ($invoice->dp_type === 'percentage') {
                         $dpLabel .= ' (' . number_format((float) $invoice->dp_value, 0) . '%)';
                     }
-                    $sheet->setCellValue("A{$currentRow}", $dpLabel);
+                    $sheet->setCellValue("A{$currentRow}", '');
+                    $sheet->setCellValue("B{$currentRow}", '');
+                    $sheet->setCellValue("C{$currentRow}", '');
+                    $sheet->setCellValue("D{$currentRow}", '');
+                    $sheet->setCellValue("E{$currentRow}", $dpLabel);
                     $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($dpAmount, 0, ',', '.'));
 
-                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                    $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FFFFFF']
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_NONE]
+                        ]
+                    ]);
+                    $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
@@ -255,10 +289,53 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],
                         'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_CENTER
+                            'horizontal' => Alignment::HORIZONTAL_RIGHT
                         ]
                     ]);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                }
+
+                $discountAmountVal = 0;
+                $dpAmountVal = 0;
+                if ($invoice->discount_value && $invoice->discount_value > 0) {
+                    $discountAmountVal = $invoice->getDiscountAmount($totalAmount);
+                }
+                if ($invoice->dp_value && $invoice->dp_value > 0) {
+                    $dpAmountVal = $invoice->getDpAmount($totalAmount);
+                }
+                $hasDiscountOrDp = $discountAmountVal > 0 || $dpAmountVal > 0;
+                $remainingAmount = $totalAmount - $discountAmountVal - $dpAmountVal;
+
+                if ($hasDiscountOrDp) {
+                    $currentRow++;
+                    $sheet->setCellValue("A{$currentRow}", '');
+                    $sheet->setCellValue("B{$currentRow}", '');
+                    $sheet->setCellValue("C{$currentRow}", '');
+                    $sheet->setCellValue("D{$currentRow}", '');
+                    $sheet->setCellValue("E{$currentRow}", 'Tersisa');
+                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($remainingAmount, 0, ',', '.'));
+
+                    $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FFFFFF']
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_NONE]
+                        ]
+                    ]);
+                    $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'E6FFE6']
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_RIGHT
+                        ]
+                    ]);
                 }
 
                 if ($invoice->payment_installments) {
@@ -269,11 +346,23 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     if (!empty($paymentInstallments) && is_array($paymentInstallments)) {
                         foreach ($paymentInstallments as $installment) {
                             $currentRow++;
-                            $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                            $sheet->setCellValue("A{$currentRow}", $installment['label'] ?? 'Pembayaran');
+                            $sheet->setCellValue("A{$currentRow}", '');
+                            $sheet->setCellValue("B{$currentRow}", '');
+                            $sheet->setCellValue("C{$currentRow}", '');
+                            $sheet->setCellValue("D{$currentRow}", '');
+                            $sheet->setCellValue("E{$currentRow}", $installment['label'] ?? 'Pembayaran');
                             $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($installment['amount'] ?? 0, 0, ',', '.'));
 
-                            $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
+                            $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                                'fill' => [
+                                    'fillType' => Fill::FILL_SOLID,
+                                    'startColor' => ['rgb' => 'FFFFFF']
+                                ],
+                                'borders' => [
+                                    'allBorders' => ['borderStyle' => Border::BORDER_NONE]
+                                ]
+                            ]);
+                            $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                                 'font' => ['bold' => true],
                                 'fill' => [
                                     'fillType' => Fill::FILL_SOLID,
@@ -283,10 +372,9 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                                     'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                                 ],
                                 'alignment' => [
-                                    'horizontal' => Alignment::HORIZONTAL_CENTER
+                                    'horizontal' => Alignment::HORIZONTAL_RIGHT
                                 ]
                             ]);
-                            $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                         }
                     }
                 }

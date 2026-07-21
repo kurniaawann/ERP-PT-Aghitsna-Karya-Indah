@@ -71,7 +71,7 @@ class RecapProyekController extends Controller
         $totals = $this->service->buildTotals($invoices);
         $periodTitle = $this->service->buildPeriodTitle($request);
 
-        $pdf = Pdf::loadView('exports.finance.project-recaps-pdf', [
+        $pdf = Pdf::loadView('exports.finance.project-invoice-recap-pdf', [
             'invoices' => $invoices,
             'totals' => $totals,
             'periodTitle' => $periodTitle,

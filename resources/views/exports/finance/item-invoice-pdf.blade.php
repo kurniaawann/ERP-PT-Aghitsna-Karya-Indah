@@ -293,9 +293,10 @@
                     </tr>
                 @endforeach
 
-                <tr class="total-row">
-                    <td colspan="4" class="right">Jumlah</td>
-                    <td class="right">Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
+                <tr>
+                    <td colspan="3" style="border: none; background-color: #fff;"></td>
+                    <td class="right" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Jumlah</strong></td>
+                    <td class="right" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Rp {{ number_format($totalAmount, 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>

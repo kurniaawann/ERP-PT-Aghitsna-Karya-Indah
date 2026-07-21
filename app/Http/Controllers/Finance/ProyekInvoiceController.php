@@ -148,7 +148,7 @@ class ProyekInvoiceController extends Controller
         $invoice = InvoiceProyek::where('invoice_number', $invoiceNumber)->firstOrFail();
         $invoice->items = $this->service->normalizeInvoiceItems($invoice->items);
 
-        $pdf = Pdf::loadView('exports.finance.project-invoices.pdf', compact('invoice'));
+        $pdf = Pdf::loadView('exports.finance.project-invoice-pdf', compact('invoice'));
         $pdf->setPaper('a4', 'portrait');
 
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);

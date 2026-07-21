@@ -176,24 +176,34 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 ]);
 
                 $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Jumlah');
+                $sheet->setCellValue("A{$currentRow}", '');
+                $sheet->setCellValue("B{$currentRow}", '');
+                $sheet->setCellValue("C{$currentRow}", '');
+                $sheet->setCellValue("D{$currentRow}", 'Jumlah');
                 $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($totalAmount, 0, ',', '.'));
 
-                $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
+                $sheet->getStyle("A{$currentRow}:C{$currentRow}")->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFFFFF']
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_NONE]
+                    ]
+                ]);
+                $sheet->getStyle("D{$currentRow}:E{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FFFF00'],
+                        'startColor' => ['rgb' => 'FFFF00']
                     ],
                     'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ],
                     'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    ],
+                        'horizontal' => Alignment::HORIZONTAL_RIGHT
+                    ]
                 ]);
-                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");

@@ -296,7 +296,7 @@ class ProductInvoiceController extends Controller
     {
         $invoices = $this->service->baseQuery($request)->get();
 
-        $pdf = Pdf::loadView('exports.finance.item-invoice-index-pdf', [
+        $pdf = Pdf::loadView('exports.finance.item-invoice-recap-pdf', [
             'invoices' => $invoices,
         ])->setPaper('a4', 'landscape');
 

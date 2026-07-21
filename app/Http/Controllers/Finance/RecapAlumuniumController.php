@@ -71,7 +71,7 @@ class RecapAlumuniumController extends Controller
         $totals = $this->service->buildTotals($invoices);
         $periodTitle = $this->service->buildPeriodTitle($request);
 
-        $pdf = Pdf::loadView('exports.finance.aluminium-recaps-pdf', [
+        $pdf = Pdf::loadView('exports.finance.aluminium-invoice-recap-pdf', [
             'invoices' => $invoices,
             'totals' => $totals,
             'periodTitle' => $periodTitle,

@@ -294,13 +294,29 @@
                     </tr>
                 @endforeach
 
-                <!-- Total Row -->
-                <tr class="total-row">
-                    <td colspan="5" class="center"><strong>Jumlah</strong></td>
-                    <td class="right"><strong>Rp {{ number_format($totalAmount, 0, ',', '.') }}</strong></td>
+                @php
+                    $discountAmount = 0;
+                    $dpAmount = 0;
+                    if ($invoice->discount_value && $invoice->discount_value > 0) {
+                        $discountAmount = $invoice->getDiscountAmount($totalAmount);
+                    }
+                    if ($invoice->dp_value && $invoice->dp_value > 0) {
+                        $dpAmount = $invoice->getDpAmount($totalAmount);
+                    }
+                    $hasDiscountOrDp = $discountAmount > 0 || $dpAmount > 0;
+                    $remainingAmount = $totalAmount - $discountAmount - $dpAmount;
+                @endphp
+
+                <tr>
+                    <!-- Kolom 1-4 dikosongkan tanpa warna latar belakang -->
+                    <td colspan="4" style="border: none; background-color: #fff;"></td>
+                    <!-- Teks masuk ke kolom Harga (Kolom 5) -->
+                    <td class="right" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Jumlah</strong></td>
+                    <!-- Nominal di kolom Jumlah (Kolom 6) -->
+                    <td class="right" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Rp {{ number_format($totalAmount, 0, ',', '.') }}</strong></td>
                 </tr>
 
-                @if ($invoice->discount_value && $invoice->discount_value > 0)
+                {{-- @if ($invoice->discount_value && $invoice->discount_value > 0)
                     @php
                         $discountAmount = $invoice->getDiscountAmount($totalAmount);
                     @endphp
@@ -314,21 +330,50 @@
                             </strong></td>
                         <td class="right"><strong>Rp {{ number_format($discountAmount, 0, ',', '.') }}</strong></td>
                     </tr>
+                @endif --}}
+                @if ($invoice->discount_value && $invoice->discount_value > 0)
+                    @php
+                        $discountAmount = $invoice->getDiscountAmount($totalAmount);
+                    @endphp
+
+                    <!-- Discount Row -->
+                    <tr>
+                        <!-- Kolom 1-4 dikosongkan -->
+                        <td colspan="4" style="border: none; background-color: #fff;"></td>
+                        <!-- Teks masuk ke kolom Harga (Kolom 5) -->
+                        <td class="right" style="background-color: #FFE6E6; border: 1px solid #000;"><strong>Discount
+                                @if ($invoice->discount_type === 'percentage')
+                                    ({{ number_format($invoice->discount_value, 0) }}%)
+                                @endif
+                            </strong></td>
+                        <td class="right" style="background-color: #FFE6E6; border: 1px solid #000;"><strong>Rp {{ number_format($discountAmount, 0, ',', '.') }}</strong></td>
+                    </tr>
                 @endif
 
-                @if ($invoice->dp_value && $invoice->dp_value > 0)
+               @if ($invoice->dp_value && $invoice->dp_value > 0)
                     @php
                         $dpAmount = $invoice->getDpAmount($totalAmount);
                     @endphp
 
                     <!-- DP Row -->
-                    <tr style="background-color: #ADD8E6;">
-                        <td colspan="5" class="center"><strong>DP
+                    <tr>
+                        <!-- Kolom 1-4 dikosongkan -->
+                        <td colspan="4" style="border: none; background-color: #fff;"></td>
+                        <!-- Teks masuk ke kolom Harga (Kolom 5) -->
+                        <td class="right" style="background-color: #ADD8E6; border: 1px solid #000;"><strong>DP
                                 @if ($invoice->dp_type === 'percentage')
                                     ({{ number_format($invoice->dp_value, 0) }}%)
                                 @endif
                             </strong></td>
-                        <td class="right"><strong>Rp {{ number_format($dpAmount, 0, ',', '.') }}</strong></td>
+                        <td class="right" style="background-color: #ADD8E6; border: 1px solid #000;"><strong>Rp {{ number_format($dpAmount, 0, ',', '.') }}</strong></td>
+                    </tr>
+                @endif
+
+                @if ($hasDiscountOrDp)
+                    <tr>
+                        <td colspan="4" style="border: none; background-color: #fff;"></td>
+                        <td class="right" style="background-color: #E6FFE6; border: 1px solid #000;"><strong>Tersisa</strong></td>
+                        <td class="right" style="background-color: #E6FFE6; border: 1px solid #000;"><strong>Rp {{ number_format($remainingAmount, 0, ',', '.') }}</strong></td>
                     </tr>
                 @endif
             </tbody>
