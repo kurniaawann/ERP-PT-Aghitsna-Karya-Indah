@@ -21,17 +21,6 @@
         </div>
     </div>
 
-    {{-- Peringatan Batas Maksimal Kasbon --}}
-    <div id="add_kasbon_limit_alert" class="mb-4 p-4 bg-warning-light border border-warning rounded-lg hidden">
-        <div class="flex gap-2">
-            <i class="fa-solid fa-exclamation-triangle text-warning mt-1"></i>
-            <div class="text-sm text-warning">
-                <p class="font-semibold mb-1">Batas Maksimal Kasbon:</p>
-                <p id="add_kasbon_limit_message"></p>
-            </div>
-        </div>
-    </div>
-
     {{-- Pilihan Jenis Kasbon --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jenis Kasbon <span class="text-error">*</span></label>
@@ -75,8 +64,7 @@
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="amount" id="add_amount"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-amount-input"
-            placeholder="Masukkan jumlah kasbon" required min="1000" step="1000"
-            oninput="validateKasbonAmount('add')">
+            placeholder="Masukkan jumlah kasbon" required min="1000" step="1000">
     </div>
 
     {{-- Tanggal Kasbon --}}

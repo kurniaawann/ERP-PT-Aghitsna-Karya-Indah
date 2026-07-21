@@ -86,8 +86,6 @@
 
     {{-- Kontainer halaman dengan atribut data untuk modul JavaScript --}}
     <div id="kasbon-page"
-        data-csrf-token="{{ csrf_token() }}"
-        data-url-check-max="{{ route('kasbon.check-max') }}"
         data-url-get-weeks="{{ route('payroll.get-weeks') }}"
         class="hidden">
     </div>

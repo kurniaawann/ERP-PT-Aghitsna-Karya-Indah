@@ -156,35 +156,6 @@ class KasbonService
             ];
         }
 
-        $daysWorked = $employee->getAttendanceUpToDate($periodStartDateCarbon, $kasbonDate);
-        $maxKasbon = $employee->getMaxKasbonUpToDate($periodStartDateCarbon, $kasbonDate);
-
-        if ($daysWorked == 0) {
-            $periodEndDate = Carbon::parse(request('period_end_date'));
-            return [
-                'valid' => false,
-                'message' => sprintf(
-                    'Tidak dapat melakukan kasbon! %s belum memiliki catatan kehadiran periode %s - %s. Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
-                    $employee->name,
-                    $periodStartDateCarbon->format('d M'),
-                    $periodEndDate->format('d M Y')
-                ),
-            ];
-        }
-
-        if ($amount > $maxKasbon) {
-            return [
-                'valid' => false,
-                'message' => sprintf(
-                    'Jumlah kasbon Rp %s melebihi batas maksimal! Berdasarkan kehadiran %d hari kerja (gaji harian Rp %s), maksimal kasbon adalah Rp %s',
-                    number_format($amount, 0, ',', '.'),
-                    $daysWorked,
-                    number_format($employee->daily_wage, 0, ',', '.'),
-                    number_format($maxKasbon, 0, ',', '.')
-                ),
-            ];
-        }
-
         return ['valid' => true, 'message' => ''];
     }
 
@@ -209,26 +180,6 @@ class KasbonService
 
         if (!$employee) {
             return ['valid' => false, 'message' => 'Karyawan tidak ditemukan'];
-        }
-
-        $periodStartDateCarbon = Carbon::parse($periodStartDate);
-        $daysWorked = $employee->getAttendanceUpToDate($periodStartDateCarbon, $kasbonDate);
-        $maxKasbon = $employee->getMaxKasbonUpToDate($periodStartDateCarbon, $kasbonDate);
-        $dailyWage = $employee->daily_wage ?? $employee->base_salary;
-
-        if (!$employee->canTakeKasbon($amount, $periodStartDateCarbon, $kasbonDate)) {
-            return [
-                'valid' => false,
-                'message' => sprintf(
-                    'Kasbon melebihi batas maksimal! %s hanya masuk %d hari pada periode ini sampai tanggal %s. Maksimal kasbon: Rp %s (Rp %s × %d hari)',
-                    $employee->name,
-                    $daysWorked,
-                    Carbon::parse($kasbonDate)->format('d/m/Y'),
-                    number_format($maxKasbon, 0, ',', '.'),
-                    number_format($dailyWage, 0, ',', '.'),
-                    $daysWorked
-                ),
-            ];
         }
 
         return ['valid' => true, 'message' => ''];
@@ -355,42 +306,20 @@ class KasbonService
             ];
         }
 
-        $daysWorked = $employee->getAttendanceUpToDate($periodStartDateCarbon, $kasbonDate);
-        $maxKasbon = $employee->getMaxKasbonUpToDate($periodStartDateCarbon, $kasbonDate);
         $dailyWage = $employee->daily_wage ?? $employee->base_salary;
-
-        if ($daysWorked == 0) {
-            return [
-                'success' => false,
-                'employee_name' => $employee->name,
-                'days_worked' => 0,
-                'daily_wage' => $dailyWage,
-                'max_kasbon' => 0,
-                'payroll_paid' => false,
-                'no_attendance' => true,
-                'max_kasbon_formatted' => 'Rp 0',
-                'message' => sprintf(
-                    '%s belum memiliki catatan kehadiran pada periode ini. Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
-                    $employee->name
-                ),
-            ];
-        }
 
         return [
             'success' => true,
             'employee_name' => $employee->name,
-            'days_worked' => $daysWorked,
+            'days_worked' => 0,
             'daily_wage' => $dailyWage,
-            'max_kasbon' => $maxKasbon,
+            'max_kasbon' => 0,
             'payroll_paid' => false,
             'no_attendance' => false,
-            'max_kasbon_formatted' => 'Rp ' . number_format($maxKasbon, 0, ',', '.'),
+            'max_kasbon_formatted' => 'Rp 0',
             'message' => sprintf(
-                '%s sudah masuk %d hari sampai %s. Maksimal kasbon: Rp %s',
-                $employee->name,
-                $daysWorked,
-                Carbon::parse($kasbonDate)->format('d/m/Y'),
-                number_format($maxKasbon, 0, ',', '.')
+                'Kasbon untuk %s tidak dibatasi oleh hari kerja.',
+                $employee->name
             ),
         ];
     }

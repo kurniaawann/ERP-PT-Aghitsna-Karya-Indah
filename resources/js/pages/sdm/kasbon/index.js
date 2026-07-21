@@ -21,15 +21,7 @@
  * Ini diatur oleh template Blade untuk menghindari hardcoding URL di JS.
  */
 const pageContainer = document.getElementById('kasbon-page');
-const CSRF_TOKEN = pageContainer ? pageContainer.dataset.csrfToken : '';
-const CHECK_MAX_URL = pageContainer ? pageUrl('kasbon.check-max') : '';
 const GET_WEEKS_URL = pageUrl('payroll.get-weeks');
-
-/**
- * Menyimpan data kasbon maksimal untuk setiap awalan formulir (add/edit_KSB001).
- * Digunakan oleh validateKasbonAmount untuk memeriksa terhadap batas.
- */
-let maxKasbonData = {};
 
 // ==========================================
 // HELPER MATA UANG
@@ -194,32 +186,10 @@ async function resolvePeriodStartDate(prefix) {
  * @param {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
  */
 window.checkMaxKasbon = async function (prefix) {
-    const employeeField = document.getElementById(prefix + '_employee_field');
-    const employeeHidden = employeeField ? employeeField.querySelector('.searchable-select-hidden') : null;
-    const employeeSelect = employeeHidden || document.getElementById(prefix + '_employee_id');
-    const kasbonDateInput = document.getElementById(prefix + '_kasbon_date');
-    const limitAlert = document.getElementById(prefix + '_kasbon_limit_alert');
-    const limitMessage = document.getElementById(prefix + '_kasbon_limit_message');
-    const amountInput = document.getElementById(prefix + '_amount');
     const weekNumberInput = document.getElementById(prefix + '_week_number');
 
-    if (!employeeSelect || !employeeSelect.value) {
-        if (limitAlert) limitAlert.classList.add('hidden');
-        maxKasbonData[prefix] = null;
-        return;
-    }
-
-    const kasbonDate = kasbonDateInput ? kasbonDateInput.value : '';
-
     const periodInfo = await resolvePeriodStartDate(prefix);
-    if (!periodInfo) {
-        if (limitAlert && limitMessage) {
-            limitMessage.textContent = 'Silakan lengkapi Bulan, Tahun, dan Tanggal Kasbon terlebih dahulu';
-            setAlertStyle(limitAlert, 'error');
-        }
-        maxKasbonData[prefix] = null;
-        return;
-    }
+    if (!periodInfo) return;
 
     if (weekNumberInput) {
         weekNumberInput.value = periodInfo.week_number;
@@ -232,101 +202,6 @@ window.checkMaxKasbon = async function (prefix) {
     }
     if (periodEndDateInput) {
         periodEndDateInput.value = periodInfo.end_date;
-    }
-
-    try {
-        const response = await fetch(CHECK_MAX_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-            },
-            body: JSON.stringify({
-                employee_id: employeeSelect.value,
-                period_start_date: periodInfo.start_date,
-                kasbon_date: kasbonDate,
-            }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            maxKasbonData[prefix] = data;
-
-            if (limitAlert && limitMessage) {
-                limitMessage.textContent = data.message;
-                setAlertStyle(limitAlert, 'warning');
-            }
-
-            if (amountInput && amountInput.value) {
-                validateKasbonAmount(prefix);
-            }
-        } else {
-            maxKasbonData[prefix] = null;
-
-            if (limitAlert && limitMessage) {
-                limitMessage.textContent = data.message || 'Gagal mengecek maksimal kasbon';
-                setAlertStyle(limitAlert, 'error');
-            }
-
-            disableSubmitButton(prefix, true);
-        }
-    } catch (error) {
-        console.error('Error checking max kasbon:', error);
-        if (limitAlert) limitAlert.classList.add('hidden');
-        maxKasbonData[prefix] = null;
-    }
-};
-
-// ==========================================
-// VALIDASI JUMLAH
-// ==========================================
-
-/**
- * Memvalidasi jumlah kasbon terhadap batas maksimal yang diizinkan.
- *
- * Jika jumlah melebihi maksimal, menonaktifkan tombol kirim dan menampilkan peringatan error.
- * Jika jumlah valid, mengaktifkan tombol kirim dan menampilkan peringatan info.
- *
- * Ditugaskan ke window karena dipanggil dari atribut oninput inline.
- *
- * @param {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
- */
-window.validateKasbonAmount = function (prefix) {
-    const amountInput = document.getElementById(prefix + '_amount');
-    const limitAlert = document.getElementById(prefix + '_kasbon_limit_alert');
-    const limitMessage = document.getElementById(prefix + '_kasbon_limit_message');
-
-    if (!amountInput || !maxKasbonData[prefix]) {
-        const amountValue = parseCurrencyInput(amountInput ? amountInput.value : '');
-        if (amountValue >= 1000) {
-            disableSubmitButton(prefix, false);
-        }
-        return;
-    }
-
-    const amount = parseCurrencyInput(amountInput.value);
-    const maxKasbon = maxKasbonData[prefix].max_kasbon;
-
-    if (amount > maxKasbon) {
-        disableSubmitButton(prefix, true);
-
-        if (limitAlert && limitMessage) {
-            limitMessage.textContent =
-                `Jumlah kasbon melebihi batas maksimal ${maxKasbonData[prefix].max_kasbon_formatted}`;
-            setAlertStyle(limitAlert, 'error');
-        }
-    } else if (amount >= 1000) {
-        disableSubmitButton(prefix, false);
-
-        if (limitAlert && limitMessage) {
-            limitMessage.textContent = maxKasbonData[prefix].message;
-            setAlertStyle(limitAlert, 'warning');
-        }
-    } else {
-        if (amount > 0) {
-            disableSubmitButton(prefix, true);
-        }
     }
 };
 
@@ -464,9 +339,6 @@ function initAmountFormatting() {
 
         input.addEventListener('input', function () {
             window.formatCurrencyInput(this);
-            const prefix = this.id === 'add_amount' ? 'add' :
-                `edit_${this.closest('[id^="editModal"]')?.id.replace('editModal', '') || ''}`;
-            validateKasbonAmount(prefix);
         });
     });
 }
@@ -474,68 +346,6 @@ function initAmountFormatting() {
 // ==========================================
 // HELPER UI
 // ==========================================
-
-/**
- * Mengatur gaya peringatan (warning/error) untuk elemen peringatan batas.
- *
- * @param {HTMLElement} alertEl  Element container peringatan
- * @param {string}      style    'warning' atau 'error'
- */
-function setAlertStyle(alertEl, style) {
-    alertEl.classList.remove('hidden');
-
-    const textDiv = alertEl.querySelector('.text-sm');
-    const icon = alertEl.querySelector('i');
-
-    if (style === 'error') {
-        alertEl.classList.remove('bg-warning-light', 'border-border-strong');
-        alertEl.classList.add('bg-error-light', 'border-error');
-        if (icon) {
-            icon.classList.remove('text-warning');
-            icon.classList.add('text-error');
-        }
-        if (textDiv) {
-            textDiv.classList.remove('text-warning');
-            textDiv.classList.add('text-error');
-        }
-    } else {
-        alertEl.classList.remove('bg-error-light', 'border-error');
-        alertEl.classList.add('bg-warning-light', 'border-border-strong');
-        if (icon) {
-            icon.classList.remove('text-error');
-            icon.classList.add('text-warning');
-        }
-        if (textDiv) {
-            textDiv.classList.remove('text-error');
-            textDiv.classList.add('text-warning');
-        }
-    }
-}
-
-/**
- * Mengaktifkan atau menonaktifkan tombol kirim untuk awalan formulir tertentu.
- *
- * @param {string}  prefix   Awalan formulir ('add' atau 'edit_KSB001')
- * @param {boolean} disable  true untuk menonaktifkan, false untuk mengaktifkan
- */
-function disableSubmitButton(prefix, disable) {
-    let modalId;
-    if (prefix === 'add') {
-        modalId = 'addModal';
-    } else if (prefix.startsWith('edit_')) {
-        modalId = 'editModal' + prefix.replace('edit_', '');
-    }
-
-    const submitButton = modalId ? document.getElementById('submit-btn-' + modalId) : null;
-    if (submitButton) {
-        submitButton.disabled = disable;
-        if (disable) {
-            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-        } else {
-            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    }
-}
 
 /**
  * Mendapatkan URL untuk rute bernama dari atribut data.
@@ -546,7 +356,6 @@ function disableSubmitButton(prefix, disable) {
  */
 function pageUrl(routeName) {
     const urlMap = {
-        'kasbon.check-max': pageContainer?.dataset.urlCheckMax || '/kasbon/check-max',
         'payroll.get-weeks': pageContainer?.dataset.urlGetWeeks || '/payroll/weeks',
     };
     return urlMap[routeName] || '#';

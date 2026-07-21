@@ -73,20 +73,6 @@ class KasbonController extends Controller
     {
         $validated = $request->validated();
 
-        // Validasi batas kasbon berbasis absensi untuk kasbon personal
-        if ($validated['kasbon_type'] === 'personal') {
-            $validation = $this->kasbonService->validatePersonalKasbonLimit(
-                $validated['employee_id'],
-                $validated['period_start_date'],
-                $validated['kasbon_date'],
-                $validated['amount']
-            );
-
-            if (!$validation['valid']) {
-                return redirect()->back()->withInput()->with('error', $validation['message']);
-            }
-        }
-
         $this->kasbonService->storeKasbon($validated);
 
         return redirect()->back()->with('success', 'Kasbon berhasil ditambahkan');
@@ -111,20 +97,6 @@ class KasbonController extends Controller
         }
 
         $validated = $request->validated();
-
-        // Validasi batas kasbon berbasis absensi untuk kasbon personal
-        if ($validated['kasbon_type'] === 'personal' && !empty($validated['period_start_date'])) {
-            $validation = $this->kasbonService->validatePersonalKasbonUpdate(
-                $validated['employee_id'],
-                $validated['period_start_date'],
-                $validated['kasbon_date'],
-                $validated['amount']
-            );
-
-            if (!$validation['valid']) {
-                return redirect()->back()->withInput()->with('error', $validation['message']);
-            }
-        }
 
         $this->kasbonService->updateKasbon($kasbon, $validated);
 
