@@ -12,6 +12,7 @@
                             <th class="p-2 text-left">Tanggal</th>
                             <th class="p-2 text-left">Nama Material</th>
                             <th class="p-2 text-left">NPWP</th>
+                            <th class="p-2 text-left">Kode Seri Pajak</th>
                             <th class="p-2 text-left">Nama Barang</th>
                             <th class="p-2 text-right">Harga Jual</th>
                             <th class="p-2 text-right">PPN Pajak</th>
@@ -36,6 +37,9 @@
 
                                 {{-- NPWP --}}
                                 <td class="p-2 text-sm text-text-label">{{ $invoice->npwp }}</td>
+
+                                {{-- Kode Seri Pajak --}}
+                                <td class="p-2 text-sm text-text-label">{{ $invoice->tax_number_code }}</td>
 
                                 {{-- Nama Barang --}}
                                 <td class="p-2 font-medium">{{ $invoice->item_name }}</td>
@@ -69,7 +73,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center p-4 text-text-secondary">
+                                <td colspan="10" class="text-center p-4 text-text-secondary">
                                     Data faktur pembelian tidak ditemukan.
                                 </td>
                             </tr>

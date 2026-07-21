@@ -54,10 +54,10 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Persentase PPN (%) <span class="text-error">*</span></label>
         <input type="text" id="addPpnPercentage" name="ppn_percentage" inputmode="decimal"
-            class="w-full border rounded p-2" placeholder="10,5" value="10" required
+            class="w-full border rounded p-2" placeholder="11" value="11" required
             oninvalid="this.setCustomValidity('Persentase PPN tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Default: 10%. Boleh pakai koma, contoh 10,5</p>
+        <p class="text-xs text-text-secondary mt-1">Default: 11%. Boleh pakai koma, contoh 11,5</p>
     </div>
 
     {{-- PPN Pengenaan Pajak (Auto-calculated) --}}

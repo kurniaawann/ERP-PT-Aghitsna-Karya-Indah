@@ -69,10 +69,10 @@
         <label class="block text-text-primary mb-1">Persentase PPN (%) <span class="text-error">*</span></label>
         <input type="text" id="editPpnPercentage-{{ $invoice->id }}" name="ppn_percentage" inputmode="decimal"
             value="{{ rtrim(rtrim(number_format((float) $invoice->ppn_percentage, 2, ',', '.'), '0'), ',') }}"
-            class="w-full border rounded p-2" placeholder="10,5" required
+            class="w-full border rounded p-2" placeholder="11" required
             oninvalid="this.setCustomValidity('Persentase PPN tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Persentase PPN yang digunakan. Boleh pakai koma, contoh 10,5</p>
+        <p class="text-xs text-text-secondary mt-1">Persentase PPN yang digunakan. Boleh pakai koma, contoh 11,5</p>
     </div>
 
     {{-- PPN Pengenaan Pajak (Auto-calculated) --}}

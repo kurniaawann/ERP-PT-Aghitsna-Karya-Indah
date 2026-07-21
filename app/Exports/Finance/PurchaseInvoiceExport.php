@@ -72,7 +72,7 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
                     'Rp ' . number_format($invoice->selling_price, 0, ',', '.'),
                     'Rp ' . number_format($invoice->ppn_tax, 0, ',', '.'),
                     'Rp ' . number_format($invoice->selling_price + $invoice->ppn_tax, 0, ',', '.'),
-                    $invoice->notes ?? '-',
+                    $invoice->notes ?? '',
                 ];
             });
     }
@@ -110,12 +110,12 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
             'B' => 12,
             'C' => 25,
             'D' => 18,
-            'E' => 20,
+            'E' => 30,
             'F' => 20,
             'G' => 15,
-            'H' => 15,
+            'H' => 20,
             'I' => 15,
-            'J' => 20,
+            'J' => 35,
         ];
     }
 
@@ -162,6 +162,11 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
                 // Center align kolom NO dan TANGGAL
                 $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('B2:B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                // Wrap text untuk kolom E, H, J
+                $sheet->getStyle('E1:E' . $highestRow)->getAlignment()->setWrapText(true);
+                $sheet->getStyle('H1:H' . $highestRow)->getAlignment()->setWrapText(true);
+                $sheet->getStyle('J1:J' . $highestRow)->getAlignment()->setWrapText(true);
             },
         ];
     }
