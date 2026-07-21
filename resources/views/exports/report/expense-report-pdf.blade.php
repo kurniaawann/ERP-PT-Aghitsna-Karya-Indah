@@ -205,7 +205,10 @@
         <tbody>
             @php
                 $no = 1;
-                $categoryGroups = $expenseRecaps->groupBy('transaction_category_id');
+                $categoryGroups = $expenseRecaps->groupBy('transaction_category_id')
+                    ->sortBy(function ($expenses) {
+                        return $expenses->first()->category->sort_order ?? 999;
+                    });
             @endphp
 
             @foreach ($categoryGroups as $categoryId => $expenses)
