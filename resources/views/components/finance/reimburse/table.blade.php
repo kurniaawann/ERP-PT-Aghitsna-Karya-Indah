@@ -27,7 +27,7 @@
                             <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Tgl Perubahan</th>
                             <th class="p-2 text-left">Catatan</th>
-                            @if (Auth::user()->role === 'admin')
+                            @if (Auth::user()->role === 'superadmin')
                                 <th class="p-2 text-center">Aksi</th>
                             @endif
                         </tr>
@@ -40,11 +40,11 @@
 
                                 {{-- Checkbox: Super Admin hanya bisa pilih draft --}}
                                 <td class="p-2 text-center">
-                                    @if (Auth::user()->role === 'superadmin' && $reimburse->status === 'draft')
+                                    @if (Auth::user()->role === 'admin' && $reimburse->status === 'draft')
                                         <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
                                             class="reimburse-checkbox w-4 h-4 accent-primary cursor-pointer"
                                             data-amount="{{ $reimburse->total_amount }}">
-                                    @elseif (Auth::user()->role === 'admin')
+                                    @elseif (Auth::user()->role === 'superadmin')
                                         <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
                                             class="w-4 h-4 accent-primary cursor-pointer">
                                     @endif
@@ -74,8 +74,8 @@
                                 {{-- Catatan --}}
                                 <td class="p-2 text-sm">{{ Str::limit($reimburse->notes ?? '-', 30) }}</td>
 
-                                {{-- Tombol Aksi (Admin only, draft only) --}}
-                                @if (Auth::user()->role === 'admin')
+                                {{-- Tombol Aksi (Super Admin only, draft only) --}}
+                                @if (Auth::user()->role === 'superadmin')
                                     <td class="p-2 text-center">
                                         @if ($reimburse->status === 'draft')
                                             <div class="flex justify-center gap-2">
@@ -97,7 +97,7 @@
 
                             {{-- ─── Empty State ─────────────────────────────────── --}}
                             <tr>
-                                <td colspan="{{ Auth::user()->role === 'admin' ? '11' : '10' }}"
+                                <td colspan="{{ Auth::user()->role === 'superadmin' ? '11' : '10' }}"
                                     class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>

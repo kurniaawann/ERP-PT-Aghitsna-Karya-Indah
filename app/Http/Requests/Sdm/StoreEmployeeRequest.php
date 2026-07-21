@@ -36,7 +36,7 @@ class StoreEmployeeRequest extends FormRequest
             'name' => 'required|string|max:255',
             'daily_wage' => 'required|integer|min:0',
             'division' => 'required|string|max:100',
-            'phone' => 'required|string|max:20',
+            'phone' => 'nullable|string|max:20',
             'address' => 'required|string',
         ];
     }

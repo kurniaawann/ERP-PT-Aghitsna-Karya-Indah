@@ -58,13 +58,13 @@
                             'year'   => request('year'),
                         ]" />
 
-                    {{-- Tombol Tambah (Admin only) --}}
-                    @if (Auth::user()->role === 'admin')
+                    {{-- Tombol Tambah (Super Admin only) --}}
+                    @if (Auth::user()->role === 'superadmin')
                         <x-buttons.add-button modalId="addModal" text="Tambah Reimburse" />
                     @endif
 
-                    {{-- Dropdown Persetujuan (Super Admin only) --}}
-                    @if (Auth::user()->role === 'superadmin')
+                    {{-- Dropdown Persetujuan (Admin only) --}}
+                    @if (Auth::user()->role === 'admin')
                         <div class="relative inline-block text-left w-full sm:w-auto">
                             <button type="button" id="approval-dropdown-button" disabled
                                 class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed">
@@ -97,8 +97,8 @@
             </div>
         </div>
 
-        {{-- ─── Ringkasan Data Terpilih (Super Admin) ────────────────────────── --}}
-        @if (Auth::user()->role === 'superadmin')
+        {{-- ─── Ringkasan Data Terpilih (Admin) ────────────────────────────── --}}
+        @if (Auth::user()->role === 'admin')
             <div id="selected-info" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p class="text-sm text-text-primary">
                     <span id="selected-count">0</span> reimburse terpilih | Total: <strong id="selected-total">Rp 0</strong>
@@ -114,20 +114,20 @@
     {{-- ─── Pagination ───────────────────────────────────────────────────────── --}}
     <x-pagination :paginator="$reimburses" />
 
-    {{-- ─── Modal Tambah (Admin only) ────────────────────────────────────────── --}}
-    @if (Auth::user()->role === 'admin')
+    {{-- ─── Modal Tambah (Super Admin only) ────────────────────────────────── --}}
+    @if (Auth::user()->role === 'superadmin')
         @include('components.finance.reimburse.add-modal')
     @endif
 
-    {{-- ─── Modal Edit per baris (Admin only, status draft) ─────────────────── --}}
+    {{-- ─── Modal Edit per baris (Super Admin only, status draft) ─────────── --}}
     @foreach ($reimburses as $reimburse)
-        @if ($reimburse->status === 'draft' && Auth::user()->role === 'admin')
+        @if ($reimburse->status === 'draft' && Auth::user()->role === 'superadmin')
             @include('components.finance.reimburse.edit-modal', ['reimburse' => $reimburse])
         @endif
     @endforeach
 
-    {{-- ─── Modal Konfirmasi Approve (Super Admin) ─────────────────────────── --}}
-    @if (Auth::user()->role === 'superadmin')
+    {{-- ─── Modal Konfirmasi Approve (Admin only) ─────────────────────────── --}}
+    @if (Auth::user()->role === 'admin')
         @include('components.finance.reimburse.approve-modal')
         @include('components.finance.reimburse.reject-modal')
     @endif

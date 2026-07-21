@@ -27,9 +27,9 @@
         selected="{{ $employee->division ?? '' }}" />
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">No. Telepon <span class="text-error">*</span></label>
-        <input type="text" name="phone" class="w-full border rounded p-2" placeholder="Masukkan no. telepon"
-            value="{{ $employee->phone }}" required maxlength="20">
+        <label class="block text-text-primary mb-1">No. Telepon</label>
+        <input type="text" name="phone" class="w-full border rounded p-2" placeholder="Masukkan no. telepon (opsional)"
+            value="{{ $employee->phone }}" maxlength="20">
     </div>
 
     <div class="mb-3">
