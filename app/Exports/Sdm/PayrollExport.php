@@ -174,7 +174,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             [''],
             [
                 'NO', 'NAMA PEKERJA', 'HADIR', 'LEMBUR', 'IZIN',
-                'SAKIT', 'CUTI', 'UPAH HARIAN', 'BONUS LEMBUR', 'KASBON', 'DITERIMA',
+                'SAKIT', 'CUTI', 'UPAH HARIAN', 'BONUS LEMBUR', 'POT. KASBON', 'DITERIMA',
             ],
         ];
     }

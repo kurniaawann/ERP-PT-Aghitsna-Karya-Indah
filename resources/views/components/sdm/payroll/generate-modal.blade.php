@@ -33,7 +33,7 @@
                     <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
                     <li><strong class="text-error">Setiap karyawan harus memiliki absensi lengkap sesuai hari
                             kerjanya</strong></li>
-                    <li>Kasbon personal dan tim otomatis dipotong saat generate</li>
+                    <li>Kasbon hanya dipotong jika karyawan sudah membayar</li>
                     <li>Bisa menambahkan pengeluaran (token listrik/air, dll)</li>
                 </ul>
             </div>

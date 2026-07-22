@@ -290,7 +290,7 @@
                     <th colspan="5">REKAP KEHADIRAN</th>
                     <th rowspan="2">UPAH HARIAN</th>
                     <th rowspan="2">BONUS LEMBUR</th>
-                    <th rowspan="2">KASBON</th>
+                    <th rowspan="2">POT. KASBON</th>
                     <th rowspan="2">DITERIMA</th>
                 </tr>
                 <tr>

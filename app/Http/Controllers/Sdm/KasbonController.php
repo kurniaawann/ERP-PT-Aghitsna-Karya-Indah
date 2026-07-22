@@ -213,11 +213,9 @@ class KasbonController extends Controller
         }
 
         $request->validate([
-            'amount' => 'required|integer|min:1',
+            'amount' => 'required',
         ], [
             'amount.required' => 'Jumlah pembayaran harus diisi',
-            'amount.integer' => 'Jumlah pembayaran harus berupa angka',
-            'amount.min' => 'Jumlah pembayaran minimal Rp 1',
         ]);
 
         $amount = InputNormalizer::normalizeCurrency($request->amount);

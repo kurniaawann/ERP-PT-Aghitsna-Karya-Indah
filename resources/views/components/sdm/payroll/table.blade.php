@@ -32,7 +32,7 @@
                         <th class="p-2 text-center">Periode</th>
                         <th class="p-2 text-center">Upah/Hari</th>
                         <th class="p-2 text-center">Hari Masuk</th>
-                        <th class="p-2 text-center">Kasbon</th>
+                        <th class="p-2 text-center">Potongan Kasbon</th>
                         <th class="p-2 text-center">Lembur</th>
                         <th class="p-2 text-center">Upah Bersih</th>
                         <th class="p-2 text-center">Status</th>

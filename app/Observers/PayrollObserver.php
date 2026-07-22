@@ -74,24 +74,8 @@ class PayrollObserver
      */
     public function deleting(Payroll $payroll): void
     {
-        // Cari semua kasbon payment yang terkait dengan payroll ini
-        // (SEBELUM FK ON DELETE SET NULL menghapus payroll_id)
-        $payments = KasbonPayment::where('payroll_id', $payroll->id)->get();
-
-        foreach ($payments as $payment) {
-            $kasbon = $payment->kasbon;
-            if (!$kasbon) {
-                continue;
-            }
-
-            // Kembalikan jumlah yang sudah dibayar
-            $kasbon->paid_amount = max(0, ($kasbon->paid_amount ?? 0) - $payment->amount);
-            $kasbon->remaining_amount = $kasbon->amount - $kasbon->paid_amount;
-            $kasbon->payment_status = $kasbon->paid_amount > 0 ? 'partial' : 'unpaid';
-            $kasbon->status = 'pending';
-            $kasbon->deducted_in_payroll_id = null;
-            $kasbon->save();
-        }
+        // FK ON DELETE SET NULL otomatis mengembalikan KasbonPayment.payroll_id = NULL
+        // Jadi payment akan kembali "belum dipotong" dan bisa terpotong di payroll berikutnya
 
         // Hapus salary reminder yang terkait
         SalaryReminder::where('payroll_id', $payroll->id)->delete();

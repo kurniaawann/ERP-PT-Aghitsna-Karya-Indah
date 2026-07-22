@@ -41,7 +41,8 @@
 
                 {{-- Filter Minggu --}}
                 <select name="week_number" id="filter_week_number"
-                    class="border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
+                    class="border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
+                    onchange="this.form.requestSubmit()">
                     <option value="">Semua Minggu</option>
                 </select>
 

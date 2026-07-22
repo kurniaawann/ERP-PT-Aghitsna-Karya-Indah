@@ -45,14 +45,16 @@ class PayrollController extends Controller
         $search = $request->input('search');
         $month = $request->input('month');
         $year = $request->input('year');
+        $weekNumber = $request->input('week_number');
 
         $payrolls = $this->payrollService->getPaginatedPayrolls(
             $search,
             $month ? (int) $month : null,
             $year ? (int) $year : null,
+            $weekNumber ? (int) $weekNumber : null,
         );
 
-        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year'));
+        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber'));
     }
 
     /**
@@ -218,10 +220,12 @@ class PayrollController extends Controller
     {
         $month = $request->input('month');
         $year = $request->input('year');
+        $weekNumber = $request->input('week_number');
 
         $payrolls = $this->payrollService->getPayrollsForExport(
             $month ? (int) $month : null,
             $year ? (int) $year : null,
+            $weekNumber ? (int) $weekNumber : null,
         );
 
         if ($payrolls === null) {
@@ -244,8 +248,9 @@ class PayrollController extends Controller
     {
         $month = $request->input('month') ? (int) $request->input('month') : null;
         $year = $request->input('year') ? (int) $request->input('year') : null;
+        $weekNumber = $request->input('week_number') ? (int) $request->input('week_number') : null;
 
-        $payrolls = $this->payrollService->getPayrollsForExport($month, $year);
+        $payrolls = $this->payrollService->getPayrollsForExport($month, $year, $weekNumber);
 
         if ($payrolls === null) {
             return redirect()->route('payroll.index')

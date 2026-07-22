@@ -129,7 +129,7 @@
                         </div>
                         @if ($payroll->kasbon_deduction)
                             <div class="flex justify-between text-error">
-                                <span>Kasbon Dipotong:</span>
+                                <span>Potongan Kasbon:</span>
                                 <span class="font-semibold">- Rp
                                     {{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</span>
                             </div>

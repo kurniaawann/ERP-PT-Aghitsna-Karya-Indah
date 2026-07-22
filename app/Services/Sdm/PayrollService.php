@@ -40,6 +40,7 @@ class PayrollService
         ?string $search,
         ?int $month,
         ?int $year,
+        ?int $weekNumber = null,
         int $perPage = 15
     ): LengthAwarePaginator {
         return Payroll::with('employee')
@@ -51,6 +52,7 @@ class PayrollService
             })
             ->when($month, fn($query) => $query->whereMonth('period_start_date', $month))
             ->when($year, fn($query) => $query->whereYear('period_start_date', $year))
+            ->when($weekNumber, fn($query) => $query->where('week_number', $weekNumber))
             ->latest('period_start_date')
             ->latest('created_at')
             ->paginate($perPage);
@@ -374,33 +376,45 @@ class PayrollService
             return ['success' => false, 'message' => $errorMessage];
         }
 
-        // === HITUNG KASBON TEAM PER DIVISI ===
-        $divisionGroups = $employees->groupBy('division');
+        // === HITUNG POTONGAN KASBON YANG SUDAH DIBAYAR TAPI BELUM DIPOTONG ===
+        // Pendekatan: cari KasbonPayment manual (bayar tunai) yang belum di-assign ke payroll
+        $employeeCodes = $employees->pluck('employee_code')->toArray();
 
-        $allTeamKasbons = Kasbon::where('kasbon_type', 'team')
-            ->where('period_start_date', $startDate->format('Y-m-d'))
-            ->where('status', 'pending')
-            ->where('payment_status', '!=', 'paid')
+        // Personal: cari kasbon payment per karyawan
+        $pendingPersonalPayments = KasbonPayment::whereNull('payroll_id')
+            ->where('payment_method', 'manual')
+            ->whereHas('kasbon', function ($q) use ($employeeCodes) {
+                $q->whereIn('employee_id', $employeeCodes)
+                    ->where('kasbon_type', 'personal');
+            })
+            ->with('kasbon')
             ->get()
-            ->groupBy('division');
+            ->groupBy('kasbon.employee_id');
 
-        $kasbonPerDivision = [];
-        foreach ($divisionGroups as $division => $divisionEmployees) {
-            if ($division) {
-                $totalTeamKasbonForDivision = $allTeamKasbons->get($division, new Collection())->sum('remaining_amount');
-                $employeeCountInDivision = $divisionEmployees->count();
-                $kasbonPerDivision[$division] = $employeeCountInDivision > 0
-                    ? $totalTeamKasbonForDivision / $employeeCountInDivision
-                    : 0;
-            }
+        $personalKasbonPerEmployee = [];
+        foreach ($pendingPersonalPayments as $empCode => $payments) {
+            $personalKasbonPerEmployee[$empCode] = $payments->sum('amount');
         }
 
-        $allPersonalKasbons = Kasbon::whereIn('employee_id', $employees->pluck('employee_code'))
-            ->where('period_start_date', $startDate->format('Y-m-d'))
-            ->pending()
-            ->notPaid()
+        // Team: cari kasbon payment per divisi
+        $pendingTeamPayments = KasbonPayment::whereNull('payroll_id')
+            ->where('payment_method', 'manual')
+            ->whereHas('kasbon', function ($q) {
+                $q->where('kasbon_type', 'team');
+            })
+            ->with('kasbon')
             ->get()
-            ->groupBy('employee_id');
+            ->groupBy('kasbon.division');
+
+        $teamKasbonPerDivision = [];
+        foreach ($pendingTeamPayments as $division => $payments) {
+            $teamKasbonPerDivision[$division] = $payments->sum('amount');
+        }
+
+        // Hitung jumlah karyawan per divisi untuk pembagian kasbon team
+        $divisionCounts = $employees->groupBy('division')
+            ->map(fn($group) => $group->count())
+            ->toArray();
 
         // === BUAT PAYROLL PER KARYAWAN ===
         $payrolls = [];
@@ -425,13 +439,13 @@ class PayrollService
 
             $grossWage = $totalWage + $overtimeTotal;
 
-            $personalKasbon = $allPersonalKasbons
-                ->get($employee->employee_code, new Collection())
-                ->sum('remaining_amount');
+            $personalKasbon = $personalKasbonPerEmployee[$employee->employee_code] ?? 0;
 
-            $teamKasbonPerPerson = $employee->division && isset($kasbonPerDivision[$employee->division])
-                ? $kasbonPerDivision[$employee->division]
-                : 0;
+            $teamKasbonPerPerson = 0;
+            if ($employee->division && isset($teamKasbonPerDivision[$employee->division])) {
+                $empCount = $divisionCounts[$employee->division] ?? 1;
+                $teamKasbonPerPerson = $teamKasbonPerDivision[$employee->division] / $empCount;
+            }
 
             $totalKasbonDeduction = $personalKasbon + $teamKasbonPerPerson;
             $netWage = $grossWage - $totalKasbonDeduction;
@@ -476,64 +490,27 @@ class PayrollService
 
             $payrolls[] = $payroll;
 
-            // Rekam pembayaran cicilan untuk kasbon personal yang dipotong dari payroll ini
-            $employeeKasbons = $allPersonalKasbons->get($employee->employee_code, new Collection());
-            foreach ($employeeKasbons as $kasbon) {
-                if ($kasbon->remaining_amount > 0) {
-                    $deduction = $kasbon->remaining_amount;
-
-                    KasbonPayment::create([
-                        'kasbon_code' => $kasbon->kasbon_code,
-                        'payroll_id' => $payroll->id,
-                        'amount' => $deduction,
-                        'payment_method' => 'payroll_deduction',
-                        'payment_date' => now()->format('Y-m-d'),
-                    ]);
-
-                    $kasbon->paid_amount = ($kasbon->paid_amount ?? 0) + $deduction;
-                    $kasbon->remaining_amount = $kasbon->amount - $kasbon->paid_amount;
-                    $kasbon->payment_status = 'paid';
-                    $kasbon->status = 'deducted';
-                    $kasbon->deducted_in_payroll_id = $payroll->id;
-                    $kasbon->save();
-                }
+            // Assign KasbonPayment personal ke payroll ini
+            $empPayments = $pendingPersonalPayments->get($employee->employee_code, new Collection());
+            foreach ($empPayments as $payment) {
+                $payment->payroll_id = $payroll->id;
+                $payment->save();
             }
         }
 
-        // Tandai kasbon team sebagai sudah dipotong + rekam pembayaran
+        // Assign KasbonPayment team ke payroll pertama per divisi
         if (!empty($payrolls)) {
             $payrollCollection = collect($payrolls);
             $processedDivisions = [];
 
             foreach ($employees as $employee) {
                 if ($employee->division && !in_array($employee->division, $processedDivisions)) {
-                    $teamKasbonsForDivision = $allTeamKasbons->get($employee->division, new Collection());
-                    $employeeCountInDivision = $employees->where('division', $employee->division)->count();
+                    $divPayments = $pendingTeamPayments->get($employee->division, new Collection());
+                    $firstPayroll = $payrollCollection->first();
 
-                    foreach ($teamKasbonsForDivision as $kasbon) {
-                        if ($kasbon->remaining_amount > 0) {
-                            $deductionPerPerson = $employeeCountInDivision > 0
-                                ? $kasbon->remaining_amount / $employeeCountInDivision
-                                : 0;
-
-                            $firstPayrollInDivision = $payrollCollection->first();
-
-                            // Rekam pembayaran untuk kasbon team
-                            KasbonPayment::create([
-                                'kasbon_code' => $kasbon->kasbon_code,
-                                'payroll_id' => $firstPayrollInDivision?->id,
-                                'amount' => $kasbon->remaining_amount,
-                                'payment_method' => 'payroll_deduction',
-                                'payment_date' => now()->format('Y-m-d'),
-                            ]);
-
-                            $kasbon->paid_amount = ($kasbon->paid_amount ?? 0) + $kasbon->remaining_amount;
-                            $kasbon->remaining_amount = 0;
-                            $kasbon->payment_status = 'paid';
-                            $kasbon->status = 'deducted';
-                            $kasbon->deducted_in_payroll_id = $firstPayrollInDivision?->id;
-                            $kasbon->save();
-                        }
+                    foreach ($divPayments as $payment) {
+                        $payment->payroll_id = $firstPayroll?->id;
+                        $payment->save();
                     }
 
                     $processedDivisions[] = $employee->division;
@@ -617,11 +594,12 @@ class PayrollService
      * @param  int|null  $year
      * @return Collection|null  Null jika tidak ada data ditemukan
      */
-    public function getPayrollsForExport(?int $month, ?int $year): ?Collection
+    public function getPayrollsForExport(?int $month, ?int $year, ?int $weekNumber = null): ?Collection
     {
         $payrolls = Payroll::with('employee')
             ->when($month, fn($query) => $query->whereMonth('period_start_date', $month))
             ->when($year, fn($query) => $query->whereYear('period_start_date', $year))
+            ->when($weekNumber, fn($query) => $query->where('week_number', $weekNumber))
             ->latest('period_start_date')
             ->latest('created_at')
             ->get();

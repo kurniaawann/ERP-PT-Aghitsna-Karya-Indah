@@ -214,9 +214,11 @@
                 }
 
                 if (submitBtn) {
-                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
                     submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
                 }
+
+                return true;
             });
         }
     });
