@@ -211,28 +211,29 @@
              ========================================== --}}
         .form-row {
             margin-bottom: 8px;
-            display: table;
             width: 100%;
+            border-collapse: collapse;
         }
 
         .form-label {
-            display: table-cell;
-            width: 20%;
+            width: 22%;
             padding: 3px 0;
+            vertical-align: bottom;
+            white-space: nowrap;
         }
 
         .form-separator {
-            display: table-cell;
             width: 1%;
             text-align: center;
+            padding: 3px 5px;
+            vertical-align: bottom;
         }
 
         .form-value {
-            display: table-cell;
-            width: 79%;
+            width: 77%;
             border-bottom: 1px solid #000;
             padding: 3px 0;
-            min-height: 15px;
+            vertical-align: bottom;
         }
 
         .amount-section {
@@ -304,32 +305,51 @@
                         <div class="main-title">BUKTI KAS KELUAR</div>
                     </div>
                     <div class="header-right">
-                        <div><strong>BKK No.</strong> : {{ $cashOut->bkk_no }}</div>
-                        <div><strong>Cek No.</strong> : {{ $cashOut->cek_no }}</div>
-                        <div><strong>Tanggal</strong> :
-                            {{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</div>
+                        <table style="border-collapse: collapse;">
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>BKK No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->bkk_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Cek No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->cek_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Tanggal</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 
                 {{-- Form Fields --}}
                 <div style="border: 2px solid #000; padding: 8px; margin-top: 10px;">
-                    <div class="form-row">
-                        <div class="form-label">Dibayarkan Kepada</div>
-                        <div class="form-separator">:</div>
-                        <div class="form-value">{{ $cashOut->paid_to }}</div>
-                    </div>
+                    <table class="form-row">
+                        <tr>
+                            <td class="form-label">Dibayarkan Kepada</td>
+                            <td class="form-separator">:</td>
+                            <td class="form-value">{{ $cashOut->paid_to }}</td>
+                        </tr>
+                    </table>
 
-                    <div class="form-row">
-                        <div class="form-label">Jumlah Dibayar</div>
-                        <div class="form-separator">:</div>
-                        <div class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</div>
-                    </div>
+                    <table class="form-row">
+                        <tr>
+                            <td class="form-label">Jumlah Dibayar</td>
+                            <td class="form-separator">:</td>
+                            <td class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</td>
+                        </tr>
+                    </table>
 
-                    <div class="form-row">
-                        <div class="form-label" style="vertical-align: top;">Keterangan</div>
-                        <div class="form-separator" style="vertical-align: top;">:</div>
-                        <div class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</div>
-                    </div>
+                    <table class="form-row">
+                        <tr>
+                            <td class="form-label" style="vertical-align: top;">Keterangan</td>
+                            <td class="form-separator" style="vertical-align: top;">:</td>
+                            <td class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</td>
+                        </tr>
+                    </table>
 
                     {{-- Box Jumlah dalam Rupiah --}}
                     <div class="amount-section">
@@ -379,31 +399,50 @@
                         <div class="title">BUKTI KAS KELUAR</div>
                     </div>
                     <div class="header-right">
-                        <div><strong>BKK No.</strong> : {{ $cashOut->bkk_no }}</div>
-                        <div><strong>Cek No.</strong> : {{ $cashOut->cek_no }}</div>
-                        <div><strong>Tanggal</strong> :
-                            {{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</div>
+                        <table style="border-collapse: collapse;">
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>BKK No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->bkk_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Cek No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->cek_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Tanggal</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 
                 {{-- Form Fields --}}
-                <div class="form-row">
-                    <div class="form-label">Dibayarkan Kepada</div>
-                    <div class="form-separator">:</div>
-                    <div class="form-value">{{ $cashOut->paid_to }}</div>
-                </div>
+                <table class="form-row">
+                    <tr>
+                        <td class="form-label">Dibayarkan Kepada</td>
+                        <td class="form-separator">:</td>
+                        <td class="form-value">{{ $cashOut->paid_to }}</td>
+                    </tr>
+                </table>
 
-                <div class="form-row">
-                    <div class="form-label">Jumlah Dibayar</div>
-                    <div class="form-separator">:</div>
-                    <div class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</div>
-                </div>
+                <table class="form-row">
+                    <tr>
+                        <td class="form-label">Jumlah Dibayar</td>
+                        <td class="form-separator">:</td>
+                        <td class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</td>
+                    </tr>
+                </table>
 
-                <div class="form-row">
-                    <div class="form-label" style="vertical-align: top;">Keterangan</div>
-                    <div class="form-separator" style="vertical-align: top;">:</div>
-                    <div class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</div>
-                </div>
+                <table class="form-row">
+                    <tr>
+                        <td class="form-label" style="vertical-align: top;">Keterangan</td>
+                        <td class="form-separator" style="vertical-align: top;">:</td>
+                        <td class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</td>
+                    </tr>
+                </table>
 
                 {{-- Box Jumlah dalam Rupiah --}}
                 <div class="amount-section">
