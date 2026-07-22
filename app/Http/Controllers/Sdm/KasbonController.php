@@ -8,6 +8,7 @@ use App\Http\Requests\Sdm\UpdateKasbonRequest;
 use App\Http\Requests\Sdm\DestroySelectedKasbonRequest;
 use App\Models\Sdm\Kasbon;
 use App\Services\Sdm\KasbonService;
+use App\Services\InputNormalizer;
 use Illuminate\Http\Request;
 
 /**
@@ -51,7 +52,8 @@ class KasbonController extends Controller
             $request->input('month') ? (int) $request->input('month') : null,
             $request->input('year') ? (int) $request->input('year') : null,
             $request->input('status'),
-            $request->input('type')
+            $request->input('type'),
+            $request->input('payment_status')
         );
 
         $employees = $this->kasbonService->getAllEmployees();
@@ -190,5 +192,84 @@ class KasbonController extends Controller
         }
 
         return response()->json($result, $statusCode);
+    }
+
+    /**
+     * Mencatat pembayaran cicilan kasbon (tunai/manual).
+     *
+     * Menerima jumlah pembayaran dan mencatatnya sebagai cicilan.
+     * Kasbon akan otomatis diperbarui (paid_amount, remaining_amount, payment_status).
+     *
+     * @param  Request   $request    Permintaan HTTP dengan amount
+     * @param  string    $kasbonCode Kode kasbon yang akan dibayar
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function pay(Request $request, string $kasbonCode)
+    {
+        $kasbon = Kasbon::findOrFail($kasbonCode);
+
+        if ($kasbon->payment_status === 'paid') {
+            return redirect()->back()->with('error', 'Kasbon sudah lunas');
+        }
+
+        $request->validate([
+            'amount' => 'required|integer|min:1',
+        ], [
+            'amount.required' => 'Jumlah pembayaran harus diisi',
+            'amount.integer' => 'Jumlah pembayaran harus berupa angka',
+            'amount.min' => 'Jumlah pembayaran minimal Rp 1',
+        ]);
+
+        $amount = InputNormalizer::normalizeCurrency($request->amount);
+
+        if ($amount <= 0) {
+            return redirect()->back()->with('error', 'Jumlah pembayaran harus lebih dari 0');
+        }
+
+        if ($amount > $kasbon->remaining_amount) {
+            return redirect()->back()->with('error', 'Jumlah pembayaran melebihi sisa hutang (' . $kasbon->formatted_remaining_amount . ')');
+        }
+
+        $this->kasbonService->recordPayment($kasbon, $amount, 'manual');
+
+        $remaining = $kasbon->fresh()->remaining_amount;
+
+        if ($remaining <= 0) {
+            return redirect()->back()->with('success', 'Pembayaran berhasil! Kasbon sudah lunas.');
+        }
+
+        return redirect()->back()->with('success', 'Pembayaran cicilan berhasil. Sisa hutang: ' . $kasbon->fresh()->formatted_remaining_amount);
+    }
+
+    /**
+     * Mendapatkan riwayat pembayaran kasbon (endpoint AJAX).
+     *
+     * @param  string  $kasbonCode  Kode kasbon
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function payments(string $kasbonCode)
+    {
+        $kasbon = Kasbon::with('employee')->findOrFail($kasbonCode);
+        $payments = $this->kasbonService->getPayments($kasbonCode);
+
+        return response()->json([
+            'kasbon' => [
+                'kasbon_code' => $kasbon->kasbon_code,
+                'amount' => $kasbon->amount,
+                'paid_amount' => $kasbon->paid_amount,
+                'remaining_amount' => $kasbon->remaining_amount,
+                'payment_status' => $kasbon->payment_status,
+                'employee_name' => $kasbon->employee?->name ?? '-',
+            ],
+            'payments' => $payments->map(fn($p) => [
+                'id' => $p->id,
+                'amount' => $p->amount,
+                'formatted_amount' => $p->formatted_amount,
+                'payment_method' => $p->payment_method,
+                'payment_method_label' => $p->payment_method_label,
+                'payment_date' => $p->payment_date->format('d M Y'),
+                'notes' => $p->notes,
+            ]),
+        ]);
     }
 }

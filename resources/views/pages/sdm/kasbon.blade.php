@@ -29,6 +29,15 @@
                     <option value="deducted" {{ request('status') == 'deducted' ? 'selected' : '' }}>Sudah Dipotong</option>
                 </select>
 
+                {{-- Filter Status Pembayaran --}}
+                <select name="payment_status" onchange="document.getElementById('filterForm').submit()"
+                    class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="">Semua Pembayaran</option>
+                    <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>Belum Dibayar</option>
+                    <option value="partial" {{ request('payment_status') == 'partial' ? 'selected' : '' }}>Cicilan Berjalan</option>
+                    <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>Lunas</option>
+                </select>
+
                 {{-- Filter Jenis --}}
                 <select name="type" onchange="document.getElementById('filterForm').submit()"
                     class="border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
@@ -40,7 +49,7 @@
                 <x-filters.search-input :value="request('search')" placeholder="Cari kasbon..." />
 
                 {{-- Tombol Reset Filter --}}
-                @if (request()->hasAny(['search', 'month', 'year', 'status', 'type']))
+                @if (request()->hasAny(['search', 'month', 'year', 'status', 'type', 'payment_status']))
                     <a href="{{ route('kasbon.index') }}"
                         class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
                         <i class="fa-solid fa-rotate-left mr-2"></i>
@@ -76,6 +85,9 @@
             'divisions' => $divisions,
         ])
     @endforeach
+
+    {{-- Modal Bayar Cicilan --}}
+    @include('components.sdm.kasbon.pay-modal')
 
     {{-- Modal Konfirmasi Hapus Massal --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"

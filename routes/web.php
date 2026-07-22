@@ -328,6 +328,8 @@ Route::middleware('auth')->group(function () {
         // Route Kasbon (Cash Advance)
         Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');
         Route::post('/kasbon', [KasbonController::class, 'store'])->name('kasbon.store');
+        Route::post('/kasbon/{kasbonCode}/pay', [KasbonController::class, 'pay'])->name('kasbon.pay');
+        Route::get('/kasbon/{kasbonCode}/payments', [KasbonController::class, 'payments'])->name('kasbon.payments');
         Route::put('/kasbon/{kasbonCode}', [KasbonController::class, 'update'])->name('kasbon.update');
         Route::delete('/kasbon/destroy-selected', [KasbonController::class, 'destroySelected'])->name('kasbon.destroySelected');
         Route::post('/kasbon/get-total', [KasbonController::class, 'getTotalForPeriod'])->name('kasbon.get-total');

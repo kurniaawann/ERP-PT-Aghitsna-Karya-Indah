@@ -756,7 +756,7 @@
 
         // Update hidden inputs
         document.getElementById('total_additional_expenses').value = total;
-        document.getElementById('additional_expenses_notes').value = JSON.stringify(items);
+        document.getElementById('additional_expenses_notes').value = items.length > 0 ? JSON.stringify(items) : '';
 
         // Update display
         document.getElementById('total-expense-display').textContent =

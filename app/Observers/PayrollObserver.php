@@ -3,6 +3,8 @@
 namespace App\Observers;
 
 use App\Models\Sdm\Payroll;
+use App\Models\Sdm\KasbonPayment;
+use App\Models\Sdm\Kasbon;
 use App\Models\Notification\SalaryReminder;
 
 /**
@@ -61,14 +63,38 @@ class PayrollObserver
     }
 
     /**
-     * Tangani event "deleted" pada Payroll.
+     * Tangani event "deleting" pada Payroll.
+     *
+     * Dijalankan SEBELUM record dihapus agar masih bisa mengakses
+     * KasbonPayment records (karena FK ON DELETE SET NULL akan
+     * menghapus payroll_id sebelum event "deleted" fires).
      *
      * @param  Payroll  $payroll
      * @return void
      */
-    public function deleted(Payroll $payroll): void
+    public function deleting(Payroll $payroll): void
     {
-        //
+        // Cari semua kasbon payment yang terkait dengan payroll ini
+        // (SEBELUM FK ON DELETE SET NULL menghapus payroll_id)
+        $payments = KasbonPayment::where('payroll_id', $payroll->id)->get();
+
+        foreach ($payments as $payment) {
+            $kasbon = $payment->kasbon;
+            if (!$kasbon) {
+                continue;
+            }
+
+            // Kembalikan jumlah yang sudah dibayar
+            $kasbon->paid_amount = max(0, ($kasbon->paid_amount ?? 0) - $payment->amount);
+            $kasbon->remaining_amount = $kasbon->amount - $kasbon->paid_amount;
+            $kasbon->payment_status = $kasbon->paid_amount > 0 ? 'partial' : 'unpaid';
+            $kasbon->status = 'pending';
+            $kasbon->deducted_in_payroll_id = null;
+            $kasbon->save();
+        }
+
+        // Hapus salary reminder yang terkait
+        SalaryReminder::where('payroll_id', $payroll->id)->delete();
     }
 
     /**

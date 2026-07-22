@@ -21,9 +21,9 @@
                             <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Karyawan</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Jenis</th>
                             <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Jumlah</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Tanggal</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Periode</th>
-                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Status</th>
+                            <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Sisa Hutang</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Progress</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Status Pembayaran</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
@@ -71,41 +71,56 @@
                                     {{ $kasbon->formatted_amount }}
                                 </td>
 
-                                {{-- Tanggal Kasbon --}}
-                                <td class="p-2 text-center text-sm text-text-label">
-                                    {{ $kasbon->kasbon_date->format('d M Y') }}
-                                </td>
-
-                                {{-- Rentang Periode --}}
-                                <td class="p-2 text-center text-sm text-text-label">
-                                    @if ($kasbon->period_start_date && $kasbon->period_end_date)
-                                        @php
-                                            $start = \Carbon\Carbon::parse($kasbon->period_start_date);
-                                            $end = \Carbon\Carbon::parse($kasbon->period_end_date);
-                                        @endphp
-                                        @if ($start->month === $end->month)
-                                            {{ $start->format('d') }}-{{ $end->format('d M Y') }}
-                                        @else
-                                            {{ $start->format('d M') }} - {{ $end->format('d M Y') }}
-                                        @endif
+                                {{-- Sisa Hutang --}}
+                                <td class="p-2 text-right text-sm text-text-primary">
+                                    @if ($kasbon->payment_status === 'paid')
+                                        <span class="text-success font-medium">Rp 0</span>
                                     @else
-                                        {{ $kasbon->period_month }}/{{ $kasbon->period_year }}@if ($kasbon->week_number)
-                                            <span class="text-xs text-text-label"> - Minggu {{ $kasbon->week_number }}</span>
-                                        @endif
+                                        <span class="font-medium {{ $kasbon->remaining_amount > 0 ? 'text-error' : 'text-success' }}">
+                                            {{ $kasbon->formatted_remaining_amount }}
+                                        </span>
                                     @endif
                                 </td>
 
-                                {{-- Lencana Status --}}
+                                {{-- Progress --}}
                                 <td class="p-2 text-center">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->status === 'pending' ? 'bg-warning-light text-warning' : 'bg-success-light text-success' }}">
-                                        {{ $kasbon->status_label }}
+                                    <div class="w-full max-w-[80px] mx-auto">
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span class="text-text-label">{{ $kasbon->progress_percentage }}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="h-2 rounded-full transition-all duration-300
+                                                {{ $kasbon->payment_status === 'paid' ? 'bg-success' : ($kasbon->payment_status === 'partial' ? 'bg-primary' : 'bg-warning') }}"
+                                                style="width: {{ $kasbon->progress_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Lencana Status Pembayaran --}}
+                                <td class="p-2 text-center">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {{ match($kasbon->payment_status) {
+                                            'paid' => 'bg-success-light text-success',
+                                            'partial' => 'bg-primary-light text-primary',
+                                            default => 'bg-warning-light text-warning',
+                                        } }}">
+                                        {{ $kasbon->payment_status_label }}
                                     </span>
                                 </td>
 
                                 {{-- Tombol Aksi --}}
                                 <td class="p-2 text-center text-sm">
-                                    @if ($kasbon->status === 'pending')
-                                        <div class="flex justify-center gap-2">
+                                    <div class="flex justify-center gap-2">
+                                        @if ($kasbon->payment_status !== 'paid')
+                                            <button type="button"
+                                                onclick="openPayModal('{{ $kasbon->kasbon_code }}', '{{ $kasbon->formatted_amount }}', '{{ $kasbon->formatted_remaining_amount }}', {{ $kasbon->remaining_amount }})"
+                                                class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                title="Bayar Cicilan">
+                                                <i class="fa-solid fa-money-bill-wave w-3 h-3"></i>
+                                                Bayar
+                                            </button>
+                                        @endif
+                                        @if ($kasbon->status === 'pending')
                                             <button type="button"
                                                 onclick="openModal('editModal{{ $kasbon->kasbon_code }}')"
                                                 class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
@@ -113,10 +128,8 @@
                                                 <i class="fa-solid fa-pen w-3 h-3"></i>
                                                 Edit
                                             </button>
-                                        </div>
-                                    @else
-                                        <span class="text-text-label italic text-xs">Sudah Dipotong</span>
-                                    @endif
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty

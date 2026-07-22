@@ -3,6 +3,7 @@
 namespace App\Services\Sdm;
 
 use App\Models\Sdm\Kasbon;
+use App\Models\Sdm\KasbonPayment;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Division;
 use App\Services\InputNormalizer;
@@ -40,6 +41,7 @@ class KasbonService
         ?int $year,
         ?string $status,
         ?string $type,
+        ?string $paymentStatus = null,
         int $perPage = 10
     ): LengthAwarePaginator {
         return Kasbon::with('employee')
@@ -57,10 +59,11 @@ class KasbonService
             ->when($year, fn($query, $year) => $query->whereYear('period_start_date', $year))
             ->when($status, fn($query, $status) => $query->where('status', $status))
             ->when($type, fn($query, $type) => $query->where('kasbon_type', $type))
+            ->when($paymentStatus, fn($query, $paymentStatus) => $query->where('payment_status', $paymentStatus))
             ->latest('kasbon_date')
             ->latest('created_at')
             ->paginate($perPage)
-            ->appends(request()->only(['search', 'month', 'year', 'status', 'type']));
+            ->appends(request()->only(['search', 'month', 'year', 'status', 'type', 'payment_status']));
     }
 
     /**
@@ -107,6 +110,9 @@ class KasbonService
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
         $data['kasbon_code'] = Kasbon::generateKasbonCode();
         $data['status'] = 'pending';
+        $data['paid_amount'] = 0;
+        $data['remaining_amount'] = $data['amount'];
+        $data['payment_status'] = 'unpaid';
         $data['week_number'] = Carbon::parse($data['period_start_date'])->weekOfMonth;
 
         if ($data['kasbon_type'] === 'team') {
@@ -256,6 +262,84 @@ class KasbonService
     public function getTotalTeamKasbon(string $periodStartDate): int
     {
         return Kasbon::getTotalTeamKasbon($periodStartDate);
+    }
+
+    // ─── Cicilan (Installment) ──────────────────────────────────────────
+
+    /**
+     * Rekam pembayaran cicilan kasbon (manual atau dari payroll).
+     *
+     * @param  Kasbon     $kasbon    Kasbon yang akan dibayar
+     * @param  int        $amount    Jumlah pembayaran
+     * @param  string     $method    'manual' atau 'payroll_deduction'
+     * @param  int|null   $payrollId ID payroll (jika dari payroll)
+     * @return KasbonPayment
+     *
+     * @throws \InvalidArgumentException  Jika kasbon sudah lunas
+     */
+    public function recordPayment(Kasbon $kasbon, int $amount, string $method = 'manual', ?int $payrollId = null): KasbonPayment
+    {
+        if ($kasbon->payment_status === 'paid') {
+            throw new \InvalidArgumentException('Kasbon sudah lunas');
+        }
+
+        $effectiveAmount = min($amount, $kasbon->remaining_amount);
+
+        $payment = KasbonPayment::create([
+            'kasbon_code' => $kasbon->kasbon_code,
+            'payroll_id' => $payrollId,
+            'amount' => $effectiveAmount,
+            'payment_method' => $method,
+            'payment_date' => now()->format('Y-m-d'),
+        ]);
+
+        $kasbon->paid_amount = ($kasbon->paid_amount ?? 0) + $effectiveAmount;
+        $kasbon->remaining_amount = $kasbon->amount - $kasbon->paid_amount;
+        $kasbon->payment_status = $kasbon->remaining_amount <= 0 ? 'paid' : 'partial';
+        $kasbon->save();
+
+        return $payment;
+    }
+
+    /**
+     * Mendapatkan total sisa kasbon yang belum dibayar untuk karyawan tertentu.
+     *
+     * @param  string  $employeeCode  Kode karyawan
+     * @return int     Total sisa kasbon
+     */
+    public function getTotalRemainingForEmployee(string $employeeCode): int
+    {
+        return Kasbon::where('employee_id', $employeeCode)
+            ->notPaid()
+            ->sum('remaining_amount');
+    }
+
+    /**
+     * Mendapatkan daftar kasbon yang masih memiliki sisa hutang untuk periode tertentu.
+     *
+     * @param  string         $periodStartDate  Tanggal mulai periode
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getPendingKasbonsForPeriod(string $periodStartDate): \Illuminate\Database\Eloquent\Collection
+    {
+        return Kasbon::where('period_start_date', $periodStartDate)
+            ->pending()
+            ->notPaid()
+            ->get();
+    }
+
+    /**
+     * Mendapatkan riwayat pembayaran untuk kasbon tertentu.
+     *
+     * @param  string  $kasbonCode  Kode kasbon
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getPayments(string $kasbonCode): \Illuminate\Database\Eloquent\Collection
+    {
+        return KasbonPayment::where('kasbon_code', $kasbonCode)
+            ->with('payroll')
+            ->latest('payment_date')
+            ->get();
     }
 
     /**

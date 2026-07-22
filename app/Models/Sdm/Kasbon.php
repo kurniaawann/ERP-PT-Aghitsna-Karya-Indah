@@ -5,6 +5,7 @@ namespace App\Models\Sdm;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model for the kasbons table.
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Codes follow the format: KSB001, KSB002, etc.
  *
  * Status flow: pending -> deducted (when payroll is generated)
+ * Payment status flow: unpaid -> partial -> paid
  *
  * @property string $kasbon_code
  * @property string|null $employee_id
@@ -30,6 +32,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Carbon\Carbon $period_end_date
  * @property string $status  pending|deducted
  * @property int|null $deducted_in_payroll_id
+ * @property int $paid_amount
+ * @property int $remaining_amount
+ * @property string $payment_status  unpaid|partial|paid
  * @property string|null $notes
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
@@ -37,8 +42,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read string $formatted_amount
  * @property-read string $status_label
  * @property-read string $kasbon_type_label
+ * @property-read string $payment_status_label
+ * @property-read int $progress_percentage
+ * @property-read string $formatted_paid_amount
+ * @property-read string $formatted_remaining_amount
  * @property-read \App\Models\Sdm\Employee|null $employee
  * @property-read \App\Models\Sdm\Payroll|null $payroll
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Sdm\KasbonPayment[] $payments
  */
 class Kasbon extends Model
 {
@@ -84,6 +94,9 @@ class Kasbon extends Model
         'period_end_date',
         'status',
         'deducted_in_payroll_id',
+        'paid_amount',
+        'remaining_amount',
+        'payment_status',
         'notes',
     ];
 
@@ -94,6 +107,8 @@ class Kasbon extends Model
      */
     protected $casts = [
         'amount' => 'integer',
+        'paid_amount' => 'integer',
+        'remaining_amount' => 'integer',
         'week_number' => 'integer',
         'period_month' => 'integer',
         'period_year' => 'integer',
@@ -145,6 +160,16 @@ class Kasbon extends Model
     public function payroll(): BelongsTo
     {
         return $this->belongsTo(Payroll::class, 'deducted_in_payroll_id');
+    }
+
+    /**
+     * Get all payment records for this kasbon.
+     *
+     * @return HasMany
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(KasbonPayment::class, 'kasbon_code');
     }
 
     // ─── Scopes ─────────────────────────────────────────────────────────
@@ -221,6 +246,17 @@ class Kasbon extends Model
         return $query->where('kasbon_type', 'team');
     }
 
+    /**
+     * Filter kasbons that are not fully paid.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeNotPaid($query)
+    {
+        return $query->where('payment_status', '!=', 'paid');
+    }
+
     // ─── Aggregate Queries ──────────────────────────────────────────────
 
     /**
@@ -239,7 +275,8 @@ class Kasbon extends Model
         return self::where('employee_id', $employeeCode)
             ->where('period_start_date', $startDate)
             ->pending()
-            ->sum('amount');
+            ->notPaid()
+            ->sum('remaining_amount');
     }
 
     /**
@@ -257,7 +294,8 @@ class Kasbon extends Model
         return self::where('kasbon_type', 'team')
             ->where('period_start_date', $startDate)
             ->pending()
-            ->sum('amount');
+            ->notPaid()
+            ->sum('remaining_amount');
     }
 
     // ─── State Management ───────────────────────────────────────────────
@@ -306,5 +344,53 @@ class Kasbon extends Model
     public function getKasbonTypeLabelAttribute(): string
     {
         return $this->kasbon_type === 'personal' ? 'Per Orang' : 'Per Tim';
+    }
+
+    /**
+     * Get the human-readable payment status label.
+     *
+     * @return string  "Belum Dibayar", "Cicilan Berjalan", or "Lunas"
+     */
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match ($this->payment_status) {
+            'unpaid' => 'Belum Dibayar',
+            'partial' => 'Cicilan Berjalan',
+            'paid' => 'Lunas',
+        };
+    }
+
+    /**
+     * Get the payment progress percentage.
+     *
+     * @return int  0-100
+     */
+    public function getProgressPercentageAttribute(): int
+    {
+        if ($this->amount <= 0) {
+            return 0;
+        }
+
+        return (int) round(($this->paid_amount / $this->amount) * 100);
+    }
+
+    /**
+     * Get the formatted paid amount in Indonesian Rupiah.
+     *
+     * @return string  e.g., "Rp 150.000"
+     */
+    public function getFormattedPaidAmountAttribute(): string
+    {
+        return 'Rp ' . number_format($this->paid_amount ?? 0, 0, ',', '.');
+    }
+
+    /**
+     * Get the formatted remaining amount in Indonesian Rupiah.
+     *
+     * @return string  e.g., "Rp 350.000"
+     */
+    public function getFormattedRemainingAmountAttribute(): string
+    {
+        return 'Rp ' . number_format($this->remaining_amount ?? 0, 0, ',', '.');
     }
 }

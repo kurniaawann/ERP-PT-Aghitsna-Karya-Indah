@@ -183,7 +183,7 @@
                                     <span class="font-semibold">Rp
                                         {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
                                 </div>
-                                @if ($payroll->additional_expenses_notes)
+                                @if ($payroll->additional_expenses_notes && trim($payroll->additional_expenses_notes) !== '[]')
                                     <div>
                                         <p class="text-text-label">Keterangan:</p>
                                         <p class="text-sm">{{ $payroll->additional_expenses_notes }}</p>
