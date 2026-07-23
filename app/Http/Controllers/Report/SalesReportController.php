@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Exports\Report\SalesReportExport;
 use App\Http\Controllers\Controller;
 use App\Services\Report\SalesReportService;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * Controller untuk Laporan Penjualan (Sales Report).
@@ -23,15 +26,6 @@ class SalesReportController extends Controller
 
     /**
      * Menampilkan halaman laporan penjualan.
-     *
-     * Mengambil data dari SalesReportService:
-     * - Paginated recaps dengan sorting
-     * - Summary statistik (total penjualan, modal, profit, dll)
-     * - Data trend bulanan untuk chart
-     * - Distribusi status untuk chart
-     * - Top 5 proyek berdasarkan profit
-     *
-     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
@@ -48,5 +42,31 @@ class SalesReportController extends Controller
             'statusDistribution',
             'topProjects'
         ));
+    }
+
+    /**
+     * Export laporan penjualan ke PDF.
+     */
+    public function exportPdf(Request $request)
+    {
+        $data = $this->salesReportService->buildExportData($request);
+
+        $pdf =Pdf::loadView('exports.report.sales-report-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Penjualan_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Export laporan penjualan ke Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $data = $this->salesReportService->buildExportData($request);
+
+        return Excel::download(
+            new SalesReportExport($data['projects'], $data['periodTitle'], $data['grandTotal']),
+            'Laporan_Penjualan_' . date('Y-m-d') . '.xlsx'
+        );
     }
 }

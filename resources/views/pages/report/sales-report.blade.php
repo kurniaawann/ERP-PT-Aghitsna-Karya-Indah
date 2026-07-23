@@ -59,6 +59,16 @@
                             class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
                             oninput="this.form.requestSubmit()">
                     </div>
+
+                    {{-- Print Dropdown --}}
+                    <div class="flex items-end">
+                        <x-buttons.print-dropdown
+                            :pdfRoute="route('report.sales.export.pdf')"
+                            :excelRoute="route('report.sales.export.excel')"
+                            :queryParams="request()->except([])"
+                            size="sm"
+                        />
+                    </div>
                 </div>
             </form>
         </div>
@@ -202,7 +212,7 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-medium text-text-primary">{{ $project->name_proyek }}</div>
-                                    <div class="text-xs text-text-secondary">{{ $project->id_sales_recap }}</div>
+                                    <div class="text-xs text-text-secondary">{{ $project->no_faktur }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                                     Rp {{ number_format($project->total_selling, 0, ',', '.') }}
@@ -259,7 +269,7 @@
                         @forelse($salesRecaps as $recap)
                             <tr class="hover:bg-surface-secondary transition-colors duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
-                                    {{ $recap->id_sales_recap }}
+                                    {{ $recap->no_faktur }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                                     {{ \Carbon\Carbon::parse($recap->date)->format('d M Y') }}
@@ -312,5 +322,6 @@
             window.statusDistributionData = @json($statusDistribution);
         </script>
         @vite(['resources/js/pages/report/sales-reports/index.js'])
+        @include('partials.shared.print-dropdown-script')
     @endpush
 @endsection

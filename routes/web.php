@@ -267,6 +267,10 @@ Route::middleware('auth')->group(function () {
         // Route Laporan Rekap Penjualan
         Route::get('/report/sales', [SalesReportController::class, 'index'])->name('report.sales');
 
+        // Route Export Laporan Penjualan
+        Route::get('/report/sales/export/pdf', [SalesReportController::class, 'exportPdf'])->name('report.sales.export.pdf');
+        Route::get('/report/sales/export/excel', [SalesReportController::class, 'exportExcel'])->name('report.sales.export.excel');
+
     });
 
     // ─── Routes untuk Admin ───

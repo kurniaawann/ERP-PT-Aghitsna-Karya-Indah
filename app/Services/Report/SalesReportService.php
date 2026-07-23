@@ -3,6 +3,7 @@
 namespace App\Services\Report;
 
 use App\Models\Report\SalesRecap;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -12,10 +13,7 @@ use Illuminate\Support\Collection;
  *
  * Menangani seluruh logika bisnis dashboard laporan penjualan untuk General Manager,
  * termasuk: query building, statistik ringkasan, trend bulanan, distribusi status,
- * dan proyek teratas.
- *
- * Service ini menggunakan RecapSalesService untuk utilitas bersama
- * (seperti validasi kolom sorting) tanpa mengubah logic bisnis yang ada.
+ * proyek teratas, dan data export PDF/Excel.
  */
 class SalesReportService
 {
@@ -57,7 +55,7 @@ class SalesReportService
             $query->whereYear('date', $request->year);
         } else {
             $query->whereYear('date', date('Y'));
-        }
+}
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -88,7 +86,7 @@ class SalesReportService
         $sortBy = $this->getAllowedSortColumn($request->get('sort_by', 'date'));
         $sortOrder = $request->get('sort_order', 'desc');
 
-        return $this->buildFilteredQuery($request)
+        $paginator = $this->buildFilteredQuery($request)
             ->select([
                 'id_sales_recap',
                 'date',
@@ -101,6 +99,15 @@ class SalesReportService
             ->orderBy($sortBy, $sortOrder)
             ->paginate(10)
             ->appends($request->all());
+
+        $fakturYear = $request->get('year', date('Y'));
+        $fakturA = 307;
+        $fakturB = 588;
+        foreach ($paginator->getCollection() as $item) {
+            $item->no_faktur = $fakturA++ . '/' . $fakturB++ . '/DIV.PRODUKSI/' . $fakturYear;
+        }
+
+        return $paginator;
     }
 
     /**
@@ -225,7 +232,7 @@ class SalesReportService
      */
     public function getTopProjects(Request $request, int $limit = 5): Collection
     {
-        return $this->buildFilteredQuery($request)
+        $projects = $this->buildFilteredQuery($request)
             ->select([
                 'id_sales_recap',
                 'date',
@@ -238,6 +245,15 @@ class SalesReportService
             ->orderBy('total_profit', 'desc')
             ->limit($limit)
             ->get();
+
+        $fakturYear = $request->get('year', date('Y'));
+        $fakturA = 307;
+        $fakturB = 588;
+        foreach ($projects as $item) {
+            $item->no_faktur = $fakturA++ . '/' . $fakturB++ . '/DIV.PRODUKSI/' . $fakturYear;
+        }
+
+        return $projects;
     }
 
     /**
@@ -252,5 +268,141 @@ class SalesReportService
     public function getAllowedSortColumn(string $sortBy): string
     {
         return in_array($sortBy, self::ALLOWED_SORT_COLUMNS) ? $sortBy : 'date';
+    }
+
+    // ============================================================
+    // EXPORT METHODS
+    // ============================================================
+
+    /**
+     * Membangun data untuk export PDF/Excel.
+     *
+     * Mengembalikan array dengan struktur:
+     * - projects: Array proyek dengan sales_recaps, subtotal, lunas_date
+     * - periodTitle: Label periode untuk header
+     * - grandTotal: Total keseluruhan
+     *
+     * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
+     * @return array{projects: array, periodTitle: string, grandTotal: int}
+     */
+    public function buildExportData(Request $request): array
+    {
+        $salesRecaps = $this->buildFilteredQuery($request)
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $projectGroups = $salesRecaps->groupBy('name_proyek');
+
+        $projects = [];
+        $grandTotal = 0;
+
+        $fakturYear = $request->get('year', date('Y'));
+        $fakturA = 307;
+        $fakturB = 588;
+
+        foreach ($projectGroups as $projectName => $projectSales) {
+            $projectData = $this->buildProjectExportData($projectSales, $fakturYear, $fakturA, $fakturB);
+            $projectData['project_name'] = $projectName;
+
+            $grandTotal += $projectData['subtotal'];
+            $projects[] = $projectData;
+        }
+
+        $periodTitle = $this->buildPeriodTitle($request, $salesRecaps);
+
+        return [
+            'projects' => $projects,
+            'periodTitle' => $periodTitle,
+            'grandTotal' => $grandTotal,
+        ];
+    }
+
+    /**
+     * Membangun data export untuk satu proyek.
+     *
+     * @param  \Illuminate\Support\Collection  $projectSales  Data sales dalam satu proyek
+     * @return array{sales_recaps: array, subtotal: int, lunas_date: string|null}
+     */
+    private function buildProjectExportData(Collection $projectSales, string $fakturYear, int &$fakturA, int &$fakturB): array
+    {
+        $subtotal = 0;
+        $lunasDate = null;
+        $salesRecapsData = [];
+
+        foreach ($projectSales as $sale) {
+            $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
+
+            $saleItems = [];
+            foreach ($items as $item) {
+                $qty = $item['quantity'] ?? 0;
+                $capital = $item['capital_price'] ?? 0;
+                $selling = $item['selling_price'] ?? 0;
+                $jumlah = $selling * $qty;
+
+                $subtotal += $jumlah;
+
+                $saleItems[] = [
+                    'name_item' => $item['name_item'] ?? '-',
+                    'qty' => $qty,
+                    'capital_price' => $capital,
+                    'selling_price' => $selling,
+                    'jumlah' => $jumlah,
+                ];
+            }
+
+            $salesRecapsData[] = [
+                'id_sales_recap' => $sale->id_sales_recap,
+                'no_faktur' => $fakturA++ . '/' . $fakturB++ . '/DIV.PRODUKSI/' . $fakturYear,
+                'date' => Carbon::parse($sale->date)->format('d/m/Y'),
+                'status' => $sale->status,
+                'items' => $saleItems,
+            ];
+
+            if ($sale->status === 'Lunas' && $lunasDate === null) {
+                $lunasDate = Carbon::parse($sale->updated_at ?? $sale->date)->format('d/m/Y');
+            }
+        }
+
+        return [
+            'sales_recaps' => $salesRecapsData,
+            'subtotal' => $subtotal,
+            'lunas_date' => $lunasDate,
+        ];
+    }
+
+    /**
+     * Membangun label periode untuk header PDF/Excel.
+     *
+     * @param  \Illuminate\Http\Request                $request     Request yang berisi parameter filter
+     * @param  \Illuminate\Support\Collection          $salesRecaps Data rekap penjualan
+     * @return string Label periode (contoh: "BULAN FEBRUARI 2026")
+     */
+    public function buildPeriodTitle(Request $request, Collection $salesRecaps): string
+    {
+        $month = $request->month;
+        $year = $request->year;
+
+        if (!empty($month) && !empty($year)) {
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            return 'BULAN ' . strtoupper($monthName) . ' ' . $year;
+        }
+
+        if (!empty($month)) {
+            $latestDate = $salesRecaps->sortByDesc('date')->first()?->date;
+            $year = $latestDate ? Carbon::parse($latestDate)->year : Carbon::now()->year;
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            return 'BULAN ' . strtoupper($monthName) . ' ' . $year;
+        }
+
+        if (!empty($year)) {
+            return 'TAHUN ' . $year;
+        }
+
+        $latestDate = $salesRecaps->sortByDesc('date')->first()?->date;
+        if ($latestDate) {
+            return 'BULAN ' . strtoupper(Carbon::parse($latestDate)->locale('id')->translatedFormat('F Y'));
+        }
+
+        return 'BULAN ' . strtoupper(Carbon::now()->locale('id')->translatedFormat('F Y'));
     }
 }

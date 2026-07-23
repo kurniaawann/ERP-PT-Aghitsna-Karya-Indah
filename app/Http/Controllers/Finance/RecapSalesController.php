@@ -237,7 +237,7 @@ class RecapSalesController extends Controller
 
         $monthYear = $this->buildMonthYearLabel($request, $salesRecaps);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.report.sales-report-pdf', [
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.finance.sales-report-pdf', [
             'salesRecaps' => $salesRecaps,
             'monthYear' => $monthYear,
             'grandTotalCapital' => $grandTotalCapital,

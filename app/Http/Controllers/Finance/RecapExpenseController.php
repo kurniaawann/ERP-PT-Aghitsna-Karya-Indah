@@ -195,7 +195,7 @@ class RecapExpenseController extends Controller
 
         $periodTitle = $this->service->buildPeriodTitle($request);
 
-        $pdf = Pdf::loadView('exports.report.expense-report-pdf', [
+        $pdf = Pdf::loadView('exports.finance.expense-report-pdf', [
             'expenseRecaps' => $expenseRecaps,
             'totals' => $totals,
             'periodTitle' => $periodTitle,
