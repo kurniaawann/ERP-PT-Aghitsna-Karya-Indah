@@ -7,8 +7,7 @@
     - $rab: Instance RAB yang akan diedit
     - $paymentAccounts: Collection dari PaymentAccount aktif
 --}}
-<x-modal :id="'editRABModal' . $rab->rab_number" :title="'Edit RAB ' . $rab->rab_number" :action="route('rab.update', $rab->rab_number)" method="POST" buttonText="Update" :formId="'editRABForm' . $rab->rab_number"
-    onsubmit="return prepareEditRABSubmit('{{ $rab->rab_number }}')">
+<x-modal :id="'editRABModal' . $rab->rab_number" :title="'Edit RAB ' . $rab->rab_number" :action="route('rab.update', $rab->rab_number)" method="POST" buttonText="Update" :formId="'editRABForm' . $rab->rab_number">
 
     @method('PUT')
 
@@ -34,6 +33,15 @@
         <textarea class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             name="recipient_address" rows="2" placeholder="Masukkan alamat lengkap penerima" maxlength="500">{{ $rab->recipient_address }}</textarea>
         <small class="text-text-secondary text-xs">Maksimal 500 karakter</small>
+    </div>
+
+    {{-- Uang Masuk --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Uang Masuk</label>
+        <input type="number" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="incoming_payment" placeholder="0" min="0" step="0" value="{{ $rab->incoming_payment ?? 0 }}"
+            oninvalid="this.setCustomValidity('Uang masuk harus berupa angka')" oninput="this.setCustomValidity('')">
+        <small class="text-text-secondary text-xs">Masukkan jumlah uang masuk (Rp)</small>
     </div>
 
     {{-- Teks Pengantar --}}

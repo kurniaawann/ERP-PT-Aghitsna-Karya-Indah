@@ -22,6 +22,7 @@ class RAB extends Model
         'recipient_address',
         'intro_text',
         'total_amount',
+        'incoming_payment',
         'amount_in_words',
         'selected_payment_accounts',
         'signed_by',
@@ -31,6 +32,7 @@ class RAB extends Model
     protected $casts = [
         'date' => 'date',
         'total_amount' => 'integer',
+        'incoming_payment' => 'integer',
         'sequence_number' => 'integer',
         'selected_payment_accounts' => 'array',
     ];

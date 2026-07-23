@@ -31,6 +31,7 @@ class RABStoreRequest extends FormRequest
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'rab_data' => 'required|string',
             'misc_costs_data' => 'nullable|string',
+            'incoming_payment' => 'nullable|integer|min:0',
         ];
     }
 

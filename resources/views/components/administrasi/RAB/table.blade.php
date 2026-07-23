@@ -20,6 +20,7 @@
                             <th class="p-3 text-left">Penerima</th>
                             <th class="p-3 text-left">Tanggal</th>
                             <th class="p-3 text-right">Total Biaya</th>
+                            <th class="p-3 text-right">Uang Masuk</th>
                             <th class="p-3 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -38,46 +39,49 @@
                                 <td class="p-3 text-right font-semibold text-success">
                                     Rp {{ number_format($rab->total_amount, 0, ',', '.') }}
                                 </td>
+                                <td class="p-3 text-right font-semibold text-primary">
+                                    Rp {{ number_format($rab->incoming_payment ?? 0, 0, ',', '.') }}
+                                </td>
                                 <td class="p-3 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
-                                        {{-- Tombol Lihat Detail --}}
+                                        {{-- Tombol Detail --}}
                                         <button type="button"
                                             onclick="openModal('detailRABModal{{ $rab->rab_number }}')"
-                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
-                                            title="Lihat Detail">
+                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Detail">
                                             <i class="fa-solid fa-eye w-3 h-3"></i>
-                                            Lihat
+                                            Detail
                                         </button>
 
-                                        {{-- Tombol Export Excel --}}
-                                        <a href="{{ route('rab.export-excel', $rab->rab_number) }}"
-                                            class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
-                                            title="Download Excel">
-                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
-                                            Excel
-                                        </a>
+                                        {{-- Tombol Edit --}}
+                                        <button type="button" onclick="editRAB('{{ $rab->rab_number }}')"
+                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Edit">
+                                            <i class="fa-solid fa-pen w-3 h-3"></i>
+                                            Edit
+                                        </button>
 
                                         {{-- Tombol Export PDF --}}
                                         <a href="{{ route('rab.export-pdf', $rab->rab_number) }}"
-                                            class="flex items-center gap-1 bg-error hover:bg-error-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
+                                            class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Download PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                             PDF
                                         </a>
 
-                                        {{-- Tombol Edit --}}
-                                        <button type="button" onclick="editRAB('{{ $rab->rab_number }}')"
-                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs font-medium"
-                                            title="Edit">
-                                            <i class="fa-solid fa-pen-to-square w-3 h-3"></i>
-                                            Edit
-                                        </button>
+                                        {{-- Tombol Export Excel --}}
+                                        <a href="{{ route('rab.export-excel', $rab->rab_number) }}"
+                                            class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Download Excel">
+                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
+                                            Excel
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
+                                <td colspan="7" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
                             </tr>
                         @endforelse
                     </tbody>

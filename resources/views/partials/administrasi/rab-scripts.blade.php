@@ -571,6 +571,24 @@
             });
 
             document.getElementById('rabDataInput').value = JSON.stringify(categories);
+
+            // Collect miscellaneous costs data
+            const miscContainer = document.getElementById('miscCostsContainer');
+            const miscCostsData = [];
+            if (miscContainer) {
+                miscContainer.querySelectorAll('.misc-cost-item').forEach(function(item, index) {
+                    miscCostsData.push({
+                        item_order: index + 1,
+                        item_name: item.querySelector('.misc-item-name').value,
+                        amount: parseInt(item.querySelector('.misc-item-amount').value) || 0
+                    });
+                });
+            }
+            const miscInput = document.getElementById('miscCostsDataInput');
+            if (miscInput) {
+                miscInput.value = JSON.stringify(miscCostsData);
+            }
+
             return true;
         };
 

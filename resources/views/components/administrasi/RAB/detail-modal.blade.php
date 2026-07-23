@@ -21,6 +21,12 @@
         </div>
     </div>
 
+    @if ($rab->incoming_payment > 0)
+        <div class="mb-2 p-2 bg-primary-light rounded border border-primary text-xs">
+            <p class="text-primary"><strong>Uang Masuk:</strong> Rp {{ number_format($rab->incoming_payment, 0, ',', '.') }}</p>
+        </div>
+    @endif
+
     @if ($rab->recipient_address)
         <div class="mb-2 p-2 bg-surface-secondary rounded border border-border-light text-xs">
             <p class="text-text-secondary mb-1"><strong>Alamat:</strong></p>
@@ -128,11 +134,25 @@
                 }) ?:
                     (int) ($subcategory->sub_harga ?? 0);
             });
+        $miscCostsTotal = $rab->miscellaneousCosts->sum('amount');
+        $totalAnggaranBiaya = $grandTotal + $miscCostsTotal;
     @endphp
     <div class="flex justify-end mb-2">
         <div class="bg-success-light border-2 border-success rounded p-2 w-full text-xs">
-            <p class="text-success"><strong>Total Keseluruhan:</strong></p>
-            <p class="font-bold text-lg text-success">Rp {{ number_format($grandTotal, 0, ',', '.') }}</p>
+            <div class="space-y-1">
+                <div class="flex justify-between text-success border-b border-success pb-1">
+                    <span><strong>Total Kategori:</strong></span>
+                    <span class="font-semibold">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between text-success border-b border-success pb-1">
+                    <span><strong>Total Biaya Lain-Lain:</strong></span>
+                    <span class="font-semibold">Rp {{ number_format($miscCostsTotal, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between text-lg text-success">
+                    <span><strong>Total Keseluruhan:</strong></span>
+                    <p class="font-bold text-xl text-success">Rp {{ number_format($totalAnggaranBiaya, 0, ',', '.') }}</p>
+                </div>
+            </div>
         </div>
     </div>
 

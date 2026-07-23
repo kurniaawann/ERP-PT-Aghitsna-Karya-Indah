@@ -27,7 +27,7 @@
          }
 
          .container {
-             border: 2px solid #4a90a4;
+             border: 2px solid #FF6600;
              padding: 6px;
              height: auto;
              position: relative;
@@ -52,7 +52,7 @@
          }
 
          .company-name {
-             color: #4a90a4;
+             color: #FF6600;
              font-size: 12px;
              font-weight: bold;
              margin-bottom: 1px;
@@ -75,7 +75,7 @@
 
          .title {
              text-align: center;
-             color: #4a90a4;
+             color: #FF6600;
              font-size: 16px;
              font-weight: bold;
              letter-spacing: 3px;
@@ -130,7 +130,7 @@
          }
 
          .amount-box {
-             border: 2px solid #4a90a4;
+             border: 2px solid #FF6600;
              padding: 6px;
              margin: 6px 0;
              /* width: 100%; */
@@ -225,7 +225,7 @@
 
          .bank-label {
              font-style: italic;
-             color: #4a90a4;
+             color: #FF6600;
              width: 40px;
              margin-right: 5px;
          }
@@ -256,7 +256,7 @@
              font-size: 7px;
              font-style: italic;
              text-align: center;
-             color: #4a90a4;
+             color: #FF6600;
              padding: 4px;
              border-top: 1px solid #ccc;
          }

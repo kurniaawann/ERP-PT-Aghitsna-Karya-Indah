@@ -35,7 +35,7 @@ class RABService
      */
     public function getPaginatedRABs(?string $search = null, int $perPage = 15)
     {
-        return RAB::with(['categories'])
+        return RAB::with(['categories', 'miscellaneousCosts'])
             ->when($search, function ($query, $search) {
                 return $query->where('rab_number', 'like', "%{$search}%")
                     ->orWhere('recipient', 'like', "%{$search}%");
@@ -159,7 +159,8 @@ class RABService
                 'recipient' => $validatedData['recipient'],
                 'recipient_address' => $validatedData['recipient_address'] ?? 'Ditempat',
                 'intro_text' => $validatedData['intro_text'],
-                'total_amount' => $totalAmount,
+                'total_amount' => $totalAnggaranBiaya,
+                'incoming_payment' => $validatedData['incoming_payment'] ?? 0,
                 'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
                 'selected_payment_accounts' => $validatedData['selected_payment_accounts'] ?? [],
                 'signed_by' => $validatedData['signed_by'] ?? null,
@@ -198,7 +199,8 @@ class RABService
                 'recipient' => $validatedData['recipient'],
                 'recipient_address' => $validatedData['recipient_address'] ?? 'Ditempat',
                 'intro_text' => $validatedData['intro_text'],
-                'total_amount' => $totalAmount,
+                'total_amount' => $totalAnggaranBiaya,
+                'incoming_payment' => $validatedData['incoming_payment'] ?? 0,
                 'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
                 'selected_payment_accounts' => $validatedData['selected_payment_accounts'] ?? [],
                 'signed_by' => $validatedData['signed_by'] ?? null,
