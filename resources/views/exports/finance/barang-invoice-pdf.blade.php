@@ -279,10 +279,17 @@
             Demikian invoice item ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.
         </div>
 
-        <div class="signature">
-            <p>Hormat Kami,</p>
-            <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
-        </div>
+        <table style="width: 100%; border: none; margin-top: 30px;">
+            <tr>
+                <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
+                    <p>Hormat Kami,</p>
+                    <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
+                </td>
+                <td style="width: 50%; border: none; vertical-align: top; text-align: center;">
+                    <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" style="height: 100px;">
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 

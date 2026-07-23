@@ -433,10 +433,17 @@
         </div>
 
         <!-- Signature -->
-        <div class="signature">
-            <div>Hormat Kami,</div>
-            <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
-        </div>
+        <table style="width: 100%; border: none; margin-top: 5px;">
+            <tr>
+                <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
+                    <div>Hormat Kami,</div>
+                    <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
+                </td>
+                <td style="width: 50%; border: none; vertical-align: top; text-align: center;">
+                    <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" style="height: 100px;">
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 
