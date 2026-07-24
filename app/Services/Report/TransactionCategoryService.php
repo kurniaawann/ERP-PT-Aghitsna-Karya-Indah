@@ -68,6 +68,7 @@ class TransactionCategoryService
             'type' => $data['type'],
             'sort_order' => $maxSortOrder + 1,
             'is_active' => true,
+            'created_by' => auth()->id(),
         ]);
     }
 

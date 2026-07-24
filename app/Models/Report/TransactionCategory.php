@@ -5,6 +5,7 @@ namespace App\Models\Report;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
 
 /**
  * Model untuk tabel transaction_categories.
@@ -28,6 +29,7 @@ class TransactionCategory extends Model
         'type',
         'sort_order',
         'is_active',
+        'created_by',
     ];
 
     protected $casts = [
@@ -43,6 +45,16 @@ class TransactionCategory extends Model
     public function expenseRecaps(): HasMany
     {
         return $this->hasMany(\App\Models\Report\ExpenseRecap::class, 'transaction_category_id');
+    }
+
+    /**
+     * Relasi ke user yang membuat kategori ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
