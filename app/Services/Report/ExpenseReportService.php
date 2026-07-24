@@ -59,7 +59,11 @@ class ExpenseReportService
      */
     public function buildFilteredQuery(Request $request): Builder
     {
-        $query = ExpenseRecap::query();
+        $query = ExpenseRecap::query()
+            ->where(function ($q) {
+                $q->where('created_by', auth()->id())
+                    ->orWhereNotNull('sales_recap_id');
+            });
 
         if ($request->filled('month')) {
             $query->whereMonth('transaction_date', $request->month);
@@ -169,6 +173,10 @@ class ExpenseReportService
         $year = $request->get('year', date('Y'));
 
         $trend = ExpenseRecap::whereYear('transaction_date', $year)
+            ->where(function ($q) {
+                $q->where('created_by', auth()->id())
+                    ->orWhereNotNull('sales_recap_id');
+            })
             ->when($request->filled('category'), function ($q) use ($request) {
                 $q->where('transaction_category_id', $request->category);
             })
@@ -261,6 +269,10 @@ class ExpenseReportService
     public function getCashFlow(Request $request): array
     {
         $periodData = ExpenseRecap::query()
+            ->where(function ($q) {
+                $q->where('created_by', auth()->id())
+                    ->orWhereNotNull('sales_recap_id');
+            })
             ->when($request->filled('year'), function ($q) use ($request) {
                 $q->whereYear('transaction_date', $request->year);
             }, function ($q) {

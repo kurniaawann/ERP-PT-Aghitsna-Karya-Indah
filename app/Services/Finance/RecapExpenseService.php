@@ -39,6 +39,10 @@ class RecapExpenseService
         $search = $request->get('search');
 
         return ExpenseRecap::query()
+            ->where(function ($query) {
+                $query->where('created_by', auth()->id())
+                    ->orWhereNotNull('sales_recap_id');
+            })
             ->when($month, function ($query, $month) {
                 $query->whereMonth('transaction_date', $month);
             })
@@ -117,6 +121,7 @@ class RecapExpenseService
     {
         $data['income_amount'] = null;
         $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
+        $data['created_by'] = auth()->id();
 
         return ExpenseRecap::create($data);
     }
