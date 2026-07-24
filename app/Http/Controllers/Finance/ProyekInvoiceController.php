@@ -153,8 +153,9 @@ class ProyekInvoiceController extends Controller
 
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
         $date = date('Y-m-d');
+        $prefix =(auth()->check() && auth()->user()->role === 'admin') ? 'Invoice' : 'Invoice_Proyek';
 
-        return $pdf->download("Invoice_Proyek_{$safeFileName}_{$date}.pdf");
+        return $pdf->download("{$prefix}_{$safeFileName}_{$date}.pdf");
     }
 
     /**
@@ -167,7 +168,8 @@ class ProyekInvoiceController extends Controller
     {
         $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
         $date = date('Y-m-d');
+        $prefix = (auth()->check() && auth()->user()->role === 'admin') ? 'Invoice' : 'Invoice_Proyek';
 
-        return Excel::download(new ProyekInvoiceExport($invoiceNumber), "Invoice_Proyek_{$safeFileName}_{$date}.xlsx");
+        return Excel::download(new ProyekInvoiceExport($invoiceNumber), "{$prefix}_{$safeFileName}_{$date}.xlsx");
     }
 }

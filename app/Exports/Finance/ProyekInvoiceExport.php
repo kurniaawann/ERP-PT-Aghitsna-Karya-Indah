@@ -33,7 +33,8 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
     public function title(): string
     {
-        return 'Invoice_Proyek_' . $this->invoice->invoice_number;
+        $prefix =(auth()->check() && auth()->user()->role === 'admin') ? 'Invoice' : 'Invoice_Proyek';
+        return $prefix . '_' . $this->invoice->invoice_number;
     }
 
     public function columnWidths(): array
@@ -69,7 +70,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $drawing->setWorksheet($sheet);
 
                 $sheet->mergeCells('B1:F1');
-                $sheet->setCellValue('B1', 'INVOICE PROYEK');
+               $sheet->setCellValue('B1', (auth()->check() && auth()->user()->role === 'admin') ? 'INVOICE' : 'INVOICE PROYEK');
                 $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 

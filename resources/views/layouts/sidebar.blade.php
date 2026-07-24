@@ -278,7 +278,7 @@
                                         class="fas fa-file-contract w-4 
                                         {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                     </i>
-                                    <span class="ml-3 text-sm font-medium">Invoice Proyek</span>
+                                    <span class="ml-3 text-sm font-medium">{{ auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek' }}</span>
                                 </a>
                             </li>
                         </ul>
