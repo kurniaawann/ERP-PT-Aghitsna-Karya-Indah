@@ -22,7 +22,8 @@ class InvoiceProyekReminderRepository
      */
     public function search(array $filters): LengthAwarePaginator
     {
-        $query = InvoiceProyekReminder::with('invoice');
+        $query = InvoiceProyekReminder::with('invoice')
+            ->where('created_by', auth()->id());
 
         // Filter berdasarkan bulan
         if (!empty($filters['month'])) {
@@ -57,6 +58,7 @@ class InvoiceProyekReminderRepository
     public function countByFilters(array $filters): int
     {
         return InvoiceProyekReminder::query()
+            ->where('created_by', auth()->id())
             ->when(!empty($filters['month']), fn ($q) => $q->whereMonth('invoice_date', $filters['month']))
             ->when(true, fn ($q) => $q->whereYear('invoice_date', $filters['year'] ?? date('Y')))
             ->when(!empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
@@ -74,6 +76,7 @@ class InvoiceProyekReminderRepository
     public function countByStatus(string $status, array $filters): int
     {
         return InvoiceProyekReminder::query()
+            ->where('created_by', auth()->id())
             ->when(!empty($filters['month']), fn ($q) => $q->whereMonth('invoice_date', $filters['month']))
             ->when(true, fn ($q) => $q->whereYear('invoice_date', $filters['year'] ?? date('Y')))
             ->when(!empty($filters['search']), fn ($q) => $q->search($filters['search']))
@@ -93,6 +96,7 @@ class InvoiceProyekReminderRepository
     public function countExpired(array $filters): int
     {
         $query = InvoiceProyekReminder::with('invoice.paymentProofs')
+            ->where('created_by', auth()->id())
             ->when(!empty($filters['month']), fn ($q) => $q->whereMonth('invoice_date', $filters['month']))
             ->when(true, fn ($q) => $q->whereYear('invoice_date', $filters['year'] ?? date('Y')))
             ->when(!empty($filters['search']), fn ($q) => $q->search($filters['search']))

@@ -97,6 +97,7 @@ class InvoiceProyekObserver
                 'status' => $status,
                 'notification_sent_at' => $status === 'paid' || $status === 'notified' ? now() : null,
                 'notes' => 'Reminder jatuh tempo invoice proyek',
+                'created_by' => $invoiceProyek->created_by,
             ]
         );
     }

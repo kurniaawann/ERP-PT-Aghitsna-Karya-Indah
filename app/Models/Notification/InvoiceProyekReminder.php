@@ -6,6 +6,7 @@ use App\Models\Finance\InvoiceProyek;
 use App\Services\Finance\InvoiceCalculatorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
 
 /**
@@ -31,6 +32,7 @@ class InvoiceProyekReminder extends Model
         'status',
         'notification_sent_at',
         'notes',
+        'created_by',
     ];
 
     protected $casts = [
@@ -48,6 +50,11 @@ class InvoiceProyekReminder extends Model
     public function invoice()
     {
         return $this->belongsTo(InvoiceProyek::class, 'invoice_number', 'invoice_number');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**
