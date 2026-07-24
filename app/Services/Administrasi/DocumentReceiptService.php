@@ -39,6 +39,7 @@ class DocumentReceiptService
     public function getPaginated(?string $search): LengthAwarePaginator
     {
         return DocumentReceipt::query()
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest()
             ->paginate(self::PER_PAGE);
@@ -53,6 +54,7 @@ class DocumentReceiptService
     public function getAllForExport(?string $search): Collection
     {
         return DocumentReceipt::query()
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest()
             ->get();
@@ -67,6 +69,7 @@ class DocumentReceiptService
     public function getByIds(array $ids): Collection
     {
         return DocumentReceipt::whereIn('id_document', $ids)
+            ->where('created_by', auth()->id())
             ->latest()
             ->get();
     }
@@ -81,6 +84,7 @@ class DocumentReceiptService
     {
         $validatedData['id_document'] = DocumentReceipt::generateDocumentCode();
         $validatedData['location'] = $validatedData['location'] ?? self::DEFAULT_LOCATION;
+        $validatedData['created_by'] = auth()->id();
 
         return DocumentReceipt::create($validatedData);
     }

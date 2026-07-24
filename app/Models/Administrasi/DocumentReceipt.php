@@ -4,6 +4,7 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Model untuk modul Tanda Terima Dokumen.
@@ -46,6 +47,7 @@ class DocumentReceipt extends Model
         'receipt_date',
         'receipt_time',
         'location',
+        'created_by',
     ];
 
     /**
@@ -80,5 +82,10 @@ class DocumentReceipt extends Model
 
         // Format dengan 3 digit (001, 002, ..., 999, 1000, dst)
         return 'DOC-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 }

@@ -44,7 +44,8 @@ class NotaService
      */
     public function getPaginated(?string $search): LengthAwarePaginator
     {
-        return Nota::when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+        return Nota::where('created_by', auth()->id())
+            ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
     }
@@ -57,7 +58,8 @@ class NotaService
      */
     public function getAllForExport(?string $search): Collection
     {
-        return Nota::when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+        return Nota::where('created_by', auth()->id())
+            ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->get();
     }
@@ -71,6 +73,7 @@ class NotaService
     public function getByIds(array $ids): Collection
     {
         return Nota::whereIn('id_nota', $ids)
+            ->where('created_by', auth()->id())
             ->latest('created_at')
             ->get();
     }
@@ -127,6 +130,7 @@ class NotaService
             'ppn_percentage' => $ppnPercentage,
             'ppn_amount' => $ppnAmount,
             'total_with_ppn' => $totalWithPpn,
+            'created_by' => auth()->id(),
         ]);
     }
 

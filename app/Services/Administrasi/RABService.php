@@ -36,6 +36,7 @@ class RABService
     public function getPaginatedRABs(?string $search = null, int $perPage = 15)
     {
         return RAB::with(['categories', 'miscellaneousCosts'])
+            ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
                 return $query->where('rab_number', 'like', "%{$search}%")
                     ->orWhere('recipient', 'like', "%{$search}%");
@@ -54,6 +55,7 @@ class RABService
     {
         return RAB::with(['categories.subcategories.items', 'miscellaneousCosts'])
             ->where('rab_number', $rabNumber)
+            ->where('created_by', auth()->id())
             ->firstOrFail();
     }
 
@@ -165,6 +167,7 @@ class RABService
                 'selected_payment_accounts' => $validatedData['selected_payment_accounts'] ?? [],
                 'signed_by' => $validatedData['signed_by'] ?? null,
                 'division' => $validatedData['division'] ?? null,
+                'created_by' => auth()->id(),
             ]);
 
             $this->createCategories($rab, $rabData);
@@ -229,7 +232,9 @@ class RABService
         return DB::transaction(function () use ($rabNumbers) {
             $count = 0;
             foreach ($rabNumbers as $rabNumber) {
-                RAB::where('rab_number', $rabNumber)->delete();
+                RAB::where('rab_number', $rabNumber)
+                    ->where('created_by', auth()->id())
+                    ->delete();
                 $count++;
             }
             return $count;

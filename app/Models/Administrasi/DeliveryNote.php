@@ -4,6 +4,7 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Model untuk entitas Surat Jalan (Delivery Note).
@@ -48,6 +49,7 @@ class DeliveryNote extends Model
         'vehicle_number',
         'total_quantity',
         'notes',
+        'created_by',
     ];
 
     /**
@@ -77,5 +79,10 @@ class DeliveryNote extends Model
         $date = now()->format('Ymd');
         $count = self::whereDate('created_at', now()->toDateString())->count() + 1;
         return "{$prefix}-{$date}-" . str_pad($count, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 }

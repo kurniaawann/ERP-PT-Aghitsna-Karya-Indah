@@ -4,6 +4,7 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Model untuk tabel "cash_out_proofs" (Bukti Kas Keluar).
@@ -55,6 +56,7 @@ class CashOutProof extends Model
         'director',
         'finance_head',
         'template_type',
+        'created_by',
     ];
 
     /**
@@ -113,5 +115,10 @@ class CashOutProof extends Model
 
         // Format dengan 3 digit (001, 002, ..., 999, 1000, dst)
         return 'CEK-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 }

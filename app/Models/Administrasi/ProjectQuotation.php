@@ -4,6 +4,7 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentAccount;
 
 /**
@@ -35,6 +36,7 @@ class ProjectQuotation extends Model
         'selected_payment_accounts',
         'signed_by',
         'division',
+        'created_by',
     ];
 
     protected $casts = [
@@ -74,6 +76,11 @@ class ProjectQuotation extends Model
             return PaymentAccount::active()->get();
         }
         return PaymentAccount::whereIn('id', $ids)->orderBy('id')->get();
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

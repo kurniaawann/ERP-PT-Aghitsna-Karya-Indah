@@ -41,6 +41,7 @@ class DeliveryNoteService
     public function getPaginated(?string $search): LengthAwarePaginator
     {
         return DeliveryNote::query()
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
@@ -55,6 +56,7 @@ class DeliveryNoteService
     public function getAllForExport(?string $search): Collection
     {
         return DeliveryNote::query()
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->get();
@@ -69,6 +71,7 @@ class DeliveryNoteService
     public function getByIds(array $ids): Collection
     {
         return DeliveryNote::whereIn('id_delivery_note', $ids)
+            ->where('created_by', auth()->id())
             ->latest('created_at')
             ->get();
     }
@@ -106,6 +109,7 @@ class DeliveryNoteService
             'vehicle_number' => $validated['vehicle_number'] ?? null,
             'total_quantity' => $totalQuantity,
             'notes' => $validated['notes'] ?? null,
+            'created_by' => auth()->id(),
         ]);
     }
 

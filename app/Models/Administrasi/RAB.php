@@ -4,6 +4,7 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RAB extends Model
 {
@@ -27,6 +28,7 @@ class RAB extends Model
         'selected_payment_accounts',
         'signed_by',
         'division',
+        'created_by',
     ];
 
     protected $casts = [
@@ -54,6 +56,11 @@ class RAB extends Model
     {
         return $this->hasMany(RABMiscellaneousCost::class, 'rab_number', 'rab_number')
             ->orderBy('item_order');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     // ─── Static Methods ────────────────────────────────────────────────────────

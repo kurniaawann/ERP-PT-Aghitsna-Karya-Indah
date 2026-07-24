@@ -36,6 +36,7 @@ class ProjectQuotationService
     public function getPaginatedSearch(?string $search): LengthAwarePaginator
     {
         return ProjectQuotation::with(['items'])
+            ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
                 $escapedSearch = $this->escapeLikeWildcards($search);
                 $query->where('quotation_number', 'like', "%{$escapedSearch}%")
@@ -95,6 +96,7 @@ class ProjectQuotationService
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by' => $validated['signed_by'] ?? null,
                 'division' => $validated['division'] ?? null,
+                'created_by' => auth()->id(),
             ]);
 
             $this->syncItems($quotation, $items);
@@ -147,7 +149,9 @@ class ProjectQuotationService
      */
     public function deleteByIds(array $ids): int
     {
-        return ProjectQuotation::whereIn('quotation_number', $ids)->delete();
+        return ProjectQuotation::whereIn('quotation_number', $ids)
+            ->where('created_by', auth()->id())
+            ->delete();
     }
 
     /**
@@ -160,6 +164,7 @@ class ProjectQuotationService
     {
         return ProjectQuotation::with(['items'])
             ->whereIn('quotation_number', $ids)
+            ->where('created_by', auth()->id())
             ->orderBy('sequence_number')
             ->get();
     }
@@ -172,7 +177,9 @@ class ProjectQuotationService
      */
     public function findByNumber(string $quotationNumber): ?ProjectQuotation
     {
-        return ProjectQuotation::with(['items'])->find($quotationNumber);
+        return ProjectQuotation::with(['items'])
+            ->where('created_by', auth()->id())
+            ->find($quotationNumber);
     }
 
     // ═══════════════════════════════════════════════════════════════

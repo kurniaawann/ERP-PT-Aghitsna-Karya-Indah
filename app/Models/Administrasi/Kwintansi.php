@@ -56,6 +56,7 @@ class Kwintansi extends Model
         'remaining',
         'kwintansi_date',
         'location',
+        'created_by',
     ];
 
     /**
@@ -78,6 +79,11 @@ class Kwintansi extends Model
     public function paymentAccount(): BelongsTo
     {
         return $this->belongsTo(PaymentAccount::class, 'payment_account_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**

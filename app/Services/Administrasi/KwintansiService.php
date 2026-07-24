@@ -40,6 +40,7 @@ class KwintansiService
     public function getPaginated(?string $search): LengthAwarePaginator
     {
         return Kwintansi::with('paymentAccount')
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
@@ -54,6 +55,7 @@ class KwintansiService
     public function getAllForExport(?string $search): Collection
     {
         return Kwintansi::with('paymentAccount')
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->get();
@@ -69,6 +71,7 @@ class KwintansiService
     {
         return Kwintansi::with('paymentAccount')
             ->whereIn('id_kwintansi', $ids)
+            ->where('created_by', auth()->id())
             ->latest('created_at')
             ->get();
     }
@@ -87,6 +90,7 @@ class KwintansiService
         $validatedData['include_bank'] = $includeBank;
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
+        $validatedData['created_by'] = auth()->id();
 
         return Kwintansi::create($validatedData);
     }

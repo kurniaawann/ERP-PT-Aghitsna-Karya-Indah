@@ -39,6 +39,7 @@ class CashOutProofService
     public function getPaginated(?string $search): LengthAwarePaginator
     {
         return CashOutProof::query()
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->paginate(15);
@@ -53,6 +54,7 @@ class CashOutProofService
     public function getAllForExport(?string $search): Collection
     {
         return CashOutProof::query()
+            ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
             ->get();
@@ -67,6 +69,7 @@ class CashOutProofService
     public function getByIds(array $bkkNos): Collection
     {
         return CashOutProof::whereIn('bkk_no', $bkkNos)
+            ->where('created_by', auth()->id())
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -84,6 +87,7 @@ class CashOutProofService
         // Auto-generate nomor BKK dan CEK
         $data['bkk_no'] = CashOutProof::generateBkkNo();
         $data['cek_no'] = CashOutProof::generateCekNo();
+        $data['created_by'] = auth()->id();
 
         return CashOutProof::create($data);
     }

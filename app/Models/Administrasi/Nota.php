@@ -4,6 +4,7 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentAccount;
 
 /**
@@ -60,6 +61,7 @@ class Nota extends Model
         'ppn_percentage',
         'ppn_amount',
         'total_with_ppn',
+        'created_by',
     ];
 
     /**
@@ -163,6 +165,11 @@ class Nota extends Model
         }
 
         return PaymentAccount::whereIn('id', $this->selected_payment_accounts)->get();
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**
