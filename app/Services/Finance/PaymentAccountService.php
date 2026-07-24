@@ -40,7 +40,7 @@ class PaymentAccountService
      */
     public function buildFilteredQuery(?Request $request = null): \Illuminate\Database\Eloquent\Builder
     {
-        $query = PaymentAccount::query();
+        $query = PaymentAccount::query()->where('created_by', auth()->id());
 
         if (!$request) {
             return $query;
@@ -72,6 +72,7 @@ class PaymentAccountService
             'account_number' => $validated['account_number'],
             'account_holder' => $validated['account_holder'],
             'is_active'      => true,
+            'created_by'     => auth()->id(),
         ]);
     }
 
@@ -251,6 +252,6 @@ class PaymentAccountService
      */
     public function canDelete(): bool
     {
-        return PaymentAccount::count() > 1;
+        return PaymentAccount::where('created_by', auth()->id())->count() > 1;
     }
 }

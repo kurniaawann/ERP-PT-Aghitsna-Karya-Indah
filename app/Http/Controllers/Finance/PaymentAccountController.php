@@ -108,7 +108,7 @@ class PaymentAccountController extends Controller
     public function destroySelected(Request $request)
     {
         $selectedIds = $request->input('selected_accounts', []);
-        $totalAccounts = PaymentAccount::count();
+        $totalAccounts = PaymentAccount::where('created_by', auth()->id())->count();
         $selectedCount = count($selectedIds);
         $isAjax = $request->ajax();
 

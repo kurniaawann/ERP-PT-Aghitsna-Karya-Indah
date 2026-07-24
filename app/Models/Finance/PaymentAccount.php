@@ -5,6 +5,7 @@ namespace App\Models\Finance;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 /**
  * Model untuk Rekening Pembayaran.
@@ -26,6 +27,7 @@ class PaymentAccount extends Model
         'account_number',
         'account_holder',
         'is_active',
+        'created_by',
     ];
 
     /**
@@ -70,5 +72,19 @@ class PaymentAccount extends Model
                 ->orWhere('account_number', 'like', "%{$search}%")
                 ->orWhere('account_holder', 'like', "%{$search}%");
         });
+    }
+
+    // ============================================================
+    // RELATIONS
+    // ============================================================
+
+    /**
+     * Relasi ke user yang membuat rekening ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }
