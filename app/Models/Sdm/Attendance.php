@@ -44,6 +44,7 @@ class Attendance extends Model
         'overtime_rate',
         'overtime_total',
         'notes',
+        'created_by',
     ];
 
     /**
@@ -66,6 +67,11 @@ class Attendance extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id', 'employee_code');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**

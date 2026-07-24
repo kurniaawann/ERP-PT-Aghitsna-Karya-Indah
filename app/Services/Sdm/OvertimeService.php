@@ -32,6 +32,7 @@ class OvertimeService
     public function getPaginatedOvertimes(?string $search, int $perPage = 15): LengthAwarePaginator
     {
         return Attendance::where('status', 'lembur')
+            ->where('created_by', auth()->id())
             ->with('employee')
             ->when($search, function ($query, $search) {
                 $query->whereHas('employee', function ($q) use ($search) {
@@ -128,6 +129,7 @@ class OvertimeService
             'overtime_rate' => (int) $data['overtime_rate'],
             'overtime_total' => (int) $overtimeTotal,
             'notes' => $data['notes'] ?? null,
+            'created_by' => auth()->id(),
         ]);
     }
 

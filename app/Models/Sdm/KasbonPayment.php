@@ -34,6 +34,7 @@ class KasbonPayment extends Model
         'payment_method',
         'payment_date',
         'notes',
+        'created_by',
     ];
 
     protected $casts = [
@@ -51,6 +52,11 @@ class KasbonPayment extends Model
     public function payroll(): BelongsTo
     {
         return $this->belongsTo(Payroll::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     // ─── Accessors ──────────────────────────────────────────────────────

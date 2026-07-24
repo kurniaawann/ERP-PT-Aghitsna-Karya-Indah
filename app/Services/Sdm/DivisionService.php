@@ -44,6 +44,7 @@ class DivisionService
      */
     public function createDivision(array $data): Division
     {
+        $data['created_by'] = auth()->id();
         return Division::create($data);
     }
 

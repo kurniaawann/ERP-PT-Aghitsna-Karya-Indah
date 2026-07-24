@@ -6,6 +6,7 @@ use App\Services\Sdm\PayrollService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -73,6 +74,7 @@ class Employee extends Model
         'base_salary',
         'daily_wage',
         'join_date',
+        'created_by',
     ];
 
     /**
@@ -135,6 +137,11 @@ class Employee extends Model
     public function kasbons(): HasMany
     {
         return $this->hasMany(Kasbon::class, 'employee_id', 'employee_code');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**

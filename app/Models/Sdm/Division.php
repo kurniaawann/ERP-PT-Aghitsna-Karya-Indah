@@ -4,6 +4,7 @@ namespace App\Models\Sdm;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -34,6 +35,7 @@ class Division extends Model
     protected $fillable = [
         'name',
         'description',
+        'created_by',
     ];
 
     /**
@@ -46,5 +48,10 @@ class Division extends Model
     public function employees(): HasMany
     {
         return $this->hasMany(Employee::class, 'division', 'name');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 }

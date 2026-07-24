@@ -45,6 +45,7 @@ class KasbonService
         int $perPage = 10
     ): LengthAwarePaginator {
         return Kasbon::with('employee')
+            ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
                 $escapedSearch = $this->escapeLikePattern($search);
                 $query->where(function ($q) use ($escapedSearch) {
@@ -114,6 +115,7 @@ class KasbonService
         $data['remaining_amount'] = $data['amount'];
         $data['payment_status'] = 'unpaid';
         $data['week_number'] = Carbon::parse($data['period_start_date'])->weekOfMonth;
+        $data['created_by'] = auth()->id();
 
         if ($data['kasbon_type'] === 'team') {
             $data['employee_id'] = null;
@@ -291,6 +293,7 @@ class KasbonService
             'amount' => $effectiveAmount,
             'payment_method' => $method,
             'payment_date' => now()->format('Y-m-d'),
+            'created_by' => auth()->id(),
         ]);
 
         $kasbon->paid_amount = ($kasbon->paid_amount ?? 0) + $effectiveAmount;

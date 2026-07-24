@@ -26,6 +26,7 @@ class AttendanceService
     public function getPaginatedAttendances(?string $search, int $perPage = 15): LengthAwarePaginator
     {
         return Attendance::with('employee')
+            ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
                 $query->whereHas('employee', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -141,6 +142,7 @@ class AttendanceService
                     'attendance_date' => $currentDate->format('Y-m-d'),
                     'status' => $status,
                     'notes' => $notes,
+                    'created_by' => auth()->id(),
                 ]);
                 $totalInserted++;
                 $currentDate->addDay();

@@ -53,6 +53,7 @@ class EmployeeService
     public function createEmployee(array $data): Employee
     {
         $data['employee_code'] = Employee::generateEmployeeCode();
+        $data['created_by'] = auth()->id();
         return Employee::create($data);
     }
 
