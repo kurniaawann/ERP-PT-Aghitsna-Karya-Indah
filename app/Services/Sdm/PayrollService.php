@@ -485,6 +485,7 @@ class PayrollService
                     'status' => $payroll->status ?? 'draft',
                     'notification_sent_at' => null,
                     'notes' => 'Reminder gaji untuk periode ' . $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
+                    'created_by' => auth()->id(),
                 ]
             );
 

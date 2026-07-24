@@ -40,6 +40,7 @@ class SalaryReminder extends Model
         'status',
         'notification_sent_at',
         'notes',
+        'created_by',
     ];
 
     /**
@@ -72,6 +73,11 @@ class SalaryReminder extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id', 'employee_code');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**

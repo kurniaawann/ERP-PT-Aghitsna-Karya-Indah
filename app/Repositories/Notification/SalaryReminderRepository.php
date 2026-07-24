@@ -27,7 +27,8 @@ class SalaryReminderRepository
      */
     public function search(array $filters): LengthAwarePaginator
     {
-        $query = SalaryReminder::with(['employee', 'payroll']);
+        $query = SalaryReminder::with(['employee', 'payroll'])
+            ->where('created_by', auth()->id());
 
         // Filter berdasarkan bulan
         if (!empty($filters['month'])) {
@@ -68,6 +69,7 @@ class SalaryReminderRepository
     public function countByFilters(array $filters): int
     {
         return SalaryReminder::with([])
+            ->where('created_by', auth()->id())
             ->when(!empty($filters['month']), fn ($q) => $q->where('period_month', $filters['month']))
             ->when(true, fn ($q) => $q->where('period_year', $filters['year'] ?? date('Y')))
             ->when(!empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
@@ -89,6 +91,7 @@ class SalaryReminderRepository
     public function countByStatus(string $status, array $filters): int
     {
         return SalaryReminder::query()
+            ->where('created_by', auth()->id())
             ->when(!empty($filters['month']), fn ($q) => $q->where('period_month', $filters['month']))
             ->when(true, fn ($q) => $q->where('period_year', $filters['year'] ?? date('Y')))
             ->when(!empty($filters['search']), function ($q) use ($filters) {
