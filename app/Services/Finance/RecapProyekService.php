@@ -34,6 +34,7 @@ class RecapProyekService
     {
         return InvoiceProyek::query()
             ->with('paymentProofs')
+            ->where('created_by', auth()->id())
             ->when($request->filled('search'), function (Builder $query) use ($request) {
                 $search = $request->search;
                 $query->where(function (Builder $searchQuery) use ($search) {

@@ -31,6 +31,7 @@ class ProyekInvoiceService
     public function baseQuery($request): \Illuminate\Database\Eloquent\Builder
     {
         return InvoiceProyek::query()->with('paymentProofs')
+            ->where('created_by', auth()->id())
             ->when($request->filled('search'), function ($builder) use ($request) {
                 $search = $request->search;
                 $builder->where(function ($searchQuery) use ($search) {
@@ -148,6 +149,7 @@ class ProyekInvoiceService
         $data['dp_amount'] = $calculations['dpAmount'] > 0
             ? $calculations['dpAmount']
             : null;
+        $data['created_by'] = auth()->id();
 
         return InvoiceProyek::create($data);
     }

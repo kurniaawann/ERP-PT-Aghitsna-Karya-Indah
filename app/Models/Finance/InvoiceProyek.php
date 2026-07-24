@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\Finance\PaymentProof;
+use App\Models\User;
 use App\Services\Finance\InvoiceCalculatorService;
 
 /**
@@ -40,6 +41,7 @@ class InvoiceProyek extends Model
         'dp_value',
         'dp_amount',
         'selected_payment_accounts',
+        'created_by',
     ];
 
     protected $casts = [
@@ -86,6 +88,16 @@ class InvoiceProyek extends Model
         return $this->hasMany(PaymentProof::class, 'invoice_number', 'invoice_number')
             ->where('invoice_type', 'proyek')
             ->orderByDesc('created_at');
+    }
+
+    /**
+     * Relasi ke user yang membuat invoice ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

@@ -88,7 +88,7 @@ class PaymentProofController extends Controller
         $availableInvoices = [
             'finance' => [
                 'proyek' => collect(
-                    \App\Models\Finance\InvoiceProyek::query()->with('paymentProofs')->orderByDesc('invoice_date')->get()
+                    \App\Models\Finance\InvoiceProyek::query()->with('paymentProofs')->where('created_by', auth()->id())->orderByDesc('invoice_date')->get()
                 )->map(
                     fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'proyek', $proofStageMap, $invoiceLookup)
                 )->values()->all(),
