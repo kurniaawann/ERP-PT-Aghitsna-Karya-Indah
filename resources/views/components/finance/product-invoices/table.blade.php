@@ -36,12 +36,12 @@
                                     {{ number_format($invoice->getNetAmount(), 0, ',', '.') }}</td>
                                 <td class="p-2 text-center">
                                     <span
-                                        class="inline-flex items-center rounded-full px-3 py-1 font-semibold {{ $invoice->status_badge_class }}">
+                                        class="inline-flex items-center rounded-[9px] px-3 py-1 font-semibold {{ $invoice->status_badge_class }}">
                                         {{ $invoice->status_label }}
                                     </span>
                                 </td>
                                 <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-1 flex-wrap">
+                                    <div class="grid gap-1 min-[1367px]:grid-cols-4 min-[1251px]:grid-cols-2 max-[1250px]:grid-cols-1 justify-items-center">
                                         <button type="button"
                                             onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
                                             class="flex items-center gap-1 bg-info hover:bg-info/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
