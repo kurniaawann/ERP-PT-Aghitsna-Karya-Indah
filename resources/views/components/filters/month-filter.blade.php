@@ -1,10 +1,10 @@
 @props(['name' => 'month', 'value' => null])
 
-<div class="w-full lg:w-auto">
+<div class="w-full xl:w-auto">
     <label for="{{ $name }}-select" class="sr-only">Pilih Bulan</label>
     <select name="{{ $name }}" id="{{ $name }}-select"
         onchange="this.form.requestSubmit()"
-        class="block w-full lg:w-40 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input 
+        class="block w-full xl:w-40 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input 
                focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
         {{ $attributes }}>
         <option value="">Semua Bulan</option>
