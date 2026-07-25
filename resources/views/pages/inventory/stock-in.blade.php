@@ -13,7 +13,7 @@
 
             {{-- Form Filter & Pencarian --}}
             <form method="GET" action="{{ route('stock-in.index') }}" id="filterForm"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full xl:w-auto xl:flex-1 flex flex-col xl:flex-row gap-3">
 
                 {{-- Filter Bulan --}}
                 <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" />
@@ -26,8 +26,8 @@
             </form>
 
             {{-- Tombol Aksi: Print, Hapus, Tambah --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 xl:mt-0 w-full xl:w-auto">
+                <div class="flex flex-col xl:flex-row gap-2 w-full xl:w-auto">
 
                     {{-- Dropdown Export (PDF & Excel) --}}
                     <x-buttons.print-dropdown :excelRoute="route('stock-in.export.excel')" :pdfRoute="route('stock-in.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />

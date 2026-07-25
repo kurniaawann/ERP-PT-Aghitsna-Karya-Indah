@@ -3,12 +3,12 @@
 @php
     $wrapperClass = match($size) {
         'sm' => 'relative inline-block text-left w-full',
-        default => 'relative inline-block text-left w-full lg:w-auto',
+        default => 'relative inline-block text-left w-full xl:w-auto',
     };
 
     $buttonClass = match($size) {
         'sm' => 'w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 border border-border-strong rounded-lg transition-colors duration-200 text-sm font-medium',
-        default => 'w-full lg:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium',
+        default => 'w-full xl:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium',
     };
 @endphp
 
@@ -22,7 +22,7 @@
 
     <!-- Dropdown Menu -->
     <div id="printDropdownMenu"
-        class="hidden absolute left-0 lg:right-0 lg:left-auto mt-2 w-full lg:w-48 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
+        class="hidden absolute left-0 xl:right-0 xl:left-auto mt-2 w-full xl:w-48 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
         <div class="py-1" role="menu">
             @if ($excelRoute)
                 <a href="{{ $excelRoute }}?{{ http_build_query(array_filter($queryParams)) }}"
