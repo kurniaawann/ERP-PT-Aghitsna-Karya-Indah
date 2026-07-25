@@ -13,24 +13,25 @@
 
             {{-- Form Filter & Pencarian --}}
             <form method="GET" action="{{ route('stock-out.index') }}" id="filterForm"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" />
+                <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" responsive="custom" />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" onchange="document.getElementById('filterForm').submit()" />
+                <x-filters.year-filter :value="request('year')" onchange="document.getElementById('filterForm').submit()" responsive="custom" />
 
                 {{-- Input Pencarian --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari barang keluar..." />
+                <x-filters.search-input :value="request('search')" placeholder="Cari barang keluar..." responsive="custom" />
             </form>
 
             {{-- Tombol Export --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
                 <x-buttons.print-dropdown
                     :excelRoute="route('stock-out.export.excel')"
                     :pdfRoute="route('stock-out.export.pdf')"
-                    :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
+                    :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]"
+                    responsive="custom" />
             </div>
         </div>
 
