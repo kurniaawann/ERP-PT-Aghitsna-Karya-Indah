@@ -19,7 +19,7 @@
 
             {{-- Tombol Aksi: Print, Hapus, Tambah --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                <div class="flex flex-col lg:flex-row gap-2 w-full lg:w-auto">
 
                     {{-- Dropdown Export (PDF & Excel) --}}
                     <x-buttons.print-dropdown :excelRoute="route('item.export.excel')" :pdfRoute="route('item.export.pdf')" />
