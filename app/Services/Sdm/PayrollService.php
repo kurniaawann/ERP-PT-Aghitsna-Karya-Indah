@@ -44,6 +44,7 @@ class PayrollService
         int $perPage = 15
     ): LengthAwarePaginator {
         return Payroll::with('employee')
+            ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
                 $query->whereHas('employee', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -89,6 +90,7 @@ class PayrollService
 
         // === QUERY BATCH (perbaikan N+1) ===
         $existingPayrollEmployeeIds = Payroll::where('period_start_date', $startDate->format('Y-m-d'))
+            ->where('created_by', auth()->id())
             ->pluck('employee_id')
             ->toArray();
 
@@ -305,6 +307,7 @@ class PayrollService
         $incompleteEmployees = [];
 
         $existingPayrollEmployeeIds = Payroll::where('period_start_date', $startDate->format('Y-m-d'))
+            ->where('created_by', auth()->id())
             ->pluck('employee_id')
             ->toArray();
 
@@ -473,6 +476,7 @@ class PayrollService
                 'additional_expenses_notes' => $additionalExpensesNotes,
                 'net_salary' => $netWage,
                 'status' => 'draft',
+                'created_by' => auth()->id(),
             ]);
 
             SalaryReminder::updateOrCreate(
@@ -540,6 +544,7 @@ class PayrollService
 
         $updated = Payroll::whereIn('id', $ids)
             ->where('status', 'draft')
+            ->where('created_by', auth()->id())
             ->update([
                 'payment_date' => $paymentDate,
                 'status' => 'paid',
@@ -576,7 +581,7 @@ class PayrollService
             return ['success' => false, 'message' => 'Tidak ada data yang dipilih!'];
         }
 
-        $payrolls = Payroll::whereIn('id', $ids)->where('status', 'draft')->get();
+        $payrolls = Payroll::whereIn('id', $ids)->where('status', 'draft')->where('created_by', auth()->id())->get();
 
         foreach ($payrolls as $payroll) {
             $payroll->delete();
@@ -598,6 +603,7 @@ class PayrollService
     public function getPayrollsForExport(?int $month, ?int $year, ?int $weekNumber = null): ?Collection
     {
         $payrolls = Payroll::with('employee')
+            ->where('created_by', auth()->id())
             ->when($month, fn($query) => $query->whereMonth('period_start_date', $month))
             ->when($year, fn($query) => $query->whereYear('period_start_date', $year))
             ->when($weekNumber, fn($query) => $query->where('week_number', $weekNumber))
@@ -618,6 +624,7 @@ class PayrollService
     public function getPayrollsForExportByDateRange(Carbon $periodStartDate, Carbon $periodEndDate): ?Collection
     {
         $payrolls = Payroll::with('employee')
+            ->where('created_by', auth()->id())
             ->where('period_start_date', $periodStartDate->format('Y-m-d'))
             ->where('period_end_date', $periodEndDate->format('Y-m-d'))
             ->get();

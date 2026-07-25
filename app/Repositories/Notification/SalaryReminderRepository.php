@@ -145,6 +145,7 @@ class SalaryReminderRepository
         $existingPayrollKeys = Payroll::whereIn('employee_id', $employeeIds)
             ->where('period_year', $year)
             ->whereIn('period_month', $months)
+            ->where('created_by', auth()->id())
             ->select('employee_id', 'period_month', 'period_year')
             ->get()
             ->map(fn ($p) => $p->employee_id . '-' . $p->period_month . '-' . $p->period_year)

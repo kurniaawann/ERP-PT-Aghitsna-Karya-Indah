@@ -44,6 +44,7 @@ class PageController extends Controller
         $paidPayrolls = Payroll::where('period_month', $currentMonth)
             ->where('period_year', $currentYear)
             ->where('status', 'paid')
+            ->where('created_by', auth()->id())
             ->select('employee_id', 'period_start_date', 'week_number')
             ->get();
 

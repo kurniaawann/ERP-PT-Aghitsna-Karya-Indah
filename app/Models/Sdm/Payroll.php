@@ -83,6 +83,7 @@ class Payroll extends Model
         'payment_date',
         'status',
         'notes',
+        'created_by',
     ];
 
     /**
