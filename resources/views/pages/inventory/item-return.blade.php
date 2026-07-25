@@ -13,29 +13,31 @@
 
             {{-- Form Filter & Pencarian --}}
             <form method="GET" action="{{ route('item-return.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
 
                 {{-- Filter Tipe Return --}}
-                <select name="return_type" id="return_type"
-                    class="block w-full lg:w-48 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-colors duration-150">
-                    <option value="">Semua Tipe</option>
-                    <option value="masuk" @selected(request('return_type') === 'masuk')>Pengembalian Masuk</option>
-                    <option value="keluar" @selected(request('return_type') === 'keluar')>Pengembalian Keluar</option>
-                </select>
+                <div class="w-full min-[1530px]:w-auto">
+                    <select name="return_type" id="return_type"
+                        class="block w-full min-[1530px]:w-48 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition-colors duration-150">
+                        <option value="">Semua Tipe</option>
+                        <option value="masuk" @selected(request('return_type') === 'masuk')>Pengembalian Masuk</option>
+                        <option value="keluar" @selected(request('return_type') === 'keluar')>Pengembalian Keluar</option>
+                    </select>
+                </div>
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" />
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
 
                 {{-- Input Pencarian --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari return barang..." />
+                <x-filters.search-input :value="request('search')" placeholder="Cari return barang..." responsive="custom" />
             </form>
 
             {{-- Tombol Aksi: Print, Hapus, Tambah --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
 
                     {{-- Dropdown Export (PDF & Excel) --}}
                     <x-buttons.print-dropdown
@@ -46,13 +48,14 @@
                             'month' => request('month'),
                             'year' => request('year'),
                             'return_type' => request('return_type'),
-                        ]" />
+                        ]"
+                        responsive="custom" />
 
                     {{-- Tombol Hapus Massal --}}
-                    <x-buttons.delete-button modalId="deleteModal" />
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
 
                     {{-- Tombol Tambah Pengembalian --}}
-                    <x-buttons.add-button modalId="addModal" text="Tambah Pengembalian" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Pengembalian" responsive="custom" />
                 </div>
             </div>
         </div>

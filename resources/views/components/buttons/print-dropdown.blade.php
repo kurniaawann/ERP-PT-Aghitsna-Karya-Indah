@@ -1,16 +1,30 @@
-@props(['excelRoute' => null, 'pdfRoute' => null, 'queryParams' => [], 'size' => 'default'])
+@props(['excelRoute' => null, 'pdfRoute' => null, 'queryParams' => [], 'size' => 'default', 'responsive' => 'xl'])
 
-@php
-    $wrapperClass = match($size) {
-        'sm' => 'relative inline-block text-left w-full',
-        default => 'relative inline-block text-left w-full xl:w-auto',
-    };
+@if($responsive === 'custom')
+    @php
+        $wrapperClass = match($size) {
+            'sm' => 'relative inline-block text-left w-full',
+            default => 'relative inline-block text-left w-full min-[1530px]:w-auto',
+        };
 
-    $buttonClass = match($size) {
-        'sm' => 'w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 border border-border-strong rounded-lg transition-colors duration-200 text-sm font-medium',
-        default => 'w-full xl:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium',
-    };
-@endphp
+        $buttonClass = match($size) {
+            'sm' => 'w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 border border-border-strong rounded-lg transition-colors duration-200 text-sm font-medium',
+            default => 'w-full min-[1530px]:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium',
+        };
+    @endphp
+@else
+    @php
+        $wrapperClass = match($size) {
+            'sm' => 'relative inline-block text-left w-full',
+            default => 'relative inline-block text-left w-full xl:w-auto',
+        };
+
+        $buttonClass = match($size) {
+            'sm' => 'w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 border border-border-strong rounded-lg transition-colors duration-200 text-sm font-medium',
+            default => 'w-full xl:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium',
+        };
+    @endphp
+@endif
 
 <div class="{{ $wrapperClass }}">
     <button type="button" id="printDropdownButton"
@@ -21,8 +35,13 @@
     </button>
 
     <!-- Dropdown Menu -->
+    @if($responsive === 'custom')
+    <div id="printDropdownMenu"
+        class="hidden absolute left-0 min-[1530px]:right-0 min-[1530px]:left-auto mt-2 w-full min-[1530px]:w-48 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
+    @else
     <div id="printDropdownMenu"
         class="hidden absolute left-0 xl:right-0 xl:left-auto mt-2 w-full xl:w-48 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
+    @endif
         <div class="py-1" role="menu">
             @if ($excelRoute)
                 <a href="{{ $excelRoute }}?{{ http_build_query(array_filter($queryParams)) }}"
