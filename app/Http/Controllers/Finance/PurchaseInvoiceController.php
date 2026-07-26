@@ -135,7 +135,7 @@ class PurchaseInvoiceController extends Controller
         $invoice = PurchaseInvoice::findOrFail($id);
         $invoices = collect([$invoice]);
 
-        $pdf = Pdf::loadView('exports.finance.purchase-invoices.single-pdf', compact('invoices'));
+        $pdf = Pdf::loadView('exports.finance.purchase-invoice-pdf', compact('invoices'));
         $pdf->setPaper('a4', 'landscape');
 
         $date = date('Y-m-d');
@@ -175,7 +175,7 @@ class PurchaseInvoiceController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $pdf = Pdf::loadView('exports.finance.purchase-invoices.single-pdf', compact('invoices'));
+        $pdf = Pdf::loadView('exports.finance.purchase-invoice-pdf', compact('invoices'));
         $pdf->setPaper('a4', 'landscape');
 
         return $pdf->download('Faktur_Pembelian_' . date('Y-m-d') . '.pdf');
