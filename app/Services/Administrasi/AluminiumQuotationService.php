@@ -5,7 +5,7 @@ namespace App\Services\Administrasi;
 use App\Models\Administrasi\AluminiumQuotation;
 use App\Models\Administrasi\AluminiumQuotationGroup;
 use App\Models\Administrasi\AluminiumQuotationItem;
-use App\Models\Finance\PaymentAccount;
+use App\Services\Finance\PaymentAccountService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +18,13 @@ use Illuminate\Support\Facades\DB;
  */
 class AluminiumQuotationService
 {
+    protected PaymentAccountService $paymentAccountService;
+
+    public function __construct(PaymentAccountService $paymentAccountService)
+    {
+        $this->paymentAccountService = $paymentAccountService;
+    }
+
     /**
      * Mendapatkan daftar penawaran dengan paginasi dan pencarian.
      *
@@ -37,13 +44,13 @@ class AluminiumQuotationService
     }
 
     /**
-     * Mendapatkan seluruh rekening pembayaran aktif.
+     * Mendapatkan seluruh rekening pembayaran aktif (menggunakan cache dari PaymentAccountService).
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getActivePaymentAccounts()
     {
-        return PaymentAccount::active()->get();
+        return $this->paymentAccountService->getActiveAccounts();
     }
 
     /**

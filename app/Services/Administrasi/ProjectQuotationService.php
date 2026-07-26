@@ -4,7 +4,7 @@ namespace App\Services\Administrasi;
 
 use App\Models\Administrasi\ProjectQuotation;
 use App\Models\Administrasi\ProjectQuotationItem;
-use App\Models\Finance\PaymentAccount;
+use App\Services\Finance\PaymentAccountService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +27,13 @@ class ProjectQuotationService
      */
     private const PER_PAGE = 15;
 
+    protected PaymentAccountService $paymentAccountService;
+
+    public function __construct(PaymentAccountService $paymentAccountService)
+    {
+        $this->paymentAccountService = $paymentAccountService;
+    }
+
     /**
      * Mendapatkan daftar penawaran dengan paginasi dan pencarian.
      *
@@ -48,13 +55,13 @@ class ProjectQuotationService
     }
 
     /**
-     * Mendapatkan seluruh rekening pembayaran aktif.
+     * Mendapatkan seluruh rekening pembayaran aktif (menggunakan cache dari PaymentAccountService).
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getActivePaymentAccounts()
     {
-        return PaymentAccount::active()->get();
+        return $this->paymentAccountService->getActiveAccounts();
     }
 
     /**

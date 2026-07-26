@@ -4,6 +4,8 @@ namespace App\Services\Sdm;
 
 use App\Models\Sdm\Division;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk mengelola bisnis logika divisi.
@@ -86,5 +88,14 @@ class DivisionService
     public function deleteDivisions(array $ids): int
     {
         return Division::whereIn('id', $ids)->delete();
+    }
+
+    public function flushCache(): void
+    {
+        try {
+            Cache::forget('sdm:divisions:dropdown');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [sdm:divisions:dropdown]: ' . $e->getMessage());
+        }
     }
 }

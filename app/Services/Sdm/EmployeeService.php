@@ -92,4 +92,13 @@ class EmployeeService
 
         return Employee::whereIn('employee_code', $employeeCodes)->delete();
     }
+
+    public function flushCache(): void
+    {
+        try {
+            Cache::forget('sdm:employees:dropdown');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [sdm:employees:dropdown]: ' . $e->getMessage());
+        }
+    }
 }

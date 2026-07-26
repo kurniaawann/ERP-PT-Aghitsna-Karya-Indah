@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Administrasi;
 
 use App\Http\Controllers\Controller;
 use App\Models\Administrasi\RAB;
-use App\Models\Finance\PaymentAccount;
 use App\Services\Administrasi\RABService;
+use App\Services\Finance\PaymentAccountService;
 use App\Http\Requests\Administrasi\RABStoreRequest;
 use App\Http\Requests\Administrasi\RABUpdateRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,10 +23,12 @@ use Maatwebsite\Excel\Facades\Excel;
 class RABController extends Controller
 {
     protected RABService $rabService;
+    protected PaymentAccountService $paymentAccountService;
 
-    public function __construct(RABService $rabService)
+    public function __construct(RABService $rabService, PaymentAccountService $paymentAccountService)
     {
         $this->rabService = $rabService;
+        $this->paymentAccountService = $paymentAccountService;
     }
 
     /**
@@ -39,7 +41,7 @@ class RABController extends Controller
     {
         $search = $request->input('search');
         $rabs = $this->rabService->getPaginatedRABs($search);
-        $paymentAccounts = PaymentAccount::active()->get();
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
 
         return view('pages.administrasi.RAB', compact('rabs', 'paymentAccounts', 'search'));
     }
@@ -65,7 +67,7 @@ class RABController extends Controller
     public function show(string $rabNumber)
     {
         $rab = $this->rabService->getRABWithDetails($rabNumber);
-        $paymentAccounts = PaymentAccount::active()->get();
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
 
         return view('components.administrasi.RAB.RABDetail', compact('rab', 'paymentAccounts'));
     }

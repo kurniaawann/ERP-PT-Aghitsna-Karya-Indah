@@ -9,7 +9,6 @@ use App\Models\Sdm\Division;
 use App\Services\Sdm\DivisionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -60,7 +59,7 @@ class DivisionController extends Controller
     public function store(StoreDivisionRequest $request): RedirectResponse
     {
         $this->divisionService->createDivision($request->validated());
-        Cache::forget('sdm:divisions:dropdown');
+        $this->divisionService->flushCache();
 
         return redirect()->route('division.index')
             ->with('success', 'Data divisi berhasil ditambahkan!');
@@ -76,7 +75,7 @@ class DivisionController extends Controller
     public function update(UpdateDivisionRequest $request, Division $division): RedirectResponse
     {
         $this->divisionService->updateDivision($division, $request->validated());
-        Cache::forget('sdm:divisions:dropdown');
+        $this->divisionService->flushCache();
 
         return redirect()->route('division.index')
             ->with('success', 'Data divisi berhasil diperbarui!');
@@ -108,7 +107,7 @@ class DivisionController extends Controller
         }
 
         $this->divisionService->deleteDivisions($ids);
-        Cache::forget('sdm:divisions:dropdown');
+        $this->divisionService->flushCache();
 
         return redirect()->route('division.index')
             ->with('success', 'Data divisi berhasil dihapus!');

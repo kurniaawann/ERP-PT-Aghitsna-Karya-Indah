@@ -9,7 +9,6 @@ use App\Models\Sdm\Employee;
 use App\Services\Sdm\EmployeeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -64,7 +63,7 @@ class EmployeeController extends Controller
     public function store(StoreEmployeeRequest $request): RedirectResponse
     {
         $this->employeeService->createEmployee($request->validated());
-        Cache::forget('sdm:employees:dropdown');
+        $this->employeeService->flushCache();
 
         return redirect()->route('employee.index')
             ->with('success', 'Data karyawan berhasil ditambahkan!');
@@ -80,7 +79,7 @@ class EmployeeController extends Controller
     public function update(UpdateEmployeeRequest $request, Employee $employee): RedirectResponse
     {
         $this->employeeService->updateEmployee($employee, $request->validated());
-        Cache::forget('sdm:employees:dropdown');
+        $this->employeeService->flushCache();
 
         return redirect()->route('employee.index')
             ->with('success', 'Data karyawan berhasil diperbarui!');
@@ -102,7 +101,7 @@ class EmployeeController extends Controller
         }
 
         $this->employeeService->deleteEmployees($ids);
-        Cache::forget('sdm:employees:dropdown');
+        $this->employeeService->flushCache();
 
         return redirect()->route('employee.index')
             ->with('success', 'Data karyawan berhasil dihapus!');
