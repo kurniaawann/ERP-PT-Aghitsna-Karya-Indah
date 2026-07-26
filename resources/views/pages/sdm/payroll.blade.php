@@ -31,46 +31,48 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian dan Filter --}}
             <form method="GET" action="{{ route('payroll.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1560px]:w-auto min-[1560px]:flex-1 flex flex-col min-[1560px]:flex-row gap-3">
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" />
+                <x-filters.month-filter :value="request('month')" fill />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" />
+                <x-filters.year-filter :value="request('year')" fill />
 
                 {{-- Filter Minggu --}}
-                <select name="week_number" id="filter_week_number"
-                    class="border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
-                    onchange="this.form.requestSubmit()">
-                    <option value="">Semua Minggu</option>
-                </select>
+                <div class="flex-1">
+                    <select name="week_number" id="filter_week_number"
+                        class="w-full border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
+                        onchange="this.form.requestSubmit()">
+                        <option value="">Semua Minggu</option>
+                    </select>
+                </div>
 
                 {{-- Search Input --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari karyawan..." />
             </form>
 
             {{-- Aksi di Kanan --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1560px]:mt-0 w-full min-[1560px]:w-auto">
+                <div class="flex flex-col min-[1560px]:flex-row gap-2 w-full min-[1560px]:w-auto">
                     <x-buttons.print-dropdown :excelRoute="route('payroll.export.excel')" :pdfRoute="route('payroll.export.pdf')" :queryParams="[
                         'search' => request('search'),
                         'month' => request('month'),
                         'year' => request('year'),
                         'week_number' => request('week_number'),
-                    ]" />
+                    ]" responsive="custom" fill />
 
                     <button type="button" id="bulk-pay-button" onclick="openModal('bulkPayModal')"
-                        class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
+                        class="w-full min-[1560px]:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
                         disabled>
                         <i class="fa-solid fa-money-check-alt"></i>
                         Bayar Terpilih
                     </button>
 
-                    <x-buttons.delete-button modalId="deleteModal" />
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
 
                     <button type="button" onclick="openModal('generateModal')"
-                        class="flex items-center gap-2 bg-success hover:bg-success-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium">
+                        class="w-full min-[1560px]:w-auto flex items-center justify-center gap-2 bg-success hover:bg-success-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium">
                         <i class="fa-solid fa-calculator"></i>
                         Generate Payroll
                     </button>

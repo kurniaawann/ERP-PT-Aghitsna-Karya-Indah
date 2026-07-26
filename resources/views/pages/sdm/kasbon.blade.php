@@ -16,10 +16,10 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Filter & Pencarian --}}
             <form method="GET" action="{{ route('kasbon.index') }}" id="filterForm"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1600px]:w-auto min-[1600px]:flex-1 flex flex-col min-[1600px]:flex-row gap-3">
 
-                <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" />
-                <x-filters.year-filter :value="request('year')" onchange="document.getElementById('filterForm').submit()" />
+                <x-filters.month-filter :value="request('month')" responsive="custom" fill onchange="document.getElementById('filterForm').submit()" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" fill onchange="document.getElementById('filterForm').submit()" />
 
                 {{-- Filter Status --}}
                 <select name="status" onchange="document.getElementById('filterForm').submit()"
@@ -46,7 +46,7 @@
                     <option value="team" {{ request('type') == 'team' ? 'selected' : '' }}>Per Tim</option>
                 </select>
 
-                <x-filters.search-input :value="request('search')" placeholder="Cari kasbon..." />
+                <x-filters.search-input :value="request('search')" placeholder="Cari kasbon..." responsive="custom" />
 
                 {{-- Tombol Reset Filter --}}
                 @if (request()->hasAny(['search', 'month', 'year', 'status', 'type', 'payment_status']))
@@ -59,10 +59,10 @@
             </form>
 
             {{-- Tombol Aksi --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" />
-                    <x-buttons.add-button modalId="addModal" text="Tambah Kasbon" />
+            <div class="flex items-center gap-2 mt-2 min-[1600px]:mt-0 w-full min-[1600px]:w-auto">
+                <div class="flex flex-col min-[1600px]:flex-row gap-2 w-full min-[1600px]:w-auto">
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Kasbon" responsive="custom" />
                 </div>
             </div>
         </div>
