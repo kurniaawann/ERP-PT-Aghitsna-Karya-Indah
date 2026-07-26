@@ -4,6 +4,7 @@ namespace App\Services\Report;
 
 use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -333,5 +334,71 @@ class ExpenseReportService
     private function getAllowedSortOrder(string $sortOrder): string
     {
         return in_array(strtolower($sortOrder), ['asc', 'desc'], true) ? strtolower($sortOrder) : self::DEFAULT_SORT_ORDER;
+    }
+
+    // ============================================================
+    // EXPORT METHODS
+    // ============================================================
+
+    /**
+     * Membangun data untuk export PDF/Excel.
+     *
+     * Mengembalikan array dengan struktur:
+     * - expenseRecaps: Collection data rekap pengeluaran dengan eager loading category
+     * - periodTitle: Label periode untuk header
+     * - totals: Object berisi total_income, total_expense, balance
+     *
+     * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
+     * @return array{expenseRecaps: \Illuminate\Support\Collection, periodTitle: string, totals: object}
+     */
+    public function buildExportData(Request $request): array
+    {
+        $expenseRecaps = $this->buildFilteredQuery($request)
+            ->with(['category'])
+            ->orderBy('transaction_date', 'asc')
+            ->get();
+
+        $totals = (object) [
+            'total_income' => (int) $expenseRecaps->sum('income_amount'),
+            'total_expense' => (int) $expenseRecaps->sum('expense_amount'),
+            'balance' => (int) $expenseRecaps->sum('income_amount') - (int) $expenseRecaps->sum('expense_amount'),
+        ];
+
+        $periodTitle = $this->buildPeriodTitle($request);
+
+        return [
+            'expenseRecaps' => $expenseRecaps,
+            'periodTitle' => $periodTitle,
+            'totals' => $totals,
+        ];
+    }
+
+    /**
+     * Membangun label periode untuk header PDF/Excel.
+     *
+     * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
+     * @return string Label periode (contoh: "BULAN FEBRUARI 2026")
+     */
+    public function buildPeriodTitle(Request $request): string
+    {
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        if (!empty($month) && !empty($year)) {
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            return 'BULAN ' . strtoupper($monthName) . ' ' . $year;
+        }
+
+        if (!empty($month)) {
+            $year = $request->get('year', date('Y'));
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            return 'BULAN ' . strtoupper($monthName) . ' ' . $year;
+        }
+
+        if (!empty($year)) {
+            return 'TAHUN ' . $year;
+        }
+
+        return 'SEMUA PERIODE';
     }
 }

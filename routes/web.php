@@ -259,6 +259,10 @@ Route::middleware('auth')->group(function () {
         // Route Laporan Rekap Pengeluaran
         Route::get('/report/expense', [ExpenseReportController::class, 'index'])->name('report.expense');
 
+        // Route Export Laporan Pengeluaran
+        Route::get('/report/expense/export/pdf', [ExpenseReportController::class, 'exportPdf'])->name('report.expense.export.pdf');
+        Route::get('/report/expense/export/excel', [ExpenseReportController::class, 'exportExcel'])->name('report.expense.export.excel');
+
     });
 
     // ─── Routes untuk General Manager ONLY (Laporan Penjualan) ───

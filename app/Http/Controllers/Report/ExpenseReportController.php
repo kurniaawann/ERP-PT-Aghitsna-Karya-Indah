@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Exports\Report\ExpenseReportExport;
 use App\Http\Controllers\Controller;
 use App\Services\Report\ExpenseReportService;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * Controller untuk Laporan Pengeluaran (Expense Report).
@@ -55,5 +58,31 @@ class ExpenseReportController extends Controller
             'cashFlow',
             'categories'
         ));
+    }
+
+    /**
+     * Export laporan pengeluaran ke PDF.
+     */
+    public function exportPdf(Request $request)
+    {
+        $data = $this->service->buildExportData($request);
+
+        $pdf = Pdf::loadView('exports.report.expense-report-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Pengeluaran_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Export laporan pengeluaran ke Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $data = $this->service->buildExportData($request);
+
+        return Excel::download(
+            new ExpenseReportExport($data['expenseRecaps'], $data['periodTitle'], $data['totals']),
+            'Laporan_Pengeluaran_' . date('Y-m-d') . '.xlsx'
+        );
     }
 }

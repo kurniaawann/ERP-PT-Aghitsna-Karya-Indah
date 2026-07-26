@@ -13,7 +13,7 @@
              ============================================================ --}}
         <div class="bg-surface-base p-6 rounded-xl shadow">
             <form method="GET" action="{{ route('report.expense') }}" class="space-y-4">
-                <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-6 gap-4">
 
                     {{-- Filter Bulan --}}
                     <div>
@@ -80,6 +80,16 @@
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="Cari transaksi..."
                             class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+
+                    {{-- Print Dropdown --}}
+                    <div class="flex items-end">
+                        <x-buttons.print-dropdown
+                            :pdfRoute="route('report.expense.export.pdf')"
+                            :excelRoute="route('report.expense.export.excel')"
+                            :queryParams="request()->except([])"
+                            size="sm"
+                        />
                     </div>
                 </div>
             </form>
@@ -431,5 +441,6 @@
             window.summaryData = @json($summary);
         </script>
         @vite(['resources/js/pages/report/expense-reports/index.js'])
+        @include('partials.shared.print-dropdown-script')
     @endpush
 @endsection
