@@ -18,7 +18,7 @@
 
             {{-- Tombol Aksi --}}
             <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                <div class="flex flex-col lg:flex-row gap-2 w-full lg:w-auto">
                     <button type="button" id="delete-button" onclick="openModal('deleteModal')" disabled
                         class="w-full sm:w-auto flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-btn-delete">
                         <i class="fa-solid fa-trash w-4 h-4"></i>
