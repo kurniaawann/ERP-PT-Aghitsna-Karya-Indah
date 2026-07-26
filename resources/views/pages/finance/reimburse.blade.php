@@ -18,13 +18,13 @@
 
             {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('reimburse.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1520px]:w-auto min-[1520px]:flex-1 flex flex-col min-[1520px]:flex-row gap-3">
 
                 {{-- Filter Status --}}
-                <div class="w-full lg:w-auto">
+                <div class="w-full min-[1520px]:w-auto">
                     <label for="status-select" class="sr-only">Semua Status</label>
                     <select name="status" id="status-select" onchange="this.form.requestSubmit()"
-                        class="block w-full lg:w-40 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input 
+                        class="block w-full min-[1520px]:w-40 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input 
                                focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
                         <option value="">Semua Status</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
@@ -34,18 +34,18 @@
                 </div>
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter name="month" :value="request('month')" />
+                <x-filters.month-filter name="month" :value="request('month')" responsive="custom" />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter name="year" :value="request('year')" />
+                <x-filters.year-filter name="year" :value="request('year')" responsive="custom" />
 
                 {{-- Input Pencarian --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari proyek atau kode reimburse..." />
+                <x-filters.search-input :value="request('search')" placeholder="Cari proyek atau kode reimburse..." responsive="custom" />
             </form>
 
             {{-- Tombol Aksi (Kanan) --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1520px]:mt-0 w-full min-[1520px]:w-auto">
+                <div class="flex flex-col min-[1520px]:flex-row gap-2 w-full min-[1520px]:w-auto">
 
                     {{-- Tombol Print/Export --}}
                     <x-buttons.print-dropdown
@@ -56,25 +56,26 @@
                             'status' => request('status'),
                             'month'  => request('month'),
                             'year'   => request('year'),
-                        ]" />
+                        ]"
+                        responsive="custom" />
 
                     {{-- Tombol Tambah (Super Admin only) --}}
                     @if (Auth::user()->role === 'superadmin')
-                        <x-buttons.add-button modalId="addModal" text="Tambah Reimburse" />
+                        <x-buttons.add-button modalId="addModal" text="Tambah Reimburse" responsive="custom" />
                     @endif
 
                     {{-- Dropdown Persetujuan (Admin only) --}}
                     @if (Auth::user()->role === 'admin')
-                        <div class="relative inline-block text-left w-full sm:w-auto">
+                        <div class="relative inline-block text-left w-full min-[1520px]:w-auto">
                             <button type="button" id="approval-dropdown-button" disabled
-                                class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed">
+                                class="w-full min-[1520px]:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed">
                                 <i class="fa-solid fa-check-circle"></i>
                                 <span>Aksi Persetujuan</span>
-                                <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>
+                                <i class="fa-solid fa-chevron-down text-xs ml-auto min-[1520px]:ml-0"></i>
                             </button>
 
                             <div id="approval-dropdown-menu"
-                                class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-48 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
+                                class="hidden absolute left-0 min-[1520px]:right-0 min-[1520px]:left-auto mt-2 w-full min-[1520px]:w-48 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
                                 <div class="py-1" role="menu">
                                     <button type="button" onclick="openModal('approveModal')"
                                         class="flex items-center gap-3 w-full px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
@@ -92,7 +93,7 @@
                     @endif
 
                     {{-- Tombol Hapus --}}
-                    <x-buttons.delete-button modalId="deleteModal" />
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
                 </div>
             </div>
         </div>
