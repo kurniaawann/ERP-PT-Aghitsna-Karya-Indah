@@ -36,7 +36,9 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect(Auth::user()->getHomeRoute());
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            return redirect($user->getHomeRoute());
         }
 
         // Jika login gagal (credentials tidak cocok):
