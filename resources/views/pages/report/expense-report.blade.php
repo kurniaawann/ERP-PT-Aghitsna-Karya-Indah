@@ -13,7 +13,7 @@
              ============================================================ --}}
         <div class="bg-surface-base p-6 rounded-xl shadow">
             <form method="GET" action="{{ route('report.expense') }}" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-5 gap-4">
 
                     {{-- Filter Bulan --}}
                     <div>
@@ -89,7 +89,7 @@
              SUMMARY CARDS
              4 kartu ringkasan: Total Pemasukan, Total Pengeluaran, Saldo, Total Transaksi.
              ============================================================ --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-4 gap-6">
 
             {{-- Total Pemasukan --}}
             <div class="bg-surface-base p-6 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
