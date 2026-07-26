@@ -7,6 +7,7 @@ use App\Models\Inventory\Items;
 use App\Models\Report\SalesRecap;
 use App\Services\InputNormalizer;
 use App\Services\StockService;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Service layer untuk operasi bisnis Invoice Barang.
@@ -32,7 +33,7 @@ class ProductInvoiceService
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function baseQuery($request): \Illuminate\Database\Eloquent\Builder
+    public function baseQuery($request): Builder
     {
         return InvoiceBarang::query()->with('salesRecap')
             ->when($request->filled('search'), function ($builder) use ($request) {

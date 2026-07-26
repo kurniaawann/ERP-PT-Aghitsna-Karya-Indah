@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StorePaymentProofRequest;
 use App\Http\Requests\Finance\UpdatePaymentProofRequest;
+use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Report\SalesRecap;
 use App\Services\Finance\InvoiceCalculatorService;
@@ -88,12 +90,12 @@ class PaymentProofController extends Controller
         $availableInvoices = [
             'finance' => [
                 'proyek' => collect(
-                    \App\Models\Finance\InvoiceProyek::query()->with('paymentProofs')->where('created_by', auth()->id())->orderByDesc('invoice_date')->get()
+                    InvoiceProyek::query()->with('paymentProofs')->where('created_by', auth()->id())->orderByDesc('invoice_date')->get()
                 )->map(
                     fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'proyek', $proofStageMap, $invoiceLookup)
                 )->values()->all(),
                 'alumunium' => collect(
-                    \App\Models\Finance\InvoiceAlumunium::query()->with('paymentProofs')->orderByDesc('invoice_date')->get()
+                    InvoiceAlumunium::query()->with('paymentProofs')->orderByDesc('invoice_date')->get()
                 )->map(
                     fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'alumunium', $proofStageMap, $invoiceLookup)
                 )->values()->all(),

@@ -3,7 +3,9 @@
 namespace App\Exports\Finance;
 
 use App\Models\Finance\InvoiceProyek;
+use App\Models\Finance\PaymentAccount;
 use App\Services\Finance\InvoiceCalculatorService;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -90,7 +92,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->setCellValue('A5', 'Email : Design@aghitsna.id');
                 $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $invoiceDate = \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
+                $invoiceDate = Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
 
                 $sheet->setCellValue('E2', 'No');
                 $sheet->setCellValue('F2', ': ' . $invoice->invoice_number);
@@ -389,11 +391,11 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     : ($invoice->selected_payment_accounts ?? []);
 
                 if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    $paymentAccounts = PaymentAccount::whereIn('id', $selectedAccountIds)
                         ->orderBy('id')
                         ->get();
                 } else {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
+                    $paymentAccounts = PaymentAccount::active()->get();
                 }
 
                 $sanitizeForExcel = function ($value) {

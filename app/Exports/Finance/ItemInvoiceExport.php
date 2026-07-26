@@ -3,6 +3,7 @@
 namespace App\Exports\Finance;
 
 use App\Models\Finance\InvoiceBarang;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -90,7 +91,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->getStyle('E2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->setCellValue('D3', 'Tanggal');
-                $sheet->setCellValue('E3', ': ' . \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY'));
+                $sheet->setCellValue('E3', ': ' . Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY'));
                 $sheet->getStyle('D3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 

@@ -5,6 +5,7 @@ namespace App\Services\Finance;
 use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
 use App\Services\InputNormalizer;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -233,10 +234,10 @@ class RecapExpenseService
         $periodParts = [];
 
         if ($month && $year) {
-            $monthName = \Carbon\Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
             $periodParts[] = $monthName . ' ' . $year;
         } elseif ($month) {
-            $monthName = \Carbon\Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
             $periodParts[] = 'Bulan ' . $monthName;
         } elseif ($year) {
             $periodParts[] = 'Tahun ' . $year;

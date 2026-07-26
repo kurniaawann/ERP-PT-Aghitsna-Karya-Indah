@@ -4,6 +4,8 @@ namespace App\Services\Finance;
 
 use App\Models\Finance\InvoiceProyek;
 use App\Services\InputNormalizer;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 
 /**
  * Service layer untuk operasi bisnis Invoice Proyek.
@@ -28,7 +30,7 @@ class ProyekInvoiceService
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function baseQuery($request): \Illuminate\Database\Eloquent\Builder
+    public function baseQuery($request): Builder
     {
         return InvoiceProyek::query()->with('paymentProofs')
             ->where('created_by', auth()->id())
@@ -137,7 +139,7 @@ class ProyekInvoiceService
     {
         $totalAmount = $this->calculateItemsTotal($items);
         $calculations = $this->calculateFromRequest(
-            new \Illuminate\Http\Request($data),
+            new Request($data),
             $totalAmount
         );
 
@@ -167,7 +169,7 @@ class ProyekInvoiceService
     {
         $totalAmount = $this->calculateItemsTotal($items);
         $calculations = $this->calculateFromRequest(
-            new \Illuminate\Http\Request($data),
+            new Request($data),
             $totalAmount
         );
 

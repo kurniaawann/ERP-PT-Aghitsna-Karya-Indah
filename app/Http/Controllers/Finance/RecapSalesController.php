@@ -9,6 +9,7 @@ use App\Models\Report\SalesRecap;
 use App\Models\Inventory\Items;
 use App\Exports\Report\SalesRecapExport;
 use App\Services\Finance\RecapSalesService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -277,15 +278,15 @@ class RecapSalesController extends Controller
         if (empty($month) && empty($year)) {
             $latestDate = $salesRecaps->sortByDesc('date')->first()?->date;
             if ($latestDate) {
-                return \Carbon\Carbon::parse($latestDate)->locale('id')->translatedFormat('F Y');
+                return Carbon::parse($latestDate)->locale('id')->translatedFormat('F Y');
             }
-            return \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y');
+            return Carbon::now()->locale('id')->translatedFormat('F Y');
         }
 
         if (!empty($month) && empty($year)) {
             $latestDate = $salesRecaps->sortByDesc('date')->first()?->date;
-            $year = $latestDate ? \Carbon\Carbon::parse($latestDate)->year : \Carbon\Carbon::now()->year;
-            $monthName = \Carbon\Carbon::create()->month($month)->locale('id')->translatedFormat('F');
+            $year = $latestDate ? Carbon::parse($latestDate)->year : Carbon::now()->year;
+            $monthName = Carbon::create()->month($month)->locale('id')->translatedFormat('F');
             return $monthName . ' ' . $year;
         }
 
@@ -293,7 +294,7 @@ class RecapSalesController extends Controller
             return 'TAHUN ' . $year;
         }
 
-        $monthName = \Carbon\Carbon::create()->month($month)->locale('id')->translatedFormat('F');
+        $monthName = Carbon::create()->month($month)->locale('id')->translatedFormat('F');
         return $monthName . ' ' . $year;
     }
 }

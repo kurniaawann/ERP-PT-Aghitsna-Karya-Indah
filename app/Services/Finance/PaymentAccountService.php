@@ -3,6 +3,7 @@
 namespace App\Services\Finance;
 
 use App\Models\Finance\PaymentAccount;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -38,7 +39,7 @@ class PaymentAccountService
      * @param  \Illuminate\Http\Request|null $request  Request yang berisi parameter filter
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function buildFilteredQuery(?Request $request = null): \Illuminate\Database\Eloquent\Builder
+    public function buildFilteredQuery(?Request $request = null): Builder
     {
         $query = PaymentAccount::query()->where('created_by', auth()->id());
 

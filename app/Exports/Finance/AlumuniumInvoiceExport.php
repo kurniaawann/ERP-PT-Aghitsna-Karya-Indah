@@ -3,6 +3,8 @@
 namespace App\Exports\Finance;
 
 use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Finance\PaymentAccount;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -92,7 +94,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet->setCellValue('A6', 'Email : Design@aghitsna.id');
                 $sheet->getStyle('A6')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $invoiceDate = \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
+                $invoiceDate = Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
 
                 $sheet->setCellValue('E2', 'No');
                 $sheet->setCellValue('F2', ': ' . $invoice->invoice_number);
@@ -350,11 +352,11 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     : ($invoice->selected_payment_accounts ?? []);
 
                 if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    $paymentAccounts = PaymentAccount::whereIn('id', $selectedAccountIds)
                         ->orderBy('id')
                         ->get();
                 } else {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
+                    $paymentAccounts = PaymentAccount::active()->get();
                 }
 
                 $sanitizeForExcel = function ($value) {

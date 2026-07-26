@@ -4,6 +4,7 @@ namespace App\Services\Finance;
 
 use App\Models\Finance\InvoiceAlumunium;
 use App\Services\InputNormalizer;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Service layer untuk operasi bisnis Invoice Alumunium.
@@ -28,7 +29,7 @@ class AlumuniumInvoiceService
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function baseQuery($request): \Illuminate\Database\Eloquent\Builder
+    public function baseQuery($request): Builder
     {
         return InvoiceAlumunium::query()->with('paymentProofs')
             ->when($request->filled('search'), function ($builder) use ($request) {

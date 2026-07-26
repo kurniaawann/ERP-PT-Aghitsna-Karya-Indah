@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Finance;
 
+use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -22,13 +23,13 @@ class UpdatePurchaseInvoiceRequest extends FormRequest
     {
         if ($this->selling_price) {
             $this->merge([
-                'selling_price' => \App\Services\InputNormalizer::normalizeCurrency($this->selling_price),
+                'selling_price' => InputNormalizer::normalizeCurrency($this->selling_price),
             ]);
         }
 
         if ($this->ppn_percentage) {
             $this->merge([
-                'ppn_percentage' => \App\Services\InputNormalizer::normalizeDecimal($this->ppn_percentage),
+                'ppn_percentage' => InputNormalizer::normalizeDecimal($this->ppn_percentage),
             ]);
         }
     }
