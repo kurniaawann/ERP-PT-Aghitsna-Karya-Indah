@@ -7,6 +7,7 @@ use App\Http\Requests\Sdm\StoreAttendanceRequest;
 use App\Http\Requests\Sdm\UpdateAttendanceRequest;
 use App\Models\Sdm\Attendance;
 use App\Services\Sdm\AttendanceService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 /**
@@ -50,8 +51,8 @@ class AttendanceController extends Controller
     public function store(StoreAttendanceRequest $request)
     {
         $employeeIds = $request->validated('employee_ids');
-        $startDate = \Illuminate\Support\Carbon::parse($request->start_date);
-        $endDate = \Illuminate\Support\Carbon::parse($request->end_date);
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
 
         $duplicates = $this->attendanceService->findDuplicates($employeeIds, $startDate, $endDate);
 

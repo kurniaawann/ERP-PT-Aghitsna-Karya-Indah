@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sdm;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sdm\UpdatePayrollRequest;
+use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Payroll;
 use App\Services\Sdm\PayrollService;
 use App\Exports\Sdm\PayrollExport;
@@ -288,7 +289,7 @@ class PayrollController extends Controller
             }
 
             foreach ($payrolls as $payroll) {
-                $payroll->attendances = \App\Models\Sdm\Attendance::where('employee_id', $payroll->employee_id)
+                $payroll->attendances = Attendance::where('employee_id', $payroll->employee_id)
                     ->whereBetween('attendance_date', [
                         $startDate->format('Y-m-d'),
                         $endDate->format('Y-m-d'),

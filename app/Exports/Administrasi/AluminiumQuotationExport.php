@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Carbon\Carbon;
 
 class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
@@ -96,7 +97,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->getStyle('A6')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 // Quotation Information (right side)
-                $quotationDate = \Carbon\Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY');
+                $quotationDate = Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY');
 
                 $sheet->setCellValue('E2', 'No');
                 $sheet->setCellValue('F2', ': ' . $quotation->quotation_number);

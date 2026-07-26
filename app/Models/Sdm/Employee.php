@@ -2,6 +2,7 @@
 
 namespace App\Models\Sdm;
 
+use App\Models\User;
 use App\Services\Sdm\PayrollService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -141,7 +142,7 @@ class Employee extends Model
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
