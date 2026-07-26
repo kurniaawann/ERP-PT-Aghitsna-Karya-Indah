@@ -48,6 +48,7 @@ class TransactionCategoryController extends Controller
     {
         try {
             $this->service->createCategory($request->validated());
+            $this->service->flushCache();
 
             return redirect()->route('transaction-category.index')
                 ->with('success', 'Kategori transaksi berhasil ditambahkan!');
@@ -72,6 +73,7 @@ class TransactionCategoryController extends Controller
     {
         try {
             $this->service->updateCategory($id, $request->validated());
+            $this->service->flushCache();
 
             return redirect()->route('transaction-category.index')
                 ->with('success', 'Kategori transaksi berhasil diupdate!');
@@ -95,6 +97,7 @@ class TransactionCategoryController extends Controller
     {
         try {
             $category = $this->service->toggleStatus($id);
+            $this->service->flushCache();
             $status = $category->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
             return redirect()->route('transaction-category.index')
@@ -131,6 +134,8 @@ class TransactionCategoryController extends Controller
             if (!empty($result['used'])) {
                 return back()->with('error', 'Kategori berikut tidak dapat dihapus karena sedang digunakan: ' . implode(', ', $result['used']));
             }
+
+            $this->service->flushCache();
 
             return redirect()->route('transaction-category.index')
                 ->with('success', "Berhasil menghapus {$result['deleted']} kategori.");

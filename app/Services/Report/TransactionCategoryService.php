@@ -4,6 +4,8 @@ namespace App\Services\Report;
 
 use App\Models\Report\TransactionCategory;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk menangani business logic Kategori Transaksi.
@@ -39,7 +41,16 @@ class TransactionCategoryService
      */
     public function getExistingCodes(): array
     {
-        return TransactionCategory::pluck('code', 'id')->toArray();
+        try {
+            return (array) Cache::remember(
+                'report:category-codes',
+                now()->addDay(),
+                fn () => TransactionCategory::pluck('code', 'id')->toArray()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [report:category-codes]: ' . $e->getMessage());
+            return TransactionCategory::pluck('code', 'id')->toArray();
+        }
     }
 
     /**
@@ -49,7 +60,32 @@ class TransactionCategoryService
      */
     public function getUsedCategoryIds(): array
     {
-        return TransactionCategory::has('expenseRecaps')->pluck('id')->toArray();
+        try {
+            return (array) Cache::remember(
+                'report:category-used-ids',
+                now()->addHour(),
+                fn () => TransactionCategory::has('expenseRecaps')->pluck('id')->toArray()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [report:category-used-ids]: ' . $e->getMessage());
+            return TransactionCategory::has('expenseRecaps')->pluck('id')->toArray();
+        }
+    }
+
+    /**
+     * Invalidate semua cache kategori transaksi.
+     *
+     * @return void
+     */
+    public function flushCache(): void
+    {
+        try {
+            Cache::forget('report:expense-categories');
+            Cache::forget('report:category-codes');
+            Cache::forget('report:category-used-ids');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [report:categories]: ' . $e->getMessage());
+        }
     }
 
     /**
