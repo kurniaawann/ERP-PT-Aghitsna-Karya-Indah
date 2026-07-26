@@ -86,8 +86,9 @@ class ProjectQuotation extends Model
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Generate nomor penawaran berikutnya: {n}/{n}/PT.AKI/{yy}
-     * Contoh: 1/1/PT.AKI/25
+     * Generate nomor penawaran berikutnya: {A}/{B}/PT.AKI/{yy}
+     * Kedua angka (A dan B) diincrement secara terpisah.
+     * Contoh: 275/310/PT.AKI/26 -> 276/311/PT.AKI/26
      *
      * @return string  Nomor penawaran yang sudah di-generate
      */
@@ -96,16 +97,23 @@ class ProjectQuotation extends Model
         $year = date('y');
 
         $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
-            ->orderBy('sequence_number', 'desc')
+            ->orderByDesc('quotation_number')
             ->first();
 
-        $next = $last ? ($last->sequence_number + 1) : 1;
+        if ($last && preg_match('/^(\d+)\/(\d+)\//', $last->quotation_number, $matches)) {
+            $nextA = (int) $matches[1] + 1;
+            $nextB = (int) $matches[2] + 1;
+        } else {
+            $nextA = 275;
+            $nextB = 310;
+        }
 
-        return "{$next}/{$next}/PT.AKI/{$year}";
+        return "{$nextA}/{$nextB}/PT.AKI/{$year}";
     }
 
     /**
      * Mendapatkan nomor urut (sequence) berikutnya untuk tahun berjalan.
+     * Sequence mengikuti angka pertama (A) dari quotation_number.
      *
      * @return int  Nomor urut berikutnya
      */
@@ -113,8 +121,13 @@ class ProjectQuotation extends Model
     {
         $year = date('y');
         $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
-            ->orderBy('sequence_number', 'desc')
+            ->orderByDesc('quotation_number')
             ->first();
-        return $last ? ($last->sequence_number + 1) : 1;
+
+        if ($last && preg_match('/^(\d+)\//', $last->quotation_number, $matches)) {
+            return (int) $matches[1] + 1;
+        }
+
+        return 1;
     }
 }

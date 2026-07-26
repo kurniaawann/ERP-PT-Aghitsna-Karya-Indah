@@ -101,7 +101,8 @@ class AlumuniumInvoiceService
     }
 
     /**
-     * Menghasilkan nomor invoice unik berformat: {n}/{n}/ALU/{yy}.
+     * Menghasilkan nomor invoice unik berformat: {A}/{B}/ALU/{yy}.
+     * Kedua angka (A dan B) diincrement secara terpisah.
      *
      * @return string  Nomor invoice berikutnya
      */
@@ -110,17 +111,17 @@ class AlumuniumInvoiceService
         $year = date('y');
 
         $lastInvoice = InvoiceAlumunium::where('invoice_number', 'like', "%/ALU/{$year}")
-            ->orderBy('invoice_number', 'desc')
+            ->orderByDesc('invoice_number')
             ->first();
 
-        if ($lastInvoice) {
-            preg_match('/^(\d+)\//', $lastInvoice->invoice_number, $matches);
-            $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
-            $nextNumber = $lastNumber + 1;
+        if ($lastInvoice && preg_match('/^(\d+)\/(\d+)\//', $lastInvoice->invoice_number, $matches)) {
+            $nextA = (int) $matches[1] + 1;
+            $nextB = (int) $matches[2] + 1;
         } else {
-            $nextNumber = 1;
+            $nextA = 53;
+            $nextB = 53;
         }
 
-        return "{$nextNumber}/{$nextNumber}/ALU/{$year}";
+        return "{$nextA}/{$nextB}/ALU/{$year}";
     }
 }

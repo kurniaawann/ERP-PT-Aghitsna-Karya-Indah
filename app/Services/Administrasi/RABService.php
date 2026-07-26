@@ -144,10 +144,8 @@ class RABService
     public function storeRAB(array $validatedData, array $rabData, array $miscCostsData): RAB
     {
         $seqNumber = RAB::getNextSequenceNumber();
-        $month = (int) date('n');
-        $romanMonth = $this->arabicToRoman($month);
         $year = date('Y');
-        $rabNumber = "{$seqNumber}/RAB/{$romanMonth}/{$year}";
+        $rabNumber = str_pad($seqNumber, 3, '0', STR_PAD_LEFT) . "/RAB/III/{$year}";
 
         $totalAmount = $this->calculateTotalAmount($rabData);
         $miscCostsTotal = $this->calculateMiscCostsTotal($miscCostsData);

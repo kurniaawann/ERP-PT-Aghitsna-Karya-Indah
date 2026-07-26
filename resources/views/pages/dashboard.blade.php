@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'PT Aghitsna Karya Indah Dashboard')
 
 @section('content')
     <!-- Reminder Cards Section -->

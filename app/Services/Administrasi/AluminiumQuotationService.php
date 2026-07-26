@@ -49,7 +49,7 @@ class AluminiumQuotationService
     /**
      * Generate nomor penawaran berikutnya.
      *
-     * @return string  Format: {n}/{n}/ALU/{yy}
+     * @return string  Format: {A}/{B}/ALU/{yy}
      */
     public function generateQuotationNumber(): string
     {
@@ -66,9 +66,9 @@ class AluminiumQuotationService
     {
         $groups = json_decode($validated['groups_json'], true);
 
-        $seqNumber = AluminiumQuotation::getNextSequenceNumber();
-        $year = date('y');
-        $quotationNumber = "{$seqNumber}/{$seqNumber}/ALU/{$year}";
+        $quotationNumber = AluminiumQuotation::generateQuotationNumber();
+        preg_match('/^(\d+)\//', $quotationNumber, $matches);
+        $seqNumber = (int) $matches[1];
 
         $totalAmount = $this->calculateGrandTotal($groups);
 

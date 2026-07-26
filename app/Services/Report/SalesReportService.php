@@ -101,8 +101,9 @@ class SalesReportService
             ->appends($request->all());
 
         $fakturYear = $request->get('year', date('Y'));
-        $fakturA = 307;
-        $fakturB = 588;
+        $offset = ($paginator->currentPage() - 1) * $paginator->perPage();
+        $fakturA = 317 + $offset;
+        $fakturB = 598 + $offset;
         foreach ($paginator->getCollection() as $item) {
             $item->no_faktur = $fakturA++ . '/' . $fakturB++ . '/DIV.PRODUKSI/' . $fakturYear;
         }
@@ -247,8 +248,8 @@ class SalesReportService
             ->get();
 
         $fakturYear = $request->get('year', date('Y'));
-        $fakturA = 307;
-        $fakturB = 588;
+        $fakturA = 317;
+        $fakturB = 598;
         foreach ($projects as $item) {
             $item->no_faktur = $fakturA++ . '/' . $fakturB++ . '/DIV.PRODUKSI/' . $fakturYear;
         }
@@ -297,8 +298,8 @@ class SalesReportService
         $grandTotal = 0;
 
         $fakturYear = $request->get('year', date('Y'));
-        $fakturA = 307;
-        $fakturB = 588;
+        $fakturA = 317;
+        $fakturB = 598;
 
         foreach ($projectGroups as $projectName => $projectSales) {
             $projectData = $this->buildProjectExportData($projectSales, $fakturYear, $fakturA, $fakturB);

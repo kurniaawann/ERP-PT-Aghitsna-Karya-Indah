@@ -75,7 +75,8 @@ if (!function_exists('generateExpenseRecapId')) {
     /**
      * Generate unique Expense Recap ID.
      *
-     * Format: ER-001, ER-002, etc.
+     * Format: {A}/{B}/DIV.PRODUKSI/{YYYY}
+     * Contoh: 333/590/DIV.PRODUKSI/2026
      * Menggunakan RecapExpenseService::generateId() yang sudah
      * menggunakan lockForUpdate() untuk mencegah race condition.
      *

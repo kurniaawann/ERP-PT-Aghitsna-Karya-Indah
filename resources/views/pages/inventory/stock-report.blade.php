@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan Stok Barang')
+@section('title', 'PT Aghitsna Karya Indah Laporan Stok Barang')
 
 @section('content')
     <div class="px-4 py-4">
@@ -255,7 +255,7 @@
                 itemsDropdownRoute: '{{ route("stock-report.items-dropdown") }}',
             };
         </script>
-        @vite('resources/js/pages/inventory/stock-reports/index.js')
+        @vite('resources/js/pages/inventory/stock-report.js')
         @include('partials.shared.print-dropdown-script')
     @endpush
 @endsection

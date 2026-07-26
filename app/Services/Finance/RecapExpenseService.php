@@ -169,7 +169,10 @@ class RecapExpenseService
     }
 
     /**
-     * Generate unique expense recap ID (format: ER-001).
+     * Generate unique expense recap ID (format: {A}/{B}/DIV.PRODUKSI/{YYYY}).
+     *
+     * Kedua angka (A dan B) diincrement secara terpisah.
+     * Contoh: 333/590/DIV.PRODUKSI/2026 -> 334/591/DIV.PRODUKSI/2026
      *
      * Menggunakan database lock untuk mencegah race condition.
      *
@@ -177,23 +180,28 @@ class RecapExpenseService
      */
     public function generateId(): string
     {
+        $year = date('Y');
+        $suffix = "/DIV.PRODUKSI/{$year}";
+
         $lastExpenseRecap = ExpenseRecap::lockForUpdate()
-            ->where('id', 'like', 'ER-%')
-            ->orderBy('id', 'desc')
+            ->where('id', 'like', "%{$suffix}")
+            ->orderByDesc('id')
             ->first();
 
-        if ($lastExpenseRecap) {
-            $lastNumber = intval(substr($lastExpenseRecap->id, 3));
-            $newNumber = $lastNumber + 1;
+        if ($lastExpenseRecap && preg_match('/^(\d+)\/(\d+)\//', $lastExpenseRecap->id, $matches)) {
+            $nextA = (int) $matches[1] + 1;
+            $nextB = (int) $matches[2] + 1;
         } else {
-            $newNumber = 1;
+            $nextA = 333;
+            $nextB = 590;
         }
 
-        $newId = 'ER-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $newId = "{$nextA}/{$nextB}/DIV.PRODUKSI/{$year}";
 
         while (ExpenseRecap::where('id', $newId)->exists()) {
-            $newNumber++;
-            $newId = 'ER-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            $nextA++;
+            $nextB++;
+            $newId = "{$nextA}/{$nextB}/DIV.PRODUKSI/{$year}";
         }
 
         return $newId;

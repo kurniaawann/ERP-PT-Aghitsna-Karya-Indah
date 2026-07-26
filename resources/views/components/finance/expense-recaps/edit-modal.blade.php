@@ -1,5 +1,6 @@
 {{-- Modal Edit Rekap Pengeluaran --}}
-<x-modal id="editModal-{{ $expense->id }}" title="Edit Rekap Pengeluaran"
+@php $safeId = str_replace('/', '-', $expense->id); @endphp
+<x-modal id="editModal-{{ $safeId }}" title="Edit Rekap Pengeluaran"
     action="{{ route('recap-expense.update', $expense->id) }}" method="PUT" buttonText="Update">
 
     {{-- Kategori Pengeluaran --}}

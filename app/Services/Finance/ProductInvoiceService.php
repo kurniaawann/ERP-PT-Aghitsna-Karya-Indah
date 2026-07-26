@@ -223,7 +223,8 @@ class ProductInvoiceService
     }
 
     /**
-     * Menghasilkan nomor invoice unik berformat: {n}/{n}/PT.AKI/{yy}.
+     * Menghasilkan nomor invoice unik berformat: {A}/{B}/PT.AKI/{yy}.
+     * Kedua angka (A dan B) diincrement secara terpisah.
      *
      * @return string  Nomor invoice berikutnya
      */
@@ -232,18 +233,18 @@ class ProductInvoiceService
         $year = date('y');
 
         $lastInvoice = InvoiceBarang::where('invoice_number', 'like', "%/PT.AKI/{$year}")
-            ->orderBy('invoice_number', 'desc')
+            ->orderByDesc('invoice_number')
             ->first();
 
-        if ($lastInvoice) {
-            preg_match('/^(\d+)\//', $lastInvoice->invoice_number, $matches);
-            $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
-            $nextNumber = $lastNumber + 1;
+        if ($lastInvoice && preg_match('/^(\d+)\/(\d+)\//', $lastInvoice->invoice_number, $matches)) {
+            $nextA = (int) $matches[1] + 1;
+            $nextB = (int) $matches[2] + 1;
         } else {
-            $nextNumber = 1;
+            $nextA = 369;
+            $nextB = 318;
         }
 
-        return "{$nextNumber}/{$nextNumber}/PT.AKI/{$year}";
+        return "{$nextA}/{$nextB}/PT.AKI/{$year}";
     }
 
     /**

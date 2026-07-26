@@ -22,7 +22,9 @@ class ExpenseRecapSeeder extends Seeder
 
         $categories = TransactionCategory::all()->keyBy('code');
         $expenseData = [];
-        $counter = 1;
+        $counterA = 333;
+        $counterB = 590;
+        $year = date('Y');
 
         // 15 diverse expense records
         $expenses = [
@@ -45,7 +47,7 @@ class ExpenseRecapSeeder extends Seeder
 
         foreach ($expenses as $expense) {
             $expenseData[] = [
-                'id' => 'ER-' . str_pad($counter++, 3, '0', STR_PAD_LEFT),
+                'id' => "{$counterA}/{$counterB}/DIV.PRODUKSI/{$year}",
                 'transaction_category_id' => $categories[$expense['cat']]->id ?? null,
                 'invoice_number' => $expense['inv'],
                 'transaction_date' => $expense['date'],
@@ -54,6 +56,8 @@ class ExpenseRecapSeeder extends Seeder
                 'expense_amount' => $expense['expense'],
                 'money_source' => $expense['source'],
             ];
+            $counterA++;
+            $counterB++;
         }
 
         foreach ($expenseData as $data) {

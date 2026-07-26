@@ -60,7 +60,7 @@ class ProjectQuotationService
     /**
      * Generate nomor penawaran berikutnya.
      *
-     * @return string  Format: {n}/{n}/PT.AKI/{yy}
+     * @return string  Format: {A}/{B}/PT.AKI/{yy}
      */
     public function generateQuotationNumber(): string
     {
@@ -77,9 +77,9 @@ class ProjectQuotationService
     {
         $items = json_decode($validated['items_json'], true);
 
-        $seqNumber = ProjectQuotation::getNextSequenceNumber();
-        $year = date('y');
-        $quotationNumber = "{$seqNumber}/{$seqNumber}/PT.AKI/{$year}";
+        $quotationNumber = ProjectQuotation::generateQuotationNumber();
+        preg_match('/^(\d+)\//', $quotationNumber, $matches);
+        $seqNumber = (int) $matches[1];
 
         $totalAmount = $this->calculateGrandTotal($items);
 

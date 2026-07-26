@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Setiap record bisa berupa input manual atau auto-generated dari sales recap.
  *
  * Table: expense_recaps
- * Primary Key: id (string, format: ER-001)
+ * Primary Key: id (string, format: {A}/{B}/DIV.PRODUKSI/{YYYY})
  *
  * @property string $id
  * @property int    $transaction_category_id

@@ -61,28 +61,44 @@ class AluminiumQuotation extends Model
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Generate next quotation number: {n}/{n}/ALU/{yy}
-     * e.g. 1/1/ALU/26
+     * Generate next quotation number: {A}/{B}/ALU/{yy}
+     * Kedua angka (A dan B) diincrement secara terpisah.
+     * e.g. 275/310/ALU/26 -> 276/311/ALU/26
      */
     public static function generateQuotationNumber(): string
     {
         $year = date('y');
 
         $last = self::where('quotation_number', 'like', "%/ALU/{$year}")
-            ->orderBy('sequence_number', 'desc')
+            ->orderByDesc('quotation_number')
             ->first();
 
-        $next = $last ? ($last->sequence_number + 1) : 1;
+        if ($last && preg_match('/^(\d+)\/(\d+)\//', $last->quotation_number, $matches)) {
+            $nextA = (int) $matches[1] + 1;
+            $nextB = (int) $matches[2] + 1;
+        } else {
+            $nextA = 275;
+            $nextB = 310;
+        }
 
-        return "{$next}/{$next}/ALU/{$year}";
+        return "{$nextA}/{$nextB}/ALU/{$year}";
     }
 
+    /**
+     * Mendapatkan nomor urut (sequence) berikutnya.
+     * Sequence mengikuti angka pertama (A) dari quotation_number.
+     */
     public static function getNextSequenceNumber(): int
     {
         $year = date('y');
         $last = self::where('quotation_number', 'like', "%/ALU/{$year}")
-            ->orderBy('sequence_number', 'desc')
+            ->orderByDesc('quotation_number')
             ->first();
-        return $last ? ($last->sequence_number + 1) : 1;
+
+        if ($last && preg_match('/^(\d+)\//', $last->quotation_number, $matches)) {
+            return (int) $matches[1] + 1;
+        }
+
+        return 1;
     }
 }

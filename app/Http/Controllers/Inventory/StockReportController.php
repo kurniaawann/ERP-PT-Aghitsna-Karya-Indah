@@ -89,7 +89,7 @@ class StockReportController extends Controller
             }
         }
 
-        return view('pages.inventory.stock-reports.index', [
+        return view('pages.inventory.stock-report', [
             'reportData' => $reportPaginator,
             'summary' => $summary,
             'items' => $items,
