@@ -8,7 +8,7 @@
         {{-- ==================== Filter Section ==================== --}}
         <div class="bg-surface-base p-6 rounded-xl shadow">
             <form method="GET" action="{{ route('report.sales') }}" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-5 gap-4">
                     {{-- Filter Bulan --}}
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Bulan</label>
@@ -74,7 +74,7 @@
         </div>
 
         {{-- ==================== Summary Cards ==================== --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-4 gap-6">
             <x-report.sales-reports.summary-card
                 title="Total Penjualan"
                 value="Rp {{ number_format($summary['total_selling'], 0, ',', '.') }}"
