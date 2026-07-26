@@ -3,6 +3,7 @@
 namespace App\Models\Notification;
 
 use App\Models\Finance\InvoiceProyek;
+use App\Models\User;
 use App\Services\Finance\InvoiceCalculatorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,7 +55,7 @@ class InvoiceProyekReminder extends Model
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

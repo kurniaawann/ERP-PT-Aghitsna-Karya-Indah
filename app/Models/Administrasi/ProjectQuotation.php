@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentAccount;
+use App\Models\User;
 
 /**
  * Model untuk data Penawaran Proyek (Project Quotation).
@@ -80,7 +81,7 @@ class ProjectQuotation extends Model
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 namespace App\Exports\Administrasi;
 
 use App\Models\Administrasi\AluminiumQuotation;
+use App\Models\Finance\PaymentAccount;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
@@ -254,11 +255,11 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     : ($quotation->selected_payment_accounts ?? []);
 
                 if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    $paymentAccounts = PaymentAccount::whereIn('id', $selectedAccountIds)
                         ->orderBy('id')
                         ->get();
                 } else {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
+                    $paymentAccounts = PaymentAccount::active()->get();
                 }
 
                 // Helper to sanitize Excel cell values

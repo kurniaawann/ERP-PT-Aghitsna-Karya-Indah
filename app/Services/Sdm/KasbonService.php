@@ -323,7 +323,7 @@ class KasbonService
      * @param  string         $periodStartDate  Tanggal mulai periode
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getPendingKasbonsForPeriod(string $periodStartDate): \Illuminate\Database\Eloquent\Collection
+    public function getPendingKasbonsForPeriod(string $periodStartDate): Collection
     {
         return Kasbon::where('period_start_date', $periodStartDate)
             ->pending()
@@ -337,7 +337,7 @@ class KasbonService
      * @param  string  $kasbonCode  Kode kasbon
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getPayments(string $kasbonCode): \Illuminate\Database\Eloquent\Collection
+    public function getPayments(string $kasbonCode): Collection
     {
         return KasbonPayment::where('kasbon_code', $kasbonCode)
             ->with('payroll')

@@ -205,7 +205,7 @@ class Employee extends Model
      */
     public function isPayrollPaidByStartDate($periodStartDate): bool
     {
-        $startDate = $periodStartDate instanceof \Carbon\Carbon
+        $startDate = $periodStartDate instanceof Carbon
             ? $periodStartDate->format('Y-m-d')
             : $periodStartDate;
 
@@ -244,7 +244,7 @@ class Employee extends Model
      */
     public function getAttendanceUpToDate($periodStart, $kasbonDate): int
     {
-        $startDate = $periodStart instanceof \Carbon\Carbon
+        $startDate = $periodStart instanceof Carbon
             ? $periodStart->format('Y-m-d')
             : $periodStart;
         $endDate = Carbon::parse($kasbonDate)->format('Y-m-d');

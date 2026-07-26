@@ -8,6 +8,7 @@ use App\Http\Requests\Administrasi\UpdateProjectQuotationRequest;
 use App\Models\Administrasi\ProjectQuotation;
 use App\Models\Finance\PaymentAccount;
 use App\Exports\Administrasi\ProjectQuotationExport;
+use App\Exports\Administrasi\ProjectQuotationMultiExport;
 use App\Services\Administrasi\ProjectQuotationService;
 use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -329,7 +330,7 @@ class ProjectQuotationController extends Controller
         } else {
             // For multiple, create a multi-sheet Excel file
             return Excel::download(
-                new \App\Exports\Administrasi\ProjectQuotationMultiExport($quotationNumbers),
+                new ProjectQuotationMultiExport($quotationNumbers),
                 'Penawaran_Proyek_' . date('Y-m-d') . '.xlsx'
             );
         }

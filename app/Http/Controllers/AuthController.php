@@ -91,7 +91,7 @@ class AuthController extends Controller
 
         // Tambahkan validasi: email harus ada di tabel users
         $email = $request->input('email');
-        $userExists = \App\Models\User::where('email', $email)->exists();
+        $userExists = User::where('email', $email)->exists();
 
         if (!$userExists) {
             return back()->withErrors([

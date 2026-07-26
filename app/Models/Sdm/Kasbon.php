@@ -3,6 +3,7 @@
 namespace App\Models\Sdm;
 
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -226,7 +227,7 @@ class Kasbon extends Model
      */
     public function scopeForStartDate($query, $startDate)
     {
-        return $query->where('period_start_date', $startDate instanceof \Carbon\Carbon
+        return $query->where('period_start_date', $startDate instanceof Carbon
             ? $startDate->format('Y-m-d')
             : $startDate);
     }
@@ -275,7 +276,7 @@ class Kasbon extends Model
      */
     public static function getTotalForEmployee(string $employeeCode, $periodStartDate): int
     {
-        $startDate = $periodStartDate instanceof \Carbon\Carbon
+        $startDate = $periodStartDate instanceof Carbon
             ? $periodStartDate->format('Y-m-d')
             : $periodStartDate;
 
@@ -294,7 +295,7 @@ class Kasbon extends Model
      */
     public static function getTotalTeamKasbon($periodStartDate): int
     {
-        $startDate = $periodStartDate instanceof \Carbon\Carbon
+        $startDate = $periodStartDate instanceof Carbon
             ? $periodStartDate->format('Y-m-d')
             : $periodStartDate;
 
