@@ -6,11 +6,12 @@ use App\Exports\Inventory\ItemReturnExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreItemReturnRequest;
 use App\Http\Requests\Inventory\UpdateItemReturnRequest;
-use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockOut;
 use App\Models\Inventory\ItemStockIn;
 use App\Models\Inventory\ItemReturn;
 use App\Services\Inventory\ItemReturnService;
+use App\Services\Inventory\ItemService;
+use App\Services\Inventory\StockInService;
 use App\Services\StockService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -31,7 +32,9 @@ class ItemReturnController extends Controller
 {
     public function __construct(
         private ItemReturnService $returnService,
-        private StockService $stockService
+        private StockService $stockService,
+        private ItemService $itemService,
+        private StockInService $stockInService
     ) {}
 
     /**
@@ -62,9 +65,9 @@ class ItemReturnController extends Controller
     {
         $returns = $this->baseQuery($request)->paginate(15);
 
-        $items = Items::orderBy('id_item', 'asc')->get();
-        $stockOuts = ItemStockOut::orderBy('id_stock_out', 'desc')->get();
-        $stockIns = ItemStockIn::orderBy('id_stock_in', 'desc')->get();
+        $items = $this->itemService->getAll();
+        $stockOuts = $this->stockService->getAllStockOuts();
+        $stockIns = $this->stockInService->getAllStockIns();
 
         $maxQuantities = $this->computeMaxQuantities($returns, $stockIns, $stockOuts);
 

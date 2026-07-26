@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreStockInRequest;
 use App\Http\Requests\Inventory\UpdateStockInRequest;
-use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
+use App\Services\Inventory\ItemService;
 use App\Services\Inventory\StockInService;
 use App\Services\StockService;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,7 +27,8 @@ class ItemStockInController extends Controller
 {
     public function __construct(
         private readonly StockInService $stockInService,
-        private readonly StockService $stockService
+        private readonly StockService $stockService,
+        private readonly ItemService $itemService
     ) {}
 
     /**
@@ -40,7 +41,7 @@ class ItemStockInController extends Controller
     {
         $stockIns = $this->baseQuery($request)->paginate(15);
 
-        $items = Items::orderBy('id_item', 'asc')->get();
+        $items = $this->itemService->getAll();
 
         return view('pages.inventory.stock-in', compact('stockIns', 'items'));
     }

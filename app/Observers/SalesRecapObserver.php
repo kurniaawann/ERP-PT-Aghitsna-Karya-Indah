@@ -7,6 +7,7 @@ use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
 use App\Models\Inventory\ItemStockOut;
 use App\Services\Finance\PaymentProofService;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Observer untuk model SalesRecap.
@@ -29,6 +30,7 @@ class SalesRecapObserver
     public function created(SalesRecap $salesRecap): void
     {
         $this->createStockOuts($salesRecap);
+        $this->flushInventoryCache();
     }
 
     /**
@@ -44,6 +46,7 @@ class SalesRecapObserver
     {
         // Selalu recreate stock outs untuk menjaga konsistensi
         $this->createStockOuts($salesRecap);
+        $this->flushInventoryCache();
 
         // Auto-create expense recap saat status berubah ke Lunas
         if ($salesRecap->wasChanged('status') && $salesRecap->status === 'Lunas') {
@@ -62,6 +65,7 @@ class SalesRecapObserver
     public function deleted(SalesRecap $salesRecap): void
     {
         ItemStockOut::where('id_sales_recap', $salesRecap->getKey())->delete();
+        $this->flushInventoryCache();
 
         foreach ($salesRecap->paymentProofs as $proof) {
             app(PaymentProofService::class)->delete($proof->file_path);
@@ -157,5 +161,15 @@ class SalesRecapObserver
     private function isFromStock($value): bool
     {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Invalidate semua cache inventory terkait stock-out dan stock report.
+     *
+     * @return void
+     */
+    private function flushInventoryCache(): void
+    {
+        Cache::forget('inventory:stock-outs:all');
     }
 }

@@ -7,6 +7,7 @@ use App\Repositories\Inventory\ItemRepository;
 use App\Services\InputNormalizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Service untuk mengelola business logic Data Barang.
@@ -34,11 +35,18 @@ class ItemService
     /**
      * Mendapatkan seluruh data barang diurutkan berdasarkan ID.
      *
+     * Menggunakan cache untuk menghindari query berulang pada dropdown.
+     * Cache di-invalidate saat ada create/update/delete item.
+     *
      * @return Collection
      */
     public function getAll(): Collection
     {
-        return $this->repository->getAllOrderedById();
+        return Cache::remember(
+            'inventory:items:all',
+            now()->addDay(),
+            fn () => $this->repository->getAllOrderedById()
+        );
     }
 
     /**

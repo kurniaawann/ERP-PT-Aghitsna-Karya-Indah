@@ -5,6 +5,7 @@ namespace App\Services\Inventory;
 use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
 use App\Services\InputNormalizer;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -37,6 +38,33 @@ class StockInService
         $lastNumber = (int) substr($lastRecord->id_stock_in, -4);
 
         return 'SIN-' . date('Ymd') . '-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Mendapatkan seluruh data Barang Masuk diurutkan berdasarkan ID descending.
+     *
+     * Menggunakan cache untuk dropdown di halaman Pengembalian Barang.
+     * Cache di-invalidate saat ada transaksi stock-in.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllStockIns()
+    {
+        return Cache::remember(
+            'inventory:stock-ins:all',
+            now()->addHour(),
+            fn () => ItemStockIn::orderBy('id_stock_in', 'desc')->get()
+        );
+    }
+
+    /**
+     * Invalidate cache stock-in.
+     *
+     * @return void
+     */
+    public function flushCache(): void
+    {
+        Cache::forget('inventory:stock-ins:all');
     }
 
     /**
@@ -85,6 +113,8 @@ class StockInService
             }
 
             DB::commit();
+
+            $this->flushCache();
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -136,6 +166,8 @@ class StockInService
             ]);
 
             DB::commit();
+
+            $this->flushCache();
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;

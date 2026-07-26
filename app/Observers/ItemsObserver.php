@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -35,6 +36,8 @@ class ItemsObserver
      */
     public function created(Items $item): void
     {
+        Cache::forget('inventory:items:all');
+
         $alreadyExists = ItemStockIn::where('id_item', $item->id_item)
             ->whereDate('date', self::OPENING_STOCK_DATE)
             ->where('notes', self::OPENING_STOCK_DESCRIPTION)
@@ -59,5 +62,27 @@ class ItemsObserver
             'notes' => self::OPENING_STOCK_DESCRIPTION,
             'date' => self::OPENING_STOCK_DATE,
         ]);
+    }
+
+    /**
+     * Dipanggil saat barang diperbarui.
+     *
+     * @param  Items  $item
+     * @return void
+     */
+    public function updated(Items $item): void
+    {
+        Cache::forget('inventory:items:all');
+    }
+
+    /**
+     * Dipanggil saat barang dihapus.
+     *
+     * @param  Items  $item
+     * @return void
+     */
+    public function deleted(Items $item): void
+    {
+        Cache::forget('inventory:items:all');
     }
 }

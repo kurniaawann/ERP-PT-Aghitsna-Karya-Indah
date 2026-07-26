@@ -51,6 +51,19 @@ class StockReportService
      */
     public function generateReport(string $startDate, string $endDate, ?string $itemId = null): Collection
     {
+        return $this->computeReport($startDate, $endDate, $itemId);
+    }
+
+    /**
+     * Menghasilkan data laporan stok (computation tanpa cache).
+     *
+     * @param  string       $startDate
+     * @param  string       $endDate
+     * @param  string|null  $itemId
+     * @return Collection
+     */
+    private function computeReport(string $startDate, string $endDate, ?string $itemId = null): Collection
+    {
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
