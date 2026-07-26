@@ -12,29 +12,29 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Filter Tipe dan Pencarian --}}
             <form method="GET" action="{{ route('transaction-category.index') }}" id="filterForm"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1520px]:w-auto min-[1520px]:flex-1 flex flex-col min-[1520px]:flex-row gap-3">
 
                 {{-- Filter Tipe (Pemasukan/Pengeluaran) --}}
                 <x-filters.select-filter name="type" :value="request('type')" :options="collect([
                     (object) ['id' => 'INCOME', 'name' => 'Pemasukan'],
                     (object) ['id' => 'EXPENSE', 'name' => 'Pengeluaran'],
                 ])" placeholder="Semua Tipe"
-                    :autoSubmit="true" />
+                    :autoSubmit="true" responsive="custom" />
 
                 {{-- Input Pencarian --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari kategori..." />
+                <x-filters.search-input :value="request('search')" placeholder="Cari kategori..." responsive="custom" />
             </form>
 
             {{-- Tombol Aksi --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1520px]:mt-0 w-full min-[1520px]:w-auto">
+                <div class="flex flex-col min-[1520px]:flex-row gap-2 w-full min-[1520px]:w-auto">
                     <button type="button" id="delete-button" onclick="checkAndDelete()" disabled
-                        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-btn-delete">
+                        class="w-full min-[1520px]:w-auto flex items-center justify-center gap-2 bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-btn-delete">
                         <i class="fa-solid fa-trash w-4 h-4"></i>
                         <span>Hapus</span>
                     </button>
 
-                    <x-buttons.add-button modalId="addModal" text="Tambah Kategori" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Kategori" responsive="custom" />
                 </div>
             </div>
         </div>
