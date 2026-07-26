@@ -11,17 +11,17 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian --}}
             <form method="GET" action="{{ route('proyek-invoice.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
-                <x-filters.month-filter :value="request('month')" />
-                <x-filters.year-filter :value="request('year')" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari no invoice atau kepada..." />
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari no invoice atau kepada..." responsive="custom" />
             </form>
 
             {{-- Aksi di Kanan --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" />
-                    <x-buttons.add-button modalId="addModal" text="Tambah Invoice" />
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Invoice" responsive="custom" />
                 </div>
             </div>
         </div>
