@@ -10,14 +10,14 @@
         {{-- ==================== Toolbar Filter & Aksi ==================== --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <form method="GET" action="{{ route('recap-proyek.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
-                <x-filters.month-filter :value="request('month')" />
-                <x-filters.year-filter :value="request('year')" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari invoice, penerima, atau proyek..." />
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari invoice, penerima, atau proyek..." responsive="custom" />
             </form>
 
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
                     <x-buttons.print-dropdown
                         :excelRoute="route('recap-proyek.export.excel')"
                         :pdfRoute="route('recap-proyek.export.pdf')"
@@ -26,6 +26,7 @@
                             'month' => request('month'),
                             'year' => request('year'),
                         ]"
+                        responsive="custom"
                     />
                 </div>
             </div>
