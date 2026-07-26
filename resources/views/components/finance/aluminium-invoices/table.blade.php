@@ -64,14 +64,14 @@
                                     Rp {{ number_format($remaining, 0, ',', '.') }}
                                 </td>
 
-                                <td class="p-2 text-center">
+                                <td class="p-2 text-center pr-4 md:pr-6">
                                     <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $statusClass }}">
                                         {{ $statusLabel }}
                                     </span>
                                 </td>
 
-                                <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-1 flex-wrap">
+                                <td class="p-2 text-center pr-4 md:pr-6">
+                                    <div class="grid gap-1 min-[1671px]:grid-cols-4 min-[1561px]:grid-cols-2 max-[1560px]:grid-cols-1 justify-items-center">
                                         <button type="button"
                                             onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
                                             class="flex items-center gap-1 bg-info hover:bg-info/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
