@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Exports\Inventory\ItemReturnExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreItemReturnRequest;
 use App\Http\Requests\Inventory\UpdateItemReturnRequest;
@@ -11,6 +12,7 @@ use App\Models\Inventory\ItemStockIn;
 use App\Models\Inventory\ItemReturn;
 use App\Services\Inventory\ItemReturnService;
 use App\Services\StockService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -38,7 +40,7 @@ class ItemReturnController extends Controller
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function baseQuery(Request $request): Builder
     {
         return ItemReturn::query()
             ->with(['item', 'stockOut', 'stockIn'])
@@ -234,7 +236,7 @@ class ItemReturnController extends Controller
     public function exportExcel(Request $request)
     {
         return Excel::download(
-            new \App\Exports\Inventory\ItemReturnExport(
+            new ItemReturnExport(
                 $request->input('search'),
                 $request->input('month'),
                 $request->input('year'),

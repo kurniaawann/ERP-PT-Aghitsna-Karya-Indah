@@ -9,6 +9,7 @@ use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
 use App\Services\Inventory\StockInService;
 use App\Services\StockService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -206,7 +207,7 @@ class ItemStockInController extends Controller
      * @param  Request  $request
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function baseQuery(Request $request): Builder
     {
         return ItemStockIn::query()
             ->with('item')

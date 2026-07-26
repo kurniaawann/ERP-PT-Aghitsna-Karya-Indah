@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Exports\Inventory\StockOutExport;
 use App\Models\Inventory\ItemStockOut;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -27,7 +29,7 @@ class ItemStockOutController extends Controller
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    private function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function baseQuery(Request $request): Builder
     {
         return ItemStockOut::query()
             ->with(['item', 'salesRecap', 'returns'])
@@ -74,7 +76,7 @@ class ItemStockOutController extends Controller
     public function exportExcel(Request $request)
     {
         return Excel::download(
-            new \App\Exports\Inventory\StockOutExport(
+            new StockOutExport(
                 $request->input('search'),
                 $request->input('month'),
                 $request->input('year')
