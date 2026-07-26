@@ -7,6 +7,8 @@ use App\Models\Sdm\Employee;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk mengelola bisnis logika lembur.
@@ -55,7 +57,14 @@ class OvertimeService
      */
     public function getAllEmployees(): Collection
     {
-        return Employee::orderBy('name')->get(['employee_code', 'name']);
+        try {
+            return Cache::remember('sdm:employees:dropdown', now()->addHours(24), function () {
+                return Employee::orderBy('name')->get(['employee_code', 'name']);
+            });
+        } catch (\Exception $e) {
+            Log::warning('Cache read failed for sdm:employees:dropdown: ' . $e->getMessage());
+            return Employee::orderBy('name')->get(['employee_code', 'name']);
+        }
     }
 
     /**

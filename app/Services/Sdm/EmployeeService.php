@@ -6,6 +6,8 @@ use App\Models\Sdm\Division;
 use App\Models\Sdm\Employee;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk mengelola bisnis logika karyawan.
@@ -41,7 +43,14 @@ class EmployeeService
      */
     public function getAllDivisions(): Collection
     {
-        return Division::orderBy('name')->get();
+        try {
+            return Cache::remember('sdm:divisions:dropdown', now()->addHours(24), function () {
+                return Division::orderBy('name')->get();
+            });
+        } catch (\Exception $e) {
+            Log::warning('Cache read failed for sdm:divisions:dropdown: ' . $e->getMessage());
+            return Division::orderBy('name')->get();
+        }
     }
 
     /**

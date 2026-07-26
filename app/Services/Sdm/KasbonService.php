@@ -10,6 +10,8 @@ use App\Services\InputNormalizer;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk mengelola bisnis logika kasbon (cash advance).
@@ -77,7 +79,14 @@ class KasbonService
      */
     public function getAllEmployees(): Collection
     {
-        return Employee::orderBy('name')->get(['employee_code', 'name']);
+        try {
+            return Cache::remember('sdm:employees:dropdown', now()->addHours(24), function () {
+                return Employee::orderBy('name')->get(['employee_code', 'name']);
+            });
+        } catch (\Exception $e) {
+            Log::warning('Cache read failed for sdm:employees:dropdown: ' . $e->getMessage());
+            return Employee::orderBy('name')->get(['employee_code', 'name']);
+        }
     }
 
     /**
@@ -87,7 +96,14 @@ class KasbonService
      */
     public function getAllDivisions(): Collection
     {
-        return Division::orderBy('name')->get(['id', 'name']);
+        try {
+            return Cache::remember('sdm:divisions:dropdown', now()->addHours(24), function () {
+                return Division::orderBy('name')->get(['id', 'name']);
+            });
+        } catch (\Exception $e) {
+            Log::warning('Cache read failed for sdm:divisions:dropdown: ' . $e->getMessage());
+            return Division::orderBy('name')->get(['id', 'name']);
+        }
     }
 
     /**
