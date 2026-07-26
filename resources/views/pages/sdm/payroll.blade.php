@@ -42,7 +42,7 @@
                 {{-- Filter Minggu --}}
                 <div class="flex-1">
                     <select name="week_number" id="filter_week_number"
-                        class="w-full border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
+                        class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
                         onchange="this.form.requestSubmit()">
                         <option value="">Semua Minggu</option>
                     </select>

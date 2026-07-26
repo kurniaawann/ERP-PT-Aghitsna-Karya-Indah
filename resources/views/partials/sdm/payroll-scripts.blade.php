@@ -424,7 +424,7 @@
     // ==========================================
 
     const filterMonthSelect = document.querySelector('select[name="month"]');
-    const filterYearInput = document.querySelector('input[name="year"]');
+    const filterYearInput = document.querySelector('select[name="year"]');
     const filterWeekSelect = document.getElementById('filter_week_number');
     const currentFilterWeek = '{{ request("week_number") }}';
     const currentFilterMonth = '{{ request("month") }}';
@@ -462,10 +462,7 @@
         filterMonthSelect.addEventListener('change', loadFilterWeeks);
     }
     if (filterYearInput) {
-        filterYearInput.addEventListener('input', function() {
-            clearTimeout(checkTimeout);
-            checkTimeout = setTimeout(loadFilterWeeks, 500);
-        });
+        filterYearInput.addEventListener('change', loadFilterWeeks);
     }
 
     // Load filter weeks on page load if month/year are set
