@@ -7,6 +7,7 @@ use App\Models\Inventory\ItemStockIn;
 use App\Models\Inventory\ItemStockOut;
 use App\Models\Inventory\ItemReturn;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class StockService
 {
@@ -20,11 +21,16 @@ class StockService
      */
     public function getAllStockOuts()
     {
-        return Cache::remember(
-            'inventory:stock-outs:all',
-            now()->addHour(),
-            fn () => ItemStockOut::orderBy('id_stock_out', 'desc')->get()
-        );
+        try {
+            return Cache::remember(
+                'inventory:stock-outs:all',
+                now()->addHour(),
+                fn () => ItemStockOut::orderBy('id_stock_out', 'desc')->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [inventory:stock-outs:all]: ' . $e->getMessage());
+            return ItemStockOut::orderBy('id_stock_out', 'desc')->get();
+        }
     }
 
     /**
@@ -34,7 +40,11 @@ class StockService
      */
     public function flushCache(): void
     {
-        Cache::forget('inventory:stock-outs:all');
+        try {
+            Cache::forget('inventory:stock-outs:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-outs:all]: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -126,7 +136,11 @@ class StockService
         // delete the stock-in record
         $stockIn->delete();
 
-        Cache::forget('inventory:stock-ins:all');
+        try {
+            Cache::forget('inventory:stock-ins:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-ins:all]: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -183,7 +197,11 @@ class StockService
         $item->save();
         $return->delete();
 
-        Cache::forget('inventory:stock-ins:all');
+        try {
+            Cache::forget('inventory:stock-ins:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-ins:all]: ' . $e->getMessage());
+        }
         $this->flushCache();
     }
 }

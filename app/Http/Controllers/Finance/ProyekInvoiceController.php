@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreProyekInvoiceRequest;
 use App\Http\Requests\Finance\UpdateProyekInvoiceRequest;
 use App\Models\Finance\InvoiceProyek;
-use App\Models\Finance\PaymentAccount;
 use App\Exports\Finance\ProyekInvoiceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,7 +25,8 @@ class ProyekInvoiceController extends Controller
     use HasBulkActions;
 
     public function __construct(
-        protected ProyekInvoiceService $service
+        protected ProyekInvoiceService $service,
+        protected \App\Services\Finance\PaymentAccountService $paymentAccountService
     ) {}
 
     /**
@@ -52,7 +52,7 @@ class ProyekInvoiceController extends Controller
     public function index(Request $request)
     {
         $invoices = $this->service->baseQuery($request)->paginate(15);
-        $paymentAccounts = PaymentAccount::active()->get();
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
 
         return view('pages.finance.project-invoices', compact('invoices', 'paymentAccounts'));
     }

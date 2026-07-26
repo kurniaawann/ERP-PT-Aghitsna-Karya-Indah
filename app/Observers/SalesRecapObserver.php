@@ -8,6 +8,7 @@ use App\Models\Report\TransactionCategory;
 use App\Models\Inventory\ItemStockOut;
 use App\Services\Finance\PaymentProofService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Observer untuk model SalesRecap.
@@ -31,6 +32,7 @@ class SalesRecapObserver
     {
         $this->createStockOuts($salesRecap);
         $this->flushInventoryCache();
+        $this->flushSalesRecapOptionsCache();
     }
 
     /**
@@ -47,6 +49,7 @@ class SalesRecapObserver
         // Selalu recreate stock outs untuk menjaga konsistensi
         $this->createStockOuts($salesRecap);
         $this->flushInventoryCache();
+        $this->flushSalesRecapOptionsCache();
 
         // Auto-create expense recap saat status berubah ke Lunas
         if ($salesRecap->wasChanged('status') && $salesRecap->status === 'Lunas') {
@@ -66,6 +69,7 @@ class SalesRecapObserver
     {
         ItemStockOut::where('id_sales_recap', $salesRecap->getKey())->delete();
         $this->flushInventoryCache();
+        $this->flushSalesRecapOptionsCache();
 
         foreach ($salesRecap->paymentProofs as $proof) {
             app(PaymentProofService::class)->delete($proof->file_path);
@@ -170,6 +174,24 @@ class SalesRecapObserver
      */
     private function flushInventoryCache(): void
     {
-        Cache::forget('inventory:stock-outs:all');
+        try {
+            Cache::forget('inventory:stock-outs:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-outs:all]: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Invalidate cache opsi SalesRecap di halaman Bukti Pembayaran.
+     *
+     * @return void
+     */
+    private function flushSalesRecapOptionsCache(): void
+    {
+        try {
+            Cache::forget('finance:sales-recap-options');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [finance:sales-recap-options]: ' . $e->getMessage());
+        }
     }
 }

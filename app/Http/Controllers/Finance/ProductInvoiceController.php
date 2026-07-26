@@ -14,6 +14,7 @@ use App\Models\Report\SalesRecap;
 use App\Services\Finance\ProductInvoiceService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -41,7 +42,17 @@ class ProductInvoiceController extends Controller
         $invoices = $this->service->baseQuery($request)->paginate(10)->appends($request->all());
         $summaryInvoices = (clone $this->service->baseQuery($request))->get();
         $totals = $this->service->buildTotals($summaryInvoices);
-        $items = Items::query()->orderBy('name_item')->get();
+
+        try {
+            $items = Cache::remember(
+                'inventory:items:all',
+                now()->addDay(),
+                fn () => Items::query()->orderBy('name_item')->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [inventory:items:all]: ' . $e->getMessage());
+            $items = Items::query()->orderBy('name_item')->get();
+        }
 
         return view('pages.finance.product-invoices', compact('invoices', 'totals', 'items'));
     }

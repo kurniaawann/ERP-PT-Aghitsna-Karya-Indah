@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\AlumuniumInvoiceStoreRequest;
 use App\Http\Requests\Finance\AlumuniumInvoiceUpdateRequest;
 use App\Models\Finance\InvoiceAlumunium;
-use App\Models\Finance\PaymentAccount;
 use App\Services\Finance\AlumuniumInvoiceService;
 use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,7 +25,8 @@ class AlumuniumInvoiceController extends Controller
     use HasBulkActions;
 
     public function __construct(
-        private AlumuniumInvoiceService $service
+        private AlumuniumInvoiceService $service,
+        private \App\Services\Finance\PaymentAccountService $paymentAccountService
     ) {}
 
     /**
@@ -38,7 +38,7 @@ class AlumuniumInvoiceController extends Controller
     public function index(Request $request)
     {
         $invoices = $this->service->baseQuery($request)->paginate(15);
-        $paymentAccounts = PaymentAccount::active()->get();
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
 
         return view('pages.finance.aluminium-invoices', compact('invoices', 'paymentAccounts'));
     }

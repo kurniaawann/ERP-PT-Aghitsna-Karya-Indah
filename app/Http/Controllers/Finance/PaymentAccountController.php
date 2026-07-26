@@ -114,7 +114,7 @@ class PaymentAccountController extends Controller
 
         // Guard: tidak boleh menghapus semua rekening
         if ($selectedCount >= $totalAccounts) {
-            $msg = 'Tidak dapat menghapus semua rekening pembayaran. Minimal 1 rekening harus tetap ada.';
+            $msg = "Kamu memilih {$selectedCount} dari {$totalAccounts} rekening. Tidak dapat menghapus semua rekening karena minimal 1 rekening harus tetap ada untuk digunakan pada form Invoice dan dokumen lainnya. Silakan batalkan pilihan pada 1 rekening yang ingin disimpan.";
             return $isAjax
                 ? response()->json(['success' => false, 'message' => $msg])
                 : redirect()->route('payment-accounts.index')->with('error', $msg);
@@ -154,7 +154,7 @@ class PaymentAccountController extends Controller
     {
         if (!$this->service->canDelete()) {
             return redirect()->route('payment-accounts.index')
-                ->with('error', 'Tidak dapat menghapus rekening terakhir. Minimal 1 rekening harus tetap ada.');
+                ->with('error', 'Ini adalah rekening terakhir kamu. Tidak dapat menghapus karena minimal 1 rekening harus tetap ada untuk digunakan pada form Invoice dan dokumen lainnya.');
         }
 
         if ($this->service->isAccountUsed($paymentAccount)) {

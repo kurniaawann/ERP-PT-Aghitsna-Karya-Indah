@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -36,7 +37,11 @@ class ItemsObserver
      */
     public function created(Items $item): void
     {
-        Cache::forget('inventory:items:all');
+        try {
+            Cache::forget('inventory:items:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:items:all]: ' . $e->getMessage());
+        }
 
         $alreadyExists = ItemStockIn::where('id_item', $item->id_item)
             ->whereDate('date', self::OPENING_STOCK_DATE)
@@ -72,7 +77,11 @@ class ItemsObserver
      */
     public function updated(Items $item): void
     {
-        Cache::forget('inventory:items:all');
+        try {
+            Cache::forget('inventory:items:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:items:all]: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -83,6 +92,10 @@ class ItemsObserver
      */
     public function deleted(Items $item): void
     {
-        Cache::forget('inventory:items:all');
+        try {
+            Cache::forget('inventory:items:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:items:all]: ' . $e->getMessage());
+        }
     }
 }

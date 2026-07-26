@@ -8,6 +8,7 @@ use App\Services\InputNormalizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk mengelola business logic Data Barang.
@@ -42,11 +43,16 @@ class ItemService
      */
     public function getAll(): Collection
     {
-        return Cache::remember(
-            'inventory:items:all',
-            now()->addDay(),
-            fn () => $this->repository->getAllOrderedById()
-        );
+        try {
+            return Cache::remember(
+                'inventory:items:all',
+                now()->addDay(),
+                fn () => $this->repository->getAllOrderedById()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [inventory:items:all]: ' . $e->getMessage());
+            return $this->repository->getAllOrderedById();
+        }
     }
 
     /**

@@ -12,6 +12,8 @@ use App\Models\Report\SalesRecap;
 use App\Services\Finance\InvoiceCalculatorService;
 use App\Services\Finance\PaymentProofService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Controller untuk modul Bukti Pembayaran (Payment Proof).
@@ -47,9 +49,16 @@ class PaymentProofController extends Controller
             ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
         ];
 
-        $salesRecapOptions = SalesRecap::query()
-            ->orderByDesc('date')
-            ->get();
+        try {
+            $salesRecapOptions = Cache::remember(
+                'finance:sales-recap-options',
+                now()->addHour(),
+                fn () => SalesRecap::query()->orderByDesc('date')->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [finance:sales-recap-options]: ' . $e->getMessage());
+            $salesRecapOptions = SalesRecap::query()->orderByDesc('date')->get();
+        }
 
         if ($request->filled('module_type')) {
             $query->where('module_type', $request->module_type);

@@ -5,7 +5,9 @@ namespace App\Services\Finance;
 use App\Models\Finance\PaymentAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service layer untuk operasi bisnis Rekening Pembayaran.
@@ -30,6 +32,48 @@ class PaymentAccountService
         ['table' => 'notas_administrasi',    'column' => 'selected_payment_accounts', 'method' => 'json'],
         ['table' => 'rabs',                  'column' => 'selected_payment_accounts', 'method' => 'like'],
     ];
+
+    public function __construct()
+    {
+        // Invalidate cache on construction if needed
+    }
+
+    /**
+     * Mendapatkan semua rekening pembayaran yang aktif.
+     *
+     * Menggunakan cache untuk dropdown di halaman Invoice Aluminium,
+     * Invoice Proyek, Bukti Pembayaran, dll.
+     * Cache di-invalidate saat ada create/update/toggle/delete.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getActiveAccounts()
+    {
+        try {
+            return Cache::remember(
+                'finance:payment-accounts:active',
+                now()->addDay(),
+                fn () => PaymentAccount::active()->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [finance:payment-accounts:active]: ' . $e->getMessage());
+            return PaymentAccount::active()->get();
+        }
+    }
+
+    /**
+     * Invalidate cache rekening pembayaran aktif.
+     *
+     * @return void
+     */
+    public function flushCache(): void
+    {
+        try {
+            Cache::forget('finance:payment-accounts:active');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [finance:payment-accounts:active]: ' . $e->getMessage());
+        }
+    }
 
     /**
      * Membangun query dasar untuk listing rekening pembayaran.
@@ -68,13 +112,17 @@ class PaymentAccountService
      */
     public function createAccount(array $validated): PaymentAccount
     {
-        return PaymentAccount::create([
+        $result = PaymentAccount::create([
             'bank_name'      => $validated['bank_name'],
             'account_number' => $validated['account_number'],
             'account_holder' => $validated['account_holder'],
             'is_active'      => true,
             'created_by'     => auth()->id(),
         ]);
+
+        $this->flushCache();
+
+        return $result;
     }
 
     /**
@@ -86,11 +134,15 @@ class PaymentAccountService
      */
     public function updateAccount(PaymentAccount $account, array $validated): bool
     {
-        return $account->update([
+        $result = $account->update([
             'bank_name'      => $validated['bank_name'],
             'account_number' => $validated['account_number'],
             'account_holder' => $validated['account_holder'],
         ]);
+
+        $this->flushCache();
+
+        return $result;
     }
 
     /**
@@ -101,9 +153,13 @@ class PaymentAccountService
      */
     public function toggleActive(PaymentAccount $account): bool
     {
-        return $account->update([
+        $result = $account->update([
             'is_active' => !$account->is_active,
         ]);
+
+        $this->flushCache();
+
+        return $result;
     }
 
     /**
@@ -179,7 +235,11 @@ class PaymentAccountService
      */
     public function bulkDelete(array $ids): int
     {
-        return PaymentAccount::whereIn('id', $ids)->delete();
+        $result = PaymentAccount::whereIn('id', $ids)->delete();
+
+        $this->flushCache();
+
+        return $result;
     }
 
     /**
@@ -190,7 +250,11 @@ class PaymentAccountService
      */
     public function deleteAccount(PaymentAccount $account): bool
     {
-        return $account->delete();
+        $result = $account->delete();
+
+        $this->flushCache();
+
+        return $result;
     }
 
     /**

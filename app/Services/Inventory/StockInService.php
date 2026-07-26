@@ -50,11 +50,16 @@ class StockInService
      */
     public function getAllStockIns()
     {
-        return Cache::remember(
-            'inventory:stock-ins:all',
-            now()->addHour(),
-            fn () => ItemStockIn::orderBy('id_stock_in', 'desc')->get()
-        );
+        try {
+            return Cache::remember(
+                'inventory:stock-ins:all',
+                now()->addHour(),
+                fn () => ItemStockIn::orderBy('id_stock_in', 'desc')->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [inventory:stock-ins:all]: ' . $e->getMessage());
+            return ItemStockIn::orderBy('id_stock_in', 'desc')->get();
+        }
     }
 
     /**
@@ -64,7 +69,11 @@ class StockInService
      */
     public function flushCache(): void
     {
-        Cache::forget('inventory:stock-ins:all');
+        try {
+            Cache::forget('inventory:stock-ins:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-ins:all]: ' . $e->getMessage());
+        }
     }
 
     /**

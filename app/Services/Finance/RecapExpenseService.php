@@ -8,6 +8,7 @@ use App\Services\InputNormalizer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -215,9 +216,16 @@ class RecapExpenseService
      */
     public function getExpenseCategories()
     {
-        return TransactionCategory::active()
-            ->orderBy('sort_order')
-            ->get();
+        try {
+            return Cache::remember(
+                'finance:expense-categories',
+                now()->addDay(),
+                fn () => TransactionCategory::active()->orderBy('sort_order')->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [finance:expense-categories]: ' . $e->getMessage());
+            return TransactionCategory::active()->orderBy('sort_order')->get();
+        }
     }
 
     /**
