@@ -11,33 +11,33 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian dan Filter --}}
             <form method="GET" action="{{ route('purchase-invoice.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" />
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
 
                 {{-- Search Input --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari material, barang, atau NPWP..." />
+                <x-filters.search-input :value="request('search')" placeholder="Cari material, barang, atau NPWP..." responsive="custom" />
             </form>
 
             {{-- Aksi di Kanan --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
                     {{-- Tombol Print/Export --}}
                     <x-buttons.print-dropdown :excelRoute="route('purchase-invoice.export-excel')" :pdfRoute="route('purchase-invoice.export-pdf')" :queryParams="[
                         'search' => request('search'),
                         'month' => request('month'),
                         'year' => request('year'),
-                    ]" />
+                    ]" responsive="custom" />
 
                     {{-- Tombol Hapus --}}
-                    <x-buttons.delete-button modalId="deleteModal" />
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
 
                     {{-- Tombol Tambah --}}
-                    <x-buttons.add-button modalId="addModal" text="Tambah Faktur" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Faktur" responsive="custom" />
                 </div>
             </div>
         </div>
