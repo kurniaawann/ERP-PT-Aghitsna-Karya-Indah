@@ -2,7 +2,9 @@
 
 namespace App\Models\Report;
 
+use App\Models\Report\SalesRecap;
 use App\Models\Report\TransactionCategory;
+use App\Services\Finance\RecapExpenseService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -70,7 +72,7 @@ class ExpenseRecap extends Model
 
         static::creating(function ($model) {
             if (empty($model->id)) {
-                $model->id = app(\App\Services\Finance\RecapExpenseService::class)->generateId();
+                $model->id = app(RecapExpenseService::class)->generateId();
             }
         });
     }
@@ -92,7 +94,7 @@ class ExpenseRecap extends Model
      */
     public function salesRecap(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Report\SalesRecap::class, 'sales_recap_id', 'id_sales_recap');
+        return $this->belongsTo(SalesRecap::class, 'sales_recap_id', 'id_sales_recap');
     }
 
     /**

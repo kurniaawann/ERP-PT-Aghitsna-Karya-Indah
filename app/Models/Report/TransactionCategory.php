@@ -2,6 +2,7 @@
 
 namespace App\Models\Report;
 
+use App\Models\Report\ExpenseRecap;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -44,7 +45,7 @@ class TransactionCategory extends Model
      */
     public function expenseRecaps(): HasMany
     {
-        return $this->hasMany(\App\Models\Report\ExpenseRecap::class, 'transaction_category_id');
+        return $this->hasMany(ExpenseRecap::class, 'transaction_category_id');
     }
 
     /**
