@@ -134,7 +134,7 @@ class StockReportService
     }
 
     /**
-     * Menghitung summary (aggregasi) dari data laporan stok.
+     * Menghitung summary (agregasi) dari data laporan stok.
      *
      * Summary mencakup:
      * - total_items: Jumlah barang
@@ -159,5 +159,50 @@ class StockReportService
             'total_ending_stock' => $reportData->sum('ending_stock'),
             'total_stock_value' => $reportData->sum('stock_value'),
         ];
+    }
+
+    /**
+     * Membangun data untuk export PDF/Excel.
+     *
+     * Mengembalikan array dengan struktur:
+     * - reportData: Collection data laporan stok per barang
+     * - summary: Array summary (total stok awal, masuk, keluar, retur, akhir, nilai)
+     * - periodTitle: Label periode untuk header
+     * - startDate: Tanggal mulai
+     * - endDate: Tanggal akhir
+     *
+     * @param  string       $startDate  Tanggal mulai laporan
+     * @param  string       $endDate    Tanggal akhir laporan
+     * @param  string|null  $itemId     ID barang spesifik (opsional)
+     * @return array{reportData: Collection, summary: array, periodTitle: string, startDate: string, endDate: string}
+     */
+    public function buildExportData(string $startDate, string $endDate, ?string $itemId = null): array
+    {
+        $reportData = $this->generateReport($startDate, $endDate, $itemId);
+        $summary = $this->getSummary($reportData);
+        $periodTitle = $this->buildPeriodTitle($startDate, $endDate);
+
+        return [
+            'reportData' => $reportData,
+            'summary' => $summary,
+            'periodTitle' => $periodTitle,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+    }
+
+    /**
+     * Membangun label periode untuk header PDF/Excel.
+     *
+     * @param  string  $startDate  Tanggal mulai
+     * @param  string  $endDate    Tanggal akhir
+     * @return string Label periode (contoh: "01/01/2026 - 31/01/2026")
+     */
+    public function buildPeriodTitle(string $startDate, string $endDate): string
+    {
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        return $start->format('d/m/Y') . ' - ' . $end->format('d/m/Y');
     }
 }

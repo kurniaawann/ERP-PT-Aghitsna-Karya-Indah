@@ -130,6 +130,8 @@ Route::middleware('auth')->group(function () {
     // Route Stock Report (Laporan Stok)
     Route::get('/stock-report', [StockReportController::class, 'index'])->name('stock-report.index');
     Route::get('/stock-report/items-dropdown', [StockReportController::class, 'itemsDropdown'])->name('stock-report.items-dropdown');
+    Route::get('/stock-report/export/pdf', [StockReportController::class, 'exportPdf'])->name('stock-report.export.pdf');
+    Route::get('/stock-report/export/excel', [StockReportController::class, 'exportExcel'])->name('stock-report.export.excel');
 
     // Route Item Invoice
     Route::get('/item-invoice', [ProductInvoiceController::class, 'index'])->name('item-invoice.index');

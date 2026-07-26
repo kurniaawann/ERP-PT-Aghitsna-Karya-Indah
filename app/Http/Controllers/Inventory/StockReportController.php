@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Exports\Inventory\StockReportExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StockReportIndexRequest;
 use App\Models\Inventory\Items;
 use App\Services\Inventory\StockReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Controller untuk menangani Laporan Stok Barang.
@@ -145,5 +148,39 @@ class StockReportController extends Controller
             'hasMore' => $hasMore,
             'total' => $total,
         ]);
+    }
+
+    /**
+     * Export laporan stok ke PDF.
+     */
+    public function exportPdf(StockReportIndexRequest $request)
+    {
+        $validated = $request->validated();
+        $startDate = $validated['start_date'] ?? Carbon::now()->startOfMonth()->toDateString();
+        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+
+        $data = $this->stockReportService->buildExportData($startDate, $endDate, $validated['item_id'] ?? null);
+
+        $pdf = Pdf::loadView('exports.inventory.stock-report-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Stok_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Export laporan stok ke Excel.
+     */
+    public function exportExcel(StockReportIndexRequest $request)
+    {
+        $validated = $request->validated();
+        $startDate = $validated['start_date'] ?? Carbon::now()->startOfMonth()->toDateString();
+        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+
+        $data = $this->stockReportService->buildExportData($startDate, $endDate, $validated['item_id'] ?? null);
+
+        return Excel::download(
+            new StockReportExport($data['reportData'], $data['summary'], $data['periodTitle'], $data['startDate'], $data['endDate']),
+            'Laporan_Stok_' . date('Y-m-d') . '.xlsx'
+        );
     }
 }

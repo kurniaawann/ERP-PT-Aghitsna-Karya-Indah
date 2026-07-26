@@ -15,7 +15,7 @@
 
         {{-- Filter Card: Form filter periode dan barang --}}
         <div class="bg-surface-base rounded-lg shadow-sm p-6 mb-6">
-            <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
                 {{-- Filter Tanggal Mulai --}}
                 <div>
@@ -73,6 +73,16 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {{-- Print Dropdown --}}
+                <div class="flex items-end">
+                    <x-buttons.print-dropdown
+                        :pdfRoute="route('stock-report.export.pdf')"
+                        :excelRoute="route('stock-report.export.excel')"
+                        :queryParams="request()->except([])"
+                        size="sm"
+                    />
                 </div>
 
             </form>
@@ -246,5 +256,6 @@
             };
         </script>
         @vite('resources/js/pages/inventory/stock-reports/index.js')
+        @include('partials.shared.print-dropdown-script')
     @endpush
 @endsection
