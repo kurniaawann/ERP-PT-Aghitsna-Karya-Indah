@@ -1,35 +1,34 @@
 <?php
-
 namespace Database\Seeders;
-
-use App\Models\Users;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = [
-            ['name' => 'superadmin', 'email' => 'superadmin@example.com', 'role' => 'superadmin'],
-            ['name' => 'admin', 'email' => 'admin@example.com', 'role' => 'admin'],
-            ['name' => 'Raden Kurniawan', 'email' => 'radenkurni78@gmail.com', 'role' => 'admin'],
-            ['name' => 'Kurniawan', 'email' => 'generalManager@gmail.com', 'role' => 'general_manager'],
+        User::factory()->superAdmin()->create([
+            'name' => 'Super Admin',
+            'email' => 'superadmin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
 
-        ];
+        User::factory()->admin()->create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
 
-        foreach ($users as $user) {
-            User::updateOrCreate(
-                ['email' => $user['email']],
-                [
-                    'id' => Str::uuid(),
-                    'name' => $user['name'],
-                    'password' => Hash::make('password123'),
-                    'role' => $user['role'],
-                ],
-            );
-        }
+        User::factory()->admin()->create([
+            'name' => 'Raden Kurniawan',
+            'email' => 'radenkurni78@gmail.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        User::factory()->generalManager()->create([
+            'name' => 'Kurniawan',
+            'email' => 'generalManager@gmail.com',
+            'password' => bcrypt('password123'),
+        ]);
     }
 }
