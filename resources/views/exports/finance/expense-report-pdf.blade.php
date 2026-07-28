@@ -315,7 +315,7 @@
             <tr>
                 <td>
                     <div>Dibuat / Diperiksa</div>
-                    <div class="signature-line">( A.Khuluqi )</div>
+                    <div class="signature-line">( A.Khaidar )</div>
                 </td>
                 <td>
                     <div>&nbsp;</div>
@@ -323,7 +323,7 @@
                 </td>
                 <td>
                     <div>Direktur PT. Aghitsna</div>
-                    <div class="signature-line">( Zulkarnaen, ST )</div>
+                    <div class="signature-line">( Zulkarnain,S.T )</div>
                 </td>
             </tr>
         </table>

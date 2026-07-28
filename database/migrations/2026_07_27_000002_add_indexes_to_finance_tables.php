@@ -57,7 +57,7 @@ return new class extends Migration
         });
 
         // ═══════════════════════════════════════════════════════════════
-        // reimburses — 3 index (maksimal)
+        // reimburses — 2 index
         // ═══════════════════════════════════════════════════════════════
         // idx_reimburses_date
         // Digunakan oleh: ReimburseService → whereMonth/Year('date'),
@@ -68,14 +68,9 @@ return new class extends Migration
         // Digunakan oleh: ReimburseService → where('status', $status)
         //   untuk filter draft/approved/rejected.
         // Alasan: Status adalah filter kedua yang paling sering dipakai.
-        //
-        // idx_reimburses_created_by
-        // Digunakan oleh: ReimburseService → WHERE created_by = auth()->id()
-        // Alasan: Setiap user hanya melihat reimburse miliknya sendiri.
         Schema::table('reimburses', function (Blueprint $table) {
             $table->index('date', 'idx_reimburses_date');
             $table->index('status', 'idx_reimburses_status');
-            $table->index('created_by', 'idx_reimburses_created_by');
         });
 
         // ═══════════════════════════════════════════════════════════════
@@ -167,7 +162,6 @@ return new class extends Migration
         Schema::table('reimburses', function (Blueprint $table) {
             $table->dropIndex('idx_reimburses_date');
             $table->dropIndex('idx_reimburses_status');
-            $table->dropIndex('idx_reimburses_created_by');
         });
 
         Schema::table('cash_out_proofs', function (Blueprint $table) {

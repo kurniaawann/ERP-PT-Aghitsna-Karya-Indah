@@ -198,7 +198,7 @@
             
             <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
                 <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                    INVOICE ALUMINIUM
+                    INVOICE
                 </div>
             </td>
             

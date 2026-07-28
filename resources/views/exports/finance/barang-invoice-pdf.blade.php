@@ -197,7 +197,7 @@
                 </div>
             </div>
             <div class="header-right">
-                <div class="invoice-title">INVOICE ITEM</div>
+                <div class="invoice-title">INVOICE</div>
                 <div class="invoice-info">
                     <table>
                         <tr>

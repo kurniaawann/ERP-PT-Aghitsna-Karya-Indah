@@ -30,7 +30,7 @@ class ReimburseService
      */
     public function buildFilteredQuery(?Request $request = null): Builder
     {
-        $query = Reimburse::query()->where('created_by', auth()->id());
+        $query = Reimburse::query();
 
         if (!$request) {
             return $query->latest('date');
@@ -79,7 +79,6 @@ class ReimburseService
     {
         $validated['reimburse_code'] = $this->generateReimburseCode();
         $validated['status'] = 'draft';
-        $validated['created_by'] = auth()->id();
 
         return Reimburse::create($validated);
     }

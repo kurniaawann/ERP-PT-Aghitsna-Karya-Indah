@@ -2,10 +2,8 @@
 
 namespace App\Models\Finance;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Model untuk tabel reimburses.
@@ -49,7 +47,6 @@ class Reimburse extends Model
         'status',
         'notes',
         'status_changed_at',
-        'created_by',
     ];
 
     /**
@@ -84,11 +81,6 @@ class Reimburse extends Model
         $newNumber = $lastNumber + 1;
 
         return 'RMB' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

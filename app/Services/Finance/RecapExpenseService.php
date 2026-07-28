@@ -171,10 +171,11 @@ class RecapExpenseService
     }
 
     /**
-     * Generate unique expense recap ID (format: {A}/{B}/DIV.PRODUKSI/{YYYY}).
+     * Generate unique expense recap ID (format: RE-00001).
      *
-     * Kedua angka (A dan B) diincrement secara terpisah.
-     * Contoh: 333/590/DIV.PRODUKSI/2026 -> 334/591/DIV.PRODUKSI/2026
+     * Prefix: RE (Recap Expense)
+     * Sequential number: 5 digit zero-padded
+     * Contoh: RE-00001, RE-00002, dst.
      *
      * Menggunakan database lock untuk mencegah race condition.
      *
@@ -182,28 +183,22 @@ class RecapExpenseService
      */
     public function generateId(): string
     {
-        $year = date('Y');
-        $suffix = "/DIV.PRODUKSI/{$year}";
-
-        $lastExpenseRecap = ExpenseRecap::lockForUpdate()
-            ->where('id', 'like', "%{$suffix}")
+        $lastRecap = ExpenseRecap::lockForUpdate()
+            ->where('id', 'like', 'RE-%')
             ->orderByDesc('id')
             ->first();
 
-        if ($lastExpenseRecap && preg_match('/^(\d+)\/(\d+)\//', $lastExpenseRecap->id, $matches)) {
-            $nextA = (int) $matches[1] + 1;
-            $nextB = (int) $matches[2] + 1;
+        if ($lastRecap && preg_match('/^RE-(\d+)$/', $lastRecap->id, $matches)) {
+            $nextNumber = (int) $matches[1] + 1;
         } else {
-            $nextA = 333;
-            $nextB = 590;
+            $nextNumber = 1;
         }
 
-        $newId = "{$nextA}/{$nextB}/DIV.PRODUKSI/{$year}";
+        $newId = 'RE-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
 
         while (ExpenseRecap::where('id', $newId)->exists()) {
-            $nextA++;
-            $nextB++;
-            $newId = "{$nextA}/{$nextB}/DIV.PRODUKSI/{$year}";
+            $nextNumber++;
+            $newId = 'RE-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
         }
 
         return $newId;
