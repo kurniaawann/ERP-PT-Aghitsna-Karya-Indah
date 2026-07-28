@@ -53,7 +53,7 @@
 <body>
     {{-- Header PDF --}}
     <div class="header">
-        STOCK HOLLOW DI GI
+        DATA BARANG
     </div>
 
     {{-- Tabel Data Barang --}}
