@@ -367,7 +367,7 @@
                 <td>
                     <div>MENGETAHUI,<br>DIREKTUR PT. AGHITSNA KARYA INDAH</div>
                     <div class="signature-space"></div>
-                    <div>( ZULKARNAIN, ST )</div>
+                    <div>( ZULKARNAIN,S.T )</div>
                 </td>
             </tr>
         </table>
