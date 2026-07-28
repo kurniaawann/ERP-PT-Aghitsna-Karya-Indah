@@ -7,16 +7,14 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ExpenseRecapFactory extends Factory
 {
     protected $model = ExpenseRecap::class;
-    protected static int $counterA = 333;
-    protected static int $counterB = 590;
+    protected static int $counter = 1;
 
     public function definition(): array
     {
         $isIncome = fake()->boolean(30);
-        $year = date('Y');
 
         return [
-            'id' => self::$counterA++ . '/' . self::$counterB++ . '/DIV.PRODUKSI/' . $year,
+            'id' => 'RE-' . str_pad(self::$counter++, 5, '0', STR_PAD_LEFT),
             'transaction_category_id' => null,
             'invoice_number' => fake()->optional()->bothify('INV-####'),
             'transaction_date' => fake()->dateTimeBetween('-6 months', 'now'),
