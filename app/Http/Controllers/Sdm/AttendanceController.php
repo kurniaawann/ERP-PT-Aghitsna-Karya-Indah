@@ -7,7 +7,7 @@ use App\Http\Requests\Sdm\StoreAttendanceRequest;
 use App\Http\Requests\Sdm\UpdateAttendanceRequest;
 use App\Models\Sdm\Attendance;
 use App\Services\Sdm\AttendanceService;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 
 /**
