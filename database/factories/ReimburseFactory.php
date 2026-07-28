@@ -1,7 +1,6 @@
 <?php
 namespace Database\Factories;
 use App\Models\Finance\Reimburse;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ReimburseFactory extends Factory
@@ -20,7 +19,6 @@ class ReimburseFactory extends Factory
             'status' => 'draft',
             'notes' => fake()->optional()->sentence(),
             'status_changed_at' => null,
-            'created_by' => null,
         ];
     }
 
@@ -43,10 +41,5 @@ class ReimburseFactory extends Factory
             'status' => 'rejected',
             'status_changed_at' => now(),
         ]);
-    }
-
-    public function createdBy(User $user): static
-    {
-        return $this->state(fn (array $attributes) => ['created_by' => $user->id]);
     }
 }
