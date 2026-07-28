@@ -7,6 +7,7 @@ use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
 use App\Models\Inventory\ItemStockOut;
 use App\Services\Finance\PaymentProofService;
+use App\Services\Finance\RecapExpenseService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -122,9 +123,11 @@ class SalesRecapObserver
             $incomeCategory = TransactionCategory::where('code', 'UANG_MASUK')->first();
 
             if ($incomeCategory) {
+                $invoiceNumber = app(RecapExpenseService::class)->generateIncomeInvoiceNumber();
+
                 ExpenseRecap::create([
                     'transaction_category_id' => $incomeCategory->id,
-                    'invoice_number' => $salesRecapId,
+                    'invoice_number' => $invoiceNumber,
                     'transaction_date' => $salesRecap->date ?? now(),
                     'description' => $salesRecap->name_proyek ?? 'Penjualan - ' . $salesRecapId,
                     'income_amount' => $salesRecap->total_selling,

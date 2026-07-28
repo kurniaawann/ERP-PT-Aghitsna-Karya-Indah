@@ -44,6 +44,7 @@
         <label class="block text-text-primary mb-1">No. Faktur (Opsional)</label>
         <input type="text" name="invoice_number" class="w-full border rounded p-2" placeholder="Contoh: INV-001"
             maxlength="100">
+        <p class="text-xs text-text-secondary mt-1">Khusus pengeluaran. Untuk pemasukan, nomor faktur di-generate otomatis.</p>
     </div>
 
     {{-- Sumber Uang --}}

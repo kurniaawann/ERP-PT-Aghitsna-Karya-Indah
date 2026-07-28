@@ -25,6 +25,13 @@ use Illuminate\Support\Facades\Log;
 class RecapExpenseService
 {
     /**
+     * Angka awal untuk format invoice number uang masuk.
+     * Format: {INCOME_INVOICE_START_A + n}/{INCOME_INVOICE_START_B + n}/div.produksi/{INCOME_INVOICE_START_C + n}
+     */
+    private const INCOME_INVOICE_START_A = 333;
+    private const INCOME_INVOICE_START_B = 590;
+    private const INCOME_INVOICE_START_C = 146;
+    /**
      * Membangun query dasar untuk listing rekap pengeluaran.
      *
      * Method ini digunakan untuk listing, totals, dan export
@@ -121,8 +128,17 @@ class RecapExpenseService
      */
     public function createRecap(array $data): ExpenseRecap
     {
-        $data['income_amount'] = null;
-        $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
+        $category = TransactionCategory::find($data['transaction_category_id']);
+
+        if ($category && $category->type === 'INCOME') {
+            $data['income_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
+            $data['expense_amount'] = null;
+            $data['invoice_number'] = $this->generateIncomeInvoiceNumber();
+        } else {
+            $data['income_amount'] = null;
+            $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
+        }
+
         $data['created_by'] = auth()->id();
 
         return ExpenseRecap::create($data);
@@ -202,6 +218,39 @@ class RecapExpenseService
         }
 
         return $newId;
+    }
+
+    /**
+     * Generate invoice number untuk uang masuk dengan format increment.
+     *
+     * Format: {333+n}/{590+n}/div.produksi/{146+n}
+     * Dimana n = jumlah record uang masuk yang sudah ada.
+     *
+     * Contoh:
+     * - Data ke-1: 333/590/div.produksi/146
+     * - Data ke-2: 334/591/div.produksi/147
+     * - Data ke-3: 335/592/div.produksi/148
+     *
+     * @return string
+     */
+    public function generateIncomeInvoiceNumber(): string
+    {
+        $lastIncome = ExpenseRecap::whereNotNull('income_amount')
+            ->where('income_amount', '>', 0)
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($lastIncome && preg_match('/^(\d+)\/(\d+)\/div\.produksi\/(\d+)$/', $lastIncome->invoice_number, $matches)) {
+            $nextA = (int) $matches[1] + 1;
+            $nextB = (int) $matches[2] + 1;
+            $nextC = (int) $matches[3] + 1;
+        } else {
+            $nextA = self::INCOME_INVOICE_START_A;
+            $nextB = self::INCOME_INVOICE_START_B;
+            $nextC = self::INCOME_INVOICE_START_C;
+        }
+
+        return "{$nextA}/{$nextB}/div.produksi/{$nextC}";
     }
 
     /**
