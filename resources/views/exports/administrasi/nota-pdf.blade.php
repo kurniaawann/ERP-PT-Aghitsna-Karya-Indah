@@ -8,7 +8,7 @@
     <style>
         @page {
             size: A4;
-            margin: 1cm 1cm 1cm 1cm;
+            margin: 0.8cm 1cm 0.8cm 1cm;
         }
 
         * {
@@ -21,33 +21,33 @@
             font-family: 'Times New Roman', Times, serif;
             font-size: 10px;
             line-height: 1.3;
+            color: #111;
         }
 
         .nota-container {
             width: 100%;
             max-width: 19cm;
-            /* border: 2px solid #000; */
-            padding: 8px;
             margin: 0 auto;
+            padding: 4px;
         }
 
         /* Header Section */
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 5px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
         }
 
         .header-left {
             display: table-cell;
             width: 55%;
-            vertical-align: top;
+            vertical-align: middle;
         }
 
         .header-left img {
-            max-width: 330px;
+            max-width: 300px;
             height: auto;
             display: block;
         }
@@ -57,7 +57,6 @@
             width: 45%;
             vertical-align: top;
             text-align: right;
-            padding-right: 5px;
         }
 
         .header-info {
@@ -67,65 +66,71 @@
 
         .location-date {
             font-size: 10px;
-            margin-bottom: 8px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .kepada-box {
+            display: inline-block;
+            text-align: left;
+            min-width: 160px;
         }
 
         .kepada-label {
             font-size: 10px;
-            font-weight: normal;
             margin-bottom: 2px;
         }
 
         .kepada-name {
             font-size: 10px;
-            font-weight: normal;
+            font-weight: bold;
             border-bottom: 1px solid #000;
-            display: inline-block;
-            min-width: 150px;
+            display: block;
             padding-bottom: 1px;
         }
 
         /* Nota Number Section */
         .nota-numbers {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .nota-numbers table {
-            width: 300px;
+            width: 280px;
             border-collapse: collapse;
         }
 
         .nota-numbers td {
             border: 1px solid #000;
-            padding: 3px 6px;
+            padding: 4px 7px;
             font-size: 10px;
             font-weight: bold;
         }
 
         .nota-numbers td:first-child {
-            width: 90px;
-            background-color: #f5f5f5;
+            width: 95px;
+            background-color: #f2f2f2;
         }
 
         /* Items Table */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 0;
+            margin-bottom: 10px;
         }
 
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 4px 6px;
+            padding: 5px 7px;
             font-size: 10px;
+            vertical-align: middle;
         }
 
         .items-table th {
-            background-color: #f5f5f5;
+            background-color: #f2f2f2;
             font-weight: bold;
             text-align: center;
-            padding: 5px;
+            text-transform: uppercase;
         }
 
         .items-table td.center {
@@ -136,63 +141,58 @@
             text-align: right;
         }
 
-        /* Bank Information in Table */
+        /* Bank Information Row */
         .bank-row td {
-            border-left: none;
-            border-right: 1px solid #000;
-            border-bottom: none;
-            border-top: none;
+            background-color: #fafafa;
             font-size: 9px;
-            padding: 2px 6px;
-            font-weight: normal;
+            padding: 4px 7px;
+            line-height: 1.3;
         }
 
         /* Bottom Section */
         .bottom-section {
             display: table;
             width: 100%;
-            margin-top: 0;
+            margin-top: 4px;
         }
 
         .bottom-left {
             display: table-cell;
-            width: 45%;
+            width: 48%;
             vertical-align: top;
-            padding-right: 10px;
-            padding-top: 8px;
-        }
-
-        .period-section {
-            font-size: 10px;
-            margin-bottom: 15px;
-        }
-
-        .footer-note {
-            font-size: 9px;
-            line-height: 1.3;
+            padding-right: 15px;
         }
 
         .bottom-right {
             display: table-cell;
-            width: 55%;
+            width: 52%;
             vertical-align: top;
+        }
+
+        .period-section {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            padding: 4px 8px;
+            background-color: #f8f8f8;
+            border-left: 3px solid #000;
         }
 
         .totals-table {
             width: 100%;
             border-collapse: collapse;
-            margin-left: auto;
         }
 
         .totals-table td {
             border: 1px solid #000;
-            padding: 3px 8px;
+            padding: 4px 8px;
             font-size: 10px;
         }
 
         .totals-table td:first-child {
             width: 55%;
             font-weight: normal;
+            background-color: #fafafa;
         }
 
         .totals-table td:last-child {
@@ -201,20 +201,55 @@
         }
 
         .totals-table .total-row td {
-            border-bottom: 2px solid #000;
+            border-top: 2px solid #000;
+            border-bottom: 2px double #000;
             font-weight: bold;
+            font-size: 10.5px;
+            background-color: #eee;
+        }
+
+        /* Footer & Signature Grid */
+        .footer-and-signature {
+            display: table;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .footer-note-cell {
+            display: table-cell;
+            width: 60%;
+            vertical-align: top;
+            padding-right: 15px;
+        }
+
+        .signature-cell {
+            display: table-cell;
+            width: 40%;
+            vertical-align: top;
+            text-align: center;
+        }
+
+        .footer-note {
+            font-size: 9px;
+            line-height: 1.35;
+            border: 1px dashed #777;
+            padding: 6px 8px;
+            background-color: #fff;
         }
 
         .signature-section {
-            text-align: left;
-            margin-top: 20px;
-            margin-left: 20px;
-            font-size: 10px;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
         }
 
-        .signature-section strong {
-            display: block;
-            margin-bottom: 50px;
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 45px;
+        }
+
+        .signature-line {
+            font-weight: bold;
         }
 
         .page-break {
@@ -236,8 +271,10 @@
                         <div class="location-date">
                             {{ $nota->location }}, {{ \Carbon\Carbon::parse($nota->nota_date)->format('d F Y') }}
                         </div>
-                        <div class="kepada-label">Kepada Yth,</div>
-                        <div class="kepada-name">{{ $nota->kepada }}</div>
+                        <div class="kepada-box">
+                            <div class="kepada-label">Kepada Yth,</div>
+                            <div class="kepada-name">{{ $nota->kepada }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -285,8 +322,7 @@
                         @foreach ($banks as $bank)
                             <tr class="bank-row">
                                 <td colspan="2">
-                                    <strong>Rekening: {{ $bank->bank_name }} -
-                                        {{ $bank->account_number }}</strong><br>
+                                    <strong>Rekening: {{ $bank->bank_name }} - {{ $bank->account_number }}</strong><br>
                                     Atas Nama: {{ $bank->account_holder }}
                                 </td>
                                 <td colspan="2"></td>
@@ -375,17 +411,19 @@
                 </div>
             </div>
 
-            {{-- Footer Note --}}
-            <div class="footer-note" style="margin-top: 10px; margin-left: 20px;">
-                <strong>*) Faktur dianggap lunas setelah dana kami terima</strong><br>
-                <strong style="padding-left: 10px;">tunai atau telah ditransfer ke rekening kami.</strong>
-            </div>
-
-            {{-- Signature --}}
-            <div class="signature-section">
-                <strong style="margin-left: 60px;">Penerima,</strong>
-                <div style="margin-top: 50px; margin-left: 30px;">
-                    <strong>(__________________)</strong>
+            {{-- Footer Note & Signature --}}
+            <div class="footer-and-signature">
+                <div class="footer-note-cell">
+                    <div class="footer-note">
+                        <strong>*) Faktur dianggap lunas setelah dana kami terima</strong><br>
+                        tunai atau telah ditransfer ke rekening kami.
+                    </div>
+                </div>
+                <div class="signature-cell">
+                    <div class="signature-section">
+                        <div class="signature-title">Penerima,</div>
+                        <div class="signature-line">(__________________)</div>
+                    </div>
                 </div>
             </div>
         </div>
