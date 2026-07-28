@@ -39,9 +39,9 @@ class PaymentAccountService
     }
 
     /**
-     * Mendapatkan semua rekening pembayaran yang aktif.
+     * Mendapatkan semua rekening pembayaran yang aktif milik user login.
      *
-     * Menggunakan cache untuk dropdown di halaman Invoice Aluminium,
+     * Menggunakan cache per user untuk dropdown di halaman Invoice Aluminium,
      * Invoice Proyek, Bukti Pembayaran, dll.
      * Cache di-invalidate saat ada create/update/toggle/delete.
      *
@@ -49,27 +49,32 @@ class PaymentAccountService
      */
     public function getActiveAccounts()
     {
+        $userId = auth()->id();
+        $cacheKey = "finance:payment-accounts:active:{$userId}";
+
         try {
             return Cache::remember(
-                'finance:payment-accounts:active',
+                $cacheKey,
                 now()->addDay(),
-                fn () => PaymentAccount::active()->get()
+                fn () => PaymentAccount::active()->where('created_by', $userId)->get()
             );
         } catch (\Exception $e) {
             Log::warning('Cache READ error [finance:payment-accounts:active]: ' . $e->getMessage());
-            return PaymentAccount::active()->get();
+            return PaymentAccount::active()->where('created_by', $userId)->get();
         }
     }
 
     /**
-     * Invalidate cache rekening pembayaran aktif.
+     * Invalidate cache rekening pembayaran aktif milik user login.
      *
      * @return void
      */
     public function flushCache(): void
     {
+        $userId = auth()->id();
+
         try {
-            Cache::forget('finance:payment-accounts:active');
+            Cache::forget("finance:payment-accounts:active:{$userId}");
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [finance:payment-accounts:active]: ' . $e->getMessage());
         }
