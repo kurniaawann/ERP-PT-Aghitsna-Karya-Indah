@@ -1,14 +1,12 @@
 <?php
 namespace Database\Seeders;
 use App\Models\Finance\Reimburse;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class ReimburseSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('email', 'admin@example.com')->first();
         $statuses = ['approved', 'approved', 'draft'];
 
         for ($i = 1; $i <= 15; $i++) {
@@ -24,7 +22,6 @@ class ReimburseSeeder extends Seeder
                     'status' => $status,
                     'status_changed_at' => $status !== 'draft' ? now() : null,
                     'notes' => fake()->optional()->sentence(),
-                    'created_by' => $admin?->id,
                 ]
             );
         }

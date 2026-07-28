@@ -15,8 +15,7 @@ class ExpenseRecapSeeder extends Seeder
         $recaps = SalesRecap::all();
         if ($categories->isEmpty()) return;
 
-        $counterA = 333;
-        $counterB = 590;
+        $counter = 1;
         $year = date('Y');
 
         for ($i = 0; $i < 15; $i++) {
@@ -24,7 +23,7 @@ class ExpenseRecapSeeder extends Seeder
             $isIncome = $cat->type === 'INCOME';
 
             ExpenseRecap::create([
-                'id' => $counterA++ . '/' . $counterB++ . '/DIV.PRODUKSI/' . $year,
+                'id' => 'RE-' . str_pad($counter++, 5, '0', STR_PAD_LEFT),
                 'transaction_category_id' => $cat->id,
                 'invoice_number' => fake()->optional()->bothify('INV-####'),
                 'transaction_date' => fake()->dateTimeBetween('-6 months', 'now'),
