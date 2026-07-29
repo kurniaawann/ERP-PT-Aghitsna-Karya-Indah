@@ -17,8 +17,7 @@
                         Module</span>
                     <div>
                         <h1 class="text-3xl font-bold tracking-tight">Bukti Pembayaran</h1>
-                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }} dan
-                            alumunium. Tahap pembayaran hanya berlaku untuk {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
+                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()->isAdmin() ? 'invoice dan rekap penjualan' : 'invoice proyek dan alumunium' }}. Tahap pembayaran hanya berlaku untuk {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">

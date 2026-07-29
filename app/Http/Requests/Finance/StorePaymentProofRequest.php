@@ -29,9 +29,13 @@ class StorePaymentProofRequest extends FormRequest
      */
     public function rules(): array
     {
+        $allowedInvoiceTypes = auth()->user()?->role === 'admin'
+            ? ['proyek', 'rekap_penjualan']
+            : ['proyek', 'alumunium', 'rekap_penjualan'];
+
         return [
             'module_type'  => ['required', Rule::in(['finance'])],
-            'invoice_type' => ['required', Rule::in(['proyek', 'alumunium', 'rekap_penjualan'])],
+            'invoice_type' => ['required', Rule::in($allowedInvoiceTypes)],
             'invoice_number' => ['required', 'string'],
             'amount'       => ['nullable'],
             'proof_image'  => ['required', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],

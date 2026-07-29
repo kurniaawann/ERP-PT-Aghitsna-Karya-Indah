@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Events\AfterSheet;
+use App\Models\Report\TransactionCategory;
 use Carbon\Carbon;
 
 class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
@@ -37,13 +38,11 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
         $no = 1;
         $currentRow = self::DATA_START_ROW;
 
-        $categoryGroups = $this->expenseRecaps->groupBy('transaction_category_id')
-            ->sortBy(function ($expenses) {
-                return $expenses->first()->category->sort_order ?? 999;
-            });
+        $allCategories = TransactionCategory::active()->orderBy('sort_order')->get();
+        $expenseRecapsById = $this->expenseRecaps->groupBy('transaction_category_id');
 
-        foreach ($categoryGroups as $categoryId => $expenses) {
-            $category = $expenses->first()->category;
+        foreach ($allCategories as $category) {
+            $expenses = $expenseRecapsById->get($category->id, collect());
             $categoryStartRow = $currentRow;
 
             // Category header row
@@ -87,6 +86,20 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
                 $categoryExpense += $expense->expense_amount ?? 0;
                 $currentRow++;
                 $itemNo++;
+            }
+
+            // Baris kosong putih jika tidak ada data
+            if ($expenses->isEmpty()) {
+                $data[] = [
+                    'no' => '',
+                    'invoice' => '',
+                    'date' => '',
+                    'description' => '',
+                    'income' => '',
+                    'expense' => '',
+                    'money_source' => '',
+                ];
+                $currentRow++;
             }
 
             // Merge NO, INVOICE, DATE columns if more than 1 item

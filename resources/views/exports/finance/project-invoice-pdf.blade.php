@@ -217,7 +217,8 @@
             
             <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
                 <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                    {{ auth()->user()->isAdmin() ? 'INVOICE' : 'INVOICE PROYEK' }}
+                    {{-- {{ auth()->user()->isAdmin() ? 'INVOICE' : 'INVOICE PROYEK' }} --}}
+                    INVOICE
                 </div>
             </td>
             
@@ -226,11 +227,18 @@
 
         <tr>
             <td valign="top">
-                <div class="company-address" style="font-size: 12px; line-height: 1.4;">
-                    JL. CEMARA RT 02 RW 07, KEL. GROGOL<br>
-                    KEC. LIMO KOTA DEPOK<br>
-                    Telp. 0882 1303 1263 / 0882 1303 1264<br>
-                    Email : Design@aghitsna.id
+                <div>
+                    PT. AGHITSNA KARYA INDAH
+                    <div>
+                         JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT 
+                    </div>
+                    <div>
+                         Telp. 021 - 29034923 - 0812 9596 552 
+                    </div>
+                    <div>
+                         Email : Design@aghitsna.id
+                    </div>
+                    
                 </div>
             </td>
 

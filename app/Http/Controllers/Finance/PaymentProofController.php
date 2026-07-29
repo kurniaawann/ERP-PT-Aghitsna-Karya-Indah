@@ -43,11 +43,20 @@ class PaymentProofController extends Controller
         ];
 
         $isAdmin = auth()->user()?->role === 'admin';
-        $invoiceTypeOptions = [
-            ['value' => 'proyek', 'label' => $isAdmin ? 'Invoice' : 'Invoice Proyek'],
-            ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
-            ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
-        ];
+        $invoiceTypeOptions = $isAdmin
+            ? [
+                ['value' => 'proyek', 'label' => 'Invoice'],
+                ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
+            ]
+            : [
+                ['value' => 'proyek', 'label' => 'Invoice Proyek'],
+                ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
+                ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
+            ];
+
+        if ($isAdmin) {
+            $query->where('created_by', auth()->id());
+        }
 
         try {
             $salesRecapOptions = Cache::remember(
@@ -103,16 +112,19 @@ class PaymentProofController extends Controller
                 )->map(
                     fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'proyek', $proofStageMap, $invoiceLookup)
                 )->values()->all(),
-                'alumunium' => collect(
-                    InvoiceAlumunium::query()->with('paymentProofs')->orderByDesc('invoice_date')->get()
-                )->map(
-                    fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'alumunium', $proofStageMap, $invoiceLookup)
-                )->values()->all(),
                 'rekap_penjualan' => collect($salesRecapOptions)->map(
                     fn ($salesRecap) => $this->service->buildSalesRecapOption($salesRecap, 'finance', 'rekap_penjualan', $proofStageMap, $invoiceLookup)
                 )->values()->all(),
             ],
         ];
+
+        if (auth()->user()?->role !== 'admin') {
+            $availableInvoices['finance']['alumunium'] = collect(
+                InvoiceAlumunium::query()->with('paymentProofs')->orderByDesc('invoice_date')->get()
+            )->map(
+                fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'alumunium', $proofStageMap, $invoiceLookup)
+            )->values()->all();
+        }
 
         return view('pages.finance.payment-proofs', compact(
             'paymentProofs',

@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Events\AfterSheet;
 use App\Models\Report\ExpenseRecap;
+use App\Models\Report\TransactionCategory;
 use Carbon\Carbon;
 
 /**
@@ -78,14 +79,12 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
         $globalNo = 1; // Nomor urut global
         $currentRow = 5; // Start from row 5 (after header)
 
-        // Group by category, sorted by sort_order
-        $categoryGroups = $this->expenseRecaps->groupBy('transaction_category_id')
-            ->sortBy(function ($expenses) {
-                return $expenses->first()->category->sort_order ?? 999;
-            });
+        // Ambil SEMUA kategori aktif, urut berdasarkan sort_order
+        $allCategories = TransactionCategory::active()->orderBy('sort_order')->get();
+        $expenseRecapsById = $this->expenseRecaps->groupBy('transaction_category_id');
 
-        foreach ($categoryGroups as $categoryId => $expenses) {
-            $category = $expenses->first()->category;
+        foreach ($allCategories as $category) {
+            $expenses = $expenseRecapsById->get($category->id, collect());
             $categoryStartRow = $currentRow;
 
             // Category header row
@@ -118,6 +117,20 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
 
                 $categoryIncome += $expense->income_amount ?? 0;
                 $categoryExpense += $expense->expense_amount ?? 0;
+                $currentRow++;
+            }
+
+            // Baris kosong putih jika tidak ada data
+            if ($expenses->isEmpty()) {
+                $data[] = [
+                    'no' => '',
+                    'invoice' => '',
+                    'date' => '',
+                    'description' => '',
+                    'income' => '',
+                    'expense' => '',
+                    'money_source' => '',
+                ];
                 $currentRow++;
             }
 

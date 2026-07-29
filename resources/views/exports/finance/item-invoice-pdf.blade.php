@@ -198,7 +198,7 @@
             
             <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
                 <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                    INVOICE BARANG
+                    INVOICE
                 </div>
             </td>
             
@@ -207,12 +207,18 @@
 
         <tr>
             <td valign="top">
-                <div class="company-address" style="font-size: 12px; line-height: 1.4;">
-                    PT AGHITSNA KARYA INDAH<br>
-                    JL. TANAH BARU RAYA PERTIWI RT/01/05
-                    BEJI, DEPOK, JAWA BARAT
-                    TELP. 021-29034923 - 0812 9596 522 <br>
-                    Email : Design@aghitsna.id
+              <div>
+                    PT. AGHITSNA KARYA INDAH
+                    <div>
+                         JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT 
+                    </div>
+                    <div>
+                         Telp. 021 - 29034923 - 0812 9596 552 
+                    </div>
+                    <div>
+                         Email : Design@aghitsna.id
+                    </div>
+                    
                 </div>
             </td>
 

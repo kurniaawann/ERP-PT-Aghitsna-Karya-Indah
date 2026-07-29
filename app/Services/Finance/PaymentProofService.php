@@ -193,6 +193,7 @@ class PaymentProofService
                     'file_path'      => $storedFile['file_path'],
                     'mime_type'      => $storedFile['mime_type'],
                     'file_size'      => $storedFile['file_size'],
+                    'created_by'     => auth()->id(),
                 ]);
 
                 $this->syncPaymentStatuses($validated['invoice_type'], $validated['invoice_number'], $salesRecapId);

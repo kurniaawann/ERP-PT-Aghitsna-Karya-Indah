@@ -187,13 +187,19 @@
                 </div>
                 <div class="company-info">
                     <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
-                    <div class="company-address">
-                        AGHITSNA ALUMUNIUM DAN BAJA RINGAN<br>
-                        JL. CEMARA RT 02 RW 07, KEL, GROGOL<br>
-                        KEC. LIMO KOTA DEPOK<br>
-                        Telp. 0882 1303 1263 / 0882 1303 1264<br>
-                        Email: Design@aghitsna.id
+                   <div>
+                    PT. AGHITSNA KARYA INDAH
+                    <div>
+                         JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT 
                     </div>
+                    <div>
+                         Telp. 021 - 29034923 - 0812 9596 552 
+                    </div>
+                    <div>
+                         Email : Design@aghitsna.id
+                    </div>
+                    
+                </div>
                 </div>
             </div>
             <div class="header-right">

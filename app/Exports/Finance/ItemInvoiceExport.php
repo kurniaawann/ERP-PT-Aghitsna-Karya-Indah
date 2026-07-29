@@ -65,7 +65,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $drawing->setWorksheet($sheet);
 
                 $sheet->mergeCells('B1:E1');
-                $sheet->setCellValue('B1', 'INVOICE BARANG');
+                $sheet->setCellValue('B1', 'INVOICE');
                 $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 

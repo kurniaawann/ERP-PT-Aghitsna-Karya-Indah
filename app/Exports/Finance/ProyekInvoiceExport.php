@@ -72,7 +72,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $drawing->setWorksheet($sheet);
 
                 $sheet->mergeCells('B1:F1');
-               $sheet->setCellValue('B1', (auth()->check() && auth()->user()->role === 'admin') ? 'INVOICE' : 'INVOICE PROYEK');
+               $sheet->setCellValue('B1', 'INVOICE');
                 $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 

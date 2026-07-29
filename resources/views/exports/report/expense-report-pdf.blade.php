@@ -221,15 +221,13 @@
         <tbody>
             @php
                 $no = 1;
-                $categoryGroups = $expenseRecaps->groupBy('transaction_category_id')
-                    ->sortBy(function ($expenses) {
-                        return $expenses->first()->category->sort_order ?? 999;
-                    });
+                $allCategories = \App\Models\Report\TransactionCategory::active()->orderBy('sort_order')->get();
+                $expenseRecapsById = $expenseRecaps->groupBy('transaction_category_id');
             @endphp
 
-            @foreach ($categoryGroups as $categoryId => $expenses)
+            @foreach ($allCategories as $category)
                 @php
-                    $category = $expenses->first()->category;
+                    $expenses = $expenseRecapsById->get($category->id, collect());
                     $categoryIncome = 0;
                     $categoryExpense = 0;
                 @endphp
@@ -275,6 +273,19 @@
                         <td>{{ $expense->money_source ?? '' }}</td>
                     </tr>
                 @endforeach
+
+                {{-- Baris kosong putih jika tidak ada data --}}
+                @if ($expenses->isEmpty())
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                @endif
 
                 {{-- Category Subtotal --}}
                 <tr class="subtotal-row">
