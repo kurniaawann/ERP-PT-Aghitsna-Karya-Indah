@@ -18,7 +18,7 @@
             {{-- EMAIL --}}
             <div>
                 <label class="block text-text-label text-sm mb-1">Email</label>
-                <input type="email" name="email" value="{{ old('email', 'superadmin@example.com') }}" id="email"
+                <input type="email" name="email" id="email"
                     required autocomplete="username" placeholder="Masukkan email anda"
                     class="w-full px-4 py-2 rounded-lg border border-border-strong bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
                 @error('email')
@@ -30,7 +30,7 @@
             <div class="relative">
                 <label class="block text-text-label text-sm mb-1">Kata Sandi</label>
                 <input type="password" name="password" id="password" required autocomplete="current-password"
-                    value="{{ old('password', 'password123') }}" placeholder="Masukkan kata sandi anda"
+                    placeholder="Masukkan kata sandi anda"
                     class="w-full px-4 py-2 pr-12 rounded-lg border border-border-strong bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
                 @include('partials.password-visibility-toggle', ['targetId' => 'password'])
                 @error('password')

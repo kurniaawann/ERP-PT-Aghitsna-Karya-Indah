@@ -9,25 +9,19 @@ class UserSeeder extends Seeder
     {
         User::factory()->superAdmin()->create([
             'name' => 'Super Admin',
-            'email' => 'superadmin@example.com',
+            'email' => 'adminaghitsna1@gmail.com',
             'password' => bcrypt('password123'),
         ]);
 
         User::factory()->admin()->create([
             'name' => 'Admin',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password123'),
-        ]);
-
-        User::factory()->admin()->create([
-            'name' => 'Raden Kurniawan',
-            'email' => 'radenkurni78@gmail.com',
+            'email' => 'adminaghitsna2@gmail.com',
             'password' => bcrypt('password123'),
         ]);
 
         User::factory()->generalManager()->create([
-            'name' => 'Kurniawan',
-            'email' => 'generalManager@gmail.com',
+            'name' => 'General Manager',
+            'email' => 'generalmanageraghitsna@gmail.com',
             'password' => bcrypt('password123'),
         ]);
     }
