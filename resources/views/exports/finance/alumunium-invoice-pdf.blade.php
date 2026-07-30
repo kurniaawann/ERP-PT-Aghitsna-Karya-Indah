@@ -207,11 +207,10 @@
 
         <tr>
             <td valign="top">
-                <div class="company-address" style="font-size: 12px; line-height: 1.4;">
-                    <strong>AGHITSNA ALUMUNIUM DAN BAJA RINGAN</strong><br>
-                    JL. CEMARA RT 02 RW 07, KEL. GROGOL<br>
-                    KEC. LIMO KOTA DEPOK<br>
-                    Telp. 0882 1303 1263 / 0882 1303 1264<br>
+                <div class="company-info" style="white-space: pre-line">
+                    AGHITSNA ALUMUNIUM DAN BAJA RINGAN
+                    JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT
+                    Telp. 021 - 29034923 - 0812 9596 552
                     Email : Design@aghitsna.id
                 </div>
             </td>
@@ -233,14 +232,9 @@
                             <td valign="top">{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
                         </tr>
                         <tr>
-                            <td style="padding-right: 5px;" valign="top">Kepada</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top"><strong>{{ $invoice->recipient }}</strong></td>
-                        </tr>
-                        <tr>
                             <td style="padding-right: 5px;" valign="top">Hal</td>
                             <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top">{{ $invoice->regarding }}</td>
+                            <td valign="top">{{ $invoice->regarding ?? '-' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -315,21 +309,6 @@
                     <td class="right" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Rp {{ number_format($totalAmount, 0, ',', '.') }}</strong></td>
                 </tr>
 
-                {{-- @if ($invoice->discount_value && $invoice->discount_value > 0)
-                    @php
-                        $discountAmount = $invoice->getDiscountAmount($totalAmount);
-                    @endphp
-
-                    <!-- Discount Row -->
-                    <tr style="background-color: #FFE6E6;">
-                        <td colspan="5" class="center"><strong>Discount
-                                @if ($invoice->discount_type === 'percentage')
-                                    ({{ number_format($invoice->discount_value, 0) }}%)
-                                @endif
-                            </strong></td>
-                        <td class="right"><strong>Rp {{ number_format($discountAmount, 0, ',', '.') }}</strong></td>
-                    </tr>
-                @endif --}}
                 @if ($invoice->discount_value && $invoice->discount_value > 0)
                     @php
                         $discountAmount = $invoice->getDiscountAmount($totalAmount);
@@ -380,7 +359,7 @@
 
         <!-- Terbilang -->
         <div class="terbilang">
-            <em>Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</em>
+            Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah
         </div>
 
         <!-- Payment Information -->
@@ -410,7 +389,7 @@
 
         <!-- Closing -->
         <div class="closing">
-            Demikian Invoice ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.
+            Demikian Invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.
         </div>
 
         <!-- Signature -->
@@ -418,11 +397,14 @@
             <tr>
                 <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
                     <div>Hormat Kami,</div>
-                    <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
+                    <div style="font-weight: bold;">PT. AGHITSNA KARYA INDAH</div>
+                    <div style="margin-top: 60px;">Akhmad Khaidir</div>
                 </td>
+                @if($invoice->isFullyPaid())
                 <td style="width: 50%; border: none; vertical-align: top; text-align: center;">
                     <img src="{{ public_path('images/status_paid_alumunium.jpeg') }}" style="height: 100px;">
                 </td>
+                @endif
             </tr>
         </table>
     </div>

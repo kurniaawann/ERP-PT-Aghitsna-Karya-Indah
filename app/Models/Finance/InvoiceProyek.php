@@ -226,7 +226,7 @@ class InvoiceProyek extends Model
      */
     public function getPaymentStatusLabelAttribute(): string
     {
-        return $this->isFullyPaid() ? 'Lunas' : 'Belum Lunas';
+        return $this->isFullyPaid() ? 'Sudah Lunas' : 'Belum Lunas';
     }
 
     /**

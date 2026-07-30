@@ -3,6 +3,7 @@
 namespace App\Exports\Finance;
 
 use App\Models\Finance\InvoiceBarang;
+use App\Models\Finance\PaymentAccount;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -69,19 +70,20 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-                $sheet->mergeCells('A2:C2');
-                $sheet->setCellValue('A2', 'JL. CEMARA RT 02 RW 07, KEL. GROGOL');
+                $sheet->mergeCells('A2:D2');
+                $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
+                $sheet->getStyle('A2')->getFont()->setBold(true);
                 $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->mergeCells('A3:C3');
-                $sheet->setCellValue('A3', 'KEC. LIMO KOTA DEPOK');
+                $sheet->mergeCells('A3:D3');
+                $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT');
                 $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->mergeCells('A4:C4');
-                $sheet->setCellValue('A4', 'Telp. 0882 1303 1263 / 0882 1303 1264');
+                $sheet->mergeCells('A4:D4');
+                $sheet->setCellValue('A4', 'Telp. 021 - 29034923 - 0812 9596 552');
                 $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->mergeCells('A5:C5');
+                $sheet->mergeCells('A5:D5');
                 $sheet->setCellValue('A5', 'Email : Design@aghitsna.id');
                 $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
@@ -95,15 +97,10 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->getStyle('D3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->setCellValue('D4', 'Kepada');
-                $sheet->setCellValue('E4', ': ' . $invoice->recipient);
+                $sheet->setCellValue('D4', 'Hal');
+                $sheet->setCellValue('E4', ': ' . ($invoice->regarding ?? '-'));
                 $sheet->getStyle('D4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->setCellValue('D5', 'Hal');
-                $sheet->setCellValue('E5', ': ' . $invoice->regarding);
-                $sheet->getStyle('D5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('E5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $currentRow = 7;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
@@ -208,6 +205,39 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'Pembayaran dapat ditransfer melalui nomor rekening');
+
+                $selectedAccountIds = is_string($invoice->selected_payment_accounts)
+                    ? json_decode($invoice->selected_payment_accounts, true)
+                    : ($invoice->selected_payment_accounts ?? []);
+
+                if (!empty($selectedAccountIds)) {
+                    $paymentAccounts = PaymentAccount::whereIn('id', $selectedAccountIds)
+                        ->orderBy('id')
+                        ->get();
+                } else {
+                    $paymentAccounts = PaymentAccount::active()->get();
+                }
+
+                $sanitizeForExcel = function ($value) {
+                    if (is_string($value) && preg_match('/^[=+\-@]/', $value)) {
+                        return "'" . $value;
+                    }
+                    return $value;
+                };
+
+                foreach ($paymentAccounts as $account) {
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
+                    $bankName = $sanitizeForExcel($account->bank_name);
+                    $accountNumber = $sanitizeForExcel($account->account_number);
+                    $accountHolder = $sanitizeForExcel($account->account_holder);
+                    $sheet->setCellValue("A{$currentRow}", "{$bankName} / No : {$accountNumber} a/n {$accountHolder}");
+                    $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                }
+
+                $currentRow += 2;
+                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Demikian invoice item ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
 
@@ -215,10 +245,14 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Hormat Kami,');
 
+                $currentRow++;
+                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
+                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+
                 $currentRow += 4;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'PT AGHITSNA KARYA INDAH');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                $sheet->setCellValue("A{$currentRow}", 'Akhmad Khaidir');
             },
         ];
     }

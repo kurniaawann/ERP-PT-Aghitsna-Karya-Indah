@@ -30,15 +30,15 @@
                                 $progressPercent = $netAmount > 0 ? min(100, (int) round(($totalPaid / $netAmount) * 100)) : 0;
 
                                 if ($isFullyPaid) {
-                                    $statusLabel = 'Lunas';
+                                    $statusLabel = 'Sudah Lunas';
                                     $statusClass = 'bg-green-100 text-green-800';
                                     $progressColor = 'bg-green-500';
                                 } elseif ($totalPaid > 0) {
-                                    $statusLabel = 'Sebagian';
+                                    $statusLabel = 'Belum Lunas';
                                     $statusClass = 'bg-orange-100 text-orange-800';
                                     $progressColor = 'bg-orange-400';
                                 } else {
-                                    $statusLabel = 'Belum';
+                                    $statusLabel = 'Belum Lunas';
                                     $statusClass = 'bg-red-100 text-red-800';
                                     $progressColor = 'bg-red-400';
                                 }

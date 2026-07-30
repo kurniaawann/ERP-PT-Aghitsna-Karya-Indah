@@ -9,7 +9,7 @@ use App\Http\Controllers\Inventory\ItemReturnController;
 use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
-use App\Http\Controllers\Finance\ProductInvoiceController;
+use App\Http\Controllers\Finance\ItemInvoiceController;
 use App\Http\Controllers\Finance\RecapAlumuniumController;
 use App\Http\Controllers\Finance\RecapProyekController;
 use App\Http\Controllers\Finance\ProyekInvoiceController;
@@ -134,18 +134,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/stock-report/export/excel', [StockReportController::class, 'exportExcel'])->name('stock-report.export.excel');
 
     // Route Item Invoice
-    Route::get('/item-invoice', [ProductInvoiceController::class, 'index'])->name('item-invoice.index');
-    Route::get('/item-invoice/next-number', [ProductInvoiceController::class, 'getNextInvoiceNumber'])->name('item-invoice.getNextNumber');
-    Route::post('/item-invoice', [ProductInvoiceController::class, 'store'])->name('item-invoice.store');
-    Route::delete('/item-invoice/destroy-selected', [ProductInvoiceController::class, 'destroySelected'])->name('item-invoice.destroySelected');
-    Route::get('/item-invoice/export/excel', [ProductInvoiceController::class, 'exportExcel'])->name('item-invoice.export.excel');
-    Route::get('/item-invoice/export/pdf', [ProductInvoiceController::class, 'exportPdf'])->name('item-invoice.export.pdf');
-    Route::get('/item-invoice/{item_invoice}/edit', [ProductInvoiceController::class, 'edit'])->name('item-invoice.edit')->where('item_invoice', '.*');
-    Route::put('/item-invoice/{item_invoice}', [ProductInvoiceController::class, 'update'])->name('item-invoice.update')->where('item_invoice', '.*');
+    Route::get('/item-invoice', [ItemInvoiceController::class, 'index'])->name('item-invoice.index');
+    Route::get('/item-invoice/next-number', [ItemInvoiceController::class, 'getNextInvoiceNumber'])->name('item-invoice.getNextNumber');
+    Route::post('/item-invoice', [ItemInvoiceController::class, 'store'])->name('item-invoice.store');
+    Route::delete('/item-invoice/destroy-selected', [ItemInvoiceController::class, 'destroySelected'])->name('item-invoice.destroySelected');
+    Route::get('/item-invoice/export/excel', [ItemInvoiceController::class, 'exportExcel'])->name('item-invoice.export.excel');
+    Route::get('/item-invoice/export/pdf', [ItemInvoiceController::class, 'exportPdf'])->name('item-invoice.export.pdf');
+    Route::get('/item-invoice/{item_invoice}/edit', [ItemInvoiceController::class, 'edit'])->name('item-invoice.edit')->where('item_invoice', '.*');
+    Route::put('/item-invoice/{item_invoice}', [ItemInvoiceController::class, 'update'])->name('item-invoice.update')->where('item_invoice', '.*');
 
     // Item Invoice Print Routes
-    Route::get('/item-invoice/{invoice_number}/print/pdf', [ProductInvoiceController::class, 'printPdf'])->name('item-invoice.print.pdf')->where('invoice_number', '.*');
-    Route::get('/item-invoice/{invoice_number}/print/excel', [ProductInvoiceController::class, 'printExcel'])->name('item-invoice.print.excel')->where('invoice_number', '.*');
+    Route::get('/item-invoice/{invoice_number}/print/pdf', [ItemInvoiceController::class, 'printPdf'])->name('item-invoice.print.pdf')->where('invoice_number', '.*');
+    Route::get('/item-invoice/{invoice_number}/print/excel', [ItemInvoiceController::class, 'printExcel'])->name('item-invoice.print.excel')->where('invoice_number', '.*');
 
     // Route Alumunium Invoice
     Route::get('/alumunium-invoice', [AlumuniumInvoiceController::class, 'index'])->name('alumunium-invoice.index');

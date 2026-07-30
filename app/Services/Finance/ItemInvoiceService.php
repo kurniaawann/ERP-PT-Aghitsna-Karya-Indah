@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
  * - Generasi nomor invoice
  * - Restorasi stok saat update/delete
  */
-class ProductInvoiceService
+class ItemInvoiceService
 {
     public function __construct(
         private StockService $stockService

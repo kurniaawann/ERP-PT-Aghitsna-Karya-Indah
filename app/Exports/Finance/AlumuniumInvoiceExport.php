@@ -76,23 +76,20 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                 $sheet->mergeCells('A2:D2');
                 $sheet->setCellValue('A2', 'AGHITSNA ALUMUNIUM DAN BAJA RINGAN');
+                $sheet->getStyle('A2')->getFont()->setBold(true);
                 $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A3:D3');
-                $sheet->setCellValue('A3', 'JL. CEMARA RT 02 RW 07, KEL. GROGOL');
+                $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT');
                 $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A4:D4');
-                $sheet->setCellValue('A4', 'KEC. LIMO KOTA DEPOK');
+                $sheet->setCellValue('A4', 'Telp. 021 - 29034923 - 0812 9596 552');
                 $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A5:D5');
-                $sheet->setCellValue('A5', 'Telp. 0882 1303 1263 / 0882 1303 1264');
+                $sheet->setCellValue('A5', 'Email : Design@aghitsna.id');
                 $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->mergeCells('A6:D6');
-                $sheet->setCellValue('A6', 'Email : Design@aghitsna.id');
-                $sheet->getStyle('A6')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $invoiceDate = Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
 
@@ -106,17 +103,12 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 $sheet->getStyle('F3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->setCellValue('E4', 'Kepada');
-                $sheet->setCellValue('F4', ': ' . $invoice->recipient);
+                $sheet->setCellValue('E4', 'Hal');
+                $sheet->setCellValue('F4', ': ' . ($invoice->regarding ?? '-'));
                 $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 $sheet->getStyle('F4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->setCellValue('E5', 'Hal');
-                $sheet->setCellValue('F5', ': ' . $invoice->regarding);
-                $sheet->getStyle('E5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $currentRow = 8;
+                $currentRow = 7;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
@@ -385,10 +377,14 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Hormat Kami,');
 
+                $currentRow++;
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
+                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+
                 $currentRow += 4;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'PT AGHITSNA KARYA INDAH');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                $sheet->setCellValue("A{$currentRow}", 'Akhmad Khaidir');
             },
         ];
     }

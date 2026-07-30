@@ -12,24 +12,30 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
         <input type="date" name="invoice_date" value="{{ $invoice->invoice_date->format('Y-m-d') }}"
-            class="w-full border rounded p-2" required>
+            class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kepada <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Kepada (Nama Penerima) <span class="text-error">*</span></label>
         <input type="text" name="recipient" value="{{ $invoice->recipient }}" class="w-full border rounded p-2"
-            required>
+            required oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Proyek <span class="text-error">*</span></label>
-        <textarea name="project_description" class="w-full border rounded p-2" rows="2" required>{{ $invoice->project_description }}</textarea>
-    </div>
-
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Hal / Keterangan</label>
+        <label class="block text-text-primary mb-1">Hal / Regarding <span class="text-error">*</span></label>
         <input type="text" name="regarding" value="{{ $invoice->regarding }}" class="w-full border rounded p-2"
-            placeholder="Opsional">
+            placeholder="Contoh: Penagihan Pembayaran" required
+            oninvalid="this.setCustomValidity('Hal/Regarding tidak boleh kosong')" oninput="this.setCustomValidity('')">
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
+        <textarea name="project_description" class="w-full border rounded p-2" rows="2" required
+            oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
     <div id="barang-items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
@@ -150,5 +156,37 @@
             data-invoice-number="{{ $invoice->invoice_number }}">
             <i class="fa-solid fa-plus"></i> Tambah Item
         </button>
+    </div>
+
+    {{-- Pilihan Rekening Pembayaran --}}
+    <div class="mb-3 p-3 border rounded bg-green-50">
+        <label class="block text-text-primary font-semibold mb-2">
+            Pilih Rekening Pembayaran <span class="text-error">*</span>
+            <span class="text-xs font-normal text-text-label">(Minimal 1 rekening harus dipilih)</span>
+        </label>
+        <div class="space-y-2">
+            @php
+                $selectedAccounts = is_string($invoice->selected_payment_accounts)
+                    ? json_decode($invoice->selected_payment_accounts, true)
+                    : $invoice->selected_payment_accounts;
+            @endphp
+            @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
+                @foreach ($paymentAccounts as $account)
+                    <label
+                        class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
+                        <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
+                            class="mt-1 mr-3 payment-account-checkbox"
+                            onchange="validatePaymentSelectionEdit('{{ $invoice->invoice_number }}')"
+                            {{ in_array($account->id, $selectedAccounts ?? []) ? 'checked' : '' }}>
+                        <div class="flex-1">
+                            <div class="font-semibold text-text-heading">{{ $account->bank_name }}</div>
+                            <div class="text-sm text-text-label">
+                                No: {{ $account->account_number }} a/n {{ $account->account_holder }}
+                            </div>
+                        </div>
+                    </label>
+                @endforeach
+            @endif
+        </div>
     </div>
 </x-modal>

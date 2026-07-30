@@ -207,7 +207,7 @@
 
         <tr>
             <td valign="top">
-              <div>
+              {{-- <div>
                     PT. AGHITSNA KARYA INDAH
                     <div>
                          JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT 
@@ -219,7 +219,13 @@
                          Email : Design@aghitsna.id
                     </div>
                     
-                </div>
+                </div> --}}
+                <div class="company-info" style="white-space: pre-line">
+                PT. AGHITSNA KARYA INDAH
+                JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT
+                Telp. 021 - 29034923 - 0812 9596 552
+                Email : Design@aghitsna.id
+     </div>
             </td>
 
             <!-- Tengah: Dikosongkan -->
@@ -237,11 +243,6 @@
                             <td style="padding-right: 5px;" valign="top">Tanggal</td>
                             <td style="padding-right: 5px;" valign="top">:</td>
                             <td valign="top">{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding-right: 5px;" valign="top">Kepada</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top"><strong>{{ $invoice->recipient }}</strong></td>
                         </tr>
                         <tr>
                             <td style="padding-right: 5px;" valign="top">Hal</td>
@@ -309,18 +310,21 @@
 
         <div class="terbilang">Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</div>
 
-        <div class="closing">Demikian invoice item ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima
+        <div class="closing">Demikian invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima
             kasih.</div>
 
         <table style="width: 100%; border: none; margin-top: 5px;">
             <tr>
                 <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
-                    <p>Hormat Kami,</p>
-                    <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
+                    <div>Hormat Kami,</div>
+                    <div>PT. AGHITSNA KARYA INDAH</div>
+                    <div style="margin-top: 60px;">Akhmad Khaidir</div>
                 </td>
+                @if($invoice->salesRecap?->status === 'Lunas')
                 <td style="width: 50%; border: none; vertical-align: top; text-align: center;">
                     <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" style="height: 100px;">
                 </td>
+                @endif
             </tr>
         </table>
     </div>

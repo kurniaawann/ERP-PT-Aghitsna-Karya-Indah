@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Finance;
 use App\Exports\Finance\ItemInvoiceExport;
 use App\Exports\Finance\ItemInvoiceIndexExport;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Finance\ProductInvoiceStoreRequest;
-use App\Http\Requests\Finance\ProductInvoiceUpdateRequest;
-use App\Http\Requests\Finance\ProductInvoiceDestroySelectedRequest;
+use App\Http\Requests\Finance\ItemInvoiceStoreRequest;
+use App\Http\Requests\Finance\ItemInvoiceUpdateRequest;
 use App\Models\Finance\InvoiceBarang;
 use App\Models\Inventory\Items;
 use App\Models\Report\SalesRecap;
-use App\Services\Finance\ProductInvoiceService;
+use App\Services\Finance\PaymentAccountService;
+use App\Services\Finance\ItemInvoiceService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -23,12 +23,13 @@ use Maatwebsite\Excel\Facades\Excel;
  * Controller untuk modul Invoice Barang (Finance).
  *
  * Menangani operasi CRUD, cetak PDF/Excel, dan export rekap Invoice Barang.
- * Semua logika bisnis didelegasikan ke ProductInvoiceService.
+ * Semua logika bisnis didelegasikan ke ItemInvoiceService.
  */
-class ProductInvoiceController extends Controller
+class ItemInvoiceController extends Controller
 {
     public function __construct(
-        private ProductInvoiceService $service
+        private ItemInvoiceService $service,
+        private PaymentAccountService $paymentAccountService
     ) {}
 
     /**
@@ -54,7 +55,9 @@ class ProductInvoiceController extends Controller
             $items = Items::query()->orderBy('name_item')->get();
         }
 
-        return view('pages.finance.product-invoices', compact('invoices', 'totals', 'items'));
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+
+        return view('pages.finance.item-invoices', compact('invoices', 'totals', 'items', 'paymentAccounts'));
     }
 
     /**
@@ -72,10 +75,10 @@ class ProductInvoiceController extends Controller
     /**
      * Menyimpan Invoice Barang baru beserta Sales Recap terkait.
      *
-     * @param  \App\Http\Requests\Finance\ProductInvoiceStoreRequest  $request
+     * @param  \App\Http\Requests\Finance\ItemInvoiceStoreRequest  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(ProductInvoiceStoreRequest $request)
+    public function store(ItemInvoiceStoreRequest $request)
     {
         $rawItems = $this->service->normalizeInvoiceItems($request->input('items'));
 
@@ -115,6 +118,7 @@ class ProductInvoiceController extends Controller
                 'total_selling' => $totals['total_selling'],
                 'total_profit' => $totals['total_profit'],
                 'sales_recap_id' => $salesRecapId,
+                'selected_payment_accounts' => $request->selected_payment_accounts,
             ]);
 
             DB::commit();
@@ -151,11 +155,11 @@ class ProductInvoiceController extends Controller
     /**
      * Mengupdate Invoice Barang dan Sales Recap terkait.
      *
-     * @param  \App\Http\Requests\Finance\ProductInvoiceUpdateRequest  $request
+     * @param  \App\Http\Requests\Finance\ItemInvoiceUpdateRequest  $request
      * @param  string  $invoiceNumber
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(ProductInvoiceUpdateRequest $request, string $invoiceNumber)
+    public function update(ItemInvoiceUpdateRequest $request, string $invoiceNumber)
     {
         $invoice = InvoiceBarang::where('invoice_number', $invoiceNumber)->firstOrFail();
         $salesRecap = SalesRecap::where('id_sales_recap', $invoice->sales_recap_id)->first();
@@ -199,6 +203,7 @@ class ProductInvoiceController extends Controller
                 'total_selling' => $totals['total_selling'],
                 'total_profit' => $totals['total_profit'],
                 'sales_recap_id' => $salesRecap?->id_sales_recap ?? $invoice->sales_recap_id,
+                'selected_payment_accounts' => $request->selected_payment_accounts,
             ]);
 
             DB::commit();
@@ -219,10 +224,10 @@ class ProductInvoiceController extends Controller
     /**
      * Menghapus beberapa Invoice Barang sekaligus.
      *
-     * @param  \App\Http\Requests\Finance\ProductInvoiceDestroySelectedRequest  $request
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destroySelected(ProductInvoiceDestroySelectedRequest $request)
+    public function destroySelected(Request $request)
     {
         $selectedInvoiceNumbers = $request->input('selected_invoices', []);
 

@@ -29,6 +29,7 @@ class PaymentAccountService
         ['table' => 'aluminium_quotations',  'column' => 'selected_payment_accounts', 'method' => 'json'],
         ['table' => 'proyek_invoices',       'column' => 'selected_payment_accounts', 'method' => 'json'],
         ['table' => 'alumunium_invoices',    'column' => 'selected_payment_accounts', 'method' => 'json'],
+        ['table' => 'barang_invoices',       'column' => 'selected_payment_accounts', 'method' => 'json'],
         ['table' => 'notas_administrasi',    'column' => 'selected_payment_accounts', 'method' => 'json'],
         ['table' => 'rabs',                  'column' => 'selected_payment_accounts', 'method' => 'like'],
     ];

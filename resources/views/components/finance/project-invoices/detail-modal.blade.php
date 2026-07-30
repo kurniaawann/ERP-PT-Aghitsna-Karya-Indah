@@ -229,7 +229,7 @@
             </div>
             <p class="text-xs text-gray-400 mt-1">
                 @if ($isFullyPaid)
-                    <span class="text-green-600 font-medium"><i class="fa-solid fa-circle-check mr-0.5"></i>Lunas</span>
+                    <span class="text-green-600 font-medium"><i class="fa-solid fa-circle-check mr-0.5"></i>Sudah Lunas</span>
                 @elseif ($totalPaid > 0)
                     <span class="text-orange-500 font-medium"><i class="fa-solid fa-circle-half-stroke mr-0.5"></i>Sebagian ({{ $progressPercent }}% terbayar)</span>
                 @else

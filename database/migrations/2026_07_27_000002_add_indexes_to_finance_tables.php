@@ -135,7 +135,7 @@ return new class extends Migration
         // barang_invoices — 1 index
         // ═══════════════════════════════════════════════════════════════
         // idx_barang_inv_invoice_date
-        // Digunakan oleh: ProductInvoiceService → whereMonth/Year('invoice_date'),
+        // Digunakan oleh: ItemInvoiceService → whereMonth/Year('invoice_date'),
         //   orderByDesc('invoice_date')
         // Alasan: invoice_date adalah filter utama di halaman Invoice Barang.
         Schema::table('barang_invoices', function (Blueprint $table) {

@@ -39,16 +39,16 @@
             </div>
         </div>
 
-        <x-finance.product-invoices.table :invoices="$invoices" />
+        <x-finance.item-invoices.table :invoices="$invoices" />
     </div>
 
     <x-pagination :paginator="$invoices" />
 
-    <x-finance.product-invoices.add-modal :items="$items" />
+    <x-finance.item-invoices.add-modal :items="$items" :paymentAccounts="$paymentAccounts" />
 
     @foreach ($invoices as $invoice)
-        <x-finance.product-invoices.edit-modal :invoice="$invoice" :items="$items" />
-        <x-finance.product-invoices.detail-modal :invoice="$invoice" />
+        <x-finance.item-invoices.edit-modal :invoice="$invoice" :items="$items" :paymentAccounts="$paymentAccounts" />
+        <x-finance.item-invoices.detail-modal :invoice="$invoice" />
     @endforeach
 
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
@@ -70,5 +70,5 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/pages/finance/product-invoices/index.js'])
+    @vite(['resources/js/pages/finance/item-invoices/index.js'])
 @endpush

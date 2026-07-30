@@ -77,15 +77,16 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                 $sheet->mergeCells('A2:D2');
-                $sheet->setCellValue('A2', 'JL. CEMARA RT 02 RW 07, KEL. GROGOL');
+                $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
+                $sheet->getStyle('A2')->getFont()->setBold(true);
                 $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A3:D3');
-                $sheet->setCellValue('A3', 'KEC. LIMO KOTA DEPOK');
+                $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT');
                 $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A4:D4');
-                $sheet->setCellValue('A4', 'Telp. 0882 1303 1263 / 0882 1303 1264');
+                $sheet->setCellValue('A4', 'Telp. 021 - 29034923 - 0812 9596 552');
                 $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A5:D5');
@@ -104,15 +105,10 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 $sheet->getStyle('F3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->setCellValue('E4', 'Kepada');
-                $sheet->setCellValue('F4', ': ' . $invoice->recipient);
+                $sheet->setCellValue('E4', 'Hal');
+                $sheet->setCellValue('F4', ': ' . ($invoice->regarding ?? '-'));
                 $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 $sheet->getStyle('F4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->setCellValue('E5', 'Hal');
-                $sheet->setCellValue('F5', ': ' . $invoice->regarding);
-                $sheet->getStyle('E5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $currentRow = 7;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
@@ -424,10 +420,14 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Hormat Kami,');
 
+                $currentRow++;
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
+                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+
                 $currentRow += 4;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'PT AGHITSNA KARYA INDAH');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                $sheet->setCellValue("A{$currentRow}", 'Akhmad Khaidir');
             },
         ];
     }

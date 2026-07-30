@@ -26,11 +26,13 @@ class InvoiceBarang extends Model
         'total_selling',
         'total_profit',
         'sales_recap_id',
+        'selected_payment_accounts',
     ];
 
     protected $casts = [
         'invoice_date' => 'date',
         'items' => 'json',
+        'selected_payment_accounts' => 'json',
         'total_capital' => 'integer',
         'total_selling' => 'integer',
         'total_profit' => 'integer',
@@ -53,7 +55,7 @@ class InvoiceBarang extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        return $this->salesRecap?->status === 'Lunas' ? 'Lunas' : 'Belum Lunas';
+        return $this->salesRecap?->status === 'Lunas' ? 'Sudah Lunas' : 'Belum Lunas';
     }
 
     public function getStatusBadgeClassAttribute(): string

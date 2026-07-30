@@ -118,7 +118,7 @@ class InvoiceAlumunium extends Model
      */
     public function getPaymentStatusLabelAttribute(): string
     {
-        return $this->isFullyPaid() ? 'Sudah Dibayarkan' : 'Belum Dibayar';
+        return $this->isFullyPaid() ? 'Sudah Lunas' : 'Belum Lunas';
     }
 
     /**

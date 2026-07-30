@@ -4,24 +4,30 @@
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
-        <input type="date" name="invoice_date" class="w-full border rounded p-2" required>
+        <input type="date" name="invoice_date" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kepada <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Kepada (Nama Penerima) <span class="text-error">*</span></label>
         <input type="text" name="recipient" class="w-full border rounded p-2" placeholder="Nama penerima invoice"
-            required>
+            required oninvalid="this.setCustomValidity('Nama penerima tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Proyek <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Hal / Regarding <span class="text-error">*</span></label>
+        <input type="text" name="regarding" class="w-full border rounded p-2"
+            placeholder="Contoh: Penagihan Pembayaran" required
+            oninvalid="this.setCustomValidity('Hal/Regarding tidak boleh kosong')" oninput="this.setCustomValidity('')">
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2"
-            placeholder="" required></textarea>
-    </div>
-
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Hal / Keterangan</label>
-        <input type="text" name="regarding" class="w-full border rounded p-2" placeholder="Opsional">
+            placeholder="Contoh: Proyek Karbela 3 / Pak Sis" required
+            oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
     <div id="barang-items-container-add" class="mb-4">
@@ -113,6 +119,43 @@
             class="add-barang-item bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover w-full mt-2">
             <i class="fa-solid fa-plus"></i> Tambah Item
         </button>
+    </div>
+
+    {{-- Pilihan Rekening Pembayaran --}}
+    <div class="mb-3 p-3 border rounded bg-green-50">
+        <label class="block text-text-primary font-semibold mb-2">
+            Pilih Rekening Pembayaran <span class="text-error">*</span>
+            <span class="text-xs font-normal text-text-label">(Minimal 1 rekening harus dipilih)</span>
+        </label>
+        <div class="space-y-2">
+            @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
+                @foreach ($paymentAccounts as $account)
+                    <label
+                        class="flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer">
+                        <input type="checkbox" name="selected_payment_accounts[]" value="{{ $account->id }}"
+                            class="mt-1 mr-3 payment-account-checkbox" onchange="validatePaymentSelection()">
+                        <div class="flex-1">
+                            <div class="font-semibold text-text-heading">{{ $account->bank_name }}</div>
+                            <div class="text-sm text-text-label">
+                                No: {{ $account->account_number }} a/n {{ $account->account_holder }}
+                            </div>
+                        </div>
+                    </label>
+                @endforeach
+            @else
+                <div class="p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-triangle text-yellow-600"></i>
+                    Belum ada rekening pembayaran.
+                    <a href="{{ route('payment-accounts.index') }}" class="text-blue-600 hover:underline"
+                        target="_blank">
+                        Tambah rekening pembayaran
+                    </a>
+                </div>
+            @endif
+        </div>
+        <div id="payment-account-error" class="text-red-600 text-sm mt-2 hidden">
+            <i class="fa-solid fa-exclamation-circle"></i> Minimal 1 rekening harus dipilih
+        </div>
     </div>
 
     <input type="hidden" name="items" id="barang-items-json" value="[]">

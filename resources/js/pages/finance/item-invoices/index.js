@@ -768,6 +768,50 @@ function initEditFormSubmissions() {
     });
 }
 
+// ─── PAYMENT ACCOUNT VALIDATION ─────────────────────────────────────────────
+
+function validatePaymentSelection() {
+    const addModal = document.getElementById('addModal');
+    const checkboxes = addModal?.querySelectorAll('.payment-account-checkbox') ?? [];
+    const errorDiv = document.getElementById('payment-account-error');
+    const submitBtn = document.getElementById('submit-btn-addModal');
+
+    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+    if (!anyChecked) {
+        errorDiv?.classList.remove('hidden');
+    } else {
+        errorDiv?.classList.add('hidden');
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = !anyChecked;
+        submitBtn.classList.toggle('opacity-50', !anyChecked);
+        submitBtn.classList.toggle('cursor-not-allowed', !anyChecked);
+    }
+
+    return anyChecked;
+}
+
+function validatePaymentSelectionEdit(invoiceNumber) {
+    const modal = document.getElementById('editModal-' + invoiceNumber);
+    const checkboxes = modal?.querySelectorAll('.payment-account-checkbox') ?? [];
+    const submitBtn = document.getElementById('submit-btn-editModal-' + invoiceNumber);
+
+    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+    if (submitBtn) {
+        submitBtn.disabled = !anyChecked;
+        submitBtn.classList.toggle('opacity-50', !anyChecked);
+        submitBtn.classList.toggle('cursor-not-allowed', !anyChecked);
+    }
+
+    return anyChecked;
+}
+
+window.validatePaymentSelection = validatePaymentSelection;
+window.validatePaymentSelectionEdit = validatePaymentSelectionEdit;
+
 // ─── SELECT ALL CHECKBOX ────────────────────────────────────────────────────
 
 function initSelectAllCheckbox() {
@@ -833,6 +877,20 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     initEditItemButtons();
     initEditFormSubmissions();
+
+    // Payment account validation
+    validatePaymentSelection();
+
+    document.querySelectorAll('[id^="editModal-"]').forEach(function (modal) {
+        var invoiceNumber = modal.id.replace('editModal-', '');
+        validatePaymentSelectionEdit(invoiceNumber);
+
+        modal.querySelectorAll('.payment-account-checkbox').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                validatePaymentSelectionEdit(invoiceNumber);
+            });
+        });
+    });
 
     // Shared
     initSelectAllCheckbox();

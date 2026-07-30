@@ -5,11 +5,11 @@ namespace App\Http\Requests\Finance;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form Request untuk validasi pembuatan Invoice Barang baru.
+ * Form Request untuk validasi update Invoice Barang.
  *
- * Memastikan semua field wajib terisi dan minimal ada 1 item.
+ * Sama dengan store namun items harus array dengan minimal 1 item.
  */
-class ProductInvoiceStoreRequest extends FormRequest
+class ItemInvoiceUpdateRequest extends FormRequest
 {
     /**
      * Menentukan apakah request ini diizinkan.
@@ -22,19 +22,20 @@ class ProductInvoiceStoreRequest extends FormRequest
     }
 
     /**
-     * Aturan validasi untuk pembuatan Invoice Barang.
+     * Aturan validasi untuk update Invoice Barang.
      *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'invoice_number' => 'nullable|string|max:255',
             'invoice_date' => 'required|date',
             'recipient' => 'required|string|max:255',
             'regarding' => 'nullable|string|max:255',
             'project_description' => 'required|string|max:255',
-            'items' => 'required|json',
+            'items' => 'required|array|min:1',
+            'selected_payment_accounts' => 'nullable|array',
+            'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
         ];
     }
 
@@ -53,7 +54,8 @@ class ProductInvoiceStoreRequest extends FormRequest
             'project_description.required' => 'Deskripsi proyek wajib diisi.',
             'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
             'items.required' => 'Minimal harus ada 1 item.',
-            'items.json' => 'Format item tidak valid.',
+            'items.array' => 'Format item tidak valid.',
+            'items.min' => 'Minimal harus ada 1 item.',
         ];
     }
 }

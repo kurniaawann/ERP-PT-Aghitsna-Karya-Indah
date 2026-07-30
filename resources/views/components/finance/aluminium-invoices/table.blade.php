@@ -27,13 +27,13 @@
                                 $remaining = $invoice->getRemainingAmount();
                                 $isFullyPaid = $invoice->isFullyPaid();
                                 if ($isFullyPaid) {
-                                    $statusLabel = 'Lunas';
+                                    $statusLabel = 'Sudah Lunas';
                                     $statusClass = 'bg-green-100 text-green-800';
                                 } elseif ($totalPaid > 0) {
-                                    $statusLabel = 'Sebagian';
+                                    $statusLabel = 'Belum Lunas';
                                     $statusClass = 'bg-orange-100 text-orange-800';
                                 } else {
-                                    $statusLabel = 'Belum';
+                                    $statusLabel = 'Belum Lunas';
                                     $statusClass = 'bg-red-100 text-red-800';
                                 }
                             @endphp
