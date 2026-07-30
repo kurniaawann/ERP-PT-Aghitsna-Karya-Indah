@@ -14,8 +14,8 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             @foreach ($paymentProofs as $proof)
                 <div class="overflow-hidden rounded-lg border bg-white">
-                    <a href="{{ Storage::url($proof->file_path) }}" target="_blank" rel="noopener noreferrer">
-                        <img src="{{ Storage::url($proof->file_path) }}" alt="Bukti pembayaran"
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer">
+                        <img src="{{ asset('storage/' . $proof->file_path) }}" alt="Bukti pembayaran"
                             class="h-48 w-full object-cover">
                     </a>
                     <div class="p-3 space-y-2">
@@ -30,7 +30,7 @@
                         </div>
 
                         <div class="flex items-center justify-between gap-2">
-                            <a href="{{ Storage::url($proof->file_path) }}" target="_blank" rel="noopener noreferrer"
+                            <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer"
                                 class="text-sm text-blue-600 hover:underline">
                                 Lihat
                             </a>

@@ -83,6 +83,7 @@ class TransactionCategoryService
             Cache::forget('report:expense-categories');
             Cache::forget('report:category-codes');
             Cache::forget('report:category-used-ids');
+            Cache::forget('finance:expense-categories');
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [report:categories]: ' . $e->getMessage());
         }

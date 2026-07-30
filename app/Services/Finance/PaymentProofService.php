@@ -634,7 +634,7 @@ class PaymentProofService
             $fileName = Str::uuid()->toString() . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
             $relativePath = $relativeDirectory . '/' . $fileName;
 
-            Storage::disk('public')->putFileAs($relativeDirectory, $file, $fileName);
+            $file->storeAs($relativeDirectory, $fileName, ['disk' => 'public']);
 
             return [
                 'file_name' => $file->getClientOriginalName(),
