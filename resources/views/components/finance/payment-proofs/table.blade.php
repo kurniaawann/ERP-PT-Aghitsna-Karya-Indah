@@ -76,7 +76,7 @@
                                     Rp {{ number_format($paymentProof->amount ?? 0, 0, ',', '.') }}
                                 </td>
                                 <td class="p-3 text-sm">
-                                    <a href="{{ asset($paymentProof->file_path) }}" target="_blank"
+                                    <a href="{{ Storage::url($paymentProof->file_path) }}" target="_blank"
                                         class="inline-flex items-center gap-1 text-primary hover:underline">
                                         <i class="fa-solid fa-image text-xs"></i>
                                         {{ $paymentProof->file_name }}

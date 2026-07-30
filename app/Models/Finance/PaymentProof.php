@@ -6,6 +6,7 @@ use App\Models\Report\SalesRecap;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Model untuk tabel payment_proofs (Bukti Pembayaran).
@@ -70,7 +71,7 @@ class PaymentProof extends Model
      */
     public function getUrlAttribute(): string
     {
-        return asset($this->file_path);
+        return Storage::disk('public')->url($this->file_path);
     }
 
     /**

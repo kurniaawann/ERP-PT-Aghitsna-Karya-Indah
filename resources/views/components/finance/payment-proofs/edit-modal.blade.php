@@ -45,7 +45,7 @@
     {{-- Section: Current File --}}
     <div class="mb-3 p-3 border rounded bg-blue-50">
         <label class="block text-text-primary mb-1">File Saat Ini</label>
-        <a href="{{ asset($paymentProof->file_path) }}" target="_blank"
+        <a href="{{ Storage::url($paymentProof->file_path) }}" target="_blank"
             class="text-blue-600 hover:underline text-sm">{{ $paymentProof->file_name }}</a>
     </div>
 

@@ -11,6 +11,7 @@ use GdImage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -628,29 +629,18 @@ class PaymentProofService
     private function storeFile(UploadedFile $file, string $moduleType, string $invoiceType, string $invoiceNumber): array
     {
         $relativeDirectory = $this->buildRelativeDirectory($moduleType, $invoiceType, $invoiceNumber);
-        $absoluteDirectory = public_path($relativeDirectory);
-
-        if (!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory, 0755, true) && !is_dir($absoluteDirectory)) {
-            throw new RuntimeException('Gagal membuat folder penyimpanan bukti pembayaran.');
-        }
-
-        $fileName = Str::uuid()->toString() . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
-        $relativePath = $relativeDirectory . '/' . $fileName;
-        $absolutePath = public_path($relativePath);
 
         if (!function_exists('imagecreatetruecolor')) {
-            $mimeType = $file->getClientMimeType() ?: $file->getMimeType();
-            try {
-                $file->move($absoluteDirectory, $fileName);
-            } catch (\Exception $e) {
-                throw new RuntimeException('Gagal menyimpan file bukti pembayaran.');
-            }
+            $fileName = Str::uuid()->toString() . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
+            $relativePath = $relativeDirectory . '/' . $fileName;
+
+            Storage::disk('public')->putFileAs($relativeDirectory, $file, $fileName);
 
             return [
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $relativePath,
-                'mime_type' => $mimeType,
-                'file_size' => file_exists($absolutePath) ? filesize($absolutePath) : null,
+                'mime_type' => $file->getClientMimeType() ?: $file->getMimeType(),
+                'file_size' => Storage::disk('public')->size($relativePath),
             ];
         }
 
@@ -676,22 +666,27 @@ class PaymentProofService
 
         $fileName = Str::uuid()->toString() . '.jpg';
         $relativePath = $relativeDirectory . '/' . $fileName;
-        $absolutePath = public_path($relativePath);
 
-        if (!imagejpeg($canvas, $absolutePath, 80)) {
+        $tempPath = tempnam(sys_get_temp_dir(), 'proof_');
+
+        if (!imagejpeg($canvas, $tempPath, 80)) {
             imagedestroy($sourceImage);
             imagedestroy($canvas);
+            @unlink($tempPath);
             throw new RuntimeException('Gagal menyimpan file bukti pembayaran.');
         }
 
         imagedestroy($sourceImage);
         imagedestroy($canvas);
 
+        Storage::disk('public')->put($relativePath, file_get_contents($tempPath));
+        @unlink($tempPath);
+
         return [
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $relativePath,
             'mime_type' => 'image/jpeg',
-            'file_size' => file_exists($absolutePath) ? filesize($absolutePath) : null,
+            'file_size' => Storage::disk('public')->size($relativePath),
         ];
     }
 
@@ -707,11 +702,7 @@ class PaymentProofService
             return;
         }
 
-        $absolutePath = public_path($relativePath);
-
-        if (is_file($absolutePath)) {
-            @unlink($absolutePath);
-        }
+        Storage::disk('public')->delete($relativePath);
     }
 
     /**
