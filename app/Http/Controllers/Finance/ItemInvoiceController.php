@@ -242,11 +242,6 @@ class ItemInvoiceController extends Controller
             foreach ($invoices as $invoice) {
                 $salesRecap = $invoice->salesRecap;
 
-                if (!$this->service->isEditable($salesRecap)) {
-                    DB::rollBack();
-                    return redirect()->back()->with('error', 'Invoice "' . $invoice->invoice_number . '" sudah Lunas dan tidak dapat dihapus!');
-                }
-
                 $items = $this->service->getItemsFromSource($salesRecap, $invoice);
 
                 $this->service->restoreStockFromItems($items);
