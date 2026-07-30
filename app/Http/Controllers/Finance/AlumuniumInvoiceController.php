@@ -85,6 +85,9 @@ class AlumuniumInvoiceController extends Controller
             : null;
         $data['dp_amount'] = $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null;
 
+        $data['signed_by'] = $request->signed_by;
+        $data['division'] = $request->division;
+
         InvoiceAlumunium::create($data);
 
         return redirect()->route('alumunium-invoice.index')
@@ -139,6 +142,8 @@ class AlumuniumInvoiceController extends Controller
                 'dp_value' => $request->dp_value,
                 'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
                 'selected_payment_accounts' => $request->selected_payment_accounts,
+                'signed_by' => $request->signed_by,
+                'division' => $request->division,
             ]);
 
             return redirect()->route('alumunium-invoice.index')

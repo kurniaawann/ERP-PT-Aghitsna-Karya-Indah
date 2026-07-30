@@ -27,6 +27,8 @@ class InvoiceBarang extends Model
         'total_profit',
         'sales_recap_id',
         'selected_payment_accounts',
+        'signed_by',
+        'division',
     ];
 
     protected $casts = [

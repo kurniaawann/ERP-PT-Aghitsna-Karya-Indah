@@ -39,6 +39,8 @@ class BarangInvoiceFactory extends Factory
             'total_selling' => $totalSelling,
             'total_profit' => $totalSelling - $totalCapital,
             'sales_recap_id' => null,
+            'signed_by' => fake()->optional()->name(),
+            'division' => fake()->optional()->randomElement(['Direktur', 'Manager', ' Supervisor']),
         ];
     }
 }

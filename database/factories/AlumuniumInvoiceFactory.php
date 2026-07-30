@@ -40,6 +40,8 @@ class AlumuniumInvoiceFactory extends Factory
             'dp_value' => null,
             'dp_amount' => null,
             'selected_payment_accounts' => null,
+            'signed_by' => fake()->optional()->name(),
+            'division' => fake()->optional()->randomElement(['Direktur', 'Manager', ' Supervisor']),
         ];
     }
 }

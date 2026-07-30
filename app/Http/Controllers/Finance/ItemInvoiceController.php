@@ -119,6 +119,8 @@ class ItemInvoiceController extends Controller
                 'total_profit' => $totals['total_profit'],
                 'sales_recap_id' => $salesRecapId,
                 'selected_payment_accounts' => $request->selected_payment_accounts,
+                'signed_by' => $request->signed_by,
+                'division' => $request->division,
             ]);
 
             DB::commit();
@@ -204,6 +206,8 @@ class ItemInvoiceController extends Controller
                 'total_profit' => $totals['total_profit'],
                 'sales_recap_id' => $salesRecap?->id_sales_recap ?? $invoice->sales_recap_id,
                 'selected_payment_accounts' => $request->selected_payment_accounts,
+                'signed_by' => $request->signed_by,
+                'division' => $request->division,
             ]);
 
             DB::commit();

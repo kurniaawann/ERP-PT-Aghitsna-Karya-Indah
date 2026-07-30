@@ -181,6 +181,25 @@
         </div>
     </div>
 
+    {{-- Tanda Tangan (Opsional) --}}
+    <div class="mb-3 p-3 border border-purple-300 rounded-lg bg-purple-50">
+        <label class="block text-text-primary font-semibold mb-2">Tanda Tangan (Opsional)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+                <label class="block text-text-label text-sm mb-1">Nama Penandatangan</label>
+                <input type="text" name="signed_by" value="{{ $invoice->signed_by }}"
+                    class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input"
+                    placeholder="Nama yang bertanda tangan">
+            </div>
+            <div>
+                <label class="block text-text-label text-sm mb-1">Divisi</label>
+                <input type="text" name="division" value="{{ $invoice->division }}"
+                    class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input"
+                    placeholder="Contoh: Direktur, Manager, dll">
+            </div>
+        </div>
+    </div>
+
     {{-- Pilihan Rekening Pembayaran --}}
     <div class="mb-3 p-3 border border-success-light rounded-lg bg-success-light">
         <label class="block text-text-primary font-semibold mb-2">

@@ -318,7 +318,10 @@
                 <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
                     <div>Hormat Kami,</div>
                     <div>PT. AGHITSNA KARYA INDAH</div>
-                    <div style="margin-top: 60px;">Akhmad Khaidir</div>
+                    <div style="margin-top: 60px;">{{ $invoice->signed_by ?? 'Akhmad Khaidir' }}</div>
+                    @if ($invoice->division)
+                    <div style="margin-top: 5px;">{{ $invoice->division }}</div>
+                    @endif
                 </td>
                 @if($invoice->salesRecap?->status === 'Lunas')
                 <td style="width: 50%; border: none; vertical-align: top; text-align: center;">

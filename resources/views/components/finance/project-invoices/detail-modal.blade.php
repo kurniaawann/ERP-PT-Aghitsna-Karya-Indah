@@ -363,6 +363,25 @@
         @endif
     </div>
 
+    {{-- Tanda Tangan --}}
+    @if ($invoice->signed_by)
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Tanda Tangan</h3>
+        <div class="space-y-2">
+            <div>
+                <p class="text-xs text-gray-400 mb-0.5">Nama Penandatangan</p>
+                <p class="font-medium text-gray-900">{{ $invoice->signed_by }}</p>
+            </div>
+            @if ($invoice->division)
+            <div>
+                <p class="text-xs text-gray-400 mb-0.5">Divisi</p>
+                <p class="text-gray-900">{{ $invoice->division }}</p>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     {{-- Terbilang --}}
     <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
         <p class="text-sm text-gray-700">

@@ -43,6 +43,8 @@ class ProyekInvoiceFactory extends Factory
             'payment_installments' => null,
             'selected_payment_accounts' => null,
             'created_by' => null,
+            'signed_by' => fake()->optional()->name(),
+            'division' => fake()->optional()->randomElement(['Direktur', 'Manager', ' Supervisor']),
         ];
     }
 

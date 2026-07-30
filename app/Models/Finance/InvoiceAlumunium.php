@@ -45,6 +45,8 @@ class InvoiceAlumunium extends Model
         'dp_value',
         'dp_amount',
         'selected_payment_accounts',
+        'signed_by',
+        'division',
     ];
 
     protected $casts = [

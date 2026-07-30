@@ -37,6 +37,8 @@ class ItemInvoiceStoreRequest extends FormRequest
             'items' => 'required|json',
             'selected_payment_accounts' => 'nullable|array',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
+            'signed_by' => 'nullable|string|max:255',
+            'division' => 'nullable|string|max:255',
         ];
     }
 

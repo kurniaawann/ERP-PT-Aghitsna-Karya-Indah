@@ -84,4 +84,23 @@
             </table>
         </div>
     </div>
+    {{-- Tanda Tangan --}}
+    @if ($invoice->signed_by)
+    <div class="mb-4 p-4 border rounded bg-gray-50">
+        <label class="block text-sm font-semibold text-text-primary mb-2">Tanda Tangan</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs text-text-label mb-0.5">Nama Penandatangan</label>
+                <p class="text-gray-900 font-medium">{{ $invoice->signed_by }}</p>
+            </div>
+            @if ($invoice->division)
+            <div>
+                <label class="block text-xs text-text-label mb-0.5">Divisi</label>
+                <p class="text-gray-900">{{ $invoice->division }}</p>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
 </x-modal>

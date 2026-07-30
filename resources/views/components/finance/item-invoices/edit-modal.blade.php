@@ -158,6 +158,23 @@
         </button>
     </div>
 
+    {{-- Tanda Tangan (Opsional) --}}
+    <div class="mb-3 p-3 border rounded bg-purple-50">
+        <label class="block text-text-primary font-semibold mb-2">Tanda Tangan (Opsional)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+                <label class="block text-text-label text-sm mb-1">Nama Penandatangan</label>
+                <input type="text" name="signed_by" value="{{ $invoice->signed_by }}"
+                    class="w-full border rounded p-2" placeholder="Nama yang bertanda tangan">
+            </div>
+            <div>
+                <label class="block text-text-label text-sm mb-1">Divisi</label>
+                <input type="text" name="division" value="{{ $invoice->division }}"
+                    class="w-full border rounded p-2" placeholder="Contoh: Direktur, Manager, dll">
+            </div>
+        </div>
+    </div>
+
     {{-- Pilihan Rekening Pembayaran --}}
     <div class="mb-3 p-3 border rounded bg-green-50">
         <label class="block text-text-primary font-semibold mb-2">

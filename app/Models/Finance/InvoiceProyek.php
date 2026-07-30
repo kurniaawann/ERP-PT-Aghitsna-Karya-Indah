@@ -42,6 +42,8 @@ class InvoiceProyek extends Model
         'dp_amount',
         'selected_payment_accounts',
         'created_by',
+        'signed_by',
+        'division',
     ];
 
     protected $casts = [
