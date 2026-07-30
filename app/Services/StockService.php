@@ -34,7 +34,7 @@ class StockService
     }
 
     /**
-     * Invalidate cache stock-out dan stock report.
+     * Invalidate cache stock-out, stock-in, dan stock report.
      *
      * @return void
      */
@@ -42,8 +42,9 @@ class StockService
     {
         try {
             Cache::forget('inventory:stock-outs:all');
+            Cache::forget('inventory:stock-ins:all');
         } catch (\Exception $e) {
-            Log::warning('Cache DELETE error [inventory:stock-outs:all]: ' . $e->getMessage());
+            Log::warning('Cache DELETE error [inventory:stock]: ' . $e->getMessage());
         }
     }
 
@@ -136,11 +137,7 @@ class StockService
         // delete the stock-in record
         $stockIn->delete();
 
-        try {
-            Cache::forget('inventory:stock-ins:all');
-        } catch (\Exception $e) {
-            Log::warning('Cache DELETE error [inventory:stock-ins:all]: ' . $e->getMessage());
-        }
+        $this->flushCache();
     }
 
     /**
@@ -197,11 +194,6 @@ class StockService
         $item->save();
         $return->delete();
 
-        try {
-            Cache::forget('inventory:stock-ins:all');
-        } catch (\Exception $e) {
-            Log::warning('Cache DELETE error [inventory:stock-ins:all]: ' . $e->getMessage());
-        }
         $this->flushCache();
     }
 }

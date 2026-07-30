@@ -56,6 +56,20 @@ class ItemService
     }
 
     /**
+     * Invalidate cache daftar barang.
+     *
+     * @return void
+     */
+    public function flushCache(): void
+    {
+        try {
+            Cache::forget('inventory:items:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:items:all]: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Mencari barang berdasarkan ID.
      *
      * @param  string     $idItem

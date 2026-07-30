@@ -5,12 +5,8 @@
 @section('content')
     <div class="w-full max-w-md bg-surface-base rounded-2xl shadow-lg border border-border-light p-8">
         <div class="flex flex-col items-center mb-6">
-            <div
-                class="bg-primary flex items-center justify-center text-white font-bold text-base rounded-md px-4 py-3 text-center">
-                <div>
-                    ERP PT Aghitsna Karya Indah
-                </div>
-            </div>
+            <img src="{{ asset('images/logo.jpeg') }}" alt="Logo PT Aghitsna Karya Indah"
+                class="h-20 w-auto object-contain">
             <h1 class="text-xl font-semibold mt-4 text-text-primary">Masuk ke Akun</h1>
             <p class="text-text-secondary text-sm mt-1">Silakan login untuk melanjutkan</p>
         </div>
