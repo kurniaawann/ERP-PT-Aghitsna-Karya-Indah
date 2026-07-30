@@ -122,6 +122,7 @@
 </head>
 
 <body>
+    {{-- ─── Header Laporan ───────────────────────────────────────────────────── --}}
     <div class="header">
         <h1>LAPORAN REIMBURSEMENT</h1>
         <h2>PT AGHITSNA KARYA INDAH</h2>
@@ -133,6 +134,7 @@
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
     </div>
 
+    {{-- ─── Tabel Data ───────────────────────────────────────────────────────── --}}
     <table>
         <thead>
             <tr>
@@ -181,18 +183,15 @@
         </tbody>
     </table>
 
+    {{-- ─── Ringkasan Status ────────────────────────────────────────────────── --}}
     <div class="summary-section">
         <h3>Ringkasan:</h3>
         <p>Total Data: {{ $reimburses->count() }} reimburse</p>
         <p>Total Amount: Rp {{ number_format($totalAmount, 0, ',', '.') }}</p>
-        @php
-            $draftCount = $reimburses->where('status', 'draft')->count();
-            $approvedCount = $reimburses->where('status', 'approved')->count();
-            $rejectedCount = $reimburses->where('status', 'rejected')->count();
-        @endphp
         <p>Draft: {{ $draftCount }} | Disetujui: {{ $approvedCount }} | Ditolak: {{ $rejectedCount }}</p>
     </div>
 
+    {{-- ─── Footer ───────────────────────────────────────────────────────────── --}}
     <div class="footer">
         <p>Dokumen ini dibuat secara otomatis oleh sistem ERP PT Aghitsna Karya Indah</p>
     </div>

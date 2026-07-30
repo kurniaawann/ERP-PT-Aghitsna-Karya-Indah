@@ -3,10 +3,21 @@
 namespace App\Models\Notification;
 
 use App\Models\Finance\InvoiceProyek;
+use App\Models\User;
+use App\Services\Finance\InvoiceCalculatorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
 
+/**
+ * Model untuk Reminder Jatuh Tempo Invoice Proyek.
+ *
+ * Menyimpan data reminder untuk setiap invoice proyek dengan status:
+ * - pending: invoice belum jatuh tempo
+ * - notified: invoice sudah jatuh tempo
+ * - paid: invoice sudah lunas
+ */
 class InvoiceProyekReminder extends Model
 {
     use HasFactory;
@@ -22,6 +33,7 @@ class InvoiceProyekReminder extends Model
         'status',
         'notification_sent_at',
         'notes',
+        'created_by',
     ];
 
     protected $casts = [
@@ -32,15 +44,26 @@ class InvoiceProyekReminder extends Model
     ];
 
     /**
-     * Relasi ke InvoiceProyek
+     * Relasi ke InvoiceProyek.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function invoice()
     {
         return $this->belongsTo(InvoiceProyek::class, 'invoice_number', 'invoice_number');
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     /**
-     * Scope untuk filter berdasarkan status
+     * Scope untuk filter berdasarkan status.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $status
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeByStatus($query, $status)
     {
@@ -48,7 +71,11 @@ class InvoiceProyekReminder extends Model
     }
 
     /**
-     * Scope untuk filter berdasarkan tahun
+     * Scope untuk filter berdasarkan tahun.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  int  $year
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeByYear($query, $year)
     {
@@ -56,7 +83,10 @@ class InvoiceProyekReminder extends Model
     }
 
     /**
-     * Scope untuk filter reminders yang sudah jatuh tempo
+     * Scope untuk filter reminders yang sudah jatuh tempo.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeOverdue($query)
     {
@@ -64,7 +94,10 @@ class InvoiceProyekReminder extends Model
     }
 
     /**
-     * Scope untuk filter reminders yang akan datang
+     * Scope untuk filter reminders yang akan datang.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeUpcoming($query)
     {
@@ -72,7 +105,19 @@ class InvoiceProyekReminder extends Model
     }
 
     /**
-     * Total invoice yang harus dibayar.
+     * Mendapatkan instance InvoiceCalculatorService.
+     *
+     * @return \App\Services\Finance\InvoiceCalculatorService
+     */
+    protected function getCalculator(): InvoiceCalculatorService
+    {
+        return app(InvoiceCalculatorService::class);
+    }
+
+    /**
+     * Accessor untuk total invoice yang harus dibayar (grand total).
+     *
+     * @return int
      */
     public function getNetAmountAttribute(): int
     {
@@ -80,11 +125,13 @@ class InvoiceProyekReminder extends Model
             return $this->invoice->getNetAmount();
         }
 
-        return (int) max(0, $this->total_amount ?? 0);
+        return $this->getCalculator()->calculateNetAmount(null, $this->total_amount);
     }
 
     /**
-     * Total pembayaran yang sudah masuk.
+     * Accessor untuk total pembayaran yang sudah masuk.
+     *
+     * @return int
      */
     public function getPaidAmountAttribute(): int
     {
@@ -96,19 +143,47 @@ class InvoiceProyekReminder extends Model
     }
 
     /**
-     * Sisa pembayaran.
+     * Scope untuk pencarian berdasarkan nomor invoice atau nama penerima.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $search
+     * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function getRemainingAmountAttribute(): int
+    public function scopeSearch($query, string $search)
     {
-        return (int) max(0, $this->net_amount - $this->paid_amount);
+        return $query->where(function ($subQuery) use ($search) {
+            $subQuery->where('invoice_number', 'like', "%{$search}%")
+                ->orWhere('recipient', 'like', "%{$search}%");
+        });
     }
 
     /**
-     * Status tampilan untuk reminder.
+     * Accessor untuk sisa pembayaran.
+     *
+     * @return int
+     */
+    public function getRemainingAmountAttribute(): int
+    {
+        return $this->getCalculator()->calculateRemainingAmount(
+            $this->net_amount,
+            0,
+            0,
+            $this->paid_amount
+        );
+    }
+
+    /**
+     * Accessor untuk status tampilan reminder.
+     *
+     * Menggabungkan status database dengan kalkulasi real-time.
+     *
+     * @return string  'paid', 'expired', atau status asli
      */
     public function getDisplayStatusAttribute(): string
     {
-        if ($this->status === 'paid' || $this->remaining_amount <= 0) {
+        $isFullyPaid = $this->getCalculator()->isFullyPaid($this->net_amount, $this->paid_amount);
+
+        if ($this->status === 'paid' || $isFullyPaid) {
             return 'paid';
         }
 
@@ -120,11 +195,15 @@ class InvoiceProyekReminder extends Model
     }
 
     /**
-     * Cek apakah reminder sudah lewat jatuh tempo.
+     * Accessor untuk mengecek apakah reminder sudah lewat jatuh tempo.
+     *
+     * @return bool
      */
     public function getIsOverdueAttribute(): bool
     {
-        if ($this->status === 'paid' || $this->remaining_amount <= 0) {
+        $isFullyPaid = $this->getCalculator()->isFullyPaid($this->net_amount, $this->paid_amount);
+
+        if ($this->status === 'paid' || $isFullyPaid) {
             return false;
         }
 

@@ -1,6 +1,28 @@
+{{-- ═══════════════════════════════════════════════════════════════════════
+     Reminder Jatuh Tempo Invoice Proyek
+     ═══════════════════════════════════════════════════════════════════════
+     Halaman ini menampilkan daftar pengingat jatuh tempo untuk invoice proyek.
+
+     Data ditampilkan:
+     - Daftar reminder dengan informasi invoice, penerima, tanggal, dan status
+     - Ringkasan: Total Reminder, Pending, Kadaluarsa, Paid
+     - Alert untuk invoice yang sudah kadaluarsa
+
+     Filter:
+     - Bulan: filter berdasarkan bulan invoice
+     - Tahun: filter berdasarkan tahun invoice (default: tahun saat ini)
+     - Status: filter berdasarkan status (pending, notified, paid)
+     - Pencarian: berdasarkan nomor invoice atau nama penerima
+
+     Arsitektur:
+     - Controller → Service → Repository → Model
+     - JavaScript modular: resources/js/pages/notification/invoice-proyek-reminder/index.js
+     - Form validation: app/Http/Requests/Notification/
+     ═══════════════════════════════════════════════════════════════════════ --}}
+
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Reminder Jatuh Tempo Invoice Proyek')
+@section('title', 'PT Aghitsna Karya Indah - Reminder Jatuh Tempo ' . (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek'))
 
 @section('content')
     <div class="space-y-6">
@@ -12,8 +34,7 @@
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Bulan</label>
                         <select id="month-select" name="month"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            onchange="document.getElementById('filterForm').submit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                             <option value="">Semua Bulan</option>
                             @for ($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" {{ request('month') == $i ? 'selected' : '' }}>
@@ -26,8 +47,7 @@
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Tahun</label>
                         <select id="year-select" name="year"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            onchange="document.getElementById('filterForm').submit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                             @for ($i = date('Y'); $i >= date('Y') - 5; $i--)
                                 <option value="{{ $i }}"
                                     {{ request('year', date('Y')) == $i ? 'selected' : '' }}>
@@ -40,12 +60,10 @@
                     <div>
                         <label class="block text-sm font-medium text-text-primary mb-2">Status</label>
                         <select id="status-select" name="status"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            onchange="document.getElementById('filterForm').submit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                             <option value="">Semua Status</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="notified" {{ request('status') == 'notified' ? 'selected' : '' }}>Kadaluarsa
-                            </option>
+                            <option value="notified" {{ request('status') == 'notified' ? 'selected' : '' }}>Kadaluarsa</option>
                             <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
                         </select>
                     </div>
@@ -54,8 +72,7 @@
                         <label class="block text-sm font-medium text-text-primary mb-2">Cari Invoice/Penerima</label>
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="No Invoice atau Nama Penerima"
-                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            oninput="this.form.requestSubmit()">
+                            class="w-full px-4 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent">
                     </div>
                 </div>
 
@@ -145,7 +162,7 @@
                     </div>
                     <div class="ml-3">
                         <p class="text-sm text-error">
-                            <strong>⚠️ Ada {{ $totalExpired }} invoice yang sudah kadaluarsa!</strong> Segera lakukan
+                            <strong>Ada {{ $totalExpired }} invoice yang sudah kadaluarsa!</strong> Segera lakukan
                             pelunasan.
                         </p>
                     </div>
@@ -163,11 +180,9 @@
                             <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">Penerima</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">Tgl Invoice</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">Tgl Jatuh Tempo</th>
-                            <th class="px-6 py-3 text-right text-sm font-semibold text-text-secondary">Total Invoice (Rp)
-                            </th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-text-secondary">Total Invoice (Rp)</th>
                             <th class="px-6 py-3 text-right text-sm font-semibold text-text-secondary">Terbayar (Rp)</th>
-                            <th class="px-6 py-3 text-right text-sm font-semibold text-text-secondary">Sisa Pembayaran (Rp)
-                            </th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-text-secondary">Sisa Pembayaran (Rp)</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">Status</th>
                             <th class="px-6 py-3 text-left text-sm font-semibold text-text-secondary">Tgl Perubahan</th>
                         </tr>
@@ -227,7 +242,7 @@
                                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                             </path>
                                         </svg>
-                                        <p>Tidak ada data reminder invoice proyek</p>
+                                        <p>Tidak ada data reminder {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}</p>
                                     </div>
                                 </td>
                             </tr>
@@ -243,3 +258,7 @@
 
     </div>
 @endsection
+
+@push('scripts')
+    @vite(['resources/js/pages/notification/invoice-proyek-reminder/index.js'])
+@endpush

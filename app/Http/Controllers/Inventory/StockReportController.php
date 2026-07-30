@@ -2,33 +2,47 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Exports\Inventory\StockReportExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\StockReportIndexRequest;
 use App\Models\Inventory\Items;
-use App\Services\StockReportService;
+use App\Services\Inventory\StockReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Controller untuk menangani Laporan Stok Barang.
+ *
+ * Menyediakan endpoint untuk:
+ * - Menampilkan laporan stok dengan filter periode dan barang
+ * - Menyediakan data barang untuk dropdown infinite scroll (AJAX)
+ */
 class StockReportController extends Controller
 {
-    protected StockReportService $stockReportService;
-
-    public function __construct(StockReportService $stockReportService)
-    {
-        $this->stockReportService = $stockReportService;
-    }
+    public function __construct(
+        private StockReportService $stockReportService
+    ) {}
 
     /**
-     * Display stock report
+     * Menampilkan halaman Laporan Stok Barang.
+     *
+     * Method ini:
+     * 1. Memvalidasi input filter (tanggal mulai, tanggal akhir, item_id)
+     * 2. Menghasilkan data laporan via StockReportService
+     * 3. Menghitung summary (total stok awal, masuk, keluar, retur, akhir, nilai)
+     * 4. Melakukan manual pagination untuk tabel
+     * 5. Mengambil data barang terpilih untuk dropdown (jika ada filter item)
+     *
+     * @param  StockReportIndexRequest  $request  Request dengan parameter filter yang sudah divalidasi
+     * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(StockReportIndexRequest $request)
     {
-        // Validasi input
-        $validated = $request->validate([
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'item_id' => 'nullable|exists:items,id_item',
-        ]);
+        $validated = $request->validated();
 
         // Default: laporan bulan ini
         $startDate = $validated['start_date'] ?? Carbon::now()->startOfMonth()->toDateString();
@@ -44,7 +58,7 @@ class StockReportController extends Controller
         // Get summary (tetap berdasarkan semua data, bukan hanya halaman)
         $summary = $this->stockReportService->getSummary($reportData);
 
-        // Pagination (untuk tampilan tabel)
+        // Pagination manual untuk tampilan tabel
         $perPage = (int) ($request->input('per_page') ?: 10);
         $perPage = max(1, min($perPage, 100));
 
@@ -87,8 +101,14 @@ class StockReportController extends Controller
     }
 
     /**
-     * JSON endpoint untuk dropdown infinite scroll.
-     * GET /stock-report/items-dropdown?search=&page=&limit=
+     * Endpoint JSON untuk dropdown infinite scroll pemilihan barang.
+     *
+     * Mengembalikan data barang secara parsial (paginated) dengan pencarian
+     * berdasarkan ID barang atau nama barang. Digunakan oleh JavaScript
+     * dropdown di halaman Laporan Stok.
+     *
+     * @param  Request  $request  Request AJAX dengan parameter search, page, limit
+     * @return JsonResponse
      */
     public function itemsDropdown(Request $request)
     {
@@ -128,5 +148,39 @@ class StockReportController extends Controller
             'hasMore' => $hasMore,
             'total' => $total,
         ]);
+    }
+
+    /**
+     * Export laporan stok ke PDF.
+     */
+    public function exportPdf(StockReportIndexRequest $request)
+    {
+        $validated = $request->validated();
+        $startDate = $validated['start_date'] ?? Carbon::now()->startOfMonth()->toDateString();
+        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+
+        $data = $this->stockReportService->buildExportData($startDate, $endDate, $validated['item_id'] ?? null);
+
+        $pdf = Pdf::loadView('exports.inventory.stock-report-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Stok_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Export laporan stok ke Excel.
+     */
+    public function exportExcel(StockReportIndexRequest $request)
+    {
+        $validated = $request->validated();
+        $startDate = $validated['start_date'] ?? Carbon::now()->startOfMonth()->toDateString();
+        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+
+        $data = $this->stockReportService->buildExportData($startDate, $endDate, $validated['item_id'] ?? null);
+
+        return Excel::download(
+            new StockReportExport($data['reportData'], $data['summary'], $data['periodTitle'], $data['startDate'], $data['endDate']),
+            'Laporan_Stok_' . date('Y-m-d') . '.xlsx'
+        );
     }
 }

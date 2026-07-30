@@ -7,14 +7,14 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     /**
-     * Run the migrations.
+     * Jalankan migrasi.
      * 
-     * Sinkronisasi status SalaryReminder berdasarkan status Payroll yang terkait
+     * Sinkronisasi status PengingatGaji (SalaryReminder) berdasarkan status Payroll yang terkait
      */
     public function up(): void
     {
-        // Update SalaryReminder yang memiliki payroll_id dengan status 'paid'
-        // Jadikan status SalaryReminder juga 'paid'
+        // Perbarui PengingatGaji yang memiliki payroll_id dengan status 'paid'
+        // Jadikan status PengingatGaji juga 'paid'
         DB::update("
             UPDATE salary_reminders sr
             INNER JOIN payrolls p ON sr.payroll_id = p.id
@@ -25,11 +25,11 @@ return new class extends Migration {
     }
 
     /**
-     * Reverse the migrations.
+     * Balikkan migrasi.
      */
     public function down(): void
     {
-        // Revert status yang di-sync, tapi hanya yang memiliki payroll_id
+        // Kembalikan status yang telah disinkronkan, namun hanya yang memiliki payroll_id
         DB::update("
             UPDATE salary_reminders sr
             INNER JOIN payrolls p ON sr.payroll_id = p.id

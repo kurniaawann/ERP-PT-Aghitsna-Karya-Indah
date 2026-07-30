@@ -4,17 +4,45 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentAccount;
+use App\Models\User;
 
+/**
+ * Model untuk data Nota Administrasi.
+ *
+ * Tabel: notas_administrasi
+ * Primary Key: id_nota (string, non-incrementing)
+ *
+ * Model ini menyimpan data nota penjualan/barang PT Aghitsna Karya Indah.
+ * Setiap nota memiliki:
+ * - Kode nota unik (NTA-001/AKI/26)
+ * - Informasi penerima (kepada)
+ * - Data faktur dan surat jalan
+ * - Daftar item barang (disimpan sebagai JSON)
+ * - Biaya tambahan opsional (sewa, ongkos kirim, dll)
+ * - Perhitungan PPN
+ * - Total keseluruhan
+ */
 class Nota extends Model
 {
     use HasFactory;
 
+    /**
+     * Nama tabel di database.
+     */
     protected $table = 'notas_administrasi';
+
+    /**
+     * Primary key menggunakan id_nota (string, non-incrementing).
+     */
     protected $primaryKey = 'id_nota';
     public $incrementing = false;
     protected $keyType = 'string';
 
+    /**
+     * Kolom yang boleh diisi secara massal (mass assignable).
+     */
     protected $fillable = [
         'id_nota',
         'location',
@@ -34,8 +62,18 @@ class Nota extends Model
         'ppn_percentage',
         'ppn_amount',
         'total_with_ppn',
+        'created_by',
     ];
 
+    /**
+     * Casting kolom ke tipe data PHP yang sesuai.
+     *
+     * - items: array (JSON)
+     * - selected_payment_accounts: array (JSON)
+     * - nota_date: date (Carbon)
+     * - ppn_percentage: decimal dengan 2 angka desimal
+     * - Sisanya: integer
+     */
     protected $casts = [
         'nota_date' => 'date',
         'items' => 'array',
@@ -52,11 +90,16 @@ class Nota extends Model
     ];
 
     /**
-     * Generate kode nota berikutnya (NTA-001/AKI/26, NTA-002/AKI/26, dst)
+     * Generate kode nota berikutnya secara otomatis.
+     *
+     * Format: NTA-001/AKI/26 (NTA = Nota, 001 = nomor urut, AKI = Aghitsna Karya Indah, 26 = tahun)
+     * Nomor urut akan otomatis increment berdasarkan nota terakhir di tahun yang sama.
+     *
+     * @return string Kode nota baru (contoh: NTA-001/AKI/26)
      */
-    public static function generateNotaCode()
+    public static function generateNotaCode(): string
     {
-        $year = date('y'); // 26 untuk 2026
+        $year = date('y');
 
         // Ambil nota terakhir dengan pola NTA-xxx/AKI/[year]
         $lastNota = self::where('id_nota', 'like', "NTA-%/AKI/{$year}")
@@ -66,21 +109,21 @@ class Nota extends Model
         if ($lastNota) {
             // Extract nomor urut dari id_nota (NTA-001/AKI/26 -> 001)
             $parts = explode('/', $lastNota->id_nota);
-            $numberPart = explode('-', $parts[0])[1]; // Ambil bagian setelah "NTA-"
+            $numberPart = explode('-', $parts[0])[1];
             $nextNumber = intval($numberPart) + 1;
         } else {
-            // Jika belum ada nota tahun ini, mulai dari 1
             $nextNumber = 1;
         }
 
-        // Format: NTA-001/AKI/26
         return sprintf('NTA-%03d/AKI/%s', $nextNumber, $year);
     }
 
     /**
-     * Calculate total dari items
+     * Menghitung total dari seluruh items.
+     *
+     * @return int Total jumlah seluruh items
      */
-    public function calculateItemsTotal()
+    public function calculateItemsTotal(): int
     {
         $total = 0;
         if (is_array($this->items)) {
@@ -92,9 +135,11 @@ class Nota extends Model
     }
 
     /**
-     * Calculate grand total (items + optional fees)
+     * Menghitung grand total (total items + biaya tambahan opsional).
+     *
+     * @return int Grand total nota
      */
-    public function calculateGrandTotal()
+    public function calculateGrandTotal(): int
     {
         $itemsTotal = $this->calculateItemsTotal();
         $optionalTotal = ($this->sewa_jual ?? 0)
@@ -107,7 +152,12 @@ class Nota extends Model
     }
 
     /**
-     * Get selected payment accounts relation
+     * Relasi ke data rekening bank yang dipilih.
+     *
+     * Menggunakan data selected_payment_accounts (JSON array) untuk
+     * mengambil data payment_accounts yang sesuai.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi PaymentAccount
      */
     public function paymentAccounts()
     {
@@ -118,19 +168,28 @@ class Nota extends Model
         return PaymentAccount::whereIn('id', $this->selected_payment_accounts)->get();
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     /**
-     * Calculate PPN amount
+     * Menghitung jumlah PPN.
+     *
+     * @return int Jumlah PPN
      */
-    public function calculatePpn()
+    public function calculatePpn(): int
     {
         $ppnPercentage = $this->ppn_percentage ?? 12;
         return (int) ($this->jumlah_total * ($ppnPercentage / 100));
     }
 
     /**
-     * Calculate total with PPN
+     * Menghitung total setelah PPN.
+     *
+     * @return int Total dengan PPN
      */
-    public function calculateTotalWithPpn()
+    public function calculateTotalWithPpn(): int
     {
         return $this->jumlah_total + $this->calculatePpn();
     }

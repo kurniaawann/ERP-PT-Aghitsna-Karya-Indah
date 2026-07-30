@@ -3,6 +3,7 @@
 namespace App\Exports\Administrasi;
 
 use App\Models\Administrasi\ProjectQuotation;
+use App\Models\Finance\PaymentAccount;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
@@ -12,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Carbon\Carbon;
 
 class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
@@ -31,7 +33,7 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
 
     public function title(): string
     {
-        return 'Penawaran ' . $this->quotation->quotation_number;
+        return 'Penawaran_Proyek_' . $this->quotation->quotation_number;
     }
 
     public function columnWidths(): array
@@ -62,54 +64,56 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                 $drawing->setName('Logo');
                 $drawing->setDescription('Company Logo');
                 $drawing->setPath(public_path('images/logo.jpeg'));
-                $drawing->setHeight(60);
+                $drawing->setHeight(55);
                 $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(10);
-                $drawing->setOffsetY(5);
+                $drawing->setOffsetX(5);
+                $drawing->setOffsetY(3);
                 $drawing->setWorksheet($sheet);
 
-                // Merge cells for header
-                $sheet->mergeCells('A1:D1');
-                $sheet->mergeCells('E1:F1');
+                // Title (centered)
+                $sheet->mergeCells('B1:F1');
+                $sheet->setCellValue('B1', 'PENAWARAN PROYEK');
+                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
+                $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                 // Company Name & Info (Row 2-6)
                 $sheet->mergeCells('A2:D2');
-                $sheet->setCellValue('A2', 'PT.AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF6600'));
+                $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
+                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A3:D3');
                 $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT.01/05');
+                $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A4:D4');
                 $sheet->setCellValue('A4', 'BEJI, DEPOK, JAWA BARAT');
+                $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A5:D5');
                 $sheet->setCellValue('A5', 'Telp. 021-29034923 - 0812.9596.552');
+                $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A6:D6');
-                $sheet->setCellValue('A6', 'Email: Design@aghitsna.id');
+                $sheet->setCellValue('A6', 'Email : Design@aghitsna.id');
+                $sheet->getStyle('A6')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                // Penawaran Title (Right side)
-                $sheet->mergeCells('E1:F1');
-                $sheet->setCellValue('E1', 'PENAWARAN');
-                $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(24)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
-                $sheet->getStyle('E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle('E1')->getFill()->setFillType(Fill::FILL_NONE);
-
-                // Quotation Information
-                $quotationDate = \Carbon\Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY');
+                // Quotation Information (right side)
+                $quotationDate = Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY');
 
                 $sheet->setCellValue('E2', 'No');
                 $sheet->setCellValue('F2', ': ' . $quotation->quotation_number);
+                $sheet->getStyle('E2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->setCellValue('E3', 'Tanggal');
                 $sheet->setCellValue('F3', ': ' . $quotationDate);
+                $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->setCellValue('E4', 'Hal');
                 $sheet->setCellValue('F4', ': ' . $quotation->subject);
-
-                // Border for header
-                $sheet->getStyle('A1:F6')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THICK);
+                $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('F4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 // Recipient (Row 8)
                 $currentRow = 8;
@@ -122,16 +126,10 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", '            ' . $quotation->recipient);
 
-                // Ditempat (Row 11)
+                // Opening text (Row 11)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Ditempat');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
-
-                // Opening text (Row 13)
-                $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan Penawaran Harga, sebagai berikut :');
+                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan ' . ($quotation->project_description ?? ''));
 
                 // Table Header (Row 15)
                 $currentRow += 2;
@@ -244,11 +242,11 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                     : ($quotation->selected_payment_accounts ?? []);
 
                 if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                    $paymentAccounts = PaymentAccount::whereIn('id', $selectedAccountIds)
                         ->orderBy('id')
                         ->get();
                 } else {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
+                    $paymentAccounts = PaymentAccount::active()->get();
                 }
 
                 foreach ($paymentAccounts as $account) {

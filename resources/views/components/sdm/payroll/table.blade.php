@@ -1,3 +1,25 @@
+{{--
+    Payroll Table Component
+
+    Renders the payroll data table with columns:
+    - Checkbox (for bulk select, only draft payroll is selectable)
+    - Employee name
+    - Period (month/year/week)
+    - Daily wage (upah/hari)
+    - Present days (hari masuk)
+    - Kasbon deduction
+    - Overtime pay
+    - Net salary (upah bersih)
+    - Status (draft/paid)
+    - Actions (edit draft, view detail)
+
+    Each row has a unique modal ID based on payroll ID.
+    Draft payroll shows Edit button, all payroll shows Detail button.
+
+    Included from: pages/sdm/payroll.blade.php
+    Uses: x-modal, x-pagination components
+--}}
+
 {{-- Payroll Table Component --}}
 <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
     <div class="inline-block min-w-full align-middle">
@@ -10,7 +32,7 @@
                         <th class="p-2 text-center">Periode</th>
                         <th class="p-2 text-center">Upah/Hari</th>
                         <th class="p-2 text-center">Hari Masuk</th>
-                        <th class="p-2 text-center">Kasbon</th>
+                        <th class="p-2 text-center">Potongan Kasbon</th>
                         <th class="p-2 text-center">Lembur</th>
                         <th class="p-2 text-center">Upah Bersih</th>
                         <th class="p-2 text-center">Status</th>
@@ -33,9 +55,21 @@
 
                             {{-- Periode --}}
                             <td class="p-2 text-center text-sm">
-                                {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('M Y') }}
-                                @if ($payroll->week_number)
-                                    <br><span class="text-xs text-text-label">Minggu {{ $payroll->week_number }}</span>
+                                @if ($payroll->period_start_date && $payroll->period_end_date)
+                                    @php
+                                        $start = \Carbon\Carbon::parse($payroll->period_start_date);
+                                        $end = \Carbon\Carbon::parse($payroll->period_end_date);
+                                    @endphp
+                                    @if ($start->month === $end->month)
+                                        {{ $start->format('d') }}-{{ $end->format('d M Y') }}
+                                    @else
+                                        {{ $start->format('d M') }} - {{ $end->format('d M Y') }}
+                                    @endif
+                                @else
+                                    {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('M Y') }}
+                                    @if ($payroll->week_number)
+                                        <br><span class="text-xs text-text-label">Minggu {{ $payroll->week_number }}</span>
+                                    @endif
                                 @endif
                             </td>
 

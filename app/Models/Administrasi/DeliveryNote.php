@@ -4,16 +4,38 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\User;
 
+/**
+ * Model untuk entitas Surat Jalan (Delivery Note).
+ *
+ * Menyimpan data pengiriman barang meliputi informasi
+ * pengirim, penerima, daftar barang, sopir, dan kendaraan.
+ *
+ * @package App\Models\Administrasi
+ */
 class DeliveryNote extends Model
 {
     use HasFactory;
 
+    /** @var string Nama tabel database */
     protected $table = 'delivery_notes';
+
+    /** @var string Kolom primary key */
     protected $primaryKey = 'id_delivery_note';
+
+    /** @var bool Primary key bukan auto-increment */
     public $incrementing = false;
+
+    /** @var string Tipe data primary key */
     protected $keyType = 'string';
 
+    /**
+     * Kolom yang boleh diisi secara massal (mass assignment).
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'id_delivery_note',
         'document_number',
@@ -28,9 +50,14 @@ class DeliveryNote extends Model
         'vehicle_number',
         'total_quantity',
         'notes',
-        'status',
+        'created_by',
     ];
 
+    /**
+     * Konversi tipe data kolom secara otomatis.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'delivery_date' => 'date',
         'items' => 'array',
@@ -38,7 +65,14 @@ class DeliveryNote extends Model
     ];
 
     /**
-     * Generate Delivery Note ID
+     * Generate ID unik untuk surat jalan baru.
+     *
+     * Format: DN-YYYYMMDD-XXXX
+     * - DN: prefix Delivery Note
+     * - YYYYMMDD: tanggal pembuatan
+     * - XXXX: nomor urut 4 digit (0001, 0002, dst.)
+     *
+     * @return string ID surat jalan yang dihasilkan
      */
     public static function generateDeliveryNoteId()
     {
@@ -48,35 +82,8 @@ class DeliveryNote extends Model
         return "{$prefix}-{$date}-" . str_pad($count, 4, '0', STR_PAD_LEFT);
     }
 
-    /**
-     * Get status label in Indonesian
-     */
-    public function getStatusLabelAttribute()
+    public function creator(): BelongsTo
     {
-        $labels = [
-            'draft' => 'Draft',
-            'approved' => 'Disetujui',
-            'shipped' => 'Dikirim',
-            'delivered' => 'Tiba',
-            'cancelled' => 'Dibatalkan',
-        ];
-
-        return $labels[$this->status] ?? $this->status;
-    }
-
-    /**
-     * Get status color class
-     */
-    public function getStatusColorAttribute()
-    {
-        $colors = [
-            'draft' => 'bg-gray-100 text-gray-800',
-            'approved' => 'bg-blue-100 text-blue-800',
-            'shipped' => 'bg-yellow-100 text-yellow-800',
-            'delivered' => 'bg-green-100 text-green-800',
-            'cancelled' => 'bg-red-100 text-red-800',
-        ];
-
-        return $colors[$this->status] ?? 'bg-gray-100 text-gray-800';
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

@@ -1,3 +1,35 @@
+{{-- ============================================================
+     TEMPLATE PDF BUKTI KAS KELUAR
+     ============================================================
+
+     Template ini digunakan untuk export PDF bukti kas keluar.
+     Mendukung dua jenis template:
+
+     1. STANDARD (template_type = 'standard')
+        - Header dengan logo perusahaan
+        - Judul "BUKTI KAS KELUAR"
+        - Informasi BKK No, Cek No, Tanggal
+        - Form fields: Dibayarkan Kepada, Jumlah Dibayar, Keterangan
+        - Box jumlah dalam Rupiah
+        - Tanda tangan: Direktur, Kabag Keuangan, Diterima Oleh
+
+     2. HOLLOW (template_type = 'hollow')
+        - Header dengan logo + info perusahaan "DESIGN AND BUILD PT. AGHITSNA KARYA INDAH"
+        - Label "HOLLOW" + Judul "BUKTI KAS KELUAR"
+        - Informasi BKK No, Cek No, Tanggal
+        - Form fields dalam box border: Dibayarkan Kepada, Jumlah Dibayar, Keterangan
+        - Box jumlah dalam Rupiah
+        - Tanda tangan: Manager, Kabag Keuangan, Diterima Oleh
+
+     Layout:
+     - 2 form per halaman (page break setiap 2 record)
+     - Ukuran kertas: A4 Portrait
+     - Margin: 5mm
+     - Font: Times New Roman
+
+     Variabel yang digunakan:
+     - $cashOuts: Koleksi model CashOutProof yang akan dicetak
+============================================================ --}}
 <!DOCTYPE html>
 <html>
 
@@ -24,7 +56,9 @@
             margin-bottom: 20px;
         }
 
-        /* STANDARD TEMPLATE STYLES */
+        {{-- ==========================================
+             STYLE: Template Standard
+             ========================================== --}}
         .standard .header {
             display: table;
             width: 100%;
@@ -86,7 +120,9 @@
             margin-top: 25px;
         }
 
-        /* HOLLOW TEMPLATE STYLES */
+        {{-- ==========================================
+             STYLE: Template Hollow
+             ========================================== --}}
         .hollow .header {
             display: table;
             width: 100%;
@@ -170,32 +206,34 @@
             margin-top: 20px;
         }
 
-        /* COMMON STYLES */
-
+        {{-- ==========================================
+             STYLE: Komponen Form (Digunakan Kedua Template)
+             ========================================== --}}
         .form-row {
             margin-bottom: 8px;
-            display: table;
             width: 100%;
+            border-collapse: collapse;
         }
 
         .form-label {
-            display: table-cell;
-            width: 20%;
+            width: 22%;
             padding: 3px 0;
+            vertical-align: bottom;
+            white-space: nowrap;
         }
 
         .form-separator {
-            display: table-cell;
             width: 1%;
             text-align: center;
+            padding: 3px 5px;
+            vertical-align: bottom;
         }
 
         .form-value {
-            display: table-cell;
-            width: 79%;
+            width: 77%;
             border-bottom: 1px solid #000;
             padding: 3px 0;
-            min-height: 15px;
+            vertical-align: bottom;
         }
 
         .amount-section {
@@ -234,14 +272,22 @@
 </head>
 
 <body>
+    {{-- Iterasi setiap data bukti kas keluar --}}
     @foreach ($cashOuts as $index => $cashOut)
+
+        {{-- Page break setiap 2 record (2 form per halaman) --}}
         @if ($index > 0 && $index % 2 == 0)
             <div style="page-break-before: always;"></div>
         @endif
 
         <div class="container {{ $cashOut->template_type ?? 'standard' }}">
+
+            {{-- ==========================================
+                 TEMPLATE: HOLLOW
+                 ========================================== --}}
             @if (($cashOut->template_type ?? 'standard') == 'hollow')
-                {{-- HOLLOW TEMPLATE --}}
+
+                {{-- Header: Logo + Info Perusahaan + Judul + Info BKK --}}
                 <div class="header">
                     <div class="header-left">
                         <div class="logo-container">
@@ -259,32 +305,53 @@
                         <div class="main-title">BUKTI KAS KELUAR</div>
                     </div>
                     <div class="header-right">
-                        <div><strong>BKK No.</strong> : {{ $cashOut->bkk_no }}</div>
-                        <div><strong>Cek No.</strong> : {{ $cashOut->cek_no }}</div>
-                        <div><strong>Tanggal</strong> :
-                            {{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</div>
+                        <table style="border-collapse: collapse;">
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>BKK No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->bkk_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Cek No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->cek_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Tanggal</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 
+                {{-- Form Fields --}}
                 <div style="border: 2px solid #000; padding: 8px; margin-top: 10px;">
-                    <div class="form-row">
-                        <div class="form-label">Dibayarkan Kepada</div>
-                        <div class="form-separator">:</div>
-                        <div class="form-value">{{ $cashOut->paid_to }}</div>
-                    </div>
+                    <table class="form-row">
+                        <tr>
+                            <td class="form-label">Dibayarkan Kepada</td>
+                            <td class="form-separator">:</td>
+                            <td class="form-value">{{ $cashOut->paid_to }}</td>
+                        </tr>
+                    </table>
 
-                    <div class="form-row">
-                        <div class="form-label">Jumlah Dibayar</div>
-                        <div class="form-separator">:</div>
-                        <div class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</div>
-                    </div>
+                    <table class="form-row">
+                        <tr>
+                            <td class="form-label">Jumlah Dibayar</td>
+                            <td class="form-separator">:</td>
+                            <td class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</td>
+                        </tr>
+                    </table>
 
-                    <div class="form-row">
-                        <div class="form-label" style="vertical-align: top;">Keterangan</div>
-                        <div class="form-separator" style="vertical-align: top;">:</div>
-                        <div class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</div>
-                    </div>
+                    <table class="form-row">
+                        <tr>
+                            <td class="form-label" style="vertical-align: top;">Keterangan</td>
+                            <td class="form-separator" style="vertical-align: top;">:</td>
+                            <td class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</td>
+                        </tr>
+                    </table>
 
+                    {{-- Box Jumlah dalam Rupiah --}}
                     <div class="amount-section">
                         <div class="amount-box">
                             <strong>Rp.</strong> {{ number_format($cashOut->amount, 0, ',', '.') }}
@@ -292,6 +359,7 @@
                     </div>
                 </div>
 
+                {{-- Tanda Tangan: Manager, Kabag Keuangan, Diterima Oleh --}}
                 <div class="signature-section">
                     <div class="signature-col">
                         <div class="signature-title">
@@ -314,8 +382,13 @@
                         <div class="signature-name">( _________________ )</div>
                     </div>
                 </div>
+
+            {{-- ==========================================
+                 TEMPLATE: STANDARD
+                 ========================================== --}}
             @else
-                {{-- STANDARD TEMPLATE --}}
+
+                {{-- Header: Logo + Judul + Info BKK --}}
                 <div class="header">
                     <div class="header-left">
                         <div class="logo-container">
@@ -326,37 +399,59 @@
                         <div class="title">BUKTI KAS KELUAR</div>
                     </div>
                     <div class="header-right">
-                        <div><strong>BKK No.</strong> : {{ $cashOut->bkk_no }}</div>
-                        <div><strong>Cek No.</strong> : {{ $cashOut->cek_no }}</div>
-                        <div><strong>Tanggal</strong> :
-                            {{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</div>
+                        <table style="border-collapse: collapse;">
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>BKK No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->bkk_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Cek No.</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ $cashOut->cek_no }}</td>
+                            </tr>
+                            <tr>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Tanggal</strong></td>
+                                <td style="padding-right: 5px;">:</td>
+                                <td>{{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-label">Dibayarkan Kepada</div>
-                    <div class="form-separator">:</div>
-                    <div class="form-value">{{ $cashOut->paid_to }}</div>
-                </div>
+                {{-- Form Fields --}}
+                <table class="form-row">
+                    <tr>
+                        <td class="form-label">Dibayarkan Kepada</td>
+                        <td class="form-separator">:</td>
+                        <td class="form-value">{{ $cashOut->paid_to }}</td>
+                    </tr>
+                </table>
 
-                <div class="form-row">
-                    <div class="form-label">Jumlah Dibayar</div>
-                    <div class="form-separator">:</div>
-                    <div class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</div>
-                </div>
+                <table class="form-row">
+                    <tr>
+                        <td class="form-label">Jumlah Dibayar</td>
+                        <td class="form-separator">:</td>
+                        <td class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</td>
+                    </tr>
+                </table>
 
-                <div class="form-row">
-                    <div class="form-label" style="vertical-align: top;">Keterangan</div>
-                    <div class="form-separator" style="vertical-align: top;">:</div>
-                    <div class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</div>
-                </div>
+                <table class="form-row">
+                    <tr>
+                        <td class="form-label" style="vertical-align: top;">Keterangan</td>
+                        <td class="form-separator" style="vertical-align: top;">:</td>
+                        <td class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</td>
+                    </tr>
+                </table>
 
+                {{-- Box Jumlah dalam Rupiah --}}
                 <div class="amount-section">
                     <div class="amount-box">
                         <strong>Rp.</strong> {{ number_format($cashOut->amount, 0, ',', '.') }}
                     </div>
                 </div>
 
+                {{-- Tanda Tangan: Direktur, Kabag Keuangan, Diterima Oleh --}}
                 <div class="signature-section">
                     <div class="signature-col">
                         <div class="signature-title">DIREKTUR,</div>
@@ -371,6 +466,7 @@
                         <div class="signature-name">( _________________ )</div>
                     </div>
                 </div>
+
             @endif
         </div>
     @endforeach

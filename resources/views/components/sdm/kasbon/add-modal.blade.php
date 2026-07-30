@@ -1,6 +1,12 @@
-{{-- Modal Tambah Kasbon --}}
+{{-- ═══════════════════════════════════════════════════════════════════════
+     Komponen Modal Tambah Kasbon
+     Formulir untuk membuat kasbon personal atau tim baru.
+     Termasuk toggle jenis, pemilihan karyawan/divisi,
+     validasi jumlah, dan resolusi tanggal periode.
+     ═══════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="addModal" title="Tambah Kasbon" action="{{ route('kasbon.store') }}" method="POST" buttonText="Simpan">
 
+    {{-- Kotak Informasi --}}
     <div class="mb-4 p-4 bg-primary-light border border-primary rounded-lg">
         <div class="flex gap-2">
             <i class="fa-solid fa-info-circle text-primary mt-1"></i>
@@ -15,17 +21,7 @@
         </div>
     </div>
 
-    {{-- Alert batas maksimal kasbon --}}
-    <div id="add_kasbon_limit_alert" class="mb-4 p-4 bg-warning-light border border-warning rounded-lg hidden">
-        <div class="flex gap-2">
-            <i class="fa-solid fa-exclamation-triangle text-warning mt-1"></i>
-            <div class="text-sm text-warning">
-                <p class="font-semibold mb-1">Batas Maksimal Kasbon:</p>
-                <p id="add_kasbon_limit_message"></p>
-            </div>
-        </div>
-    </div>
-
+    {{-- Pilihan Jenis Kasbon --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jenis Kasbon <span class="text-error">*</span></label>
         <select name="kasbon_type" id="add_kasbon_type"
@@ -38,6 +34,7 @@
         </select>
     </div>
 
+    {{-- Pilihan Karyawan (Personal) --}}
     <div class="mb-3" id="add_employee_field">
         <label class="block text-text-primary mb-1">Karyawan <span class="text-error">*</span></label>
         <select name="employee_id" id="add_employee_id"
@@ -45,12 +42,12 @@
             onchange="checkMaxKasbon('add')">
             <option value="">Pilih Karyawan</option>
             @foreach ($employees as $employee)
-                <option value="{{ $employee->employee_code }}">{{ $employee->name }} ({{ $employee->employee_code }})
-                </option>
+                <option value="{{ $employee->employee_code }}">{{ $employee->name }} ({{ $employee->employee_code }})</option>
             @endforeach
         </select>
     </div>
 
+    {{-- Pilihan Divisi (Tim) --}}
     <div class="mb-3" id="add_division_field" style="display: none;">
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
         <select name="division" id="add_division"
@@ -62,14 +59,15 @@
         </select>
     </div>
 
+    {{-- Input Jumlah --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="amount" id="add_amount"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-amount-input"
-            placeholder="Masukkan jumlah kasbon" required min="1000" step="1000"
-            oninput="validateKasbonAmount('add')">
+            placeholder="Masukkan jumlah kasbon" required min="1000" step="1000">
     </div>
 
+    {{-- Tanggal Kasbon --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
         <input type="date" name="kasbon_date" id="add_kasbon_date"
@@ -78,6 +76,7 @@
             oninput="this.setCustomValidity('')" onchange="checkMaxKasbon('add')">
     </div>
 
+    {{-- Periode Bulan & Tahun --}}
     <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
@@ -92,7 +91,6 @@
                 @endfor
             </select>
         </div>
-
         <div>
             <label class="block text-text-primary mb-1">Tahun <span class="text-error">*</span></label>
             <input type="number" name="period_year" id="add_period_year"
@@ -101,9 +99,12 @@
         </div>
     </div>
 
-    {{-- Hidden field untuk week_number (auto-detected dari tanggal) --}}
+    {{-- Bidang Tersembunyi (dihapus otomatis dari tanggal periode) --}}
     <input type="hidden" name="week_number" id="add_week_number" value="">
+    <input type="hidden" name="period_start_date" id="add_period_start_date" value="">
+    <input type="hidden" name="period_end_date" id="add_period_end_date" value="">
 
+    {{-- Catatan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
         <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"

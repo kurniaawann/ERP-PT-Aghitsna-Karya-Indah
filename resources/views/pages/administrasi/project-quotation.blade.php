@@ -1,20 +1,20 @@
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Penawaran Proyek')
+@section('title', 'PT Aghitsna Karya Indah - ' . (auth()->user()->isAdmin() ? 'Penawaran' : 'Penawaran Proyek'))
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Penawaran Proyek</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">{{ auth()->user()->isAdmin() ? 'Penawaran' : 'Penawaran Proyek' }}</h1>
 
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <form method="GET" action="{{ route('project-quotation.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
                 <x-filters.search-input :value="request('search')" placeholder="Cari nomor / penerima..." />
             </form>
 
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
+                <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
 
                     <x-buttons.delete-button modalId="deleteModal" />
 
@@ -26,9 +26,10 @@
         {{-- Table --}}
         @include('components.administrasi.project-quotation.table', ['quotations' => $quotations])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$quotations" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$quotations" />
 
     {{-- Add Modal --}}
     @include('components.administrasi.project-quotation.add-modal')
@@ -44,7 +45,12 @@
         Apakah kamu yakin ingin menghapus penawaran yang dipilih?
     </x-modal>
 
-    {{-- Scripts --}}
-    @include('partials.administrasi.project-quotation-scripts')
+    {{-- Print Dropdown Script --}}
     @include('partials.shared.print-dropdown-script')
+
+    {{-- ═══ JAVASCRIPT: Load via Vite (modular) ═══ --}}
+    @push('scripts')
+        <meta name="project-quotation-get-next-number" content="{{ route('project-quotation.getNextNumber') }}">
+        @vite('resources/js/pages/administrasi/project-quotation/index.js')
+    @endpush
 @endsection

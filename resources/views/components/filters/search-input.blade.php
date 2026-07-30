@@ -1,6 +1,10 @@
-@props(['value' => '', 'placeholder' => 'Cari...'])
+@props(['value' => '', 'placeholder' => 'Cari...', 'responsive' => 'xl'])
 
+@if($responsive === 'custom')
+<div class="flex flex-col min-[1530px]:flex-row items-stretch min-[1530px]:items-center gap-2 flex-1">
+@else
 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
+@endif
     <div class="relative flex-1">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <svg class="w-4 h-4 text-text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20"
@@ -11,7 +15,7 @@
         </span>
 
         <input type="text" name="search" value="{{ $value }}" placeholder="{{ $placeholder }}"
-            oninput="this.form.requestSubmit()"
+            data-search-debounce
             class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 pl-10 text-sm text-text-input 
                    focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light" />
     </div>

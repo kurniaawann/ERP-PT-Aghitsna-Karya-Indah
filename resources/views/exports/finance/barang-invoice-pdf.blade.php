@@ -187,17 +187,23 @@
                 </div>
                 <div class="company-info">
                     <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
-                    <div class="company-address">
-                        AGHITSNA ALUMUNIUM DAN BAJA RINGAN<br>
-                        JL. CEMARA RT 02 RW 07, KEL, GROGOL<br>
-                        KEC. LIMO KOTA DEPOK<br>
-                        Telp. 0882 1303 1263 / 0882 1303 1264<br>
-                        Email: Design@aghitsna.id
+                   <div>
+                    PT. AGHITSNA KARYA INDAH
+                    <div>
+                         JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT 
                     </div>
+                    <div>
+                         Telp. 021 - 29034923 - 0812 9596 552 
+                    </div>
+                    <div>
+                         Email : Design@aghitsna.id
+                    </div>
+                    
+                </div>
                 </div>
             </div>
             <div class="header-right">
-                <div class="invoice-title">INVOICE ITEM</div>
+                <div class="invoice-title">INVOICE</div>
                 <div class="invoice-info">
                     <table>
                         <tr>
@@ -231,8 +237,7 @@
         </div>
 
         <div class="description">
-            <strong>Ditempat</strong><br>
-            {{ $invoice->project_description }}
+            Dengan ini kami sampaikan {{ $invoice->project_description }}
         </div>
 
         <table class="items-table">
@@ -280,10 +285,17 @@
             Demikian invoice item ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.
         </div>
 
-        <div class="signature">
-            <p>Hormat Kami,</p>
-            <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
-        </div>
+        <table style="width: 100%; border: none; margin-top: 30px;">
+            <tr>
+                <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
+                    <p>Hormat Kami,</p>
+                    <div class="signature-line">PT AGHITSNA KARYA INDAH</div>
+                </td>
+                <td style="width: 50%; border: none; vertical-align: top; text-align: center;">
+                    <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" style="height: 100px;">
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 

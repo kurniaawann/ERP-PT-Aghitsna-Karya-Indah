@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     /**
-     * Run the migrations.
+     * Jalankan migrasi.
      * 
      * Tabel ini menyimpan data reimbursement yang diajukan oleh admin
      * dan disetujui oleh super admin
@@ -51,7 +51,7 @@ return new class extends Migration {
     }
 
     /**
-     * Reverse the migrations.
+     * Balikkan migrasi.
      */
     public function down(): void
     {

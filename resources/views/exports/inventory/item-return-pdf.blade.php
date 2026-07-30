@@ -105,31 +105,17 @@
             border: none;
             padding: 2px 0;
         }
-
-        .signature {
-            margin-top: 40px;
-            text-align: right;
-        }
-
-        .signature p {
-            margin: 5px 0;
-            font-size: 11px;
-        }
-
-        .signature-line {
-            width: 150px;
-            border-top: 1px solid #000;
-            margin: 0 auto;
-        }
     </style>
 </head>
 
 <body>
+    {{-- Header Laporan --}}
     <div class="header">
         <h1>PT AGHITSNA KARYA INDAH</h1>
         <p>Laporan Pengembalian Barang</p>
     </div>
 
+    {{-- Info Cetak & Filter --}}
     <table class="info">
         <tr>
             <td style="width: 120px;"><strong>Tanggal Cetak</strong></td>
@@ -149,6 +135,7 @@
         </tr>
     </table>
 
+    {{-- Tabel Data Pengembalian --}}
     <div class="content">
         <table>
             <thead>
@@ -163,9 +150,6 @@
                 </tr>
             </thead>
             <tbody>
-                @php
-                    $totalQuantity = 0;
-                @endphp
                 @forelse($returns as $index => $record)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
@@ -173,12 +157,9 @@
                         <td>{{ $record->item->name_item ?? '-' }}</td>
                         <td class="text-center">{{ $record->quantity }}</td>
                         <td class="text-center">{{ ucfirst($record->return_type) }}</td>
-                        <td>{{ $record->alasan ?? '-' }}</td>
-                        <td class="text-center">{{ $record->tanggal->format('d M Y') }}</td>
+                        <td>{{ $record->reason ?? '-' }}</td>
+                        <td class="text-center">{{ $record->date->format('d M Y') }}</td>
                     </tr>
-                    @php
-                        $totalQuantity += $record->quantity;
-                    @endphp
                 @empty
                     <tr>
                         <td colspan="7" class="text-center">Tidak ada data untuk periode yang dipilih.</td>
@@ -187,17 +168,18 @@
             </tbody>
         </table>
 
+        {{-- Ringkasan Total --}}
         <div class="clearfix">
             <div class="summary">
                 <div class="summary-item">
                     <span>Total Kuantitas: </span>
-                    <span class="text-right"><strong>{{ number_format($totalQuantity, 0, ',', '.') }}</strong></span>
+                    <span class="text-right"><strong>{{ number_format($returns->sum('quantity'), 0, ',', '.') }}</strong></span>
                 </div>
             </div>
         </div>
-
     </div>
 
+    {{-- Footer Laporan --}}
     <div class="footer">
         Laporan ini dibuat secara otomatis oleh sistem ERP PT Aghitsna Karya Indah.
     </div>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Pengeluaran Divisi Produksi</title>
+    <title>Laporan Pengeluaran</title>
     <style>
         * {
             margin: 0;
@@ -13,156 +13,154 @@
         }
 
         body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 9px;
-            padding: 15px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            padding: 20px;
+            color: #000;
         }
 
-        .header-title {
+        .title-container {
             text-align: center;
+            margin-bottom: 12px;
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 3px;
+            line-height: 1.3;
         }
 
-        .header-subtitle {
-            text-align: center;
-            font-weight: bold;
+        .title-container .company {
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .title-container .title {
             font-size: 12px;
-            margin-bottom: 3px;
+            text-transform: uppercase;
         }
 
-        .header-period {
-            text-align: center;
-            font-weight: bold;
+        .title-container .subtitle {
             font-size: 11px;
-            margin-bottom: 15px;
+            text-transform: uppercase;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
-        }
-
-        th,
-        td {
-            border: 1px solid black;
-            padding: 4px 6px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #FFFF00;
-            font-weight: bold;
-            text-align: center;
-            font-size: 10px;
-            vertical-align: middle;
+            margin-bottom: 15px;
         }
 
         thead {
             display: table-header-group;
         }
 
-        tbody {
-            display: table-row-group;
+        tfoot {
+            display: table-footer-group;
         }
 
-        tr {
-            page-break-inside: avoid;
+        tfoot td.tfoot-border {
+            border: none;
+            border-top: 1px solid #333;
+            padding: 0;
+            height: 0;
+            line-height: 0;
+            font-size: 0;
         }
 
-        .text-center {
-            text-align: center;
+        th,
+        td {
+            border: 1px solid #333;
+            padding: 4px 5px;
+            vertical-align: middle;
         }
 
-        .text-right {
-            text-align: right;
-        }
-
-        .category-row {
+        th {
+            background-color: #9EA974;
             font-weight: bold;
             text-align: center;
+            font-size: 9.5px;
+            text-transform: uppercase;
         }
 
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: bold; }
+
+        .col-no { width: 4%; }
+        .col-faktur { width: 14%; }
+        .col-tanggal { width: 10%; }
+        .col-keterangan { width: 28%; }
+        .col-pemasukan { width: 13%; }
+        .col-pengeluaran { width: 13%; }
+        .col-sumber { width: 18%; }
+
+        .currency-cell {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        /* Category header row */
         .category-row td {
-            padding: 6px;
-        }
-
-        .category-row .category-header {
             background-color: #A9D08E;
+            font-weight: bold;
+            text-align: center;
+            font-size: 9.5px;
+            padding: 5px;
         }
 
-        .category-row .empty-cell {
-            background-color: white;
+        .category-row td.empty-cell {
+            background-color: #fff;
         }
 
-        .subtotal-row {
-            background-color: #FFCC00;
+        /* Category subtotal row */
+        .subtotal-row td {
+            background-color: #E2AD28;
+            font-weight: bold;
             font-style: italic;
         }
 
-        .total-row {
-            background-color: #FFCC00;
+        .subtotal-row td.subtotal-label {
+            text-align: right;
+            padding-right: 10px;
+        }
+
+        /* Grand total row */
+        .grand-total-row td {
+            background-color: #E5C327;
             font-weight: bold;
         }
 
+        /* Rekapitulasi section */
         .rekapitulasi {
-            margin-top: 20px;
-            font-weight: bold;
-            font-size: 11px;
+            margin-top: 15px;
+            margin-bottom: 10px;
         }
 
-        .rekap-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
+        .rekapitulasi-title {
+            font-weight: bold;
             font-size: 10px;
+            margin-bottom: 5px;
         }
 
-        .rekap-label {
+        .rekapitulasi table {
+            width: 50%;
+            border: none;
+        }
+
+        .rekapitulasi table td {
+            border: none;
+            padding: 2px 5px;
+            font-size: 9.5px;
+        }
+
+        .rekapitulasi .rekap-bold {
             font-weight: bold;
         }
 
-        .rekap-value {
-            font-weight: bold;
-        }
-
-        .col-no {
-            width: 4%;
-            text-align: center;
-        }
-
-        .col-faktur {
-            width: 18%;
-        }
-
-        .col-tanggal {
-            width: 10%;
-            text-align: center;
-        }
-
-        .col-keterangan {
-            width: 28%;
-        }
-
-        .col-pemasukan {
-            width: 13%;
-            text-align: right;
-        }
-
-        .col-pengeluaran {
-            width: 13%;
-            text-align: right;
-        }
-
-        .col-sumber {
-            width: 14%;
-        }
-
+        /* Footer signatures */
         .footer-signatures {
-            margin-top: 30px;
+            margin-top: 25px;
             width: 100%;
+            page-break-inside: avoid;
         }
 
         .footer-signatures table {
@@ -175,20 +173,25 @@
             border: none;
             text-align: center;
             vertical-align: top;
-            padding: 5px;
+            padding: 0 10px;
             width: 33.33%;
+            font-weight: bold;
+            font-size: 9.5px;
         }
 
-        .signature-line {
-            margin-top: 60px;
+        .signature-space {
+            height: 55px;
         }
     </style>
 </head>
 
 <body>
-    <div class="header-title">PT. AGHITSNA KARYA INDAH</div>
-    <div class="header-subtitle">LAPORAN PENGELUARAN DIVISI PRODUKSI</div>
-    <div class="header-period">PERIODE {{ strtoupper($periodTitle) }}</div>
+
+    <div class="title-container">
+        <div class="company">PT. AGHITSNA KARYA INDAH</div>
+        <div class="title">LAPORAN PENGELUARAN DIVISI PRODUKSI</div>
+        <div class="subtitle">{{ $periodTitle }}</div>
+    </div>
 
     <table>
         <thead>
@@ -202,22 +205,36 @@
                 <th class="col-sumber">SUMBER UANG</th>
             </tr>
         </thead>
+
+        <tfoot>
+            <tr>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+            </tr>
+        </tfoot>
+
         <tbody>
             @php
                 $no = 1;
-                $categoryGroups = $expenseRecaps->groupBy('transaction_category_id');
+                $allCategories = \App\Models\Report\TransactionCategory::active()->orderBy('sort_order')->get();
+                $expenseRecapsById = $expenseRecaps->groupBy('transaction_category_id');
             @endphp
 
-            @foreach ($categoryGroups as $categoryId => $expenses)
+            @foreach ($allCategories as $category)
                 @php
-                    $category = $expenses->first()->category;
+                    $expenses = $expenseRecapsById->get($category->id, collect());
                     $categoryIncome = 0;
                     $categoryExpense = 0;
                 @endphp
 
                 {{-- Category Header Row --}}
                 <tr class="category-row">
-                    <td colspan="4" class="category-header">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
+                    <td colspan="4">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
                     <td class="empty-cell"></td>
                     <td class="empty-cell"></td>
                     <td class="empty-cell"></td>
@@ -238,37 +255,77 @@
                         </td>
                         <td>{{ $expense->description ?? '' }}</td>
                         <td class="text-right">
-                            {{ $expense->income_amount ? 'Rp ' . number_format($expense->income_amount, 0, ',', '.') : '' }}
+                            @if ($expense->income_amount > 0)
+                                <div class="currency-cell">
+                                    <span>Rp</span>
+                                    <span>{{ number_format($expense->income_amount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         </td>
                         <td class="text-right">
-                            {{ $expense->expense_amount ? 'Rp ' . number_format($expense->expense_amount, 0, ',', '.') : '' }}
+                            @if ($expense->expense_amount > 0)
+                                <div class="currency-cell">
+                                    <span>Rp</span>
+                                    <span>{{ number_format($expense->expense_amount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         </td>
                         <td>{{ $expense->money_source ?? '' }}</td>
                     </tr>
                 @endforeach
 
+                {{-- Baris kosong putih jika tidak ada data --}}
+                @if ($expenses->isEmpty())
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                @endif
+
                 {{-- Category Subtotal --}}
                 <tr class="subtotal-row">
-                    <td colspan="4"></td>
+                    <td colspan="4" class="subtotal-label">SUB TOTAL</td>
                     <td class="text-right">
-                        {{ $categoryIncome > 0 ? number_format($categoryIncome, 0, ',', '.') : '0' }}</td>
+                        <div class="currency-cell">
+                            <span>Rp</span>
+                            <span>{{ number_format($categoryIncome, 0, ',', '.') }}</span>
+                        </div>
+                    </td>
                     <td class="text-right">
-                        {{ $categoryExpense > 0 ? number_format($categoryExpense, 0, ',', '.') : '0' }}</td>
+                        <div class="currency-cell">
+                            <span>Rp</span>
+                            <span>{{ number_format($categoryExpense, 0, ',', '.') }}</span>
+                        </div>
+                    </td>
                     <td></td>
                 </tr>
             @endforeach
 
             {{-- Grand Total --}}
-            <tr class="total-row">
-                <td colspan="4" class="text-center"><strong>Jumlah</strong></td>
+            <tr class="grand-total-row">
+                <td colspan="4" class="text-center">JUMLAH</td>
                 <td class="text-right">
-                    <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
+                    <div class="currency-cell">
+                        <span>Rp</span>
+                        <span>{{ number_format($totals->total_income, 0, ',', '.') }}</span>
+                    </div>
                 </td>
                 <td class="text-right">
-                    <strong>Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</strong>
+                    <div class="currency-cell">
+                        <span>Rp</span>
+                        <span>{{ number_format($totals->total_expense, 0, ',', '.') }}</span>
+                    </div>
                 </td>
                 <td class="text-right">
-                    <strong>Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}</strong>
+                    <div class="currency-cell">
+                        <span>Rp</span>
+                        <span>{{ number_format($totals->balance, 0, ',', '.') }}</span>
+                    </div>
                 </td>
             </tr>
         </tbody>
@@ -276,55 +333,57 @@
 
     {{-- Rekapitulasi --}}
     <div class="rekapitulasi">
-        <div style="margin-bottom: 10px;">Rekapitulasi Pengeluaran Divisi Produksi {{ $periodTitle }}</div>
-
-        <table style="border: none; width: 50%;">
-            <tr style="border: none;">
-                <td style="border: none; width: 30px;">1.</td>
-                <td style="border: none;">Uang Masuk</td>
-                <td style="border: none; text-align: right;">
-                    <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
+        <div class="rekapitulasi-title">Rekapitulasi Pengeluaran Divisi Produksi {{ $periodTitle }}</div>
+        <table>
+            <tr>
+                <td style="width: 30px;">1.</td>
+                <td>Uang Masuk</td>
+                <td style="text-align: right;">
+                    <strong>Rp {{ number_format($totals->total_income, 0, ',', '.') }}</strong>
                 </td>
-                <td style="border: none; padding-left: 20px;"><strong>UANG MASUK</strong></td>
+                <td style="padding-left: 20px;"><strong>UANG MASUK</strong></td>
             </tr>
-            <tr style="border: none;">
-                <td style="border: none;">2.</td>
-                <td style="border: none;">Uang Keluar</td>
-                <td style="border: none; text-align: right;">
-                    <strong>Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</strong>
+            <tr>
+                <td>2.</td>
+                <td>Uang Keluar</td>
+                <td style="text-align: right;">
+                    <strong>Rp {{ number_format($totals->total_expense, 0, ',', '.') }}</strong>
                 </td>
-                <td style="border: none; padding-left: 20px;"><strong>UANG KELUAR</strong></td>
+                <td style="padding-left: 20px;"><strong>UANG KELUAR</strong></td>
             </tr>
-            <tr style="border: none;">
-                <td style="border: none;"></td>
-                <td style="border: none;"><strong>Saldo</strong></td>
-                <td style="border: none; text-align: right;">
-                    <strong>Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}</strong>
+            <tr>
+                <td></td>
+                <td><strong>Saldo</strong></td>
+                <td style="text-align: right;">
+                    <strong>Rp {{ number_format($totals->balance, 0, ',', '.') }}</strong>
                 </td>
-                <td style="border: none; padding-left: 20px;"><strong>SALDO</strong></td>
+                <td style="padding-left: 20px;"><strong>SALDO</strong></td>
             </tr>
         </table>
     </div>
 
-    {{-- Footer Signatures --}}
     <div class="footer-signatures">
         <table>
             <tr>
                 <td>
-                    <div>Dibuat / Diperiksa</div>
-                    <div class="signature-line">( A.Khuluqi )</div>
+                    <div>DIBUAT/DIPERIKSA</div>
+                    <div class="signature-space"></div>
+                    <div>( A. KHAIDIR )</div>
                 </td>
                 <td>
-                    <div>&nbsp;</div>
-                    <div class="signature-line"></div>
+                    <div>KAB. KEUANGAN</div>
+                    <div class="signature-space"></div>
+                    <div>( KAMILA )</div>
                 </td>
                 <td>
-                    <div>Direktur PT. Aghitsna</div>
-                    <div class="signature-line">( Zulkarnaen, ST )</div>
+                    <div>MENGETAHUI,<br>DIREKTUR PT. AGHITSNA KARYA INDAH</div>
+                    <div class="signature-space"></div>
+                    <div>( ZULKARNAIN,S.T )</div>
                 </td>
             </tr>
         </table>
     </div>
+
 </body>
 
 </html>

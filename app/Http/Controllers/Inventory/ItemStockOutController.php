@@ -3,79 +3,85 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Exports\Inventory\StockOutExport;
 use App\Models\Inventory\ItemStockOut;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Controller untuk halaman Barang Keluar (read-only).
+ *
+ * Menangani:
+ * - Menampilkan daftar barang keluar dengan filter & pencarian
+ * - Export PDF
+ * - Export Excel
+ */
 class ItemStockOutController extends Controller
 {
+    /**
+     * Membangun query dasar untuk daftar barang keluar.
+     *
+     * Query ini digunakan oleh index, exportPdf, dan exportExcel
+     * untuk memastikan konsistensi data yang ditampilkan.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function baseQuery(Request $request): Builder
+    {
+        return ItemStockOut::query()
+            ->with(['item', 'salesRecap', 'returns'])
+            ->search($request->input('search'))
+            ->filterMonth($request->input('month'))
+            ->filterYear($request->input('year'))
+            ->orderBy('date', 'desc')
+            ->orderBy('id_stock_out', 'desc');
+    }
+
+    /**
+     * Menampilkan halaman daftar barang keluar.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-
-        $stockOuts = ItemStockOut::query()
-            ->with(['item', 'salesRecap'])
-            ->when($search, function ($query, $search) {
-                $query->where('id_stock_out', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
-            })
-            ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
-            })
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('id_stock_out', 'desc')
-            ->paginate(15);
+        $stockOuts = $this->baseQuery($request)->paginate(15);
 
         return view('pages.inventory.stock-out', compact('stockOuts'));
     }
 
+    /**
+     * Mengunduh laporan barang keluar dalam format PDF.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportPdf(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-
-        $stockOuts = ItemStockOut::query()
-            ->with(['item', 'salesRecap'])
-            ->when($search, function ($query, $search) {
-                $query->where('id_stock_out', 'like', "%{$search}%")
-                    ->orWhere('id_item', 'like', "%{$search}%")
-                    ->orWhereHas('item', function ($q) use ($search) {
-                        $q->where('name_item', 'like', "%{$search}%");
-                    });
-            })
-            ->when($month, function ($query, $month) {
-                $query->whereMonth('tanggal', $month);
-            })
-            ->when($year, function ($query, $year) {
-                $query->whereYear('tanggal', $year);
-            })
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('id_stock_out', 'desc')
-            ->get();
+        $stockOuts = $this->baseQuery($request)->get();
 
         $pdf = Pdf::loadView('exports.inventory.stock-out-pdf', compact('stockOuts'));
-        return $pdf->download('barang-keluar-' . date('Y-m-d-His') . '.pdf');
+        return $pdf->download('Barang_Keluar_' . date('Y-m-d') . '.pdf');
     }
 
+    /**
+     * Mengunduh laporan barang keluar dalam format Excel.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function exportExcel(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-
         return Excel::download(
-            new \App\Exports\Inventory\StockOutExport($search, $month, $year),
-            'barang-keluar-' . date('Y-m-d-His') . '.xlsx'
+            new StockOutExport(
+                $request->input('search'),
+                $request->input('month'),
+                $request->input('year')
+            ),
+            'Barang_Keluar_' . date('Y-m-d') . '.xlsx'
         );
     }
 }

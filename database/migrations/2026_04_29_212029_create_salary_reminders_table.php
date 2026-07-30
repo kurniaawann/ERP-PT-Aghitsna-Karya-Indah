@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     /**
-     * Run the migrations.
+     * Jalankan migrasi.
      */
     public function up(): void
     {
@@ -22,14 +22,14 @@ return new class extends Migration {
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            // Foreign keys
+            // Kunci asing
             $table->foreign('payroll_id')->references('id')->on('payrolls')->onDelete('cascade');
             $table->foreign('employee_id')->references('employee_code')->on('employees')->onDelete('cascade');
         });
     }
 
     /**
-     * Reverse the migrations.
+     * Balikkan migrasi.
      */
     public function down(): void
     {

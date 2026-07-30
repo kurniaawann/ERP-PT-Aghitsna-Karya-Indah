@@ -1,64 +1,46 @@
 <?php
-
 namespace Database\Seeders;
-
+use App\Models\Sdm\Employee;
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class EmployeeSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Hapus data lama terlebih dahulu (gunakan delete karena ada foreign key)
-        DB::table('employees')->delete();
-
-        $employees = [];
-        $names = [
-            'Ahmad Kurniawan',
-            'Siti Nurhaliza',
-            'Budi Santoso',
-            'Hendra Wijaya',
-            'Rini Pratiwi',
-            'Denny Hermawan',
-            'Eka Putri',
-            'Fajar Ramadhan',
-            'Ghina Salsa',
-            'Hartono Sulistyo',
-            'Indra Kusuma',
-            'Joko Wahono',
-            'Karina Sephira',
-            'Luthfi Rahman'
-        ];
-
+        $admin = User::where('email', 'admin@example.com')->first();
         $divisions = ['Produksi', 'Keuangan', 'SDM', 'Operasional', 'Marketing'];
 
-        // Generate 14 employees (EMP001-EMP014) untuk kebutuhan AttendanceSeeder
-        for ($i = 1; $i <= 14; $i++) {
-            $empCode = 'EMP' . str_pad($i, 3, '0', STR_PAD_LEFT);
-            $name = $names[$i - 1] ?? "Karyawan $i";
-            $phone = '0812345678' . str_pad($i, 2, '0', STR_PAD_LEFT);
-            $division = $divisions[($i - 1) % count($divisions)];
+        $employees = [
+            ['employee_code' => 'EMP001', 'name' => 'Ahmad Kurniawan', 'division' => 'Produksi', 'daily_wage' => 100000],
+            ['employee_code' => 'EMP002', 'name' => 'Siti Nurhaliza', 'division' => 'Keuangan', 'daily_wage' => 120000],
+            ['employee_code' => 'EMP003', 'name' => 'Budi Santoso', 'division' => 'SDM', 'daily_wage' => 130000],
+            ['employee_code' => 'EMP004', 'name' => 'Hendra Wijaya', 'division' => 'Operasional', 'daily_wage' => 140000],
+            ['employee_code' => 'EMP005', 'name' => 'Rini Pratiwi', 'division' => 'Marketing', 'daily_wage' => 150000],
+            ['employee_code' => 'EMP006', 'name' => 'Denny Hermawan', 'division' => 'Produksi', 'daily_wage' => 160000],
+            ['employee_code' => 'EMP007', 'name' => 'Eka Putri', 'division' => 'Keuangan', 'daily_wage' => 170000],
+            ['employee_code' => 'EMP008', 'name' => 'Fajar Ramadhan', 'division' => 'SDM', 'daily_wage' => 180000],
+            ['employee_code' => 'EMP009', 'name' => 'Ghina Salsa', 'division' => 'Operasional', 'daily_wage' => 190000],
+            ['employee_code' => 'EMP010', 'name' => 'Hartono Sulistyo', 'division' => 'Marketing', 'daily_wage' => 200000],
+            ['employee_code' => 'EMP011', 'name' => 'Indra Kusuma', 'division' => 'Produksi', 'daily_wage' => 210000],
+            ['employee_code' => 'EMP012', 'name' => 'Joko Wahono', 'division' => 'Keuangan', 'daily_wage' => 220000],
+            ['employee_code' => 'EMP013', 'name' => 'Karina Sephira', 'division' => 'SDM', 'daily_wage' => 230000],
+            ['employee_code' => 'EMP014', 'name' => 'Luthfi Rahman', 'division' => 'Operasional', 'daily_wage' => 240000],
+        ];
 
-            $employees[] = [
-                'employee_code' => $empCode,
-                'name' => $name,
-                'phone' => $phone,
-                'address' => "Jl. Merdeka No. $i, Jakarta",
-                'division' => $division,
-                'daily_wage' => 100000 + ($i * 10000),
-                'position' => null,
-                'email' => null,
-                'base_salary' => null,
-                'join_date' => '2025-09-01',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+        foreach ($employees as $emp) {
+            Employee::updateOrCreate(
+                ['employee_code' => $emp['employee_code']],
+                [
+                    'name' => $emp['name'],
+                    'phone' => fake()->phoneNumber(),
+                    'address' => fake()->address(),
+                    'division' => $emp['division'],
+                    'daily_wage' => $emp['daily_wage'],
+                    'join_date' => '2025-09-01',
+                    'created_by' => $admin?->id,
+                ]
+            );
         }
-
-        DB::table('employees')->insert($employees);
     }
 }

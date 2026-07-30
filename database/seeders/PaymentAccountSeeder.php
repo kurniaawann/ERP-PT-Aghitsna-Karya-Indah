@@ -1,35 +1,23 @@
 <?php
-
 namespace Database\Seeders;
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Finance\PaymentAccount;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class PaymentAccountSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $accounts = [
-            [
-                'bank_name' => 'BCA',
-                'account_number' => '791 2937 21',
-                'account_holder' => 'AHMAD KHOIUR',
-                'is_active' => true,
-            ],
-            [
-                'bank_name' => 'Mandiri',
-                'account_number' => '126 0009 792 046',
-                'account_holder' => 'AHMAD KHOIUR',
-                'is_active' => true,
-            ],
-        ];
+        $admin = User::where('email', 'admin@example.com')->first();
 
-        foreach ($accounts as $account) {
-            PaymentAccount::create($account);
-        }
+        PaymentAccount::updateOrCreate(
+            ['account_number' => '791 2937 21'],
+            ['bank_name' => 'BCA', 'account_holder' => 'AHMAD KHOIUR', 'is_active' => true, 'created_by' => $admin?->id]
+        );
+
+        PaymentAccount::updateOrCreate(
+            ['account_number' => '126 0009 792 046'],
+            ['bank_name' => 'Mandiri', 'account_holder' => 'AHMAD KHOIUR', 'is_active' => true, 'created_by' => $admin?->id]
+        );
     }
 }

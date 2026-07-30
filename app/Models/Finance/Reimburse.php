@@ -2,22 +2,41 @@
 
 namespace App\Models\Finance;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model untuk tabel reimburses.
+ *
+ * Menggunakan reimburse_code sebagai primary key (bukan auto-increment ID).
+ * Format kode: RMB001, RMB002, RMB003, dst.
+ *
+ * @property string                    $reimburse_code
+ * @property \Carbon\Carbon            $date
+ * @property string                    $project_name
+ * @property string                    $expense_description
+ * @property int                       $total_amount
+ * @property \Carbon\Carbon            $due_date
+ * @property string                    $status           draft|approved|rejected
+ * @property string|null               $notes
+ * @property \Carbon\Carbon|null       $status_changed_at
+ */
 class Reimburse extends Model
 {
     use HasFactory;
 
     /**
-     * Primary key adalah reimburse_code (bukan auto-increment ID)
-     * Format: RMB001, RMB002, RMB003, dst
+     * Primary key adalah reimburse_code (bukan auto-increment ID).
      */
     protected $primaryKey = 'reimburse_code';
     public $incrementing = false;
     protected $keyType = 'string';
 
+    /**
+     * Field yang dapat diisi secara massal.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'reimburse_code',
         'date',
@@ -30,6 +49,11 @@ class Reimburse extends Model
         'status_changed_at',
     ];
 
+    /**
+     * Type casting untuk atribut model.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'date' => 'date',
         'due_date' => 'date',
@@ -38,64 +62,63 @@ class Reimburse extends Model
     ];
 
     /**
-     * Generate kode reimburse berikutnya
-     * Format: RMB001, RMB002, RMB003, dst
-     * 
-     * @return string
+     * Generate kode reimburse berikutnya.
+     *
+     * Format: RMB001, RMB002, RMB003, dst.
+     * Mengambil kode terakhir berdasarkan sort descending.
+     *
+     * @return string  Kode reimburse berikutnya
      */
-    public static function generateReimburseCode()
+    public static function generateReimburseCode(): string
     {
-        // Ambil reimburse terakhir berdasarkan kode (descending)
         $lastReimburse = self::orderBy('reimburse_code', 'desc')->first();
 
-        // Jika belum ada data, mulai dari RMB001
         if (!$lastReimburse) {
             return 'RMB001';
         }
 
-        // Ambil nomor dari kode terakhir (contoh: RMB001 -> 001)
         $lastNumber = (int) substr($lastReimburse->reimburse_code, 3);
-
-        // Increment nomor
         $newNumber = $lastNumber + 1;
 
-        // Format dengan 3 digit (001, 002, ..., 999, 1000, dst)
-        // str_pad akan menambahkan 0 di depan jika kurang dari 3 digit
         return 'RMB' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
     /**
-     * Accessor untuk format tanggal Indonesia
+     * Accessor untuk format tanggal Indonesia.
+     *
+     * @return string  Format: d/m/Y
      */
-    public function getFormattedDateAttribute()
+    public function getFormattedDateAttribute(): string
     {
-        /** @var \Carbon\Carbon|null $date */
-        $date = $this->date;
-        return $date ? $date->format('d/m/Y') : '-';
+        return $this->date ? $this->date->format('d/m/Y') : '-';
     }
 
     /**
-     * Accessor untuk format due date Indonesia
+     * Accessor untuk format due date Indonesia.
+     *
+     * @return string  Format: d/m/Y
      */
-    public function getFormattedDueDateAttribute()
+    public function getFormattedDueDateAttribute(): string
     {
-        /** @var \Carbon\Carbon|null $dueDate */
-        $dueDate = $this->due_date;
-        return $dueDate ? $dueDate->format('d/m/Y') : '-';
+        return $this->due_date ? $this->due_date->format('d/m/Y') : '-';
     }
 
     /**
-     * Accessor untuk format total amount dengan Rupiah
+     * Accessor untuk format total amount dengan Rupiah.
+     *
+     * @return string  Format: Rp 1.000.000
      */
-    public function getFormattedTotalAmountAttribute()
+    public function getFormattedTotalAmountAttribute(): string
     {
         return 'Rp ' . number_format($this->total_amount, 0, ',', '.');
     }
 
     /**
-     * Accessor untuk status label
+     * Accessor untuk label status dalam Bahasa Indonesia.
+     *
+     * @return string
      */
-    public function getStatusLabelAttribute()
+    public function getStatusLabelAttribute(): string
     {
         $labels = [
             'draft' => 'Draft',
@@ -107,9 +130,11 @@ class Reimburse extends Model
     }
 
     /**
-     * Accessor untuk status badge class (untuk styling)
+     * Accessor untuk CSS class badge status.
+     *
+     * @return string  Tailwind CSS classes
      */
-    public function getStatusBadgeClassAttribute()
+    public function getStatusBadgeClassAttribute(): string
     {
         $classes = [
             'draft' => 'bg-yellow-100 text-yellow-800',
@@ -121,12 +146,14 @@ class Reimburse extends Model
     }
 
     /**
-     * Accessor untuk format tanggal status changed
+     * Accessor untuk format tanggal perubahan status.
+     *
+     * @return string  Format: d/m/Y H:i
      */
-    public function getFormattedStatusChangedAtAttribute()
+    public function getFormattedStatusChangedAtAttribute(): string
     {
-        /** @var \Carbon\Carbon|null $statusChangedAt */
-        $statusChangedAt = $this->status_changed_at;
-        return $statusChangedAt ? $statusChangedAt->format('d/m/Y H:i') : '-';
+        return $this->status_changed_at
+            ? $this->status_changed_at->format('d/m/Y H:i')
+            : '-';
     }
 }

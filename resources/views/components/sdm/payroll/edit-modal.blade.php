@@ -1,3 +1,28 @@
+{{--
+    Edit Payroll Draft Modal
+
+    Modal form for editing draft payroll records.
+    Only available for payroll with status 'draft'.
+
+    Editable fields:
+    - project_name (required)
+    - additional_expenses (required, must be >= 0)
+    - additional_expenses_notes (required if additional_expenses > 0)
+    - notes (optional)
+
+    Read-only fields:
+    - Employee name
+    - Period
+    - Daily wage
+    - Net salary
+
+    Validation:
+    - Uses UpdatePayrollRequest for server-side validation
+    - Client-side validation via validatePayrollEditNotes() in payroll-scripts.blade.php
+
+    Included from: pages/sdm/payroll.blade.php (inside @foreach loop)
+--}}
+
 {{-- Modal Edit Payroll --}}
 <x-modal id="editModal-{{ $payroll->id }}" title="Edit Payroll Draft" action="{{ route('payroll.update', $payroll->id) }}"
     method="PUT" buttonText="Update" size="xl">
@@ -66,7 +91,17 @@
         <label class="block text-text-primary mb-1">Keterangan Pengeluaran Tambahan</label>
         <textarea name="additional_expenses_notes" id="additional_expenses_notes_{{ $payroll->id }}"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" rows="3"
-            placeholder="Contoh: Token listrik, air, ATK" oninput="validatePayrollEditNotes({{ $payroll->id }})">{{ old('additional_expenses_notes', $payroll->additional_expenses_notes) }}</textarea>
+            placeholder="Contoh: Token listrik, air, ATK" oninput="validatePayrollEditNotes({{ $payroll->id }})">@php
+                $notesValue = old('additional_expenses_notes', $payroll->additional_expenses_notes);
+                if (is_string($notesValue) && trim($notesValue) !== '' && trim($notesValue) !== '[]') {
+                    $decoded = json_decode($notesValue, true);
+                    if (is_array($decoded) && count($decoded) === 0) {
+                        echo '';
+                    } else {
+                        echo e($notesValue);
+                    }
+                }
+            @endphp</textarea>
         <p class="text-xs text-text-secondary mt-1">Contoh: token listrik, air, ATK, dll.</p>
     </div>
 

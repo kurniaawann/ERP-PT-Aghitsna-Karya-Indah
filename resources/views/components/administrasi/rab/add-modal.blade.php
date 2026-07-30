@@ -27,6 +27,15 @@
         <small class="text-text-secondary text-xs">Maksimal 500 karakter</small>
     </div>
 
+    {{-- Uang Masuk --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Uang Masuk</label>
+        <input type="number" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="incoming_payment" placeholder="0" min="0" step="0"
+            oninvalid="this.setCustomValidity('Uang masuk harus berupa angka')" oninput="this.setCustomValidity('')">
+        <small class="text-text-secondary text-xs">Masukkan jumlah uang masuk (Rp)</small>
+    </div>
+
     {{-- Teks Pengantar --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Teks Pengantar <span class="text-error">*</span></label>

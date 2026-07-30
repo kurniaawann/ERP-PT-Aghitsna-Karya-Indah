@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Profit Penjualan Divisi Produksi</title>
+    <title>Laporan Penjualan</title>
     <style>
         * {
             margin: 0;
@@ -13,166 +13,161 @@
         }
 
         body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 9px;
-            padding: 15px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            padding: 20px;
+            color: #000;
         }
 
-        .title {
+        .title-container {
             text-align: center;
+            margin-bottom: 12px;
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 5px;
+            line-height: 1.3;
         }
 
-        .subtitle {
-            text-align: center;
-            font-weight: bold;
+        .title-container .title {
             font-size: 12px;
-            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .title-container .subtitle {
+            font-size: 11px;
+            text-transform: uppercase;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
-        th,
-        td {
-            border: 1px solid black;
-            padding: 4px 6px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #FFFF00;
-            font-weight: bold;
-            text-align: center;
-            font-size: 10px;
-            vertical-align: middle;
-        }
-
-        .vertical-center {
-            vertical-align: middle;
-        }
-
-        /* Ensure table headers repeat on each page */
+        /* Mengulang Header di setiap halaman baru */
         thead {
             display: table-header-group;
         }
 
-        tbody {
-            display: table-row-group;
+        /* SOLUSI A: Memaksa Footer selalu muncul di BAGIAN PALING BAWAH KERTAS tiap halaman */
+        tfoot {
+            display: table-footer-group;
         }
 
-        /* Prevent page breaks inside table rows */
-        tr {
-            page-break-inside: avoid;
+        tfoot td.tfoot-border {
+            border: none   ;
+            border-top: 1px solid #333   ; /* Garis penutup paling bawah kertas */
+            padding: 0   ;
+            height: 0   ;
+            line-height: 0   ;
+            font-size: 0   ;
         }
 
-        /* Style untuk merged cell - hide konten jika bukan first item */
-        .hide-content {
-            color: transparent;
-            font-size: 0;
-            line-height: 0;
+        /* Menjaga agar 1 kelompok proyek tidak terpisah antar halaman */
+        tbody.project-group {
+            page-break-inside: avoid   ;
+            break-inside: avoid   ;
         }
 
-        /* Hide top border untuk merged cells (bukan first item) */
-        .border-top-none {
-            border-top: none;
+        /* Border standar untuk Kolom 4-9 (Nama Barang s/d Total) */
+        th,
+        td {
+            border: 1px solid #333;
+            padding: 4px 5px;
+            vertical-align: middle;
         }
 
-        /* Hide bottom border untuk merged cells (bukan last item) */
-        .border-bottom-none {
-            border-bottom: none;
-        }
-
-        .text-center {
+        th {
+            background-color: #9EA974;
+            font-weight: bold;
             text-align: center;
+            font-size: 9.5px;
+            text-transform: uppercase;
         }
 
-        .text-right {
+        /* STYLING KHUSUS KOLOM 1-3 (NO, TANGGAL, FAKTUR) */
+        /* Hanya garis samping kiri & kanan, tanpa garis horizontal di tengah */
+        td.col-merged {
+            border-top: none   ;
+            border-bottom: none   ;
+            border-left: 1px solid #333   ;
+            border-right: 1px solid #333   ;
+        }
+
+        /* Garis ATAS hanya untuk baris pertama kelompok */
+        td.col-merged.is-first {
+            border-top: 1px solid #333   ;
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: bold; }
+
+        .col-no { width: 3.5%; }
+        .col-date { width: 9%; }
+        .col-faktur { width: 22%; }
+        .col-item { width: 20%; }
+        .col-qty { width: 4.5%; }
+        .col-harga-modal { width: 11%; }
+        .col-harga-jual { width: 11%; }
+        .col-jumlah { width: 9%; }
+        .col-total { width: 10%; }
+
+        .currency-cell {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subtotal-row td.subtotal-label {
+            background-color: #E2AD28;
+            font-weight: bold;
             text-align: right;
+            padding-right: 10px;
         }
 
-        .subtotal-row {
-            background-color: #FFC000;
+        .subtotal-row td.subtotal-val {
+            background-color: #E2AD28;
             font-weight: bold;
         }
 
-        .total-row {
-            background-color: #FFFF00;
+        .grand-total-row td {
+            background-color: #E5C327;
             font-weight: bold;
         }
 
-        .footer-info {
-            margin-top: 15px;
-            font-weight: bold;
-            text-align: center;
+        .footer-signatures {
+            margin-top: 25px;
+            width: 100%;
+            page-break-inside: avoid   ;
         }
 
-        .footer-info table {
-            width: auto;
+        .footer-signatures table {
+            width: 100%;
             border: none;
-            margin: 0 auto;
+            margin: 0;
         }
 
-        .footer-info td {
-            border: none;
-            padding: 2px 10px 2px 0;
-        }
-
-        .col-no {
-            width: 3%;
+        .footer-signatures td {
+            border: none   ;
             text-align: center;
+            vertical-align: top;
+            padding: 0 10px;
+            width: 33.33%;
+            font-weight: bold;
+            font-size: 9.5px;
         }
 
-        .col-date {
-            width: 7%;
-            text-align: center;
-        }
-
-        .col-project {
-            width: 12%;
-            text-align: center;
-        }
-
-        .col-item {
-            width: 15%;
-            text-align: center;
-        }
-
-        .col-qty {
-            width: 4%;
-            text-align: center;
-        }
-
-        .col-hpp {
-            width: 13%;
-            text-align: center;
-        }
-
-        .col-selling {
-            width: 11%;
-            text-align: center;
-        }
-
-        .col-profit {
-            width: 11%;
-            text-align: center;
-        }
-
-        .col-status {
-            width: 13%;
-            text-align: center;
+        .signature-space {
+            height: 55px;
         }
     </style>
 </head>
 
 <body>
-    <div class="title">LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI</div>
-    <div class="subtitle">BULAN {{ strtoupper($monthYear) }}
+
+    <div class="title-container">
+        <div class="title">LAPORAN PENJUALAN LIST ORDER DIVISI PRODUKSI</div>
+        <div class="subtitle">{{ $periodTitle }}</div>
     </div>
 
     <table>
@@ -180,158 +175,156 @@
             <tr>
                 <th class="col-no">NO</th>
                 <th class="col-date">TANGGAL</th>
-                <th class="col-project">PROYEK</th>
+                <th class="col-faktur">NO FAKTUR & PROYEK</th>
                 <th class="col-item">NAMA BARANG</th>
                 <th class="col-qty">QTY</th>
-                <th class="col-hpp">HPP (HARGA MODAL )</th>
-                <th class="col-selling">HARGA JUAL</th>
-                <th class="col-profit">Jumlah & PROFIT</th>
-                <th class="col-status">SUMBER UANG</th>
+                <th class="col-harga-modal">HARGA MODAL</th>
+                <th class="col-harga-jual">HARGA JUAL</th>
+                <th class="col-jumlah">JUMLAH</th>
+                <th class="col-total">TOTAL</th>
             </tr>
         </thead>
-        <tbody>
+
+        <!-- TFOOTER SOLUSI A: Membuat garis horizontal otomatis di paling bawah setiap halaman -->
+        <tfoot>
+            <tr>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+                <td class="tfoot-border"></td>
+                <td colspan="6" style="border: none; padding: 0; height: 0;"></td>
+            </tr>
+        </tfoot>
+
+        @php $no = 1; @endphp
+
+        @foreach ($projects as $project)
             @php
-                $no = 1;
-                $projectGroups = $salesRecaps->groupBy('name_proyek');
-                $totalCapitalAll = 0;
-                $totalSellingAll = 0;
-                $totalProfitAll = 0;
+                $itemCounter = 0;
             @endphp
 
-            @foreach ($projectGroups as $projectName => $projectSales)
-                @php
-                    $projectTotalCapital = 0;
-                    $projectTotalSelling = 0;
-                    $projectTotalProfit = 0;
-                    $projectItemCounter = 0;
-
-                    // Hitung total items dalam project ini
-                    $totalItemsInProject = 0;
-                    foreach ($projectSales as $saleTemp) {
-                        $itemsTemp = is_string($saleTemp->items)
-                            ? json_decode($saleTemp->items, true)
-                            : $saleTemp->items;
-                        $totalItemsInProject += count($itemsTemp);
-                    }
-                @endphp
-
-                @foreach ($projectSales as $saleIndex => $sale)
-                    @php
-                        $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
-                        $itemCount = count($items);
-                    @endphp
-
-                    @foreach ($items as $itemIndex => $item)
+            <tbody class="project-group">
+                @foreach ($project['sales_recaps'] as $sale)
+                    @foreach ($sale['items'] as $itemIndex => $item)
                         @php
-                            $qty = $item['quantity'] ?? 0;
-                            $capital = $item['capital_price'] ?? 0;
-                            $selling = $item['selling_price'] ?? 0;
-                            $totalCapital = $capital * $qty;
-                            $totalSelling = $selling * $qty;
-                            $profit = $totalSelling - $totalCapital;
+                            $isFirstRow = ($itemCounter === 0);
+                            $itemCounter++;
 
-                            $projectTotalCapital += $totalCapital;
-                            $projectTotalSelling += $totalSelling;
-                            $projectTotalProfit += $profit;
-
-                            // Tentukan apakah ini first/last item dalam sale
-                            $isFirstInSale = $itemIndex === 0;
-                            $isLastInSale = $itemIndex === $itemCount - 1;
-
-                            // Tentukan apakah ini first/last item dalam project
-                            $isFirstInProject = $projectItemCounter === 0;
-                            $isLastInProject = $projectItemCounter === $totalItemsInProject - 1;
-
-                            $projectItemCounter++;
+                            $mergedClass = 'col-merged';
+                            if ($isFirstRow) $mergedClass .= ' is-first';
                         @endphp
-
                         <tr>
-                            <!-- NO Column: Tampilkan hanya di first item dalam sale, sisanya hide dengan border manipulation -->
-                            <td
-                                class="text-center vertical-center {{ !$isFirstInSale ? 'border-top-none' : '' }} {{ !$isLastInSale ? 'border-bottom-none' : '' }}">
-                                <span class="{{ !$isFirstInSale ? 'hide-content' : '' }}">{{ $no }}</span>
+                            <!-- Kolom 1: NO -->
+                            <td class="text-center {{ $mergedClass }}">
+                                {{ $isFirstRow ? $no . '.' : '' }}
                             </td>
 
-                            <!-- TANGGAL Column: Tampilkan hanya di first item dalam sale -->
-                            <td
-                                class="text-center vertical-center {{ !$isFirstInSale ? 'border-top-none' : '' }} {{ !$isLastInSale ? 'border-bottom-none' : '' }}">
-                                <span
-                                    class="{{ !$isFirstInSale ? 'hide-content' : '' }}">{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</span>
+                            <!-- Kolom 2: TANGGAL -->
+                            <td class="text-center {{ $mergedClass }}">
+                                {{ $isFirstRow ? $sale['date'] : '' }}
                             </td>
 
-                            <!-- PROYEK Column: Tampilkan hanya di first item dalam project -->
-                            <td
-                                class="vertical-center {{ !$isFirstInProject ? 'border-top-none' : '' }} {{ !$isLastInProject ? 'border-bottom-none' : '' }}">
-                                <span
-                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($projectName) }}</span>
+                            <!-- Kolom 3: NO FAKTUR & PROYEK -->
+                            <td class="text-center {{ $mergedClass }}">
+                                @if ($isFirstRow)
+                                    <div>{{ $sale['no_faktur'] }}</div>
+                                    <div class="font-bold">{{ $project['project_name'] }}</div>
+                                @endif
                             </td>
 
-                            <td>{{ $item['name_item'] ?? '-' }}</td>
-                            <td class="text-center">{{ $qty }}</td>
-                            <td class="text-right">Rp {{ number_format($capital, 0, ',', '.') }} | Rp
-                                {{ number_format($totalCapital, 0, ',', '.') }}</td>
-                            <td class="text-right">Rp {{ number_format($selling, 0, ',', '.') }} | Rp
-                                {{ number_format($totalSelling, 0, ',', '.') }}</td>
-                            <td class="text-right">Rp {{ number_format($profit, 0, ',', '.') }}</td>
+                            <!-- Kolom 4: NAMA BARANG -->
+                            <td class="text-left">{{ $item['name_item'] }}</td>
 
-                            <!-- STATUS Column: Tampilkan hanya di first item dalam project -->
-                            <td
-                                class="text-center vertical-center {{ !$isFirstInProject ? 'border-top-none' : '' }} {{ !$isLastInProject ? 'border-bottom-none' : '' }}">
-                                <span
-                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($sale->status) }}</span>
+                            <!-- Kolom 5: QTY -->
+                            <td class="text-center">{{ $item['qty'] }}</td>
+
+                            <!-- Kolom 6: HARGA MODAL -->
+                            <td>
+                                <div class="currency-cell">
+                                    <span>Rp</span>
+                                    <span>{{ number_format($item['capital_price'], 0, ',', '.') }}</span>
+                                </div>
                             </td>
+
+                            <!-- Kolom 7: HARGA JUAL -->
+                            <td>
+                                <div class="currency-cell">
+                                    <span>Rp</span>
+                                    <span>{{ number_format($item['selling_price'], 0, ',', '.') }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Kolom 8: JUMLAH -->
+                            <td>
+                                <div class="currency-cell">
+                                    <span>Rp</span>
+                                    <span>{{ number_format($item['jumlah'], 0, ',', '.') }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Kolom 9: TOTAL -->
+                            <td></td>
                         </tr>
                     @endforeach
-                    @php $no++; @endphp
                 @endforeach
 
-                <!-- Project Subtotal -->
+                <!-- Subtotal Row -->
                 <tr class="subtotal-row">
-                    <td class="text-center"></td>
-                    <td class="text-center"></td>
                     <td></td>
                     <td></td>
-                    <td class="text-center"></td>
-                    <td class="text-right">Rp {{ number_format($projectTotalCapital, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($projectTotalSelling, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($projectTotalProfit, 0, ',', '.') }}</td>
                     <td></td>
+                    <td colspan="5" class="subtotal-label">
+                        TOTAL
+                        @if (($project['sales_recaps'][0]['status'] ?? '') === 'Lunas')
+                            (Sudah Lunas {{ $project['lunas_date'] ?? '' }})
+                        @endif
+                    </td>
+                    <td class="subtotal-val">
+                        <div class="currency-cell">
+                            <span>Rp</span>
+                            <span>{{ number_format($project['subtotal'], 0, ',', '.') }}</span>
+                        </div>
+                    </td>
                 </tr>
+            </tbody>
 
-                @php
-                    $totalCapitalAll += $projectTotalCapital;
-                    $totalSellingAll += $projectTotalSelling;
-                    $totalProfitAll += $projectTotalProfit;
-                @endphp
-            @endforeach
+            @php $no++; @endphp
+        @endforeach
 
-            <!-- Grand Total -->
-            <tr class="total-row">
-                <td colspan="5" class="text-center" style="font-weight: bold;">TOTAL PENJUALAN PROFIT</td>
-                <td class="text-right">Rp {{ number_format($totalCapitalAll, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($totalSellingAll, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($totalProfitAll, 0, ',', '.') }}</td>
-                <td class="text-center" style="background-color: white; border: none;"></td>
+        <tbody class="project-group">
+            <tr class="grand-total-row">
+                <td colspan="8" class="text-center">TOTAL PENJUALAN BELUM PROFIT</td>
+                <td>
+                    <div class="currency-cell">
+                        <span>Rp</span>
+                        <span>{{ number_format($grandTotal, 0, ',', '.') }}</span>
+                    </div>
+                </td>
             </tr>
         </tbody>
     </table>
 
-    <div class="footer-info">
+    <div class="footer-signatures">
         <table>
             <tr>
-                <td>Modal Aghitsna</td>
-                <td>Rp {{ number_format($totalCapitalAll, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Modal Divisi Holo</td>
-                <td>Rp {{ number_format($totalSellingAll, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>PROFIT</td>
-                <td>Rp {{ number_format($totalProfitAll, 0, ',', '.') }}</td>
+                <td>
+                    <div>DIBUAT/DIPERIKSA</div>
+                    <div class="signature-space"></div>
+                    <div>( A. KHAIDIR )</div>
+                </td>
+                <td>
+                    <div>KAB. KEUANGAN</div>
+                    <div class="signature-space"></div>
+                    <div>( KAMILA )</div>
+                </td>
+                <td>
+                    <div>MENGETAHUI,<br>DIREKTUR PT. AGHITSNA KARYA INDAH</div>
+                    <div class="signature-space"></div>
+                    <div>( ZULKARNAIN, ST )</div>
+                </td>
             </tr>
         </table>
     </div>
+
 </body>
 
 </html>

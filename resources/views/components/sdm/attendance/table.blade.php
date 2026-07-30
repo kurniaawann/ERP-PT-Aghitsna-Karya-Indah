@@ -1,4 +1,16 @@
-{{-- Attendance Table Component --}}
+{{--
+    Attendance Table Component
+    Renders the attendance data table with columns:
+    - Checkbox (bulk selection)
+    - Nama Karyawan (employee name)
+    - Tanggal (date)
+    - Status (with color-coded badges)
+    - Keterangan (notes)
+    - Aksi (edit button)
+
+    Uses $attendances paginator from the parent page.
+    Includes a delete form wrapping the table for bulk deletion.
+--}}
 <form id="deleteForm" method="POST" action="{{ route('attendance.destroy') }}">
     @csrf
     @method('DELETE')
@@ -19,46 +31,49 @@
                     <tbody>
                         @forelse($attendances as $attendance)
                             <tr class="border-t hover:bg-surface-secondary">
+                                {{-- Checkbox untuk bulk delete --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="ids[]" value="{{ $attendance->id }}"
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
-                                <td class="p-2">{{ $attendance->employee->name }}</td>
+                                {{-- Nama Karyawan --}}
+                                <td class="p-2">{{ $attendance->employee->name ?? '-' }}</td>
 
                                 {{-- Tanggal --}}
                                 <td class="p-2 text-center">
                                     {{ \Carbon\Carbon::parse($attendance->attendance_date)->format('d/m/Y') }}
                                 </td>
 
-                                {{-- Status --}}
+                                {{-- Status (dengan badge warna) --}}
                                 <td class="p-2 text-center">
                                     @if ($attendance->status === 'hadir')
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
                                             Hadir
                                         </span>
                                     @elseif ($attendance->status === 'izin')
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">
                                             Izin
                                         </span>
                                     @elseif ($attendance->status === 'sakit')
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
                                             Sakit
                                         </span>
                                     @elseif ($attendance->status === 'cuti')
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-light text-text-primary">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-light text-text-primary">
                                             Cuti
+                                        </span>
+                                    @elseif ($attendance->status === 'lembur')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                            Lembur
                                         </span>
                                     @endif
                                 </td>
 
+                                {{-- Keterangan --}}
                                 <td class="p-2">{{ $attendance->notes ?? '-' }}</td>
 
-                                {{-- Aksi --}}
+                                {{-- Aksi: Tombol Edit --}}
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-2">
                                         <button type="button" onclick="openModal('editModal-{{ $attendance->id }}')"

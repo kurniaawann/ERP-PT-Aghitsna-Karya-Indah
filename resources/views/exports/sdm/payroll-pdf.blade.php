@@ -1,3 +1,28 @@
+{{--
+    Payroll PDF Export Template
+
+    Generates a landscape A4 PDF report for payroll data.
+
+    Sections:
+    1. Header - Company name, report title, project, period, print date
+    2. Attendance Table - Daily attendance status per employee per day
+    3. Salary Summary Table - Daily wage, present days, overtime, kasbon, net salary
+    4. Additional Expenses Section - If any expenses are recorded
+    5. Fund Recap - Total wages, expenses, kasbon, grand total
+    6. Footer - Auto-generated timestamp
+
+    Layout: A4 Landscape (DomPDF)
+    Orientation: Landscape (many columns)
+
+    Variables received from PayrollController@exportPdf:
+    - $payrolls: Collection with employee and attendances loaded
+    - $periodText: Formatted period string
+    - $projectName: Project name (or null)
+    - $dateRange: Date range string (e.g., "01 Feb 2026 - 07 Feb 2026")
+    - $weekDays: Array of 7 date strings for column headers
+    - $totalBaseSalary, $totalDeduction, $totalOvertime, $totalNetSalary: Summary totals
+--}}
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -265,7 +290,7 @@
                     <th colspan="5">REKAP KEHADIRAN</th>
                     <th rowspan="2">UPAH HARIAN</th>
                     <th rowspan="2">BONUS LEMBUR</th>
-                    <th rowspan="2">KASBON</th>
+                    <th rowspan="2">POT. KASBON</th>
                     <th rowspan="2">DITERIMA</th>
                 </tr>
                 <tr>

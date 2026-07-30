@@ -1,28 +1,17 @@
-{{-- Modal Tambah Absensi (Multi Select) --}}
+{{--
+    Modal Tambah Absensi (Bulk Create)
+    Allows selecting multiple employees with a searchable multi-select dropdown,
+    a date range, status, and optional notes to create attendance records in bulk.
+--}}
 <x-modal id="addModal" title="Tambah Absensi" action="{{ route('attendance.store') }}" method="POST" buttonText="Simpan">
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Pilih Karyawan <span class="text-error">*</span></label>
-        <div class="border rounded p-3 max-h-48 overflow-y-auto bg-surface-secondary">
-            <div class="mb-2">
-                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
-                    <input type="checkbox" id="selectAllEmployees" class="w-4 h-4 accent-primary">
-                    <span class="font-semibold">Pilih Semua</span>
-                </label>
-            </div>
-            <hr class="my-2">
-            @foreach ($employees as $employee)
-                <label class="flex items-center gap-2 cursor-pointer hover:bg-surface-hover p-2 rounded">
-                    <input type="checkbox" name="employee_ids[]" value="{{ $employee->employee_code }}"
-                        class="w-4 h-4 accent-primary employee-checkbox">
-                    <span>{{ $employee->name }} - {{ $employee->employee_code }}</span>
-                </label>
-            @endforeach
-        </div>
-        <p class="text-xs text-text-secondary mt-1">Pilih satu atau lebih karyawan</p>
-        <p id="employee-error" class="text-xs text-red-600 mt-1 hidden">Silakan pilih minimal 1 karyawan!</p>
-    </div>
+    {{-- Pilih Karyawan (Searchable Multi-Select) --}}
+    <x-forms.searchable-multi-select name="employee_ids"
+        id="add-employee_ids" label="Pilih Karyawan" :required="true"
+        placeholder="Cari karyawan..."
+        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
 
+    {{-- Tanggal Mulai --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Mulai <span class="text-error">*</span></label>
         <input type="date" name="start_date" id="start_date" class="w-full border rounded p-2"
@@ -31,6 +20,7 @@
         <p class="text-xs text-text-secondary mt-1">Tanggal tidak boleh lebih dari hari ini</p>
     </div>
 
+    {{-- Tanggal Akhir --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal Akhir <span class="text-error">*</span></label>
         <input type="date" name="end_date" id="end_date" class="w-full border rounded p-2" max="{{ date('Y-m-d') }}"
@@ -41,19 +31,20 @@
             mulai!</p>
     </div>
 
+    {{-- Status Absensi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Status <span class="text-error">*</span></label>
         <select name="status" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Status tidak boleh kosong')" oninput="this.setCustomValidity('')">
             <option value="">Pilih Status</option>
-            <option value="Hadir">Hadir</option>
-            <option value="Izin">Izin</option>
-            <option value="Sakit">Sakit</option>
-            <option value="Alfa">Alfa</option>
-            <option value="Cuti">Cuti</option>
+            <option value="hadir">Hadir</option>
+            <option value="izin">Izin</option>
+            <option value="sakit">Sakit</option>
+            <option value="cuti">Cuti</option>
         </select>
     </div>
 
+    {{-- Keterangan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
         <textarea name="notes" class="w-full border rounded p-2" placeholder="Masukkan keterangan (opsional)" rows="3"></textarea>

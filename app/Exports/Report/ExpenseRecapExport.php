@@ -14,15 +14,44 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Events\AfterSheet;
 use App\Models\Report\ExpenseRecap;
+use App\Models\Report\TransactionCategory;
 use Carbon\Carbon;
 
+/**
+ * Export class untuk rekap pengeluaran ke Excel.
+ *
+ * Menghasilkan file Excel dengan format:
+ * - Header: PT. AGHITSNA KARYA INDAH / LAPORAN PENGELUARAN / PERIODE
+ * - Data: Grouped by kategori dengan subtotal per kategori
+ * - Grand Total: Jumlah keseluruhan
+ * - Rekapitulasi: Ringkasan uang masuk, uang keluar, saldo
+ * - Tanda tangan: Dibuat/Diperiksa & Direktur
+ *
+ * @property \Illuminate\Database\Eloquent\Collection $expenseRecaps
+ * @property string                                   $periodTitle
+ * @property object                                   $totals
+ */
 class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
 {
+    /** @var \Illuminate\Database\Eloquent\Collection Data rekap pengeluaran */
     protected $expenseRecaps;
+
+    /** @var string Judul periode untuk header */
     protected $periodTitle;
+
+    /** @var object Total income, expense, dan balance */
     protected $totals;
+
+    /** @var array Info merge cells (unused) */
     protected $mergeInfo = [];
 
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection $expenseRecaps  Data rekap pengeluaran
+     * @param  int|null                                 $month           Filter bulan
+     * @param  int|null                                 $year            Filter tahun
+     * @param  string|null                              $categoryName    Nama kategori (unused)
+     * @param  object|null                              $totals          Total income, expense, balance
+     */
     public function __construct($expenseRecaps, $month = null, $year = null, $categoryName = null, $totals = null)
     {
         $this->expenseRecaps = $expenseRecaps;
@@ -50,11 +79,12 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
         $globalNo = 1; // Nomor urut global
         $currentRow = 5; // Start from row 5 (after header)
 
-        // Group by category
-        $categoryGroups = $this->expenseRecaps->groupBy('transaction_category_id');
+        // Ambil SEMUA kategori aktif, urut berdasarkan sort_order
+        $allCategories = TransactionCategory::active()->orderBy('sort_order')->get();
+        $expenseRecapsById = $this->expenseRecaps->groupBy('transaction_category_id');
 
-        foreach ($categoryGroups as $categoryId => $expenses) {
-            $category = $expenses->first()->category;
+        foreach ($allCategories as $category) {
+            $expenses = $expenseRecapsById->get($category->id, collect());
             $categoryStartRow = $currentRow;
 
             // Category header row
@@ -87,6 +117,20 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
 
                 $categoryIncome += $expense->income_amount ?? 0;
                 $categoryExpense += $expense->expense_amount ?? 0;
+                $currentRow++;
+            }
+
+            // Baris kosong putih jika tidak ada data
+            if ($expenses->isEmpty()) {
+                $data[] = [
+                    'no' => '',
+                    'invoice' => '',
+                    'date' => '',
+                    'description' => '',
+                    'income' => '',
+                    'expense' => '',
+                    'money_source' => '',
+                ];
                 $currentRow++;
             }
 
@@ -303,8 +347,14 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                         !str_contains($cellD, 'Rekapitulasi')
                     ) {
 
-                        // Merge A to D for category header (hanya sampai kolom KETERANGAN)
+                        // Simpan value sebelum merge (merge menghapus value non-first cell)
+                        $categoryName = $sheet->getCell('D' . $row)->getValue();
+
+                        // Merge A to D for category header
                         $sheet->mergeCells('A' . $row . ':D' . $row);
+
+                        // Set value kembali setelah merge
+                        $sheet->setCellValue('A' . $row, $categoryName);
 
                         // Background hijau hanya untuk kolom A sampai D (sampai KETERANGAN)
                         $sheet->getStyle('A' . $row . ':D' . $row)->applyFromArray([
@@ -351,8 +401,14 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
 
                     // Jumlah (Grand Total) row
                     if ($cellD === 'Jumlah') {
+                        // Simpan value sebelum merge
+                        $jumlahText = $sheet->getCell('D' . $row)->getValue();
+
                         // Merge A to D for "Jumlah" text
                         $sheet->mergeCells('A' . $row . ':D' . $row);
+
+                        // Set value kembali setelah merge
+                        $sheet->setCellValue('A' . $row, $jumlahText);
 
                         $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'fill' => [
@@ -466,6 +522,6 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
 
     public function title(): string
     {
-        return 'Laporan Pengeluaran';
+        return 'Laporan_Pengeluaran';
     }
 }

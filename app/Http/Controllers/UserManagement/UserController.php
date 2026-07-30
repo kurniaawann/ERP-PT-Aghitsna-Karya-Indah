@@ -3,69 +3,75 @@
 namespace App\Http\Controllers\UserManagement;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UserManagement\StoreUserRequest;
+use App\Http\Requests\UserManagement\UpdateUserRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use App\Services\UserManagement\UserService;
 use App\Traits\HasBulkActions;
+use Illuminate\Http\Request;
 
+/**
+ * Controller untuk mengelola Modul User Management.
+ *
+ * Controller ini hanya menangani request dan response HTTP.
+ * Business logic didelegasikan ke UserService.
+ */
 class UserController extends Controller
 {
     use HasBulkActions;
+
+    public function __construct(
+        private readonly UserService $userService
+    ) {}
+
+    /**
+     * Menampilkan daftar User dengan paginasi dan pencarian.
+     *
+     * @param  Request  $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
-        $search = $request->input('search');
+        $users = $this->userService->getPaginatedSearch($request->input('search'));
 
-        $users = User::when($search, function ($q, $search) {
-            $q->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
-        })
-            ->latest()
-            ->paginate(15);
-
-        return view('pages.user-management.index', compact('users', 'search'));
+        return view('pages.user-management.index', compact('users'));
     }
 
-    public function store(Request $request)
+    /**
+     * Menyimpan User baru.
+     *
+     * @param  StoreUserRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'role' => 'required|in:' . implode(',', array_keys(User::ROLES)),
-        ]);
+        $this->userService->store($request->validated());
 
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-        ]);
-
-        return redirect()->route('user-management.index')->with('success', 'User berhasil ditambahkan!');
+        return redirect()->back()->with('success', 'User berhasil ditambahkan!');
     }
 
-    public function update(Request $request, User $user)
+    /**
+     * Memperbarui data User yang sudah ada.
+     *
+     * @param  UpdateUserRequest  $request
+     * @param  User               $user
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:' . implode(',', array_keys(User::ROLES)),
-        ]);
+        $this->userService->update($user, $request->validated());
 
-        $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-        ];
-
-        $user->update($data);
-
-        return redirect()->route('user-management.index')->with('success', 'User berhasil diperbarui!');
+        return redirect()->back()->with('success', 'User berhasil diperbarui!');
     }
 
+    /**
+     * Menghapus beberapa User sekaligus (bulk delete).
+     *
+     * @param  Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(Request $request)
     {
         return $this->destroySelectedBy($request, User::class, 'ids', 'id', 'user-management.index');
     }
-
 }

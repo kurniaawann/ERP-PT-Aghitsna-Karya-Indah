@@ -5,6 +5,7 @@
     'method' => 'POST',
     'buttonText' => 'Simpan',
     'readonly' => false,
+    'hideFooter' => false,
     'confirmDelete' => false,
     'onConfirm' => null,
     'size' => 'lg',
@@ -29,7 +30,12 @@
         class="bg-surface-base rounded-xl shadow-lg w-full {{ $maxWidthClass }} p-6 relative max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-semibold text-text-primary mb-4">{{ $title }}</h2>
 
-        @if ($confirmDelete || (strtoupper($method) === 'DELETE' && $onConfirm))
+        @if ($hideFooter)
+            {{-- No footer mode --}}
+            <div class="space-y-4">
+                {{ $slot }}
+            </div>
+        @elseif ($confirmDelete || (strtoupper($method) === 'DELETE' && $onConfirm))
             {{-- Delete Confirmation mode - tampilan warning dengan icon merah --}}
             <div class="text-center space-y-4">
                 <svg class="mx-auto mb-4 text-error w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"

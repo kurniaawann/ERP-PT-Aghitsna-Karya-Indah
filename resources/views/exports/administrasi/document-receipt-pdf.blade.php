@@ -190,8 +190,11 @@
                 <div class="company-info">
                     <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
                     <div class="company-address">
-                        JL. PETITION NO.34, TAMAN SARI/ RAWA BUAYA/ CENGKARENG/ BARAT<br>
-                        Telp: 021-5402802, Email: febby@ghitsna.co.id / febby.suhendra@yahoo.com
+                    PT AGHITSNA KARYA INDAH<br>
+                    JL. TANAH BARU RAYA PERTIWI RT/01/05
+                    BEJI, DEPOK, JAWA BARAT
+                    TELP. 021-29034923 - 0812 9596 522 <br>
+                    Email : Design@aghitsna.id
                     </div>
                 </div>
             </div>

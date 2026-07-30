@@ -1,10 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan Stok Barang')
+@section('title', 'PT Aghitsna Karya Indah Laporan Stok Barang')
 
 @section('content')
     <div class="px-4 py-4">
-        <!-- Header -->
+
+        {{-- Header Halaman --}}
         <div class="mb-6">
             <div>
                 <h2 class="text-2xl font-bold text-text-primary mb-1">📊 Laporan Stok Barang</h2>
@@ -12,9 +13,11 @@
             </div>
         </div>
 
-        <!-- Filter Card -->
+        {{-- Filter Card: Form filter periode dan barang --}}
         <div class="bg-surface-base rounded-lg shadow-sm p-6 mb-6">
-            <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                {{-- Filter Tanggal Mulai --}}
                 <div>
                     <label for="start_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Mulai</label>
                     <input type="date"
@@ -22,6 +25,7 @@
                         id="start_date" name="start_date" value="{{ $startDate }}" required>
                 </div>
 
+                {{-- Filter Tanggal Akhir --}}
                 <div>
                     <label for="end_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Akhir</label>
                     <input type="date"
@@ -29,13 +33,14 @@
                         id="end_date" name="end_date" value="{{ $endDate }}" required>
                 </div>
 
+                {{-- Filter Pilihan Barang (Dropdown Infinite Scroll) --}}
                 <div>
                     <label class="block text-sm font-semibold text-text-primary mb-2">Pilih Barang (Opsional)</label>
 
-                    {{-- Hidden input used for form submission --}}
+                    {{-- Hidden input untuk form submission --}}
                     <input type="hidden" name="item_id" id="item_id" value="{{ $selectedItemId ?? '' }}">
 
-                    {{-- Custom dropdown with infinite scroll --}}
+                    {{-- Custom dropdown dengan infinite scroll --}}
                     <div class="relative">
                         <button type="button" id="itemDropdownBtn"
                             class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary">
@@ -47,6 +52,14 @@
 
                         <div id="itemDropdownMenu"
                             class="absolute z-20 mt-1 w-full bg-surface-base border border-border-light rounded-lg shadow-sm hidden">
+                            {{-- Input pencarian barang --}}
+                            <div class="p-2 border-b border-border-light">
+                                <input type="text" id="itemSearchInput"
+                                    placeholder="Cari ID atau nama barang..."
+                                    class="w-full px-3 py-2 border border-border-light rounded-lg bg-surface-base text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+
+                            {{-- Daftar barang (infinite scroll) --}}
                             <div id="itemDropdownList" class="max-h-60 overflow-y-auto">
                                 <div class="p-2 text-sm text-text-secondary" id="dropdownLoadingPlaceholder">
                                     Silakan klik scroll untuk memuat data...
@@ -62,13 +75,23 @@
                     </div>
                 </div>
 
-                <!-- Submit button dihapus karena filter auto via JS saat item/tanggal berubah -->
+                {{-- Print Dropdown --}}
+                <div class="flex items-end">
+                    <x-buttons.print-dropdown
+                        :pdfRoute="route('stock-report.export.pdf')"
+                        :excelRoute="route('stock-report.export.excel')"
+                        :queryParams="request()->except([])"
+                        size="sm"
+                    />
+                </div>
+
             </form>
         </div>
 
-        <!-- Summary Card -->
+        {{-- Summary Cards: Ringkasan cepat stok --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <!-- Card 1: Total Jumlah Barang -->
+
+            {{-- Card 1: Total Jumlah Barang --}}
             <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-primary">
                 <div class="flex justify-between items-center">
                     <div>
@@ -80,7 +103,7 @@
                 </div>
             </div>
 
-            <!-- Card 2: Stok Akhir Total -->
+            {{-- Card 2: Stok Akhir Total --}}
             <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-success">
                 <div class="flex justify-between items-center">
                     <div>
@@ -92,7 +115,7 @@
                 </div>
             </div>
 
-            <!-- Card 3: Nilai Stok Total -->
+            {{-- Card 3: Nilai Stok Total --}}
             <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-warning">
                 <div class="flex justify-between items-center">
                     <div>
@@ -105,7 +128,7 @@
             </div>
         </div>
 
-        <!-- Detail Summary -->
+        {{-- Detail Summary: Ringkasan pergerakan stok per periode --}}
         <div class="bg-surface-base rounded-lg shadow-sm mb-6 overflow-hidden">
             <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
                 <h6 class="text-sm font-semibold text-text-primary mb-0">📈 Ringkasan Pergerakan Stok Periode
@@ -141,13 +164,13 @@
             </div>
         </div>
 
-        <!-- Report Table -->
+        {{-- Tabel Laporan Stok: Detail data per barang --}}
         <div class="bg-surface-base rounded-lg shadow-sm overflow-hidden">
             <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
                 <h6 class="text-sm font-semibold text-text-primary mb-0">📋 Detail Laporan Stok</h6>
             </div>
 
-            <!-- Scroll area for long tables -->
+            {{-- Scroll area untuk tabel --}}
             <div class="overflow-x-auto">
                 <div class="max-h-[520px] overflow-y-auto">
                     <table class="w-full">
@@ -216,7 +239,7 @@
                 </div>
             </div>
 
-            <!-- Pagination -->
+            {{-- Pagination --}}
             <div class="px-6 py-4 border-t border-border-light">
                 {{ $reportData->appends(request()->query())->links() }}
             </div>
@@ -224,6 +247,15 @@
 
     </div>
 
-    @include('partials.inventory.stock-report-scripts')
-    </div>
+    {{-- Konfigurasi route untuk JavaScript module --}}
+    @push('scripts')
+        <script>
+            window.stockReportConfig = {
+                indexRoute: '{{ route("stock-report.index") }}',
+                itemsDropdownRoute: '{{ route("stock-report.items-dropdown") }}',
+            };
+        </script>
+        @vite('resources/js/pages/inventory/stock-report.js')
+        @include('partials.shared.print-dropdown-script')
+    @endpush
 @endsection

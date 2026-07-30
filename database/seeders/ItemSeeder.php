@@ -1,47 +1,32 @@
 <?php
-
 namespace Database\Seeders;
-
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use App\Models\Inventory\Items;
-
+use Illuminate\Database\Seeder;
 
 class ItemSeeder extends Seeder
 {
-    /**
-     * Jalankan seeder untuk tabel items.
-     */
     public function run(): void
     {
-        // Bersihkan data lama agar tidak bentrok primary key
-        DB::table('items')->delete();
         $items = [
-            ['name' => 'Profil Aluminium 5x5x2mm', 'qty' => 150, 'capital' => 185000, 'selling' => 250000],
-            ['name' => 'Kaca Tempered 10mm Clear', 'qty' => 85, 'capital' => 450000, 'selling' => 620000],
-            ['name' => 'Engsel Pivot Stainless Steel', 'qty' => 200, 'capital' => 95000, 'selling' => 145000],
-            ['name' => 'Handle Aluminium Anodized Black', 'qty' => 320, 'capital' => 35000, 'selling' => 65000],
-            ['name' => 'Pita Perekat Doble Sided 2cm', 'qty' => 500, 'capital' => 15000, 'selling' => 28000],
-            ['name' => 'Sealant Silikon Transparan 500ml', 'qty' => 120, 'capital' => 28000, 'selling' => 52000],
-            ['name' => 'Kaca Float Bening 5mm', 'qty' => 200, 'capital' => 350000, 'selling' => 480000],
-            ['name' => 'Kaca Patri Warna Biru', 'qty' => 75, 'capital' => 520000, 'selling' => 720000],
-            ['name' => 'Cat Duco Warna Putih 1L', 'qty' => 300, 'capital' => 45000, 'selling' => 75000],
-            ['name' => 'Serbuk Kayu Mahoni Premium', 'qty' => 250, 'capital' => 25000, 'selling' => 45000],
-            ['name' => 'Kaleng Minyak Linseed 2L', 'qty' => 150, 'capital' => 85000, 'selling' => 135000],
-            ['name' => 'Paku Stainless Steel 5cm', 'qty' => 1000, 'capital' => 8000, 'selling' => 15000],
-            ['name' => 'Baut M8 Galvanis Box', 'qty' => 500, 'capital' => 12000, 'selling' => 22000],
-            ['name' => 'Kunci Pengaman Panel Pintu', 'qty' => 100, 'capital' => 55000, 'selling' => 95000],
-            ['name' => 'Kaca Cermin Dekorasi 60x80', 'qty' => 45, 'capital' => 280000, 'selling' => 420000],
+            ['id_item' => 'ITM-0001', 'name_item' => 'Profil Aluminium', 'quantity' => 150, 'capital_price' => 85000, 'selling_price' => 120000],
+            ['id_item' => 'ITM-0002', 'name_item' => 'Kaca Tempered', 'quantity' => 80, 'capital_price' => 250000, 'selling_price' => 350000],
+            ['id_item' => 'ITM-0003', 'name_item' => 'Engsel Pivot', 'quantity' => 200, 'capital_price' => 15000, 'selling_price' => 25000],
+            ['id_item' => 'ITM-0004', 'name_item' => 'Handle Aluminium', 'quantity' => 120, 'capital_price' => 35000, 'selling_price' => 55000],
+            ['id_item' => 'ITM-0005', 'name_item' => 'Pita Perekat', 'quantity' => 300, 'capital_price' => 8000, 'selling_price' => 12000],
+            ['id_item' => 'ITM-0006', 'name_item' => 'Sealant Silikon', 'quantity' => 90, 'capital_price' => 45000, 'selling_price' => 70000],
+            ['id_item' => 'ITM-0007', 'name_item' => 'Kaca Float', 'quantity' => 60, 'capital_price' => 180000, 'selling_price' => 260000],
+            ['id_item' => 'ITM-0008', 'name_item' => 'Kaca Patri', 'quantity' => 40, 'capital_price' => 320000, 'selling_price' => 450000],
+            ['id_item' => 'ITM-0009', 'name_item' => 'Cat Duco', 'quantity' => 70, 'capital_price' => 55000, 'selling_price' => 85000],
+            ['id_item' => 'ITM-0010', 'name_item' => 'Serbuk Kayu', 'quantity' => 250, 'capital_price' => 12000, 'selling_price' => 20000],
+            ['id_item' => 'ITM-0011', 'name_item' => 'Kaleng Minyak Linseed', 'quantity' => 50, 'capital_price' => 65000, 'selling_price' => 95000],
+            ['id_item' => 'ITM-0012', 'name_item' => 'Paku Stainless', 'quantity' => 500, 'capital_price' => 5000, 'selling_price' => 8000],
+            ['id_item' => 'ITM-0013', 'name_item' => 'Baut Galvanis', 'quantity' => 400, 'capital_price' => 7000, 'selling_price' => 12000],
+            ['id_item' => 'ITM-0014', 'name_item' => 'Kunci Pengaman', 'quantity' => 30, 'capital_price' => 120000, 'selling_price' => 180000],
+            ['id_item' => 'ITM-0015', 'name_item' => 'Kaca Cermin', 'quantity' => 35, 'capital_price' => 200000, 'selling_price' => 300000],
         ];
 
-        foreach ($items as $index => $item) {
-            Items::create([
-                'id_item' => 'ITM-' . str_pad($index + 1, 4, '0', STR_PAD_LEFT),
-                'name_item' => $item['name'],
-                'quantity' => $item['qty'],
-                'capital_price' => $item['capital'],
-                'selling_price' => $item['selling'],
-            ]);
+        foreach ($items as $item) {
+            Items::updateOrCreate(['id_item' => $item['id_item']], $item);
         }
     }
 }

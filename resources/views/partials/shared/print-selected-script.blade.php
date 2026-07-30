@@ -1,4 +1,4 @@
-function sharedPrintSelected(route, checkboxSelector = 'input[name="ids[]"]:checked', emptyMessage = 'Tidak ada data yang dipilih!') {
+function sharedPrintSelected(route, triggerBtn = null, checkboxSelector = 'input[name="ids[]"]:checked', emptyMessage = 'Tidak ada data yang dipilih!') {
     const checkedCheckboxes = document.querySelectorAll(checkboxSelector);
 
     if (checkedCheckboxes.length === 0) {
@@ -6,26 +6,50 @@ function sharedPrintSelected(route, checkboxSelector = 'input[name="ids[]"]:chec
         return false;
     }
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = route;
-    form.style.display = 'none';
+    if (triggerBtn && triggerBtn.dataset.downloading === 'true') return false;
 
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = '_token';
-    csrfInput.value = '{{ csrf_token() }}';
-    form.appendChild(csrfInput);
+    if (triggerBtn) {
+        triggerBtn.dataset.downloading = 'true';
+    }
+
+    setButtonLoading(triggerBtn, true, 'Memproses...');
+
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
 
     Array.from(checkedCheckboxes).forEach(checkbox => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'ids[]';
-        input.value = checkbox.value;
-        form.appendChild(input);
+        formData.append('ids[]', checkbox.value);
     });
 
-    document.body.appendChild(form);
-    form.submit();
+    fetch(route, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(async (response) => {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const blob = await response.blob();
+        const filename = getFilenameFromResponse(response);
+        const objectUrl = window.URL.createObjectURL(blob);
+        const tempAnchor = document.createElement('a');
+        tempAnchor.href = objectUrl;
+        tempAnchor.download = filename;
+        document.body.appendChild(tempAnchor);
+        tempAnchor.click();
+        tempAnchor.remove();
+        window.URL.revokeObjectURL(objectUrl);
+    })
+    .catch(error => {
+        console.error('Download failed:', error);
+    })
+    .finally(() => {
+        if (triggerBtn) {
+            triggerBtn.dataset.downloading = 'false';
+        }
+        setButtonLoading(triggerBtn, false);
+    });
+
     return true;
 }

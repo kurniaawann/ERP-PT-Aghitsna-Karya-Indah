@@ -1,7 +1,12 @@
-{{-- Modal Approve Reimburse --}}
+{{-- ═══════════════════════════════════════════════════════════════════════════
+     KOMPONEN MODAL APPROVE REIMBURSE
+     Konfirmasi persetujuan reimbursement (Super Admin only).
+     Menampilkan jumlah dan total amount dari reimburse yang dipilih.
+     ═══════════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="approveModal" title="Setujui Reimbursement" action="{{ route('reimburse.approve') }}" method="POST"
     buttonText="Setujui">
 
+    {{-- ─── Info Konfirmasi ─────────────────────────────────────────────────── --}}
     <div class="mb-4">
         <div class="flex items-center gap-3 p-4 bg-success-light border border-success rounded-lg">
             <div class="flex-shrink-0">
@@ -20,6 +25,7 @@
         </div>
     </div>
 
+    {{-- ─── Total Amount ───────────────────────────────────────────────────── --}}
     <div class="mb-3 p-3 bg-surface-secondary border border-border-strong rounded-lg">
         <div class="flex justify-between items-center">
             <span class="text-sm font-medium text-text-primary">Total Amount:</span>
@@ -27,6 +33,7 @@
         </div>
     </div>
 
+    {{-- ─── Catatan Penting ────────────────────────────────────────────────── --}}
     <div class="mb-3">
         <p class="text-xs text-text-secondary">
             <i class="fa-solid fa-info-circle"></i>
@@ -34,6 +41,6 @@
         </p>
     </div>
 
-    {{-- Hidden inputs will be added dynamically by JavaScript --}}
+    {{-- ─── Container Hidden Inputs (diisi oleh JavaScript) ────────────────── --}}
     <div id="approve-hidden-inputs"></div>
 </x-modal>

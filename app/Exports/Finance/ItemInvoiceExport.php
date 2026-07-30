@@ -3,6 +3,7 @@
 namespace App\Exports\Finance;
 
 use App\Models\Finance\InvoiceBarang;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -29,7 +30,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
 
     public function title(): string
     {
-        return 'Invoice ' . $this->invoice->invoice_number;
+        return 'Invoice_Barang_' . $this->invoice->invoice_number;
     }
 
     public function columnWidths(): array
@@ -57,48 +58,54 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $drawing->setName('Logo');
                 $drawing->setDescription('Company Logo');
                 $drawing->setPath(public_path('images/logo.jpeg'));
-                $drawing->setHeight(60);
+                $drawing->setHeight(55);
                 $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(10);
-                $drawing->setOffsetY(5);
+                $drawing->setOffsetX(5);
+                $drawing->setOffsetY(3);
                 $drawing->setWorksheet($sheet);
 
-                $sheet->mergeCells('A1:C1');
-                $sheet->mergeCells('D1:E1');
+                $sheet->mergeCells('B1:E1');
+                $sheet->setCellValue('B1', 'INVOICE');
+                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
+                $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                 $sheet->mergeCells('A2:C2');
-                $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF6600'));
+                $sheet->setCellValue('A2', 'JL. CEMARA RT 02 RW 07, KEL. GROGOL');
+                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A3:C3');
-                $sheet->setCellValue('A3', 'AGHITSNA ALUMUNIUM DAN BAJA RINGAN');
+                $sheet->setCellValue('A3', 'KEC. LIMO KOTA DEPOK');
+                $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A4:C4');
-                $sheet->setCellValue('A4', 'JL. CEMARA RT 02 RW 07, KEL, GROGOL');
+                $sheet->setCellValue('A4', 'Telp. 0882 1303 1263 / 0882 1303 1264');
+                $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->mergeCells('A5:C5');
-                $sheet->setCellValue('A5', 'KEC. LIMO KOTA DEPOK');
-
-                $sheet->mergeCells('A6:C6');
-                $sheet->setCellValue('A6', 'Telp. 0882 1303 1263 / 0882 1303 1264 | Email: Design@aghitsna.id');
-
-                $sheet->mergeCells('D1:E1');
-                $sheet->setCellValue('D1', 'INVOICE ITEM');
-                $sheet->getStyle('D1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
-                $sheet->getStyle('D1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->setCellValue('A5', 'Email : Design@aghitsna.id');
+                $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $sheet->setCellValue('D2', 'No');
                 $sheet->setCellValue('E2', ': ' . $invoice->invoice_number);
+                $sheet->getStyle('D2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('E2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+
                 $sheet->setCellValue('D3', 'Tanggal');
-                $sheet->setCellValue('E3', ': ' . \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY'));
+                $sheet->setCellValue('E3', ': ' . Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY'));
+                $sheet->getStyle('D3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+
                 $sheet->setCellValue('D4', 'Kepada');
                 $sheet->setCellValue('E4', ': ' . $invoice->recipient);
+                $sheet->getStyle('D4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+
                 $sheet->setCellValue('D5', 'Hal');
                 $sheet->setCellValue('E5', ': ' . $invoice->regarding);
+                $sheet->getStyle('D5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('E5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
-                $sheet->getStyle('A1:E5')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THICK);
-
-                $currentRow = 8;
+                $currentRow = 7;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
@@ -109,12 +116,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Ditempat');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
-
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", $invoice->project_description);
+                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan ' . ($invoice->project_description ?? ''));
 
                 $currentRow += 2;
                 $sheet->setCellValue("A{$currentRow}", 'No');
@@ -170,24 +172,34 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 ]);
 
                 $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Jumlah');
+                $sheet->setCellValue("A{$currentRow}", '');
+                $sheet->setCellValue("B{$currentRow}", '');
+                $sheet->setCellValue("C{$currentRow}", '');
+                $sheet->setCellValue("D{$currentRow}", 'Jumlah');
                 $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($totalAmount, 0, ',', '.'));
 
-                $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
+                $sheet->getStyle("A{$currentRow}:C{$currentRow}")->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFFFFF']
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_NONE]
+                    ]
+                ]);
+                $sheet->getStyle("D{$currentRow}:E{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FFFF00'],
+                        'startColor' => ['rgb' => 'FFFF00']
                     ],
                     'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ],
                     'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    ],
+                        'horizontal' => Alignment::HORIZONTAL_RIGHT
+                    ]
                 ]);
-                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");

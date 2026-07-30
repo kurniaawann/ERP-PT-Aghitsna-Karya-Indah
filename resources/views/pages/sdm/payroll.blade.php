@@ -1,3 +1,24 @@
+{{--
+    Payroll Index Page
+
+    Main page for managing employee payroll.
+    Displays a paginated list of payroll records with:
+    - Search by employee name or code
+    - Filter by month, year, and week number
+    - Bulk actions: Pay selected, Delete selected, Generate new
+
+    Business logic: PayrollService
+    Controller: PayrollController@index
+
+    Flow:
+    1. Generate payroll via modal (validates attendance first)
+    2. Edit draft payroll (project name, additional expenses only)
+    3. View detail (read-only)
+    4. Bulk pay selected draft records
+    5. Delete selected draft records
+    6. Export to Excel or PDF
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Data Payroll')
@@ -10,49 +31,48 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian dan Filter --}}
             <form method="GET" action="{{ route('payroll.index') }}"
-                class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+                class="w-full min-[1560px]:w-auto min-[1560px]:flex-1 flex flex-col min-[1560px]:flex-row gap-3">
 
                 {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" />
+                <x-filters.month-filter :value="request('month')" fill />
 
                 {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" />
+                <x-filters.year-filter :value="request('year')" fill />
 
                 {{-- Filter Minggu --}}
-                <select name="week_number"
-                    class="border border-border-strong rounded-lg px-3 py-2 text-sm bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary">
-                    <option value="">Semua Minggu</option>
-                    <option value="1" {{ request('week_number') == 1 ? 'selected' : '' }}>Minggu 1</option>
-                    <option value="2" {{ request('week_number') == 2 ? 'selected' : '' }}>Minggu 2</option>
-                    <option value="3" {{ request('week_number') == 3 ? 'selected' : '' }}>Minggu 3</option>
-                    <option value="4" {{ request('week_number') == 4 ? 'selected' : '' }}>Minggu 4</option>
-                </select>
+                <div class="flex-1">
+                    <select name="week_number" id="filter_week_number"
+                        class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+                        onchange="this.form.requestSubmit()">
+                        <option value="">Semua Minggu</option>
+                    </select>
+                </div>
 
                 {{-- Search Input --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari karyawan..." />
             </form>
 
             {{-- Aksi di Kanan --}}
-            <div class="flex items-center gap-2 mt-2 lg:mt-0 w-full lg:w-auto">
-                <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1560px]:mt-0 w-full min-[1560px]:w-auto">
+                <div class="flex flex-col min-[1560px]:flex-row gap-2 w-full min-[1560px]:w-auto">
                     <x-buttons.print-dropdown :excelRoute="route('payroll.export.excel')" :pdfRoute="route('payroll.export.pdf')" :queryParams="[
                         'search' => request('search'),
                         'month' => request('month'),
                         'year' => request('year'),
                         'week_number' => request('week_number'),
-                    ]" />
+                    ]" responsive="custom" fill />
 
                     <button type="button" id="bulk-pay-button" onclick="openModal('bulkPayModal')"
-                        class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
+                        class="w-full min-[1560px]:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
                         disabled>
                         <i class="fa-solid fa-money-check-alt"></i>
                         Bayar Terpilih
                     </button>
 
-                    <x-buttons.delete-button modalId="deleteModal" />
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
 
                     <button type="button" onclick="openModal('generateModal')"
-                        class="flex items-center gap-2 bg-success hover:bg-success-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium">
+                        class="w-full min-[1560px]:w-auto flex items-center justify-center gap-2 bg-success hover:bg-success-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium">
                         <i class="fa-solid fa-calculator"></i>
                         Generate Payroll
                     </button>
@@ -63,9 +83,10 @@
         {{-- Table Component --}}
         @include('components.sdm.payroll.table', ['payrolls' => $payrolls])
 
-        {{-- Pagination --}}
-        <x-pagination :paginator="$payrolls" />
     </div>
+
+    {{-- Pagination --}}
+    <x-pagination :paginator="$payrolls" />
 
     {{-- Modal Generate Payroll --}}
     @include('components.sdm.payroll.generate-modal')
@@ -96,4 +117,5 @@
 
     {{-- JavaScript --}}
     @include('partials.sdm.payroll-scripts')
+    @include('partials.shared.print-dropdown-script')
 @endsection

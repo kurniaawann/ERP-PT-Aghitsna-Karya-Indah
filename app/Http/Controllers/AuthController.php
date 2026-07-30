@@ -36,7 +36,9 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect()->intended('/dashboard');
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            return redirect($user->getHomeRoute());
         }
 
         // Jika login gagal (credentials tidak cocok):
@@ -89,7 +91,7 @@ class AuthController extends Controller
 
         // Tambahkan validasi: email harus ada di tabel users
         $email = $request->input('email');
-        $userExists = \App\Models\User::where('email', $email)->exists();
+        $userExists = User::where('email', $email)->exists();
 
         if (!$userExists) {
             return back()->withErrors([

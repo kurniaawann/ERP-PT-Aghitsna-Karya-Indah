@@ -1,16 +1,39 @@
-{{-- Modal Edit Lembur --}}
+{{--
+    Edit Overtime Modal Component
+
+    Displays a modal form for editing an existing overtime record.
+    One modal is rendered per overtime record (triggered from the table's Edit button).
+    Uses <x-forms.searchable-select> for employee selection with pre-selected value.
+
+    Sections:
+    - Searchable Select: Employee picker (pre-selected with current employee)
+    - Attendance Date: Date picker (pre-populated)
+    - Duplicate Warning: Client-side validation for existing attendance
+    - Overtime Hours: Numeric input (pre-populated)
+    - Overtime Rate: Rate per hour (pre-populated)
+    - Total Lembur: Auto-calculated (hours × rate), readonly
+    - Notes: Optional notes textarea (pre-populated)
+
+    Variables:
+    - $overtime: Attendance model instance with status 'lembur'
+    - $employees: Collection of Employee models with employee_code and name
+
+    Data Attributes (used by JavaScript for duplicate validation):
+    - data-original-date: Original attendance date (to skip validation if unchanged)
+    - data-overtime-id: Overtime record ID (to exclude from duplicate check)
+--}}
 <x-modal id="editModal-{{ $overtime->id }}" title="Edit Lembur" action="{{ route('overtime.update', $overtime->id) }}"
     method="POST" buttonText="Update">
     @method('PUT')
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Karyawan</label>
-        <input type="text"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary"
-            value="{{ $overtime->employee->name }}" disabled>
-        <input type="hidden" name="employee_id" value="{{ $overtime->employee_id }}">
-    </div>
+    {{-- Searchable Select: Karyawan (pre-selected) --}}
+    <x-forms.searchable-select name="employee_id"
+        id="edit-employee_id-{{ $overtime->id }}" label="Karyawan" :required="true"
+        placeholder="Cari karyawan..."
+        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()"
+        selected="{{ $overtime->employee_id }}" />
 
+    {{-- Tanggal Lembur --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="attendance_date" id="edit-attendance-date-{{ $overtime->id }}"
@@ -20,7 +43,7 @@
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
-    {{-- Error Message untuk Duplicate Overtime --}}
+    {{-- Duplicate Warning: client-side validation --}}
     <div id="edit-duplicate-warning-{{ $overtime->id }}"
         class="hidden mb-3 p-3 bg-error-light border-l-4 border-error rounded">
         <div class="flex items-start">
@@ -36,33 +59,39 @@
         </div>
     </div>
 
+    {{-- Jam Lembur --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jam Lembur <span class="text-error">*</span></label>
         <input type="number" name="overtime_hours"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             placeholder="Contoh: 2.5" value="{{ $overtime->overtime_hours }}" required min="0.01" max="24"
             step="0.01" id="edit-overtime-hours-{{ $overtime->id }}"
-            oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')" oninput="this.setCustomValidity('')">
+            oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')"
+            oninput="calculateEditOvertimeTotal('{{ $overtime->id }}'); this.setCustomValidity('')">
         <p class="text-xs text-text-secondary mt-1">Maksimal 24 jam</p>
     </div>
 
+    {{-- Tarif per Jam (Rupiah currency format) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tarif per Jam <span class="text-error">*</span></label>
-        <input type="number" name="overtime_rate"
+        <input type="text" inputmode="numeric" name="overtime_rate"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan tarif per jam" value="{{ $overtime->overtime_rate }}" required min="0"
-            id="edit-overtime-rate-{{ $overtime->id }}" oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+            placeholder="Masukkan tarif per jam" value="{{ number_format($overtime->overtime_rate, 0, ',', '.') }}"
+            required min="0" id="edit-overtime-rate-{{ $overtime->id }}"
+            oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
+            oninput="formatCurrencyInput(this); calculateEditOvertimeTotal('{{ $overtime->id }}'); this.setCustomValidity('')">
     </div>
 
+    {{-- Total Lembur (Auto-calculated) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Total Lembur</label>
         <input type="text" id="edit-overtime-total-{{ $overtime->id }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary" readonly
+            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-input" readonly
             value="Rp {{ number_format($overtime->overtime_total, 0, ',', '.') }}">
         <p class="text-xs text-text-secondary mt-1">Otomatis dihitung: Jam Lembur × Tarif</p>
     </div>
 
+    {{-- Keterangan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
         <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"

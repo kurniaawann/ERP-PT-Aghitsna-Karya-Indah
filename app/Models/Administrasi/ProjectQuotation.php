@@ -4,8 +4,18 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentAccount;
+use App\Models\User;
 
+/**
+ * Model untuk data Penawaran Proyek (Project Quotation).
+ *
+ * Model ini menyimpan data header penawaran proyek,
+ * termasuk nomor penawaran, tanggal, penerima, total, dan relasi ke items.
+ *
+ * Primary key: quotation_number (string, bukan auto-increment)
+ */
 class ProjectQuotation extends Model
 {
     use HasFactory;
@@ -21,12 +31,13 @@ class ProjectQuotation extends Model
         'date',
         'subject',
         'recipient',
-        'recipient_address',
+        'project_description',
         'total_amount',
         'amount_in_words',
         'selected_payment_accounts',
         'signed_by',
         'division',
+        'created_by',
     ];
 
     protected $casts = [
@@ -43,12 +54,22 @@ class ProjectQuotation extends Model
 
     // ─── Relationships ────────────────────────────────────────────────────────
 
+    /**
+     * Relasi ke items penawaran.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function items()
     {
         return $this->hasMany(ProjectQuotationItem::class, 'quotation_number', 'quotation_number')
             ->orderBy('order_number');
     }
 
+    /**
+     * Mendapatkan rekening pembayaran berdasarkan selected_payment_accounts.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
     public function paymentAccounts()
     {
         $ids = $this->selected_payment_accounts ?? [];
@@ -58,32 +79,56 @@ class ProjectQuotation extends Model
         return PaymentAccount::whereIn('id', $ids)->orderBy('id')->get();
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Generate next quotation number: {n}/{n}/PT.AKI/{yy}
-     * e.g. 265/300/PT.AKI/25
+     * Generate nomor penawaran berikutnya: {A}/{B}/PT.AKI/{yy}
+     * Kedua angka (A dan B) diincrement secara terpisah.
+     * Contoh: 275/310/PT.AKI/26 -> 276/311/PT.AKI/26
+     *
+     * @return string  Nomor penawaran yang sudah di-generate
      */
     public static function generateQuotationNumber(): string
     {
         $year = date('y');
 
         $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
-            ->orderBy('sequence_number', 'desc')
+            ->orderByDesc('quotation_number')
             ->first();
 
-        $next = $last ? ($last->sequence_number + 1) : 1;
+        if ($last && preg_match('/^(\d+)\/(\d+)\//', $last->quotation_number, $matches)) {
+            $nextA = (int) $matches[1] + 1;
+            $nextB = (int) $matches[2] + 1;
+        } else {
+            $nextA = 275;
+            $nextB = 310;
+        }
 
-        // Format: 265/300/PT.AKI/25 (arbitrary format, adjust as needed)
-        return "{$next}/{$next}/PT.AKI/{$year}";
+        return "{$nextA}/{$nextB}/PT.AKI/{$year}";
     }
 
+    /**
+     * Mendapatkan nomor urut (sequence) berikutnya untuk tahun berjalan.
+     * Sequence mengikuti angka pertama (A) dari quotation_number.
+     *
+     * @return int  Nomor urut berikutnya
+     */
     public static function getNextSequenceNumber(): int
     {
         $year = date('y');
         $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
-            ->orderBy('sequence_number', 'desc')
+            ->orderByDesc('quotation_number')
             ->first();
-        return $last ? ($last->sequence_number + 1) : 1;
+
+        if ($last && preg_match('/^(\d+)\//', $last->quotation_number, $matches)) {
+            return (int) $matches[1] + 1;
+        }
+
+        return 1;
     }
 }

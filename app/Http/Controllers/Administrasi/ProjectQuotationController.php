@@ -3,60 +3,94 @@
 namespace App\Http\Controllers\Administrasi;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Administrasi\StoreProjectQuotationRequest;
+use App\Http\Requests\Administrasi\UpdateProjectQuotationRequest;
 use App\Models\Administrasi\ProjectQuotation;
-use App\Models\Administrasi\ProjectQuotationItem;
 use App\Models\Finance\PaymentAccount;
 use App\Exports\Administrasi\ProjectQuotationExport;
+use App\Exports\Administrasi\ProjectQuotationMultiExport;
+use App\Services\Administrasi\ProjectQuotationService;
+use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Controller untuk modul Penawaran Proyek (Project Quotation).
+ *
+ * Controller ini menggunakan Service layer untuk business logic
+ * dan FormRequest untuk validasi data.
+ */
 class ProjectQuotationController extends Controller
 {
+    use HasBulkActions;
+
+    /**
+     * @var ProjectQuotationService
+     */
+    protected $service;
+
+    /**
+     * @param  ProjectQuotationService  $service
+     */
+    public function __construct(ProjectQuotationService $service)
+    {
+        $this->service = $service;
+    }
+
     // ─── Index ────────────────────────────────────────────────────────────────
 
+    /**
+     * Menampilkan daftar penawaran proyek dengan paginasi dan pencarian.
+     *
+     * @param  Request  $request
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
         $search = $request->input('search');
-
-        $quotations = ProjectQuotation::with(['items'])
-            ->when($search, function ($query, $search) {
-                return $query->where('quotation_number', 'like', "%{$search}%")
-                    ->orWhere('recipient', 'like', "%{$search}%")
-                    ->orWhere('subject', 'like', "%{$search}%");
-            })
-            ->orderBy('sequence_number', 'desc')
-            ->paginate(15);
-
-        $paymentAccounts = PaymentAccount::active()->get();
+        $quotations = $this->service->getPaginatedSearch($search);
+        $paymentAccounts = $this->service->getActivePaymentAccounts();
 
         return view('pages.administrasi.project-quotation', compact('quotations', 'paymentAccounts', 'search'));
     }
 
     // ─── Get Next Number (AJAX) ───────────────────────────────────────────────
 
+    /**
+     * Mendapatkan nomor penawaran berikutnya via AJAX.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getNextQuotationNumber()
     {
         return response()->json([
-            'quotation_number' => ProjectQuotation::generateQuotationNumber(),
+            'quotation_number' => $this->service->generateQuotationNumber(),
         ]);
     }
 
     // ─── Show (Get for Edit) ──────────────────────────────────────────────────
 
+    /**
+     * Mendapatkan data penawaran berdasarkan nomor (untuk edit modal).
+     *
+     * @param  string  $quotationNumber
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(string $quotationNumber)
     {
-        $quotation = ProjectQuotation::with(['items'])
-            ->where('quotation_number', $quotationNumber)
-            ->firstOrFail();
+        $quotation = $this->service->findByNumber($quotationNumber);
+
+        if (!$quotation) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
 
         return response()->json([
             'quotation_number' => $quotation->quotation_number,
             'date' => $quotation->date,
             'subject' => $quotation->subject,
             'recipient' => $quotation->recipient,
-            'recipient_address' => $quotation->recipient_address,
+                'project_description' => $quotation->project_description,
             'total_amount' => $quotation->total_amount,
             'amount_in_words' => $quotation->amount_in_words,
             'selected_payment_accounts' => is_string($quotation->selected_payment_accounts)
@@ -79,126 +113,33 @@ class ProjectQuotationController extends Controller
 
     // ─── Store ────────────────────────────────────────────────────────────────
 
-    public function store(Request $request)
+    /**
+     * Menyimpan penawaran baru.
+     *
+     * @param  StoreProjectQuotationRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StoreProjectQuotationRequest $request)
     {
-        $request->validate([
-            'recipient' => 'required|string|max:255',
-            'date' => 'required|date',
-            'items_json' => 'required|string',
-        ]);
-
-        if (empty($request->input('selected_payment_accounts', []))) {
-            return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih.')->withInput();
-        }
-
-        // Parse items JSON
-        $items = json_decode($request->input('items_json'), true);
-        if (!$items || !is_array($items) || count($items) === 0) {
-            return back()->with('error', 'Minimal 1 item harus ditambahkan.')->withInput();
-        }
-
-        // Auto-generate quotation number
-        $seqNumber = ProjectQuotation::getNextSequenceNumber();
-        $year = date('y');
-        $quotationNumber = "{$seqNumber}/{$seqNumber}/PT.AKI/{$year}";
-
-        // Calculate grand total
-        $totalAmount = 0;
-        foreach ($items as $item) {
-            $totalAmount += (int) ($item['total_price'] ?? 0);
-        }
-
-        DB::transaction(function () use ($request, $quotationNumber, $seqNumber, $totalAmount, $items) {
-            // Create header
-            $quotation = ProjectQuotation::create([
-                'quotation_number' => $quotationNumber,
-                'sequence_number' => $seqNumber,
-                'date' => $request->input('date'),
-                'subject' => $request->input('subject', 'Penawaran Harga'),
-                'recipient' => $request->input('recipient'),
-                'recipient_address' => $request->input('recipient_address', 'Ditempat'),
-                'total_amount' => $totalAmount,
-                'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
-                'selected_payment_accounts' => $request->input('selected_payment_accounts', []),
-                'signed_by' => $request->input('signed_by'),
-                'division' => $request->input('division'),
-            ]);
-
-            // Create items
-            foreach ($items as $index => $itemData) {
-                ProjectQuotationItem::create([
-                    'quotation_number' => $quotationNumber,
-                    'order_number' => $index + 1,
-                    'description' => $itemData['description'],
-                    'volume' => $itemData['volume'] ?? null,
-                    'unit' => $itemData['unit'] ?? null,
-                    'unit_price' => (int) ($itemData['unit_price'] ?? 0),
-                    'total_price' => (int) ($itemData['total_price'] ?? 0),
-                ]);
-            }
-        });
+        $quotation = $this->service->create($request->validated());
 
         return redirect()->route('project-quotation.index')
-            ->with('success', "Penawaran {$quotationNumber} berhasil ditambahkan!");
+            ->with('success', "Penawaran {$quotation->quotation_number} berhasil ditambahkan!");
     }
 
     // ─── Update ───────────────────────────────────────────────────────────────
 
-    public function update(Request $request, string $quotationNumber)
+    /**
+     * Memperbarui penawaran yang sudah ada.
+     *
+     * @param  UpdateProjectQuotationRequest  $request
+     * @param  string                          $quotationNumber
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(UpdateProjectQuotationRequest $request, string $quotationNumber)
     {
         $quotation = ProjectQuotation::findOrFail($quotationNumber);
-
-        $request->validate([
-            'recipient' => 'required|string|max:255',
-            'date' => 'required|date',
-            'items_json' => 'required|string',
-        ]);
-
-        if (empty($request->input('selected_payment_accounts', []))) {
-            return back()->with('error', 'Minimal 1 rekening pembayaran harus dipilih.')->withInput();
-        }
-
-        $items = json_decode($request->input('items_json'), true);
-        if (!$items || !is_array($items) || count($items) === 0) {
-            return back()->with('error', 'Minimal 1 item harus ditambahkan.')->withInput();
-        }
-
-        // Calculate grand total
-        $totalAmount = 0;
-        foreach ($items as $item) {
-            $totalAmount += (int) ($item['total_price'] ?? 0);
-        }
-
-        DB::transaction(function () use ($request, $quotation, $totalAmount, $items) {
-            // Delete old items
-            $quotation->items()->delete();
-
-            // Update header
-            $quotation->update([
-                'date' => $request->input('date'),
-                'subject' => $request->input('subject', 'Penawaran Harga'),
-                'recipient' => $request->input('recipient'),
-                'recipient_address' => $request->input('recipient_address', 'Ditempat'),
-                'total_amount' => $totalAmount,
-                'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
-                'selected_payment_accounts' => $request->input('selected_payment_accounts', []),
-                'signed_by' => $request->input('signed_by'),
-                'division' => $request->input('division'),
-            ]);
-
-            // Re-create items
-            foreach ($items as $index => $itemData) {
-                ProjectQuotationItem::create([
-                    'quotation_number' => $quotation->quotation_number,
-                    'order_number' => $index + 1,
-                    'description' => $itemData['description'],
-                    'volume' => $itemData['volume'] ?? null,
-                    'unit' => $itemData['unit'] ?? null,
-                    'unit_price' => (int) ($itemData['unit_price'] ?? 0),
-                    'total_price' => (int) ($itemData['total_price'] ?? 0),
-                ]);
-            }
-        });
+        $this->service->update($quotation, $request->validated());
 
         return redirect()->route('project-quotation.index')
             ->with('success', 'Penawaran berhasil diperbarui!');
@@ -206,6 +147,12 @@ class ProjectQuotationController extends Controller
 
     // ─── Destroy Selected ────────────────────────────────────────────────────
 
+    /**
+     * Menghapus beberapa penawaran sekaligus.
+     *
+     * @param  Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroySelected(Request $request)
     {
         $ids = $request->input('ids', []);
@@ -215,47 +162,52 @@ class ProjectQuotationController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Items cascade deleted via DB constraint
-        ProjectQuotation::whereIn('quotation_number', $ids)->each(function ($q) {
-            $q->items()->delete();
-            $q->delete();
-        });
+        $count = $this->service->deleteByIds($ids);
 
         return redirect()->route('project-quotation.index')
-            ->with('success', 'Penawaran berhasil dihapus!');
+            ->with('success', "{$count} data terpilih berhasil dihapus.");
     }
 
     // ─── Print PDF (Single from GET route) ───────────────────────────────────
 
+    /**
+     * Generate dan download PDF untuk satu penawaran.
+     *
+     * @param  string  $quotationNumber
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\RedirectResponse
+     */
     public function printPdfSingle(string $quotationNumber)
     {
         try {
-            $quotation = ProjectQuotation::with(['items'])
-                ->where('quotation_number', $quotationNumber)
-                ->firstOrFail();
+            $quotation = $this->service->findByNumber($quotationNumber);
+
+            if (!$quotation) {
+                return back()->with('error', 'Data tidak ditemukan!');
+            }
 
             $selectedAccountIds = is_string($quotation->selected_payment_accounts)
                 ? json_decode($quotation->selected_payment_accounts, true)
                 : ($quotation->selected_payment_accounts ?? []);
 
             if (!empty($selectedAccountIds)) {
-                $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                $paymentAccounts = PaymentAccount::whereIn('id', $selectedAccountIds)
                     ->orderBy('id')
                     ->get();
             } else {
-                $paymentAccounts = \App\Models\Finance\PaymentAccount::where('is_active', true)->get();
+                $paymentAccounts = PaymentAccount::where('is_active', true)->get();
             }
 
             $items = $quotation->items()->orderBy('order_number')->get();
 
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation', 'items', 'paymentAccounts'))
+            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
+            $date = date('Y-m-d');
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, "penawaran-proyek-{$safeNumber}.pdf", [
+            }, "Penawaran_Proyek_{$safeNumber}_{$date}.pdf", [
                 'Content-Type' => 'application/pdf',
             ]);
 
@@ -266,17 +218,30 @@ class ProjectQuotationController extends Controller
 
     // ─── Print Excel (Single from GET route) ─────────────────────────────────
 
+    /**
+     * Generate dan download Excel untuk satu penawaran.
+     *
+     * @param  string  $quotationNumber
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function printExcelSingle(string $quotationNumber)
     {
         $safeFileName = str_replace(['/', '\\'], '-', $quotationNumber);
+        $date = date('Y-m-d');
         return Excel::download(
             new ProjectQuotationExport($quotationNumber),
-            'Penawaran-Proyek-' . $safeFileName . '.xlsx'
+            "Penawaran_Proyek_{$safeFileName}_{$date}.xlsx"
         );
     }
 
     // ─── Print PDF (Single or Multiple) ──────────────────────────────────────
 
+    /**
+     * Generate dan download PDF untuk satu atau beberapa penawaran.
+     *
+     * @param  Request  $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\RedirectResponse
+     */
     public function printPdf(Request $request)
     {
         $quotationNumbers = $request->input('quotation_numbers', []);
@@ -286,10 +251,7 @@ class ProjectQuotationController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        $quotations = ProjectQuotation::with(['items'])
-            ->whereIn('quotation_number', $quotationNumbers)
-            ->orderBy('sequence_number')
-            ->get();
+        $quotations = $this->service->getByIds($quotationNumbers);
 
         if ($quotations->isEmpty()) {
             return redirect()->route('project-quotation.index')
@@ -303,11 +265,11 @@ class ProjectQuotationController extends Controller
                 : ($quotation->selected_payment_accounts ?? []);
 
             if (!empty($selectedAccountIds)) {
-                $quotation->paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                $quotation->paymentAccounts = PaymentAccount::whereIn('id', $selectedAccountIds)
                     ->orderBy('id')
                     ->get();
             } else {
-                $quotation->paymentAccounts = \App\Models\Finance\PaymentAccount::where('is_active', true)->get();
+                $quotation->paymentAccounts = PaymentAccount::where('is_active', true)->get();
             }
 
             $quotation->items = $quotation->items()->orderBy('order_number')->get();
@@ -316,27 +278,26 @@ class ProjectQuotationController extends Controller
         // Single PDF view or bulk view
         if (count($quotationNumbers) === 1) {
             $quotation = $quotations->first();
-            $items = $quotation->items;
-            $paymentAccounts = $quotation->paymentAccounts;
 
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation', 'items', 'paymentAccounts'))
+            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
+            $date = date('Y-m-d');
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, "penawaran-proyek-{$safeNumber}.pdf", [
+            }, "Penawaran_Proyek_{$safeNumber}_{$date}.pdf", [
                 'Content-Type' => 'application/pdf',
             ]);
         } else {
             // Multiple quotations - create separate pages
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf-bulk', compact('quotations'))
+            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotations'))
                 ->setPaper('a4', 'portrait');
 
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, 'penawaran-proyek-' . date('Ymd-His') . '.pdf', [
+            }, 'Penawaran_Proyek_' . date('Y-m-d') . '.pdf', [
                 'Content-Type' => 'application/pdf',
             ]);
         }
@@ -344,6 +305,12 @@ class ProjectQuotationController extends Controller
 
     // ─── Print Excel (Single or Multiple) ────────────────────────────────────
 
+    /**
+     * Generate dan download Excel untuk satu atau beberapa penawaran.
+     *
+     * @param  Request  $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+     */
     public function printExcel(Request $request)
     {
         $quotationNumbers = $request->input('quotation_numbers', []);
@@ -355,24 +322,30 @@ class ProjectQuotationController extends Controller
 
         if (count($quotationNumbers) === 1) {
             $safeFileName = str_replace(['/', '\\'], '-', $quotationNumbers[0]);
+            $date = date('Y-m-d');
             return Excel::download(
                 new ProjectQuotationExport($quotationNumbers[0]),
-                'Penawaran-Proyek-' . $safeFileName . '.xlsx'
+                "Penawaran_Proyek_{$safeFileName}_{$date}.xlsx"
             );
         } else {
             // For multiple, create a multi-sheet Excel file
             return Excel::download(
-                new \App\Exports\Administrasi\ProjectQuotationMultiExport($quotationNumbers),
-                'Penawaran-Proyek-' . date('Ymd-His') . '.xlsx'
+                new ProjectQuotationMultiExport($quotationNumbers),
+                'Penawaran_Proyek_' . date('Y-m-d') . '.xlsx'
             );
         }
     }
 
     // ─── Export selected PDF ─────────────────────────────────────────────────
 
+    /**
+     * Export PDF untuk penawaran yang dipilih (delegate ke printPdf).
+     *
+     * @param  Request  $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\RedirectResponse
+     */
     public function exportPdfSelected(Request $request)
     {
-        // This is now handled by printPdf() method
         return $this->printPdf($request);
     }
 }

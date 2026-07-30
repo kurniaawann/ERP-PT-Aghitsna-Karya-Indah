@@ -1,4 +1,19 @@
-{{-- Overtime Table Component --}}
+{{--
+    Overtime Table Component
+
+    Renders the overtime data table with:
+    - Select All checkbox for bulk operations
+    - Employee name, date, hours, rate, total, notes columns
+    - Edit button per row (opens per-record edit modal)
+    - Empty state when no data
+
+    The table is wrapped in a <form> for bulk delete functionality.
+    Checkboxes submit attendance IDs via 'ids[]' to the delete endpoint.
+
+    Variables:
+    - $overtimes: LengthAwarePaginator of Attendance models (status = 'lembur')
+      with eager-loaded 'employee' relation
+--}}
 <form id="deleteForm" method="POST" action="{{ route('overtime.destroy') }}">
     @csrf
     @method('DELETE')
@@ -26,6 +41,7 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
+                                {{-- Nama Karyawan --}}
                                 <td class="p-2">{{ $overtime->employee->name }}</td>
 
                                 {{-- Tanggal --}}
@@ -48,6 +64,7 @@
                                     {{ 'Rp ' . number_format($overtime->overtime_total, 0, ',', '.') }}
                                 </td>
 
+                                {{-- Keterangan --}}
                                 <td class="p-2">{{ $overtime->notes ?? '-' }}</td>
 
                                 {{-- Aksi --}}

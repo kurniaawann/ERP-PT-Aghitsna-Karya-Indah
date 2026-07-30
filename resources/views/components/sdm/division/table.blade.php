@@ -1,4 +1,9 @@
-{{-- Division Table Component --}}
+{{-- =====================================================================
+     Division Table Component
+     Menampilkan daftar divisi dalam format tabel dengan checkbox
+     untuk bulk delete dan tombol edit per baris.
+     Menggunakan employees_count (via withCount) untuk menghindari N+1 query.
+     ===================================================================== --}}
 <form id="deleteForm" method="POST" action="{{ route('division.destroy') }}">
     @csrf
     @method('DELETE')
@@ -6,6 +11,7 @@
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
+                    {{-- Header Tabel --}}
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
@@ -18,16 +24,22 @@
                     <tbody>
                         @forelse($divisions as $division)
                             <tr class="border-t hover:bg-surface-secondary">
+                                {{-- Checkbox untuk bulk delete --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="ids[]" value="{{ $division->id }}"
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
+                                {{-- Nama Divisi --}}
                                 <td class="p-2 font-medium text-primary">{{ $division->name }}</td>
-                                <td class="p-2">{{ $division->description ?? '-' }}</td>
-                                <td class="p-2 text-center">{{ $division->employees->count() }}</td>
 
-                                {{-- Aksi --}}
+                                {{-- Deskripsi (tampilkan '-' jika kosong) --}}
+                                <td class="p-2">{{ $division->description ?? '-' }}</td>
+
+                                {{-- Jumlah Karyawan (menggunakan withCount untuk optimasi query) --}}
+                                <td class="p-2 text-center">{{ $division->employees_count }}</td>
+
+                                {{-- Tombol Aksi --}}
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-2">
                                         <button type="button" onclick="openModal('editModal-{{ $division->id }}')"

@@ -34,7 +34,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
 
     public function title(): string
     {
-        return 'RAB ' . $this->rab->rab_number;
+        return 'RAB_' . $this->rab->rab_number;
     }
 
     public function columnWidths(): array
@@ -92,8 +92,8 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                 $sheet->setCellValue('A6', 'Telp. 0882 1303 1263 / 0882 1303 1264 | Email: Design@aghitsna.id');
 
                 $sheet->mergeCells('E1:G1');
-                $sheet->setCellValue('E1', 'RAB');
-                $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(24)->setColor(new Color('000000'));
+                $sheet->setCellValue('E1', 'RENCANA ANGGARAN BIAYA');
+                $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(18)->setColor(new Color('000000'));
                 $sheet->getStyle('E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
 
                 $sheet->setCellValue('E2', 'To');
@@ -366,6 +366,52 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                     ],
                 ]);
 
+                $incomingPayment = $rab->incoming_payment ?? 0;
+                $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
+
+                $currentRow++;
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'UANG MASUK');
+                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($incomingPayment, 0, ',', '.'));
+                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                    'font' => ['bold' => true],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'E8F5E9'],
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                    ],
+                ]);
+                $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+                $currentRow++;
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'SISA PEMBAYARAN');
+                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($sisaPembayaran, 0, ',', '.'));
+                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                    'font' => ['bold' => true],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFE0B2'],
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                    ],
+                ]);
+                $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+                $currentRow++;
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'TERBILANG');
+                $sheet->setCellValue("G{$currentRow}", ucwords(terbilang($sisaPembayaran)) . ' rupiah');
+                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                    'font' => ['bold' => true, 'italic' => true],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                    ],
+                ]);
+
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Pembayaran dapat ditransfer melalui nomor rekening :');
@@ -401,7 +447,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Demikian penawaran harga ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
+                $sheet->setCellValue("A{$currentRow}", 'Demikian rencana anggaran biaya ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
 
                 $currentRow += 2;

@@ -3,75 +3,113 @@
 namespace App\Http\Controllers\Sdm;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Sdm\StoreDivisionRequest;
+use App\Http\Requests\Sdm\UpdateDivisionRequest;
 use App\Models\Sdm\Division;
+use App\Services\Sdm\DivisionService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
+/**
+ * Controller untuk mengelola data divisi.
+ *
+ * Menangani permintaan dan respons HTTP untuk operasi CRUD divisi.
+ * Logika bisnis didelegasikan ke DivisionService.
+ */
 class DivisionController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Instance layanan divisi.
+     *
+     * @var DivisionService
+     */
+    protected DivisionService $divisionService;
+
+    /**
+     * Membuat instance controller baru.
+     *
+     * @param  DivisionService  $divisionService
+     */
+    public function __construct(DivisionService $divisionService)
+    {
+        $this->divisionService = $divisionService;
+    }
+
+    /**
+     * Menampilkan daftar divisi dengan paginasi dan pencarian opsional.
+     *
+     * @param  Request  $request
+     * @return View
+     */
+    public function index(Request $request): View
     {
         $search = $request->input('search');
-
-        $divisions = Division::when($search, function ($query, $search) {
-            return $query->where('name', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%");
-        })
-            ->latest('created_at')
-            ->paginate(15);
+        $divisions = $this->divisionService->getPaginatedDivisions($search);
 
         return view('pages.sdm.division', compact('divisions', 'search'));
     }
 
-    public function store(Request $request)
+    /**
+     * Menyimpan data divisi baru.
+     *
+     * @param  StoreDivisionRequest  $request
+     * @return RedirectResponse
+     */
+    public function store(StoreDivisionRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:divisions,name',
-            'description' => 'nullable|string|max:500',
-        ], [
-            'name.required' => 'Nama divisi harus diisi',
-            'name.unique' => 'Nama divisi sudah ada',
-        ]);
+        $this->divisionService->createDivision($request->validated());
+        $this->divisionService->flushCache();
 
-        Division::create($validated);
-
-        return redirect()->route('division.index')->with('success', 'Data divisi berhasil ditambahkan!');
+        return redirect()->route('division.index')
+            ->with('success', 'Data divisi berhasil ditambahkan!');
     }
 
-    public function update(Request $request, Division $division)
+    /**
+     * Memperbarui data divisi yang ditentukan.
+     *
+     * @param  UpdateDivisionRequest  $request
+     * @param  Division               $division
+     * @return RedirectResponse
+     */
+    public function update(UpdateDivisionRequest $request, Division $division): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:divisions,name,' . $division->id,
-            'description' => 'nullable|string|max:500',
-        ], [
-            'name.required' => 'Nama divisi harus diisi',
-            'name.unique' => 'Nama divisi sudah ada',
-        ]);
+        $this->divisionService->updateDivision($division, $request->validated());
+        $this->divisionService->flushCache();
 
-        $division->update($validated);
-
-        return redirect()->route('division.index')->with('success', 'Data divisi berhasil diperbarui!');
+        return redirect()->route('division.index')
+            ->with('success', 'Data divisi berhasil diperbarui!');
     }
 
-    public function destroy(Request $request)
+    /**
+     * Menghapus divisi yang ditentukan secara massal.
+     *
+     * Memeriksa apakah ada divisi yang dipilih masih memiliki karyawan sebelum penghapusan.
+     * Mengembalikan pesan kesalahan yang mencantumkan divisi yang tidak dapat dihapus.
+     *
+     * @param  Request  $request
+     * @return RedirectResponse
+     */
+    public function destroy(Request $request): RedirectResponse
     {
         $ids = $request->input('ids');
 
         if (empty($ids)) {
-            return redirect()->route('division.index')->with('error', 'Tidak ada data yang dipilih!');
+            return redirect()->route('division.index')
+                ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        // Check if any division has employees
-        $divisionsWithEmployees = Division::whereIn('id', $ids)
-            ->whereHas('employees')
-            ->pluck('name')
-            ->toArray();
+        $divisionsWithEmployees = $this->divisionService->getDivisionsWithEmployees($ids);
 
         if (!empty($divisionsWithEmployees)) {
-            return redirect()->route('division.index')->with('error', 'Divisi ' . implode(', ', $divisionsWithEmployees) . ' masih memiliki karyawan!');
+            return redirect()->route('division.index')
+                ->with('error', 'Divisi ' . implode(', ', $divisionsWithEmployees) . ' masih memiliki karyawan!');
         }
 
-        Division::whereIn('id', $ids)->delete();
+        $this->divisionService->deleteDivisions($ids);
+        $this->divisionService->flushCache();
 
-        return redirect()->route('division.index')->with('success', 'Data divisi berhasil dihapus!');
+        return redirect()->route('division.index')
+            ->with('success', 'Data divisi berhasil dihapus!');
     }
 }

@@ -3,295 +3,153 @@
 namespace App\Http\Controllers\Sdm;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Sdm\StoreKasbonRequest;
+use App\Http\Requests\Sdm\UpdateKasbonRequest;
+use App\Http\Requests\Sdm\DestroySelectedKasbonRequest;
 use App\Models\Sdm\Kasbon;
-use App\Models\Sdm\Employee;
-use Illuminate\Http\Request;
-use Carbon\Carbon;
+use App\Services\Sdm\KasbonService;
 use App\Services\InputNormalizer;
+use Illuminate\Http\Request;
 
+/**
+ * Controller untuk mengelola operasi kasbon (cash advance).
+ *
+ * Menangani permintaan HTTP untuk CRUD kasbon, pencarian, penyaringan,
+ * pemeriksaan kasbon maksimum, dan perhitungan total.
+ *
+ * Logika bisnis didelegasikan ke KasbonService.
+ * Validasi ditangani oleh kelas FormRequest yang dedikasi.
+ */
 class KasbonController extends Controller
 {
-
+    /**
+     * Instance layanan kasbon.
+     *
+     * @var KasbonService
+     */
+    protected KasbonService $kasbonService;
 
     /**
-     * Menampilkan halaman daftar kasbon dengan fitur filter dan pencarian.
+     * Membuat instance controller baru.
+     *
+     * @param  KasbonService  $kasbonService  Layanan kasbon
      */
-    public function index(Request $request)
+    public function __construct(KasbonService $kasbonService)
     {
-        $search = $request->input('search');
-        $month = $request->input('month');
-        $year = $request->input('year');
-        $status = $request->input('status');
-        $type = $request->input('type');
-
-        $kasbons = Kasbon::with('employee')
-            ->when($search, function ($query, $search) {
-                return $query->where(function ($q) use ($search) {
-                    $q->where('kasbon_code', 'like', "%{$search}%")
-                        ->orWhere('notes', 'like', "%{$search}%")
-                        ->orWhereHas('employee', function ($empQuery) use ($search) {
-                            $empQuery->where('name', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->when($month, function ($query, $month) {
-                return $query->where('period_month', $month);
-            })
-            ->when($year, function ($query, $year) {
-                return $query->where('period_year', $year);
-            })
-            ->when($status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->when($type, function ($query, $type) {
-                return $query->where('kasbon_type', $type);
-            })
-            ->latest('kasbon_date')
-            ->latest('created_at')
-            ->paginate(10)
-            ->appends($request->only(['search', 'month', 'year', 'status', 'type']));
-
-        // Ambil data employees dan divisions untuk dropdown
-        $employees = Employee::orderBy('name')->get();
-        $divisions = \App\Models\Sdm\Division::orderBy('name')->get();
-
-        return view('pages.sdm.kasbon', compact('kasbons', 'employees', 'divisions', 'search', 'month', 'year', 'status', 'type'));
+        $this->kasbonService = $kasbonService;
     }
 
     /**
-     * Simpan kasbon baru
+     * Menampilkan halaman daftar kasbon dengan pencarian dan penyaringan.
+     *
+     * @param  Request  $request  Permintaan HTTP dengan parameter penyaringan opsional
+     * @return \Illuminate\View\View
      */
-    public function store(Request $request)
+    public function index(Request $request)
     {
-        $request->merge([
-            'amount' => InputNormalizer::normalizeCurrency($request->input('amount')),
-        ]);
+        $kasbons = $this->kasbonService->getPaginatedKasbons(
+            $request->input('search'),
+            $request->input('month') ? (int) $request->input('month') : null,
+            $request->input('year') ? (int) $request->input('year') : null,
+            $request->input('status'),
+            $request->input('type'),
+            $request->input('payment_status')
+        );
 
-        $validated = $request->validate([
-            'kasbon_type' => 'required|in:personal,team',
-            'employee_id' => 'required_if:kasbon_type,personal|nullable|exists:employees,employee_code',
-            'division' => 'required_if:kasbon_type,team|nullable|string|max:100',
-            'amount' => 'required|integer|min:1000',
-            'kasbon_date' => 'required|date',
-            'week_number' => 'nullable|integer|min:1|max:4',
-            'period_month' => 'required|integer|min:1|max:12',
-            'period_year' => 'required|integer|min:2020',
-            'notes' => 'nullable|string|max:500',
-        ], [
-            'kasbon_type.required' => 'Jenis kasbon harus dipilih',
-            'employee_id.required_if' => 'Karyawan harus dipilih untuk kasbon personal',
-            'division.required_if' => 'Divisi harus dipilih untuk kasbon tim',
-            'amount.required' => 'Jumlah kasbon harus diisi',
-            'amount.min' => 'Jumlah kasbon minimal Rp 1.000',
-            'kasbon_date.required' => 'Tanggal kasbon harus diisi',
-            'period_month.required' => 'Bulan periode harus diisi',
-            'period_year.required' => 'Tahun periode harus diisi',
-        ]);
+        $employees = $this->kasbonService->getAllEmployees();
+        $divisions = $this->kasbonService->getAllDivisions();
 
-        // Auto-detect minggu dari tanggal kasbon
-        $weekNumber = Employee::detectWeekNumber($validated['kasbon_date']);
-        $validated['week_number'] = $weekNumber;
+        return view('pages.sdm.kasbon', compact('kasbons', 'employees', 'divisions'));
+    }
 
-        // Validasi kasbon personal berdasarkan kehadiran dan status payroll
-        if ($validated['kasbon_type'] === 'personal') {
-            $employee = Employee::findOrFail($validated['employee_id']);
-            $month = $validated['period_month'];
-            $year = $validated['period_year'];
-            $kasbonDate = $validated['kasbon_date'];
+    /**
+     * Menyimpan data kasbon baru.
+     *
+     * Memvalidasi input melalui StoreKasbonRequest, kemudian mendelegasikan
+     * pembuatan dan validasi berbasis absensi ke KasbonService.
+     *
+     * @param  StoreKasbonRequest  $request  Data kasbon yang sudah divalidasi
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StoreKasbonRequest $request)
+    {
+        $validated = $request->validated();
 
-            // Cek apakah payroll minggu ini sudah paid
-            if ($employee->isPayrollPaid($month, $year, $weekNumber)) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', sprintf(
-                        'Tidak dapat melakukan kasbon! Payroll minggu ke-%d bulan %d/%d untuk %s sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
-                        $weekNumber,
-                        $month,
-                        $year,
-                        $employee->name
-                    ));
-            }
-
-            // Hitung maksimal kasbon berdasarkan kehadiran
-            $daysWorked = $employee->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
-            $maxKasbon = $employee->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
-
-            // VALIDASI PENTING: Jika belum ada kehadiran sama sekali, tidak bisa kasbon!
-            if ($daysWorked == 0) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', sprintf(
-                        'Tidak dapat melakukan kasbon! %s belum memiliki catatan kehadiran di minggu ke-%d (tanggal %d-%d %s %d). Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
-                        $employee->name,
-                        $weekNumber,
-                        (($weekNumber - 1) * 7) + 1,
-                        min($weekNumber * 7, \Carbon\Carbon::create($year, $month)->endOfMonth()->day),
-                        \Carbon\Carbon::create($year, $month)->translatedFormat('F'),
-                        $year
-                    ));
-            }
-
-            // Validasi apakah jumlah kasbon tidak melebihi maksimal
-            if ($validated['amount'] > $maxKasbon) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', sprintf(
-                        'Jumlah kasbon Rp %s melebihi batas maksimal! Berdasarkan kehadiran %d hari kerja (gaji harian Rp %s), maksimal kasbon adalah Rp %s',
-                        number_format($validated['amount'], 0, ',', '.'),
-                        $daysWorked,
-                        number_format($employee->daily_wage, 0, ',', '.'),
-                        number_format($maxKasbon, 0, ',', '.')
-                    ));
-            }
-        }
-
-        // Generate kasbon code
-        $validated['kasbon_code'] = Kasbon::generateKasbonCode();
-        $validated['status'] = 'pending';
-
-        // Jika kasbon team, set employee_id ke null
-        if ($validated['kasbon_type'] === 'team') {
-            $validated['employee_id'] = null;
-        } else {
-            // Jika kasbon personal, set division ke null
-            $validated['division'] = null;
-        }
-
-        Kasbon::create($validated);
+        $this->kasbonService->storeKasbon($validated);
 
         return redirect()->back()->with('success', 'Kasbon berhasil ditambahkan');
     }
 
     /**
-     * Update kasbon yang sudah ada
+     * Memperbarui data kasbon yang sudah ada.
+     *
+     * Hanya kasbon yang masih menunggu yang dapat diperbarui. Memvalidasi input melalui
+     * UpdateKasbonRequest, kemudian mendelegasikan ke KasbonService.
+     *
+     * @param  UpdateKasbonRequest  $request     Data kasbon yang sudah divalidasi
+     * @param  string               $kasbonCode  Kode kasbon yang akan diperbarui
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, $kasbonCode)
+    public function update(UpdateKasbonRequest $request, string $kasbonCode)
     {
         $kasbon = Kasbon::findOrFail($kasbonCode);
 
-        // Hanya bisa update jika status masih pending
         if ($kasbon->status === 'deducted') {
             return redirect()->back()->with('error', 'Kasbon yang sudah dipotong tidak bisa diubah');
         }
 
-        $request->merge([
-            'amount' => InputNormalizer::normalizeCurrency($request->input('amount')),
-        ]);
+        $validated = $request->validated();
 
-        $validated = $request->validate([
-            'kasbon_type' => 'required|in:personal,team',
-            'employee_id' => 'required_if:kasbon_type,personal|nullable|exists:employees,employee_code',
-            'division' => 'required_if:kasbon_type,team|nullable|string|max:100',
-            'amount' => 'required|integer|min:1000',
-            'kasbon_date' => 'required|date',
-            'week_number' => 'nullable|integer|min:1|max:4',
-            'period_month' => 'required|integer|min:1|max:12',
-            'period_year' => 'required|integer|min:2020',
-            'notes' => 'nullable|string|max:500',
-        ]);
-
-        // Validasi kasbon personal berdasarkan kehadiran
-        if ($validated['kasbon_type'] === 'personal' && $validated['week_number']) {
-            $employee = Employee::findOrFail($validated['employee_id']);
-            $month = $validated['period_month'];
-            $year = $validated['period_year'];
-            $weekNumber = $validated['week_number'];
-            $kasbonDate = $validated['kasbon_date'];
-
-            $daysWorked = $employee->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
-            $maxKasbon = $employee->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
-            $dailyWage = $employee->daily_wage ?? $employee->base_salary;
-
-            if (!$employee->canTakeKasbon($validated['amount'], $month, $year, $weekNumber, $kasbonDate)) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', sprintf(
-                        'Kasbon melebihi batas maksimal! %s hanya masuk %d hari pada minggu ke-%d sampai tanggal %s. Maksimal kasbon: Rp %s (Rp %s × %d hari)',
-                        $employee->name,
-                        $daysWorked,
-                        $weekNumber,
-                        \Carbon\Carbon::parse($kasbonDate)->format('d/m/Y'),
-                        number_format($maxKasbon, 0, ',', '.'),
-                        number_format($dailyWage, 0, ',', '.'),
-                        $daysWorked
-                    ));
-            }
-        }
-
-        // Jika kasbon team, set employee_id ke null
-        if ($validated['kasbon_type'] === 'team') {
-            $validated['employee_id'] = null;
-        } else {
-            // Jika kasbon personal, set division ke null
-            $validated['division'] = null;
-        }
-
-        $kasbon->update($validated);
+        $this->kasbonService->updateKasbon($kasbon, $validated);
 
         return redirect()->back()->with('success', 'Kasbon berhasil diupdate');
     }
 
     /**
-     * Hapus kasbon terpilih (bulk delete)
+     * Menghapus data kasbon yang dipilih secara massal.
+     *
+     * Hanya kasbon yang masih menunggu yang dapat dihapus. Kasbon yang sudah dipotong dilewati.
+     *
+     * @param  DestroySelectedKasbonRequest  $request  Data pilihan yang sudah divalidasi
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function destroySelected(Request $request)
+    public function destroySelected(DestroySelectedKasbonRequest $request)
     {
-        // Ambil array kasbon_code dari input dengan nama 'selected_kasbons'
-        $selectedIds = $request->input('selected_kasbons', []);
+        $result = $this->kasbonService->deleteSelectedKasbons($request->input('selected_kasbons'));
 
-        // Validasi: cek apakah tidak ada yang dipilih
-        if (empty($selectedIds)) {
-            return redirect()->back()->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
-        }
-
-        $deleted = 0;
-        $skipped = 0;
-
-        foreach ($selectedIds as $kasbonCode) {
-            $kasbon = Kasbon::find($kasbonCode);
-
-            if (!$kasbon) {
-                continue;
-            }
-
-            // Hanya bisa hapus jika status masih pending
-            if ($kasbon->status === 'deducted') {
-                $skipped++;
-                continue;
-            }
-
-            $kasbon->delete();
-            $deleted++;
-        }
-
-        if ($deleted > 0 && $skipped > 0) {
-            return redirect()->back()->with('success', "Berhasil menghapus {$deleted} kasbon. {$skipped} kasbon tidak dapat dihapus karena sudah dipotong.");
-        } elseif ($deleted > 0) {
-            return redirect()->back()->with('success', "Data terpilih berhasil dihapus. ({$deleted} kasbon)");
+        if ($result['deleted'] > 0 && $result['skipped'] > 0) {
+            return redirect()->back()->with('success', "Berhasil menghapus {$result['deleted']} kasbon. {$result['skipped']} kasbon tidak dapat dihapus karena sudah dipotong.");
+        } elseif ($result['deleted'] > 0) {
+            return redirect()->back()->with('success', "Data terpilih berhasil dihapus. ({$result['deleted']} kasbon)");
         } else {
             return redirect()->back()->with('error', 'Semua kasbon yang dipilih sudah dipotong dan tidak dapat dihapus.');
         }
     }
 
     /**
-     * Get total kasbon untuk periode tertentu (untuk ditampilkan saat generate payroll)
+     * Mendapatkan total kasbon untuk periode tertentu (endpoint AJAX).
+     *
+     * Mengembalikan total kasbon personal dan tim untuk periode yang diberikan.
+     * Digunakan oleh modal pembuatan payroll.
+     *
+     * @param  Request  $request  Permintaan HTTP dengan period_start_date dan employee_id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getTotalForPeriod(Request $request)
     {
-        $month = $request->period_month;
-        $year = $request->period_year;
-        $weekNumber = $request->week_number;
+        $periodStartDate = $request->period_start_date;
         $employeeId = $request->employee_id;
 
-        if ($employeeId) {
-            // Get kasbon personal untuk employee tertentu
-            $personalKasbon = Kasbon::getTotalForEmployee($employeeId, $month, $year, $weekNumber);
+        if ($periodStartDate) {
+            $personalKasbon = $employeeId
+                ? $this->kasbonService->getTotalForEmployee($employeeId, $periodStartDate)
+                : 0;
+
+            $teamKasbon = $this->kasbonService->getTotalTeamKasbon($periodStartDate);
         } else {
             $personalKasbon = 0;
+            $teamKasbon = 0;
         }
-
-        // Get kasbon team untuk periode ini
-        $teamKasbon = Kasbon::getTotalTeamKasbon($month, $year, $weekNumber);
 
         return response()->json([
             'personal_kasbon' => $personalKasbon,
@@ -301,86 +159,115 @@ class KasbonController extends Controller
     }
 
     /**
-     * Check maksimal kasbon berdasarkan kehadiran sampai tanggal kasbon
+     * Memeriksa kasbon maksimum yang diperbolehkan berdasarkan absensi (endpoint AJAX).
+     *
+     * Mengembalikan informasi absensi karyawan, batas kasbon maksimum, dan
+     * apakah payroll untuk periode tersebut sudah dibayar.
+     *
+     * @param  Request  $request  Permintaan HTTP dengan employee_id, period_start_date, kasbon_date
+     * @return \Illuminate\Http\JsonResponse
      */
     public function checkMaxKasbon(Request $request)
     {
         $employeeId = $request->input('employee_id');
-        $month = $request->input('period_month');
-        $year = $request->input('period_year');
+        $periodStartDate = $request->input('period_start_date');
         $kasbonDate = $request->input('kasbon_date');
 
-        if (!$employeeId || !$month || !$year || !$kasbonDate) {
+        if (!$employeeId || !$periodStartDate || !$kasbonDate) {
             return response()->json([
                 'success' => false,
-                'message' => 'Parameter tidak lengkap. Pastikan karyawan, bulan, tahun, dan tanggal kasbon sudah dipilih.'
+                'message' => 'Parameter tidak lengkap. Pastikan karyawan, periode, dan tanggal kasbon sudah dipilih.',
             ], 400);
         }
 
-        $employee = Employee::find($employeeId);
-        if (!$employee) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Karyawan tidak ditemukan'
-            ], 404);
+        $result = $this->kasbonService->checkMaxKasbon($employeeId, $periodStartDate, $kasbonDate);
+
+        // Menentukan kode status HTTP yang sesuai berdasarkan hasil
+        if ($result['success']) {
+            $statusCode = 200;
+        } elseif ($result['message'] === 'Karyawan tidak ditemukan') {
+            $statusCode = 404;
+        } else {
+            $statusCode = 400;
         }
 
-        // Auto-detect minggu dari tanggal kasbon
-        $weekNumber = Employee::detectWeekNumber($kasbonDate);
+        return response()->json($result, $statusCode);
+    }
 
-        // Cek apakah payroll minggu ini sudah paid
-        if ($employee->isPayrollPaid($month, $year, $weekNumber)) {
-            return response()->json([
-                'success' => false,
-                'payroll_paid' => true,
-                'week_number' => $weekNumber,
-                'message' => sprintf(
-                    'Payroll minggu ke-%d sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
-                    $weekNumber
-                )
-            ], 400);
+    /**
+     * Mencatat pembayaran cicilan kasbon (tunai/manual).
+     *
+     * Menerima jumlah pembayaran dan mencatatnya sebagai cicilan.
+     * Kasbon akan otomatis diperbarui (paid_amount, remaining_amount, payment_status).
+     *
+     * @param  Request   $request    Permintaan HTTP dengan amount
+     * @param  string    $kasbonCode Kode kasbon yang akan dibayar
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function pay(Request $request, string $kasbonCode)
+    {
+        $kasbon = Kasbon::findOrFail($kasbonCode);
+
+        if ($kasbon->payment_status === 'paid') {
+            return redirect()->back()->with('error', 'Kasbon sudah lunas');
         }
 
-        $daysWorked = $employee->getAttendanceUpToDate($month, $year, $weekNumber, $kasbonDate);
-        $maxKasbon = $employee->getMaxKasbonUpToDate($month, $year, $weekNumber, $kasbonDate);
-        $dailyWage = $employee->daily_wage ?? $employee->base_salary;
+        $request->validate([
+            'amount' => 'required',
+        ], [
+            'amount.required' => 'Jumlah pembayaran harus diisi',
+        ]);
 
-        // Jika belum ada kehadiran sama sekali, return dengan max kasbon 0
-        if ($daysWorked == 0) {
-            return response()->json([
-                'success' => false,
-                'employee_name' => $employee->name,
-                'days_worked' => 0,
-                'max_kasbon' => 0,
-                'week_number' => $weekNumber,
-                'no_attendance' => true,
-                'message' => sprintf(
-                    '%s belum memiliki catatan kehadiran di minggu ke-%d. Kasbon hanya bisa dilakukan setelah karyawan hadir bekerja.',
-                    $employee->name,
-                    $weekNumber
-                )
-            ], 400);
+        $amount = InputNormalizer::normalizeCurrency($request->amount);
+
+        if ($amount <= 0) {
+            return redirect()->back()->with('error', 'Jumlah pembayaran harus lebih dari 0');
         }
+
+        if ($amount > $kasbon->remaining_amount) {
+            return redirect()->back()->with('error', 'Jumlah pembayaran melebihi sisa hutang (' . $kasbon->formatted_remaining_amount . ')');
+        }
+
+        $this->kasbonService->recordPayment($kasbon, $amount, 'manual');
+
+        $remaining = $kasbon->fresh()->remaining_amount;
+
+        if ($remaining <= 0) {
+            return redirect()->back()->with('success', 'Pembayaran berhasil! Kasbon sudah lunas.');
+        }
+
+        return redirect()->back()->with('success', 'Pembayaran cicilan berhasil. Sisa hutang: ' . $kasbon->fresh()->formatted_remaining_amount);
+    }
+
+    /**
+     * Mendapatkan riwayat pembayaran kasbon (endpoint AJAX).
+     *
+     * @param  string  $kasbonCode  Kode kasbon
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function payments(string $kasbonCode)
+    {
+        $kasbon = Kasbon::with('employee')->findOrFail($kasbonCode);
+        $payments = $this->kasbonService->getPayments($kasbonCode);
 
         return response()->json([
-            'success' => true,
-            'employee_name' => $employee->name,
-            'days_worked' => $daysWorked,
-            'daily_wage' => $dailyWage,
-            'max_kasbon' => $maxKasbon,
-            'week_number' => $weekNumber,
-            'payroll_paid' => false,
-            'no_attendance' => false,
-            'max_kasbon_formatted' => 'Rp ' . number_format($maxKasbon, 0, ',', '.'),
-            'message' => sprintf(
-                '%s sudah masuk %d hari pada minggu ke-%d sampai %s. Maksimal kasbon: Rp %s',
-                $employee->name,
-                $daysWorked,
-                $weekNumber,
-                \Carbon\Carbon::parse($kasbonDate)->format('d/m/Y'),
-                number_format($maxKasbon, 0, ',', '.')
-            )
+            'kasbon' => [
+                'kasbon_code' => $kasbon->kasbon_code,
+                'amount' => $kasbon->amount,
+                'paid_amount' => $kasbon->paid_amount,
+                'remaining_amount' => $kasbon->remaining_amount,
+                'payment_status' => $kasbon->payment_status,
+                'employee_name' => $kasbon->employee?->name ?? '-',
+            ],
+            'payments' => $payments->map(fn($p) => [
+                'id' => $p->id,
+                'amount' => $p->amount,
+                'formatted_amount' => $p->formatted_amount,
+                'payment_method' => $p->payment_method,
+                'payment_method_label' => $p->payment_method_label,
+                'payment_date' => $p->payment_date->format('d M Y'),
+                'notes' => $p->notes,
+            ]),
         ]);
     }
 }
-

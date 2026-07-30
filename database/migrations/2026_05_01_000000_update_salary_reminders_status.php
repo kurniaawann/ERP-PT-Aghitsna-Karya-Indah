@@ -7,27 +7,27 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     /**
-     * Run the migrations.
+     * Jalankan migrasi.
      * 
-     * Mengubah status SalaryReminder untuk mengikuti prinsip payroll:
+     * Mengubah status PengingatGaji (SalaryReminder) untuk mengikuti prinsip payroll:
      * - 'pending' dan 'notified' menjadi 'draft' (belum dibayar)
      * - 'paid' tetap 'paid' (sudah dibayar)
      */
     public function up(): void
     {
-        // Convert data lama ke status baru SEBELUM mengubah column definition
-        // Mapping: pending -> draft, notified -> draft, paid -> paid
+        // Konversi data lama ke status baru SEBELUM mengubah definisi kolom
+        // Pemetaan: pending -> draft, notified -> draft, paid -> paid
         DB::update("UPDATE salary_reminders SET status = 'draft' WHERE status IN ('pending', 'notified')");
 
-        // Ubah column enum ke status baru yang hanya ada 'draft' dan 'paid'
+        // Ubah kolom enum ke status baru yang hanya berisi 'draft' dan 'paid'
         Schema::table('salary_reminders', function (Blueprint $table) {
-            // Update column definition menggunakan raw SQL untuk enum
+            // Perbarui definisi kolom menggunakan SQL mentah untuk enum
             DB::statement("ALTER TABLE salary_reminders MODIFY status ENUM('draft', 'paid') DEFAULT 'draft'");
         });
     }
 
     /**
-     * Reverse the migrations.
+     * Balikkan migrasi.
      */
     public function down(): void
     {

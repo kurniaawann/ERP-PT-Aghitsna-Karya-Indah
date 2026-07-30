@@ -4,33 +4,54 @@ namespace App\Observers;
 
 use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+/**
+ * Observer untuk Model Items.
+ *
+ * Menangani event created untuk membuat catatan stok awal
+ * (opening stock) secara otomatis ketika barang baru ditambahkan.
+ */
 class ItemsObserver
 {
     /**
-     * Handle the Items "created" event.
+     * Tanggal stok awal (1970-01-01) sebagai penanda data inisial.
+     */
+    const OPENING_STOCK_DATE = '1970-01-01';
+
+    /**
+     * Deskripsi/catatan untuk stok awal.
+     */
+    const OPENING_STOCK_DESCRIPTION = 'Opening stock (auto)';
+
+    /**
+     * Dipanggil saat barang baru berhasil dibuat.
      *
-     * Auto-create opening stock (stok awal) as an ItemStockIn record so that
-     * StockReportService (which relies on item_stock_ins) can calculate beginning stock.
+     * Membuat catatan ItemStockIn dengan ID awalan OPN- sebagai
+     * stok awal barang, asalkan belum ada catatan serupa.
+     *
+     * @param  Items  $item
+     * @return void
      */
     public function created(Items $item): void
     {
-        // Prevent duplicate opening stock inserts (in case of re-seeding / manual creation).
-        // We tag opening stock using a fixed keterangan and tanggal.
-        $openingTanggal = '1970-01-01';
-        $openingKeterangan = 'Opening stock (auto)';
+        try {
+            Cache::forget('inventory:items:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:items:all]: ' . $e->getMessage());
+        }
 
         $alreadyExists = ItemStockIn::where('id_item', $item->id_item)
-            ->whereDate('tanggal', $openingTanggal)
-            ->where('keterangan', $openingKeterangan)
+            ->whereDate('date', self::OPENING_STOCK_DATE)
+            ->where('notes', self::OPENING_STOCK_DESCRIPTION)
             ->exists();
 
         if ($alreadyExists) {
             return;
         }
 
-        // Only insert opening stock if quantity > 0 (avoid clutter).
         $qty = (int) ($item->quantity ?? 0);
         if ($qty <= 0) {
             return;
@@ -43,8 +64,38 @@ class ItemsObserver
             'id_item' => $item->id_item,
             'quantity' => $qty,
             'capital_price' => (int) ($item->capital_price ?? 0),
-            'keterangan' => $openingKeterangan,
-            'tanggal' => $openingTanggal,
+            'notes' => self::OPENING_STOCK_DESCRIPTION,
+            'date' => self::OPENING_STOCK_DATE,
         ]);
+    }
+
+    /**
+     * Dipanggil saat barang diperbarui.
+     *
+     * @param  Items  $item
+     * @return void
+     */
+    public function updated(Items $item): void
+    {
+        try {
+            Cache::forget('inventory:items:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:items:all]: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Dipanggil saat barang dihapus.
+     *
+     * @param  Items  $item
+     * @return void
+     */
+    public function deleted(Items $item): void
+    {
+        try {
+            Cache::forget('inventory:items:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:items:all]: ' . $e->getMessage());
+        }
     }
 }

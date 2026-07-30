@@ -4,7 +4,7 @@ namespace App\Exports\Inventory;
 
 use App\Models\Inventory\Items;
 use Maatwebsite\Excel\Concerns\{
-    FromCollection,
+    FromQuery,
     WithHeadings,
     WithMapping,
     WithStyles,
@@ -14,13 +14,29 @@ use Maatwebsite\Excel\Concerns\{
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill};
 
-class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
+/**
+ * Export Data Barang ke format Excel (.xlsx).
+ *
+ * Menghasilkan file Excel dengan header "STOCK HOLLOW DI GI"
+ * berisi daftar barang beserta quantity, harga modal, total, dan harga jual.
+ */
+class ItemsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
 {
-    public function collection()
+    /**
+     * Query data yang akan di-export.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function query()
     {
-        return Items::orderBy('id_item', 'asc')->get();
+        return Items::orderBy('id_item', 'asc');
     }
 
+    /**
+     * Header kolom Excel.
+     *
+     * @return array
+     */
     public function headings(): array
     {
         return [
@@ -29,6 +45,12 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         ];
     }
 
+    /**
+     * Mapping data setiap baris barang.
+     *
+     * @param  Items  $item
+     * @return array
+     */
     public function map($item): array
     {
         $total = $item->quantity * $item->capital_price;
@@ -46,6 +68,12 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         ];
     }
 
+    /**
+     * Style header dan border untuk seluruh sheet.
+     *
+     * @param  Worksheet  $sheet
+     * @return array
+     */
     public function styles(Worksheet $sheet): array
     {
         // Header utama style (baris 1)
@@ -84,7 +112,7 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             ],
         ]);
 
-        // Border style
+        // Border style untuk seluruh data
         $lastRow = $sheet->getHighestRow();
         $sheet->getStyle('A1:E' . $lastRow)->applyFromArray([
             'borders' => [
@@ -97,19 +125,29 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         return [];
     }
 
+    /**
+     * Judul sheet Excel.
+     *
+     * @return string
+     */
     public function title(): string
     {
-        return 'Stock Hollow';
+        return 'Stock_Hollow';
     }
 
+    /**
+     * Lebar kolom Excel.
+     *
+     * @return array<string, int>
+     */
     public function columnWidths(): array
     {
         return [
-            'A' => 25,  // Nama Barang
-            'B' => 12,  // Quantity
-            'C' => 18,  // Harga Modal
-            'D' => 18,  // Total
-            'E' => 18,  // Harga Jual
+            'A' => 25,
+            'B' => 12,
+            'C' => 18,
+            'D' => 18,
+            'E' => 18,
         ];
     }
 }

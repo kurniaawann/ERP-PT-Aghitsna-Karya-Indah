@@ -1,0 +1,236 @@
+<?php
+
+namespace App\Services\Sdm;
+
+use App\Models\Sdm\Attendance;
+use App\Models\Sdm\Employee;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Service untuk mengelola bisnis logika absensi.
+ *
+ * Menangani daftar absensi, pembuatan massal, pembaruan, penghapusan,
+ * deteksi duplikat, dan semua aturan bisnis terkait absensi karyawan.
+ */
+class AttendanceService
+{
+    /**
+     * Mendapatkan daftar absensi dengan paginasi, pencarian, dan eager loading.
+     *
+     * @param  string|null  $search     Kata kunci pencarian (nama karyawan, kode, atau tanggal)
+     * @param  int          $perPage    Jumlah data per halaman
+     * @return LengthAwarePaginator
+     */
+    public function getPaginatedAttendances(?string $search, int $perPage = 15): LengthAwarePaginator
+    {
+        return Attendance::with('employee')
+            ->where('created_by', auth()->id())
+            ->when($search, function ($query, $search) {
+                $query->whereHas('employee', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                })
+                    ->orWhere('attendance_date', 'like', "%{$search}%");
+            })
+            ->latest('attendance_date')
+            ->latest('created_at')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Mendapatkan semua karyawan yang diurutkan berdasarkan nama untuk pilihan formulir.
+     *
+     * @return Collection<int, Employee>
+     */
+    public function getAllEmployees(): Collection
+    {
+        try {
+            return Cache::remember('sdm:employees:dropdown', now()->addHours(24), function () {
+                return Employee::orderBy('name')->get(['employee_code', 'name']);
+            });
+        } catch (\Exception $e) {
+            Log::warning('Cache read failed for sdm:employees:dropdown: ' . $e->getMessage());
+            return Employee::orderBy('name')->get(['employee_code', 'name']);
+        }
+    }
+
+    /**
+     * Mendapatkan data absensi yang sudah ada, dikelompokkan berdasarkan employee_id
+     * untuk validasi duplikat di sisi klien.
+     *
+     * Mengembalikan array asosiatif: ['EMP001' => ['2025-01-01', '2025-01-02'], ...]
+     *
+     * @return array<string, array<int, string>>
+     */
+    public function getExistingAttendance(): array
+    {
+        return Attendance::select('employee_id', 'attendance_date')
+            ->get()
+            ->groupBy('employee_id')
+            ->map(function ($items) {
+                return $items->pluck('attendance_date')
+                    ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
+                    ->toArray();
+            })
+            ->toArray();
+    }
+
+    /**
+     * Mencari data absensi duplikat untuk karyawan dan rentang tanggal tertentu.
+     *
+     * Melakukan satu query untuk mengambil semua data yang sudah ada dalam rentang,
+     * kemudian memeriksa setiap kombinasi karyawan+tanggal terhadap hasil tersebut.
+     *
+     * @param  array<int, string>  $employeeIds  Array nilai employee_code
+     * @param  Carbon              $startDate    Tanggal mulai (inklusif)
+     * @param  Carbon              $endDate      Tanggal akhir (inklusif)
+     * @return array<int, string>  Array deskripsi duplikat yang mudah dibaca
+     */
+    public function findDuplicates(array $employeeIds, Carbon $startDate, Carbon $endDate): array
+    {
+        $existingRecords = Attendance::whereIn('employee_id', $employeeIds)
+            ->whereBetween('attendance_date', [
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d'),
+            ])
+            ->get(['id', 'employee_id', 'attendance_date', 'status'])
+            ->keyBy(fn ($record) => $record->employee_id . '_' . Carbon::parse($record->attendance_date)->format('Y-m-d'));
+
+        $duplicates = [];
+        $employeeNames = Employee::whereIn('employee_code', $employeeIds)
+            ->pluck('name', 'employee_code')
+            ->toArray();
+
+        foreach ($employeeIds as $employeeId) {
+            $currentDate = $startDate->copy();
+
+            while ($currentDate->lte($endDate)) {
+                $key = $employeeId . '_' . $currentDate->format('Y-m-d');
+
+                if (isset($existingRecords[$key])) {
+                    $record = $existingRecords[$key];
+                    $duplicates[] = sprintf(
+                        '%s pada tanggal %s (Status: %s)',
+                        $employeeNames[$employeeId] ?? $employeeId,
+                        $currentDate->format('d-m-Y'),
+                        $record->status
+                    );
+                }
+
+                $currentDate->addDay();
+            }
+        }
+
+        return $duplicates;
+    }
+
+    /**
+     * Membuat data absensi secara massal untuk beberapa karyawan dalam rentang tanggal.
+     *
+     * @param  array<int, string>  $employeeIds  Array nilai employee_code
+     * @param  Carbon              $startDate    Tanggal mulai (inklusif)
+     * @param  Carbon              $endDate      Tanggal akhir (inklusif)
+     * @param  string              $status       Status absensi (hadir|izin|sakit|cuti)
+     * @param  string|null         $notes        Catatan opsional
+     * @return int                 Jumlah data yang dimasukkan
+     */
+    public function bulkCreate(array $employeeIds, Carbon $startDate, Carbon $endDate, string $status, ?string $notes): int
+    {
+        $totalInserted = 0;
+
+        foreach ($employeeIds as $employeeId) {
+            $currentDate = $startDate->copy();
+
+            while ($currentDate->lte($endDate)) {
+                Attendance::create([
+                    'employee_id' => $employeeId,
+                    'attendance_date' => $currentDate->format('Y-m-d'),
+                    'status' => $status,
+                    'notes' => $notes,
+                    'created_by' => auth()->id(),
+                ]);
+                $totalInserted++;
+                $currentDate->addDay();
+            }
+        }
+
+        return $totalInserted;
+    }
+
+    /**
+     * Memperbarui satu data absensi.
+     *
+     * @param  Attendance  $attendance  Instance model absensi
+     * @param  array       $data        Data pembaruan yang sudah divalidasi
+     * @return bool
+     */
+    public function updateAttendance(Attendance $attendance, array $data): bool
+    {
+        return $attendance->update($data);
+    }
+
+    /**
+     * Menghapus data absensi berdasarkan ID-nya.
+     *
+     * @param  array<int, int>  $ids  Array ID absensi
+     * @return int                    Jumlah data yang dihapus
+     */
+    public function deleteAttendances(array $ids): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+
+        return Attendance::whereIn('id', $ids)->delete();
+    }
+
+    /**
+     * Membuat pesan sukses yang mudah dibaca untuk pembuatan massal.
+     *
+     * @param  int     $totalInserted  Jumlah data yang dimasukkan
+     * @param  int     $employeeCount  Jumlah karyawan
+     * @param  Carbon  $startDate      Tanggal mulai
+     * @param  Carbon  $endDate        Tanggal akhir
+     * @return string
+     */
+    public function buildBulkCreateMessage(int $totalInserted, int $employeeCount, Carbon $startDate, Carbon $endDate): string
+    {
+        $totalDays = $startDate->diffInDays($endDate) + 1;
+
+        return sprintf(
+            'Berhasil menambahkan %d record absensi untuk %d karyawan selama %d hari (%s s/d %s).',
+            $totalInserted,
+            $employeeCount,
+            $totalDays,
+            $startDate->format('d-m-Y'),
+            $endDate->format('d-m-Y')
+        );
+    }
+
+    /**
+     * Membuat pesan kesalahan yang mudah dibaca untuk data duplikat.
+     *
+     * Membatasi tampilan hingga 5 duplikat pertama dan menambahkan jumlah item yang tersisa.
+     *
+     * @param  array<int, string>  $duplicates  Array deskripsi duplikat
+     * @return string
+     */
+    public function buildDuplicateErrorMessage(array $duplicates): string
+    {
+        $errorMessage = 'Karyawan berikut sudah memiliki absensi: ';
+        $displayDuplicates = array_slice($duplicates, 0, 5);
+        $errorMessage .= implode('; ', $displayDuplicates);
+
+        if (count($duplicates) > 5) {
+            $errorMessage .= sprintf(' dan %d lainnya', count($duplicates) - 5);
+        }
+
+        $errorMessage .= '. Silakan hapus atau edit data yang sudah ada.';
+
+        return $errorMessage;
+    }
+}

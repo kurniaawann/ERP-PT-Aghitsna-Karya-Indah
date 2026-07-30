@@ -25,17 +25,28 @@
                 deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
                 deleteBtn.disabled = true;
                 deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
-                deleteBtn.dataset.originalText = deleteBtn.textContent || 'Hapus';
             }
 
             const form = document.getElementById('deleteForm');
             if (form) {
-                setTimeout(() => {
-                    form.submit();
-                }, 100);
+                form.submit();
             } else {
-                // If form not found, reset button
                 resetLoadingState(deleteBtn);
+            }
+        }
+
+        // ==========================================
+        // CENTRALIZED RECALCULATION
+        // ==========================================
+
+        function recalculateAllTotals(contextContainer) {
+            if (!contextContainer) return;
+            const containerId = contextContainer.id;
+            if (containerId === 'rabCategoriesContainer') {
+                calculateAndUpdateGrandTotal();
+            } else if (containerId.startsWith('editRabCategoriesContainer')) {
+                const rabNumber = containerId.replace('editRabCategoriesContainer', '');
+                calculateAndUpdateGrandTotalForEditModal(rabNumber);
             }
         }
 
@@ -101,7 +112,8 @@
                                                                                                         <label class="block text-text-primary mb-2 text-sm font-semibold">Item Pekerjaan (a, b, c...)</label>
                                                                                                         <div class="items-container space-y-2">
                                                                                                             ${(subcategory.items || []).map(item => `
-                                        <div class="item-block bg-surface-base rounded border border-border-strong p-3 flex flex-col gap-2">
+                                        <div class="item-block bg-surface-base rounded border border-border-strong p-3 flex flex-col gap-2"
+                                            data-sub-harga="${item.sub_harga || 0}">
                                             <input type="text" class="w-full border border-border-strong rounded p-2 item-description bg-surface-base text-text-input"
                                                 placeholder="Masukkan item pekerjaan" value="${item.item_description || ''}" required>
                                             <input type="number" class="w-full border border-border-strong rounded p-2 item-volume bg-surface-base text-text-input" placeholder="Vol"
@@ -142,6 +154,7 @@
 
             container.appendChild(categoryBlock);
             attachPriceListeners();
+            recalculateAllTotals(container);
         }
 
         // Add Subcategory
@@ -190,6 +203,8 @@
 
             container.appendChild(subcategoryBlock);
             attachPriceListeners();
+            const rootContainer = categoryBlock.closest('#rabCategoriesContainer, [id^="editRabCategoriesContainer"]');
+            if (rootContainer) recalculateAllTotals(rootContainer);
         }
 
         // Add Item
@@ -213,21 +228,34 @@
             `;
 
             container.appendChild(itemBlock);
+            // Ikat event listener volume dan harga pada item yang baru ditambahkan
+            attachPriceListenersToItem(itemBlock);
+            const rootContainer = subcategoryBlock.closest('#rabCategoriesContainer, [id^="editRabCategoriesContainer"]');
+            if (rootContainer) recalculateAllTotals(rootContainer);
         }
 
         // Remove Category
         function removeCategoryBlock(button) {
-            button.closest('.category-block').remove();
+            const block = button.closest('.category-block');
+            const rootContainer = block.closest('#rabCategoriesContainer, [id^="editRabCategoriesContainer"]');
+            block.remove();
+            if (rootContainer) recalculateAllTotals(rootContainer);
         }
 
         // Remove Subcategory
         function removeSubcategoryBlock(button) {
-            button.closest('.subcategory-block').remove();
+            const block = button.closest('.subcategory-block');
+            const rootContainer = block.closest('#rabCategoriesContainer, [id^="editRabCategoriesContainer"]');
+            block.remove();
+            if (rootContainer) recalculateAllTotals(rootContainer);
         }
 
         // Remove Item
         function removeItemBlock(button) {
-            button.closest('.item-block').remove();
+            const block = button.closest('.item-block');
+            const rootContainer = block.closest('#rabCategoriesContainer, [id^="editRabCategoriesContainer"]');
+            block.remove();
+            if (rootContainer) recalculateAllTotals(rootContainer);
         }
 
         // ==========================================
@@ -235,20 +263,37 @@
         // ==========================================
 
         function attachPriceListeners() {
-            const volumeInputs = document.querySelectorAll('.item-volume');
-            const priceInputs = document.querySelectorAll('.item-unit-price');
+            // Gunakan event delegation pada document untuk menangkap semua input volume/harga
+            // termasuk yang ditambahkan secara dinamis
+            document.removeEventListener('input', handlePriceInput);
+            document.addEventListener('input', handlePriceInput);
+        }
 
-            volumeInputs.forEach(input => {
-                input.addEventListener('input', function() {
+        function handlePriceInput(e) {
+            const target = e.target;
+            if (target.classList.contains('item-volume') || target.classList.contains('item-unit-price')) {
+                updatePricesForContext(target);
+            }
+        }
+
+        /**
+         * Ikat listener langsung pada elemen item block yang baru (untuk redundancy).
+         */
+        function attachPriceListenersToItem(itemBlock) {
+            const volumeInput = itemBlock.querySelector('.item-volume');
+            const priceInput = itemBlock.querySelector('.item-unit-price');
+
+            if (volumeInput) {
+                volumeInput.addEventListener('input', function() {
                     updatePricesForContext(this);
                 });
-            });
+            }
 
-            priceInputs.forEach(input => {
-                input.addEventListener('input', function() {
+            if (priceInput) {
+                priceInput.addEventListener('input', function() {
                     updatePricesForContext(this);
                 });
-            });
+            }
         }
 
         function updatePricesForContext(element) {
@@ -297,15 +342,18 @@
                         const itemTotal = volume * unitPrice;
                         const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
 
+                        // Gunakan sub_harga dari data attribute jika volume*price = 0
+                        const displayTotal = itemTotal > 0 ? itemTotal : (parseInt(itemBlock.dataset.subHarga) || 0);
+
                         if (itemPriceDisplay) {
                             itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
                                 currency: 'IDR',
                                 minimumFractionDigits: 0
-                            }).format(itemTotal);
+                            }).format(displayTotal);
                         }
 
-                        totalPrice += itemTotal;
+                        totalPrice += displayTotal;
                     });
 
                     const priceDisplay = block.querySelector('.sub-total-price');
@@ -354,15 +402,18 @@
                         const itemTotal = volume * unitPrice;
                         const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
 
+                        // Gunakan sub_harga dari data attribute jika volume*price = 0
+                        const displayTotal = itemTotal > 0 ? itemTotal : (parseInt(itemBlock.dataset.subHarga) || 0);
+
                         if (itemPriceDisplay) {
                             itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
                                 currency: 'IDR',
                                 minimumFractionDigits: 0
-                            }).format(itemTotal);
+                            }).format(displayTotal);
                         }
 
-                        totalPrice += itemTotal;
+                        totalPrice += displayTotal;
                     });
 
                     const priceDisplay = block.querySelector('.sub-total-price');
@@ -465,15 +516,8 @@
                         e.preventDefault();
                         return false;
                     }
-                    // Extract rab number dari form ID (editRABForm123 -> 123)
                     const rabNumber = this.id.replace('editRABForm', '');
                     prepareEditRABSubmit(rabNumber);
-
-                    // Delay submission sedikit agar loading indicator terlihat
-                    e.preventDefault();
-                    setTimeout(() => {
-                        this.submit();
-                    }, 100);
                 });
             });
         });
@@ -527,6 +571,24 @@
             });
 
             document.getElementById('rabDataInput').value = JSON.stringify(categories);
+
+            // Collect miscellaneous costs data
+            const miscContainer = document.getElementById('miscCostsContainer');
+            const miscCostsData = [];
+            if (miscContainer) {
+                miscContainer.querySelectorAll('.misc-cost-item').forEach(function(item, index) {
+                    miscCostsData.push({
+                        item_order: index + 1,
+                        item_name: item.querySelector('.misc-item-name').value,
+                        amount: parseInt(item.querySelector('.misc-item-amount').value) || 0
+                    });
+                });
+            }
+            const miscInput = document.getElementById('miscCostsDataInput');
+            if (miscInput) {
+                miscInput.value = JSON.stringify(miscCostsData);
+            }
+
             return true;
         };
 
@@ -547,11 +609,6 @@
                     return false;
                 }
                 prepareRABSubmit();
-                // Delay submission sedikit agar loading indicator terlihat
-                e.preventDefault();
-                setTimeout(() => {
-                    this.submit();
-                }, 100);
             });
         }
 
@@ -656,15 +713,18 @@
                         const itemTotal = volume * unitPrice;
                         const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
 
+                        // Gunakan sub_harga dari data attribute jika volume*price = 0
+                        const displayTotal = itemTotal > 0 ? itemTotal : (parseInt(itemBlock.dataset.subHarga) || 0);
+
                         if (itemPriceDisplay) {
                             itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
                                 currency: 'IDR',
                                 minimumFractionDigits: 0
-                            }).format(itemTotal);
+                            }).format(displayTotal);
                         }
 
-                        totalPrice += itemTotal;
+                        totalPrice += displayTotal;
                     });
 
                     const priceDisplay = block.querySelector('.sub-total-price');
@@ -726,15 +786,17 @@
                         const itemTotal = volume * unitPrice;
                         const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
 
+                        const displayTotal = itemTotal > 0 ? itemTotal : (parseInt(itemBlock.dataset.subHarga) || 0);
+
                         if (itemPriceDisplay) {
                             itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
                                 currency: 'IDR',
                                 minimumFractionDigits: 0
-                            }).format(itemTotal);
+                            }).format(displayTotal);
                         }
 
-                        subTotal += itemTotal;
+                        subTotal += displayTotal;
                     });
 
                     totalCategories += subTotal;
@@ -813,15 +875,17 @@
                         const itemTotal = volume * unitPrice;
                         const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
 
+                        const displayTotal = itemTotal > 0 ? itemTotal : (parseInt(itemBlock.dataset.subHarga) || 0);
+
                         if (itemPriceDisplay) {
                             itemPriceDisplay.textContent = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
                                 currency: 'IDR',
                                 minimumFractionDigits: 0
-                            }).format(itemTotal);
+                            }).format(displayTotal);
                         }
 
-                        subTotal += itemTotal;
+                        subTotal += displayTotal;
                     });
 
                     totalCategories += subTotal;

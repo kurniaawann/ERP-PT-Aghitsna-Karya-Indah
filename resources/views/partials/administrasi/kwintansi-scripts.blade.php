@@ -1,112 +1,150 @@
+{{-- ============================================================
+     JAVASCRIPT: MODUL KWINTANSI
+     Inisialisasi dan event handler untuk halaman kwintansi.
+
+     Fitur:
+     - Fungsi mata uang (dari shared script)
+     - Fungsi hapus massal (dari shared script)
+     - Fungsi cetak terpilih (dari shared script)
+     - Select All checkbox dan sinkronisasi checkbox individual
+     - Pengelolaan status tombol aksi (hapus, cetak)
+     - Pencegahan double submit pada form tambah/edit
+============================================================ --}}
+
 <script>
-    // ==========================================
-    // PREVENT DOUBLE SUBMIT & LOADING STATE
-    // ==========================================
+    {{-- ==========================================
+         UTILITAS: Mata Uang, Hapus, dan Cetak
+         ========================================== --}}
 
-    // Shared helper is loaded from resources/js/shared/form-submit.js
-
+    @include('partials.shared.currency-utils-script')
     @include('partials.shared.delete-form-script')
     @include('partials.shared.print-selected-script')
 
-    // ==========================================
-    // SELECT ALL CHECKBOX
-    // ==========================================
+    {{-- ==========================================
+         SUBMIT DELETE FORM (global scope)
+         ========================================== --}}
 
-    // Select All Checkbox
+    window.submitDeleteForm = function () {
+        var deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        var form = document.getElementById('deleteForm');
+        if (form) {
+            form.submit();
+        }
+    };
+
+    {{-- ==========================================
+         SELECT ALL CHECKBOX
+         Mengelola checkbox "Pilih Semua" dan sinkronisasi
+         dengan checkbox individual di setiap baris data.
+         ========================================== --}}
+
     document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-        checkboxes.forEach(checkbox => {
+        var checkboxes = document.querySelectorAll('input[name="ids[]"]');
+        checkboxes.forEach(function(checkbox) {
             checkbox.checked = this.checked;
         });
         updateButtonStates();
     });
 
-    // Individual Checkbox
-    document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
+    {{-- Sinkronisasi checkbox individual dengan checkbox "Pilih Semua" --}}
+    document.querySelectorAll('input[name="ids[]"]').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+            var selectAll = document.getElementById('selectAll');
+            var checkboxes = document.querySelectorAll('input[name="ids[]"]');
+            var checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
 
-            selectAll.checked = checkboxes.length === checkedCheckboxes.length;
+            if (selectAll) {
+                selectAll.checked = checkboxes.length === checkedCheckboxes.length;
+            }
             updateButtonStates();
         });
     });
 
-    // Update Delete Button and Print Button State
-    deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
-    deleteButton.classList.add('hover:bg-btn-delete-hover');
-    }
-    else {
-        deleteButton.disabled = true;
-        deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
-        return sharedPrintSelected('{{ route('kwintansi.export.pdf.selected') }}', 'input[name="ids[]"]:checked',
-            'Silakan pilih data terlebih dahulu!');
-        updateButtonStates();
+    {{-- ==========================================
+         STATUS TOMBOL AKSI
+         Mengelola status aktif/nonaktif tombol Hapus
+         dan tampilan/menampilkan tombol Cetak Terpilih
+         berdasarkan jumlah data yang dipilih.
+         ========================================== --}}
 
-        // ==========================================
-        // PRINT SELECTED HANDLER
-        // ==========================================
+    function updateButtonStates() {
+        var deleteButton = document.getElementById('delete-button');
+        var printSelectedItem = document.getElementById('printSelectedItem');
+        var selectedCountText = document.getElementById('selectedCountText');
+        var checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        var count = checkedCheckboxes.length;
 
-        function printSelected() {
-            const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-            const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
-
-            if (selectedIds.length === 0) {
-                alert('Silakan pilih data terlebih dahulu!');
-                return;
+        {{-- Aktifkan/nonaktifkan tombol Hapus --}}
+        if (deleteButton) {
+            if (count > 0) {
+                deleteButton.disabled = false;
+                deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                deleteButton.disabled = true;
+                deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
             }
-
-            // Create a form and submit
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ route('kwintansi.export.pdf.selected') }}';
-
-            // Add CSRF token
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = '_token';
-            csrfInput.value = '{{ csrf_token() }}';
-            form.appendChild(csrfInput);
-
-            // Add selected IDs
-            selectedIds.forEach(id => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'ids[]';
-                input.value = id;
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
         }
 
-        // ==========================================
-        // ADD/EDIT FORM SUBMIT HANDLERS
-        // ==========================================
-
-        // Handle Add Modal Submit
-        const addForm = document.querySelector('#addModal form');
-        if (addForm) {
-            addForm.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                if (!handleFormSubmit(submitBtn)) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
+        {{-- Tampilkan/sembunyikan tombol Cetak Terpilih --}}
+        if (printSelectedItem) {
+            if (count > 0) {
+                printSelectedItem.classList.remove('hidden');
+            } else {
+                printSelectedItem.classList.add('hidden');
+            }
         }
 
-        // Handle Edit Modal Submits
-        document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                if (!handleFormSubmit(submitBtn)) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
+        {{-- Perbarui teks jumlah data terpilih --}}
+        if (selectedCountText) {
+            selectedCountText.textContent = count;
+        }
+    }
+
+    {{-- Inisialisasi status tombol saat halaman dimuat --}}
+    updateButtonStates();
+
+    {{-- ==========================================
+         CETAK TERPILIH
+         Fungsi wrapper untuk sharedPrintSelected dengan
+         route export PDF yang sesuai.
+         ========================================== --}}
+
+    function printSelected(btn) {
+        return sharedPrintSelected('{{ route('kwintansi.export.pdf.selected') }}', btn);
+    }
+
+    {{-- ==========================================
+         PENCEGAHAN DOUBLE SUBMIT
+         Mencegah pengiriman form ganda pada form Tambah
+         dan Edit kwintansi.
+         ========================================== --}}
+
+    {{-- Form Tambah --}}
+    var addForm = document.querySelector('#addModal form');
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            var submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
         });
+    }
+
+    {{-- Form Edit (satu form per baris data) --}}
+    document.querySelectorAll('[id^="editModal-"] form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            var submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
 </script>

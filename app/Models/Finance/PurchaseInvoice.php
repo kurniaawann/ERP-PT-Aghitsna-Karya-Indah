@@ -4,13 +4,30 @@ namespace App\Models\Finance;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Model untuk Faktur Pembelian.
+ *
+ * Menyimpan data faktur pembelian material/barang beserta informasi
+ * pajak (PPN) yang terkait.
+ */
 class PurchaseInvoice extends Model
 {
     use HasFactory;
 
+    /**
+     * Nama tabel yang digunakan.
+     *
+     * @var string
+     */
     protected $table = 'purchase_invoices';
 
+    /**
+     * Kolom yang boleh diisi secara massal.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'date',
         'material_name',
@@ -23,6 +40,11 @@ class PurchaseInvoice extends Model
         'notes',
     ];
 
+    /**
+     * Konversi tipe data kolom.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'date' => 'date',
         'selling_price' => 'integer',
@@ -30,35 +52,110 @@ class PurchaseInvoice extends Model
         'ppn_tax' => 'integer',
     ];
 
+    // ============================================================
+    // ACCESSORS
+    // ============================================================
+
     /**
-     * Calculate total with PPN
+     * Total harga: harga jual + PPN.
+     *
+     * @return int
      */
-    public function getTotalAttribute()
+    public function getTotalAttribute(): int
     {
-        return $this->harga_jual + $this->ppn_pengenaan_pajak;
+        return $this->selling_price + $this->ppn_tax;
+    }
+
+    // ============================================================
+    // SCOPES
+    // ============================================================
+
+    /**
+     * Scope: filter berdasarkan tanggal spesifik.
+     *
+     * @param  Builder $query
+     * @param  string  $date  Format tanggal yang bisa diterima Carbon
+     * @return Builder
+     */
+    public function scopeFilterByDate(Builder $query, string $date): Builder
+    {
+        return $query->whereDate('date', $date);
     }
 
     /**
-     * Scope untuk filter berdasarkan tanggal
+     * Scope: filter berdasarkan range tanggal.
+     *
+     * @param  Builder $query
+     * @param  string  $start
+     * @param  string  $end
+     * @return Builder
      */
-    public function scopeFilterByDate($query, $tanggal)
+    public function scopeFilterByDateRange(Builder $query, string $start, string $end): Builder
     {
-        return $query->whereDate('tanggal', $tanggal);
+        return $query->whereBetween('date', [$start, $end]);
     }
 
     /**
-     * Scope untuk filter berdasarkan range tanggal
+     * Scope: filter berdasarkan nama material.
+     *
+     * @param  Builder $query
+     * @param  string  $materialName
+     * @return Builder
      */
-    public function scopeFilterByDateRange($query, $start, $end)
+    public function scopeFilterByMaterial(Builder $query, string $materialName): Builder
     {
-        return $query->whereBetween('tanggal', [$start, $end]);
+        return $query->where('material_name', 'like', "%{$materialName}%");
     }
 
     /**
-     * Scope untuk filter berdasarkan nama material
+     * Scope: filter berdasarkan kata kunci pencarian (material, barang, NPWP).
+     *
+     * @param  Builder     $query
+     * @param  string|null $search
+     * @return Builder
      */
-    public function scopeFilterByMaterial($query, $nama_material)
+    public function scopeSearch(Builder $query, ?string $search): Builder
     {
-        return $query->where('nama_material', 'like', "%{$nama_material}%");
+        if (!$search) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($search) {
+            $q->where('material_name', 'like', "%{$search}%")
+                ->orWhere('item_name', 'like', "%{$search}%")
+                ->orWhere('npwp', 'like', "%{$search}%");
+        });
+    }
+
+    /**
+     * Scope: filter berdasarkan bulan.
+     *
+     * @param  Builder     $query
+     * @param  string|null $month  Bulan (1-12)
+     * @return Builder
+     */
+    public function scopeFilterByMonth(Builder $query, ?string $month): Builder
+    {
+        if (!$month) {
+            return $query;
+        }
+
+        return $query->whereMonth('date', $month);
+    }
+
+    /**
+     * Scope: filter berdasarkan tahun.
+     *
+     * @param  Builder     $query
+     * @param  string|null $year
+     * @return Builder
+     */
+    public function scopeFilterByYear(Builder $query, ?string $year): Builder
+    {
+        if (!$year) {
+            return $query;
+        }
+
+        return $query->whereYear('date', $year);
     }
 }

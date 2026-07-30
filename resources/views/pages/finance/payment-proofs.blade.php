@@ -4,6 +4,7 @@
 
 @section('content')
     <div class="space-y-4">
+        {{-- Section: Header --}}
         <div
             class="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-5 sm:p-6 text-white shadow-xl overflow-hidden relative">
             <div class="absolute inset-0 opacity-20"
@@ -16,16 +17,17 @@
                         Module</span>
                     <div>
                         <h1 class="text-3xl font-bold tracking-tight">Bukti Pembayaran</h1>
-                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran invoice proyek dan
-                            alumunium. Tahap pembayaran hanya berlaku untuk invoice proyek.</p>
+                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()->isAdmin() ? 'invoice dan rekap penjualan' : 'invoice proyek dan alumunium' }}. Tahap pembayaran hanya berlaku untuk {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <x-buttons.delete-button modalId="deleteModal" />
                     <x-buttons.add-button modalId="addModal" text="Tambah Bukti" />
                 </div>
             </div>
         </div>
 
+        {{-- Section: Summary Cards --}}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div
                 class="group rounded-2xl border border-border-strong bg-surface-base p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
@@ -46,7 +48,7 @@
                 class="group rounded-2xl border border-primary/20 bg-gradient-to-br from-primary-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Invoice Proyek</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{{ auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek' }}</p>
                         <p class="mt-2 text-3xl font-bold tracking-tight text-primary">{{ number_format($projectProofs) }}
                         </p>
                     </div>
@@ -88,6 +90,7 @@
             </div>
         </div>
 
+        {{-- Section: Filter --}}
         <div class="rounded-xl border border-border-strong bg-surface-base p-4 shadow-sm">
             <form method="GET" action="{{ route('payment-proofs.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -118,19 +121,51 @@
             </form>
         </div>
 
+        {{-- Section: Table --}}
         @include('components.finance.payment-proofs.table')
-
-        <div class="mt-4">
-            <x-pagination :paginator="$paymentProofs" />
-        </div>
     </div>
 
+    {{-- Section: Pagination --}}
+    <div class="mt-4">
+        <x-pagination :paginator="$paymentProofs" />
+    </div>
+
+    {{-- Section: Modals --}}
     @include('components.finance.payment-proofs.add-modal')
 
     @foreach ($paymentProofs as $paymentProof)
         @include('components.finance.payment-proofs.edit-modal', ['paymentProof' => $paymentProof])
-        @include('components.finance.payment-proofs.delete-modal', ['paymentProof' => $paymentProof])
     @endforeach
 
-    @include('partials.finance.payment-proofs-scripts')
+    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
+        buttonText="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus data yang dipilih?
+    </x-modal>
 @endsection
+
+@push('scripts')
+    <script>
+        /* global handleFormSubmit, parseCurrencyInput, formatRupiah, bindPaymentProofForm, validatePaymentProofAmount */
+        window.paymentProofInvoiceData = @json($availableInvoices);
+    </script>
+    @vite('resources/js/pages/finance/payment-proofs/index.js')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            @foreach ($paymentProofs as $paymentProof)
+                (function () {
+                    var editForm = document.querySelector('#editModal-{{ $paymentProof->id }} form');
+                    if (editForm) {
+                        editForm.addEventListener('submit', function (e) {
+                            var submitBtn = this.querySelector('button[type="submit"]');
+                            var originalText = submitBtn.innerHTML;
+                            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                                e.preventDefault();
+                                return false;
+                            }
+                        });
+                    }
+                })();
+            @endforeach
+        });
+    </script>
+@endpush

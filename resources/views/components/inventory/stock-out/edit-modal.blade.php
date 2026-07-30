@@ -29,13 +29,13 @@
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-            <input type="date" name="tanggal" value="{{ $item->tanggal->format('Y-m-d') }}"
+            <input type="date" name="date" value="{{ $item->date->format('Y-m-d') }}"
                 class="w-full border rounded p-2" required>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Keterangan</label>
-            <textarea name="keterangan" class="w-full border rounded p-2" rows="3">{{ $item->keterangan }}</textarea>
+            <textarea name="notes" class="w-full border rounded p-2" rows="3">{{ $item->notes }}</textarea>
         </div>
     </x-modal>
 @endforeach

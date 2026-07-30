@@ -1,7 +1,16 @@
 <script>
     // ==========================================
-    // PREVENT DOUBLE SUBMIT & LOADING STATE
+    // CURRENCY FORMATTING UTILITIES
     // ==========================================
+
+    @include('partials.shared.currency-utils-script')
+
+    // ==========================================
+    // SHARED DELETE & PRINT SCRIPTS
+    // ==========================================
+
+    @include('partials.shared.delete-form-script')
+    @include('partials.shared.print-selected-script')
 
     // Shared helper is loaded from resources/js/shared/form-submit.js
 
@@ -9,7 +18,6 @@
     // SELECT ALL CHECKBOX
     // ==========================================
 
-    // Select All Checkbox
     document.getElementById('selectAll').addEventListener('change', function() {
         const checkboxes = document.querySelectorAll('input[name="ids[]"]');
         checkboxes.forEach(checkbox => {
@@ -18,7 +26,6 @@
         updateButtonStates();
     });
 
-    // Individual Checkbox
     document.querySelectorAll('input[name="ids[]"]').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const selectAll = document.getElementById('selectAll');
@@ -30,19 +37,14 @@
         });
     });
 
-    // Update Delete Button and Print Button State
     function updateButtonStates() {
         const deleteButton = document.getElementById('delete-button');
-        const printButton = document.getElementById('printDropdownButton');
+        const printSelectedItem = document.getElementById('printSelectedItem');
         const selectedCountText = document.getElementById('selectedCountText');
         const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
         const count = checkedCheckboxes.length;
 
-        // Update selected count text
         if (selectedCountText) {
-
-            @include('partials.shared.delete-form-script')
-            @include('partials.shared.print-selected-script')
             selectedCountText.textContent = count;
         }
 
@@ -56,103 +58,104 @@
             }
         }
 
-        if (printButton) {
+        if (printSelectedItem) {
             if (count > 0) {
-                printButton.disabled = false;
-                printButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                printSelectedItem.classList.remove('hidden');
             } else {
-                printButton.disabled = true;
-                printButton.classList.add('opacity-50', 'cursor-not-allowed');
+                printSelectedItem.classList.add('hidden');
             }
         }
     }
 
-    // Initialize button states
     updateButtonStates();
 
     // ==========================================
-    // SUBMIT DELETE FORM
+    // ITEM ROW FUNCTIONS
     // ==========================================
 
-    function submitDeleteForm() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-        if (checkedCheckboxes.length === 0) {
-            alert('Tidak ada data yang dipilih!');
-            return;
-        }
+    function updateDeleteButtons(modalId) {
+        const container = document.getElementById('itemsContainer-' + modalId);
+        const items = container.querySelectorAll('.item-row');
+        const deleteButtons = container.querySelectorAll('.delete-btn');
 
-        // Update confirm button in modal
-        const confirmBtn = document.getElementById('confirm-btn-deleteModal');
-        if (confirmBtn) {
-            confirmBtn.disabled = true;
-            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            confirmBtn.classList.add('opacity-70', 'cursor-not-allowed');
-        }
-
-        const form = document.getElementById('deleteForm');
-        form.submit();
+        deleteButtons.forEach(btn => {
+            btn.style.display = items.length > 1 ? 'flex' : 'none';
+        });
     }
 
-    // ==========================================
-    // PRINT SELECTED FUNCTION
-    // ==========================================
+    function calculateItemTotal(row) {
+        const qty = parseInt(row.querySelector('input[name="item_banyaknya[]"]')?.value) || 0;
+        const harga = parseCurrencyInput(row.querySelector('input[name="item_harga_satuan[]"]')?.value);
+        const total = qty * harga;
+        const totalEl = row.querySelector('.item-total');
+        if (totalEl) {
+            totalEl.textContent = total ? new Intl.NumberFormat('id-ID').format(total) : '0';
+        }
+        return total;
+    }
 
-    function printSelected() {
-        const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+    function calculateGrandTotal(modalId) {
+        const container = document.getElementById('itemsContainer-' + modalId);
+        if (!container) return 0;
+        const rows = container.querySelectorAll('.item-row');
+        let grandTotal = 0;
+        rows.forEach(row => {
+            const qty = parseInt(row.querySelector('input[name="item_banyaknya[]"]')?.value) || 0;
+            const harga = parseCurrencyInput(row.querySelector('input[name="item_harga_satuan[]"]')?.value);
+            grandTotal += qty * harga;
+        });
+        const grandTotalEl = document.getElementById('grandTotal-' + modalId);
+        if (grandTotalEl) {
+            grandTotalEl.textContent = new Intl.NumberFormat('id-ID').format(grandTotal);
+        }
+        return grandTotal;
+    }
 
-        if (checkedCheckboxes.length === 0) {
-            alert('Tidak ada data yang dipilih!');
-            return;
+    function attachItemListeners(row, modalId) {
+        const qtyInput = row.querySelector('input[name="item_banyaknya[]"]');
+        const hargaInput = row.querySelector('input[name="item_harga_satuan[]"]');
+
+        function recalc() {
+            calculateItemTotal(row);
+            calculateGrandTotal(modalId);
         }
 
-        // Create a temporary form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('nota.administrasi.export.pdf.selected') }}';
-        form.style.display = 'none';
-
-        return sharedPrintSelected('{{ route('nota.administrasi.export.pdf.selected') }}');
-
-        function updateDeleteButtons(modalId) {
-            const container = document.getElementById('itemsContainer-' + modalId);
-            const items = container.querySelectorAll('.item-row');
-            const deleteButtons = container.querySelectorAll('.delete-btn');
-
-            // Show delete buttons only if there are more than 1 items
-            deleteButtons.forEach(btn => {
-                if (items.length > 1) {
-                    btn.style.display = 'flex';
-                } else {
-                    btn.style.display = 'none';
-                }
-            });
+        if (qtyInput) qtyInput.addEventListener('input', recalc);
+        if (hargaInput) {
+            hargaInput.addEventListener('keyup', recalc);
+            hargaInput.addEventListener('blur', recalc);
         }
+    }
 
-        function addItemRow(modalId) {
-            const container = document.getElementById('itemsContainer-' + modalId);
-            const newRow = document.createElement('div');
-            newRow.className =
-                'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
-            newRow.innerHTML = `
+    function addItemRow(modalId) {
+        const container = document.getElementById('itemsContainer-' + modalId);
+        const newRow = document.createElement('div');
+        newRow.className =
+            'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+        newRow.innerHTML = `
             <div class="space-y-3">
                 <div class="grid grid-cols-12 gap-3">
                     <div class="col-span-2">
-                            <label class="block text-xs font-semibold text-text-label mb-1.5">Qty <span class="text-error">*</span></label>
-                            <input type="number" name="item_banyaknya[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="0" min="1" required>
+                        <label class="block text-xs font-semibold text-text-label mb-1.5">Qty <span class="text-error">*</span></label>
+                        <input type="number" name="item_banyaknya[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="0" min="1" required>
                     </div>
                     <div class="col-span-10">
-                            <label class="block text-xs font-semibold text-text-label mb-1.5">Nama Barang <span class="text-error">*</span></label>
-                            <input type="text" name="item_nama_barang[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="Masukkan nama barang..." required>
+                        <label class="block text-xs font-semibold text-text-label mb-1.5">Nama Barang <span class="text-error">*</span></label>
+                        <input type="text" name="item_nama_barang[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="Masukkan nama barang..." required>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-12 gap-3">
-                    <div class="col-span-9">
-                            <label class="block text-xs font-semibold text-text-label mb-1.5">Harga Satuan <span class="text-error">*</span></label>
-                            <input type="text" name="item_harga_satuan[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right text-text-input price-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="0" required>
+                    <div class="col-span-4">
+                        <label class="block text-xs font-semibold text-text-label mb-1.5">Harga Satuan <span class="text-error">*</span></label>
+                        <input type="text" name="item_harga_satuan[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right text-text-input price-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="0" required oninput="formatCurrencyInput(this)">
                     </div>
-                    <div class="col-span-3 flex items-end">
-                            <button type="button" onclick="removeItemRow(this)" class="delete-btn w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+                    <div class="col-span-3">
+                        <label class="block text-xs font-semibold text-text-label mb-1.5">Jumlah</label>
+                        <div class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right bg-surface-secondary text-text-input item-total">0</div>
+                    </div>
+                    <div class="col-span-5 flex items-end">
+                        <button type="button" onclick="removeItemRow(this)" class="delete-btn w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-trash"></i>
                             <span>Hapus</span>
                         </button>
@@ -160,103 +163,85 @@
                 </div>
             </div>
         `;
-            container.appendChild(newRow);
+        container.appendChild(newRow);
 
-            // Initialize price formatting for the new input
-            const newPriceInput = newRow.querySelector('.price-input');
-            if (newPriceInput) {
-                initPriceInput(newPriceInput);
-            }
+        attachItemListeners(newRow, modalId);
+        updateDeleteButtons(modalId);
+    }
 
-            // Update delete button visibility
-            updateDeleteButtons(modalId);
-        }
+    function removeItemRow(button) {
+        const itemRow = button.closest('.item-row');
+        const container = itemRow.parentElement;
+        const modalId = container.id.replace('itemsContainer-', '');
 
-        function removeItemRow(button) {
-            const itemRow = button.closest('.item-row');
-            const container = itemRow.parentElement;
+        itemRow.remove();
+        calculateGrandTotal(modalId);
+        updateDeleteButtons(modalId);
+    }
+
+    // ==========================================
+    // PRINT SELECTED
+    // ==========================================
+
+    function printSelected(btn) {
+        return sharedPrintSelected('{{ route('nota.administrasi.export.pdf.selected') }}', btn);
+    }
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize delete buttons for add modal
+        updateDeleteButtons('addModal');
+        calculateGrandTotal('addModal');
+
+        // Initialize delete buttons and totals for edit modals
+        document.querySelectorAll('[id^="itemsContainer-editModal-"]').forEach(container => {
             const modalId = container.id.replace('itemsContainer-', '');
-
-            // Remove the item
-            itemRow.remove();
-
-            // Update delete button visibility
             updateDeleteButtons(modalId);
-        }
-
-        // Initialize delete buttons on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // For add modal
-            updateDeleteButtons('addModal');
-
-            // For edit modals
-            document.querySelectorAll('[id^="itemsContainer-editModal-"]').forEach(container => {
-                const modalId = container.id.replace('itemsContainer-', '');
-                updateDeleteButtons(modalId);
-            });
+            calculateGrandTotal(modalId);
         });
 
-        // ==========================================
-        // PRICE INPUT FORMATTING
-        // ==========================================
-
-        function formatRupiah(angka) {
-            const numberString = angka.replace(/[^,\d]/g, '').toString();
-            const split = numberString.split(',');
-            const sisa = split[0].length % 3;
-            let rupiah = split[0].substr(0, sisa);
-            const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-            if (ribuan) {
-                const separator = sisa ? '.' : '';
-                rupiah += separator + ribuan.join('.');
-            }
-
-            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-            return rupiah;
-        }
-
-        function initPriceInput(input) {
-            input.addEventListener('keyup', function(e) {
-                this.value = formatRupiah(this.value);
-            });
-
-            input.addEventListener('blur', function() {
-                if (this.value === '') {
-                    this.value = '0';
-                }
-            });
-
-            input.addEventListener('focus', function() {
-                if (this.value === '0') {
-                    this.value = '';
-                }
-            });
-        }
-
-        // Initialize all price inputs
+        // Initialize currency formatting on all price inputs (optional fields)
         document.querySelectorAll('.price-input').forEach(input => {
-            initPriceInput(input);
+            if (!input.hasAttribute('oninput')) {
+                input.addEventListener('input', function() {
+                    formatCurrencyInput(this);
+                });
+            }
         });
 
-        // ==========================================
-        // FORM SUBMISSION HANDLERS
-        // ==========================================
+        // Attach calculation listeners to existing rows
+        document.querySelectorAll('[id^="itemsContainer-"]').forEach(container => {
+            const modalId = container.id.replace('itemsContainer-', '');
+            container.querySelectorAll('.item-row').forEach(row => {
+                attachItemListeners(row, modalId);
+            });
+        });
 
-        // Add modal form
+        // Add modal form submission with loading indicator
         const addForm = document.querySelector('#addModal form');
         if (addForm) {
             addForm.addEventListener('submit', function(e) {
                 const submitBtn = this.querySelector('button[type="submit"]');
-                handleFormSubmit(submitBtn);
+                const originalText = submitBtn ? submitBtn.innerHTML : '';
+                if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                    e.preventDefault();
+                    return false;
+                }
             });
         }
 
-        // Edit modal forms
+        // Edit modal forms submission with loading indicator
         document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
             form.addEventListener('submit', function(e) {
                 const submitBtn = this.querySelector('button[type="submit"]');
-                handleFormSubmit(submitBtn);
+                const originalText = submitBtn ? submitBtn.innerHTML : '';
+                if (!handleFormSubmit(submitBtn, originalText, 'Memperbarui...')) {
+                    e.preventDefault();
+                    return false;
+                }
             });
         });
 
@@ -264,17 +249,18 @@
         const deleteForm = document.getElementById('deleteForm');
         if (deleteForm) {
             deleteForm.addEventListener('submit', function(e) {
-                if (isSubmitting) {
+                if (formSubmitState.isSubmitting) {
                     e.preventDefault();
                     return false;
                 }
             });
         }
 
-        // Reset isSubmitting when modal is closed
+        // Reset submitting state when modal backdrop is clicked
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal-backdrop')) {
-                isSubmitting = false;
+                formSubmitState.isSubmitting = false;
             }
         });
+    });
 </script>

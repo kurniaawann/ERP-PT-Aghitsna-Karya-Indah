@@ -1,7 +1,6 @@
 {{-- Modal Edit Kwintansi --}}
 <x-modal id="editModal-{{ $kwintansi->id_kwintansi }}" title="Edit Kwintansi"
-    action="{{ route('kwintansi.update', $kwintansi->id_kwintansi) }}" method="POST" buttonText="Update">
-    @method('PUT')
+    action="{{ route('kwintansi.update', $kwintansi->id_kwintansi) }}" method="PUT" buttonText="Update">
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">No. Kwintansi</label>
@@ -26,15 +25,17 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Jumlah (Rp) <span class="text-error">*</span></label>
-            <input type="number" name="amount" class="w-full border rounded p-2" value="{{ $kwintansi->amount }}"
-                required min="0" oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')"
-                oninput="this.setCustomValidity('')">
+            <input type="text" inputmode="numeric" name="amount" class="w-full border rounded p-2" placeholder="Rp 0"
+                value="Rp {{ number_format($kwintansi->amount, 0, ',', '.') }}" required
+                oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')"
+                oninput="formatCurrencyInput(this); this.setCustomValidity('')">
         </div>
 
         <div>
             <label class="block text-text-primary mb-1">Sisa (Rp)</label>
-            <input type="number" name="remaining" class="w-full border rounded p-2" value="{{ $kwintansi->remaining }}"
-                min="0">
+            <input type="text" inputmode="numeric" name="remaining" class="w-full border rounded p-2" placeholder="Rp 0"
+                value="Rp {{ number_format($kwintansi->remaining, 0, ',', '.') }}"
+                oninput="formatCurrencyInput(this)">
         </div>
     </div>
 

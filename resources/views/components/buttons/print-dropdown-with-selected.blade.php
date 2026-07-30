@@ -1,16 +1,33 @@
-@props(['pdfRoute' => null, 'queryParams' => []])
+@props(['pdfRoute' => null, 'queryParams' => [], 'responsive' => 'xl', 'fill' => false])
 
-<div class="relative inline-block text-left w-full sm:w-auto">
+@if($responsive === 'custom')
+    @php
+        $wrapperClass = $fill ? 'relative inline-block text-left flex-1' : 'relative inline-block text-left w-full min-[1530px]:w-auto';
+        $buttonClass = 'w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium';
+    @endphp
+@else
+    @php
+        $wrapperClass = $fill ? 'relative inline-block text-left flex-1' : 'relative inline-block text-left w-full sm:w-auto';
+        $buttonClass = 'w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium';
+    @endphp
+@endif
+
+<div class="{{ $wrapperClass }}">
     <button type="button" id="printDropdownButton"
-        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium">
+        class="{{ $buttonClass }}">
         <i class="fa-solid fa-print w-4 h-4"></i>
         <span>Print Laporan</span>
         <i class="fa-solid fa-chevron-down text-xs ml-auto sm:ml-0"></i>
     </button>
 
     <!-- Dropdown Menu -->
+    @if($responsive === 'custom')
+    <div id="printDropdownMenu"
+        class="hidden absolute left-0 min-[1530px]:right-0 min-[1530px]:left-auto mt-2 w-full min-[1530px]:w-56 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
+    @else
     <div id="printDropdownMenu"
         class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-56 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
+    @endif
         <div class="py-1" role="menu">
             @if ($pdfRoute)
                 {{-- Export All --}}
@@ -21,11 +38,13 @@
                 </a>
 
                 {{-- Export Selected --}}
-                <button type="button" onclick="printSelected()"
-                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
-                    <i class="fa-solid fa-check-square text-primary w-4"></i>
-                    <span>Export Dipilih (<span id="selectedCountText">0</span>)</span>
-                </button>
+                <div id="printSelectedItem" class="hidden">
+                    <button type="button" onclick="printSelected(this)"
+                        class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
+                        <i class="fa-solid fa-check-square text-primary w-4"></i>
+                        <span>Export Dipilih (<span id="selectedCountText">0</span>)</span>
+                    </button>
+                </div>
             @endif
         </div>
     </div>

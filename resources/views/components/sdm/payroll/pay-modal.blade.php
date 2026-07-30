@@ -1,3 +1,18 @@
+{{--
+    Pay Individual Payroll Modal (UNUSED/DEAD CODE)
+
+    NOTE: This component is currently not included in payroll.blade.php.
+    Individual payment has been replaced by Bulk Pay functionality.
+    This file is kept for reference only.
+
+    Previously used for:
+    - Confirming individual payroll payment
+    - Setting payment date
+    - Warning about permanent status change
+
+    Routes: route('payroll.pay') does not exist in routes/web.php.
+--}}
+
 {{-- Modal Bayar Payroll --}}
 <x-modal id="payModal-{{ $payroll->id }}" title="Bayar Payroll" action="{{ route('payroll.pay', $payroll->id) }}"
     method="POST" buttonText="Bayar">

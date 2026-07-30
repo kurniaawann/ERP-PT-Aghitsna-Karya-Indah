@@ -3,12 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Penawaran {{ $quotation->quotation_number }}</title>
+    <title>Penawaran Alumunium</title>
     <style>
-        @page {
+        /* @page {
             size: A4;
-            margin: 0.4cm 0.4cm 0.4cm 0.4cm;
-        }
+            margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+        } */
 
         * {
             margin: 0;
@@ -21,80 +21,62 @@
             font-size: 10px;
             line-height: 1.4;
             color: #000;
-            padding: 15px;
+            padding: 15mm 15mm 15mm 15mm;
         }
 
-        /* ── Header ─────────────────────────────────────────── */
-        .header {
-            display: table;
+        /* ── Header (Table Layout) ──────────────────────────── */
+        .header-table {
             width: 100%;
-            padding-bottom: 10px;
-            margin-bottom: 12px;
-        }
-
-        .header-left {
-            display: table-cell;
-            width: 55%;
-            vertical-align: top;
-        }
-
-        .header-right {
-            display: table-cell;
-            width: 45%;
-            vertical-align: top;
-            text-align: right;
-        }
-
-        .logo-wrap {
-            display: table;
-        }
-
-        .logo-wrap .logo-img {
-            display: table-cell;
-            vertical-align: top;
-        }
-
-        .logo-wrap .logo-img img {
-            width: 65px;
-            height: auto;
-        }
-
-        .logo-wrap .company-info {
-            display: table-cell;
-            vertical-align: middle;
-            padding-left: 8px;
-        }
-
-        .company-name {
-            font-size: 11px;
-            font-weight: bold;
-            color: #CC5500;
-        }
-
-        .company-addr {
-            font-size: 9px;
-            line-height: 1.5;
-        }
-
-        .title-penawaran {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .doc-info-table {
-            width: auto;
-            margin-left: auto;
             border-collapse: collapse;
         }
 
-        .doc-info-table td {
-            padding: 1px 3px;
-            font-size: 10px;
+        .header-table td {
+            border: none;
+            padding: 0;
         }
 
-        .doc-info-table td:first-child {
-            white-space: nowrap;
+        .logo-cell {
+            width: 100px;
+            vertical-align: top;
+            padding-right: 10px;
+        }
+
+        .logo-cell img {
+            display: block;
+            width: 80px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .company-address {
+            font-size: 10px;
+            line-height: 1.8;
+        }
+
+        .invoice-info {
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .invoice-info table {
+            margin-left: 0;
+        }
+
+        .invoice-info td {
+            padding: 2px 0;
+        }
+
+        .invoice-info td:first-child {
+            width: 65px;
+        }
+
+        .invoice-info td:nth-child(2) {
+            width: 10px;
         }
 
         /* ── Recipient ──────────────────────────────────────── */
@@ -103,17 +85,12 @@
             font-size: 10px;
         }
 
-        .recipient-inline {
-            margin-bottom: 3px;
-        }
-
-        .recipient-inline strong {
-            display: inline;
+        .recipient-label {
+            margin-bottom: 5px;
         }
 
         .recipient-name {
-            display: inline;
-            margin-left: 5px;
+            margin-left: 80px;
         }
 
         /* ── Opening text ───────────────────────────────────── */
@@ -161,17 +138,19 @@
             background-color: #fff;
         }
 
-        /* Subtotal row */
-        .row-subtotal td {
-            font-weight: bold;
-            background-color: #FFFF99;
-        }
-
         /* Grand total row */
         .row-grand-total td {
             font-weight: bold;
-            background-color: #FFFF00;
             font-size: 11px;
+        }
+
+        .row-grand-total td.yellow-cell {
+            background-color: #FFFF00;
+        }
+
+        .row-grand-total td.empty-cell {
+            background-color: transparent;
+            border: none;
         }
 
         /* ── Footer ─────────────────────────────────────────── */
@@ -206,77 +185,99 @@
             font-size: 9.5px;
             margin-top: 2px;
         }
+
+        .page-break {
+            page-break-after: always;
+        }
     </style>
 </head>
 
 <body>
     @php
-        $q = $quotation;
-        $groups = $q->groups;
-        $grandTotal = $q->total_amount;
-
-        // Resolve payment accounts
-        $selectedIds = $q->selected_payment_accounts ?? [];
-        if (!empty($selectedIds)) {
-            $payAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedIds)->orderBy('id')->get();
+        if (isset($quotations)) {
+            $quotationList = $quotations;
         } else {
-            $payAccounts = \App\Models\Finance\PaymentAccount::active()->get();
+            $quotationList = collect([$quotation]);
         }
     @endphp
 
-    {{-- ═══ HEADER ════════════════════════════════════════════════════════════════ --}}
-    <div class="header">
-        <div class="header-left">
-            <div class="logo-wrap">
-                <div class="logo-img">
-                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
+    @foreach ($quotationList as $loop_idx => $q)
+        @if ($loop_idx > 0)
+            <div class="page-break"></div>
+        @endif
+        @php
+            $groups = $q->groups;
+            $grandTotal = $q->total_amount;
+            $selectedIds = $q->selected_payment_accounts ?? [];
+            if (!empty($selectedIds)) {
+                $payAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedIds)->orderBy('id')->get();
+            } else {
+                $payAccounts = \App\Models\Finance\PaymentAccount::active()->get();
+            }
+        @endphp
+
+    {{-- ═══ HEADER (TABLE LAYOUT) ══════════════════════════════════════════════════ --}}
+    <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+            <td width="45%" valign="top" style="padding-bottom: 15px;">
+                <div class="logo-cell">
+                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
                 </div>
-                <div class="company-info">
-                    <div class="company-name">PT.AGHITSNA KARYA INDAH</div>
-                    <div class="company-addr">
-                        JL. TANAH BARU RAYA PERTIWI RT.01/05<br>
-                        BEJI, DEPOK, JAWA BARAT<br>
-                        Telp. 021-29034923 - 0812,9596,552<br>
-                        Email : Design@aghitsna.id
-                    </div>
+            </td>
+            <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
+                <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
+                    PENAWARAN ALUMUNIUM
                 </div>
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="title-penawaran">PENAWARAN</div>
-            <table class="doc-info-table">
-                <tr>
-                    <td>No</td>
-                    <td>:</td>
-                    <td><strong>{{ $q->quotation_number }}</strong></td>
-                </tr>
-                <tr>
-                    <td>Tanggal</td>
-                    <td>:</td>
-                    <td>{{ \Carbon\Carbon::parse($q->date)->isoFormat('DD MMMM YYYY') }}</td>
-                </tr>
-                <tr>
-                    <td>Hal</td>
-                    <td>:</td>
-                    <td>{{ $q->subject }}</td>
-                </tr>
-            </table>
-        </div>
-    </div>
+            </td>
+            <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
+        </tr>
+        <tr>
+            <td valign="top">
+                <div class="company-address" style="font-size: 12px; line-height: 1.4;">
+                    <strong>AGHITSNA ALUMUNIUM DAN BAJA RINGAN</strong><br>
+                    JL. TANAH BARU RAYA PERTIWI RT.01/05<br>
+                    BEJI, DEPOK, JAWA BARAT<br>
+                    Telp. 021-29034923 - 0812.9596.552<br>
+                    Email : Design@aghitsna.id
+                </div>
+            </td>
+            <td valign="top"></td>
+            <td valign="top">
+                <div class="invoice-info" style="font-size: 12px;">
+                    <table cellpadding="0" cellspacing="0" border="0" align="right">
+                        <tr>
+                            <td style="padding-right: 5px;" valign="top">No</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                            <td valign="top">{{ $q->quotation_number }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-right: 5px;" valign="top">Tanggal</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                            <td valign="top">{{ \Carbon\Carbon::parse($q->date)->isoFormat('DD MMMM YYYY') }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-right: 5px;" valign="top">Hal</td>
+                            <td style="padding-right: 5px;" valign="top">:</td>
+                            <td valign="top">{{ $q->subject }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <div class="recipient-inline">
+        <div class="recipient-label">
             <strong>Kepada Yth :</strong>
-            <span class="recipient-name">{{ $q->recipient }}</span>
         </div>
-        <div>
-            <strong>{{ $q->recipient_address }}</strong>
+        <div class="recipient-name">
+            {{ $q->recipient }}
         </div>
     </div>
 
     <div class="opening">
-        Dengan ini kami sampaikan Penawaran Harga, sebagai berikut :
+        Dengan ini kami sampaikan {{ $q->project_description }}
     </div>
 
     {{-- ═══ ITEMS TABLE ═════════════════════════════════════════════════════════════ --}}
@@ -311,17 +312,13 @@
                     </tr>
                 @endforeach
 
-                {{-- Subtotal row --}}
-                <tr class="row-subtotal">
-                    <td colspan="5" class="c">Jumlah</td>
-                    <td class="r">Rp &nbsp;{{ number_format($group->subtotal, 0, ',', '.') }}</td>
-                </tr>
             @endforeach
 
             {{-- Grand Total --}}
             <tr class="row-grand-total">
-                <td colspan="5" class="c">Total</td>
-                <td class="r">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
+                <td colspan="4" class="empty-cell"></td>
+                <td class="c yellow-cell">Total</td>
+                <td class="r yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
@@ -349,6 +346,7 @@
         <div class="signature-line">{{ $q->signed_by ?? 'Akhmad Khaidir' }}</div>
         <div class="signature-division">Divisi Alumunium</div>
     </div>
+    @endforeach
 
 </body>
 

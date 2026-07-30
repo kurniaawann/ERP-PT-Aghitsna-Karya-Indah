@@ -28,22 +28,35 @@
         }
     }
 
-    // Override openModal for project quotation modals to hide errors
-    (function() {
+    // Override openModal for project quotation modals to hide errors & init checkboxes
+    document.addEventListener('DOMContentLoaded', function() {
         const originalOpenModal = window.openModal;
+        if (typeof originalOpenModal !== 'function') return;
+
         window.openModal = function(id) {
-            // Call original function
             originalOpenModal(id);
 
-            // Hide error messages when modal opens
             if (id === 'addModal') {
                 hideModalError('add');
+                validatePaymentSelection();
             } else if (id.startsWith('editModal-')) {
                 const quotNum = id.replace('editModal-', '');
                 hideModalError('editModal-' + quotNum);
+
+                const container = document.getElementById('payment-accounts-' + quotNum);
+                if (container) {
+                    const selectedIds = JSON.parse(container.dataset.selectedIds || '[]');
+                    const anyChecked = selectedIds.length > 0;
+                    container.querySelectorAll('.payment-account-checkbox').forEach(cb => {
+                        cb.checked = selectedIds.some(id => id == cb.value);
+                        cb.required = !anyChecked;
+                    });
+                }
+
+                validatePaymentSelectionEdit(quotNum);
             }
         };
-    })();
+    });
 
     /**
      * Resolve container, grand-total display, and JSON hidden-input IDs from a prefix.
@@ -147,11 +160,11 @@
                 {{-- Volume --}}
                 <div>
                     <label class="block text-xs font-semibold text-text-label mb-1">Volume</label>
-                    <input type="text" class="item-volume w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text-input bg-surface-base"
-                        placeholder="-" maxlength="50"
-                        oninvalid="this.setCustomValidity('Volume maksimal 50 karakter')"
+                    <input type="number" class="item-volume w-full border border-border-strong rounded-lg px-3 py-2 text-sm text-text-input bg-surface-base"
+                        placeholder="-" min="0" step="0.01"
+                        oninvalid="this.setCustomValidity('Volume harus berupa angka')"
                         oninput="this.setCustomValidity('')"
-                        value="${escHtml(prefillData.volume || '')}">
+                        value="${prefillData.volume || ''}">
                 </div>
                 {{-- Unit --}}
                 <div>
@@ -199,7 +212,10 @@
             formatPriceInput(priceInput);
             updateGrandTotal(prefix);
         });
-        volInput.addEventListener('input', () => updateGrandTotal(prefix));
+        volInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9.,]/g, '');
+            updateGrandTotal(prefix);
+        });
 
         itemsContainer.appendChild(itemEl);
 
@@ -340,11 +356,15 @@
         }
 
         // Set JSON
-        // Show loading spinner
+        jsonInput.value = JSON.stringify(groups);
+
+        // Show loading spinner, prevent double submit
         const submitBtn = document.getElementById('submit-btn-addModal');
         if (submitBtn) {
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                return false;
+            }
         }
 
         return true;
@@ -380,38 +400,78 @@
         // Set JSON
         jsonInput.value = JSON.stringify(groups);
 
-        // Show loading spinner
+        // Show loading spinner, prevent double submit
         const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);
         if (submitBtn) {
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            if (!handleFormSubmit(submitBtn, originalText, 'Menyimpan...')) {
+                return false;
+            }
         }
 
         return true;
     }
 
+    // ─── Payment Account Validation ──────────────────────────────────────────────
+    function validatePaymentSelection() {
+        const addModal = document.getElementById('addModal');
+        const checkboxes = addModal?.querySelectorAll('.payment-account-checkbox') ?? [];
+        const submitBtn = document.getElementById('submit-btn-addModal');
+
+        const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+        if (submitBtn) {
+            submitBtn.disabled = !anyChecked;
+            submitBtn.classList.toggle('opacity-50', !anyChecked);
+            submitBtn.classList.toggle('cursor-not-allowed', !anyChecked);
+        }
+
+        return anyChecked;
+    }
+
+    function validatePaymentSelectionEdit(quotNum) {
+        const modal = document.getElementById('editModal-' + quotNum);
+        const checkboxes = modal?.querySelectorAll('.payment-account-checkbox') ?? [];
+        const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);
+
+        const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+        if (submitBtn) {
+            submitBtn.disabled = !anyChecked;
+            submitBtn.classList.toggle('opacity-50', !anyChecked);
+            submitBtn.classList.toggle('cursor-not-allowed', !anyChecked);
+        }
+
+        return anyChecked;
+    }
+
+    // ─── Delete Button State ──────────────────────────────────────────────────────
+    function updateDeleteButtonState() {
+        const deleteBtn = document.getElementById('delete-button');
+        const anyChecked = Array.from(document.querySelectorAll('input[name="ids[]"]')).some(cb => cb.checked);
+        if (deleteBtn) {
+            deleteBtn.disabled = !anyChecked;
+        }
+    }
+
     // ─── Submit delete ────────────────────────────────────────────────────────────
     function submitDeleteForm() {
-        document.getElementById('deleteForm').submit();
+        const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        const form = document.getElementById('deleteForm');
+        if (form) {
+            form.submit();
+        }
     }
 
     // ─── Export PDF (selected) ───────────────────────────────────────────────────
-    function submitExportPdf() {
-        const checkboxes = document.querySelectorAll('input[name="ids[]"]:checked');
-        if (checkboxes.length === 0) {
-            alert('Pilih minimal 1 penawaran untuk diekspor.');
-            return;
-        }
-        const container = document.getElementById('exportPdfIdsContainer');
-        container.innerHTML = '';
-        checkboxes.forEach(cb => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'ids[]';
-            input.value = cb.value;
-            container.appendChild(input);
-        });
-        document.getElementById('exportPdfForm').submit();
+    function submitExportPdf(btn) {
+        return sharedPrintSelected('{{ route('aluminium-quotation.export.pdf.selected') }}', btn);
     }
 
     // ─── Auto-populate Add modal number on open ──────────────────────────────────
@@ -447,8 +507,53 @@
                 document.querySelectorAll('input[name="ids[]"]').forEach(cb => {
                     cb.checked = selectAll.checked;
                 });
+                updateDeleteButtonState();
             });
         }
+
+        // Individual checkbox listeners for delete button state
+        document.querySelectorAll('input[name="ids[]"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (selectAll && !this.checked) {
+                    selectAll.checked = false;
+                }
+                if (selectAll) {
+                    const allChecked = Array.from(document.querySelectorAll('input[name="ids[]"]')).every(c => c.checked);
+                    selectAll.checked = allChecked;
+                }
+                updateDeleteButtonState();
+            });
+        });
+
+        updateDeleteButtonState();
+
+        // Payment account validation: Add modal
+        validatePaymentSelection();
+        document.querySelectorAll('#addModal .payment-account-checkbox').forEach(cb => {
+            cb.addEventListener('change', validatePaymentSelection);
+        });
+
+        // Payment account validation & initialization: Edit modals
+        document.querySelectorAll('[id^="editModal-"]').forEach(modal => {
+            const quotNum = modal.id.replace('editModal-', '');
+            const container = document.getElementById('payment-accounts-' + quotNum);
+            if (container) {
+                const selectedIds = JSON.parse(container.dataset.selectedIds || '[]');
+                container.querySelectorAll('.payment-account-checkbox').forEach(cb => {
+                    cb.checked = selectedIds.some(id => id == cb.value);
+                });
+            }
+            validatePaymentSelectionEdit(quotNum);
+            modal.querySelectorAll('.payment-account-checkbox').forEach(cb => {
+                cb.addEventListener('change', () => validatePaymentSelectionEdit(quotNum));
+            });
+        });
+    });
+
+    // ─── Reset form state on page show (back button) ────────────────────────────
+    window.addEventListener('pageshow', function() {
+        resetFormSubmitState();
+        updateDeleteButtonState();
     });
 
     // ─── HTML escape helper ───────────────────────────────────────────────────────

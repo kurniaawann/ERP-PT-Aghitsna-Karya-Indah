@@ -6,9 +6,47 @@ use App\Models\Inventory\Items;
 use App\Models\Inventory\ItemStockIn;
 use App\Models\Inventory\ItemStockOut;
 use App\Models\Inventory\ItemReturn;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class StockService
 {
+    /**
+     * Mendapatkan seluruh data Barang Keluar diurutkan berdasarkan ID descending.
+     *
+     * Menggunakan cache untuk dropdown di halaman Pengembalian Barang.
+     * Cache di-invalidate saat ada transaksi stock-out.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllStockOuts()
+    {
+        try {
+            return Cache::remember(
+                'inventory:stock-outs:all',
+                now()->addHour(),
+                fn () => ItemStockOut::orderBy('id_stock_out', 'desc')->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [inventory:stock-outs:all]: ' . $e->getMessage());
+            return ItemStockOut::orderBy('id_stock_out', 'desc')->get();
+        }
+    }
+
+    /**
+     * Invalidate cache stock-out dan stock report.
+     *
+     * @return void
+     */
+    public function flushCache(): void
+    {
+        try {
+            Cache::forget('inventory:stock-outs:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-outs:all]: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Increase stock quantities for items array (used when restoring stock on delete).
      * Each item array is expected to have 'from_stock', 'id_item', and 'quantity'.
@@ -97,6 +135,12 @@ class StockService
 
         // delete the stock-in record
         $stockIn->delete();
+
+        try {
+            Cache::forget('inventory:stock-ins:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-ins:all]: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -152,5 +196,12 @@ class StockService
 
         $item->save();
         $return->delete();
+
+        try {
+            Cache::forget('inventory:stock-ins:all');
+        } catch (\Exception $e) {
+            Log::warning('Cache DELETE error [inventory:stock-ins:all]: ' . $e->getMessage());
+        }
+        $this->flushCache();
     }
 }

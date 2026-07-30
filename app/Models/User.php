@@ -16,9 +16,7 @@ class User extends Authenticatable
     const ROLES = [
         'superadmin' => 'Super Admin',
         'admin' => 'Admin',
-        'keuangan' => 'Keuangan',
-        'sdm' => 'SDM',
-        'administrasi' => 'Administrasi',
+        'general_manager' => 'General Manager',
     ];
 
     protected $fillable = [
@@ -42,6 +40,27 @@ class User extends Authenticatable
         return $this->role === 'superadmin';
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isGeneralManager(): bool
+    {
+        return $this->role === 'general_manager';
+    }
+
+    public function getHomeRoute(): string
+    {
+        if ($this->isAdmin()) {
+            return '/proyek-invoice';
+        }
+        if ($this->isGeneralManager()) {
+            return '/report/sales';
+        }
+        return '/dashboard';
+    }
+
     public function hasRole(string|array $roles): bool
     {
         return in_array($this->role, (array) $roles);
@@ -50,6 +69,23 @@ class User extends Authenticatable
     public function getRoleLabelAttribute(): string
     {
         return self::ROLES[$this->role] ?? $this->role;
+    }
+
+    /**
+     * Scope pencarian berdasarkan nama atau email.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string|null                             $search
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, ?string $search)
+    {
+        if (!$search) {
+            return $query;
+        }
+
+        return $query->where('name', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%");
     }
 
     public function sendPasswordResetNotification($token)

@@ -1,3 +1,23 @@
+{{--
+    Generate Payroll Modal
+
+    Modal form for generating weekly payroll for all active employees.
+
+    Process:
+    1. User selects month, year, week, and optional project name
+    2. Auto-checks attendance completeness via AJAX (PayrollController@checkAttendanceCompleteness)
+    3. Shows validation results:
+       - Complete employees (all days filled)
+       - Incomplete employees (missing attendance days)
+       - Already generated employees (skip)
+       - Kasbon issues (exceeds salary)
+    4. Generate button only enabled if all conditions pass (can_generate = true)
+    5. Additional expenses can be added dynamically (token listrik, air, etc.)
+    6. On submit, posts to PayrollController@generate
+
+    Frontend JS: partials/sdm/payroll-scripts.blade.php (checkAttendanceData function)
+--}}
+
 {{-- Modal Generate Payroll --}}
 <x-modal id="generateModal" title="Generate Payroll" action="{{ route('payroll.generate') }}" method="POST"
     buttonText="Generate">
@@ -13,7 +33,7 @@
                     <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
                     <li><strong class="text-error">Setiap karyawan harus memiliki absensi lengkap sesuai hari
                             kerjanya</strong></li>
-                    <li>Kasbon personal dan tim otomatis dipotong saat generate</li>
+                    <li>Kasbon hanya dipotong jika karyawan sudah membayar</li>
                     <li>Bisa menambahkan pengeluaran (token listrik/air, dll)</li>
                 </ul>
             </div>
@@ -54,14 +74,14 @@
             <select name="week_number" id="week_number"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
                 oninvalid="this.setCustomValidity('Minggu tidak boleh kosong')" oninput="this.setCustomValidity('')">
-                <option value="">Pilih</option>
-                <option value="1">Minggu 1 (1-7)</option>
-                <option value="2">Minggu 2 (8-14)</option>
-                <option value="3">Minggu 3 (15-21)</option>
-                <option value="4">Minggu 4 (22-akhir)</option>
+                <option value="">Pilih bulan & tahun terlebih dahulu</option>
             </select>
         </div>
     </div>
+
+    {{-- Hidden inputs for period date range (populated by JS when week is selected) --}}
+    <input type="hidden" name="period_start_date" id="period_start_date" value="">
+    <input type="hidden" name="period_end_date" id="period_end_date" value="">
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Nama Proyek <span

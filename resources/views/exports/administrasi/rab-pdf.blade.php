@@ -204,7 +204,8 @@
         }
 
         .summary-row.terbilang-row td {
-            background-color: #fff;
+            /* background-color: #fff; */
+            background-color:  #ffff00;
             font-weight: bold;
             font-style: italic;
         }
@@ -281,7 +282,7 @@
                 <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
             </div>
             <div class="header-center">
-                <h1>PENAWARAN HARGA PEKERJAAN</h1>
+                <h1>RENCANA ANGGARAN BIAYA</h1>
             </div>
         </div>
 
@@ -478,6 +479,24 @@
                     <td colspan="6" class="label">TERBILANG</td>
                     <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
                 </tr>
+                @php
+                    $incomingPayment = $rab->incoming_payment ?? 0;
+                    $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
+                @endphp
+                @if ($incomingPayment > 0)
+                    <tr class="summary-row" style="background-color: #edbcbc;">
+                        <td colspan="6" class="label">UANG MASUK</td>
+                        <td class="value">Rp. {{ number_format($incomingPayment, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr class="summary-row total-amount-row" style="background-color: #FFE0B2;">
+                        <td colspan="6" class="label">SISA PEMBAYARAN</td>
+                        <td class="value">Rp. {{ number_format($sisaPembayaran, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr class="summary-row terbilang-row">
+                        <td colspan="6" class="label">TERBILANG</td>
+                        <td class="value">{{ ucwords(terbilang($sisaPembayaran)) }} rupiah</td>
+                    </tr>
+                @endif
             </tbody>
         </table>
 
@@ -509,8 +528,8 @@
         </div>
 
         <div class="footer-section">
-            <p>Demikian penawaran harga ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.
-            </p>
+            <p>Demikian rencana anggaran biaya ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima
+                kasih.</p>
         </div>
 
         <div class="signature-section">
