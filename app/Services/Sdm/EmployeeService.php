@@ -52,17 +52,31 @@ class EmployeeService
      *
      * @return \Illuminate\Support\Collection
      */
-    public function getAllDivisions(): Collection
-    {
-        try {
-            return Cache::remember('sdm:divisions:dropdown', now()->addHours(24), function () {
-                return Division::orderBy('name')->get();
-            });
-        } catch (\Exception $e) {
-            Log::warning('Cache read failed for sdm:divisions:dropdown: ' . $e->getMessage());
-            return Division::orderBy('name')->get();
-        }
+   public function getAllDivisions(): Collection
+{
+    $userId = auth()->id();
+
+    try {
+        return Cache::remember(
+            'sdm:divisions:dropdown:' . $userId,
+            now()->addHours(24),
+            function () use ($userId) {
+                return Division::where('created_by', $userId)
+                    ->orderBy('name')
+                    ->get();
+            }
+        );
+    } catch (\Exception $e) {
+        Log::warning(
+            'Cache read failed for sdm:divisions:dropdown:' . $userId . ': ' .
+            $e->getMessage()
+        );
+
+        return Division::where('created_by', $userId)
+            ->orderBy('name')
+            ->get();
     }
+}
 
     /**
      * Membuat karyawan baru dengan kode karyawan yang dihasilkan secara otomatis.
