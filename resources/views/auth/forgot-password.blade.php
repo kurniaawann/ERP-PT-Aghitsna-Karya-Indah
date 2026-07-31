@@ -33,11 +33,16 @@
                 @enderror
             </div>
 
-            {{-- TOMBOL KIRIM LINK --}}
-            <button type="submit"
-                class="w-full bg-primary text-white font-medium py-2 rounded-lg hover:bg-primary-hover transition-all">
-                Kirim Link Reset
-            </button>
+            {{-- TOMBOL KIRIM LINK (loading reusable) --}}
+            @include('partials.loading-submit-button', [
+                'id' => 'resetLinkBtn',
+                'textId' => 'resetLinkBtnText',
+                'spinnerId' => 'resetLinkBtnSpinner',
+                'buttonText' => 'Kirim Link Reset',
+                'buttonType' => 'submit',
+                'buttonClass' =>
+                    'w-full bg-primary text-white font-medium py-2 rounded-lg hover:bg-primary-hover transition-all',
+            ])
 
             {{-- BACK TO LOGIN --}}
             <div class="text-center">

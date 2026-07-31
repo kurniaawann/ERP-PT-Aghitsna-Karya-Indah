@@ -50,7 +50,7 @@ class PageController extends Controller
 
         $paidMap = [];
         foreach ($paidPayrolls as $p) {
-            $paidMap[$p->employee_id][$p->period_start_date] = true;
+            $paidMap[$p->employee_id][$p->period_start_date->format('Y-m-d')] = true;
         }
 
         $employeesWithoutSalary = [];
