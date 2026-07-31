@@ -279,20 +279,20 @@ class PayrollController extends Controller
             $endDate = Carbon::parse($firstPayroll->period_end_date);
             $dateRange = $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y');
 
-            // Membuat array hari minggu untuk header kolom (Senin-Sabtu saja)
+            // Membuat array hari untuk kolom header (Senin-Minggu = 7 hari).
+            // Minggu disertakan karena absensi lembur hari Minggu bisa diinput.
             $current = $startDate->copy();
-            while ($current->lte($endDate)) {
-                if ($current->dayOfWeek !== Carbon::SUNDAY) {
-                    $weekDays[] = $current->format('Y-m-d');
-                }
+            for ($i = 0; $i < 7; $i++) {
+                $weekDays[] = $current->format('Y-m-d');
                 $current->addDay();
             }
+            $lastWeekDay = $current->copy()->subDay();
 
             foreach ($payrolls as $payroll) {
                 $payroll->attendances = Attendance::where('employee_id', $payroll->employee_id)
                     ->whereBetween('attendance_date', [
                         $startDate->format('Y-m-d'),
-                        $endDate->format('Y-m-d'),
+                        $lastWeekDay->format('Y-m-d'),
                     ])
                     ->get();
             }

@@ -36,7 +36,7 @@
         }
 
         body {
-            font-family: 'Times New Roman', Times, serif;
+            font-family: 'Times New Roman', Times, serif, 'DejaVu Sans';
             font-size: 10px;
             color: #333;
             line-height: 1.3;
@@ -82,6 +82,7 @@
         .main-table {
             width: 100%;
             border-collapse: collapse;
+            border: 1px solid #ccc;
             margin-bottom: 20px;
         }
 
@@ -230,13 +231,13 @@
                 <tr>
                     <th rowspan="2" style="width: 30px;">NO</th>
                     <th rowspan="2">NAMA PEKERJA</th>
-                    <th colspan="7">KEHADIRAN ({{ count($weekDays) }} Hari)</th>
+                    <th colspan="7">KEHADIRAN (7 Hari)</th>
                     <th rowspan="2" style="width: 80px;">UPAH HARIAN</th>
                     <th rowspan="2" style="width: 90px;">TOTAL UPAH</th>
                 </tr>
                 <tr>
-                    @foreach (['MING', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'] as $d)
-                        <th style="font-size: 8px; width: 25px;">{{ $d }}</th>
+                    @foreach ($weekDays as $date)
+                        <th style="font-size: 8px; width: 25px;">{{ ['MING', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'][\Carbon\Carbon::parse($date)->dayOfWeek] }}</th>
                     @endforeach
                 </tr>
             </thead>
@@ -247,15 +248,17 @@
                         <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
                         @foreach ($weekDays as $date)
                             @php
-                                $attendance = $payroll->attendances->firstWhere('attendance_date', $date);
+                                $attendance = $payroll->attendances->first(
+                                    fn($a) => $a->attendance_date?->format('Y-m-d') === $date
+                                );
                                 $status = $attendance ? $attendance->status : '';
-                                $symbol = '-';
+                                $symbol = 'L';
                                 $bg = '';
 
                                 if ($status === 'hadir') {
                                     $symbol = '✓';
                                 } elseif ($status === 'lembur') {
-                                    $symbol = 'L';
+                                    $symbol = 'Lb';
                                     $bg = '#e3f2fd';
                                 } elseif ($status === 'izin') {
                                     $symbol = 'I';
@@ -278,7 +281,7 @@
             </tbody>
         </table>
         <div class="legend">
-            Keterangan: ✓=Hadir, L=Lembur, I=Izin, S=Sakit, C=Cuti
+            Keterangan: ✓=Hadir, Lb=Lembur, L=Libur, I=Izin, S=Sakit, C=Cuti
         </div>
     @else
         {{-- TABEL RINGKASAN --}}

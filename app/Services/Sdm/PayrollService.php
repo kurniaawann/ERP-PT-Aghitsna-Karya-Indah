@@ -21,6 +21,8 @@ use Illuminate\Support\Collection;
  *
  * Identifikasi periode menggunakan period_start_date sebagai kunci utama.
  * Minggu berjalan dari Senin-Sabtu dan TIDAK dipotong di batas bulan.
+ * Lembur hari Minggu (akhir periode) ikut dihitung dalam payroll,
+ * namun Minggu tidak wajib diisi dalam validasi kelengkapan absensi.
  */
 class PayrollService
 {
@@ -94,8 +96,11 @@ class PayrollService
             ->pluck('employee_id')
             ->toArray();
 
+        // Rentang absensi meliputi Minggu (endDate + 1) karena lembur hari Minggu
+        // diperbolehkan diinput dan harus ikut dihitung dalam payroll.
+        // Minggu tidak termasuk hari kerja wajib (tidak divalidasi kelengkapan).
         $allAttendances = Attendance::whereIn('employee_id', $employees->pluck('employee_code'))
-            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->whereBetween('attendance_date', [$startDate, $endDate->copy()->addDay()])
             ->get()
             ->groupBy('employee_id');
 
@@ -158,7 +163,7 @@ class PayrollService
             $missingDates = array_diff($employeeWorkingDates, $attendanceDates);
 
             $requiredDays = count($employeeWorkingDates);
-            $filledDays = count($attendanceDates);
+            $filledDays = count(array_intersect($employeeWorkingDates, $attendanceDates));
 
             if ($filledDays < $requiredDays || count($missingDates) > 0) {
                 $incompleteEmployees[] = [
@@ -311,8 +316,10 @@ class PayrollService
             ->pluck('employee_id')
             ->toArray();
 
+        // Rentang absensi meliputi Minggu (endDate + 1) karena lembur hari Minggu
+        // diperbolehkan diinput dan harus ikut dihitung dalam payroll.
         $allAttendances = Attendance::whereIn('employee_id', $employees->pluck('employee_code'))
-            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->whereBetween('attendance_date', [$startDate, $endDate->copy()->addDay()])
             ->get()
             ->groupBy('employee_id');
 
@@ -346,7 +353,7 @@ class PayrollService
             $missingDates = array_diff($employeeWorkingDates, $attendanceDates);
 
             $requiredDays = count($employeeWorkingDates);
-            $filledDays = count($attendanceDates);
+            $filledDays = count(array_intersect($employeeWorkingDates, $attendanceDates));
 
             if ($filledDays < $requiredDays || count($missingDates) > 0) {
                 $incompleteEmployees[] = [
@@ -661,18 +668,16 @@ class PayrollService
 
         $weeks = [];
         $weekNumber = 1;
+
+        // Minggu kerja selalu dimulai hari Senin. Jika tanggal 1 jatuh di tengah
+        // minggu (bukan Senin), hari-hari awal bulan tersebut sudah termasuk
+        // minggu terakhir bulan sebelumnya, jadi tidak dibuat minggu parsial di sini.
         $currentDate = $firstDayOfMonth->copy();
+        while ($currentDate->dayOfWeek !== Carbon::MONDAY) {
+            $currentDate->addDay();
+        }
 
-        while (true) {
-            // Lewati hari Minggu — tidak pernah menjadi awal minggu
-            if ($currentDate->dayOfWeek === Carbon::SUNDAY) {
-                $currentDate->addDay();
-                if ($currentDate->month !== $month || $currentDate->year !== $year) {
-                    break;
-                }
-                continue;
-            }
-
+        while ($currentDate->month === $month && $currentDate->year === $year) {
             $weekStart = $currentDate->copy();
 
             // Cari hari Sabtu dari minggu ini
@@ -681,23 +686,15 @@ class PayrollService
                 $weekEnd->addDay();
             }
 
-            // Hanya sertakan minggu yang DIMULAI di bulan ini
-            if ($weekStart->month === $month && $weekStart->year === $year) {
-                $weeks[] = [
-                    'week_number' => $weekNumber,
-                    'start' => $weekStart->copy(),
-                    'end' => $weekEnd->copy(),
-                ];
-                $weekNumber++;
-            }
+            $weeks[] = [
+                'week_number' => $weekNumber,
+                'start' => $weekStart->copy(),
+                'end' => $weekEnd->copy(),
+            ];
+            $weekNumber++;
 
-            // Pindah ke Senin berikutnya (Sabtu + 2 hari)
+            // Pindah ke Senin minggu berikutnya (Sabtu + 2 hari)
             $currentDate = $weekEnd->copy()->addDays(2);
-
-            // Berhenti jika sudah melampaui bulan yang dituju
-            if ($currentDate->month !== $month || $currentDate->year !== $year) {
-                break;
-            }
         }
 
         return $weeks;
