@@ -14,7 +14,7 @@
  */
 
 // ════════════════════════════════════════════════════════════════════════════
-// SELECT ALL CHECKBOX
+// CHECKBOX PILIH SEMUA
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -58,7 +58,7 @@ function initIndividualCheckboxes() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// UPDATE BUTTON STATES
+// UPDATE STATE TOMBOL
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -96,7 +96,7 @@ function updateButtonStates() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// UPDATE SELECTED INFO (Super Admin)
+// UPDATE INFO TERPILIH (Super Admin)
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -157,7 +157,7 @@ function updateSelectedInfo() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SUBMIT FORM: DELETE
+// SUBMIT FORM: HAPUS
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -175,7 +175,7 @@ function submitDeleteForm() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SUBMIT FORM: ADD & EDIT
+// SUBMIT FORM: TAMBAH & EDIT
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -213,7 +213,7 @@ function initEditFormSubmit() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SUBMIT FORM: APPROVE & REJECT
+// SUBMIT FORM: SETUJUI & TOLAK
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateButtonStates();
     updateSelectedInfo();
 
-    // Form submit handlers
+    // Handler submit form
     initAddFormSubmit();
     initEditFormSubmit();
     initApprovalFormSubmit('#approveModal form', 'approve-hidden-inputs', 'submit-btn-approveModal', 'Setujui');
@@ -312,5 +312,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// Expose ke global scope untuk akses dari onclick di Blade
+// Ekspos ke global scope untuk akses dari onclick di Blade
 window.submitDeleteForm = submitDeleteForm;

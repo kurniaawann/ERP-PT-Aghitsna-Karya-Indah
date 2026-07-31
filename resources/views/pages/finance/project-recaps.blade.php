@@ -46,7 +46,4 @@
     @foreach ($invoices as $invoice)
         @include('components.finance.project-invoices.detail-modal', ['invoice' => $invoice])
     @endforeach
-
-    {{-- ==================== Script Print Dropdown ==================== --}}
-    @include('partials.shared.print-dropdown-script')
 @endsection

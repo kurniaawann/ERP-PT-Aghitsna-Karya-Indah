@@ -45,9 +45,6 @@
         Apakah kamu yakin ingin menghapus penawaran yang dipilih?
     </x-modal>
 
-    {{-- Print Dropdown Script --}}
-    @include('partials.shared.print-dropdown-script')
-
     {{-- ═══ JAVASCRIPT: Load via Vite (modular) ═══ --}}
     @push('scripts')
         <meta name="project-quotation-get-next-number" content="{{ route('project-quotation.getNextNumber') }}">

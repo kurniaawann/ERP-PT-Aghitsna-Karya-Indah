@@ -50,5 +50,4 @@
 
     {{-- JavaScript --}}
     @vite('resources/js/pages/finance/aluminium-invoices/index.js')
-    @include('partials.shared.print-dropdown-script')
 @endsection

@@ -2,18 +2,18 @@
  * Rekap Penjualan — Modular JavaScript
  *
  * Fitur:
- * - Print dropdown toggle
- * - Select all checkbox
- * - Dari Stok toggle
- * - Searchable dropdown (add & edit modal)
- * - Tambah/hapus item (add & edit modal)
+ * - Toggle dropdown print
+ * - Checkbox select all
+ * - Toggle Dari Stok
+ * - Dropdown yang dapat dicari (modal tambah & edit)
+ * - Tambah/hapus item (modal tambah & edit)
  * - Validasi harga & stok
- * - Form submission dengan JSON serialization
- * - Auto-submit filter
+ * - Submit form dengan serialisasi JSON
+ * - Filter auto-submit
  */
 
 // ============================================================
-// SHARED HELPERS
+// HELPER BERSAMA
 // ============================================================
 
 /**
@@ -63,7 +63,7 @@ function formatCurrencyInput(input) {
 window.formatCurrencyInput = formatCurrencyInput;
 
 /**
- * Submit bulk delete form.
+ * Submit form hapus massal.
  */
 function submitDeleteForm() {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -78,7 +78,7 @@ function submitDeleteForm() {
 window.submitDeleteForm = submitDeleteForm;
 
 /**
- * Handle form submit (loading state).
+ * Menangani submit form (status loading).
  * @param {HTMLButtonElement} submitBtn
  * @param {string} originalText
  * @param {string} loadingText
@@ -96,7 +96,7 @@ function handleFormSubmit(submitBtn, originalText, loadingText = 'Menyimpan...')
 }
 
 /**
- * Reset form submit state.
+ * Mereset status submit form.
  */
 function resetFormSubmitState() {
     window._isSubmitting = false;
@@ -107,13 +107,13 @@ function resetFormSubmitState() {
 }
 
 // ============================================================
-// INITIALIZATION
+// INISIALISASI
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
-    // PRINT DROPDOWN
+    // DROPDOWN PRINT
     // ============================================================
 
     const printDropdownButton = document.getElementById('printDropdownButton');
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // SELECT ALL CHECKBOX
+    // CHECKBOX SELECT ALL
     // ============================================================
 
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDeleteButtonState();
 
     // ============================================================
-    // SEARCHABLE DROPDOWN — SHARED LOGIC
+    // DROPDOWN YANG DAPAT DICARI — LOGIKA BERSAMA
     // ============================================================
 
     /**
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // DARI STOK TOGGLE — ADD MODAL
+    // TOGGLE DARI STOK — MODAL TAMBAH
     // ============================================================
 
     function toggleStockHandler() {
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // HAPUS ITEM — ADD MODAL
+    // HAPUS ITEM — MODAL TAMBAH
     // ============================================================
 
     function removeItemHandler(e) {
@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // HAPUS ITEM — EDIT MODAL
+    // HAPUS ITEM — MODAL EDIT
     // ============================================================
 
     function removeEditItemHandler(e) {
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         this.closest('.item-row-edit').remove();
 
-        // Re-index items
+        // Indeks ulang items
         itemsContainer.querySelectorAll('.item-row-edit').forEach((row, index) => {
             row.querySelectorAll('input[name^="items"]').forEach(input => {
                 const fieldName = input.name.match(/\[(\w+)\]$/)[1];
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // ATTACH LISTENERS — ADD MODAL
+    // PASANG LISTENER — MODAL TAMBAH
     // ============================================================
 
     function attachItemListeners() {
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // ATTACH LISTENERS — EDIT MODAL
+    // PASANG LISTENER — MODAL EDIT
     // ============================================================
 
     function attachEditRemoveListeners() {
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // VALIDASI HARGA — ADD MODAL
+    // VALIDASI HARGA — MODAL TAMBAH
     // ============================================================
 
     function initPriceValidation(row) {
@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // VALIDASI HARGA — EDIT MODAL
+    // VALIDASI HARGA — MODAL EDIT
     // ============================================================
 
     function initPriceValidationEdit(row, saleId) {
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // VALIDASI STOK — ADD MODAL
+    // VALIDASI STOK — MODAL TAMBAH
     // ============================================================
 
     function initStockValidation(row) {
@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // VALIDASI STOK — EDIT MODAL
+    // VALIDASI STOK — MODAL EDIT
     // ============================================================
 
     function initStockValidationEdit(row, saleId) {
@@ -572,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // INISIALISASI — ADD MODAL
+    // INISIALISASI — MODAL TAMBAH
     // ============================================================
 
     attachItemListeners();
@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // INISIALISASI — EDIT MODAL
+    // INISIALISASI — MODAL EDIT
     // ============================================================
 
     attachEditRemoveListeners();
@@ -763,7 +763,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // FORM SUBMISSION — ADD MODAL
+    // SUBMIT FORM — MODAL TAMBAH
     // ============================================================
 
     const addModal = document.getElementById('addModal');
@@ -834,7 +834,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // FORM SUBMISSION — EDIT MODAL
+    // SUBMIT FORM — MODAL EDIT
     // ============================================================
 
     const editForms = document.querySelectorAll('[id^="editModal-"] form');
@@ -873,7 +873,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // AUTO-SUBMIT FILTER
+    // FILTER AUTO-SUBMIT
     // ============================================================
 
     const monthSelect = document.getElementById('month-select');
@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // RESET SUBMIT STATE ON PAGE SHOW
+    // RESET STATUS SUBMIT SAAT HALAMAN DITAMPILKAN
     // ============================================================
 
     window.addEventListener('pageshow', function () {

@@ -1,5 +1,5 @@
 /**
- * Reminder Jatuh Tempo Invoice Proyek - Index Page JavaScript
+ * Reminder Jatuh Tempo Invoice Proyek - JavaScript Halaman Index
  *
  * Modul ini menangani:
  * - Auto-submit form pada perubahan filter (bulan, tahun, status)
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var filterForm = document.getElementById('filterForm');
     if (!filterForm) return;
 
-    // ─── Auto-submit pada filter dropdown ──────────────────────────────
+    // ─── Kirim otomatis pada filter dropdown ───────────────────────────
     var filterSelects = filterForm.querySelectorAll('select');
     filterSelects.forEach(function (select) {
         select.addEventListener('change', function () {

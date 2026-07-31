@@ -1,7 +1,7 @@
 /* global handleFormSubmit, resetFormSubmitState, openModal, closeModal, showToast */
 
 // ==========================================
-// TOGGLE ACTIVE STATUS
+// TOGGLE STATUS AKTIF
 // ==========================================
 
 /**
@@ -29,7 +29,7 @@ function toggleActive(accountId) {
 window.toggleActive = toggleActive;
 
 // ==========================================
-// BULK DELETE
+// HAPUS MASSAL
 // ==========================================
 
 /**
@@ -103,13 +103,13 @@ function submitDeleteForm() {
 window.submitDeleteForm = submitDeleteForm;
 
 // ==========================================
-// DOM READY
+// DOM SIAP
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // ==========================================
-    // SELECT ALL CHECKBOX
+    // CHECKBOX PILIH SEMUA
     // ==========================================
 
     const selectAll = document.getElementById('selectAll');
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDeleteButton();
 
     // ==========================================
-    // FORM SUBMIT HANDLING — ADD MODAL
+    // PENANGANAN SUBMIT FORM — MODAL TAMBAH
     // ==========================================
 
     const addForm = document.querySelector('#addModal form');
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================
-    // FORM SUBMIT HANDLING — EDIT MODALS
+    // PENANGANAN SUBMIT FORM — MODAL EDIT
     // ==========================================
 
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==========================================
-    // ERROR MODAL — Rekening masih digunakan
+    // MODAL ERROR — Rekening masih digunakan
     // ==========================================
 
     const usageErrorData = document.getElementById('usageErrorData');
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================
-    // RESET SUBMIT STATE ON PAGE SHOW
+    // RESET STATE SUBMIT SAAT HALAMAN DIMUAT ULANG
     // ==========================================
 
     window.addEventListener('pageshow', () => resetFormSubmitState());

@@ -1,14 +1,14 @@
 /**
- * Payment Proof Module - Frontend Logic
+ * Modul Bukti Pembayaran - Logika Frontend
  *
  * Menangani interaksi UI untuk modul Bukti Pembayaran:
- * - Lazy loading invoice options (chunk-based)
- * - Dynamic amount section & stage calculation
- * - Amount validation (tidak melebihi sisa tagihan)
- * - Form binding untuk create & edit modals
- * - Select all / bulk delete checkbox
+ * - Lazy loading opsi invoice (berbasis chunk)
+ * - Bagian nominal dinamis & perhitungan tahap pembayaran
+ * - Validasi nominal (tidak melebihi sisa tagihan)
+ * - Binding form untuk modal create & edit
+ * - Checkbox pilih semua / hapus massal
  *
- * Dependencies (dari shared modules):
+ * Dependensi (dari modul shared):
  * - handleFormSubmit, resetFormSubmitState (form-submit.js)
  * - parseCurrencyInput, formatRupiah (currency.js)
  * - openModal, closeModal (layout/app.blade.php global)
@@ -17,7 +17,7 @@
 
 const PAYMENT_PROOF_INVOICE_CHUNK_SIZE = 10;
 
-// ─── Config Helpers ──────────────────────────────────────────────────────
+// ─── Helper Config ──────────────────────────────────────────────────────
 
 /**
  * Mengambil referensi DOM elements berdasarkan prefix (create atau edit-{id}).
@@ -56,7 +56,7 @@ function getPaymentProofInvoiceData(prefix) {
     return window.paymentProofInvoiceData?.[moduleValue]?.[invoiceTypeValue] ?? [];
 }
 
-// ─── Invoice Option Loading ──────────────────────────────────────────────
+// ─── Pemuatan Opsi Invoice ──────────────────────────────────────────────
 
 /**
  * Menambahkan opsi invoice ke dropdown secara bertahap (lazy loading).
@@ -167,7 +167,7 @@ function updatePaymentProofInvoices(prefix, selectedInvoiceNumber = null) {
     loadPaymentProofInvoices(prefix, selectedInvoiceNumber);
 }
 
-// ─── Stage & Amount Calculation ──────────────────────────────────────────
+// ─── Perhitungan Tahap & Nominal ──────────────────────────────────────────
 
 /**
  * Memperbarui tampilan tahap pembayaran berdasarkan invoice yang dipilih.
@@ -274,7 +274,7 @@ function validatePaymentProofAmount(prefix) {
     }
 }
 
-// ─── Form Binding ────────────────────────────────────────────────────────
+// ─── Binding Form ────────────────────────────────────────────────────────
 
 /**
  * Mengikat event listener dan menginisialisasi form bukti pembayaran.
@@ -313,7 +313,7 @@ function bindPaymentProofForm(prefix, defaults = {}) {
     validatePaymentProofAmount(prefix);
 }
 
-// ─── Bulk Delete ─────────────────────────────────────────────────────────
+// ─── Hapus Massal ─────────────────────────────────────────────────────────
 
 /**
  * Submit form hapus dengan loading state.
@@ -334,7 +334,7 @@ function submitDeleteForm() {
     }
 }
 
-// ─── Select All Checkbox ────────────────────────────────────────────────
+// ─── Checkbox Pilih Semua ────────────────────────────────────────────────
 
 /**
  * Menginisialisasi checkbox select all dan update delete button state.
@@ -377,12 +377,12 @@ function initSelectAllCheckbox() {
     updateDeleteButtonState();
 }
 
-// ─── Initialization ─────────────────────────────────────────────────────
+// ─── Inisialisasi ─────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function () {
     bindPaymentProofForm('create');
 
-    // Form submit loading state - Add Modal
+    // State loading submit form - Modal Tambah
     const addForm = document.querySelector('#addModal form');
     if (addForm) {
         addForm.addEventListener('submit', function (e) {
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Select All checkbox
+    // Checkbox pilih semua
     initSelectAllCheckbox();
 });
 

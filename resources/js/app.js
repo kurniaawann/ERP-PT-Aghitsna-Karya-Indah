@@ -4,6 +4,8 @@ import './shared/searchable-select';
 import './shared/searchable-multi-select';
 import './shared/currency';
 import './shared/debounce';
+import './shared/print';
+import './shared/delete-form';
 
 /**
  * Inisialisasi debounced search untuk semua search input.

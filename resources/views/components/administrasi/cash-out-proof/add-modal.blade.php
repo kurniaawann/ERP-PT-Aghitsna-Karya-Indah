@@ -81,25 +81,4 @@
             placeholder="Kamila,AMK (default)" maxlength="255">
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
-
-    {{-- Inisialisasi: Ubah label Direktur/Manager saat tipe template berubah --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const templateType = document.getElementById('addTemplateType');
-            const directorLabel = document.getElementById('addDirectorLabel');
-            const directorInput = document.getElementById('addDirectorInput');
-
-            if (templateType && directorLabel && directorInput) {
-                templateType.addEventListener('change', function() {
-                    if (this.value === 'hollow') {
-                        directorLabel.textContent = 'Manager';
-                        directorInput.placeholder = 'SISWORO SUBENO (default)';
-                    } else {
-                        directorLabel.textContent = 'Direktur';
-                        directorInput.placeholder = 'Zulkarnain,ST.,MT (default)';
-                    }
-                });
-            }
-        });
-    </script>
 </x-modal>

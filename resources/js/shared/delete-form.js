@@ -1,3 +1,10 @@
+/**
+ * Shared Delete Form Helper
+ *
+ * Submit form hapus dengan loading indicator pada tombol konfirmasi.
+ * Dipanggil dari onclick pada modal konfirmasi hapus massal.
+ */
+
 function submitDeleteForm(buttonId = 'confirm-btn-deleteModal', formId = 'deleteForm', loadingText = 'Menghapus...') {
     const deleteBtn = document.getElementById(buttonId);
     if (deleteBtn) {
@@ -14,3 +21,5 @@ function submitDeleteForm(buttonId = 'confirm-btn-deleteModal', formId = 'delete
 
     return false;
 }
+
+window.submitDeleteForm = submitDeleteForm;

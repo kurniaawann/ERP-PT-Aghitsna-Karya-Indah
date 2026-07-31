@@ -36,7 +36,7 @@ function resetFormSubmitState() {
 window.handleFormSubmit = handleFormSubmit;
 window.resetFormSubmitState = resetFormSubmitState;
 
-// ─── Download Helpers with Loading Indicator ─────────────────────────────────
+// ─── Helper Download dengan Indikator Loading ─────────────────────────────────
 
 function getFilenameFromResponse(response) {
     const disposition = response.headers.get('Content-Disposition');

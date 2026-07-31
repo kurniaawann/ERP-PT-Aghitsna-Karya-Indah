@@ -2,17 +2,17 @@
  * Rekap Pengeluaran — Modular JavaScript
  *
  * Fitur:
- * - Format currency input (Rupiah)
- * - Bulk delete (submit delete form)
- * - Select all checkbox
- * - Auto-submit filter form
- * - Print dropdown toggle
- * - Form submission handling (prevent double submit)
- * - Reset submit state on page show (back button)
+ * - Format input currency (Rupiah)
+ * - Hapus massal (submit form hapus)
+ * - Checkbox pilih semua
+ * - Auto-submit form filter
+ * - Toggle dropdown cetak
+ * - Penanganan submit form (cegah double submit)
+ * - Reset state submit saat halaman dimuat ulang (tombol kembali)
  */
 
 // ============================================================
-// FORMAT CURRENCY INPUT
+// FORMAT INPUT CURRENCY
 // ============================================================
 
 /**
@@ -45,13 +45,13 @@ function submitDeleteForm() {
 window.submitDeleteForm = submitDeleteForm;
 
 // ============================================================
-// INITIALIZATION
+// INISIALISASI
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
-    // SELECT ALL CHECKBOX
+    // CHECKBOX PILIH SEMUA
     // ============================================================
 
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDeleteButtonState();
 
     // ============================================================
-    // FORMAT CURRENCY INPUTS
+    // FORMAT INPUT CURRENCY
     // ============================================================
 
     document.querySelectorAll('.expense-amount-input').forEach(input => {
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // AUTO-SUBMIT FILTER FORM
+    // AUTO-SUBMIT FORM FILTER
     // ============================================================
 
     const categorySelect = document.getElementById('category-select');
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // PRINT DROPDOWN
+    // DROPDOWN CETAK
     // ============================================================
 
     const printDropdownButton = document.getElementById('printDropdownButton');
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // FORM SUBMISSION HANDLING — ADD MODAL
+    // PENANGANAN SUBMIT FORM — MODAL TAMBAH
     // ============================================================
 
     const addForm = document.querySelector('#addModal form');
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // FORM SUBMISSION HANDLING — EDIT MODALS
+    // PENANGANAN SUBMIT FORM — MODAL EDIT
     // ============================================================
 
     const editForms = document.querySelectorAll('[id^="editModal-"] form');
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // RESET SUBMIT STATE ON PAGE SHOW
+    // RESET STATE SUBMIT SAAT HALAMAN DIMUAT ULANG
     // ============================================================
 
     window.addEventListener('pageshow', function () {

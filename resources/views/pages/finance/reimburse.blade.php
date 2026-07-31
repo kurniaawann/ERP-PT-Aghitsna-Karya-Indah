@@ -141,5 +141,4 @@
 
     {{-- ─── JavaScript Module ───────────────────────────────────────────────── --}}
     @vite('resources/js/pages/finance/reimburse/index.js')
-    @include('partials.shared.print-dropdown-script')
 @endsection

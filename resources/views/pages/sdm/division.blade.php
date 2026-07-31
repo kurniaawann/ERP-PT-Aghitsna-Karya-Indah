@@ -66,5 +66,5 @@
     </x-modal>
 
     {{-- JavaScript --}}
-    @include('partials.sdm.division-scripts')
+    @vite('resources/js/pages/sdm/division/index.js')
 @endsection

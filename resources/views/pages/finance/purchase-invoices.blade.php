@@ -65,5 +65,4 @@
 
     {{-- ==================== JavaScript ==================== --}}
     @vite('resources/js/pages/finance/purchase-invoices/index.js')
-    @include('partials.shared.print-dropdown-script')
 @endsection

@@ -60,6 +60,13 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
+    {{-- Pass existing attendance data to JavaScript for client-side duplicate validation --}}
+    <script>
+        window.attendanceConfig = @json([
+            'existingAttendance' => $existingAttendance ?? [],
+        ]);
+    </script>
+
     {{-- JavaScript --}}
-    @include('partials.sdm.attendance-scripts')
+    @vite('resources/js/pages/sdm/attendance/index.js')
 @endsection

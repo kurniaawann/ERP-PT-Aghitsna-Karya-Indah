@@ -11,7 +11,7 @@
  */
 
 // ============================================================
-// BULK DELETE — CHECK USED CATEGORIES
+// HAPUS MASSAL — PERIKSA KATEGORI YANG DIGUNAKAN
 // ============================================================
 
 /**
@@ -81,7 +81,7 @@ function closeWarningModal() {
 window.closeWarningModal = closeWarningModal;
 
 /**
- * Submit form bulk delete dengan loading indicator.
+ * Mengirim form hapus massal dengan indikator loading.
  */
 function submitDeleteForm() {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -99,7 +99,7 @@ function submitDeleteForm() {
 window.submitDeleteForm = submitDeleteForm;
 
 // ============================================================
-// TOGGLE STATUS
+// UBAH STATUS
 // ============================================================
 
 /**
@@ -130,13 +130,13 @@ function toggleStatus(categoryId) {
 window.toggleStatus = toggleStatus;
 
 // ============================================================
-// INITIALIZATION
+// INISIALISASI
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
-    // CODE VALIDATION — ADD MODAL
+    // VALIDASI KODE — MODAL TAMBAH
     // ============================================================
 
     /**
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // CODE VALIDATION — EDIT MODALS
+    // VALIDASI KODE — MODAL EDIT
     // ============================================================
 
     /**
@@ -236,12 +236,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // FORM SUBMISSION — ADD MODAL
+    // PENGIRIMAN FORM — MODAL TAMBAH
     // ============================================================
 
     /**
-     * Handle form submission untuk modal tambah.
-     * Validasi kode duplikat dan prevent double submit.
+     * Menangani pengiriman form untuk modal tambah.
+     * Validasi kode duplikat dan cegah pengiriman ganda.
      */
     const addForm = document.querySelector('#addModal form');
     if (addForm) {
@@ -263,12 +263,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // FORM SUBMISSION — EDIT MODALS
+    // PENGIRIMAN FORM — MODAL EDIT
     // ============================================================
 
     /**
-     * Handle form submission untuk semua modal edit.
-     * Prevent double submit.
+     * Menangani pengiriman form untuk semua modal edit.
+     * Mencegah pengiriman ganda.
      */
     const editForms = document.querySelectorAll('[id^="editModal-"] form');
     editForms.forEach(function (editForm) {
@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // SELECT ALL CHECKBOX
+    // CHECKBOX PILIH SEMUA
     // ============================================================
 
     /**
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDeleteButtonState();
 
     // ============================================================
-    // RESET SUBMIT STATE ON PAGE SHOW
+    // RESET STATUS SUBMIT SAAT HALAMAN DITAMPILKAN
     // ============================================================
 
     /**

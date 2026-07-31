@@ -15,7 +15,7 @@
     5. Additional expenses can be added dynamically (token listrik, air, etc.)
     6. On submit, posts to PayrollController@generate
 
-    Frontend JS: partials/sdm/payroll-scripts.blade.php (checkAttendanceData function)
+    Frontend JS: resources/js/pages/sdm/payroll/index.js (checkAttendanceData function)
 --}}
 
 {{-- Modal Generate Payroll --}}

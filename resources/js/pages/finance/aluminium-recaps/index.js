@@ -2,17 +2,17 @@
  * Rekap Aluminium — Modular JavaScript
  *
  * Fitur:
- * - Print dropdown toggle
- * - Auto-submit filter (month, year)
- * - Reset submit state on page show
+ * - Toggle dropdown print
+ * - Filter auto-submit (bulan, tahun)
+ * - Reset status submit saat halaman ditampilkan
  */
 
 // ============================================================
-// SHARED HELPERS
+// HELPER BERSAMA
 // ============================================================
 
 /**
- * Handle form submit (loading state).
+ * Menangani submit form (status loading).
  * @param {HTMLButtonElement} submitBtn
  * @param {string} originalText
  * @param {string} loadingText
@@ -30,7 +30,7 @@ function handleFormSubmit(submitBtn, originalText, loadingText = 'Menyimpan...')
 }
 
 /**
- * Reset form submit state.
+ * Mereset status submit form.
  */
 function resetFormSubmitState() {
     window._isSubmitting = false;
@@ -41,13 +41,13 @@ function resetFormSubmitState() {
 }
 
 // ============================================================
-// INITIALIZATION
+// INISIALISASI
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
-    // PRINT DROPDOWN
+    // DROPDOWN PRINT
     // ============================================================
 
     const printDropdownButton = document.getElementById('printDropdownButton');
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // AUTO-SUBMIT FILTER
+    // FILTER AUTO-SUBMIT
     // ============================================================
 
     const monthSelect = document.getElementById('month-select');
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // RESET SUBMIT STATE ON PAGE SHOW
+    // RESET STATUS SUBMIT SAAT HALAMAN DITAMPILKAN
     // ============================================================
 
     window.addEventListener('pageshow', function () {

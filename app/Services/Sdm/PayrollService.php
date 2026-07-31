@@ -5,7 +5,6 @@ namespace App\Services\Sdm;
 use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
-use App\Models\Sdm\Kasbon;
 use App\Models\Sdm\KasbonPayment;
 use App\Models\Notification\SalaryReminder;
 use Carbon\Carbon;
@@ -67,8 +66,10 @@ class PayrollService
      * Pemeriksaan:
      * 1. Karyawan mana yang sudah memiliki payroll untuk periode ini
      * 2. Karyawan mana yang memiliki absensi tidak lengkap (hari yang kurang)
-     * 3. Karyawan mana yang memiliki kasbon personal melebihi gaji maksimal
-     * 4. Divisi mana yang memiliki kasbon team melebihi total gaji divisi
+     *
+     * Catatan: Kasbon (tim maupun perorangan) TIDAK memblokir generate payroll —
+     * kasbon diperbolehkan melebihi gaji. Potongan kasbon hanya diterapkan saat
+     * generatePayroll berjalan.
      *
      * Mengembalikan laporan status komprehensif yang digunakan oleh frontend
      * untuk menentukan apakah pembuatan payroll diperbolehkan.
@@ -103,19 +104,6 @@ class PayrollService
             ->whereBetween('attendance_date', [$startDate, $endDate->copy()->addDay()])
             ->get()
             ->groupBy('employee_id');
-
-        $allPersonalKasbons = Kasbon::whereIn('employee_id', $employees->pluck('employee_code'))
-            ->where('period_start_date', $startDate->format('Y-m-d'))
-            ->pending()
-            ->notPaid()
-            ->get()
-            ->groupBy('employee_id');
-
-        $allTeamKasbons = Kasbon::where('kasbon_type', 'team')
-            ->where('period_start_date', $startDate->format('Y-m-d'))
-            ->where('status', 'pending')
-            ->where('payment_status', '!=', 'paid')
-            ->get();
         // === AKHIR QUERY BATCH ===
 
         $incompleteEmployees = [];
@@ -187,65 +175,8 @@ class PayrollService
 
         $hasNewEmployees = count($newEmployees) > 0;
 
-        // === VALIDASI KASBON ===
-        $kasbonIssues = [];
-        $divisionTotals = [];
-
-        foreach ($employees as $employee) {
-            $dailyWage = $employee->daily_wage ?? $employee->base_salary;
-            $maxSalary = $dailyWage * 6;
-
-            if ($employee->division) {
-                if (!isset($divisionTotals[$employee->division])) {
-                    $divisionTotals[$employee->division] = [
-                        'total_salary' => 0,
-                        'employee_count' => 0,
-                    ];
-                }
-                $divisionTotals[$employee->division]['total_salary'] += $maxSalary;
-                $divisionTotals[$employee->division]['employee_count']++;
-            }
-        }
-
-        foreach ($employees as $employee) {
-            $dailyWage = $employee->daily_wage ?? $employee->base_salary;
-            $maxSalary = $dailyWage * 6;
-
-            $personalKasbonTotal = $allPersonalKasbons
-                ->get($employee->employee_code, new Collection())
-                ->sum('remaining_amount');
-
-            if ($personalKasbonTotal > $maxSalary) {
-                $kasbonIssues[] = [
-                    'type' => 'personal',
-                    'employee_name' => $employee->name,
-                    'employee_code' => $employee->employee_code,
-                    'kasbon_amount' => $personalKasbonTotal,
-                    'max_salary' => $maxSalary,
-                    'daily_wage' => $dailyWage,
-                ];
-            }
-        }
-
-        foreach ($allTeamKasbons as $teamKasbon) {
-            if ($teamKasbon->division && isset($divisionTotals[$teamKasbon->division])) {
-                $divisionMaxSalary = $divisionTotals[$teamKasbon->division]['total_salary'];
-
-                if ($teamKasbon->remaining_amount > $divisionMaxSalary) {
-                    $kasbonIssues[] = [
-                        'type' => 'team',
-                        'division' => $teamKasbon->division,
-                        'kasbon_amount' => $teamKasbon->amount,
-                        'max_salary' => $divisionMaxSalary,
-                        'employee_count' => $divisionTotals[$teamKasbon->division]['employee_count'],
-                    ];
-                }
-            }
-        }
-
         $canGenerate = count($newEmployees) > 0
-            && count($incompleteEmployees) === 0
-            && count($kasbonIssues) === 0;
+            && count($incompleteEmployees) === 0;
 
         return [
             'working_days' => $workingDays,
@@ -259,7 +190,7 @@ class PayrollService
             'has_new_employees' => $hasNewEmployees,
             'new_employees' => $newEmployees,
             'total_employees' => count($employees),
-            'kasbon_issues' => $kasbonIssues,
+            'kasbon_issues' => [],
             'can_generate' => $canGenerate,
         ];
     }

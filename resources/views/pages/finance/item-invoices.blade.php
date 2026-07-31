@@ -56,8 +56,6 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
-    @include('partials.shared.print-dropdown-script')
-
     <script>
         window._itemsData = {!! json_encode($items->map(fn($item) => [
             'id_item' => $item->id_item,

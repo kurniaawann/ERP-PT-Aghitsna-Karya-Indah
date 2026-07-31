@@ -193,7 +193,7 @@ function updateButtonStates() {
 }
 
 /* ==========================================
- * PRINT SELECTED
+ * CETAK TERPILIH
  * ========================================== */
 
 /**
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
         docNumField.value = generateDocumentNumber();
     }
 
-    // ─── Select All Checkbox ─────────────────────────────────────────
+    // ─── Checkbox Pilih Semua ─────────────────────────────────────────
     const selectAllEl = document.getElementById('selectAll');
     if (selectAllEl) {
         selectAllEl.addEventListener('change', function () {
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ─── Delete Form: Prevent Double Submission ──────────────────────
+    // ─── Form Hapus: Cegah Double Submit ──────────────────────
     const deleteForm = document.getElementById('deleteForm');
     if (deleteForm) {
         deleteForm.addEventListener('submit', function (e) {

@@ -1,13 +1,13 @@
 /* global parseCurrencyInput, handleFormSubmit, resetFormSubmitState */
 
 // ==========================================
-// ALUMUNIUM-SPECIFIC PARSERS
+// PARSER KHUSUS ALUMUNIUM
 // ==========================================
 
 /**
- * Parse currency input handling Indonesian format:
- * - "1.000" => 1000 (dots as thousand separators)
- * - "1,5" => 1.5 (comma as decimal separator)
+ * Parsing input mata uang sesuai format Indonesia:
+ * - "1.000" => 1000 (titik sebagai pemisah ribuan)
+ * - "1,5" => 1.5 (koma sebagai pemisah desimal)
  * - "Rp 1.000" => 1000
  */
 function parseCurrencyInput(value) {
@@ -28,7 +28,7 @@ function parseCurrencyInput(value) {
 }
 
 /**
- * Format input value as Indonesian currency (no "Rp" prefix).
+ * Format nilai input sebagai mata uang Indonesia (tanpa prefiks "Rp").
  */
 function formatCurrencyInput(input) {
     const str = String(input.value ?? '').trim();
@@ -51,12 +51,12 @@ function normalizeInvoicePriceFields(form) {
     });
 }
 
-// Expose to window for Blade inline handlers
+// Ekspos ke window untuk handler inline Blade
 window.parseCurrencyInput = parseCurrencyInput;
 window.formatCurrencyInput = formatCurrencyInput;
 
 // ==========================================
-// LIVE CALCULATION FUNCTIONS
+// FUNGSI PERHITUNGAN LIVE
 // ==========================================
 
 function calculateRowTotal(input) {

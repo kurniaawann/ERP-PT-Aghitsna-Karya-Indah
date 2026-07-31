@@ -322,6 +322,5 @@
             window.statusDistributionData = @json($statusDistribution);
         </script>
         @vite(['resources/js/pages/report/sales-reports/index.js'])
-        @include('partials.shared.print-dropdown-script')
     @endpush
 @endsection

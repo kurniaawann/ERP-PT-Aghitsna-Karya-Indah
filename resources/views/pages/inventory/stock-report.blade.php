@@ -256,6 +256,5 @@
             };
         </script>
         @vite('resources/js/pages/inventory/stock-report.js')
-        @include('partials.shared.print-dropdown-script')
     @endpush
 @endsection

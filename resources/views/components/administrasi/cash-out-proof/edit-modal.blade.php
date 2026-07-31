@@ -112,25 +112,4 @@
             value="{{ $cashOut->finance_head }}">
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
-
-    {{-- Inisialisasi: Ubah label Direktur/Manager saat tipe template berubah --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const templateType = document.getElementById('editTemplateType-{{ $cashOut->bkk_no }}');
-            const directorLabel = document.getElementById('editDirectorLabel-{{ $cashOut->bkk_no }}');
-            const directorInput = document.getElementById('editDirectorInput-{{ $cashOut->bkk_no }}');
-
-            if (templateType && directorLabel && directorInput) {
-                templateType.addEventListener('change', function() {
-                    if (this.value === 'hollow') {
-                        directorLabel.textContent = 'Manager';
-                        directorInput.placeholder = 'SISWORO SUBENO (default)';
-                    } else {
-                        directorLabel.textContent = 'Direktur';
-                        directorInput.placeholder = 'Zulkarnain,ST.,MT (default)';
-                    }
-                });
-            }
-        });
-    </script>
 </x-modal>

@@ -1,5 +1,5 @@
 /**
- * Tanda Terima Dokumen - Index Page JavaScript
+ * Tanda Terima Dokumen - JavaScript Halaman Index
  *
  * Modul ini menangani:
  * - Submit form hapus massal dengan loading indicator
@@ -11,7 +11,7 @@
  */
 
 /* ==========================================
- * HELPER: Submit Form Hapus
+ * PEMBANTU: Submit Form Hapus
  * ========================================== */
 
 /**
@@ -98,12 +98,12 @@ function printSelected(btn) {
 window.printSelected = printSelected;
 
 /* ==========================================
- * INITIALIZATION
+ * INISIALISASI
  * ========================================== */
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* ─── Select All Checkbox ─── */
+    /* ─── Checkbox Pilih Semua ─── */
     var selectAllCheckbox = document.getElementById('selectAll');
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function () {
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ─── Individual Checkbox Listener ─── */
+    /* ─── Listener Checkbox Individual ─── */
     document.querySelectorAll('input[name="ids[]"]').forEach(function (checkbox) {
         checkbox.addEventListener('change', function () {
             var selectAll = document.getElementById('selectAll');
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    /* ─── Delete Form - Prevent Double Submission ─── */
+    /* ─── Form Hapus - Cegah Pengiriman Ganda ─── */
     var deleteForm = document.getElementById('deleteForm');
     if (deleteForm) {
         deleteForm.addEventListener('submit', function (e) {

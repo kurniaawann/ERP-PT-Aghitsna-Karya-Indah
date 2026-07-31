@@ -88,7 +88,4 @@
         <meta name="aluminium-quotation-get-next-number" content="{{ route('aluminium-quotation.getNextNumber') }}">
         @vite('resources/js/pages/administrasi/aluminium-quotation/index.js')
     @endpush
-
-    {{-- Script dropdown print --}}
-    @include('partials.shared.print-dropdown-script')
 @endsection

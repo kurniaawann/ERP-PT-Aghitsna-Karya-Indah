@@ -1,16 +1,16 @@
 /* global parseCurrencyInput, handleFormSubmit, resetFormSubmitState, submitDeleteForm */
 
 // ==========================================
-// CURRENCY PARSERS
+// PARSER MATA UANG
 // ==========================================
 
 /**
- * Parse currency input handling Indonesian format.
- * - "1.000" => 1000 (dots as thousand separators)
+ * Parsing input mata uang sesuai format Indonesia.
+ * - "1.000" => 1000 (titik sebagai pemisah ribuan)
  * - "Rp 1.000" => 1000
  *
- * @param  {string|number} value  Raw input value
- * @return {number} Parsed numeric value
+ * @param  {string|number} value  Nilai input mentah
+ * @return {number} Nilai numerik hasil parsing
  */
 function parseCurrencyInput(value) {
     const str = String(value ?? '').trim();
@@ -30,7 +30,7 @@ function parseCurrencyInput(value) {
 }
 
 /**
- * Format input value as Indonesian currency (no "Rp" prefix).
+ * Format nilai input sebagai mata uang Indonesia (tanpa prefiks "Rp").
  *
  * @param  {HTMLInputElement} input  Element input yang akan diformat
  */
@@ -68,12 +68,12 @@ function normalizeInvoicePriceFields(form) {
     });
 }
 
-// Expose to window for Blade inline handlers
+// Ekspos ke window untuk handler inline Blade
 window.parseCurrencyInput = parseCurrencyInput;
 window.formatCurrencyInput = formatCurrencyInput;
 
 // ==========================================
-// LIVE CALCULATION FUNCTIONS
+// FUNGSI PERHITUNGAN LIVE
 // ==========================================
 
 /**
@@ -139,7 +139,7 @@ function updateInvoiceTotal() {
         wordsElement.textContent = '';
     }
 
-    // Recalculate discount and DP when total changes
+    // Hitung ulang discount dan DP saat total berubah
     calculateDiscount();
 }
 
@@ -171,7 +171,7 @@ function updateEditInvoiceTotal(invoiceNumber) {
 }
 
 // ==========================================
-// DISCOUNT & DP CALCULATIONS
+// PERHITUNGAN DISCOUNT & DP
 // ==========================================
 
 /**
@@ -183,7 +183,7 @@ function calculateDiscount() {
     let discountValue = parseDecimalInput(discountValueInput);
     const discountError = document.getElementById('discount-error');
 
-    // Enable/disable based on type
+    // Aktifkan/nonaktifkan berdasarkan tipe
     if (discountValueInput) {
         if (!discountType) {
             discountValueInput.value = '';
@@ -204,7 +204,7 @@ function calculateDiscount() {
         if (discountError) discountError.classList.add('hidden');
     }
 
-    // Get base total
+    // Ambil total dasar
     let baseTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
@@ -222,14 +222,14 @@ function calculateDiscount() {
 
     const totalAfterDiscount = Math.round(baseTotal - discountAmount);
 
-    // Update UI
+    // Perbarui UI
     const discountAmountEl = document.getElementById('discount-amount');
     const totalAfterDiscountEl = document.getElementById('total-after-discount');
 
     if (discountAmountEl) discountAmountEl.textContent = 'Rp ' + discountAmount.toLocaleString('id-ID');
     if (totalAfterDiscountEl) totalAfterDiscountEl.textContent = 'Rp ' + totalAfterDiscount.toLocaleString('id-ID');
 
-    // Recalculate DP based on new total after discount
+    // Hitung ulang DP berdasarkan total setelah discount
     calculateDP();
 }
 
@@ -242,7 +242,7 @@ function calculateDP() {
     let dpValue = parseDecimalInput(dpValueInput);
     const dpError = document.getElementById('dp-error');
 
-    // Enable/disable based on type
+    // Aktifkan/nonaktifkan berdasarkan tipe
     if (dpValueInput) {
         if (!dpType) {
             dpValueInput.value = '';
@@ -263,7 +263,7 @@ function calculateDP() {
         if (dpError) dpError.classList.add('hidden');
     }
 
-    // Get base total
+    // Ambil total dasar
     let baseTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
@@ -272,7 +272,7 @@ function calculateDP() {
     });
     baseTotal = Math.round(baseTotal);
 
-    // Check if there's discount
+    // Periksa apakah ada discount
     const discountType = document.getElementById('discount-type')?.value;
     const discountValue = parseDecimalInput(document.getElementById('discount-value'));
 
@@ -293,7 +293,7 @@ function calculateDP() {
             : Math.round(dpValue);
     }
 
-    // Update UI
+    // Perbarui UI
     const dpAmountEl = document.getElementById('dp-amount');
     if (dpAmountEl) dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
 }
@@ -308,7 +308,7 @@ function calculateDiscountEdit(invoiceNumber) {
     const discountValueInput = document.getElementById('discount-value-edit-' + invoiceNumber);
     let discountValue = parseDecimalInput(discountValueInput);
 
-    // Enable/disable based on type
+    // Aktifkan/nonaktifkan berdasarkan tipe
     if (discountValueInput) {
         if (!discountType) {
             discountValueInput.value = 0;
@@ -360,7 +360,7 @@ function calculateDPEdit(invoiceNumber) {
     const dpValueInput = document.getElementById('dp-value-edit-' + invoiceNumber);
     let dpValue = parseDecimalInput(dpValueInput);
 
-    // Enable/disable based on type
+    // Aktifkan/nonaktifkan berdasarkan tipe
     if (dpValueInput) {
         if (!dpType) {
             dpValueInput.value = 0;
@@ -408,7 +408,7 @@ function calculateDPEdit(invoiceNumber) {
     if (dpAmountEl) dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
 }
 
-// Expose to window for inline Blade handlers
+// Ekspos ke window untuk handler inline Blade
 window.calculateRowTotal = calculateRowTotal;
 window.calculateRowTotalEdit = calculateRowTotalEdit;
 window.calculateDiscount = calculateDiscount;
@@ -417,7 +417,7 @@ window.calculateDiscountEdit = calculateDiscountEdit;
 window.calculateDPEdit = calculateDPEdit;
 
 // ==========================================
-// NUMBER TO WORDS (Terbilang)
+// ANGKA KE TEKS (Terbilang)
 // ==========================================
 
 /**
@@ -465,7 +465,7 @@ function numberToWords(num) {
 }
 
 // ==========================================
-// PAYMENT ACCOUNT VALIDATION
+// VALIDASI REKENING PEMBAYARAN
 // ==========================================
 
 /**
@@ -522,11 +522,11 @@ window.validatePaymentSelection = validatePaymentSelection;
 window.validatePaymentSelectionEdit = validatePaymentSelectionEdit;
 
 // ==========================================
-// BULK DELETE
+// HAPUS MASSAL
 // ==========================================
 
 /**
- * Submit form bulk delete.
+ * Submit form hapus massal.
  */
 function submitDeleteForm() {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -543,7 +543,7 @@ function submitDeleteForm() {
 window.submitDeleteForm = submitDeleteForm;
 
 // ==========================================
-// SINGLE INVOICE DELETE
+// HAPUS INVOICE TUNGGAL
 // ==========================================
 
 /**
@@ -563,12 +563,12 @@ function deleteInvoiceProyek(invoiceNumber) {
 window.deleteInvoiceProyek = deleteInvoiceProyek;
 
 // ==========================================
-// DOM READY
+// DOM SIAP
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
-    // SELECT ALL CHECKBOX FUNCTIONALITY
+    // FUNGSIONALITAS CHECKBOX PILIH SEMUA
     // ==========================================
 
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDeleteButtonState();
 
     // ==========================================
-    // ADD MODAL - ADD ITEM FUNCTIONALITY
+    // FUNGSIONALITAS TAMBAH ITEM - MODAL ADD
     // ==========================================
 
     const addItemBtn = document.getElementById('add-item');
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', function () {
     attachRemoveListener();
 
     // ==========================================
-    // EDIT MODAL - ADD ITEM FUNCTIONALITY
+    // FUNGSIONALITAS TAMBAH ITEM - MODAL EDIT
     // ==========================================
 
     document.querySelectorAll('[id^="add-item-edit-"]').forEach(btn => {
@@ -727,7 +727,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         this.closest('.item-row-edit').remove();
 
-        // Re-index items
+        // Indeks ulang items
         itemsContainer.querySelectorAll('.item-row-edit').forEach((row, index) => {
             row.querySelectorAll('input[name^="items"]').forEach(input => {
                 const fieldName = input.name.match(/\[(\w+)\]$/)[1];
@@ -735,7 +735,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        // Update total after removing item
+        // Perbarui total setelah item dihapus
         const invoiceNumber = itemsContainer.id.replace('items-list-edit-', '');
         if (invoiceNumber) {
             updateEditInvoiceTotal(invoiceNumber);
@@ -745,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function () {
     attachRemoveListenerEdit();
 
     // ==========================================
-    // FORM SUBMIT HANDLING - ADD MODAL
+    // PENANGANAN SUBMIT FORM - MODAL ADD
     // ==========================================
 
     const addModalElement = document.getElementById('addModal');
@@ -755,7 +755,7 @@ document.addEventListener('DOMContentLoaded', function () {
             addForm.addEventListener('submit', function (e) {
                 const submitBtn = this.querySelector('button[type="submit"]');
 
-                // Serialize items
+                // Serialisasi items
                 const items = [];
                 const itemRows = this.querySelectorAll('.item-row');
 
@@ -789,7 +789,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 itemsJsonField.value = JSON.stringify(items);
 
-                // Prevent double submit
+                // Cegah submit ganda
                 if (!handleFormSubmit(submitBtn)) {
                     e.preventDefault();
                     return false;
@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================
-    // FORM SUBMIT HANDLING - EDIT MODALS
+    // PENANGANAN SUBMIT FORM - MODAL EDIT
     // ==========================================
 
     document.querySelectorAll('form[action*="proyek-invoice"]').forEach(form => {
@@ -818,7 +818,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 normalizeInvoicePriceFields(this);
 
-                // Prevent double submit
+                // Cegah submit ganda
                 if (!handleFormSubmit(submitBtn)) {
                     e.preventDefault();
                     return false;
@@ -827,31 +827,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Format existing harga inputs in edit modals
+    // Format input harga yang sudah ada pada modal edit
     document.querySelectorAll('[id^="editModal-"] .item-harga').forEach(input => {
         if (input.value) formatCurrencyInput(input);
     });
 
     // ==========================================
-    // INITIALIZE TOTALS ON PAGE LOAD
+    // INISIALISASI TOTAL SAAT HALAMAN DIMUAT
     // ==========================================
 
     updateInvoiceTotal();
 
-    // Initialize discount & DP display for all edit modals
+    // Inisialisasi tampilan discount & DP untuk semua modal edit
     document.querySelectorAll('[id^="discount-type-edit-"]').forEach(el => {
         const invoiceNumber = el.id.replace('discount-type-edit-', '');
         calculateDiscountEdit(invoiceNumber);
     });
 
     // ==========================================
-    // INITIALIZE PAYMENT ACCOUNT BUTTON STATES
+    // INISIALISASI STATUS TOMBOL REKENING PEMBAYARAN
     // ==========================================
 
-    // ADD modal: disable submit if no checkbox checked on load
+    // Modal ADD: nonaktifkan submit jika tidak ada checkbox tercentang saat dimuat
     validatePaymentSelection();
 
-    // EDIT modals: disable submit if no checkbox checked, add change listeners
+    // Modal EDIT: nonaktifkan submit jika tidak ada checkbox tercentang, tambahkan event listener change
     document.querySelectorAll('[id^="editModal-"]').forEach(modal => {
         const invoiceNumber = modal.id.replace('editModal-', '');
         validatePaymentSelectionEdit(invoiceNumber);
@@ -862,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==========================================
-    // FILTER URL HANDLING
+    // PENANGANAN URL FILTER
     // ==========================================
 
     const monthSelect = document.getElementById('month-select');
@@ -891,7 +891,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (yearSelect) yearSelect.addEventListener('change', updateInvoiceFilterUrl);
 
     // ==========================================
-    // RESET SUBMIT STATE ON PAGE SHOW
+    // RESET STATUS SUBMIT SAAT HALAMAN DITAMPILKAN
     // ==========================================
 
     window.addEventListener('pageshow', () => resetFormSubmitState());

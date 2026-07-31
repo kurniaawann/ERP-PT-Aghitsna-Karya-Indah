@@ -18,7 +18,7 @@
 
     Validation:
     - Uses UpdatePayrollRequest for server-side validation
-    - Client-side validation via required expense item fields in payroll-scripts.blade.php
+    - Client-side validation via required expense item fields in resources/js/pages/sdm/payroll/index.js
 
     Included from: pages/sdm/payroll.blade.php (inside @foreach loop)
 --}}

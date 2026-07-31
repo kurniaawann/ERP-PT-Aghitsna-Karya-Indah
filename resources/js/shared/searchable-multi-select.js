@@ -1,9 +1,9 @@
 /**
- * Searchable Multi-Select - Initializes multi-select searchable dropdowns
- * created by the <x-forms.searchable-multi-select> Blade component.
+ * Searchable Multi-Select - Menginisialisasi dropdown multi-pilih yang dapat
+ * dicari yang dibuat oleh komponen Blade <x-forms.searchable-multi-select>.
  *
- * Supports multiple checkbox selection with tag display and hidden inputs.
- * Usage: call initSearchableMultiSelects() after DOM ready or after a modal opens.
+ * Mendukung pemilihan banyak checkbox dengan tampilan tag dan input tersembunyi.
+ * Penggunaan: panggil initSearchableMultiSelects() setelah DOM siap atau setelah modal terbuka.
  */
 function initSearchableMultiSelects(container) {
     const wrappers = (container || document).querySelectorAll('.searchable-multi-select-wrapper');
@@ -28,14 +28,14 @@ function initSearchableMultiSelects(container) {
         var isSelectAllInProgress = false;
 
         /**
-         * Show dropdown on focus
+         * Tampilkan dropdown saat fokus
          */
         searchInput.addEventListener('focus', function () {
             dropdown.classList.remove('hidden');
         });
 
         /**
-         * Search / filter options
+         * Cari / saring opsi
          */
         searchInput.addEventListener('input', function () {
             const searchTerm = this.value.toLowerCase();
@@ -61,7 +61,7 @@ function initSearchableMultiSelects(container) {
         });
 
         /**
-         * Handle individual checkbox click
+         * Menangani klik checkbox individual
          */
         individualOptions.forEach(function (option) {
             option.addEventListener('click', function (e) {
@@ -81,11 +81,11 @@ function initSearchableMultiSelects(container) {
         });
 
         /**
-         * Handle Select All checkbox.
+         * Menangani checkbox Select All.
          *
-         * IMPORTANT: We must save the target state (this.checked) before the loop,
-         * because handleCheckboxChange() calls updateSelectAllState() which modifies
-         * selectAllCheckbox.checked based on partial state during iteration.
+         * PENTING: Kita harus menyimpan state target (this.checked) sebelum perulangan,
+         * karena handleCheckboxChange() memanggil updateSelectAllState() yang mengubah
+         * selectAllCheckbox.checked berdasarkan state parsial selama iterasi.
          */
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function () {
@@ -110,7 +110,7 @@ function initSearchableMultiSelects(container) {
         }
 
         /**
-         * Handle checkbox change - update selected values, tags, and hidden inputs
+         * Menangani perubahan checkbox - memperbarui nilai terpilih, tag, dan input tersembunyi
          *
          * @param {HTMLInputElement} checkbox
          */
@@ -131,7 +131,7 @@ function initSearchableMultiSelects(container) {
         }
 
         /**
-         * Render selected items as tags below the input
+         * Render item terpilih sebagai tag di bawah input
          */
         function renderTags() {
             tagsContainer.innerHTML = '';
@@ -160,7 +160,7 @@ function initSearchableMultiSelects(container) {
         }
 
         /**
-         * Render hidden inputs for form submission
+         * Render input tersembunyi untuk pengiriman form
          */
         function renderHiddenInputs() {
             const fieldName = hiddenInputsContainer.dataset.name || name;
@@ -176,8 +176,8 @@ function initSearchableMultiSelects(container) {
         }
 
         /**
-         * Update Select All checkbox state based on visible checked checkboxes.
-         * Skipped during Select All iteration to prevent flickering.
+         * Perbarui state checkbox Select All berdasarkan checkbox yang terlihat dan dicentang.
+         * Dilewati selama iterasi Select All untuk mencegah kedipan (flickering).
          */
         function updateSelectAllState() {
             if (!selectAllCheckbox || isSelectAllInProgress) return;
@@ -199,7 +199,7 @@ function initSearchableMultiSelects(container) {
         }
 
         /**
-         * Close dropdown when clicking outside
+         * Tutup dropdown saat mengklik di luar
          */
         document.addEventListener('click', function (e) {
             if (!wrapper.contains(e.target)) {
@@ -211,7 +211,7 @@ function initSearchableMultiSelects(container) {
 
 window.initSearchableMultiSelects = initSearchableMultiSelects;
 
-// Auto-init on DOM ready
+// Inisialisasi otomatis saat DOM siap
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
         initSearchableMultiSelects();

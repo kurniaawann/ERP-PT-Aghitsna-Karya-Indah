@@ -441,6 +441,5 @@
             window.summaryData = @json($summary);
         </script>
         @vite(['resources/js/pages/report/expense-reports/index.js'])
-        @include('partials.shared.print-dropdown-script')
     @endpush
 @endsection

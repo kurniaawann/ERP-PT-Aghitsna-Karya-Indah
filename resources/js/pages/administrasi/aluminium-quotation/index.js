@@ -12,7 +12,7 @@
  */
 
 /* ==========================================
- * HELPER: Escape HTML
+ * HELPER: Meng-escape HTML
  * ========================================== */
 
 /**
@@ -132,7 +132,7 @@ function resolveIds(prefix) {
  * ========================================== */
 
 /**
- * Recalculate total_price satu item berdasarkan volume x unit_price.
+ * Menghitung ulang total_price satu item berdasarkan volume x unit_price.
  *
  * @param  {HTMLElement} itemEl  Element item row
  * @return {number}              Total price item
@@ -151,7 +151,7 @@ function recalcItem(itemEl) {
 }
 
 /**
- * Recalculate subtotal satu group berdasarkan total semua items.
+ * Menghitung ulang subtotal satu group berdasarkan total semua items.
  *
  * @param  {HTMLElement} groupEl  Element group card
  * @return {number}               Subtotal group
@@ -167,7 +167,7 @@ function recalcGroup(groupEl) {
 }
 
 /**
- * Recalculate grand total dari semua groups.
+ * Menghitung ulang grand total dari semua groups.
  *
  * @param  {string} prefix  'add' atau 'edit-{quotationNumber}'
  */
@@ -260,7 +260,7 @@ function addItem(itemsContainer, prefix, prefillData) {
 
     itemsContainer.appendChild(itemEl);
 
-    // Recalc setelah ditambahkan (untuk data pra-isi)
+    // Hitung ulang setelah ditambahkan (untuk data pra-isi)
     if (prefillData.unit_price) updateGrandTotal(prefix);
 }
 
@@ -404,7 +404,7 @@ function serializeGroups(prefix) {
 }
 
 /* ==========================================
- * FORM SUBMISSION: ADD
+ * SUBMIT FORM: TAMBAH
  * ========================================== */
 
 /**
@@ -436,10 +436,10 @@ function prepareAddSubmit() {
         }
     }
 
-    // Set JSON
+    // Atur JSON
     jsonInput.value = JSON.stringify(groups);
 
-    // Loading indicator
+    // Indikator loading
     const submitBtn = document.getElementById('submit-btn-addModal');
     if (submitBtn) {
         const originalText = submitBtn.innerHTML;
@@ -452,7 +452,7 @@ function prepareAddSubmit() {
 }
 
 /* ==========================================
- * FORM SUBMISSION: EDIT
+ * SUBMIT FORM: EDIT
  * ========================================== */
 
 /**
@@ -487,10 +487,10 @@ function prepareEditSubmit(quotNum) {
         }
     }
 
-    // Set JSON
+    // Atur JSON
     jsonInput.value = JSON.stringify(groups);
 
-    // Loading indicator
+    // Indikator loading
     const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);
     if (submitBtn) {
         const originalText = submitBtn.innerHTML;
@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(addModal, { attributes: true, attributeFilter: ['class'] });
     }
 
-    // ─── Select All Checkbox ───
+    // ─── Checkbox Pilih Semua ───
     const selectAll = document.getElementById('selectAll');
     if (selectAll) {
         selectAll.addEventListener('change', function() {
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ─── Individual checkbox listeners ───
+    // ─── Listener checkbox individual ───
     document.querySelectorAll('input[name="ids[]"]').forEach(cb => {
         cb.addEventListener('change', function() {
             if (selectAll && !this.checked) {
@@ -644,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updateDeleteButtonState();
 
-    // ─── Payment account validation: Add Modal ───
+    // ─── Validasi rekening pembayaran: Modal Tambah ───
     document.querySelectorAll('#addModal .payment-account-checkbox').forEach(cb => {
         cb.addEventListener('change', function() {
             validatePaymentSelection('addModal');
@@ -652,7 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     validatePaymentSelection('addModal');
 
-    // ─── Payment account validation: Edit Modals ───
+    // ─── Validasi rekening pembayaran: Modal Edit ───
     document.querySelectorAll('[id^="editModal-"]').forEach(modal => {
         const modalId = modal.id;
         modal.querySelectorAll('.payment-account-checkbox').forEach(cb => {
@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', function() {
         validatePaymentSelection(modalId);
     });
 
-    // ─── Delete Form: Prevent Double Submission ───
+    // ─── Form Hapus: Cegah Double Submit ───
     const deleteForm = document.getElementById('deleteForm');
     if (deleteForm) {
         deleteForm.addEventListener('submit', function(e) {

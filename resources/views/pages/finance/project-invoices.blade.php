@@ -51,5 +51,4 @@
 
     {{-- JavaScript --}}
     @vite('resources/js/pages/finance/project-invoices/index.js')
-    @include('partials.shared.print-dropdown-script')
 @endsection

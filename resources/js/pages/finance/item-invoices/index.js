@@ -1,19 +1,19 @@
 /**
- * Invoice Barang - Index Page JavaScript
+ * Invoice Barang - JavaScript Halaman Index
  *
  * Modul ini menangani:
- * - Searchable dropdown untuk pemilihan barang (add & edit mode)
- * - Toggle "Dari Stok" (add & edit mode)
+ * - Searchable dropdown untuk pemilihan barang (mode tambah & edit)
+ * - Toggle "Dari Stok" (mode tambah & edit)
  * - Validasi harga modal < harga jual
  * - Validasi stok mencukupi
- * - Dynamic add/remove item rows
- * - Form submission dengan JSON items
- * - Select all checkbox untuk bulk delete
+ * - Tambah/hapus item rows secara dinamis
+ * - Submit form dengan JSON items
+ * - Checkbox select all untuk hapus massal
  */
 
 /* global parseCurrencyInput, handleFormSubmit, resetFormSubmitState */
 
-// ─── Currency Helper (compat with inline oninput handlers in Blade) ──────────
+// ─── Currency Helper (kompatibel dengan handler oninput inline di Blade) ─────
 
 function formatCurrencyInput(input) {
     if (!input) return;
@@ -22,7 +22,7 @@ function formatCurrencyInput(input) {
 }
 window.formatCurrencyInput = formatCurrencyInput;
 
-// ─── Item Options Builder ─────────────────────────────────────────────────
+// ─── Pembuat Opsi Item ─────────────────────────────────────────────────────
 
 function buildBarangOptionsHtml(prefix) {
     const items = window._itemsData || [];
@@ -41,7 +41,7 @@ function buildBarangOptionsHtml(prefix) {
     }).join('');
 }
 
-// ─── Submit Delete Form ──────────────────────────────────────────────────────
+// ─── Submit Form Hapus ───────────────────────────────────────────────────────
 
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -57,7 +57,7 @@ window.submitDeleteForm = function () {
     }
 };
 
-// ─── ADD MODE: Searchable Dropdown ──────────────────────────────────────────
+// ─── MODE TAMBAH: Dropdown yang Dapat Dicari ────────────────────────────────
 
 function initSearchableDropdown(row) {
     const searchInput = row.querySelector('.barang-search-input');
@@ -129,7 +129,7 @@ function initSearchableDropdown(row) {
     });
 }
 
-// ─── ADD MODE: Dari Stok Toggle ─────────────────────────────────────────────
+// ─── MODE TAMBAH: Toggle Dari Stok ───────────────────────────────────────────
 
 function toggleStockHandler() {
     const row = this.closest('.barang-item-row');
@@ -158,7 +158,7 @@ function toggleStockHandler() {
     }
 }
 
-// ─── ADD MODE: Remove Item ──────────────────────────────────────────────────
+// ─── MODE TAMBAH: Hapus Item ─────────────────────────────────────────────────
 
 function removeItemHandler(e) {
     e.preventDefault();
@@ -173,7 +173,7 @@ function removeItemHandler(e) {
     this.closest('.barang-item-row').remove();
 }
 
-// ─── ADD MODE: Price Validation ─────────────────────────────────────────────
+// ─── MODE TAMBAH: Validasi Harga ─────────────────────────────────────────────
 
 function initPriceValidation(row) {
     const capitalInput = row.querySelector('.barang-item-capital');
@@ -213,7 +213,7 @@ function initPriceValidation(row) {
     sellingInput.addEventListener('input', validatePrices);
 }
 
-// ─── ADD MODE: Stock Validation ─────────────────────────────────────────────
+// ─── MODE TAMBAH: Validasi Stok ──────────────────────────────────────────────
 
 function initStockValidation(row) {
     const qtyInput = row.querySelector('.barang-item-qty');
@@ -267,7 +267,7 @@ function initStockValidation(row) {
     fromStockCheckbox.addEventListener('change', validateStock);
 }
 
-// ─── ADD MODE: Attach Listeners ─────────────────────────────────────────────
+// ─── MODE TAMBAH: Pasang Listener ────────────────────────────────────────────
 
 function attachItemListeners() {
     document.querySelectorAll('.remove-barang-item').forEach(function (btn) {
@@ -285,7 +285,7 @@ function attachItemListeners() {
     });
 }
 
-// ─── EDIT MODE: Searchable Dropdown ─────────────────────────────────────────
+// ─── MODE EDIT: Dropdown yang Dapat Dicari ───────────────────────────────────
 
 function initSearchableDropdownEdit(row) {
     const searchInput = row.querySelector('.barang-search-input-edit');
@@ -360,7 +360,7 @@ function initSearchableDropdownEdit(row) {
     });
 }
 
-// ─── EDIT MODE: Dari Stok Toggle ────────────────────────────────────────────
+// ─── MODE EDIT: Toggle Dari Stok ─────────────────────────────────────────────
 
 function toggleEditStockHandler() {
     const row = this.closest('.barang-item-row-edit');
@@ -395,7 +395,7 @@ function toggleEditStockHandler() {
     }
 }
 
-// ─── EDIT MODE: Price Validation ────────────────────────────────────────────
+// ─── MODE EDIT: Validasi Harga ───────────────────────────────────────────────
 
 function initPriceValidationEdit(row, invoiceNumber) {
     const capitalInput = row.querySelector('.barang-item-capital-edit');
@@ -438,7 +438,7 @@ function initPriceValidationEdit(row, invoiceNumber) {
     sellingInput.addEventListener('input', validatePrices);
 }
 
-// ─── EDIT MODE: Stock Validation ────────────────────────────────────────────
+// ─── MODE EDIT: Validasi Stok ────────────────────────────────────────────────
 
 function initStockValidationEdit(row, invoiceNumber) {
     const qtyInput = row.querySelector('.barang-item-qty-edit');
@@ -497,7 +497,7 @@ function initStockValidationEdit(row, invoiceNumber) {
     fromStockCheckbox.addEventListener('change', validateStock);
 }
 
-// ─── EDIT MODE: Remove Item ─────────────────────────────────────────────────
+// ─── MODE EDIT: Hapus Item ───────────────────────────────────────────────────
 
 function removeEditItemHandler(e) {
     e.preventDefault();
@@ -522,7 +522,7 @@ function removeEditItemHandler(e) {
     });
 }
 
-// ─── EDIT MODE: Attach Listeners ────────────────────────────────────────────
+// ─── MODE EDIT: Pasang Listener ──────────────────────────────────────────────
 
 function attachEditListeners() {
     document.querySelectorAll('.remove-barang-item-edit').forEach(function (btn) {
@@ -540,7 +540,7 @@ function attachEditListeners() {
     });
 }
 
-// ─── ADD MODE: Add Item Button ──────────────────────────────────────────────
+// ─── MODE TAMBAH: Tombol Tambah Item ─────────────────────────────────────────
 
 function initAddItemButton() {
     var addBtn = document.querySelector('.add-barang-item');
@@ -600,7 +600,7 @@ function initAddItemButton() {
     });
 }
 
-// ─── ADD MODE: Form Submission ──────────────────────────────────────────────
+// ─── MODE TAMBAH: Submit Form ────────────────────────────────────────────────
 
 function initAddFormSubmission() {
     var addModal = document.getElementById('addModal');
@@ -665,7 +665,7 @@ function initAddFormSubmission() {
     });
 }
 
-// ─── EDIT MODE: Add Item Button ─────────────────────────────────────────────
+// ─── MODE EDIT: Tombol Tambah Item ───────────────────────────────────────────
 
 function initEditItemButtons() {
     document.querySelectorAll('.add-barang-item-edit').forEach(function (btn) {
@@ -731,7 +731,7 @@ function initEditItemButtons() {
     });
 }
 
-// ─── EDIT MODE: Form Submission ─────────────────────────────────────────────
+// ─── MODE EDIT: Submit Form ──────────────────────────────────────────────────
 
 function initEditFormSubmissions() {
     document.querySelectorAll('[id^="editModal-"] form').forEach(function (form) {
@@ -768,7 +768,7 @@ function initEditFormSubmissions() {
     });
 }
 
-// ─── PAYMENT ACCOUNT VALIDATION ─────────────────────────────────────────────
+// ─── VALIDASI AKUN PEMBAYARAN ───────────────────────────────────────────────
 
 function validatePaymentSelection() {
     const addModal = document.getElementById('addModal');
@@ -812,7 +812,7 @@ function validatePaymentSelectionEdit(invoiceNumber) {
 window.validatePaymentSelection = validatePaymentSelection;
 window.validatePaymentSelectionEdit = validatePaymentSelectionEdit;
 
-// ─── SELECT ALL CHECKBOX ────────────────────────────────────────────────────
+// ─── CHECKBOX SELECT ALL ─────────────────────────────────────────────────────
 
 function initSelectAllCheckbox() {
     var selectAllCheckbox = document.getElementById('selectAll');
@@ -853,10 +853,10 @@ function initSelectAllCheckbox() {
     updateDeleteButtonState();
 }
 
-// ─── INITIALIZATION ─────────────────────────────────────────────────────────
+// ─── INISIALISASI ────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Add mode
+    // Mode tambah
     attachItemListeners();
     document.querySelectorAll('.barang-item-row').forEach(function (row) {
         initSearchableDropdown(row);
@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initAddItemButton();
     initAddFormSubmission();
 
-    // Edit mode
+    // Mode edit
     attachEditListeners();
     document.querySelectorAll('[id^="barang-items-list-edit-"]').forEach(function (container) {
         var invoiceNumber = container.id.replace('barang-items-list-edit-', '');
@@ -878,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initEditItemButtons();
     initEditFormSubmissions();
 
-    // Payment account validation
+    // Validasi akun pembayaran
     validatePaymentSelection();
 
     document.querySelectorAll('[id^="editModal-"]').forEach(function (modal) {
@@ -892,10 +892,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Shared
+    // Umum
     initSelectAllCheckbox();
 
-    // Reset form submit state on page show (back/forward navigation)
+    // Reset status submit form saat halaman ditampilkan (navigasi kembali/maju)
     window.addEventListener('pageshow', function () {
         resetFormSubmitState();
     });

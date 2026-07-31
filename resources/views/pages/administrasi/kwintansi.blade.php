@@ -91,12 +91,4 @@
     @push('scripts')
         @vite('resources/js/pages/administrasi/kwitansi/index.js')
     @endpush
-
-    {{-- Script dropdown print --}}
-    @include('partials.shared.print-dropdown-script')
-
-    {{-- Script print selected (harus dalam <script> karena tidak punya tag sendiri) --}}
-    <script>
-        @include('partials.shared.print-selected-script')
-    </script>
 @endsection

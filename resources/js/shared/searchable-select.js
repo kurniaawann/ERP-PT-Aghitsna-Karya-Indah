@@ -1,15 +1,15 @@
 /**
- * Searchable Select - Initializes searchable dropdowns created by the
- * <x-forms.searchable-select> Blade component.
+ * Searchable Select - Menginisialisasi dropdown yang dapat dicari yang dibuat
+ * oleh komponen Blade <x-forms.searchable-select>.
  *
- * Usage: call initSearchableSelects() after DOM ready or after a modal opens.
+ * Penggunaan: panggil initSearchableSelects() setelah DOM siap atau setelah modal terbuka.
  */
 
 function initSearchableSelects(container) {
     const wrappers = (container || document).querySelectorAll('.searchable-select-wrapper');
 
     wrappers.forEach(function(wrapper) {
-        // Skip already initialized
+        // Lewati yang sudah diinisialisasi
         if (wrapper.dataset.searchableInitialized === 'true') return;
         wrapper.dataset.searchableInitialized = 'true';
 
@@ -21,12 +21,12 @@ function initSearchableSelects(container) {
 
         if (!searchInput || !dropdown) return;
 
-        // Show dropdown on focus
+        // Tampilkan dropdown saat fokus
         searchInput.addEventListener('focus', function() {
             dropdown.classList.remove('hidden');
         });
 
-        // Search functionality
+        // Fungsi pencarian
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             let hasResults = false;
@@ -51,7 +51,7 @@ function initSearchableSelects(container) {
             }
         });
 
-        // Handle option selection
+        // Menangani pemilihan opsi
         options.forEach(function(option) {
             option.addEventListener('click', function() {
                 const value = this.dataset.value;
@@ -64,7 +64,7 @@ function initSearchableSelects(container) {
             });
         });
 
-        // Close dropdown when clicking outside
+        // Tutup dropdown saat mengklik di luar
         document.addEventListener('click', function(e) {
             if (!wrapper.contains(e.target)) {
                 dropdown.classList.add('hidden');
@@ -75,7 +75,7 @@ function initSearchableSelects(container) {
 
 window.initSearchableSelects = initSearchableSelects;
 
-// Auto-init on DOM ready
+// Inisialisasi otomatis saat DOM siap
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initSearchableSelects();

@@ -15,13 +15,13 @@
  */
 
 // ============================================================
-// INITIALIZATION
+// INISIALISASI
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
-    // SEARCH DEBOUNCE
+    // DEBOUNCE PENCARIAN
     //
     // Mencegah form submit setiap keystroke pada input pencarian.
     // Form akan submit setelah user berhenti mengetik 500ms.
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // MONTHLY TREND CHART
+    // GRAFIK TREN BULANAN
     //
     // Line chart yang menampilkan trend pemasukan dan pengeluaran
     // per bulan selama tahun yang dipilih.
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // CATEGORY EXPENSE CHART
+    // GRAFIK PENGELUARAN PER KATEGORI
     //
     // Horizontal bar chart yang menampilkan total pengeluaran
     // per kategori. Warna diambil dari categoryColors map.
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // INCOME VS EXPENSE CHART
+    // GRAFIK PEMASUKAN VS PENGELUARAN
     //
     // Doughnut chart yang menampilkan perbandingan total
     // pemasukan vs total pengeluaran.

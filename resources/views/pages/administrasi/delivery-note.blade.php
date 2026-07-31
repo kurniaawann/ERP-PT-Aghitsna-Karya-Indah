@@ -111,12 +111,4 @@
             }
         </script>
     @endpush
-
-    {{-- Script dropdown print --}}
-    @include('partials.shared.print-dropdown-script')
-
-    {{-- Script print selected (harus dalam <script> karena menggunakan csrf_token) --}}
-    <script>
-        @include('partials.shared.print-selected-script')
-    </script>
 @endsection

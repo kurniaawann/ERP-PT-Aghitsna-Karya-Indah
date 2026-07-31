@@ -1,15 +1,19 @@
 /**
- * RAB (Rencana Anggaran Biaya) - Index Page JavaScript
+ * RAB (Rencana Anggaran Biaya) - JavaScript Halaman Index
  *
  * Modul ini menangani:
  * - Select all checkbox dan update tombol delete
  * - Submit form dengan loading indicator
  * - Delete dengan modal konfirmasi
  * - Export PDF/Excel dengan loading indicator
+ *
+ * Manajemen struktur dinamis (kategori/sub-kategori/item) dihandle oleh rab-dynamic.js
  */
+import './rab-dynamic';
+
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ─── Select All Checkbox ───────────────────────────────────────────
+    // ─── Checkbox Pilih Semua ───────────────────────────────────────────
     const selectAll = document.getElementById('selectAll');
     const itemCheckboxes = document.querySelectorAll('.item-checkbox');
 
@@ -45,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateDeleteButton();
 
-    // ─── Submit Delete (dipanggil dari onclick di modal) ──────────────
+    // ─── Submit Hapus (dipanggil dari onclick di modal) ──────────────
     window.submitDeleteForm = function () {
         const btn = document.getElementById('confirm-btn-deleteModal');
         if (btn) {
@@ -57,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (f) f.submit();
     };
 
-    // ─── Add RAB Form ─────────────────────────────────────────────────
+    // ─── Form Tambah RAB ─────────────────────────────────────────────────
     const addForm = document.getElementById('addRABForm');
     if (addForm) {
         addForm.addEventListener('submit', function (e) {
@@ -71,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ─── Edit RAB Forms ───────────────────────────────────────────────
+    // ─── Form Edit RAB ───────────────────────────────────────────────
     document.querySelectorAll('form[id^="editRABForm"]').forEach(function (form) {
         form.addEventListener('submit', function (e) {
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -85,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ─── Handle Export PDF/Excel with loading ─────────────────────────
+    // ─── Tangani Ekspor PDF/Excel dengan loading ─────────────────────────
     document.querySelectorAll('[data-export]').forEach(function (el) {
         el.addEventListener('click', function (e) {
             const url = this.getAttribute('data-export-url');

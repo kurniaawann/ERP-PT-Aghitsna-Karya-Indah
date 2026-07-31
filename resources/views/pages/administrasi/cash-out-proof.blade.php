@@ -65,7 +65,11 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
-    {{-- JavaScript: Inisialisasi halaman, event listener, dan interaksi --}}
-    @include('partials.administrasi.cash-out-proof-scripts')
-    @include('partials.shared.print-dropdown-script')
+    {{-- Hidden input untuk route print selected (digunakan oleh JS) --}}
+    <input type="hidden" id="cash-out-proof-print-selected-route" value="{{ route('cash-out-proof.export.pdf.selected') }}">
+
+    {{-- JavaScript: Load via Vite (modular) --}}
+    @push('scripts')
+        @vite('resources/js/pages/administrasi/cash-out-proof/index.js')
+    @endpush
 @endsection

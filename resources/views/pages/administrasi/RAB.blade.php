@@ -2,9 +2,9 @@
 
 @section('title', 'PT Aghitsna Karya Indah - RAB')
 
-@push('styles')
+@push('scripts')
     {{-- Halaman index RAB --}}
-    @vite('resources/js/pages/administration/budgets/index.js')
+    @vite('resources/js/pages/administrasi/rab/index.js')
 @endpush
 
 @section('content')
@@ -57,8 +57,4 @@
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus RAB yang dipilih?
     </x-modal>
-
-    {{-- Script RAB --}}
-    @include('partials.administrasi.rab-scripts')
-    @include('partials.shared.print-dropdown-script')
 @endsection

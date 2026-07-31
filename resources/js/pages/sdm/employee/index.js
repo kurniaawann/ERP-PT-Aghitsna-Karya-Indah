@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Individual Checkboxes
+    // Checkbox Individu
     document.querySelectorAll('input[name="ids[]"]').forEach(function (checkbox) {
         checkbox.addEventListener('change', function () {
             var allCheckboxes = document.querySelectorAll('input[name="ids[]"]');
@@ -92,15 +92,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Initialize delete button state
+    // Inisialisasi status tombol hapus
     updateDeleteButtonState();
 
-    // Initialize searchable selects (from shared global)
+    // Inisialisasi searchable selects (dari global bersama)
     if (typeof window.initSearchableSelects === 'function') {
         window.initSearchableSelects();
     }
 
-    // Daily Wage Currency Formatting
+    // Format Mata Uang Upah Harian
     document.querySelectorAll('.daily-wage-input').forEach(function (input) {
         if (input.value) {
             formatCurrencyInput(input);
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Add Form Submit (with double-submit prevention)
+    // Submit Form Tambah (dengan pencegahan pengiriman ganda)
     var addForm = document.querySelector('#addModal form');
     if (addForm) {
         addForm.addEventListener('submit', function (e) {
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Edit Form Submits (with double-submit prevention)
+    // Submit Form Edit (dengan pencegahan pengiriman ganda)
     document.querySelectorAll('[id^="editModal-"] form').forEach(function (form) {
         form.addEventListener('submit', function (e) {
             var submitBtn = this.querySelector('button[type="submit"]');

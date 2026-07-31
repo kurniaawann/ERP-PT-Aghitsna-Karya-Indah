@@ -115,7 +115,23 @@
         <p class="text-text-primary">Apakah kamu yakin ingin membayar payroll yang dipilih?</p>
     </x-modal>
 
+    {{-- Pass server data to JavaScript --}}
+    @php
+        $payrollConfig = [
+            'getWeeksUrl' => route('payroll.get-weeks'),
+            'checkAttendanceUrl' => route('payroll.check-attendance'),
+            'csrfToken' => csrf_token(),
+            'currentYear' => (int) date('Y'),
+            'filterWeek' => request('week_number'),
+            'filterMonth' => request('month'),
+            'filterYear' => request('year'),
+        ];
+    @endphp
+
+    <script>
+        window.payrollConfig = @json($payrollConfig);
+    </script>
+
     {{-- JavaScript --}}
-    @include('partials.sdm.payroll-scripts')
-    @include('partials.shared.print-dropdown-script')
+    @vite('resources/js/pages/sdm/payroll/index.js')
 @endsection

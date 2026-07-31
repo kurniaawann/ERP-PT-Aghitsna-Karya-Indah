@@ -12,7 +12,7 @@
  */
 
 /* ==========================================
- * HELPER: Escape HTML
+ * HELPER: Meng-escape HTML
  * ========================================== */
 
 /**
@@ -102,7 +102,7 @@ function hideModalError(prefix) {
 }
 
 /* ==========================================
- * RESOLVE CONTAINER / GRAND-TOTAL / JSON IDs
+ * RESOLVE ID CONTAINER / GRAND-TOTAL / JSON
  * ========================================== */
 
 /**
@@ -129,7 +129,7 @@ function resolveIds(prefix) {
 }
 
 /* ==========================================
- * ITEMS STORE MANAGEMENT
+ * MANAJEMEN ITEM STORE
  * ========================================== */
 
 /**
@@ -174,7 +174,7 @@ function setItemsStore(prefix, items) {
 }
 
 /* ==========================================
- * ITEM OPERATIONS
+ * OPERASI ITEM
  * ========================================== */
 
 /**
@@ -221,7 +221,7 @@ function removeItem(prefix, itemId) {
     let items = getItemsStore(prefix);
     items = items.filter(i => i.id !== itemId);
 
-    // Reorder
+    // Urutkan ulang
     items.forEach((item, idx) => {
         item.order_number = idx + 1;
     });
@@ -273,7 +273,7 @@ function updateItemField(prefix, itemId, field, value, render = true) {
 }
 
 /* ==========================================
- * RENDER ITEMS
+ * MERENDER ITEM
  * ========================================== */
 
 /**
@@ -388,7 +388,7 @@ function updateGrandTotal(prefix) {
 }
 
 /* ==========================================
- * FETCH NEXT QUOTATION NUMBER
+ * AMBIL NOMOR PENAWARAN BERIKUTNYA
  * ========================================== */
 
 /**
@@ -412,7 +412,7 @@ function fetchNextQuotationNumber() {
 }
 
 /* ==========================================
- * RENDER EDIT MODAL ITEMS
+ * MERENDER ITEM MODAL EDIT
  * ========================================== */
 
 /**
@@ -461,7 +461,7 @@ function validatePaymentSelection(modalId) {
 }
 
 /* ==========================================
- * PREPARE SUBMIT
+ * MENYIAPKAN SUBMIT
  * ========================================== */
 
 /**
@@ -500,14 +500,14 @@ function prepareAddSubmit() {
         }
     }
 
-    // Set JSON
+    // Atur JSON
     const ids = resolveIds('add');
     const jsonInput = document.getElementById(ids.jsonInput);
     if (jsonInput) {
         jsonInput.value = JSON.stringify(addItemsStore);
     }
 
-    // Show loading spinner, cegah double submit
+    // Tampilkan loading spinner, cegah double submit
     const submitBtn = document.getElementById('submit-btn-addModal');
     if (submitBtn) {
         const originalText = submitBtn.innerHTML;
@@ -558,14 +558,14 @@ function prepareEditSubmit(quotNum) {
         }
     }
 
-    // Set JSON
+    // Atur JSON
     const ids = resolveIds('edit-' + quotNum);
     const jsonInput = document.getElementById(ids.jsonInput);
     if (jsonInput) {
         jsonInput.value = JSON.stringify(items);
     }
 
-    // Show loading spinner, cegah double submit
+    // Tampilkan loading spinner, cegah double submit
     const submitBtn = document.getElementById('submit-btn-editModal-' + quotNum);
     if (submitBtn) {
         const originalText = submitBtn.innerHTML;
@@ -577,7 +577,7 @@ function prepareEditSubmit(quotNum) {
 }
 
 /* ==========================================
- * DELETE
+ * HAPUS
  * ========================================== */
 
 /**
@@ -591,7 +591,7 @@ function submitDeleteForm() {
         return false;
     }
 
-    // Set delete button ke loading state, cegah double click
+    // Atur tombol hapus ke loading state, cegah double click
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
     if (deleteBtn) {
         const originalText = deleteBtn.innerHTML;
@@ -627,11 +627,11 @@ function updateDeleteButtonState() {
 }
 
 /* ==========================================
- * DOMCONTENTLOADED INITIALIZATION
+ * INISIALISASI DOMCONTENTLOADED
  * ========================================== */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // ═══ Auto-fetch next quotation number untuk Add modal ═══
+    // ═══ Ambil otomatis nomor penawaran berikutnya untuk modal Add ═══
     const addModal = document.getElementById('addModal');
     if (addModal) {
         const observer = new MutationObserver(function(mutations) {
@@ -669,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // ═══ Select All checkbox ═══
+    // ═══ Checkbox Pilih Semua ═══
     const selectAllCheckbox = document.getElementById('selectAll');
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
@@ -688,7 +688,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const allCheckboxes = document.querySelectorAll('#deleteForm input[name="ids[]"]');
             const checkedCheckboxes = document.querySelectorAll('#deleteForm input[name="ids[]"]:checked');
 
-            // Update select all checkbox state
+            // Perbarui status checkbox select all
             if (selectAllCheckbox) {
                 selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
             }
@@ -700,7 +700,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inisialisasi delete button state saat halaman dimuat
     updateDeleteButtonState();
 
-    // ═══ Payment account validation: Add Modal ═══
+    // ═══ Validasi rekening pembayaran: Modal Tambah ═══
     const addModalCheckboxes = document.querySelectorAll('#addModal .payment-account-checkbox');
     addModalCheckboxes.forEach(cb => {
         cb.addEventListener('change', function() {
@@ -709,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     validatePaymentSelection('addModal');
 
-    // ═══ Payment account validation: Edit Modals ═══
+    // ═══ Validasi rekening pembayaran: Modal Edit ═══
     document.querySelectorAll('[id^="editModal-"]').forEach(modal => {
         const modalId = modal.id;
         modal.querySelectorAll('.payment-account-checkbox').forEach(cb => {
@@ -720,7 +720,7 @@ document.addEventListener('DOMContentLoaded', function() {
         validatePaymentSelection(modalId);
     });
 
-    // ═══ Delete Form: Prevent Double Submission ═══
+    // ═══ Form Hapus: Cegah Double Submit ═══
     const deleteForm = document.getElementById('deleteForm');
     if (deleteForm) {
         deleteForm.addEventListener('submit', function(e) {

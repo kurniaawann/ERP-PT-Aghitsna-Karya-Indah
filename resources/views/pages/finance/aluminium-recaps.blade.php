@@ -40,6 +40,4 @@
     @foreach ($invoices as $invoice)
         <x-finance.aluminium-invoices.detail-modal :invoice="$invoice" />
     @endforeach
-
-    @include('partials.shared.print-dropdown-script')
 @endsection

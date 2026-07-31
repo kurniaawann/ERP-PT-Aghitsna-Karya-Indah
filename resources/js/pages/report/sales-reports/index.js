@@ -9,13 +9,13 @@
  */
 
 // ============================================================
-// INITIALIZATION
+// INISIALISASI
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
-    // MONTHLY SALES CHART
+    // GRAFIK PENJUALAN BULANAN
     //
     // Line chart yang menampilkan trend penjualan dan profit
     // per bulan selama tahun yang dipilih.
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // STATUS DISTRIBUTION CHART
+    // GRAFIK DISTRIBUSI STATUS
     //
     // Doughnut chart yang menampilkan proporsi
     // pembayaran Lunas vs Belum Lunas.
