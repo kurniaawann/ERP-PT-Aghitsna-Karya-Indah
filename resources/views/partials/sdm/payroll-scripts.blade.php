@@ -20,14 +20,11 @@
        - submitBulkPayForm(): Collects selected IDs + payment date, submits PATCH form
        - Shows loading state during submission
 
-    4. Form Validation
-       - validatePayrollEditNotes(): Ensures notes are provided when expenses > 0
-       - Used by edit modal forms
-
-    5. Dynamic Expense Items
-       - addExpenseItem(): Adds new expense item row to generate modal
+    4. Dynamic Expense Items
+       - addExpenseItem(): Adds new expense item row (generate & edit modals)
        - removeExpenseItem(): Removes expense item row
        - updateExpenseData(): Recalculates totals and updates hidden inputs
+       - Context-based: each modal container has data-expense-context attribute
        - Expense items stored as JSON in additional_expenses_notes
 
     Dependencies:
@@ -624,14 +621,6 @@
     // Handle Edit Modal Submits
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
         form.addEventListener('submit', function(e) {
-            const modal = this.closest('[id^="editModal-"]');
-            const payrollId = modal ? modal.id.replace('editModal-', '') : null;
-
-            if (payrollId && !validatePayrollEditNotes(payrollId)) {
-                e.preventDefault();
-                return false;
-            }
-
             const submitBtn = this.querySelector('button[type="submit"]');
             if (!handleFormSubmit(submitBtn, undefined, 'Memproses...')) {
                 e.preventDefault();
@@ -640,29 +629,6 @@
         });
     });
 
-    function validatePayrollEditNotes(payrollId) {
-        const amountInput = document.getElementById(`additional_expenses_${payrollId}`);
-        const notesInput = document.getElementById(`additional_expenses_notes_${payrollId}`);
-
-        if (!amountInput || !notesInput) {
-            return true;
-        }
-
-        const amount = parseInt(amountInput.value, 10) || 0;
-        const notes = notesInput.value.trim();
-
-        if (amount > 0 && !notes) {
-            notesInput.setCustomValidity('Keterangan pengeluaran tambahan wajib diisi jika nominal lebih dari 0.');
-            notesInput.reportValidity();
-            return false;
-        }
-
-        notesInput.setCustomValidity('');
-        return true;
-    }
-
-    window.validatePayrollEditNotes = validatePayrollEditNotes;
-
     // ==========================================
     // DYNAMIC EXPENSE ITEMS
     // ==========================================
@@ -670,13 +636,14 @@
     let expenseItemCounter = 0;
     const expenseItems = [];
 
-    function addExpenseItem() {
+    function addExpenseItem(context) {
         expenseItemCounter++;
         const itemId = expenseItemCounter;
 
-        const container = document.getElementById('expense-items-container');
-        const noExpenseText = document.getElementById('no-expense-text');
+        const container = document.getElementById(`expense-items-container-${context}`);
+        if (!container) return;
 
+        const noExpenseText = document.getElementById(`no-expense-text-${context}`);
         if (noExpenseText) {
             noExpenseText.style.display = 'none';
         }
@@ -690,7 +657,7 @@
                             <input type="text" 
                                 class="expense-name w-full border border-border-strong rounded-lg px-2 py-1.5 text-sm bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
                                 placeholder="Contoh: Token Listrik"
-                                oninput="updateExpenseData()"
+                                oninput="updateExpenseData('${context}')"
                                 required>
                         </div>
                         <div>
@@ -699,12 +666,12 @@
                                 class="expense-amount w-full border border-border-strong rounded-lg px-2 py-1.5 text-sm bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
                                 placeholder="0"
                                 min="0"
-                                oninput="updateExpenseData()"
+                                oninput="updateExpenseData('${context}')"
                                 required>
                         </div>
                     </div>
                     <button type="button" 
-                        onclick="removeExpenseItem(${itemId})"
+                        onclick="removeExpenseItem(${itemId}, '${context}')"
                         class="mt-6 text-error hover:text-error hover:bg-error-light px-2 py-1.5 rounded transition-colors"
                         title="Hapus item">
                         <i class="fa-solid fa-trash"></i>
@@ -714,19 +681,21 @@
         `;
 
         container.insertAdjacentHTML('beforeend', itemHTML);
-        updateExpenseData();
+        updateExpenseData(context);
     }
 
-    function removeExpenseItem(itemId) {
-        const item = document.querySelector(`[data-item-id="${itemId}"]`);
+    function removeExpenseItem(itemId, context) {
+        const container = document.getElementById(`expense-items-container-${context}`);
+        if (!container) return;
+
+        const item = container.querySelector(`[data-item-id="${itemId}"]`);
         if (item) {
             item.remove();
-            updateExpenseData();
+            updateExpenseData(context);
 
             // Show "no expense" text if no items left
-            const container = document.getElementById('expense-items-container');
             const items = container.querySelectorAll('.expense-item');
-            const noExpenseText = document.getElementById('no-expense-text');
+            const noExpenseText = document.getElementById(`no-expense-text-${context}`);
 
             if (items.length === 0 && noExpenseText) {
                 noExpenseText.style.display = 'block';
@@ -734,11 +703,14 @@
         }
     }
 
-    function updateExpenseData() {
+    function updateExpenseData(context) {
+        const container = document.getElementById(`expense-items-container-${context}`);
+        if (!container) return;
+
         const items = [];
         let total = 0;
 
-        document.querySelectorAll('.expense-item').forEach(item => {
+        container.querySelectorAll('.expense-item').forEach(item => {
             const name = item.querySelector('.expense-name').value.trim();
             const amount = parseInt(item.querySelector('.expense-amount').value) || 0;
 
@@ -752,22 +724,24 @@
         });
 
         // Update hidden inputs
-        document.getElementById('total_additional_expenses').value = total;
-        document.getElementById('additional_expenses_notes').value = items.length > 0 ? JSON.stringify(items) : '';
+        document.getElementById(`total_additional_expenses_${context}`).value = total;
+        document.getElementById(`additional_expenses_notes_${context}`).value = items.length > 0 ? JSON.stringify(items) : '';
 
         // Update display
-        document.getElementById('total-expense-display').textContent =
+        document.getElementById(`total-expense-display-${context}`).textContent =
             'Rp ' + total.toLocaleString('id-ID');
     }
 
-    // Initialize: hide no-expense text if there are items
+    // Initialize: hide no-expense text if there are items in a container
     document.addEventListener('DOMContentLoaded', function() {
-        const container = document.getElementById('expense-items-container');
-        const items = container.querySelectorAll('.expense-item');
-        const noExpenseText = document.getElementById('no-expense-text');
+        document.querySelectorAll('[data-expense-context]').forEach(container => {
+            const context = container.dataset.expenseContext;
+            const items = container.querySelectorAll('.expense-item');
+            const noExpenseText = document.getElementById(`no-expense-text-${context}`);
 
-        if (items.length > 0 && noExpenseText) {
-            noExpenseText.style.display = 'none';
-        }
+            if (items.length > 0 && noExpenseText) {
+                noExpenseText.style.display = 'none';
+            }
+        });
     });
 </script>

@@ -95,28 +95,27 @@
     <div class="mb-3">
         <div class="flex justify-between items-center mb-2">
             <label class="block text-text-primary font-semibold">Pengeluaran Tambahan (Opsional)</label>
-            <button type="button" onclick="addExpenseItem()"
+            <button type="button" onclick="addExpenseItem('generate')"
                 class="text-sm bg-success hover:bg-success-hover text-white px-3 py-1 rounded-lg flex items-center gap-1">
                 <i class="fa-solid fa-plus"></i> Tambah Item
             </button>
         </div>
 
-        <div id="expense-items-container" class="space-y-2">
-            <!-- Expense items will be added here dynamically -->
-            <p class="text-sm text-text-secondary text-center py-4" id="no-expense-text">
+        <div id="expense-items-container-generate" class="space-y-2" data-expense-context="generate">
+            <p class="text-sm text-text-secondary text-center py-4" id="no-expense-text-generate">
                 Belum ada pengeluaran tambahan. Klik "Tambah Item" untuk menambahkan.
             </p>
         </div>
 
         <!-- Hidden inputs for form submission -->
-        <input type="hidden" name="additional_expenses" id="total_additional_expenses" value="0">
-        <input type="hidden" name="additional_expenses_notes" id="additional_expenses_notes" value="">
+        <input type="hidden" name="additional_expenses" id="total_additional_expenses_generate" value="0">
+        <input type="hidden" name="additional_expenses_notes" id="additional_expenses_notes_generate" value="">
 
         <!-- Total Display -->
         <div class="mt-3 p-3 bg-surface-secondary rounded-lg border border-border-strong">
             <div class="flex justify-between items-center">
                 <span class="font-semibold text-text-primary">Total Pengeluaran Tambahan:</span>
-                <span class="text-lg font-bold text-primary" id="total-expense-display">Rp 0</span>
+                <span class="text-lg font-bold text-primary" id="total-expense-display-generate">Rp 0</span>
             </div>
         </div>
     </div>
