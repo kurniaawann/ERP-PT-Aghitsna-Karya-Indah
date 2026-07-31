@@ -29,17 +29,18 @@ class TransactionCategoryService
      * @return LengthAwarePaginator
      */
     public function getPaginatedCategories(?string $search = null, ?string $type = null): LengthAwarePaginator
-    {
-        return TransactionCategory::query()
-            ->when($type, fn ($query, $type) => $query->where('type', $type))
-            ->when($search, fn ($query, $search) => $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%");
-            }))
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->paginate(15);
-    }
+{
+    return TransactionCategory::query()
+        ->where('created_by', auth()->id())
+        ->when($type, fn ($query, $type) => $query->where('type', $type))
+        ->when($search, fn ($query, $search) => $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+                ->orWhere('code', 'like', "%{$search}%");
+        }))
+        ->orderBy('sort_order')
+        ->orderBy('name')
+        ->paginate(15);
+}
 
     /**
      * Mengambil semua kode kategori yang sudah ada (untuk validasi duplikat di frontend).

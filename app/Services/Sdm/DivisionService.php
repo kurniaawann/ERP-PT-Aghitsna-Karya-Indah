@@ -32,17 +32,18 @@ class DivisionService
      * @return LengthAwarePaginator
      */
     public function getPaginatedDivisions(?string $search, int $perPage = 15): LengthAwarePaginator
-    {
-        return Division::withCount('employees')
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
-                });
-            })
-            ->latest('created_at')
-            ->paginate($perPage);
-    }
+{
+    return Division::withCount('employees')
+        ->where('created_by', auth()->id())
+        ->when($search, function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        })
+        ->latest('created_at')
+        ->paginate($perPage);
+}
 
     /**
      * Membuat divisi baru.

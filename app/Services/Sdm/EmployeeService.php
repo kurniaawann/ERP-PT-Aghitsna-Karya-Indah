@@ -30,17 +30,18 @@ class EmployeeService
      * @param  int          $perPage
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
-    public function getPaginatedEmployees(?string $search, int $perPage = 15): LengthAwarePaginator
-    {
-        return Employee::when($search, function ($query, $search) {
+  public function getPaginatedEmployees(?string $search, int $perPage = 15): LengthAwarePaginator
+{
+    return Employee::where('created_by', auth()->id())
+        ->when($search, function ($query, $search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('employee_code', 'like', "%{$search}%");
             });
         })
-            ->latest('created_at')
-            ->paginate($perPage);
-    }
+        ->latest('created_at')
+        ->paginate($perPage);
+}
 
     /**
      * Mendapatkan semua divisi yang diurutkan berdasarkan nama.
