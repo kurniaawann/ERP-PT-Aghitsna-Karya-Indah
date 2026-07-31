@@ -50,4 +50,15 @@ class UserRepository
     {
         return $user->update($data);
     }
+
+    /**
+     * Menghapus beberapa data user sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar ID user yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function deleteMany(array $ids): int
+    {
+        return User::whereIn('id', $ids)->delete();
+    }
 }

@@ -10,7 +10,6 @@ use App\Models\Finance\PaymentAccount;
 use App\Exports\Administrasi\ProjectQuotationExport;
 use App\Exports\Administrasi\ProjectQuotationMultiExport;
 use App\Services\Administrasi\ProjectQuotationService;
-use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,8 +22,6 @@ use Maatwebsite\Excel\Facades\Excel;
  */
 class ProjectQuotationController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * @var ProjectQuotationService
      */

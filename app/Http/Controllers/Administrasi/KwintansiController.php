@@ -7,7 +7,6 @@ use App\Http\Requests\Administrasi\StoreKwitansiRequest;
 use App\Http\Requests\Administrasi\UpdateKwitansiRequest;
 use App\Models\Administrasi\Kwintansi;
 use App\Services\Administrasi\KwintansiService;
-use App\Traits\HasBulkActions;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -19,8 +18,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
  */
 class KwintansiController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * Konstruktor dengan dependency injection KwintansiService.
      *
@@ -80,13 +77,17 @@ class KwintansiController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        return $this->destroySelectedBy(
-            $request,
-            Kwintansi::class,
-            'ids',
-            'id_kwintansi',
-            'kwintansi.index'
-        );
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return redirect()->route('kwintansi.index')
+                ->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $deletedCount = $this->service->destroySelected($ids);
+
+        return redirect()->route('kwintansi.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

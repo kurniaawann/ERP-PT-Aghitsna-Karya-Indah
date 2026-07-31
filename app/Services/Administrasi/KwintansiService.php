@@ -116,6 +116,19 @@ class KwintansiService
     }
 
     /**
+     * Menghapus beberapa kwitansi sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar id_kwintansi yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        return Kwintansi::whereIn('id_kwintansi', $ids)
+            ->where('created_by', auth()->id())
+            ->delete();
+    }
+
+    /**
      * Menerapkan filter pencarian pada query builder.
      *
      * Pencarian dilakukan pada kolom: id_kwintansi, received_from, payment_for.

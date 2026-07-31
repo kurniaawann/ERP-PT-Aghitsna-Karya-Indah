@@ -125,4 +125,21 @@ class AlumuniumInvoiceService
 
         return "{$nextA}/{$nextB}/ALU/{$year}";
     }
+
+    /**
+     * Menghapus beberapa invoice alumunium sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar invoice_number yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        $invoices = InvoiceAlumunium::whereIn('invoice_number', $ids)->get();
+
+        foreach ($invoices as $invoice) {
+            $invoice->delete();
+        }
+
+        return $invoices->count();
+    }
 }

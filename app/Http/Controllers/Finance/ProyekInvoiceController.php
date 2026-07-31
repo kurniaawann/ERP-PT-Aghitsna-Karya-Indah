@@ -10,7 +10,6 @@ use App\Exports\Finance\ProyekInvoiceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\Finance\ProyekInvoiceService;
-use App\Traits\HasBulkActions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -22,8 +21,6 @@ use Illuminate\Support\Facades\Log;
  */
 class ProyekInvoiceController extends Controller
 {
-    use HasBulkActions;
-
     public function __construct(
         protected ProyekInvoiceService $service,
         protected \App\Services\Finance\PaymentAccountService $paymentAccountService
@@ -134,7 +131,17 @@ class ProyekInvoiceController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        return $this->destroySelectedBy($request, InvoiceProyek::class, 'selected_invoices', 'invoice_number', 'proyek-invoice.index');
+        $ids = $request->input('selected_invoices', []);
+
+        if (empty($ids)) {
+            return redirect()->route('proyek-invoice.index')
+                ->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $deletedCount = $this->service->destroySelected($ids);
+
+        return redirect()->route('proyek-invoice.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

@@ -9,7 +9,6 @@ use App\Models\Administrasi\DeliveryNote;
 use App\Services\Administrasi\DeliveryNoteService;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Traits\HasBulkActions;
 
 /**
  * Controller untuk modul Surat Jalan (Delivery Note).
@@ -22,8 +21,6 @@ use App\Traits\HasBulkActions;
  */
 class DeliveryNoteController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * @var DeliveryNoteService Service layer untuk surat jalan
      */
@@ -89,13 +86,16 @@ class DeliveryNoteController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        $ids = $request->input('ids');
+        $ids = $request->input('ids', []);
 
         if (empty($ids)) {
             return redirect()->route('delivery-note.administrasi.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        return $this->destroySelectedBy($request, DeliveryNote::class, 'ids', 'id_delivery_note', 'delivery-note.administrasi.index');
+        $deletedCount = $this->deliveryNoteService->destroySelected($ids);
+
+        return redirect()->route('delivery-note.administrasi.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

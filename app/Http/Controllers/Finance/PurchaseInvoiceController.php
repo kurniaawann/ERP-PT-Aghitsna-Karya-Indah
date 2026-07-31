@@ -11,7 +11,6 @@ use App\Services\Finance\PurchaseInvoiceService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Traits\HasBulkActions;
 
 /**
  * Controller untuk sub modul Faktur Pembelian.
@@ -21,8 +20,6 @@ use App\Traits\HasBulkActions;
  */
 class PurchaseInvoiceController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * Halaman index: menampilkan daftar faktur pembelian dengan filter.
      *
@@ -115,13 +112,17 @@ class PurchaseInvoiceController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        return $this->destroySelectedBy(
-            $request,
-            PurchaseInvoice::class,
-            'selected_invoices',
-            'id',
-            'purchase-invoice.index'
-        );
+        $ids = $request->input('selected_invoices', []);
+
+        if (empty($ids)) {
+            return redirect()->route('purchase-invoice.index')
+                ->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $deletedCount = PurchaseInvoiceService::deleteSelected($ids);
+
+        return redirect()->route('purchase-invoice.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

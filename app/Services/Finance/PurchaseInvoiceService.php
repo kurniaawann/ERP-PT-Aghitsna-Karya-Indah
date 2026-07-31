@@ -87,4 +87,15 @@ class PurchaseInvoiceService
 
         return $invoice;
     }
+
+    /**
+     * Menghapus beberapa faktur pembelian sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar ID faktur pembelian yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public static function deleteSelected(array $ids): int
+    {
+        return PurchaseInvoice::whereIn('id', $ids)->delete();
+    }
 }

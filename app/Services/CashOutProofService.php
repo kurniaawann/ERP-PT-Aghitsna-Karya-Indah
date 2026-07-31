@@ -137,6 +137,19 @@ class CashOutProofService
     }
 
     /**
+     * Menghapus beberapa bukti kas keluar sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar bkk_no yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        return CashOutProof::whereIn('bkk_no', $ids)
+            ->where('created_by', auth()->id())
+            ->delete();
+    }
+
+    /**
      * Menerapkan filter pencarian pada query builder.
      *
      * Pencarian dilakukan pada kolom: bkk_no, cek_no, paid_to, description.

@@ -8,7 +8,6 @@ use App\Http\Requests\Finance\UpdateReimburseRequest;
 use App\Models\Finance\Reimburse;
 use App\Exports\Finance\ReimburseExport;
 use App\Services\Finance\ReimburseService;
-use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,8 +22,6 @@ use Maatwebsite\Excel\Facades\Excel;
  */
 class ReimburseController extends Controller
 {
-    use HasBulkActions;
-
     public function __construct(
         private ReimburseService $reimburseService
     ) {}
@@ -97,13 +94,17 @@ class ReimburseController extends Controller
      */
     public function destroy(Request $request)
     {
-        return $this->destroySelectedBy(
-            $request,
-            Reimburse::class,
-            'ids',
-            'reimburse_code',
-            'reimburse.index'
-        );
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return redirect()->route('reimburse.index')
+                ->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $deletedCount = $this->reimburseService->bulkDelete($ids);
+
+        return redirect()->route('reimburse.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

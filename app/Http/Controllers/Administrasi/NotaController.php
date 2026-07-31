@@ -7,7 +7,6 @@ use App\Http\Requests\Administrasi\StoreNotaRequest;
 use App\Http\Requests\Administrasi\UpdateNotaRequest;
 use App\Models\Administrasi\Nota;
 use App\Services\Administrasi\NotaService;
-use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -22,8 +21,6 @@ use Illuminate\Http\Request;
  */
 class NotaController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * Constructor - inject NotaService.
      *
@@ -85,14 +82,17 @@ class NotaController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        $ids = $request->input('ids');
+        $ids = $request->input('ids', []);
 
         if (empty($ids)) {
             return redirect()->route('nota.administrasi.index')
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        return $this->destroySelectedBy($request, Nota::class, 'ids', 'id_nota', 'nota.administrasi.index');
+        $deletedCount = $this->notaService->destroySelected($ids);
+
+        return redirect()->route('nota.administrasi.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

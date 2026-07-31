@@ -200,6 +200,19 @@ class DeliveryNoteService
     }
 
     /**
+     * Menghapus beberapa surat jalan sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar id_delivery_note yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        return DeliveryNote::whereIn('id_delivery_note', $ids)
+            ->where('created_by', auth()->id())
+            ->delete();
+    }
+
+    /**
      * Menerapkan filter pencarian pada query builder.
      *
      * Pencarian dilakukan pada kolom: id_delivery_note, document_number, receiver_name, shipper_name.

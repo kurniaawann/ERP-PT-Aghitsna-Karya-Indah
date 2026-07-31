@@ -107,6 +107,19 @@ class DocumentReceiptService
     }
 
     /**
+     * Menghapus beberapa tanda terima dokumen sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar id_document yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        return DocumentReceipt::whereIn('id_document', $ids)
+            ->where('created_by', auth()->id())
+            ->delete();
+    }
+
+    /**
      * Menerapkan filter pencarian pada query builder.
      *
      * Pencarian dilakukan pada kolom: id_document, received_from, regarding.

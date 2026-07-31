@@ -115,6 +115,23 @@ class ItemService
     }
 
     /**
+     * Menghapus beberapa barang sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar id_item yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        $items = Items::whereIn('id_item', $ids)->get();
+
+        foreach ($items as $item) {
+            $item->delete();
+        }
+
+        return $items->count();
+    }
+
+    /**
      * Generate ID barang berikutnya.
      *
      * @return string

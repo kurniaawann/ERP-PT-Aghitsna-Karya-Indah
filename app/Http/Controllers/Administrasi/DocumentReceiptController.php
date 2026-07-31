@@ -7,7 +7,6 @@ use App\Http\Requests\Administrasi\StoreDocumentReceiptRequest;
 use App\Http\Requests\Administrasi\UpdateDocumentReceiptRequest;
 use App\Models\Administrasi\DocumentReceipt;
 use App\Services\Administrasi\DocumentReceiptService;
-use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -19,8 +18,6 @@ use Illuminate\Http\Request;
  */
 class DocumentReceiptController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * Konstruktor - dependency injection DocumentReceiptService.
      *
@@ -83,7 +80,7 @@ class DocumentReceiptController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        $ids = $request->input('ids');
+        $ids = $request->input('ids', []);
 
         if (empty($ids)) {
             return redirect()
@@ -91,13 +88,11 @@ class DocumentReceiptController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        return $this->destroySelectedBy(
-            $request,
-            DocumentReceipt::class,
-            'ids',
-            'id_document',
-            'document-receipt.index'
-        );
+        $deletedCount = $this->service->destroySelected($ids);
+
+        return redirect()
+            ->route('document-receipt.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

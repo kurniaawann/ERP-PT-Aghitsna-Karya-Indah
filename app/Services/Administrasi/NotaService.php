@@ -265,6 +265,19 @@ class NotaService
     }
 
     /**
+     * Menghapus beberapa nota sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar id_nota yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        return Nota::whereIn('id_nota', $ids)
+            ->where('created_by', auth()->id())
+            ->delete();
+    }
+
+    /**
      * Menerapkan filter pencarian pada query builder.
      *
      * Pencarian dilakukan pada kolom: id_nota, kepada, faktur_no, sj_no.

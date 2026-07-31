@@ -5,9 +5,7 @@ namespace App\Http\Controllers\UserManagement;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserManagement\StoreUserRequest;
 use App\Http\Requests\UserManagement\UpdateUserRequest;
-use App\Models\User;
 use App\Services\UserManagement\UserService;
-use App\Traits\HasBulkActions;
 use Illuminate\Http\Request;
 
 /**
@@ -18,8 +16,6 @@ use Illuminate\Http\Request;
  */
 class UserController extends Controller
 {
-    use HasBulkActions;
-
     public function __construct(
         private readonly UserService $userService
     ) {}
@@ -72,6 +68,16 @@ class UserController extends Controller
      */
     public function destroy(Request $request)
     {
-        return $this->destroySelectedBy($request, User::class, 'ids', 'id', 'user-management.index');
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return redirect()->route('user-management.index')
+                ->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $deletedCount = $this->userService->destroySelected($ids);
+
+        return redirect()->route('user-management.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 }

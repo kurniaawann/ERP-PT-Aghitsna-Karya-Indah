@@ -7,7 +7,6 @@ use App\Http\Requests\Administrasi\StoreCashOutProofRequest;
 use App\Http\Requests\Administrasi\UpdateCashOutProofRequest;
 use App\Models\Administrasi\CashOutProof;
 use App\Services\CashOutProofService;
-use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -19,8 +18,6 @@ use Illuminate\Http\Request;
  */
 class CashOutProofController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * Konstruktor - dependency injection CashOutProofService.
      *
@@ -83,7 +80,7 @@ class CashOutProofController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        $ids = $request->input('ids');
+        $ids = $request->input('ids', []);
 
         if (empty($ids)) {
             return redirect()
@@ -91,13 +88,11 @@ class CashOutProofController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        return $this->destroySelectedBy(
-            $request,
-            CashOutProof::class,
-            'ids',
-            'bkk_no',
-            'cash-out-proof.index'
-        );
+        $deletedCount = $this->service->destroySelected($ids);
+
+        return redirect()
+            ->route('cash-out-proof.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

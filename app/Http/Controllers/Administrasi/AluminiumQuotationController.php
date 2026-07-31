@@ -7,7 +7,6 @@ use App\Http\Requests\Administrasi\StoreAluminiumQuotationRequest;
 use App\Http\Requests\Administrasi\UpdateAluminiumQuotationRequest;
 use App\Models\Administrasi\AluminiumQuotation;
 use App\Services\Administrasi\AluminiumQuotationService;
-use App\Traits\HasBulkActions;
 use App\Exports\Administrasi\AluminiumQuotationExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -21,8 +20,6 @@ use Maatwebsite\Excel\Facades\Excel;
  */
 class AluminiumQuotationController extends Controller
 {
-    use HasBulkActions;
-
     /**
      * @var AluminiumQuotationService Service layer untuk penawaran aluminium
      */

@@ -196,4 +196,21 @@ class ProyekInvoiceService
             'division' => $data['division'] ?? null,
         ]);
     }
+
+    /**
+     * Menghapus beberapa invoice proyek sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar invoice_number yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        $invoices = InvoiceProyek::whereIn('invoice_number', $ids)->get();
+
+        foreach ($invoices as $invoice) {
+            $invoice->delete();
+        }
+
+        return $invoices->count();
+    }
 }

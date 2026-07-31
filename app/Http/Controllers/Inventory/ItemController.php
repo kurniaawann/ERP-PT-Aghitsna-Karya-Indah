@@ -5,10 +5,8 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreItemRequest;
 use App\Http\Requests\Inventory\UpdateItemRequest;
-use App\Models\Inventory\Items;
 use App\Services\Inventory\ItemService;
 use App\Exports\Inventory\ItemsExport;
-use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,8 +19,6 @@ use Maatwebsite\Excel\Facades\Excel;
  */
 class ItemController extends Controller
 {
-    use HasBulkActions;
-
     public function __construct(
         private readonly ItemService $itemService
     ) {}
@@ -81,7 +77,15 @@ class ItemController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        return $this->destroySelectedBy($request, Items::class, 'selected_items', 'id_item');
+        $ids = $request->input('selected_items', []);
+
+        if (empty($ids)) {
+            return back()->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $deletedCount = $this->itemService->destroySelected($ids);
+
+        return back()->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

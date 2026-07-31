@@ -8,7 +8,6 @@ use App\Http\Requests\Finance\AlumuniumInvoiceStoreRequest;
 use App\Http\Requests\Finance\AlumuniumInvoiceUpdateRequest;
 use App\Models\Finance\InvoiceAlumunium;
 use App\Services\Finance\AlumuniumInvoiceService;
-use App\Traits\HasBulkActions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -22,8 +21,6 @@ use Maatwebsite\Excel\Facades\Excel;
  */
 class AlumuniumInvoiceController extends Controller
 {
-    use HasBulkActions;
-
     public function __construct(
         private AlumuniumInvoiceService $service,
         private \App\Services\Finance\PaymentAccountService $paymentAccountService
@@ -166,13 +163,17 @@ class AlumuniumInvoiceController extends Controller
      */
     public function destroySelected(Request $request)
     {
-        return $this->destroySelectedBy(
-            $request,
-            InvoiceAlumunium::class,
-            'selected_invoices',
-            'invoice_number',
-            'alumunium-invoice.index'
-        );
+        $ids = $request->input('selected_invoices', []);
+
+        if (empty($ids)) {
+            return redirect()->route('alumunium-invoice.index')
+                ->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $deletedCount = $this->service->destroySelected($ids);
+
+        return redirect()->route('alumunium-invoice.index')
+            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**

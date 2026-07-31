@@ -60,4 +60,15 @@ class UserService
             'role' => $data['role'],
         ]);
     }
+
+    /**
+     * Menghapus beberapa user sekaligus (bulk delete).
+     *
+     * @param  array  $ids  Daftar ID user yang akan dihapus
+     * @return int  Jumlah record yang dihapus
+     */
+    public function destroySelected(array $ids): int
+    {
+        return $this->repository->deleteMany($ids);
+    }
 }
