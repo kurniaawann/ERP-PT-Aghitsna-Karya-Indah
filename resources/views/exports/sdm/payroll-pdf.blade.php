@@ -21,6 +21,7 @@
     - $dateRange: Date range string (e.g., "01 Feb 2026 - 07 Feb 2026")
     - $weekDays: Array of 7 date strings for column headers
     - $totalBaseSalary, $totalDeduction, $totalOvertime, $totalNetSalary: Summary totals
+    - $operationalExpenses: Collection of project operational expenses (period-level)
 --}}
 
 <!DOCTYPE html>
@@ -330,7 +331,19 @@
         $totalWages = $payrolls->sum('net_salary');
         $totalKasbon = $payrolls->sum('kasbon_deduction');
 
+        // Biaya operasional proyek: satu record per periode + data legacy di payroll
         $allExpenses = [];
+        foreach (($operationalExpenses ?? collect()) as $expense) {
+            $items = is_array($expense->expense_items) ? $expense->expense_items : [];
+            foreach ($items as $exp) {
+                $name = $exp['name'] ?? 'Lain-lain';
+                $amount = (int) ($exp['amount'] ?? 0);
+                if (!isset($allExpenses[$name])) {
+                    $allExpenses[$name] = 0;
+                }
+                $allExpenses[$name] += $amount;
+            }
+        }
         foreach ($payrolls as $payroll) {
             if ($payroll->additional_expenses_notes) {
                 $expenses = json_decode($payroll->additional_expenses_notes, true);

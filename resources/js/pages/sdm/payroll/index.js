@@ -530,6 +530,45 @@ function initFormSubmitHandlers() {
             }
         });
     });
+
+    // Handle Edit Pengeluaran Operasional Modal Submits
+    document.querySelectorAll('[id^="expenseModal-"] form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (!handleFormSubmit(submitBtn, undefined, 'Memproses...')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+}
+
+// ==========================================
+// PANEL PENGELUARAN OPERASIONAL (Scroll List)
+// ==========================================
+
+/**
+ * Batasi tinggi panel "Pengeluaran Operasional Proyek" agar hanya ~3 kartu
+ * yang terlihat; data berikutnya bisa di-scroll di dalam panel (tidak membuat
+ * halaman terlalu panjang ke bawah).
+ *
+ * Tinggi diukur dari kartu ke-4 (offsetTop) sehingga tepat 3 kartu terlihat
+ * utuh tanpa ada kartu yang terpotong.
+ */
+function initExpensePanelScroll() {
+    const container = document.querySelector('.expense-scroll');
+    if (!container) return;
+
+    const cards = container.querySelectorAll(':scope > .expense-card');
+    const MAX_VISIBLE = 3;
+
+    if (cards.length <= MAX_VISIBLE) {
+        container.style.maxHeight = '';
+        return;
+    }
+
+    const fourthCard = cards[MAX_VISIBLE];
+    container.style.maxHeight = fourthCard.offsetTop + 'px';
 }
 
 // ==========================================
@@ -788,6 +827,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Form submit handlers
     initFormSubmitHandlers();
+
+    // Batasi tinggi panel pengeluaran operasional (hanya ~3 kartu terlihat)
+    initExpensePanelScroll();
 
     // Hide no-expense text if there are items in a container
     document.querySelectorAll('[data-expense-context]').forEach(container => {

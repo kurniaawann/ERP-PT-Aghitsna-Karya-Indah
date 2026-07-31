@@ -332,6 +332,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
         Route::post('/payroll/check-attendance', [PayrollController::class, 'checkAttendanceCompleteness'])->name('payroll.check-attendance');
         Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
+        Route::put('/payroll/operational-expenses/{expense}', [PayrollController::class, 'updateOperationalExpense'])->name('payroll.operational-expense.update');
+        Route::delete('/payroll/operational-expenses/{expense}', [PayrollController::class, 'destroyOperationalExpense'])->name('payroll.operational-expense.destroy');
         Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
         Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
 

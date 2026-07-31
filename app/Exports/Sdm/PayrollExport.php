@@ -49,6 +49,13 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
     protected $projectName;
 
     /**
+     * Pengeluaran operasional proyek (satu record per periode).
+     *
+     * @var \Illuminate\Support\Collection|null
+     */
+    protected $operationalExpenses;
+
+    /**
      * Calculated totals for the summary section.
      *
      * @var array|null
@@ -62,11 +69,13 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
      * @param  int|null                        $month      Filter by month (optional)
      * @param  int|null                        $year       Filter by year (optional)
      * @param  string|null                     $projectName  Project name for header (optional)
+     * @param  \Illuminate\Support\Collection|null $operationalExpenses  Biaya operasional proyek per periode (optional)
      */
-    public function __construct($payrolls, $month = null, $year = null, $projectName = null)
+    public function __construct($payrolls, $month = null, $year = null, $projectName = null, $operationalExpenses = null)
     {
         $this->payrolls = $payrolls;
         $this->projectName = $projectName;
+        $this->operationalExpenses = $operationalExpenses ?? collect();
 
         $monthNames = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
@@ -123,8 +132,20 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             $totalNetSalary += $payroll->net_salary;
         }
 
-        // Aggregate all expense items from JSON notes
+        // Aggregate expense items dari biaya operasional proyek per periode
+        // (satu record per periode) plus data legacy additional_expenses_notes.
         $allExpenses = [];
+        foreach ($this->operationalExpenses as $expense) {
+            $items = is_array($expense->expense_items) ? $expense->expense_items : [];
+            foreach ($items as $exp) {
+                $name = $exp['name'] ?? 'Lain-lain';
+                $amount = (int) ($exp['amount'] ?? 0);
+                if (!isset($allExpenses[$name])) {
+                    $allExpenses[$name] = 0;
+                }
+                $allExpenses[$name] += $amount;
+            }
+        }
         foreach ($this->payrolls as $payroll) {
             if ($payroll->additional_expenses_notes) {
                 $expenses = json_decode($payroll->additional_expenses_notes, true);

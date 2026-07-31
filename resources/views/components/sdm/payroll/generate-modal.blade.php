@@ -34,7 +34,8 @@
                     <li><strong class="text-error">Setiap karyawan harus memiliki absensi lengkap sesuai hari
                             kerjanya</strong></li>
                     <li>Kasbon hanya dipotong jika karyawan sudah membayar</li>
-                    <li>Bisa menambahkan pengeluaran (token listrik/air, dll)</li>
+                    <li>Bisa menambahkan pengeluaran operasional proyek (air minum, material tambahan, dll) —
+                        disimpan <strong>sekali per periode</strong>, bukan per karyawan</li>
                 </ul>
             </div>
         </div>
@@ -92,14 +93,16 @@
         <p class="text-xs text-text-secondary mt-1">Kosongkan jika tidak ada proyek tertentu</p>
     </div>
 
-    <div class="mb-3">
-        <div class="flex justify-between items-center mb-2">
-            <label class="block text-text-primary font-semibold">Pengeluaran Tambahan (Opsional)</label>
-            <button type="button" onclick="addExpenseItem('generate')"
-                class="text-sm bg-success hover:bg-success-hover text-white px-3 py-1 rounded-lg flex items-center gap-1">
-                <i class="fa-solid fa-plus"></i> Tambah Item
-            </button>
-        </div>
+        <div class="mb-3">
+            <div class="flex justify-between items-center mb-2">
+                <label class="block text-text-primary font-semibold">Pengeluaran Tambahan / Operasional Proyek (Opsional)</label>
+                <button type="button" onclick="addExpenseItem('generate')"
+                    class="text-sm bg-success hover:bg-success-hover text-white px-3 py-1 rounded-lg flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Tambah Item
+                </button>
+            </div>
+            <p class="text-xs text-text-secondary mb-2">Contoh: air minum proyek, pembelian material tambahan. Disimpan sekali
+                untuk periode ini (tidak disalin ke setiap karyawan).</p>
 
         <div id="expense-items-container-generate" class="space-y-2" data-expense-context="generate">
             <p class="text-sm text-text-secondary text-center py-4" id="no-expense-text-generate">

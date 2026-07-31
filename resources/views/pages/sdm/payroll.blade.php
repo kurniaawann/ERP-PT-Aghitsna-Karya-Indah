@@ -80,6 +80,9 @@
             </div>
         </div>
 
+        {{-- Pengeluaran Operasional Proyek (sekali per periode) --}}
+        @include('components.sdm.payroll.operational-expense-panel', ['operationalExpenses' => $operationalExpenses])
+
         {{-- Table Component --}}
         @include('components.sdm.payroll.table', ['payrolls' => $payrolls])
 
@@ -99,6 +102,13 @@
             @include('components.sdm.payroll.edit-modal', ['payroll' => $payroll])
         @endif
         @include('components.sdm.payroll.detail-modal', ['payroll' => $payroll])
+    @endforeach
+
+    {{-- Modal Edit Pengeluaran Operasional (per periode) --}}
+    @foreach ($operationalExpenses as $expense)
+        @if (!$expense->period_locked)
+            @include('components.sdm.payroll.operational-expense-edit-modal', ['expense' => $expense])
+        @endif
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}

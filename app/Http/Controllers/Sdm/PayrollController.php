@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Sdm\UpdatePayrollRequest;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Payroll;
+use App\Models\Sdm\ProjectOperationalExpense;
 use App\Services\Sdm\PayrollService;
 use App\Exports\Sdm\PayrollExport;
 use Carbon\Carbon;
@@ -55,7 +56,23 @@ class PayrollController extends Controller
             $weekNumber ? (int) $weekNumber : null,
         );
 
-        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber'));
+        $operationalExpenses = $this->payrollService->getOperationalExpenses(
+            $month ? (int) $month : null,
+            $year ? (int) $year : null,
+            $weekNumber ? (int) $weekNumber : null,
+        );
+
+        // Tandai periode yang sudah tidak punya payroll draft (sudah dibayar)
+        // supaya pengeluaran operasionalnya tidak bisa diedit/dihapus lagi.
+        $operationalExpenses->each(function ($expense) {
+            $expense->period_locked = !Payroll::where('period_start_date', $expense->period_start_date)
+                ->where('period_end_date', $expense->period_end_date)
+                ->where('created_by', auth()->id())
+                ->where('status', 'draft')
+                ->exists();
+        });
+
+        return view('pages.sdm.payroll', compact('payrolls', 'operationalExpenses', 'search', 'month', 'year', 'weekNumber'));
     }
 
     /**
@@ -117,23 +134,71 @@ class PayrollController extends Controller
 
         $validated = $request->validated();
 
-        if ((int) $validated['additional_expenses'] > 0 && empty(trim((string) ($validated['additional_expenses_notes'] ?? '')))) {
-            return redirect()->back()
-                ->withErrors([
-                    'additional_expenses_notes' => 'Keterangan pengeluaran tambahan wajib diisi jika nominal lebih dari 0.',
-                ])
-                ->withInput();
-        }
-
         $payroll->update([
             'project_name' => $validated['project_name'],
-            'additional_expenses' => (int) $validated['additional_expenses'],
-            'additional_expenses_notes' => $validated['additional_expenses_notes'] ?: null,
             'notes' => $validated['notes'] ?: null,
         ]);
 
         return redirect()->route('payroll.index')
             ->with('success', 'Payroll draft berhasil diperbarui!');
+    }
+
+    /**
+     * Memperbarui pengeluaran operasional proyek (satu record per periode).
+     */
+    public function updateOperationalExpense(Request $request, ProjectOperationalExpense $expense)
+    {
+        if ($expense->created_by !== auth()->id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'project_name' => 'nullable|string|max:255',
+            'additional_expenses' => 'required|integer|min:0',
+            'additional_expenses_notes' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        if ((int) $validated['additional_expenses'] > 0 && empty(trim((string) ($validated['additional_expenses_notes'] ?? '')))) {
+            return back()->withErrors([
+                'additional_expenses_notes' => 'Rincian pengeluaran tambahan wajib diisi jika nominal lebih dari 0.',
+            ])->withInput();
+        }
+
+        $expenses = $this->payrollService->validateAdditionalExpenses(
+            (int) $validated['additional_expenses'],
+            $validated['additional_expenses_notes']
+        );
+
+        $expenseItems = json_decode($expenses['notes'] ?? '[]', true);
+        if (!is_array($expenseItems)) {
+            $expenseItems = [];
+        }
+
+        $expense->update([
+            'project_name' => $validated['project_name'] ?: null,
+            'expense_items' => $expenseItems,
+            'total_amount' => $expenses['total'],
+            'notes' => $validated['notes'] ?: null,
+        ]);
+
+        return redirect()->route('payroll.index')
+            ->with('success', 'Pengeluaran operasional proyek berhasil diperbarui!');
+    }
+
+    /**
+     * Menghapus pengeluaran operasional proyek.
+     */
+    public function destroyOperationalExpense(Request $request, ProjectOperationalExpense $expense)
+    {
+        if ($expense->created_by !== auth()->id()) {
+            abort(403);
+        }
+
+        $expense->delete();
+
+        return redirect()->route('payroll.index')
+            ->with('success', 'Pengeluaran operasional proyek berhasil dihapus!');
     }
 
     /**
@@ -236,7 +301,13 @@ class PayrollController extends Controller
 
         $fileName = 'Laporan_Payroll_' . ($month ? $month . '_' : '') . ($year ? $year : 'Semua') . '_' . date('Ymd_His') . '.xlsx';
 
-        return Excel::download(new PayrollExport($payrolls, $month, $year), $fileName);
+        $operationalExpenses = $this->payrollService->getOperationalExpenses(
+            $month ? (int) $month : null,
+            $year ? (int) $year : null,
+            $weekNumber ? (int) $weekNumber : null,
+        );
+
+        return Excel::download(new PayrollExport($payrolls, $month, $year, null, $operationalExpenses), $fileName);
     }
 
     /**
@@ -307,6 +378,12 @@ class PayrollController extends Controller
         $totalOvertime = $payrolls->sum('overtime_total');
         $totalNetSalary = $payrolls->sum('net_salary');
 
+        $operationalExpenses = $this->payrollService->getOperationalExpenses(
+            $month,
+            $year,
+            $weekNumber,
+        );
+
         $data = [
             'payrolls' => $payrolls,
             'periodText' => $periodText,
@@ -317,6 +394,7 @@ class PayrollController extends Controller
             'totalDeduction' => $totalDeduction,
             'totalOvertime' => $totalOvertime,
             'totalNetSalary' => $totalNetSalary,
+            'operationalExpenses' => $operationalExpenses,
         ];
 
         $pdf = Pdf::loadView('exports.sdm.payroll-pdf', $data);
