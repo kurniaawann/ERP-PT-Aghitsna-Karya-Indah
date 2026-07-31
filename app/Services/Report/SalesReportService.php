@@ -41,6 +41,13 @@ class SalesReportService
      * - status: Filter berdasarkan status (Lunas/Belum Lunas)
      * - search: Pencarian berdasarkan ID atau nama proyek
      *
+     * Logika:
+     * - Semua filter memakai kolom `date` sebagai basis periode.
+     * - Jika year tidak dikirim, dianggap tahun berjalan — laporan tidak pernah
+     *   menampilkan data lintas tahun tanpa filter eksplisit.
+     * - search dibungkus closure agar LIKE pada id_sales_recap dan name_proyek
+     *   digabung dengan OR di dalam satu group (tidak merusak filter lain).
+     *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      */
     public function buildFilteredQuery(Request $request): Builder
@@ -55,7 +62,7 @@ class SalesReportService
             $query->whereYear('date', $request->year);
         } else {
             $query->whereYear('date', date('Y'));
-}
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -77,6 +84,14 @@ class SalesReportService
      *
      * Hanya mengambil kolom yang diperlukan untuk tampilan tabel
      * tanpa kolom JSON `items` untuk menghindari over-fetching.
+     *
+     * Logika nomor faktur (no_faktur):
+     * - Nomor faktur di-generate saat render, TIDAK disimpan di database.
+     * - Format: {A}/{B}/DIV.PRODUKSI/{tahun}; A mulai dari 317, B dari 598,
+     *   keduanya naik 1 per baris.
+     * - Karena halaman hanya menampilkan 10 baris, offset = (halaman-1) × 10
+     *   dijumlahkan ke angka awal supaya urutan faktur berlanjut antar halaman
+     *   (halaman 2 lanjut dari 327/608, bukan mengulang dari 317/598).
      *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter dan sorting
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
@@ -117,6 +132,14 @@ class SalesReportService
      * Mengembalikan: total transaksi, total modal, total penjualan, total profit,
      * margin profit, rata-rata per transaksi, jumlah lunas/belum lunas,
      * dan nilai lunas/belum lunas.
+     *
+     * Logika:
+     * - Semua agregasi memakai satu SELECT agregat (single-row) lewat selectRaw,
+     *   bukan perhitungan per record — efisien walau dataset besar.
+     * - paid/unpaid dihitung dengan CASE WHEN pada kolom status (1/0) lalu di-SUM.
+     * - profit_margin = total_profit / total_selling × 100; 0 jika selling = 0.
+     * - avg_transaction = total_selling / total_transactions, dibulatkan ke
+     *   integer (round, 0 desimal) karena nominal rupiah.
      *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return array<string, mixed>
@@ -163,6 +186,13 @@ class SalesReportService
      * Mengembalikan data 12 bulan (Jan-Des) dengan jumlah transaksi,
      * total modal, total penjualan, dan total profit per bulan.
      * Bulan yang tidak ada data akan diisi dengan nilai 0.
+     *
+     * Logika:
+     * - Query memakai MONTH(date) + GROUP BY month → hanya bulan berdata yang
+     *   keluar dari database.
+     * - Loop 1..12 lalu keyBy('month') memastikan 12 titik chart selalu lengkap;
+     *   bulan kosong diisi 0 (bukan null) agar grafik tidak putus.
+     * - Filter status tetap diterapkan sehingga trend mengikuti pilihan user.
      *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return array<int, array{month: int, month_name: string, count: int, capital: int, selling: int, profit: int}>
@@ -227,6 +257,11 @@ class SalesReportService
      *
      * Hanya mengambil kolom yang diperlukan untuk tampilan
      * tanpa kolom JSON `items` untuk menghindari over-fetching.
+     *
+     * Logika:
+     * - Diurutkan total_profit menurun lalu dibatasi $limit → "top proyek".
+     * - Nomor faktur di-generate sekuensial dari 317/598 tanpa offset halaman,
+     *   karena list selalu dimulai dari baris pertama (bukan hasil pagination).
      *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @param  int  $limit  Jumlah proyek yang ditampilkan (default: 5)
@@ -321,6 +356,16 @@ class SalesReportService
     /**
      * Membangun data export untuk satu proyek.
      *
+     * Logika:
+     * 1. Kolom items di DB bisa berupa JSON string atau array → di-decode dulu
+     *    jika string, agar item bisa di-loop seragam.
+     * 2. Subtotal DIHITUNG ULANG dari selling_price × quantity per item (bukan
+     *    memakai total_selling tabel) supaya sesuai detail items pada faktur.
+     * 3. lunas_date diambil dari record pertama berstatus 'Lunas': memakai
+     *    updated_at (tanggal pembayaran) jika ada, fallback ke date.
+     * 4. Nomor faktur (317/598++) diteruskan antar proyek lewat referensi
+     *    $fakturA/$fakturB agar tidak ada nomor yang terulang di seluruh export.
+     *
      * @param  \Illuminate\Support\Collection  $projectSales  Data sales dalam satu proyek
      * @return array{sales_recaps: array, subtotal: int, lunas_date: string|null}
      */
@@ -373,6 +418,13 @@ class SalesReportService
 
     /**
      * Membangun label periode untuk header PDF/Excel.
+     *
+     * Logika:
+     * - Prioritas label: (month+year) → (month saja) → (year saja) → otomatis
+     *   dari data terbaru → fallback bulan berjalan.
+     * - Jika hanya month dikirim, tahun diturunkan dari tanggal terbaru di
+     *   data (atau tahun sekarang bila tidak ada data), bukan dari request.
+     * - Nama bulan memakai locale id lewat Carbon::translatedFormat('F').
      *
      * @param  \Illuminate\Http\Request                $request     Request yang berisi parameter filter
      * @param  \Illuminate\Support\Collection          $salesRecaps Data rekap penjualan

@@ -36,6 +36,11 @@ class PaymentProofService
     /**
      * Resolusi model invoice berdasarkan tipe dan nomor.
      *
+     * Tiga tipe invoice yang didukung:
+     * - 'proyek'          → tabel proyek_invoices, kolom invoice_number
+     * - 'alumunium'       → tabel alumunium_invoices, kolom invoice_number
+     * - 'rekap_penjualan' → tabel sales_recaps, kolom id_sales_recap
+     *
      * @param  string $invoiceType   Tipe invoice: proyek|alumunium|rekap_penjualan
      * @param  string $invoiceNumber Nomor atau ID invoice
      * @return \Illuminate\Database\Eloquent\Model|null
@@ -55,7 +60,10 @@ class PaymentProofService
     /**
      * Mendapatkan stage pembayaran berikutnya untuk invoice proyek.
      *
-     * Stage dihitung dari max(payment_stage) dan count existing proofs + 1.
+     * Logika: stage dihitung dari nilai tertinggi antara MAX(payment_stage) dan
+     * COUNT(proof) yang sudah ada, lalu + 1. Contoh: jika sudah ada proof
+     * dengan stage 1 dan 3 → max(3, 2) + 1 = stage 4 (angka tidak pernah
+     * bentrok walau stage pernah di-skip).
      *
      * @param  string      $moduleType
      * @param  string      $invoiceType
@@ -111,6 +119,15 @@ class PaymentProofService
     /**
      * Resolve amount berdasarkan tipe invoice.
      *
+     * Logika:
+     * - Invoice 'proyek': amount berasal dari input user (dari form). Divalidasi
+     *   tidak melebihi sisa tagihan. Jika amount <= 0 → null (tidak valid).
+     * - Invoice lain (alumunium/rekap): amount otomatis = seluruh sisa tagihan
+     *   (pembayaran dianggap lunas). Dikembalikan sebagai int.
+     *
+     * Return union:
+     * - int (amount valid) / string (pesan error validasi) / null (amount <= 0).
+     *
      * @param  array<string, mixed>                 $validated
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @param  int|null                             $excludePaymentProofId
@@ -140,6 +157,14 @@ class PaymentProofService
 
     /**
      * Menyimpan bukti pembayaran baru.
+     *
+     * Alur logika:
+     * 1. Resolusi invoice — jika tidak ditemukan, batal.
+     * 2. Tentukan amount (validasi sisa tagihan) — jika gagal, batal.
+     * 3. Untuk invoice proyek: hitung payment_stage berikutnya.
+     * 4. Simpan file gambar (resize 1200px) lalu insert record + sync status.
+     * 5. Jika gagal: file yang baru tersimpan dihapus (cleanup), agar tidak
+     *    ada file yatim (file tanpa record di DB).
      *
      * @param  array<string, mixed>         $validated  Data yang sudah validasi
      * @param  \Illuminate\Http\UploadedFile $proofImage
@@ -245,6 +270,8 @@ class PaymentProofService
         $storedFile = null;
 
         try {
+            // invoiceChanged = apakah bukti bayar dipindah ke invoice/modul lain.
+            // Jika ya, stage dihitung ulang; jika tidak, stage dipertahankan.
             $invoiceChanged = $paymentProof->module_type !== $validated['module_type']
                 || $paymentProof->invoice_type !== $validated['invoice_type']
                 || $paymentProof->invoice_number !== $validated['invoice_number'];
@@ -515,6 +542,13 @@ class PaymentProofService
     /**
      * Membangun peta stage pembayaran dari semua payment proof.
      *
+     * Logika query:
+     * - GROUP BY module_type, invoice_type, invoice_number → 1 baris per kombinasi.
+     * - MAX(COALESCE(payment_stage, 0)) = stage tertinggi per invoice (0 jika null).
+     * - COUNT(*) = jumlah proof per invoice.
+     * - keyBy(kombinasi 'module|type|number') → map lookup O(1) di buildInvoiceOption().
+     *   Ini menghindari query per invoice (N+1).
+     *
      * @return \Illuminate\Support\Collection
      */
     public function buildProofStageMap()
@@ -530,6 +564,12 @@ class PaymentProofService
 
     /**
      * Sinkronisasi status pembayaran pada invoice terkait.
+     *
+     * Logika:
+     * - Invoice proyek: sinkronkan status SalesRecap terkait (via syncSalesRecapStatus).
+     *   Jika salesRecapId berubah (update), status sales recap LAMA juga ikut
+     *   disinkronkan ulang agar tidak ada yang tersisa "Lunas" padahal proof sudah pindah.
+     * - Invoice rekap_penjualan: sinkronkan status sales recap langsung.
      *
      * @param  string      $invoiceType
      * @param  string      $invoiceNumber
@@ -558,6 +598,13 @@ class PaymentProofService
 
     /**
      * Sinkronisasi status sales recap dari invoice proyek.
+     *
+     * Logika pencarian sales recap:
+     * 1. Jika salesRecapId diberikan, cari langsung by id.
+     * 2. Jika tidak (invoice proyek lama tanpa sales_recap_id), cocokkan nama proyek:
+     *    - Exact match (case-insensitive via LOWER()).
+     *    - Jika tidak ketemu, partial match LIKE '%nama%' (fallback).
+     * 3. Update status sales recap: 'Lunas' jika invoice lunas, 'Belum Lunas' sebaliknya.
      *
      * @param  \App\Models\Finance\InvoiceProyek $invoice
      * @param  string|null                       $salesRecapId
@@ -617,6 +664,14 @@ class PaymentProofService
 
     /**
      * Menyimpan file gambar bukti pembayaran.
+     *
+     * Logika:
+     * - Jika ekstensi GD tidak tersedia (imagecreatetruecolor tidak ada): simpan file
+     *   asli apa adanya (tanpa resize).
+     * - Jika ada: resize gambar maksimal 1200×1200 (proporsional, tidak pernah diperbesar),
+     *   konversi ke JPEG kualitas 80, lalu simpan. File disimpan dengan nama UUID unik.
+     * - Semua file disimpan via Storage::disk('public') — jadi path yang disimpan ke DB
+     *   adalah path RELATIF (bukan absolut) agar portabel antar server.
      *
      * @param  \Illuminate\Http\UploadedFile $file
      * @param  string                         $moduleType
@@ -727,6 +782,10 @@ class PaymentProofService
 
     /**
      * Membangun path direktori relatif untuk penyimpanan file.
+     *
+     * Struktur: images/proof_payment/{module}/{invoice_type}/{invoice_number}/
+     * Setiap segment dibersihkan dari karakter tidak valid (sanitizeSegment) agar
+     * aman dijadikan folder.
      *
      * @param  string $moduleType
      * @param  string $invoiceType

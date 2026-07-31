@@ -57,6 +57,14 @@ class ExpenseReportService
      * - type: Filter berdasarkan tipe transaksi (income/expense)
      * - search: Pencarian berdasarkan id, invoice_number, atau description
      *
+     * Logika filter visibilitas (clause pertama):
+     * - Record milik user saat ini (created_by = auth()->id()).
+     * - ATAU record yang berasal dari sales recap (sales_recap_id IS NOT NULL).
+     *   Record sales recap bersifat global sehingga tetap tampil walau dibuat
+     *   user lain — ini dasar laporan keuangan gabungan.
+     * - type income/expense diimplementasikan dengan where(income_amount>0) /
+     *   where(expense_amount>0) karena satu record hanya mengisi salah satu kolom.
+     *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return \Illuminate\Database\Eloquent\Builder
      */
@@ -129,6 +137,14 @@ class ExpenseReportService
      * Mengembalikan: total transaksi, total pemasukan, total pengeluaran,
      * saldo, jumlah transaksi pemasukan/pengeluaran, dan rata-rata.
      *
+     * Logika:
+     * - Satu SELECT agregat (single-row) memakai selectRaw; COALESCE memastikan
+     *   kolom NULL dihitung 0 agar tidak merusak total.
+     * - balance = total_income - total_expense (saldo periode).
+     * - income_count/expense_count dihitung via CASE WHEN amount > 0.
+     * - avg_income = total_income / income_count (bukan per semua transaksi),
+     *   0 jika tidak ada transaksi pemasukan — menghindari division by zero.
+     *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return array<string, mixed>
      */
@@ -167,6 +183,13 @@ class ExpenseReportService
      * Mengembalikan data 12 bulan (Jan-Des) dengan jumlah transaksi,
      * total pemasukan, total pengeluaran, dan saldo per bulan.
      * Bulan yang tidak ada data akan diisi dengan nilai 0.
+     *
+     * Logika:
+     * - Trend memakai rentang year dari request (default tahun berjalan) dan
+     *   MENERAPKAN ulang filter visibilitas + category + type agar konsisten
+     *   dengan data tabel — tidak memakai buildFilteredQuery karena di sini
+     *   selalu grouped by bulan dan basis tahunnya eksplisit.
+     * - Loop 1..12 + keyBy('month') mengisi bulan kosong dengan 0.
      *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return array<int, array{month: int, month_name: string, count: int, income: int, expense: int, balance: int}>
@@ -226,6 +249,15 @@ class ExpenseReportService
      * total pemasukan, total pengeluaran, dan total.
      * Digunakan untuk chart bar dan tabel ringkasan kategori.
      *
+     * Logika:
+     * - Agregasi GROUP BY transaction_category_id di-sort menurun berdasarkan
+     *   total expense (kategori terbesar tampil pertama).
+     * - Nama kategori diambil dari cache 'report:expense-categories' (seluruh
+     *   kategori, di-keyBy id) lalu difilter sesuai categoryIds hasil query —
+     *   menghindari query per kategori (N+1).
+     * - Jika cache gagal dibaca, fallback query whereIn; kategori yang sudah
+     *   dihapus (id null/tidak ketemu) diberi nama "Tidak ada kategori".
+     *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return \Illuminate\Support\Collection
      */
@@ -277,6 +309,12 @@ class ExpenseReportService
      * Mengembalikan: saldo awal, total pemasukan, total pengeluaran,
      * net cash flow, dan saldo akhir.
      *
+     * Logika:
+     * - Hanya menjumlahkan income dan expense dalam periode (tahun dari request,
+     *   default tahun berjalan) dengan filter visibilitas yang sama.
+     * - opening_balance sengaja 0: perhitungan saldo awal antar periode belum
+     *   didukung, sehingga closing = 0 + income - expense.
+     *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return array{opening_balance: int, total_income: int, total_expense: int, net_cash_flow: int, closing_balance: int}
      */
@@ -312,6 +350,13 @@ class ExpenseReportService
 
     /**
      * Ambil semua kategori transaksi yang aktif untuk filter dropdown.
+     *
+     * Logika:
+     * - Hasil di-cache 1 hari dengan key 'report:expense-categories' — key yang
+     *   SAMA dengan getCategoryDistribution(), jadi keduanya saling berbagi cache.
+     *   Cache di-flush saat CRUD kategori (lihat TransactionCategoryService).
+     * - Hanya scope active() yang diambil, diurutkan sort_order untuk dropdown.
+     * - Jika cache error, fallback query langsung agar halaman tetap berfungsi.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -368,6 +413,12 @@ class ExpenseReportService
      * - periodTitle: Label periode untuk header
      * - totals: Object berisi total_income, total_expense, balance
      *
+     * Logika:
+     * - Data diambil memakai buildFilteredQuery + eager load category dan
+     *   diurutkan transaction_date menaik (kronologis untuk laporan).
+     * - Totals dihitung dari Collection::sum() di sisi PHP (bukan SQL) karena
+     *   sudah terlanjur dimuat semua record untuk export.
+     *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return array{expenseRecaps: \Illuminate\Support\Collection, periodTitle: string, totals: object}
      */
@@ -395,6 +446,13 @@ class ExpenseReportService
 
     /**
      * Membangun label periode untuk header PDF/Excel.
+     *
+     * Logika:
+     * - Prioritas label: (month+year) → (month saja, year fallback ke request
+     *   atau tahun berjalan) → (year saja) → "SEMUA PERIODE".
+     * - Berbeda dari SalesReportService: tidak perlu data untuk menurunkan
+     *   tahun karena ekspor pengeluaran selalu punya parameter filter.
+     * - Nama bulan memakai locale id via Carbon::translatedFormat('F').
      *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return string Label periode (contoh: "BULAN FEBRUARI 2026")

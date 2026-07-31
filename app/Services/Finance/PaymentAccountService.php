@@ -22,6 +22,11 @@ class PaymentAccountService
     /**
      * Tabel-tabel yang mereferensikan payment_accounts via JSON column.
      *
+     * 'method' menentukan cara pengecekan:
+     * - 'json' : kolom bertipe JSON → pakai whereJsonContains (cara SQL-native, paling benar).
+     * - 'like' : kolom longText berisi JSON string → pakai LIKE '%"id"%'
+     *   (rabs memakai ini karena kolomnya bukan tipe JSON di DB).
+     *
      * @var array<int, array{table: string, column: string, method: string}>
      */
     private const JSON_REFERENCE_TABLES = [
@@ -171,7 +176,16 @@ class PaymentAccountService
     /**
      * Mengecek apakah rekening masih digunakan di tabel lain.
      *
-     * Menggunakan batch query (1 per tabel, bukan 1 per ID) untuk performa optimal.
+     * Logika:
+     * - Referensi FK langsung: kwintansi.payment_account_id (cek via whereIn).
+     * - Referensi JSON: tiap ID dicek ke tiap tabel referensi.
+     *   - Kolom JSON → whereJsonContains (memeriksa apakah ID ada di array JSON).
+     *   - Kolom text → LIKE '%"id"%' (fallback karena tidak berformat JSON native).
+     * - Hasil digabung lalu di-unique.
+     *
+     * CATATAN: untuk JSON di-loop per ID (bukan per tabel) — jika ID yang dipilih
+     * sedikit, ini praktis; bila perlu performa untuk banyak ID, bisa dioptimalkan
+     * dengan bulk JSON_CONTAINS. Di sini prioritas kesederhanaan.
      *
      * @param  array<int, int> $ids  Daftar ID rekening yang akan dicek
      * @return array<int, int>       ID rekening yang masih digunakan

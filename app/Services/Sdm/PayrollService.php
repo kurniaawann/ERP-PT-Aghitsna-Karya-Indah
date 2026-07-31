@@ -32,6 +32,11 @@ class PayrollService
      * Mendukung filter berdasarkan pencarian (nama/kode), bulan, tahun.
      * Hasil diurutkan berdasarkan periode terbaru terlebih dahulu.
      *
+     * Logika:
+     * - Pencarian hanya via whereHas relasi employee (nama/kode).
+     * - Bulan/tahun/minggu difilter pada period_start_date — periode adalah
+     *   kunci utama identifikasi payroll mingguan.
+     *
      * @param  string|null  $search
      * @param  int|null     $month
      * @param  int|null     $year
@@ -77,6 +82,17 @@ class PayrollService
      *
      * Optimasi query: Mengambil semua data payroll dan absensi yang sudah ada
      * secara batch di awal alih-alih per karyawan (perbaikan N+1).
+     *
+     * Logika alur per karyawan:
+     * 1. Lewati jika sudah ada payroll untuk periode ini (already_generated).
+     * 2. Lewati jika join_date lebih besar dari akhir periode (belum bekerja).
+     * 3. Susun daftar hari kerja yang diwajibkan: dari max(join_date, start)
+     *    sampai end, mengecualikan Minggu.
+     * 4. Bandingkan dengan tanggal absensi milik karyawan (dari batch query);
+     *    selisihnya = hari hilang. Lengkap → complete, ada kurang → incomplete.
+     * 5. can_generate = ada karyawan baru DAN tidak ada yang incomplete.
+     * 6. Rentang absensi diambil sampai endDate+1 (termasuk Minggu) karena
+     *    lembur Minggu ikut dihitung, meski Minggu bukan hari kerja wajib.
      *
      * @param  Carbon  $periodStartDate
      * @param  Carbon  $periodEndDate
@@ -208,6 +224,17 @@ class PayrollService
      * 6. Tandai kasbon personal dan team sebagai sudah dipotong
      * 7. Simpan pengeluaran operasional proyek SEKALI per periode
      *    (tabel project_operational_expenses), bukan per karyawan
+     *
+     * Logika potongan kasbon:
+     * - Hanya KasbonPayment manual yang BELUM di-assign ke payroll
+     *   (payroll_id IS NULL) yang dipotong — mencegah potongan ganda.
+     * - Kasbon personal dipotong penuh dari gaji karyawan terkait.
+     * - Kasbon team dibagi rata ke setiap karyawan di divisi yang sama
+     *   (total team / jumlah karyawan divisi).
+     * - Rumus: net_salary = (daily_wage × present_days) + overtime_total
+     *   - kasbon_deduction.
+     * - week_number dideteksi dari getWeeksInMonth() dengan mencocokkan
+     *   tanggal mulai periode.
      *
      * @param  Carbon        $periodStartDate
      * @param  Carbon        $periodEndDate
@@ -496,6 +523,12 @@ class PayrollService
      * Memperbarui status dari 'draft' menjadi 'paid' dan mengatur tanggal pembayaran.
      * Juga menyinkronkan status SalaryReminder untuk payroll yang sudah dibayar.
      *
+     * Logika:
+     * - UPDATE massal dijalankan hanya untuk id terpilih yang masih berstatus
+     *   'draft' → payroll 'paid' tidak mungkin dibayar dua kali.
+     * - SalaryReminder ikut di-update menjadi 'paid' + notification_sent_at
+     *   diisi sekarang, sehingga reminder tidak mengirim ulang notifikasi.
+     *
      * @param  array   $ids     Array ID payroll
      * @param  string  $paymentDate  Tanggal pembayaran (Y-m-d)
      * @return array   ['success' => bool, 'message' => string, 'count' => int]
@@ -535,6 +568,14 @@ class PayrollService
      *
      * Hanya payroll dengan status 'draft' yang bisa dihapus.
      * Payroll yang sudah dibayar dilindungi dari penghapusan.
+     *
+     * Logika:
+     * - Dihapus per record (loop $payroll->delete()) karena Payroll punya
+     *   relasi/observer yang perlu dipicu per model.
+     * - Setelah itu pengeluaran operasional proyek dibersihkan: jika sebuah
+     *   periode sudah TIDAK punya payroll tersisa sama sekali, record
+     *   project_operational_expenses periode tersebut ikut dihapus agar tidak
+     *   jadi data sampah.
      *
      * @param  array  $ids  Array ID payroll
      * @return array  ['success' => bool, 'message' => string]
@@ -623,6 +664,13 @@ class PayrollService
      * Mendapatkan pengeluaran operasional proyek sesuai filter bulan/tahun/minggu.
      *
      * Digunakan untuk panel ringkasan "Biaya Operasional" di halaman payroll.
+     *
+     * Logika:
+     * - Filter minggu diterapkan hanya jika ketiganya (weekNumber+month+year)
+     *   terisi; rentang minggu diambil dari getWeekDateRange lalu dicocokkan
+     *   pada period_start_date.
+     * - Jika weekNumber tidak valid untuk bulan tersebut, exception ditangkap
+     *   dan dikembalikan koleksi kosong (panel tidak menampilkan error).
      *
      * @param  int|null  $month
      * @param  int|null  $year
@@ -784,6 +832,12 @@ class PayrollService
      *
      * Memastikan JSON valid dan menghitung ulang total di sisi server
      * demi keamanan (mencegah total yang dimanipulasi dari frontend).
+     *
+     * Logika:
+     * - Jika tidak ada JSON, dianggap tidak ada pengeluaran tambahan.
+     * - Total dihitung ulang dari SUM(amount) seluruh item.
+     * - Hasil yang dipakai adalah total hasil perhitungan server, bukan nilai
+     *   dari frontend — frontend hanya dipakai sebagai pembanding.
      *
      * @param  int|null  $frontendTotal
      * @param  string|null  $notesJson

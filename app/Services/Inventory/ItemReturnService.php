@@ -85,7 +85,14 @@ class ItemReturnService
     }
 
     /**
-     * Membuat return tipe masuk (dari supplier).
+     * Membuat return tipe masuk (barang dikembalikan ke supplier).
+     *
+     * Logika:
+     * - Stok barang DIKURANGI karena barang keluar dari gudang kembali ke supplier.
+     * - Stok stock-in (catatan barang masuk) juga DIKURANGI.
+     * - Harga modal rata-rata dihitung ulang: nilai stok sebelum retur dikurangi
+     *   nilai barang yang diretur (quantity × harga modal stock-in terkait).
+     * - Max(0, ...) mencegah stok negatif jika data lama tidak konsisten.
      *
      * @param  array<string, mixed> $data
      * @param  \App\Models\Inventory\Items $item
@@ -123,6 +130,8 @@ class ItemReturnService
         }
 
         $currentItemValue = (($item->quantity + $data['quantity']) * $item->capital_price);
+        // Nilai stok SEBELUM retur = ($item->quantity + qty_retur) * harga_modal.
+        // Lalu kurangi nilai barang yang diretur (qty_retur × harga stock-in asal).
         $returnedValue = $data['quantity'] * $stockIn->capital_price;
         $newValue = $currentItemValue - $returnedValue;
 
@@ -135,7 +144,12 @@ class ItemReturnService
     }
 
     /**
-     * Membuat return tipe keluar (dari proyek/konsumen).
+     * Membuat return tipe keluar (barang dikembalikan dari proyek/konsumen).
+     *
+     * Logika:
+     * - Stok barang DITAMBAH karena barang kembali masuk ke gudang.
+     * - Stok stock-out (catatan barang keluar) DIKURANGI karena pengeluarannya dibatalkan.
+     * - Tidak ada hitung ulang harga modal karena tidak ada nilai baru yang masuk ke gudang.
      *
      * @param  array<string, mixed> $data
      * @param  \App\Models\Inventory\Items $item
@@ -177,6 +191,12 @@ class ItemReturnService
 
     /**
      * Update return tipe masuk.
+     *
+     * Logika:
+     * - maxQuantity = sisa stock-in + qty return lama (sebab qty return lama masih "terpakai").
+     * - qtyDifference = qty baru - qty lama → dipakai untuk mengubah stok item & stock-in
+     *   secara relatif (bukan set ulang total).
+     * - Harga modal dihitung ulang berbasis nilai yang berubah (qtyDifference × harga stock-in).
      *
      * @param  \App\Models\Inventory\ItemReturn $return
      * @param  array<string, mixed> $data
@@ -227,6 +247,11 @@ class ItemReturnService
 
     /**
      * Update return tipe keluar.
+     *
+     * Logika:
+     * - maxQuantity = sisa stock-out + qty return lama (qty return lama masih "terpakai").
+     * - qtyDifference = qty baru - qty lama → item ditambah & stock-out dikurangi secara relatif.
+     * - Tidak ada hitung ulang harga modal (barang kembali tanpa nilai baru).
      *
      * @param  \App\Models\Inventory\ItemReturn $return
      * @param  array<string, mixed> $data

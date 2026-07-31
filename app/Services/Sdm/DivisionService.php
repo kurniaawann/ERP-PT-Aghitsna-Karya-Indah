@@ -21,6 +21,12 @@ class DivisionService
      * Menggunakan withCount untuk menghindari query N+1 saat menampilkan jumlah karyawan.
      * Pencarian dibatasi pada kolom name dan description dengan pengelompokan yang tepat.
      *
+     * Logika:
+     * - withCount('employees') menambahkan kolom agregat employees_count lewat
+     *   subquery — tanpa perlu query terpisah per divisi.
+     * - Pencarian dibungkus closure + grup WHERE agar OR antara name/description
+     *   tidak membatalkan kondisi lain.
+     *
      * @param  string|null  $search
      * @param  int          $perPage
      * @return LengthAwarePaginator
@@ -40,6 +46,10 @@ class DivisionService
 
     /**
      * Membuat divisi baru.
+     *
+     * Logika: created_by selalu di-set dari user yang login; pemanggil tidak
+     * bisa memalsukan pembuat lewat data request. Pemanggil wajib memanggil
+     * flushCache() setelahnya agar dropdown divisi tidak basi.
      *
      * @param  array  $data  Data divisi yang sudah divalidasi (name, description)
      * @return Division
@@ -67,6 +77,12 @@ class DivisionService
      *
      * Mengembalikan nama divisi yang masih memiliki karyawan,
      * sehingga pemanggil dapat menampilkan pesan kesalahan yang mudah dipahami.
+     *
+     * Logika:
+     * - whereHas('employees') = EXISTS subquery, hanya divisi dengan minimal
+     *   satu karyawan yang diambil — pengecekan constraint sebelum delete.
+     * - pluck('name') mengembalikan daftar nama (bukan object) agar langsung
+     *   bisa ditampilkan di pesan error.
      *
      * @param  array<int>  $ids  ID divisi yang akan diperiksa
      * @return array<string>  Nama divisi yang memiliki karyawan

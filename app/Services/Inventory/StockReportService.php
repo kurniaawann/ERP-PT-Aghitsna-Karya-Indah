@@ -75,6 +75,10 @@ class StockReportService
         $items = $query->get();
 
         // ─── Agregasi Stok Sebelum Periode (untuk Stok Awal) ────────
+        // POLA PENTING: groupBy + SUM quantity per id_item, lalu pluck('total', 'id_item').
+        // Hasilnya adalah Map: [ 'id_item_A' => total_qty_A, 'id_item_B' => total_qty_B, ... ]
+        // sehingga nanti kita bisa ambil total per barang dengan O(1): $map[$idItem] ?? 0.
+        // Ini menghindari N+1 query (tidak query per barang satu-satu).
         $stockInsBefore = ItemStockIn::where('date', '<', $start)
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
@@ -94,6 +98,9 @@ class StockReportService
             ->pluck('total', 'id_item');
 
         // ─── Agregasi Stok Selama Periode ──────────────────────────
+        // whereBetween('date', [$start, $end]) = tanggal dalam rentang periode.
+        // $start adalah 00:00:00 hari pertama, $end adalah 23:59:59 hari terakhir
+        // (sudah di-set lewat startOfDay()/endOfDay() di atas), sehingga rentangnya presisi.
         $stockInsPeriod = ItemStockIn::whereBetween('date', [$start, $end])
             ->when($itemId, fn($q) => $q->where('id_item', $itemId))
             ->groupBy('id_item')
@@ -116,6 +123,8 @@ class StockReportService
         $reportData = collect();
 
         foreach ($items as $item) {
+            // '?? 0' = jika barang ini tidak punya record di map (tidak ada stok masuk/keluar/retur),
+            // anggap totalnya 0. Ini mencegah PHP notice "Undefined array key".
             $beginningStock = max(0,
                 ($stockInsBefore[$item->id_item] ?? 0)
                 - ($stockOutsBefore[$item->id_item] ?? 0)

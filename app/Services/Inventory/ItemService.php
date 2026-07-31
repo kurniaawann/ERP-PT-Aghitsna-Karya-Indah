@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\Log;
  *
  * Service ini bertanggung jawab atas operasi CRUD,
  * normalisasi input harga, dan generasi ID otomatis.
+ *
+ * CATATAN:
+ * - getAll() memakai cache 'inventory:items:all'. Cache dibersihkan OTOMATIS lewat
+ *   ItemsObserver (event created/updated/deleted) — jadi jangan panggil flushCache()
+ *   secara manual kecuali perlu, dan jangan ubah mass delete menjadi query builder.
+ * - Semua harga masuk lewat InputNormalizer::normalizeCurrency() agar seragam format.
  */
 class ItemService
 {
@@ -116,6 +122,12 @@ class ItemService
 
     /**
      * Menghapus beberapa barang sekaligus (bulk delete).
+     *
+     * PENTING (kenapa pakai foreach, bukan Items::whereIn(...)->delete()):
+     * - whereIn()->delete() adalah "mass delete" yang TIDAK memicu event model.
+     * - foreach + $item->delete() memicu event 'deleted' → ItemsObserver::deleted()
+     *   berjalan → cache 'inventory:items:all' otomatis ter-bersihkan.
+     * - Jika pakai mass delete, cache akan menyimpan data lama yang sudah tidak ada di DB.
      *
      * @param  array  $ids  Daftar id_item yang akan dihapus
      * @return int  Jumlah record yang dihapus

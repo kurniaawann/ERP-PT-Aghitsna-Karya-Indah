@@ -108,6 +108,12 @@ class ItemInvoiceService
     /**
      * Memproses item untuk penyimpanan: validasi stok, kurangi stok, hitung profit.
      *
+     * Logika:
+     * - Item dari stok (from_stock=true): validasi stok cukup, lalu kurangi stok,
+     *   ambil harga dari data barang (bukan dari form) sebagai sumber kebenaran.
+     * - Item manual: nama wajib ada, dan harga modal harus < harga jual.
+     * - Profit per item = (harga jual − harga modal) × qty.
+     *
      * @param  array  $items  Item yang sudah dinormalisasi
      * @return array  Item yang sudah diproses (termasuk field profit)
      *
@@ -163,6 +169,11 @@ class ItemInvoiceService
 
     /**
      * Memproses satu item dari stok: kurangi stok, ambil data harga.
+     *
+     * Logika:
+     * - lockForUpdate() mengunci baris barang saat dikurangi supaya tidak terjadi
+     *   over-deduct dari dua request bersamaan.
+     * - Mengembalikan data harga terkini dari DB (bukan input form).
      *
      * @param  string|null  $idItem    ID barang
      * @param  int          $quantity  Kuantitas yang akan dikurangi
@@ -250,6 +261,9 @@ class ItemInvoiceService
 
     /**
      * Menghasilkan ID Sales Recap unik berformat: SR-{nnnnn}.
+     *
+     * Logika: ambil ID terakhir (SR-xxxxx), increment angka setelah prefix 'SR-',
+     * lalu pad ke 5 digit. Loop while-exists sebagai pengaman race condition.
      *
      * @return string  ID Sales Recap berikutnya
      */

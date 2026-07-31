@@ -44,6 +44,14 @@ class InvoiceCalculatorService
     /**
      * Menghitung jumlah DP berdasarkan tipe dan nilai.
      *
+     * Logika pemilihan base amount:
+     * - Jika $baseAmount eksplisit diberikan, itu yang dipakai.
+     * - Jika tidak, pakai $totalAfterDiscount BUKAN $totalAmount hanya saat
+     *   totalAfterDiscount ada dan nilainya berbeda dari totalAmount.
+     *   Maksudnya: DP dihitung dari total SETELAH diskon (lebih umum), tapi jika
+     *   tidak ada diskon, fallback ke totalAmount.
+     * - DP percentage = base × dpValue / 100 (dibulatkan). DP amount = nilai mentah.
+     *
      * @param  float  $totalAmount  Total amount asli
      * @param  float|int|null  $totalAfterDiscount  Total setelah diskon
      * @param  string|null  $dpType  Tipe DP: 'percentage' atau 'amount'
@@ -78,6 +86,9 @@ class InvoiceCalculatorService
     /**
      * Menghitung sisa tagihan.
      *
+     * Rumus: Grand Total - Diskon - DP - Total yang sudah dibayar.
+     * max(0, ...) memastikan hasil tidak pernah negatif (anti overpaid/hutang).
+     *
      * @param  int  $grandTotal  Grand total
      * @param  int  $discountAmount  Jumlah diskon
      * @param  int  $dpAmount  Jumlah DP
@@ -102,6 +113,9 @@ class InvoiceCalculatorService
 
     /**
      * Menghitung progress pembayaran dalam persentase.
+     *
+     * Rumus: (totalPaid / grandTotal) × 100, dibatasi maksimal 100%.
+     * Jika grandTotal 0 (data belum lengkap), hasil 0.
      *
      * @param  int  $grandTotal  Grand total
      * @param  int  $totalPaidAmount  Total yang sudah dibayar
@@ -157,6 +171,12 @@ class InvoiceCalculatorService
     /**
      * Mendapatkan total pembayaran yang sudah masuk dari relasi paymentProofs.
      *
+     * Logika:
+     * - Jika relasi 'paymentProofs' sudah di-eager-load (relationLoaded), pakai hasilnya
+     *   langsung (tidak query ulang). Ini menghemat query pada listing.
+     * - Jika belum, lazy-load via paymentProofs()->get().
+     * - Total = jumlah semua kolom 'amount'. max(0, ...) mencegah nilai negatif.
+     *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @return int  Total nominal pembayaran
      */
@@ -171,6 +191,10 @@ class InvoiceCalculatorService
 
     /**
      * Mendapatkan sisa tagihan dari model invoice.
+     *
+     * Logika: SalesRecap dihitung beda dari invoice biasa.
+     * - SalesRecap: sisa = total_selling - total bayar (tidak ada diskon/DP).
+     * - Invoice lain: sisa = total - diskon - DP - total bayar.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @return int  Sisa tagihan
@@ -303,6 +327,12 @@ class InvoiceCalculatorService
 
     /**
      * Mendapatkan total pembayaran untuk invoice, dengan opsi exclude payment proof tertentu.
+     *
+     * Logika:
+     * - Jika tidak perlu exclude dan bukan SalesRecap, langsung pakai getTotalPaidAmount()
+     *   (menggunakan relasi eager-load — lebih cepat).
+     * - SalesRecap & invoice lain dihitung dengan query SUM langsung ke tabel payment_proofs,
+     *   karena butuh filter invoice_type + invoice_number (dan opsi exclude id).
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @param  int|null  $excludePaymentProofId  ID PaymentProof yang dikecualikan

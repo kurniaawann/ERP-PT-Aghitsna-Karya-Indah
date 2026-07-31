@@ -55,6 +55,12 @@ class RecapProyekService
     /**
      * Mengambil data invoice untuk tampilan paginated.
      *
+     * Logika:
+     * - (clone $query) penting! Query builder dibagikan antar method; clone mencegah
+     *   method lain (mis. getAllInvoices) ikut terpengaruh pagination/order ini.
+     * - ->appends($request->all()) menjaga filter (search/month/year) tetap ada
+     *   di URL saat pindah halaman pagination.
+     *
      * @param  \Illuminate\Database\Eloquent\Builder  $query  Query dasar
      * @param  \Illuminate\Http\Request  $request  Request untuk pagination
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator

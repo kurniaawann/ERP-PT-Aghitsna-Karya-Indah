@@ -20,6 +20,12 @@ class EmployeeService
     /**
      * Mendapatkan daftar karyawan dengan paginasi dan pencarian opsional.
      *
+     * Logika:
+     * - Pencarian (nama/kode) dibungkus closure + grup WHERE agar OR antar
+     *   kolom tidak mengganggu kondisi lain.
+     * - Diurutkan created_at terbaru; kode karyawan dipakai sebagai primary key
+     *   bisnis (employee_code), bukan id numerik.
+     *
      * @param  string|null  $search
      * @param  int          $perPage
      * @return \Illuminate\Pagination\LengthAwarePaginator
@@ -39,6 +45,10 @@ class EmployeeService
     /**
      * Mendapatkan semua divisi yang diurutkan berdasarkan nama.
      *
+     * Logika: hasil di-cache 24 jam di key 'sdm:divisions:dropdown' (key yang
+     * sama dipakai DivisionService) — cache di-flush saat CRUD divisi. Fallback
+     * query langsung jika cache bermasalah.
+     *
      * @return \Illuminate\Support\Collection
      */
     public function getAllDivisions(): Collection
@@ -55,6 +65,12 @@ class EmployeeService
 
     /**
      * Membuat karyawan baru dengan kode karyawan yang dihasilkan secara otomatis.
+     *
+     * Logika:
+     * - employee_code di-generate di sisi server (Employee::generateEmployeeCode())
+     *   sehingga user tidak bisa memasukkan kode sembarangan/duplikat.
+     * - created_by di-set dari user login. Pemanggil wajib memanggil flushCache()
+     *   agar dropdown karyawan tidak basi.
      *
      * @param  array  $data  Data karyawan yang sudah divalidasi
      * @return \App\Models\Sdm\Employee

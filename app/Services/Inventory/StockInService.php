@@ -224,6 +224,12 @@ class StockInService
     /**
      * Menyesuaikan stok barang dengan weighted average price.
      *
+     * KONSEP WEIGHTED AVERAGE:
+     * Harga modal rata-rata dihitung dari "total nilai" bukan "rata-rata harga biasa".
+     * Contoh: stok 10 unit @ Rp100 (nilai 1000) + beli lagi 5 unit @ Rp200 (nilai 1000)
+     *   → total 15 unit, nilai 2000 → harga rata-rata = 2000/15 = Rp133 (bukan (100+200)/2).
+     * Jadi: (nilai stok lama + nilai pembelian baru) / (total quantity).
+     *
      * @param  Items  $item
      * @param  int    $quantity
      * @param  int    $capitalPrice
@@ -245,6 +251,13 @@ class StockInService
 
     /**
      * Menyesuaikan stok barang yang sama saat update (selisih quantity).
+     *
+     * Logika:
+     * 1. qtyDifference = quantity baru - quantity lama (bisa negatif jika mengurangi).
+     * 2. Nilai item saat ini di-"kurangi" nilai stock-in LAMA, karena record itu
+     *    akan ditimpa dengan data baru.
+     * 3. Lalu nilai stock-in BARU ditambahkan, dan harga rata-rata dihitung ulang
+     *    terhadap total quantity yang baru.
      *
      * @param  Items        $item
      * @param  ItemStockIn  $stockIn
@@ -273,6 +286,13 @@ class StockInService
 
     /**
      * Menukar stok dari item lama ke item baru saat update.
+     *
+     * Langkah:
+     * 1. Kurangi quantity & hitung ulang harga modal item LAMA — seolah-olah
+     *    stock-in ini dihapus dari item lama.
+     * 2. Tambah quantity & harga rata-rata item BARU lewat adjustItemStock() —
+     *    seolah-olah stock-in ini adalah pembelian baru untuk item baru.
+     * 3. Record stock-in kemudian dipindah id_item-nya ke item baru (di method update()).
      *
      * @param  Items        $oldItem
      * @param  Items        $newItem

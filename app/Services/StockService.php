@@ -9,6 +9,20 @@ use App\Models\Inventory\ItemReturn;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Service untuk business logic Stok Barang Keluar (Stock Out) dan kalkulasi stok.
+ *
+ * Tanggung jawab utama:
+ * - Menyediakan data Barang Keluar (dengan cache untuk dropdown)
+ * - Mengurangi/menambah quantity stok item (dipakai saat buat/hapus transaksi)
+ * - Menghitung ulang harga modal rata-rata (weighted average) saat stok berubah
+ * - Membersihkan cache stok setelah ada perubahan
+ *
+ * CATATAN PENTING:
+ * Semua perubahan stok memakai lockForUpdate() agar dua request yang bersamaan
+ * tidak saling menimpa quantity (race condition). Selalu panggil method ini
+ * di dalam DB transaction supaya kalau error, perubahan stok ikut di-rollback.
+ */
 class StockService
 {
     /**
@@ -49,12 +63,18 @@ class StockService
     }
 
     /**
-     * Increase stock quantities for items array (used when restoring stock on delete).
-     * Each item array is expected to have 'from_stock', 'id_item', and 'quantity'.
+     * Menaikkan quantity stok untuk daftar item (dipakai saat restore stok pada delete).
+     *
+     * Setiap elemen array harus memiliki: 'from_stock', 'id_item', dan 'quantity'.
+     *
+     * @param  array  $items  Daftar item yang akan dikembalikan stoknya
+     * @return void
      */
     public function increaseStockFromItems(array $items): void
     {
         foreach ($items as $item) {
+            // 'from_stock' bisa berisi true (boolean), 'true' (string), 1 (int), atau '1' (string)
+            // tergantung dari mana data dikirim (form/API). Kita cek semua kemungkinan.
             $isFromStock = isset($item['from_stock']) && ($item['from_stock'] === true || $item['from_stock'] === 'true' || $item['from_stock'] === 1 || $item['from_stock'] === '1');
 
             if (!$isFromStock || empty($item['id_item'])) {
@@ -73,8 +93,14 @@ class StockService
     }
 
     /**
-     * Decrease stock quantities for items array (used when consuming stock on create/update).
-     * Throws RuntimeException if stock insufficient or item not found.
+     * Menurunkan quantity stok untuk daftar item (dipakai saat konsumsi stok pada create/update).
+     *
+     * Melempar RuntimeException jika stok tidak cukup atau barang tidak ditemukan.
+     *
+     * @param  array  $items  Daftar item yang akan mengurangi stok
+     * @return void
+     *
+     * @throws \RuntimeException
      */
     public function decreaseStockFromItems(array $items): void
     {
@@ -103,8 +129,16 @@ class StockService
     }
 
     /**
-     * Process deletion of a stock-in record: adjust item quantity and recalculate capital price, then delete the stock-in.
-     * Assumes caller manages DB transaction if needed.
+     * Proses penghapusan record Barang Masuk (Stock In): sesuaikan quantity item
+     * dan hitung ulang harga modal, lalu hapus record stock-in.
+     *
+     * Asumsi: pemanggil sudah mengelola DB transaction bila diperlukan.
+     *
+     * Rumus hitung ulang harga modal (weighted average):
+     * Harga modal baru = (Nilai stok sisa - Nilai stock-in yang dihapus) / Sisa quantity
+     *
+     * @param  ItemStockIn  $stockIn  Record Barang Masuk yang akan dihapus
+     * @return void
      */
     public function processStockInDeletion(ItemStockIn $stockIn): void
     {
@@ -141,8 +175,19 @@ class StockService
     }
 
     /**
-     * Process deletion of an ItemReturn record. Handles both 'masuk' and 'keluar' return types.
-     * Assumes caller manages DB transaction if needed.
+     * Proses penghapusan record Pengembalian Barang (Item Return). Menangani tipe 'masuk' dan 'keluar'.
+     *
+     * Asumsi: pemanggil sudah mengelola DB transaction bila diperlukan.
+     *
+     * Logika:
+     * - Return tipe 'masuk' (mengembalikan barang ke supplier):
+     *   stok item DITAMBAH, dan quantity stock-in DITAMBAH kembali. Harga modal dihitung ulang
+     *   dengan weighted average agar barang yang dikembalikan "dikeluarkan" dari perhitungan harga.
+     * - Return tipe 'keluar' (barang dikembalikan dari proyek/konsumen):
+     *   stok item DIKURANGI, dan quantity stock-out DITAMBAH kembali.
+     *
+     * @param  ItemReturn  $return  Record Pengembalian Barang yang akan dihapus
+     * @return void
      */
     public function processReturnDeletion(ItemReturn $return): void
     {
@@ -164,6 +209,9 @@ class StockService
 
             // Recalculate weighted average cost
             $currentItemValue = (($item->quantity - $return->quantity) * $item->capital_price);
+            // $stockIn?->capital_price adalah nullsafe operator:
+            // jika $stockIn null, ekspresi ini langsung mengembalikan null (tanpa error),
+            // lalu '?? 0' mengubah null menjadi 0. Jadi aman walau stock-in sudah tidak ada.
             $restoredValue = $return->quantity * ($stockIn?->capital_price ?? 0);
             $newValue = $currentItemValue + $restoredValue;
             $newQuantity = $item->quantity;

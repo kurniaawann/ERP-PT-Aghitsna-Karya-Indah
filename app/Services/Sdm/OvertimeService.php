@@ -27,6 +27,13 @@ class OvertimeService
      * relasi karyawan untuk menghindari query N+1, dan menerapkan filter
      * pencarian opsional pada nama atau kode karyawan.
      *
+     * Logika:
+     * - Lembur TIDAK punya tabel sendiri — tersimpan di tabel absensi dengan
+     *   status = 'lembur'. Filter `status` di sini adalah sumber kebenarannya.
+     * - Berbeda dari AttendanceService, pencarian hanya ke relasi employee
+     *   (nama/kode), tidak mencocokkan tanggal — data lembur diidentifikasi
+     *   lewat karyawan, bukan lewat tanggal.
+     *
      * @param  string|null  $search   Kata kunci pencarian (nama atau kode karyawan)
      * @param  int          $perPage  Jumlah data per halaman
      * @return LengthAwarePaginator
@@ -145,8 +152,9 @@ class OvertimeService
     /**
      * Memperbarui data lembur dengan menghitung ulang total.
      *
-     * overtime_total selalu dihitung ulang di sisi server untuk mencegah
-     * manipulasi nilai total dari klien.
+     * Logika: overtime_total selalu dihitung ulang di sisi server (jam × tarif)
+     * dari input yang baru — nilai total yang dikirim frontend diabaikan untuk
+     * mencegah manipulasi nominal.
      *
      * @param  Attendance  $overtime  Instance model absensi yang akan diperbarui
      * @param  array       $data      Data pembaruan yang sudah divalidasi

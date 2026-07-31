@@ -105,6 +105,11 @@ class AlumuniumInvoiceService
      * Menghasilkan nomor invoice unik berformat: {A}/{B}/ALU/{yy}.
      * Kedua angka (A dan B) diincrement secara terpisah.
      *
+     * Logika:
+     * - Cari invoice terakhir tahun ini (filter '%/ALU/{yy}').
+     * - Parse dua angka depan lewat regex /^(\d+)\/(\d+)\//, lalu increment keduanya.
+     * - Jika belum ada invoice tahun ini, mulai dari A=53, B=53.
+     *
      * @return string  Nomor invoice berikutnya
      */
     public function generateInvoiceNumber(): string
@@ -128,6 +133,11 @@ class AlumuniumInvoiceService
 
     /**
      * Menghapus beberapa invoice alumunium sekaligus (bulk delete).
+     *
+     * PENTING (kenapa foreach, bukan mass delete):
+     * - Model InvoiceAlumunium punya boot() dengan hook 'deleting' yang menghapus
+     *   file bukti pembayaran terkait.
+     * - foreach + $invoice->delete() memicu hook tersebut; mass delete tidak.
      *
      * @param  array  $ids  Daftar invoice_number yang akan dihapus
      * @return int  Jumlah record yang dihapus

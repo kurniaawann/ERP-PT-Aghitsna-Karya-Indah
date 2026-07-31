@@ -42,6 +42,9 @@ class RecapSalesService
     /**
      * Membangun query dasar untuk listing rekap penjualan.
      *
+     * Menerapkan filter search (id/name), month, year. Digunakan untuk index,
+     * grand totals, dan export sehingga filter hanya di satu tempat.
+     *
      * @param  \Illuminate\Http\Request $request  Request yang berisi parameter filter
      * @return \Illuminate\Database\Eloquent\Builder
      */
@@ -66,6 +69,9 @@ class RecapSalesService
 
     /**
      * Membangun query untuk grand totals (ringkasan).
+     *
+     * Memakai DB::raw dengan fungsi agregat SUM di level database (bukan loop di PHP)
+     * supaya cepat untuk data banyak.
      *
      * @param  \Illuminate\Http\Request $request  Request yang berisi parameter filter
      * @return object|null  Object berisi grand_total_capital, grand_total_selling, grand_total_profit
@@ -244,6 +250,13 @@ class RecapSalesService
     /**
      * Proses stock untuk items yang dari stock (from_stock = true).
      *
+     * Logika:
+     * - Hanya item dari stock yang diproses: validasi stok cukup, kurangi quantity,
+     *   dan isi harga (capital/selling) dari data barang saat ini (source of truth).
+     * - Item manual (tidak dari stock): from_stock di-set false, id_item di-null.
+     * - lockForUpdate() mencegah dua transaksi mengubah stok bersamaan.
+     * - $items dilewatkan by reference (&) agar perubahan harga ikut tersimpan.
+     *
      * @param  array<int, array<string, mixed>> &$items  Items (by reference)
      * @return void
      *
@@ -279,6 +292,13 @@ class RecapSalesService
 
     /**
      * Rekonsiliasi stock: kembalikan stock lama, lalu kurangi stock baru.
+     *
+     * Logika (untuk menghemat query):
+     * 1. Loop item LAMA → akumulasi stock yang harus dikembalikan (+delta per id_item).
+     * 2. Loop item BARU → akumulasi stock yang harus dikurangi (−delta per id_item).
+     * 3. Satu map $stockChanges[id_item] = delta net. Terapkan sekali per item
+     *    (bukan per baris), jadi total query hanya = jumlah id_item unik.
+     * 4. Jika hasil akhir negatif → tolak update (stok tidak cukup).
      *
      * @param  array<int, array<string, mixed>> $oldItems  Items lama
      * @param  array<int, array<string, mixed>> $newItems  Items baru
@@ -353,7 +373,10 @@ class RecapSalesService
     /**
      * Generate unique sales recap ID (format: SR-xxxxx).
      *
-     * Menggunakan database lock untuk mencegah race condition.
+     * Logika anti race-condition:
+     * - lockForUpdate() mengunci baris terakhir sehingga dua request tidak
+     *   membaca nomor terakhir yang sama.
+     * - Loop while-exists sebagai double-check kedua (pengaman tambahan).
      *
      * @return string
      */

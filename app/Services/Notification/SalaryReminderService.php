@@ -23,6 +23,10 @@ class SalaryReminderService
     /**
      * Mendapatkan daftar salary reminder dengan filter dan paginasi.
      *
+     * Logika: filter (month, year, status, search) dan pagination sepenuhnya
+     * didelegasikan ke repository->search(). Query terpusat di repository
+     * agar filter tabel reminder tidak terduplikasi di beberapa tempat.
+     *
      * @param  array  $filters  Parameter filter dari request (month, year, status, search)
      * @return LengthAwarePaginator
      */
@@ -33,6 +37,10 @@ class SalaryReminderService
 
     /**
      * Mendapatkan statistik ringkasan berdasarkan filter yang diterapkan.
+     *
+     * Logika: tiga hitungan terpisah (total/draft/paid) dengan filter yang
+     * sama; tidak ada saling kurang sehingga tidak perlu guard seperti modul
+     * invoice reminder.
      *
      * @param  array  $filters  Parameter filter dari request
      * @return array  ['total' => int, 'draft' => int, 'paid' => int]
@@ -51,6 +59,17 @@ class SalaryReminderService
      *
      * Attendance reminders menampilkan karyawan yang sudah absen minggu 1-4
      * namun payroll belum dibuatkan.
+     *
+     * Logika:
+     * - Data attendance teragregasi diambil sekali oleh repository (batch,
+     *   anti N+1): karyawan dengan absensi tanggal 1-28, dikelompokkan per
+     *   employee+bulan+tahun.
+     * - map() me-resolve objek employee dari relasi eager-loaded; jika karyawan
+     *   sudah dihapus (employee null) → item dijadikan null lalu dibuang oleh
+     *   ->filter().
+     * - week_number dihitung dari tanggal pertama absensi: ceil(day / 7).
+     *   CATATAN: ini pendekatan perkiraan (day 1-7 → minggu 1, dst.), bukan
+     *   sistem minggu Senin-Sabtu dari PayrollService.
      *
      * @param  int  $month  Bulan filter (0 = semua bulan)
      * @param  int  $year   Tahun filter
@@ -88,6 +107,9 @@ class SalaryReminderService
     /**
      * Mendapatkan nilai default tahun dari filter.
      *
+     * Logika: fallback ke tahun berjalan bila filter kosong, sehingga halaman
+     * selalu menampilkan data periode berjalan tanpa parameter.
+     *
      * @param  array  $filters  Parameter filter dari request
      * @return int
      */
@@ -98,6 +120,8 @@ class SalaryReminderService
 
     /**
      * Mendapatkan nilai default bulan dari filter.
+     *
+     * Logika: fallback ke bulan berjalan bila filter kosong.
      *
      * @param  array  $filters  Parameter filter dari request
      * @return int

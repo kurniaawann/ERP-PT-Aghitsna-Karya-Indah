@@ -17,6 +17,13 @@ class TransactionCategoryService
     /**
      * Mengambil data kategori transaksi dengan pagination, filter, dan pencarian.
      *
+     * Logika:
+     * - when($type) menambah filter type hanya jika tidak kosong; when($search)
+     *   membungkus pencarian dalam closure agar LIKE name/code digabung dengan
+     *   OR dalam satu grup (tidak membatalkan filter type).
+     * - Urutan tampil: sort_order naik (urutan yang bisa diubah user) lalu name
+     *   sebagai tie-breaker agar deterministik saat sort_order sama.
+     *
      * @param string|null $search  Kata kunci pencarian (nama atau kode)
      * @param string|null $type    Tipe kategori (INCOME/EXPENSE)
      * @return LengthAwarePaginator
@@ -37,6 +44,12 @@ class TransactionCategoryService
     /**
      * Mengambil semua kode kategori yang sudah ada (untuk validasi duplikat di frontend).
      *
+     * Logika:
+     * - pluck('code', 'id') menghasilkan map [id => code] sekali query, lalu
+     *   di-cache 1 hari dengan key 'report:category-codes'.
+     * - Dipakai frontend untuk menolak kode duplikat tanpa reload server.
+     * - Jika cache error, fallback query langsung agar validasi tetap jalan.
+     *
      * @return array<int, string> Array dengan format [id => code]
      */
     public function getExistingCodes(): array
@@ -55,6 +68,12 @@ class TransactionCategoryService
 
     /**
      * Mengambil ID kategori yang sedang digunakan di expense reports.
+     *
+     * Logika:
+     * - has('expenseRecaps') menghasilkan subquery EXISTS — hanya kategori yang
+     *   punya minimal satu expense recap yang diambil.
+     * - Cache 1 JAM (lebih pendek dari kategori) karena data ini berubah setiap
+     *   ada transaksi pengeluaran baru, bukan hanya saat CRUD kategori.
      *
      * @return array<int> Array berisi ID kategori yang sedang digunakan
      */
@@ -75,6 +94,11 @@ class TransactionCategoryService
     /**
      * Invalidate semua cache kategori transaksi.
      *
+     * CATATAN: menghapus 4 key sekaligus — key milik modul Report
+     * (expense-categories, category-codes, category-used-ids) dan key milik
+     * modul Finance (finance:expense-categories). Wajib dipanggil di setiap
+     * operasi CRUD kategori agar semua modul tidak menyajikan data basi.
+     *
      * @return void
      */
     public function flushCache(): void
@@ -91,6 +115,12 @@ class TransactionCategoryService
 
     /**
      * Membuat kategori transaksi baru dengan auto sort_order.
+     *
+     * Logika:
+     * - sort_order di-generate otomatis = MAX(sort_order) + 1 sehingga kategori
+     *   baru selalu menempel di posisi terakhir tanpa input manual.
+     * - Default is_active = true dan created_by = user saat ini.
+     * - Pemanggil wajib memanggil flushCache() setelah operasi ini.
      *
      * @param array{name: string, code: string, type: string} $data
      * @return TransactionCategory
@@ -114,6 +144,11 @@ class TransactionCategoryService
      *
      * Jika sort_order berubah, kategori lain akan digeser secara otomatis
      * untuk memastikan tidak ada gap dalam urutan.
+     *
+     * Logika:
+     * - Urutan langkah: geser kategori lain DULU (reorderCategories) baru update
+     *   kategori ini — menghindari tabrakan nilai sort_order sesaat.
+     * - Pemanggil wajib memanggil flushCache() setelah operasi ini.
      *
      * @param int   $id   ID kategori yang akan diupdate
      * @param array{name: string, code: string, type: string, sort_order: int} $data
@@ -158,6 +193,13 @@ class TransactionCategoryService
      * Menghapus beberapa kategori sekaligus (bulk delete) dengan pengecekan constraint.
      *
      * Kategori yang sedang digunakan di expense reports tidak akan dihapus.
+     *
+     * Logika:
+     * - Pengecekan constraint dilakukan SATU query (whereIn + has) di awal;
+     *   jika ada kategori terpakai, seluruh proses dibatalkan (deleted = 0)
+     *   dan nama-nama kategori dikembalikan untuk ditampilkan ke user.
+     * - Hanya jika tidak ada yang terpakai, mass delete dijalankan.
+     * - Pemanggil wajib memanggil flushCache() setelah operasi ini.
      *
      * @param array<int> $selectedIds Array berisi ID kategori yang akan dihapus
      * @return array{deleted: int, used: array<string>}

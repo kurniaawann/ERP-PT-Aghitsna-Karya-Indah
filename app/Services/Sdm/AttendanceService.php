@@ -21,6 +21,13 @@ class AttendanceService
     /**
      * Mendapatkan daftar absensi dengan paginasi, pencarian, dan eager loading.
      *
+     * Logika:
+     * - with('employee') mencegah query N+1 saat menampilkan nama karyawan.
+     * - where('created_by') membatasi data hanya milik user yang login.
+     * - Pencarian memakai whereHas pada relasi employee (nama/kode) ATAU
+     *   attendance_date — dibungkus satu group agar OR tidak merusak filter user.
+     * - Urutan: tanggal terbaru dulu, lalu created_at sebagai tie-breaker.
+     *
      * @param  string|null  $search     Kata kunci pencarian (nama karyawan, kode, atau tanggal)
      * @param  int          $perPage    Jumlah data per halaman
      * @return LengthAwarePaginator
@@ -44,6 +51,13 @@ class AttendanceService
     /**
      * Mendapatkan semua karyawan yang diurutkan berdasarkan nama untuk pilihan formulir.
      *
+     * Logika:
+     * - Hanya mengambil kolom employee_code + name (data lengkap tidak dibutuhkan
+     *   untuk dropdown) agar payload ringan.
+     * - Hasil di-cache 24 jam di key 'sdm:employees:dropdown'; cache di-flush
+     *   saat CRUD karyawan (lihat EmployeeService::flushCache). Fallback ke
+     *   query langsung jika cache bermasalah.
+     *
      * @return Collection<int, Employee>
      */
     public function getAllEmployees(): Collection
@@ -63,6 +77,11 @@ class AttendanceService
      * untuk validasi duplikat di sisi klien.
      *
      * Mengembalikan array asosiatif: ['EMP001' => ['2025-01-01', '2025-01-02'], ...]
+     *
+     * Logika:
+     * - SELECT hanya employee_id + attendance_date (kolom minimal) untuk data ini.
+     * - groupBy('employee_id') lalu pluck tanggal — format dinormalisasi ke
+     *   Y-m-d agar bisa dibandingkan dengan tanggal pilihan user di frontend.
      *
      * @return array<string, array<int, string>>
      */
@@ -84,6 +103,13 @@ class AttendanceService
      *
      * Melakukan satu query untuk mengambil semua data yang sudah ada dalam rentang,
      * kemudian memeriksa setiap kombinasi karyawan+tanggal terhadap hasil tersebut.
+     *
+     * Logika:
+     * - Semua record existing diambil SEKALI lalu di-keyBy("employee_date") →
+     *   lookup O(1) per kombinasi, bukan query per karyawan/tanggal (anti N+1).
+     * - Loop karyawan × tanggal melewati setiap hari; kunci disamakan dengan
+     *   keyBy di atas sehingga pengecekan cukup `isset`.
+     * - Nama karyawan di-pluck sekaligus untuk pesan yang mudah dibaca.
      *
      * @param  array<int, string>  $employeeIds  Array nilai employee_code
      * @param  Carbon              $startDate    Tanggal mulai (inklusif)
@@ -130,6 +156,13 @@ class AttendanceService
 
     /**
      * Membuat data absensi secara massal untuk beberapa karyawan dalam rentang tanggal.
+     *
+     * Logika:
+     * - Nested loop karyawan × tanggal; `$currentDate` di-copy dari startDate
+     *   tiap karyawan lalu digeser per hari sampai melewati endDate.
+     * - Setiap record dibuat terpisah (bukan bulk insert) agar created_by dan
+     *   nilai per record konsisten; jumlah total dikembalikan untuk pesan sukses.
+     * - Catatan: diasumsikan caller sudah menjalankan findDuplicates() lebih dulu.
      *
      * @param  array<int, string>  $employeeIds  Array nilai employee_code
      * @param  Carbon              $startDate    Tanggal mulai (inklusif)
@@ -190,6 +223,11 @@ class AttendanceService
 
     /**
      * Membuat pesan sukses yang mudah dibaca untuk pembuatan massal.
+     *
+     * Logika:
+     * - totalDays = selisih tanggal + 1 (inklusif kedua ujung tanggal).
+     * - Memakai sprintf agar format nominal pesan konsisten dan terhindar dari
+     *   concatenation yang berantakan.
      *
      * @param  int     $totalInserted  Jumlah data yang dimasukkan
      * @param  int     $employeeCount  Jumlah karyawan

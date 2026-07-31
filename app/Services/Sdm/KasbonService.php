@@ -29,6 +29,14 @@ class KasbonService
      * Mendukung filter berdasarkan pencarian (kode/catatan/nama karyawan), bulan, tahun,
      * status, dan tipe. Hasil diurutkan berdasarkan kasbon_date terbaru terlebih dahulu.
      *
+     * Logika:
+     * - Search memakai escapeLikePattern('%' dan '_' di-escape) agar wildcard
+     *   SQL dari input user diperlakukan sebagai teks biasa, bukan pattern.
+     * - Filter bulan/tahun memakai period_start_date (bukan kasbon_date) —
+     *   kasbon diidentifikasi berdasarkan periode payrollnya.
+     * - appends(request()->only(...)) mempertahankan filter pada URL pagination
+     *   agar berpindah halaman tidak kehilangan filter.
+     *
      * @param  string|null  $search   Kata kunci pencarian (kode kasbon, catatan, atau nama karyawan)
      * @param  int|null     $month    Filter berdasarkan bulan periode
      * @param  int|null     $year     Filter berdasarkan tahun periode
@@ -188,6 +196,11 @@ class KasbonService
      *
      * Menggunakan metode canTakeKasbon untuk validasi.
      *
+     * CATATAN: saat ini selalu mengembalikan valid=true (selama karyawan ada).
+     * Validasi batas untuk update masih kosong oleh desain — sisipkan logika
+     * (misal pengecekan payroll dibayar seperti validatePersonalKasbonLimit)
+     * jika aturan bisnisnya diperketat.
+     *
      * @param  string         $employeeCode    Kode karyawan
      * @param  string         $periodStartDate Tanggal mulai periode (Y-m-d)
      * @param  string         $kasbonDate      Tanggal kasbon (Y-m-d)
@@ -287,6 +300,14 @@ class KasbonService
     /**
      * Rekam pembayaran cicilan kasbon (manual atau dari payroll).
      *
+     * Logika:
+     * - effectiveAmount = min(amount, remaining_amount) → pembayaran otomatis
+     *   dibatasi agar tidak pernah melebihi sisa hutang.
+     * - paid_amount diakumulasi, remaining_amount dihitung ulang dari amount,
+     *   lalu payment_status diturunkan: sisa ≤ 0 → 'paid', selain itu 'partial'.
+     * - Dipanggil baik dari pembayaran manual maupun potongan payroll
+     *   (method = 'payroll_deduction' + payroll_id).
+     *
      * @param  Kasbon     $kasbon    Kasbon yang akan dibayar
      * @param  int        $amount    Jumlah pembayaran
      * @param  string     $method    'manual' atau 'payroll_deduction'
@@ -322,6 +343,10 @@ class KasbonService
 
     /**
      * Mendapatkan total sisa kasbon yang belum dibayar untuk karyawan tertentu.
+     *
+     * Logika:
+     * - notPaid() scope = status selain 'paid'; hasil SUM(remaining_amount)
+     *   dipakai untuk membatasi kasbon baru agar total hutang tidak meledak.
      *
      * @param  string  $employeeCode  Kode karyawan
      * @return int     Total sisa kasbon

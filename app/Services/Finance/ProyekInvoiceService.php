@@ -107,6 +107,11 @@ class ProyekInvoiceService
      * Menghasilkan nomor invoice unik berformat: {A}/{B}/PT.AKI/{yy}.
      * Kedua angka (A dan B) diincrement secara terpisah.
      *
+     * Logika:
+     * - Cari invoice terakhir tahun ini (filter '%/PT.AKI/{yy}').
+     * - Parse dua angka depan lewat regex /^(\d+)\/(\d+)\//, lalu increment keduanya.
+     * - Jika belum ada invoice tahun ini, mulai dari A=1, B=6.
+     *
      * @return string  Nomor invoice berikutnya
      */
     public function generateInvoiceNumber(): string
@@ -199,6 +204,11 @@ class ProyekInvoiceService
 
     /**
      * Menghapus beberapa invoice proyek sekaligus (bulk delete).
+     *
+     * PENTING (kenapa foreach, bukan mass delete):
+     * - InvoiceProyek punya InvoiceProyekObserver. Event 'deleted' di observer
+     *   membersihkan InvoiceProyekReminder dan file bukti pembayaran terkait.
+     * - foreach + $invoice->delete() memicu observer tersebut; mass delete tidak.
      *
      * @param  array  $ids  Daftar invoice_number yang akan dihapus
      * @return int  Jumlah record yang dihapus
