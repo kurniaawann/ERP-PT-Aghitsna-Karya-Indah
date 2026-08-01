@@ -234,30 +234,6 @@ window.submitDeleteForm = function () {
 document.addEventListener('DOMContentLoaded', function () {
 
     // ==========================================
-    // PRINT DROPDOWN
-    // ==========================================
-
-    const printDropdownButton = document.getElementById('printDropdownButton');
-    const printDropdownMenu = document.getElementById('printDropdownMenu');
-
-    if (printDropdownButton && printDropdownMenu) {
-        printDropdownButton.addEventListener('click', function (e) {
-            e.stopPropagation();
-            printDropdownMenu.classList.toggle('hidden');
-        });
-
-        document.addEventListener('click', function (e) {
-            if (!printDropdownButton.contains(e.target) && !printDropdownMenu.contains(e.target)) {
-                printDropdownMenu.classList.add('hidden');
-            }
-        });
-
-        printDropdownMenu.addEventListener('click', function (e) {
-            e.stopPropagation();
-        });
-    }
-
-    // ==========================================
     // ADD MODAL SETUP
     // ==========================================
 
