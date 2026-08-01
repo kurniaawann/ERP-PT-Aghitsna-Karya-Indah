@@ -3,7 +3,6 @@
 namespace App\Services\Inventory;
 
 use App\Models\Inventory\Items;
-use App\Repositories\Inventory\ItemRepository;
 use App\Services\InputNormalizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,10 +23,6 @@ use Illuminate\Support\Facades\Log;
  */
 class ItemService
 {
-    public function __construct(
-        private readonly ItemRepository $repository
-    ) {}
-
     /**
      * Mendapatkan daftar barang dengan paginasi dan pencarian.
      *
@@ -36,7 +31,10 @@ class ItemService
      */
     public function getPaginatedSearch(?string $search): LengthAwarePaginator
     {
-        return $this->repository->search($search);
+        return Items::query()
+            ->search($search)
+            ->orderBy('id_item', 'desc')
+            ->paginate(15);
     }
 
     /**
@@ -53,11 +51,11 @@ class ItemService
             return Cache::remember(
                 'inventory:items:all',
                 now()->addDay(),
-                fn () => $this->repository->getAllOrderedById()
+                fn () => Items::orderBy('id_item', 'asc')->get()
             );
         } catch (\Exception $e) {
             Log::warning('Cache READ error [inventory:items:all]: ' . $e->getMessage());
-            return $this->repository->getAllOrderedById();
+            return Items::orderBy('id_item', 'asc')->get();
         }
     }
 
@@ -83,7 +81,7 @@ class ItemService
      */
     public function findById(string $idItem): ?Items
     {
-        return $this->repository->findById($idItem);
+        return Items::where('id_item', $idItem)->first();
     }
 
     /**
@@ -94,7 +92,7 @@ class ItemService
      */
     public function store(array $data): Items
     {
-        return $this->repository->create([
+        return Items::create([
             'id_item' => $this->generateNextId(),
             'name_item' => $data['name_item'],
             'quantity' => $data['quantity'],
@@ -112,7 +110,7 @@ class ItemService
      */
     public function update(Items $item, array $data): bool
     {
-        return $this->repository->update($item, [
+        return $item->update([
             'name_item' => $data['name_item'],
             'quantity' => $data['quantity'],
             'capital_price' => InputNormalizer::normalizeCurrency($data['capital_price']),
