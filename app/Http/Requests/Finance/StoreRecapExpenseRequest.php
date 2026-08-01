@@ -41,16 +41,16 @@ class StoreRecapExpenseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'transaction_category_id.required' => 'Kategori pengeluaran tidak boleh kosong!',
+            'transaction_category_id.required' => 'Kategori tidak boleh kosong!',
             'transaction_category_id.integer' => 'Format kategori tidak valid!',
             'transaction_category_id.exists' => 'Kategori yang dipilih tidak ditemukan!',
             'transaction_date.required' => 'Tanggal tidak boleh kosong!',
             'transaction_date.date' => 'Format tanggal tidak valid!',
             'description.required' => 'Keterangan tidak boleh kosong!',
             'description.max' => 'Keterangan maksimal 1000 karakter!',
-            'expense_amount.required' => 'Jumlah pengeluaran tidak boleh kosong!',
-            'expense_amount.numeric' => 'Jumlah pengeluaran harus berupa angka!',
-            'expense_amount.min' => 'Jumlah pengeluaran tidak boleh negatif!',
+            'expense_amount.required' => 'Jumlah tidak boleh kosong!',
+            'expense_amount.numeric' => 'Jumlah harus berupa angka!',
+            'expense_amount.min' => 'Jumlah tidak boleh negatif!',
             'invoice_number.max' => 'Nomor faktur maksimal 100 karakter!',
             'money_source.max' => 'Sumber uang maksimal 255 karakter!',
         ];

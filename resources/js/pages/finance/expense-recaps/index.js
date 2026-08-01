@@ -26,6 +26,36 @@ function formatCurrencyInput(input) {
 }
 window.formatCurrencyInput = formatCurrencyInput;
 
+// ============================================================
+// KATEGORI INCOME vs EXPENSE — LABEL & NOMOR FAKTUR
+// ============================================================
+
+/**
+ * Sinkronkan form (tambah/edit) berdasarkan tipe kategori terpilih.
+ * - INCOME: label "Jumlah Pemasukan", bagian No. Faktur disembunyikan (di-generate otomatis).
+ * - EXPENSE: label "Jumlah Pengeluaran", bagian No. Faktur ditampilkan.
+ * @param {HTMLFormElement} form
+ */
+function syncCategoryFields(form) {
+    const select = form.querySelector('select[name="transaction_category_id"]');
+    if (!select) return;
+
+    const selected = select.options[select.selectedIndex];
+    const isIncome = selected && selected.dataset.type === 'INCOME';
+
+    const amountLabel = form.querySelector('.amount-label');
+    const invoiceSection = form.querySelector('.invoice-section');
+
+    if (amountLabel) {
+        amountLabel.innerHTML = (isIncome ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran') +
+            ' <span class="text-error">*</span>';
+    }
+    if (invoiceSection) {
+        invoiceSection.classList.toggle('hidden', isIncome);
+    }
+}
+window.syncCategoryFields = syncCategoryFields;
+
 /**
  * Submit bulk delete form dengan loading indicator.
  */
@@ -49,6 +79,20 @@ window.submitDeleteForm = submitDeleteForm;
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
+
+    // ============================================================
+    // KATEGORI INCOME vs EXPENSE — SINKRON LABEL FORM
+    // ============================================================
+
+    document.querySelectorAll('#addModal form, [id^="editModal-"] form').forEach(function (form) {
+        const select = form.querySelector('select[name="transaction_category_id"]');
+        if (select) {
+            syncCategoryFields(form);
+            select.addEventListener('change', function () {
+                syncCategoryFields(form);
+            });
+        }
+    });
 
     // ============================================================
     // CHECKBOX PILIH SEMUA

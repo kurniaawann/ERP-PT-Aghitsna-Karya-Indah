@@ -4,13 +4,13 @@
 
     {{-- Kategori Pengeluaran --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kategori Pengeluaran <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Kategori <span class="text-error">*</span></label>
         <select name="transaction_category_id" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Kategori pengeluaran tidak boleh kosong')"
+            oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
             <option value="">-- Pilih Kategori --</option>
-            @foreach ($categories->where('type', 'EXPENSE') as $cat)
-                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+            @foreach ($categories as $cat)
+                <option value="{{ $cat->id }}" data-type="{{ $cat->type }}">{{ $cat->name }}</option>
             @endforeach
         </select>
     </div>
@@ -30,21 +30,22 @@
             oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
-    {{-- Jumlah Pengeluaran --}}
+    {{-- Jumlah --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jumlah Pengeluaran <span class="text-error">*</span></label>
+        <label class="amount-label block text-text-primary mb-1">Jumlah Pengeluaran <span
+                class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="expense_amount"
             class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000" required min="0"
-            oninvalid="this.setCustomValidity('Jumlah pengeluaran tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+            oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
     {{-- Nomor Faktur --}}
-    <div class="mb-3">
+    <div class="invoice-section mb-3">
         <label class="block text-text-primary mb-1">No. Faktur (Opsional)</label>
-        <input type="text" name="invoice_number" class="w-full border rounded p-2" placeholder="Contoh: INV-001"
-            maxlength="100">
-        <p class="text-xs text-text-secondary mt-1">Khusus pengeluaran. Untuk pemasukan, nomor faktur di-generate otomatis.</p>
+        <input type="text" name="invoice_number" class="w-full border rounded p-2"
+            placeholder="Contoh: INV-001" maxlength="100">
+        <p class="invoice-note text-xs text-text-secondary mt-1">Khusus pengeluaran. Untuk pemasukan, nomor faktur
+            di-generate otomatis.</p>
     </div>
 
     {{-- Sumber Uang --}}

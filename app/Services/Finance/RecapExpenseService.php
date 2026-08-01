@@ -155,6 +155,12 @@ class RecapExpenseService
     /**
      * Mengupdate rekap pengeluaran yang sudah ada.
      *
+     * Logika INCOME vs EXPENSE (ditentukan dari tipe kategori transaksi):
+     * - Kategori INCOME: expense_amount dipindah ke income_amount, dan jika record
+     *   sebelumnya bukan pemasukan maka invoice_number digenerate (format
+     *   {333+n}/{590+n}/div.produksi/{146+n}).
+     * - Kategori selain INCOME (EXPENSE): income_amount null, expense_amount dipakai.
+     *
      * @param  \App\Models\Report\ExpenseRecap $expenseRecap  Model yang akan diupdate
      * @param  array<string, mixed>            $data          Data yang sudah validasi dari FormRequest
      * @return bool
@@ -167,7 +173,20 @@ class RecapExpenseService
             throw new \RuntimeException('Data yang auto-generated dari sales report tidak dapat diubah!');
         }
 
-        $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
+        $category = TransactionCategory::find($data['transaction_category_id']);
+        $amount = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
+
+        if ($category && $category->type === 'INCOME') {
+            $data['income_amount'] = $amount;
+            $data['expense_amount'] = null;
+
+            if ($expenseRecap->income_amount === null) {
+                $data['invoice_number'] = $this->generateIncomeInvoiceNumber();
+            }
+        } else {
+            $data['income_amount'] = null;
+            $data['expense_amount'] = $amount;
+        }
 
         return $expenseRecap->update($data);
     }
