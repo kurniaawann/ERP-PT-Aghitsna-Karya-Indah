@@ -370,7 +370,7 @@
                 <td>
                     <div>KAB. KEUANGAN</div>
                     <div class="signature-space"></div>
-                    <div>( KAMILA )</div>
+                    <div>( Kamila,AMK )</div>
                 </td>
                 <td>
                     <div>MENGETAHUI,<br>DIREKTUR PT. AGHITSNA KARYA INDAH</div>

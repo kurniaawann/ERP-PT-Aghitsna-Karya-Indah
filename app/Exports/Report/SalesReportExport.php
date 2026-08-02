@@ -133,7 +133,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             'faktur' => '( A. KHAIDIR )',
             'item' => '',
             'qty' => '',
-            'harga_modal' => '( KAMILA )',
+            'harga_modal' => '( Kamila,AMK )',
             'harga_jual' => '',
             'jumlah' => '',
             'total' => '( Zulkarnain,ST.,MT )',
@@ -308,7 +308,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             }
 
             $cellF = $sheet->getCell('F' . $row)->getValue();
-            if (in_array($cellF, ['KAB. KEUANGAN', '( KAMILA )'])) {
+            if (in_array($cellF, ['KAB. KEUANGAN', '( Kamila,AMK )'])) {
                 $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
                     'font' => ['bold' => true],

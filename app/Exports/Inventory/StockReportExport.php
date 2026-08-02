@@ -118,7 +118,7 @@ class StockReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             'stock_out' => '',
             'returns' => '',
             'ending_stock' => '',
-            'capital_price' => '( KAMILA )',
+            'capital_price' => '( Kamila,AMK )',
             'stock_value' => '( Zulkarnain,ST.,MT )',
         ];
 

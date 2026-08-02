@@ -362,7 +362,7 @@
                             <strong>MENGETAHUI,</strong><br>
                             <strong>KABAG.KEUANGAN</strong>
                         </div>
-                        <div class="signature-name">( {{ $cashOut->finance_head ?? 'KAMILA' }} )</div>
+                        <div class="signature-name">( {{ $cashOut->finance_head ?? 'Kamila,AMK' }} )</div>
                     </div>
                     <div class="signature-col">
                         <div class="signature-title">
