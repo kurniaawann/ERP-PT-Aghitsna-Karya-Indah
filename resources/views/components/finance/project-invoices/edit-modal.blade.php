@@ -131,9 +131,14 @@
                     class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
                     placeholder="0"
                     oninput="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
+                <div id="discount-error-edit-{{ $invoice->invoice_number }}"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span>Persentase diskon tidak boleh lebih dari 100%</span>
+                </div>
             </div>
         </div>
-        <div class="mt-2 p-2 bg-surface-base rounded-lg">
+        <div class="mt-2 p-2 bg-surface-base rounded-lg" id="discount-summary-edit-{{ $invoice->invoice_number }}">
             <div class="flex justify-between">
                 <span class="text-sm text-text-label">Discount:</span>
                 <span id="discount-amount-edit-{{ $invoice->invoice_number }}"

@@ -106,7 +106,7 @@
                 </div>
             </div>
         </div>
-        <div class="mt-2 p-2 bg-white rounded">
+        <div class="mt-2 p-2 bg-white rounded hidden" id="discount-summary">
             <div class="flex justify-between">
                 <span class="text-sm text-text-label">Discount:</span>
                 <span id="discount-amount" class="text-sm font-semibold text-red-600">Rp 0</span>

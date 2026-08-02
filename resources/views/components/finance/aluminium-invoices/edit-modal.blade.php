@@ -121,9 +121,14 @@
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
                     oninput="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
+                <div id="discount-error-edit-{{ $invoice->invoice_number }}"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span>Persentase diskon tidak boleh lebih dari 100%</span>
+                </div>
             </div>
         </div>
-        <div class="mt-2 p-2 bg-white rounded">
+        <div class="mt-2 p-2 bg-white rounded" id="discount-summary-edit-{{ $invoice->invoice_number }}">
             <div class="flex justify-between">
                 <span class="text-sm text-text-label">Discount:</span>
                 <span id="discount-amount-edit-{{ $invoice->invoice_number }}"
