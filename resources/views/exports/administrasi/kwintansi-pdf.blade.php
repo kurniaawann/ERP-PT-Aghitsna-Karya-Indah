@@ -27,7 +27,7 @@
          }
 
          .container {
-             border: 2px solid #FF6600;
+             border: 2px solid #000000;
              padding: 6px;
              height: auto;
              position: relative;
@@ -52,7 +52,7 @@
          }
 
          .company-name {
-             color: #FF6600;
+             color: #000000;
              font-size: 12px;
              font-weight: bold;
              margin-bottom: 1px;
@@ -75,7 +75,7 @@
 
          .title {
              text-align: center;
-             color: #FF6600;
+             color: #000000;
              font-size: 16px;
              font-weight: bold;
              letter-spacing: 3px;
@@ -130,7 +130,7 @@
          }
 
          .amount-box {
-             border: 2px solid #FF6600;
+             border: 2px solid #000000;
              padding: 6px;
              margin: 6px 0;
              /* width: 100%; */
@@ -225,7 +225,7 @@
 
          .bank-label {
              font-style: italic;
-             color: #FF6600;
+             color: #000000;
              width: 40px;
              margin-right: 5px;
          }
@@ -256,7 +256,7 @@
              font-size: 7px;
              font-style: italic;
              text-align: center;
-             color: #FF6600;
+             color: #000000;
              padding: 4px;
              border-top: 1px solid #ccc;
          }
@@ -289,7 +289,7 @@
                  <div style="display: flex; flex: 1;">
                      <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
                      <div class="company-info">
-                         <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
+                         {{-- <div class="company-name">PT. AGHITSNA KARYA INDAH</div> --}}
                          <div class="company-details">
                             PT AGHITSNA KARYA INDAH<br>
                             JL. TANAH BARU RAYA PERTIWI RT/01/05
