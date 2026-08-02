@@ -94,12 +94,18 @@
                 <input type="text" inputmode="decimal" name="discount_value" id="discount-value"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="0" oninput="calculateDiscount()">
-                <small class="text-xs text-text-secondary" id="discount-helper">Maksimal 100% untuk persentase. Boleh
+                <small class="text-xs text-text-secondary" id="discount-helper">Tidak boleh 100% atau lebih untuk persentase. Boleh
                     pakai koma, contoh 1,5</small>
                 <div id="discount-error"
                     class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
-                    <span id="discount-error-text">Persentase diskon tidak boleh lebih dari 100%</span>
+                    <span id="discount-error-text">Persentase diskon tidak boleh 100% atau lebih</span>
+                </div>
+                <div id="discount-amount-error"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span id="discount-amount-error-text">Nominal diskon tidak boleh lebih dari atau sama dengan total
+                        invoice</span>
                 </div>
             </div>
         </div>
@@ -132,12 +138,17 @@
                 <input type="text" inputmode="decimal" name="dp_value" id="dp-value"
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="0" oninput="calculateDP()">
-                <small class="text-xs text-text-secondary" id="dp-helper">Maksimal 100% untuk persentase. Boleh pakai
+                <small class="text-xs text-text-secondary" id="dp-helper">Tidak boleh 100% atau lebih untuk persentase. Boleh pakai
                     koma, contoh 1,5</small>
                 <div id="dp-error"
                     class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
-                    <span id="dp-error-text">Persentase DP tidak boleh lebih dari 100%</span>
+                    <span id="dp-error-text">Persentase DP tidak boleh 100% atau lebih</span>
+                </div>
+                <div id="dp-amount-error"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span id="dp-amount-error-text">Nominal DP tidak boleh lebih dari atau sama dengan total</span>
                 </div>
             </div>
         </div>

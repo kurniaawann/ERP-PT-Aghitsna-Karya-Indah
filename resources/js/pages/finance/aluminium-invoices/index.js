@@ -151,15 +151,6 @@ function calculateDiscount() {
         }
     }
 
-    if (discountError) {
-        const isOverLimit = discountType === 'percentage' && discountValue > 100;
-        discountError.classList.toggle('hidden', !isOverLimit);
-    }
-
-    if (discountType === 'percentage' && discountValue > 100) {
-        discountValue = 100;
-    }
-
     let baseTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
         const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
@@ -168,11 +159,28 @@ function calculateDiscount() {
     });
     baseTotal = Math.round(baseTotal);
 
+    const isOverLimitPercent = discountType === 'percentage' && discountValue >= 100;
+    if (discountError) discountError.classList.toggle('hidden', !isOverLimitPercent);
+
+    const isOverLimitAmount = discountType === 'amount'
+        && discountValue > 0
+        && baseTotal > 0
+        && discountValue >= baseTotal;
+    const discountAmountError = document.getElementById('discount-amount-error');
+    if (discountAmountError) discountAmountError.classList.toggle('hidden', !isOverLimitAmount);
+
+    if (discountType === 'percentage' && discountValue >= 100) {
+        discountValue = 100;
+    }
+
     let discountAmount = 0;
     if (discountType && discountValue > 0) {
         discountAmount = discountType === 'percentage'
             ? Math.round((baseTotal * discountValue) / 100)
             : Math.round(discountValue);
+    }
+    if (discountType === 'amount' && discountAmount > baseTotal) {
+        discountAmount = baseTotal;
     }
 
     const totalAfterDiscount = Math.round(baseTotal - discountAmount);
@@ -194,23 +202,13 @@ function calculateDP() {
     const dpValueInput = document.getElementById('dp-value');
     let dpValue = parseDecimalInput(dpValueInput);
     const dpError = document.getElementById('dp-error');
+    const dpAmountError = document.getElementById('dp-amount-error');
 
     if (dpValueInput) {
         if (!dpType) {
             dpValueInput.value = '';
             dpValue = 0;
         }
-    }
-
-    if (dpType === 'percentage' && dpValue > 100) {
-        dpValue = 100;
-        if (dpValueInput) dpValueInput.value = 100;
-        if (dpError) {
-            dpError.classList.remove('hidden');
-            setTimeout(() => dpError.classList.add('hidden'), 3000);
-        }
-    } else {
-        if (dpError) dpError.classList.add('hidden');
     }
 
     let baseTotal = 0;
@@ -231,15 +229,33 @@ function calculateDP() {
             ? Math.round((baseTotal * discountValue) / 100)
             : Math.round(discountValue);
     }
+    if (discountType === 'amount' && discountAmount > baseTotal) {
+        discountAmount = baseTotal;
+    }
 
     const totalAfterDiscount = Math.round(baseTotal - discountAmount);
     const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
+
+    const isOverLimitPercent = dpType === 'percentage' && dpValue >= 100;
+    if (dpError) dpError.classList.toggle('hidden', !isOverLimitPercent);
+    if (dpType === 'percentage' && dpValue >= 100) {
+        dpValue = 100;
+    }
+
+    const isOverLimitAmount = dpType === 'amount'
+        && dpValue > 0
+        && calculationBase > 0
+        && dpValue >= calculationBase;
+    if (dpAmountError) dpAmountError.classList.toggle('hidden', !isOverLimitAmount);
 
     let dpAmount = 0;
     if (dpType && dpValue > 0) {
         dpAmount = dpType === 'percentage'
             ? Math.round((calculationBase * dpValue) / 100)
             : Math.round(dpValue);
+    }
+    if (dpType === 'amount' && dpAmount > calculationBase) {
+        dpAmount = calculationBase;
     }
 
     const dpAmountEl = document.getElementById('dp-amount');
@@ -264,12 +280,8 @@ function calculateDiscountEdit(invoiceNumber) {
 
     const discountError = document.getElementById('discount-error-edit-' + invoiceNumber);
     if (discountError) {
-        const isOverLimit = discountType === 'percentage' && discountValue > 100;
+        const isOverLimit = discountType === 'percentage' && discountValue >= 100;
         discountError.classList.toggle('hidden', !isOverLimit);
-    }
-
-    if (discountType === 'percentage' && discountValue > 100) {
-        discountValue = 100;
     }
 
     const modal = document.getElementById('editModal-' + invoiceNumber);
@@ -283,11 +295,25 @@ function calculateDiscountEdit(invoiceNumber) {
     }
     baseTotal = Math.round(baseTotal);
 
+    const isOverLimitAmount = discountType === 'amount'
+        && discountValue > 0
+        && baseTotal > 0
+        && discountValue >= baseTotal;
+    const discountAmountError = document.getElementById('discount-amount-error-edit-' + invoiceNumber);
+    if (discountAmountError) discountAmountError.classList.toggle('hidden', !isOverLimitAmount);
+
+    if (discountType === 'percentage' && discountValue >= 100) {
+        discountValue = 100;
+    }
+
     let discountAmount = 0;
     if (discountType && discountValue > 0) {
         discountAmount = discountType === 'percentage'
             ? Math.round((baseTotal * discountValue) / 100)
             : Math.round(discountValue);
+    }
+    if (discountType === 'amount' && discountAmount > baseTotal) {
+        discountAmount = baseTotal;
     }
 
     const totalAfterDiscount = Math.round(baseTotal - discountAmount);
@@ -309,17 +335,14 @@ function calculateDPEdit(invoiceNumber) {
     const valueEl = document.getElementById('dp-value-edit-' + invoiceNumber);
     const dpType = typeEl?.value;
     let dpValue = parseDecimalInput(valueEl);
+    const dpError = document.getElementById('dp-error-edit-' + invoiceNumber);
+    const dpAmountError = document.getElementById('dp-amount-error-edit-' + invoiceNumber);
 
     if (valueEl) {
         if (!dpType) {
             valueEl.value = 0;
             dpValue = 0;
         }
-    }
-
-    if (dpType === 'percentage' && dpValue > 100) {
-        dpValue = 100;
-        if (valueEl) valueEl.value = 100;
     }
 
     const modal = document.getElementById('editModal-' + invoiceNumber);
@@ -343,15 +366,33 @@ function calculateDPEdit(invoiceNumber) {
             ? Math.round((baseTotal * discountValue) / 100)
             : Math.round(discountValue);
     }
+    if (discountType === 'amount' && discountAmount > baseTotal) {
+        discountAmount = baseTotal;
+    }
 
     const totalAfterDiscount = Math.round(baseTotal - discountAmount);
     const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
+
+    const isOverLimitPercent = dpType === 'percentage' && dpValue >= 100;
+    if (dpError) dpError.classList.toggle('hidden', !isOverLimitPercent);
+    if (dpType === 'percentage' && dpValue >= 100) {
+        dpValue = 100;
+    }
+
+    const isOverLimitAmount = dpType === 'amount'
+        && dpValue > 0
+        && calculationBase > 0
+        && dpValue >= calculationBase;
+    if (dpAmountError) dpAmountError.classList.toggle('hidden', !isOverLimitAmount);
 
     let dpAmount = 0;
     if (dpType && dpValue > 0) {
         dpAmount = dpType === 'percentage'
             ? Math.round((calculationBase * dpValue) / 100)
             : Math.round(dpValue);
+    }
+    if (dpType === 'amount' && dpAmount > calculationBase) {
+        dpAmount = calculationBase;
     }
 
     const dpAmountEl = document.getElementById('dp-amount-edit-' + invoiceNumber);

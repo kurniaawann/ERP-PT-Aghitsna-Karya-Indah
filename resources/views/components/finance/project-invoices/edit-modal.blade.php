@@ -134,7 +134,12 @@
                 <div id="discount-error-edit-{{ $invoice->invoice_number }}"
                     class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
-                    <span>Persentase diskon tidak boleh lebih dari 100%</span>
+                    <span>Persentase diskon tidak boleh 100% atau lebih</span>
+                </div>
+                <div id="discount-amount-error-edit-{{ $invoice->invoice_number }}"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span>Nominal diskon tidak boleh lebih dari atau sama dengan total invoice</span>
                 </div>
             </div>
         </div>
@@ -175,6 +180,16 @@
                     class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
                     placeholder="0"
                     oninput="calculateDPEdit('{{ $invoice->invoice_number }}')">
+                <div id="dp-error-edit-{{ $invoice->invoice_number }}"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span>Persentase DP tidak boleh 100% atau lebih</span>
+                </div>
+                <div id="dp-amount-error-edit-{{ $invoice->invoice_number }}"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span>Nominal DP tidak boleh lebih dari atau sama dengan total</span>
+                </div>
             </div>
         </div>
         <div class="mt-2 p-2 bg-surface-base rounded-lg">
