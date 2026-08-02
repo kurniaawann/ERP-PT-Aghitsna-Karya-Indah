@@ -276,16 +276,19 @@ class ExpenseReportService
 
         $categoryIds = $results->pluck('transaction_category_id')->unique()->filter();
 
+        $userId = auth()->id();
+        $cacheKey = 'report:category-lookup:' . $userId;
+
         try {
             $allCategories = Cache::remember(
-                'report:expense-categories',
+                $cacheKey,
                 now()->addDay(),
-                fn () => TransactionCategory::query()->get()->keyBy('id')
+                fn () => TransactionCategory::where('created_by', $userId)->get()->keyBy('id')
             );
             $categories = $allCategories->filter(fn ($cat) => $categoryIds->contains($cat->id));
         } catch (\Exception $e) {
-            Log::warning('Cache READ error [report:expense-categories]: ' . $e->getMessage());
-            $categories = TransactionCategory::whereIn('id', $categoryIds)->get()->keyBy('id');
+            Log::warning('Cache READ error [' . $cacheKey . ']: ' . $e->getMessage());
+            $categories = TransactionCategory::where('created_by', $userId)->whereIn('id', $categoryIds)->get()->keyBy('id');
         }
 
         return $results->map(function ($item) use ($categories) {
@@ -362,15 +365,18 @@ class ExpenseReportService
      */
     public function getActiveCategories()
     {
+        $userId = auth()->id();
+        $cacheKey = 'report:expense-categories:' . $userId;
+
         try {
             return Cache::remember(
-                'report:expense-categories',
+                $cacheKey,
                 now()->addDay(),
-                fn () => TransactionCategory::active()->orderBy('sort_order')->get()
+                fn () => TransactionCategory::where('created_by', $userId)->active()->orderBy('sort_order')->get()
             );
         } catch (\Exception $e) {
-            Log::warning('Cache READ error [report:expense-categories]: ' . $e->getMessage());
-            return TransactionCategory::active()->orderBy('sort_order')->get();
+            Log::warning('Cache READ error [' . $cacheKey . ']: ' . $e->getMessage());
+            return TransactionCategory::where('created_by', $userId)->active()->orderBy('sort_order')->get();
         }
     }
 

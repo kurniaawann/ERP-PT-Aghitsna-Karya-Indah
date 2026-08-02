@@ -80,7 +80,7 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
         $currentRow = 5; // Start from row 5 (after header)
 
         // Ambil SEMUA kategori aktif, urut berdasarkan sort_order
-        $allCategories = TransactionCategory::active()->orderBy('sort_order')->get();
+        $allCategories = TransactionCategory::where('created_by', auth()->id())->active()->orderBy('sort_order')->get();
         $expenseRecapsById = $this->expenseRecaps->groupBy('transaction_category_id');
 
         foreach ($allCategories as $category) {
@@ -178,30 +178,30 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
             'no' => '1.',
             'invoice' => '',
             'date' => '',
-            'description' => 'Uang Masuk',
+            'description' => 'UANG MASUK',
             'income' => 'Rp ' . number_format($this->totals->total_income ?? 0, 0, ',', '.'),
             'expense' => '',
-            'money_source' => 'UANG MASUK',
+            // 'money_source' => 'UANG MASUK',
         ];
 
         $data[] = [
             'no' => '2.',
             'invoice' => '',
             'date' => '',
-            'description' => 'Uang Keluar',
+            'description' => 'UANG KELUAR',
             'income' => 'Rp ' . number_format($this->totals->total_expense ?? 0, 0, ',', '.'),
             'expense' => '',
-            'money_source' => 'UANG KELUAR',
+            // 'money_source' => 'UANG KELUAR',
         ];
 
         $data[] = [
             'no' => '',
             'invoice' => '',
             'date' => '',
-            'description' => 'Saldo',
+            'description' => 'SALDO',
             'income' => 'Rp ' . number_format($this->totals->balance ?? 0, 0, ',', '.'),
             'expense' => '',
-            'money_source' => 'SALDO',
+            // 'money_source' => 'SALDO',
         ];
 
         // Empty rows before signatures
@@ -227,12 +227,12 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
         // Signature names
         $data[] = [
             'no' => '',
-            'invoice' => '( A.Khuluqi )',
+            'invoice' => '( AKHMAD KHAIDIR )',
             'date' => '',
             'description' => '',
             'income' => '',
             'expense' => '',
-            'money_source' => '( Zulkarnaen, ST )',
+            'money_source' => '( Zulkarnaen,ST.,MT )',
         ];
 
         return collect($data);
@@ -304,7 +304,7 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
         $lastDataRow = $highestRow;
         for ($row = 5; $row <= $highestRow; $row++) {
             $cellD = $sheet->getCell('D' . $row)->getValue();
-            if ($cellD === 'Saldo') {
+            if ($cellD === 'SALDO') {
                 $lastDataRow = $row;
                 break;
             }
@@ -443,14 +443,14 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                     }
 
                     // Rekapitulasi detail rows (1., 2., Saldo)
-                    if (in_array($cellA, ['1.', '2.', '']) && in_array($cellD, ['Uang Masuk', 'Uang Keluar', 'Saldo'])) {
+                    if (in_array($cellA, ['1.', '2.', '']) && in_array($cellD, ['UANG MASUK', 'UANG KELUAR', 'SALDO'])) {
                         $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_NONE],
                             ],
                         ]);
                         $sheet->getStyle('D' . $row)->applyFromArray([
-                            'font' => ['bold' => $cellD === 'Saldo'],
+                            'font' => ['bold' => $cellD === 'SALDO'],
                         ]);
                         $sheet->getStyle('E' . $row)->applyFromArray([
                             'font' => ['bold' => true],
@@ -474,8 +474,8 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                         ]);
                     }
 
-                    // Signature names (A.Khuluqi, Zulkarnaen)
-                    if ($cellB === '( A.Khuluqi )' || $cellG === '( Zulkarnaen, ST )') {
+                    // Signature names (AKHMAD KHAIDIR, Zulkarnaen)
+                    if ($cellB === '( AKHMAD KHAIDIR )' || $cellG === '( Zulkarnaen,ST.,MT )') {
                         $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_NONE],
@@ -493,7 +493,7 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                             $prevCellB = $sheet->getCell('B' . $prevRow)->getValue();
 
                             // If previous row has Saldo or is signature-related, remove border
-                            if ($prevCellD === 'Saldo' || $prevCellB === 'Dibuat / Diperiksa' || strpos($prevCellB, 'Khuluqi') !== false) {
+                            if ($prevCellD === 'SALDO' || $prevCellB === 'Dibuat / Diperiksa' || strpos($prevCellB, 'KHAIDIR') !== false) {
                                 $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                                     'borders' => [
                                         'allBorders' => ['borderStyle' => Border::BORDER_NONE],

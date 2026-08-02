@@ -38,7 +38,7 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
         $no = 1;
         $currentRow = self::DATA_START_ROW;
 
-        $allCategories = TransactionCategory::active()->orderBy('sort_order')->get();
+        $allCategories = TransactionCategory::where('created_by', auth()->id())->active()->orderBy('sort_order')->get();
         $expenseRecapsById = $this->expenseRecaps->groupBy('transaction_category_id');
 
         foreach ($allCategories as $category) {
@@ -155,30 +155,30 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
             'no' => '1.',
             'invoice' => '',
             'date' => '',
-            'description' => 'Uang Masuk',
+            'description' => 'UANG MASUK',
             'income' => 'Rp ' . number_format($this->totals->total_income, 0, ',', '.'),
             'expense' => '',
-            'money_source' => 'UANG MASUK',
+            'money_source' => '',
         ];
 
         $data[] = [
             'no' => '2.',
             'invoice' => '',
             'date' => '',
-            'description' => 'Uang Keluar',
+            'description' => 'UANG KELUAR',
             'income' => 'Rp ' . number_format($this->totals->total_expense, 0, ',', '.'),
             'expense' => '',
-            'money_source' => 'UANG KELUAR',
+            'money_source' => '',
         ];
 
         $data[] = [
             'no' => '',
             'invoice' => '',
             'date' => '',
-            'description' => 'Saldo',
+            'description' => 'SALDO',
             'income' => 'Rp ' . number_format($this->totals->balance, 0, ',', '.'),
             'expense' => '',
-            'money_source' => 'SALDO',
+            'money_source' => '',
         ];
 
         // Empty rows before signatures
@@ -209,7 +209,7 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
             'description' => '',
             'income' => '',
             'expense' => '',
-            'money_source' => '( ZULKARNAIN, ST )',
+            'money_source' => '( ZULKARNAEN, ST )',
         ];
 
         return collect($data);
@@ -426,12 +426,12 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
             }
 
             // Rekapitulasi detail rows
-            if (in_array($cellD, ['Uang Masuk', 'Uang Keluar', 'Saldo'])) {
+            if (in_array($cellD, ['UANG MASUK', 'UANG KELUAR', 'SALDO'])) {
                 $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
                 ]);
                 $sheet->getStyle('D' . $row)->applyFromArray([
-                    'font' => ['bold' => $cellD === 'Saldo'],
+                    'font' => ['bold' => $cellD === 'SALDO'],
                 ]);
                 $sheet->getStyle('E' . $row)->applyFromArray([
                     'font' => ['bold' => true],
@@ -451,7 +451,7 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
             }
 
             // Signature names
-            if ($cellB === '( A. KHAIDIR )' || ($cellG ?? '') === '( ZULKARNAIN, ST )') {
+            if ($cellB === '( A. KHAIDIR )' || ($cellG ?? '') === '( ZULKARNAEN, ST )') {
                 $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
@@ -465,7 +465,7 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
                     $prevCellD = $sheet->getCell('D' . $prevRow)->getValue();
                     $prevCellB = $sheet->getCell('B' . $prevRow)->getValue();
 
-                    if ($prevCellD === 'Saldo' || $prevCellB === 'DIBUAT/DIPERIKSA' || strpos($prevCellB ?? '', 'KHAIDIR') !== false) {
+                    if ($prevCellD === 'SALDO' || $prevCellB === 'DIBUAT/DIPERIKSA' || strpos($prevCellB ?? '', 'KHAIDIR') !== false) {
                         $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
                         ]);

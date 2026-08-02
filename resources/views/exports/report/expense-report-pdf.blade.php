@@ -221,7 +221,7 @@
         <tbody>
             @php
                 $no = 1;
-                $allCategories = \App\Models\Report\TransactionCategory::active()->orderBy('sort_order')->get();
+                $allCategories = \App\Models\Report\TransactionCategory::where('created_by', auth()->id())->active()->orderBy('sort_order')->get();
                 $expenseRecapsById = $expenseRecaps->groupBy('transaction_category_id');
             @endphp
 
@@ -337,27 +337,24 @@
         <table>
             <tr>
                 <td style="width: 30px;">1.</td>
-                <td>Uang Masuk</td>
+                <td>UANG MASUK</td>
                 <td style="text-align: right;">
                     <strong>Rp {{ number_format($totals->total_income, 0, ',', '.') }}</strong>
                 </td>
-                <td style="padding-left: 20px;"><strong>UANG MASUK</strong></td>
             </tr>
             <tr>
                 <td>2.</td>
-                <td>Uang Keluar</td>
+                <td>UANG KELUAR</td>
                 <td style="text-align: right;">
                     <strong>Rp {{ number_format($totals->total_expense, 0, ',', '.') }}</strong>
                 </td>
-                <td style="padding-left: 20px;"><strong>UANG KELUAR</strong></td>
             </tr>
             <tr>
                 <td></td>
-                <td><strong>Saldo</strong></td>
+                <td><strong>SALDO</strong></td>
                 <td style="text-align: right;">
                     <strong>Rp {{ number_format($totals->balance, 0, ',', '.') }}</strong>
                 </td>
-                <td style="padding-left: 20px;"><strong>SALDO</strong></td>
             </tr>
         </table>
     </div>
@@ -378,7 +375,7 @@
                 <td>
                     <div>MENGETAHUI,<br>DIREKTUR PT. AGHITSNA KARYA INDAH</div>
                     <div class="signature-space"></div>
-                    <div>( ZULKARNAIN,S.T )</div>
+                    <div>( ZULKARNAEN, ST )</div>
                 </td>
             </tr>
         </table>

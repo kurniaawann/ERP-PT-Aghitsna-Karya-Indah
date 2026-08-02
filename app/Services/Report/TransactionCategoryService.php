@@ -95,20 +95,24 @@ class TransactionCategoryService
     /**
      * Invalidate semua cache kategori transaksi.
      *
-     * CATATAN: menghapus 4 key sekaligus — key milik modul Report
-     * (expense-categories, category-codes, category-used-ids) dan key milik
-     * modul Finance (finance:expense-categories). Wajib dipanggil di setiap
-     * operasi CRUD kategori agar semua modul tidak menyajikan data basi.
+     * CATATAN: menghapus key per-user milik modul Report
+     * (expense-categories, category-lookup) plus key global
+     * (category-codes, category-used-ids) dan key per-user milik modul Finance
+     * (finance:expense-categories). Wajib dipanggil di setiap operasi CRUD
+     * kategori agar semua modul tidak menyajikan data basi.
      *
      * @return void
      */
     public function flushCache(): void
     {
+        $userId = auth()->id();
+
         try {
-            Cache::forget('report:expense-categories');
+            Cache::forget('report:expense-categories:' . $userId);
+            Cache::forget('report:category-lookup:' . $userId);
             Cache::forget('report:category-codes');
             Cache::forget('report:category-used-ids');
-            Cache::forget('finance:expense-categories');
+            Cache::forget('finance:expense-categories:' . $userId);
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [report:categories]: ' . $e->getMessage());
         }

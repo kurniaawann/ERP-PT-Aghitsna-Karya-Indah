@@ -91,6 +91,7 @@
 
         .category-row .category-header {
             background-color: #A9D08E;
+            text-align: center;
         }
 
         .category-row .empty-cell {
@@ -205,7 +206,7 @@
         <tbody>
             @php
                 $no = 1;
-                $allCategories = \App\Models\Report\TransactionCategory::active()->orderBy('sort_order')->get();
+                $allCategories = \App\Models\Report\TransactionCategory::where('created_by', auth()->id())->active()->orderBy('sort_order')->get();
                 $expenseRecapsById = $expenseRecaps->groupBy('transaction_category_id');
             @endphp
 
@@ -295,27 +296,24 @@
         <table style="border: none; width: 50%;">
             <tr style="border: none;">
                 <td style="border: none; width: 30px;">1.</td>
-                <td style="border: none;">Uang Masuk</td>
+                <td style="border: none;">UANG MASUK</td>
                 <td style="border: none; text-align: right;">
                     <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
                 </td>
-                <td style="border: none; padding-left: 20px;"><strong>UANG MASUK</strong></td>
             </tr>
             <tr style="border: none;">
                 <td style="border: none;">2.</td>
-                <td style="border: none;">Uang Keluar</td>
+                <td style="border: none;">UANG KELUAR</td>
                 <td style="border: none; text-align: right;">
                     <strong>Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</strong>
                 </td>
-                <td style="border: none; padding-left: 20px;"><strong>UANG KELUAR</strong></td>
             </tr>
             <tr style="border: none;">
                 <td style="border: none;"></td>
-                <td style="border: none;"><strong>Saldo</strong></td>
+                <td style="border: none;"><strong>SALDO</strong></td>
                 <td style="border: none; text-align: right;">
                     <strong>Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}</strong>
                 </td>
-                <td style="border: none; padding-left: 20px;"><strong>SALDO</strong></td>
             </tr>
         </table>
     </div>
@@ -334,7 +332,7 @@
                 </td>
                 <td>
                     <div>Direktur PT. Aghitsna</div>
-                    <div class="signature-line">( Zulkarnain,ST.,MT )</div>
+                    <div class="signature-line">( Zulkarnaen,ST.,MT )</div>
                 </td>
             </tr>
         </table>

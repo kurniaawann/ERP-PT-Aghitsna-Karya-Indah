@@ -290,15 +290,24 @@ class RecapExpenseService
      */
     public function getExpenseCategories()
     {
+        $userId = auth()->id();
+        $cacheKey = 'finance:expense-categories:' . $userId;
+
         try {
             return Cache::remember(
-                'finance:expense-categories',
+                $cacheKey,
                 now()->addDay(),
-                fn () => TransactionCategory::active()->orderBy('sort_order')->get()
+                fn () => TransactionCategory::where('created_by', $userId)
+                    ->active()
+                    ->orderBy('sort_order')
+                    ->get()
             );
         } catch (\Exception $e) {
-            Log::warning('Cache READ error [finance:expense-categories]: ' . $e->getMessage());
-            return TransactionCategory::active()->orderBy('sort_order')->get();
+            Log::warning('Cache READ error [' . $cacheKey . ']: ' . $e->getMessage());
+            return TransactionCategory::where('created_by', $userId)
+                ->active()
+                ->orderBy('sort_order')
+                ->get();
         }
     }
 
