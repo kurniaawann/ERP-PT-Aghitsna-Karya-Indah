@@ -1,244 +1,246 @@
-{{-- =====================================================================
-     Template PDF Surat Jalan (Delivery Note)
-
-     Template ini digunakan oleh DomPDF untuk menghasilkan file PDF
-     surat jalan. Mendukung multiple delivery notes dengan page break.
-
-     Struktur dokumen:
-     - Header: Nama perusahaan
-     - Judul: SURAT JALAN
-     - Info Dokumen: No. Dokumen, Tanggal, Total
-     - Pengirim & Penerima
-     - Deskripsi
-     - Tabel Barang
-     - Info Pengiriman: Sopir, Kendaraan
-     - Catatan Tambahan
-     - Tanda Tangan: Pengirim & Penerima
-     ===================================================================== --}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Surat Jalan - PT. Aghitsna Karya Indah</title>
     <style>
-        /* @page {
+        @page {
             size: A4;
-            margin: 1.5cm;
-        } */
-        /* @page {
-
-            margin: 20mm 15mm;
+            margin: 0.8cm 1cm;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        } */
+        }
 
         body {
-            font-family: 'Arial', sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
-            color: #333;
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 10px;
+            line-height: 1.3;
+            color: #111;
+            background: #fff;
         }
 
         .page {
-            width: 100%;
-            /* min-height: 100vh;
-            margin-bottom: 20px; */
+            /* width: 100%;
+            padding: 0; */
+            margin: 20px;
         }
 
         .page-break {
             page-break-after: always;
         }
 
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #000;
+        /* TABLE LAYOUT FIXED AGAR SEJAJAR 100% */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
         }
 
-        .company-name {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 3px;
+        /* HEADER SECTION */
+        .header-table {
+            margin-bottom: 12px;
+        }
+
+        .header-table td {
+            /* border-bottom: 2px solid #000; */
+            padding-bottom: 8px;
+        }
+
+        /* Kolom Kiri: Logo */
+        .header-col-left {
+            width: 30%;
+            vertical-align: middle;
+            text-align: left;
+        }
+
+        .company-logo {
+            max-width: 150px;
+            height: auto;
+            display: block;
+        }
+
+        /* Kolom Tengah: Judul Surat Jalan */
+        .header-col-center {
+            width: 35%;
+            vertical-align: middle;
+            text-align: center;
         }
 
         .document-title {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 12px 0 8px 0;
-            text-align: center;
-            border-bottom: 1px solid #000;
-            padding: 4px 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
-        /* Document Info */
-        .doc-info {
-            display: table;
-            width: 100%;
-            margin-bottom: 15px;
-            font-size: 10px;
-        }
-
-        .doc-info-left {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-
-        .doc-info-right {
-            display: table-cell;
-            width: 50%;
+        /* Kolom Kanan: Detail Info Dokumen */
+        .header-col-right {
+            width: 35%;
+            vertical-align: middle;
             text-align: right;
-            vertical-align: top;
         }
 
-        .info-row {
-            display: flex;
-            margin-bottom: 3px;
-        }
-
-        .info-label {
-            width: 100px;
-            font-weight: bold;
-        }
-
-        .info-value {
-            flex: 1;
-        }
-
-        /* Shipper & Receiver */
-        .parties {
-            display: table;
+        .meta-table {
             width: 100%;
-            margin-bottom: 15px;
+            border-collapse: collapse;
         }
 
-        .party {
-            display: table-cell;
-            width: 50%;
-            padding-right: 10px;
-            font-size: 10px;
+        .meta-table td {
+            padding: 1.5px 0;
+            font-size: 9.5px;
             vertical-align: top;
+            border-bottom: none;
+        }
+
+        .meta-label {
+            font-weight: bold;
+            width: 48%;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .meta-value {
+            width: 52%;
+            text-align: left;
+            padding-left: 2px;
+        }
+
+        /* PARTIES SECTION (DARI & KEPADA) */
+        .parties-table {
+            margin-bottom: 12px;
+        }
+
+        .party-box {
+            vertical-align: top;
+            width: 50%;
+            padding: 8px;
+            border: 1px solid #000;
+            background-color: #fafafa;
+        }
+
+        .party-box.left {
+            border-right: none;
         }
 
         .party-title {
+            font-size: 9px;
             font-weight: bold;
-            border-bottom: 1px solid #000;
-            margin-bottom: 5px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #ccc;
             padding-bottom: 3px;
+            margin-bottom: 5px;
+            color: #333;
         }
 
-        .party-content {
-            line-height: 1.5;
+        .party-name {
+            font-size: 10.5px;
+            font-weight: bold;
+            margin-bottom: 2px;
         }
 
-        /* Items Table */
-        .items-table {
+        .party-address {
+            font-size: 9.5px;
+            line-height: 1.35;
+        }
+
+        /* DESKRIPSI (TANPA BORDER) */
+        .description-box {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            font-size: 10px;
+            border: none;
+            padding: 4px 0;
+            margin-bottom: 8px;
+            font-size: 9.5px;
+            background-color: transparent;
         }
 
-        .items-table thead {
-            background-color: #f5f5f5;
+        /* ITEMS TABLE */
+        .items-table {
+            margin-bottom: 12px;
         }
 
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 6px 8px;
-            text-align: left;
+            padding: 6px 7px;
+            font-size: 9.5px;
+            vertical-align: middle;
         }
 
         .items-table th {
+            background-color: #f0f0f0;
             font-weight: bold;
             text-align: center;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.5px;
         }
 
-        .items-table td:nth-child(1),
-        .items-table td:nth-child(4) {
-            text-align: center;
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+
+        .item-row {
+            height: 24px;
         }
 
-        .items-table td:nth-child(3) {
-            text-align: right;
-        }
-
-        .items-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        /* Notes Section */
-        .notes-section {
+        /* CATATAN TAMBAHAN */
+        .info-section {
             margin-bottom: 15px;
-            font-size: 10px;
         }
 
-        .notes-title {
+        .info-cell {
+            vertical-align: top;
+            width: 100%;
+            font-size: 9px;
+        }
+
+        .info-title {
             font-weight: bold;
             margin-bottom: 3px;
         }
 
-        .notes-content {
-            border: 1px solid #ccc;
-            padding: 5px;
-            background-color: #fafafa;
-            line-height: 1.4;
+        .info-content {
+            border: 1px dashed #777;
+            padding: 6px;
+            background-color: #fff;
+            line-height: 1.35;
         }
 
-        /* Signature Section */
-        .signature-section {
-            display: table;
-            width: 100%;
-            margin-top: 30px;
+        /* SIGNATURE SECTION (TANPA GARIS DI ATAS) */
+        .signature-table {
+            margin-top: 15px;
+        }
+
+        .signature-cell {
+            vertical-align: top;
+            width: 50%;
+            text-align: center;
             font-size: 10px;
         }
 
-        /* .signature-col {
-            display: table-cell;
-            width: 33.33%;
-            text-align: center;
-            padding: 0 10px;
-            vertical-align: top;
-        } */
-
-        .signature-col {
-            display: table-cell;
-            width: 50%;
-            text-align: center;
-            padding: 0 20px;
-            vertical-align: top;
-        }
-
-        .signature-col strong {
-            display: block;
-            margin-top: 30px;
-            border-top: 1px solid #000;
-            padding-top: 3px;
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 55px;
         }
 
         .signature-line {
-            margin-top: 80px;
-            border-top: 1px solid #000;
-            padding-top: 3px;
+            font-weight: bold;
+            display: inline-block;
         }
 
-        /* Footer */
+        /* FOOTER */
         .footer {
+            margin-top: 15px;
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
             color: #666;
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1px solid #ccc;
+            border-top: 1px solid #ddd;
+            padding-top: 4px;
         }
     </style>
 </head>
@@ -246,127 +248,139 @@
 <body>
     @foreach ($deliveryNotes as $deliveryNote)
         <div class="page @if (!$loop->last) page-break @endif">
-            {{-- Header --}}
-            <div class="header">
-                <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
-            </div>
+            
+            {{-- HEADER SECTION --}}
+            <table class="header-table">
+                <tr>
+                    <!-- KIRI: Logo Saja -->
+                    <td class="header-col-left">
+                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="company-logo">
+                    </td>
 
-            {{-- Document Title --}}
-            <div class="document-title">SURAT JALAN</div>
+                    <!-- TENGAH: Judul Dokumen -->
+                    <td class="header-col-center">
+                        <div class="document-title">SURAT JALAN</div>
+                    </td>
 
-            {{-- Document Info --}}
-            <div class="doc-info">
-                <div class="doc-info-left">
-                    <div class="info-row">
-                        <span class="info-label">No. Dokumen</span>
-                        <span class="info-value">: {{ $deliveryNote->id_delivery_note }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Nomor Dokumen</span>
-                        <span class="info-value">: {{ $deliveryNote->document_number }}</span>
-                    </div>
-                </div>
-                <div class="doc-info-right">
-                    <div class="info-row">
-                        <span class="info-label">Tanggal</span>
-                        <span class="info-value">:
-                            {{ \Carbon\Carbon::parse($deliveryNote->delivery_date)->format('d-m-Y') }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Total Jumlah</span>
-                        <span class="info-value">: {{ $deliveryNote->total_quantity }}</span>
-                    </div>
-                </div>
-            </div>
+                    <!-- KANAN: Detail Informasi -->
+                    <td class="header-col-right">
+                        <table class="meta-table">
+                            <tr>
+                                <td class="meta-label">No. Surat Jalan</td>
+                                <td class="meta-value">: {{ $deliveryNote->document_number ?? $deliveryNote->id_delivery_note }}</td>
+                            </tr>
+                            <tr>
+                                <td class="meta-label">Tanggal</td>
+                                <td class="meta-value">: {{ \Carbon\Carbon::parse($deliveryNote->delivery_date)->format('d F Y') }}</td>
+                            </tr>
+                            @if ($deliveryNote->vehicle_number)
+                            <tr>
+                                <td class="meta-label">No. Kendaraan</td>
+                                <td class="meta-value">: {{ $deliveryNote->vehicle_number }}</td>
+                            </tr>
+                            @endif
+                            @if ($deliveryNote->driver_name)
+                            <tr>
+                                <td class="meta-label">Sopir</td>
+                                <td class="meta-value">: {{ $deliveryNote->driver_name }}</td>
+                            </tr>
+                            @endif
+                        </table>
+                    </td>
+                </tr>
+            </table>
 
-            {{-- Shipper & Receiver --}}
-            <div class="parties">
-                <div class="party">
-                    <div class="party-title">DARI (Pengirim)</div>
-                    <div class="party-content">
-                        <div><strong>{{ $deliveryNote->shipper_name }}</strong></div>
-                        <div>{{ $deliveryNote->shipper_address }}</div>
-                    </div>
-                </div>
-                <div class="party">
-                    <div class="party-title">KEPADA (Penerima)</div>
-                    <div class="party-content">
-                        <div><strong>{{ $deliveryNote->receiver_name }}</strong></div>
-                        <div>{{ $deliveryNote->receiver_address }}</div>
-                    </div>
-                </div>
-            </div>
+            {{-- SHIPPER & RECEIVER SECTION --}}
+            <table class="parties-table">
+                <tr>
+                    <td class="party-box left">
+                        <div class="party-title">DARI (Pengirim)</div>
+                        <div class="party-name">{{ $deliveryNote->shipper_name }}</div>
+                        <div class="party-address">{{ $deliveryNote->shipper_address }}</div>
+                    </td>
+                    <td class="party-box">
+                        <div class="party-title">KEPADA YTH (Penerima)</div>
+                        <div class="party-name">{{ $deliveryNote->receiver_name }}</div>
+                        <div class="party-address">{{ $deliveryNote->receiver_address }}</div>
+                    </td>
+                </tr>
+            </table>
 
-            {{-- Description --}}
+            {{-- DESKRIPSI (TANPA BORDER) --}}
             @if ($deliveryNote->description)
-                <div class="notes-section">
-                    <div class="notes-title">Deskripsi:</div>
-                    <div class="notes-content">{{ $deliveryNote->description }}</div>
+                <div class="description-box">
+                    <strong>Deskripsi:</strong> {{ $deliveryNote->description }}
                 </div>
             @endif
 
-            {{-- Items Table --}}
+            {{-- TABEL BARANG --}}
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width: 5%;">No</th>
-                        <th style="width: 40%;">Nama Barang</th>
-                        <th style="width: 15%;">Jumlah</th>
-                        <th style="width: 15%;">Satuan</th>
-                        <th style="width: 25%;">Catatan</th>
+                        <th style="width: 6%;">NO</th>
+                        <th style="width: 48%;">NAMA BARANG / DESKRIPSI</th>
+                        <th style="width: 12%;">JUMLAH</th>
+                        <th style="width: 12%;">SATUAN</th>
+                        <th style="width: 22%;">CATATAN</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($deliveryNote->items as $item)
-                        <tr>
-                            <td>{{ $item['no'] }}</td>
+                        <tr class="item-row">
+                            <td class="text-center">{{ $item['no'] ?? $loop->iteration }}</td>
                             <td>{{ data_get($item, 'item_name', data_get($item, 'name', '-')) }}</td>
-                            <td>{{ $item['quantity'] }}</td>
-                            <td>{{ $item['unit'] ?? 'pcs' }}</td>
+                            <td class="text-center"><strong>{{ $item['quantity'] }}</strong></td>
+                            <td class="text-center">{{ $item['unit'] ?? 'pcs' }}</td>
                             <td>{{ $item['notes'] ?? '-' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" style="text-align: center;">Tidak ada barang</td>
+                            <td colspan="5" class="text-center">Tidak ada barang yang terdaftar</td>
                         </tr>
                     @endforelse
+
+                    {{-- Baris pelengkap grid jika jumlah barang sedikit --}}
+                    @for ($i = count($deliveryNote->items ?? []); $i < 5; $i++)
+                        <tr class="item-row">
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    @endfor
                 </tbody>
             </table>
 
-            {{-- Driver & Vehicle Info --}}
-            @if ($deliveryNote->driver_name || $deliveryNote->vehicle_number)
-                <div class="notes-section">
-                    <div class="notes-title">Informasi Pengiriman:</div>
-                    <div class="notes-content">
-                        @if ($deliveryNote->driver_name)
-                            <div><strong>Sopir:</strong> {{ $deliveryNote->driver_name }}</div>
-                        @endif
-                        @if ($deliveryNote->vehicle_number)
-                            <div><strong>No. Kendaraan:</strong> {{ $deliveryNote->vehicle_number }}</div>
-                        @endif
-                    </div>
-                </div>
-            @endif
-
-            {{-- Additional Notes --}}
+            {{-- CATATAN TAMBAHAN (JIKA ADA) --}}
             @if ($deliveryNote->notes)
-                <div class="notes-section">
-                    <div class="notes-title">Catatan Tambahan:</div>
-                    <div class="notes-content">{{ $deliveryNote->notes }}</div>
-                </div>
+                <table class="info-section">
+                    <tr>
+                        <td class="info-cell">
+                            <div class="info-title">Catatan Tambahan:</div>
+                            <div class="info-content">{{ $deliveryNote->notes }}</div>
+                        </td>
+                    </tr>
+                </table>
             @endif
 
-            {{-- Signature Section --}}
+            {{-- TANDA TANGAN (2 KOLOM: PENGIRIM & PENERIMA TANPA GARIS ATAS) --}}
+            <table class="signature-table">
+                <tr>
+                    <td class="signature-cell">
+                        <div class="signature-title">Pengirim</div>
+                        <div class="signature-line">( ____________________ )</div>
+                    </td>
+                    <td class="signature-cell">
+                        <div class="signature-title">Penerima</div>
+                        <div class="signature-line">( ____________________ )</div>
+                    </td>
+                </tr>
+            </table>
 
-            <div class="signature-section">
-                <div class="signature-col">
-                    <div>Pengirim</div>
-                    <div class="signature-line"></div>
-                </div>
-                <div class="signature-col">
-                    <div>Penerima</div>
-                    <div class="signature-line"></div>
-                </div>
+            {{-- FOOTER --}}
+            <div class="footer">
+                Surat Jalan ini merupakan bukti resmi penerimaan barang. Harap diperiksa dan ditandatangani saat barang diterima.
             </div>
 
         </div>
