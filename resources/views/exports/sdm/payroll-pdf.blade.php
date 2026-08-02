@@ -234,6 +234,8 @@
                     <th rowspan="2">NAMA PEKERJA</th>
                     <th colspan="7">KEHADIRAN (7 Hari)</th>
                     <th rowspan="2" style="width: 80px;">UPAH HARIAN</th>
+                    <th rowspan="2" style="width: 70px;">KASBON</th>
+                    <th rowspan="2" style="width: 70px;">LEMBUR</th>
                     <th rowspan="2" style="width: 90px;">TOTAL UPAH</th>
                 </tr>
                 <tr>
@@ -276,6 +278,8 @@
                             </td>
                         @endforeach
                         <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
                         <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
@@ -328,7 +332,9 @@
 
     {{-- SUMMARY SECTION --}}
     @php
+        $totalKerja = $payrolls->sum(fn($payroll) => $payroll->base_salary * $payroll->present_days);
         $totalWages = $payrolls->sum('net_salary');
+        $totalLembur = $payrolls->sum('overtime_total');
         $totalKasbon = $payrolls->sum('kasbon_deduction');
 
         // Biaya operasional proyek: satu record per periode + data legacy di payroll
@@ -360,7 +366,7 @@
             }
         }
         $totalExpenses = array_sum($allExpenses);
-        $grandTotal = $totalWages + $totalExpenses - $totalKasbon;
+        $grandTotal = $totalWages + $totalExpenses;
     @endphp
 
     <div class="summary-container">
@@ -389,16 +395,24 @@
         <div class="summary-col">
             <div class="summary-header">REKAPITULASI DANA</div>
             <div class="summary-row">
-                <div class="s-label">Total Upah Pekerja</div>
-                <div class="s-value">{{ number_format($totalWages, 0, ',', '.') }}</div>
+                <div class="s-label">Total Kerja</div>
+                <div class="s-value">{{ number_format($totalKerja, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row">
+                <div class="s-label">Total Lembur</div>
+                <div class="s-value">+ {{ number_format($totalLembur, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row" style="color: #c0392b;">
+                <div class="s-label">Total Kasbon</div>
+                <div class="s-value">- {{ number_format($totalKasbon, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row" style="border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 5px;">
+                <div class="s-label font-bold">Total Upah Pekerja</div>
+                <div class="s-value font-bold">{{ number_format($totalWages, 0, ',', '.') }}</div>
             </div>
             <div class="summary-row">
                 <div class="s-label">Total Pengeluaran Tambahan</div>
                 <div class="s-value">{{ number_format($totalExpenses, 0, ',', '.') }}</div>
-            </div>
-            <div class="summary-row" style="color: #c0392b;">
-                <div class="s-label">Total Potongan Kasbon</div>
-                <div class="s-value">({{ number_format($totalKasbon, 0, ',', '.') }})</div>
             </div>
         </div>
     </div>

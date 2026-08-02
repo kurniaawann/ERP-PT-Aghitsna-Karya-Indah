@@ -107,6 +107,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
         $no = 1;
 
         $totalBaseSalary = 0;
+        $totalKerja = 0;
         $totalOvertime = 0;
         $totalKasbon = 0;
         $totalNetSalary = 0;
@@ -127,6 +128,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             ];
 
             $totalBaseSalary += $payroll->base_salary;
+            $totalKerja += $payroll->base_salary * $payroll->present_days;
             $totalOvertime += $payroll->overtime_total;
             $totalKasbon += $payroll->kasbon_deduction;
             $totalNetSalary += $payroll->net_salary;
@@ -165,12 +167,13 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
 
         $this->totals = [
             'base_salary' => $totalBaseSalary,
+            'total_kerja' => $totalKerja,
             'overtime_total' => $totalOvertime,
             'kasbon_deduction' => $totalKasbon,
             'net_salary' => $totalNetSalary,
             'total_expenses' => $totalExpenses,
             'expenses_details' => $allExpenses,
-            'grand_total' => $totalNetSalary + $totalExpenses - $totalKasbon,
+            'grand_total' => $totalNetSalary + $totalExpenses,
         ];
 
         return collect($data);
@@ -305,25 +308,37 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
 
                 $rekapRow = $startSummaryRow + 1;
 
-                $sheet->setCellValue("H{$rekapRow}", "Total Upah Pekerja");
-                $sheet->setCellValue("K{$rekapRow}", $this->totals['net_salary']);
+                $sheet->setCellValue("H{$rekapRow}", "Total Kerja");
+                $sheet->setCellValue("K{$rekapRow}", $this->totals['total_kerja']);
                 $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
 
-                $sheet->setCellValue("H{$rekapRow}", "Total Pengeluaran Tambahan");
-                $sheet->setCellValue("K{$rekapRow}", $this->totals['total_expenses']);
-                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->setCellValue("H{$rekapRow}", "Total Lembur");
+                $sheet->setCellValue("K{$rekapRow}", $this->totals['overtime_total']);
+                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('+#,##0;-#,##0');
                 $rekapRow++;
 
-                $sheet->setCellValue("H{$rekapRow}", "Total Potongan Kasbon");
-                $sheet->setCellValue("K{$rekapRow}", $this->totals['kasbon_deduction']);
+                $sheet->setCellValue("H{$rekapRow}", "Total Kasbon");
+                $sheet->setCellValue("K{$rekapRow}", -$this->totals['kasbon_deduction']);
                 $sheet->getStyle("H{$rekapRow}")->getFont()->setColor(
                     new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
                 );
                 $sheet->getStyle("K{$rekapRow}")->getFont()->setColor(
                     new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
                 );
-                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('(#,##0)');
+                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+                $rekapRow++;
+
+                $sheet->setCellValue("H{$rekapRow}", "Total Upah Pekerja");
+                $sheet->setCellValue("K{$rekapRow}", $this->totals['net_salary']);
+                $sheet->getStyle("H{$rekapRow}")->getFont()->setBold(true);
+                $sheet->getStyle("K{$rekapRow}")->getFont()->setBold(true);
+                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+                $rekapRow++;
+
+                $sheet->setCellValue("H{$rekapRow}", "Total Pengeluaran Tambahan");
+                $sheet->setCellValue("K{$rekapRow}", $this->totals['total_expenses']);
+                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
 
                 // Grand Total
