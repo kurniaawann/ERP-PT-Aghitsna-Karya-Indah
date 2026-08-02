@@ -140,8 +140,8 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                 'invoice' => '',
                 'date' => '',
                 'description' => '',
-                'income' => $categoryIncome > 0 ? number_format($categoryIncome, 0, ',', '.') : '0',
-                'expense' => $categoryExpense > 0 ? number_format($categoryExpense, 0, ',', '.') : '0',
+                'income' => 'Rp ' . number_format($categoryIncome, 0, ',', '.'),
+                'expense' => 'Rp ' . number_format($categoryExpense, 0, ',', '.'),
                 'money_source' => '',
             ];
             $currentRow++;
@@ -343,7 +343,7 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                     // Category header rows (background hijau #A9D08E)
                     if (
                         empty($cellA) && !empty($cellD) && $cellD === strtoupper($cellD) &&
-                        !in_array($cellD, ['Jumlah']) &&
+                        !in_array($cellD, ['Jumlah', 'SALDO']) &&
                         !str_contains($cellD, 'Rekapitulasi')
                     ) {
 
@@ -427,10 +427,12 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                         $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                     }
 
-                    // Rekapitulasi header
+                    // Rekapitulasi header (di sebelah kiri)
                     if (str_contains($cellD, 'Rekapitulasi')) {
-                        $sheet->mergeCells('D' . $row . ':G' . $row);
-                        $sheet->getStyle('D' . $row)->applyFromArray([
+                        $title = $cellD;
+                        $sheet->mergeCells('A' . $row . ':G' . $row);
+                        $sheet->setCellValue('A' . $row, $title);
+                        $sheet->getStyle('A' . $row)->applyFromArray([
                             'font' => ['bold' => true, 'size' => 10],
                             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
                         ]);
@@ -442,15 +444,21 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                         ]);
                     }
 
-                    // Rekapitulasi detail rows (1., 2., Saldo)
+                    // Rekapitulasi detail rows (1., 2., SALDO) — sejajar di kiri
                     if (in_array($cellA, ['1.', '2.', '']) && in_array($cellD, ['UANG MASUK', 'UANG KELUAR', 'SALDO'])) {
+                        $label = $cellD;
+                        $number = $cellA;
+                        $sheet->mergeCells('A' . $row . ':D' . $row);
+                        $sheet->setCellValue('A' . $row, ($number !== '' ? $number . ' ' : '') . $label);
+                        $sheet->setCellValue('D' . $row, $label);
                         $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_NONE],
                             ],
                         ]);
-                        $sheet->getStyle('D' . $row)->applyFromArray([
-                            'font' => ['bold' => $cellD === 'SALDO'],
+                        $sheet->getStyle('A' . $row)->applyFromArray([
+                            'font' => ['bold' => $label === 'SALDO'],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
                         ]);
                         $sheet->getStyle('E' . $row)->applyFromArray([
                             'font' => ['bold' => true],

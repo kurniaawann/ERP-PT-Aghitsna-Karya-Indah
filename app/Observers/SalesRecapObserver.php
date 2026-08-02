@@ -6,8 +6,11 @@ use App\Models\Report\SalesRecap;
 use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
 use App\Models\Inventory\ItemStockOut;
+use App\Models\User;
 use App\Services\Finance\PaymentProofService;
 use App\Services\Finance\RecapExpenseService;
+use App\Services\Report\TransactionCategoryService;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -113,31 +116,99 @@ class SalesRecapObserver
      * @param  \App\Models\Report\SalesRecap $salesRecap
      * @return void
      */
-    private function createExpenseRecap(SalesRecap $salesRecap): void
+    public function createExpenseRecap(SalesRecap $salesRecap): void
     {
         $salesRecapId = $salesRecap->getKey();
 
         $exists = ExpenseRecap::where('sales_recap_id', $salesRecapId)->exists();
 
-        if (!$exists) {
-            $incomeCategory = TransactionCategory::where('code', 'UANG_MASUK')->first();
+        if ($exists) {
+            return;
+        }
 
-            if ($incomeCategory) {
-                $invoiceNumber = app(RecapExpenseService::class)->generateIncomeInvoiceNumber();
+        $incomeCategory = $this->resolveIncomeCategory();
 
-                ExpenseRecap::create([
-                    'transaction_category_id' => $incomeCategory->id,
-                    'invoice_number' => $invoiceNumber,
-                    'transaction_date' => $salesRecap->date ?? now(),
-                    'description' => $salesRecap->name_proyek ?? 'Penjualan - ' . $salesRecapId,
-                    'income_amount' => $salesRecap->total_selling,
-                    'expense_amount' => null,
-                    'money_source' => null,
-                    'sales_recap_id' => $salesRecapId,
-                    'notes' => 'Auto-generated from sales recap',
+        if (!$incomeCategory) {
+            Log::warning('Auto expense recap skipped: tidak ada kategori INCOME aktif', [
+                'sales_recap_id' => $salesRecapId,
+            ]);
+            return;
+        }
+
+        $invoiceNumber = app(RecapExpenseService::class)->generateIncomeInvoiceNumber();
+
+        ExpenseRecap::create([
+            'transaction_category_id' => $incomeCategory->id,
+            'invoice_number' => $invoiceNumber,
+            'transaction_date' => $salesRecap->date ?? now(),
+            'description' => $salesRecap->name_proyek ?? 'Penjualan - ' . $salesRecapId,
+            'income_amount' => $salesRecap->total_selling,
+            'expense_amount' => null,
+            'money_source' => null,
+            'sales_recap_id' => $salesRecapId,
+            'notes' => 'Auto-generated from sales recap',
+        ]);
+    }
+
+    /**
+     * Pilih kategori INCOME untuk uang masuk otomatis.
+     *
+     * Kategori dicari berdasarkan user yang memicu (created_by), bukan global,
+     * karena daftar kategori transaksi ditampilkan per-user. Jika user belum
+     * punya kategori UANG_MASUK, dibuat otomatis satu kali saja (bukan setiap
+     * rekap penjualan lunas) dengan created_by user yang memicu. Karena kolom
+     * code bersifat unique global, sebelum create dicek dulu apakah kode
+     * tersedia; jika kode UANG_MASUK sudah terpakai (oleh user lain), kode
+     * di-increment menjadi UANG_MASUK1, UANG_MASUK2, dst. sampai ketemu yang
+     * kosong (atau saat create gagal karena kode bentrok).
+     *
+     * @return \App\Models\Report\TransactionCategory|null
+     */
+    private function resolveIncomeCategory(): ?TransactionCategory
+    {
+        $userId = auth()->id() ?? User::orderBy('created_at')->value('id');
+
+        $incomeCategory = TransactionCategory::where('created_by', $userId)
+            ->where('type', TransactionCategory::TYPE_INCOME)
+            ->whereRaw("code REGEXP '^UANG_MASUK[0-9]*$'")
+            ->orderBy('id')
+            ->first();
+
+        if ($incomeCategory) {
+            return $incomeCategory;
+        }
+
+        $baseCode = 'UANG_MASUK';
+        $suffix = 1;
+
+        while (true) {
+            $code = $suffix === 1 ? $baseCode : $baseCode . $suffix;
+            $suffix++;
+
+            if (TransactionCategory::where('code', $code)->exists()) {
+                continue;
+            }
+
+            try {
+                $incomeCategory = TransactionCategory::create([
+                    'name' => 'UANG MASUK',
+                    'code' => $code,
+                    'type' => TransactionCategory::TYPE_INCOME,
+                    'sort_order' => 1,
+                    'is_active' => true,
+                    'created_by' => $userId,
                 ]);
+                break;
+            } catch (QueryException $e) {
+                if ($e->getCode() !== '23000') {
+                    throw $e;
+                }
             }
         }
+
+        app(TransactionCategoryService::class)->flushCache();
+
+        return $incomeCategory;
     }
 
     /**

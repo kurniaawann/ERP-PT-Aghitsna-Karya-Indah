@@ -266,9 +266,9 @@
                 <tr class="subtotal-row">
                     <td colspan="4"></td>
                     <td class="text-right">
-                        {{ $categoryIncome > 0 ? number_format($categoryIncome, 0, ',', '.') : '0' }}</td>
+                        {{ 'Rp ' . number_format($categoryIncome, 0, ',', '.') }}</td>
                     <td class="text-right">
-                        {{ $categoryExpense > 0 ? number_format($categoryExpense, 0, ',', '.') : '0' }}</td>
+                        {{ 'Rp ' . number_format($categoryExpense, 0, ',', '.') }}</td>
                     <td></td>
                 </tr>
             @endforeach
