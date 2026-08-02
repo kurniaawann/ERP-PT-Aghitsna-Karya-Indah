@@ -136,7 +136,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             'harga_modal' => '( KAMILA )',
             'harga_jual' => '',
             'jumlah' => '',
-            'total' => '( ZULKARNAIN, ST )',
+            'total' => '( Zulkarnain,ST.,MT )',
         ];
 
         return collect($data);
@@ -316,7 +316,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                 ]);
             }
 
-            if (str_contains($cellI ?? '', 'DIREKTUR') || ($cellI ?? '') === '( ZULKARNAIN, ST )') {
+            if (str_contains($cellI ?? '', 'DIREKTUR') || ($cellI ?? '') === '( Zulkarnain,ST.,MT )') {
                 $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
                     'font' => ['bold' => true],

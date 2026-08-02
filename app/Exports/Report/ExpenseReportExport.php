@@ -209,7 +209,7 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
             'description' => '',
             'income' => '',
             'expense' => '',
-            'money_source' => '( ZULKARNAEN, ST )',
+            'money_source' => '( Zulkarnain,ST.,MT )',
         ];
 
         return collect($data);
@@ -451,7 +451,7 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
             }
 
             // Signature names
-            if ($cellB === '( A. KHAIDIR )' || ($cellG ?? '') === '( ZULKARNAEN, ST )') {
+            if ($cellB === '( A. KHAIDIR )' || ($cellG ?? '') === '( Zulkarnain,ST.,MT )') {
                 $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],

@@ -232,7 +232,7 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
             'description' => '',
             'income' => '',
             'expense' => '',
-            'money_source' => '( Zulkarnaen,ST.,MT )',
+            'money_source' => '( Zulkarnain,ST.,MT )',
         ];
 
         return collect($data);
@@ -474,8 +474,8 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
                         ]);
                     }
 
-                    // Signature names (AKHMAD KHAIDIR, Zulkarnaen)
-                    if ($cellB === '( AKHMAD KHAIDIR )' || $cellG === '( Zulkarnaen,ST.,MT )') {
+                    // Signature names (AKHMAD KHAIDIR, Zulkarnain)
+                    if ($cellB === '( AKHMAD KHAIDIR )' || $cellG === '( Zulkarnain,ST.,MT )') {
                         $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_NONE],
