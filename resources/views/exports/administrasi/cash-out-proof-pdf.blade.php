@@ -263,11 +263,6 @@
             min-width: 150px;
             font-size: 9px;
         }
-
-        .keterangan-box {
-            min-height: 40px;
-            padding: 5px;
-        }
     </style>
 </head>
 
@@ -292,12 +287,6 @@
                     <div class="header-left">
                         <div class="logo-container">
                             <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
-                        </div>
-                        <div class="company-info">
-                            <div class="company-name">
-                                DESIGN AND BUILD<br>
-                                PT. AGHITSNA KARYA INDAH
-                            </div>
                         </div>
                     </div>
                     <div class="header-center">
