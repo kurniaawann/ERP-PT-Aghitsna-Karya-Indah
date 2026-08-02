@@ -127,7 +127,7 @@ class EmployeeService
     public function flushCache(): void
     {
         try {
-            Cache::forget('sdm:employees:dropdown');
+            Cache::forget('sdm:employees:dropdown:' . auth()->id());
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [sdm:employees:dropdown]: ' . $e->getMessage());
         }

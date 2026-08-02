@@ -64,13 +64,27 @@ class OvertimeService
      */
     public function getAllEmployees(): Collection
     {
+        $userId = auth()->id();
+
         try {
-            return Cache::remember('sdm:employees:dropdown', now()->addHours(24), function () {
-                return Employee::orderBy('name')->get(['employee_code', 'name']);
-            });
+            return Cache::remember(
+                'sdm:employees:dropdown:' . $userId,
+                now()->addHours(24),
+                function () use ($userId) {
+                    return Employee::where('created_by', $userId)
+                        ->orderBy('name')
+                        ->get(['employee_code', 'name']);
+                }
+            );
         } catch (\Exception $e) {
-            Log::warning('Cache read failed for sdm:employees:dropdown: ' . $e->getMessage());
-            return Employee::orderBy('name')->get(['employee_code', 'name']);
+            Log::warning(
+                'Cache read failed for sdm:employees:dropdown:' . $userId . ': ' .
+                $e->getMessage()
+            );
+
+            return Employee::where('created_by', $userId)
+                ->orderBy('name')
+                ->get(['employee_code', 'name']);
         }
     }
 
