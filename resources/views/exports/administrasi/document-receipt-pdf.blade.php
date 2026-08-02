@@ -60,7 +60,7 @@
         .company-name {
             font-weight: bold;
             font-size: 14pt;
-            color: #c00000;
+            color: #ffb921;
             margin-bottom: 2px;
         }
 
@@ -88,14 +88,14 @@
 
         .form-label {
             display: table-cell;
-            width: 130px;
-            vertical-align: top;
+            width: 150px;
+            vertical-align: bottom; 
         }
 
         .form-colon {
             display: table-cell;
-            width: 10px;
-            vertical-align: top;
+            width: 15px;
+            vertical-align: bottom;
         }
 
         .form-value {
@@ -115,26 +115,36 @@
 
         .date-section {
             display: table-cell;
-            width: 55%;
-            vertical-align: middle;
+            width: 65%;
+            vertical-align: bottom;
         }
 
         .jam-section {
             display: table-cell;
-            width: 45%;
+            width: 35%;
             text-align: left;
-            padding-left: 40px;
-            vertical-align: middle;
+            vertical-align: bottom;
         }
 
         .date-label {
             display: inline-block;
-            width: 120px;
+            width: 150px;
+        }
+
+        .date-colon {
+            display: inline-block;
+            /* width: -20; */
+            margin-left: -4px;
         }
 
         .jam-label {
             display: inline-block;
-            width: 30px;
+            width: 40px;
+        }
+
+        .jam-colon {
+            display: inline-block;
+            width: 15px;
         }
 
         .date-value,
@@ -142,9 +152,18 @@
             border-bottom: 1px solid #000;
             display: inline-block;
             min-width: 120px;
+            padding-left: 4px;
         }
 
-        /* Signature sec5ion */
+        
+        /* Location */
+        .location {
+            text-align: center;
+            /* margin-bottom: 20px; */
+            margin-top: 50px
+        }
+
+        /* Signature section */
         .signature-area {
             margin-top: 40px;
             display: table;
@@ -226,15 +245,16 @@
         <div class="date-time-row">
             <div class="date-section">
                 <span class="date-label">Hari / Tanggal</span>
-                <span> :</span>
-                <span
-                    class="date-value">{{ \Carbon\Carbon::parse($document->receipt_date)->locale('id')->isoFormat('dddd, D MMMM Y') }}</span>
+                <span class="date-colon">:</span>
+                <span class="date-value">{{ \Carbon\Carbon::parse($document->receipt_date)->locale('id')->isoFormat('dddd, D MMMM Y') }}</span>
             </div>
             <div class="jam-section">
-                <span class="jam-label">Jam</span>
-                <span>:</span>
-                <span class="jam-value">{{ \Carbon\Carbon::parse($document->receipt_time)->format('H:i') }}</span>
+                <span class="jam-label">Jam</span><span class="jam-colon">:</span><span class="jam-value">{{ \Carbon\Carbon::parse($document->receipt_time)->format('H:i') }}</span>
             </div>
+        </div>
+
+        <div class= "location">Depok,
+            {{ \Carbon\Carbon::parse($document->receipt_date)->locale('id')->isoFormat('D MMMM Y') }}
         </div>
 
         {{-- Signature section --}}
@@ -247,8 +267,7 @@
             <div class="signature-right">
                 <div class="signature-label">Yang Menerima,</div>
                 <div class="signature-name">&nbsp;</div>
-                <div class="signature-location">Depok,
-                    {{ \Carbon\Carbon::parse($document->receipt_date)->locale('id')->isoFormat('D MMMM Y') }}</div>
+                
             </div>
         </div>
     @endforeach
