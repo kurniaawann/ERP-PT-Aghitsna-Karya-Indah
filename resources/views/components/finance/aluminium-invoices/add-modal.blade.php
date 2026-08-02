@@ -31,6 +31,11 @@
     </div>
 
     <div id="items-container" class="mb-4">
+        <div id="items-error"
+            class="hidden mb-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+            <i class="fa-solid fa-exclamation-circle"></i>
+            <span>Minimal harus ada 1 item dalam invoice dengan data lengkap</span>
+        </div>
         <label class="block text-text-primary font-semibold mb-2">Item-Item Invoice <span
                 class="text-error">*</span></label>
         <div id="items-list">

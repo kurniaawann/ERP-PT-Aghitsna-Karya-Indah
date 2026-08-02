@@ -657,6 +657,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (addItemBtn) {
         addItemBtn.addEventListener('click', function (e) {
             e.preventDefault();
+            const itemsError = document.getElementById('items-error');
+            if (itemsError) itemsError.classList.add('hidden');
             const itemsContainer = document.getElementById('items-list');
             const newItem = document.createElement('div');
             newItem.className = 'item-row mb-3 p-3 border rounded bg-surface-secondary';
@@ -716,6 +718,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[id^="add-item-edit-"]').forEach(btn => {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
+            const container = this.closest('[id^="items-container-edit-"]');
+            const errorDiv = container ? container.querySelector('.items-error-edit') : null;
+            if (errorDiv) errorDiv.classList.add('hidden');
             const invoiceNumber = this.id.replace('add-item-edit-', '');
             const itemsContainer = document.getElementById('items-list-edit-' + invoiceNumber);
             const currentItems = itemsContainer.querySelectorAll('.item-row-edit');
@@ -770,7 +775,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const remainingItems = itemsContainer.querySelectorAll('.item-row-edit');
 
         if (remainingItems.length <= 1) {
-            alert('Minimal harus ada 1 item dalam invoice');
+            const container = this.closest('[id^="items-container-edit-"]');
+            const errorDiv = container ? container.querySelector('.items-error-edit') : null;
+            if (errorDiv) errorDiv.classList.remove('hidden');
             return;
         }
 
@@ -825,7 +832,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (items.length === 0) {
                     e.preventDefault();
-                    alert('Minimal harus ada 1 item dalam invoice dengan data lengkap');
+                    const itemsError = this.querySelector('#items-error');
+                    if (itemsError) itemsError.classList.remove('hidden');
                     return false;
                 }
 
@@ -861,7 +869,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const editItems = this.querySelectorAll('.item-row-edit');
                 if (editItems.length === 0) {
                     e.preventDefault();
-                    alert('Minimal harus ada 1 item dalam invoice');
+                    const errorDiv = this.querySelector('.items-error-edit');
+                    if (errorDiv) errorDiv.classList.remove('hidden');
                     return false;
                 }
 
