@@ -100,7 +100,7 @@
     </div>
 
     <!-- Discount Section -->
-    <div class="mb-3 p-3 border rounded bg-yellow-50">
+    <div class="mb-3 p-3 border rounded bg-yellow-50" id="discount-section-edit-{{ $invoice->invoice_number }}">
         <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
@@ -120,7 +120,7 @@
                 <input type="text" inputmode="decimal" name="discount_value"
                     id="discount-value-edit-{{ $invoice->invoice_number }}"
                     value="{{ $invoice->discount_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
-                    oninput="calculateDiscountEdit('{{ $invoice->invoice_number }}')">
+                    oninput="formatDecimalInput(this); calculateDiscountEdit('{{ $invoice->invoice_number }}')">
                 <div id="discount-error-edit-{{ $invoice->invoice_number }}"
                     class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>
@@ -148,7 +148,7 @@
     </div>
 
     <!-- DP Section -->
-    <div class="mb-3 p-3 border rounded bg-blue-50">
+    <div class="mb-3 p-3 border rounded bg-blue-50" id="dp-section-edit-{{ $invoice->invoice_number }}">
         <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
@@ -167,7 +167,7 @@
                 <input type="text" inputmode="decimal" name="dp_value"
                     id="dp-value-edit-{{ $invoice->invoice_number }}" value="{{ $invoice->dp_value ?? 0 }}"
                     class="w-full border rounded p-2" placeholder="0"
-                    oninput="calculateDPEdit('{{ $invoice->invoice_number }}')">
+                    oninput="formatDecimalInput(this); calculateDPEdit('{{ $invoice->invoice_number }}')">
                 <div id="dp-error-edit-{{ $invoice->invoice_number }}"
                     class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
                     <i class="fa-solid fa-exclamation-circle"></i>

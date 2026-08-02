@@ -76,16 +76,15 @@
             <span class="text-text-primary font-semibold">Total Invoice:</span>
             <span id="invoice-total-preview" class="text-2xl font-bold text-primary">Rp 0</span>
         </div>
-        <div class="text-xs text-text-secondary mt-1" id="invoice-total-words"></div>
     </div>
 
     {{-- Discount Section --}}
-    <div class="mb-3 p-3 border rounded bg-yellow-50">
+    <div class="mb-3 p-3 border rounded bg-yellow-50" id="discount-section">
         <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-text-label text-sm mb-1">Tipe Discount</label>
-                <select name="discount_type" id="discount-type" class="w-full border rounded p-2"
+                <select name="discount_type" id="discount-type" class="w-full border rounded p-2" disabled
                     onchange="calculateDiscount()">
                     <option value="">Tidak Ada Discount</option>
                     <option value="percentage">Persentase (%)</option>
@@ -94,9 +93,9 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai Discount</label>
-                <input type="text" inputmode="decimal" name="discount_value" id="discount-value"
+                <input type="text" inputmode="decimal" name="discount_value" id="discount-value" disabled
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="0" oninput="calculateDiscount()">
+                    placeholder="0" oninput="formatDecimalInput(this); calculateDiscount()">
                 <small class="text-xs text-text-secondary" id="discount-helper">Tidak boleh 100% atau lebih untuk persentase. Boleh
                     pakai koma, contoh 1,5</small>
                 <div id="discount-error"
@@ -125,12 +124,12 @@
     </div>
 
     {{-- DP / Uang Muka Section --}}
-    <div class="mb-3 p-3 border rounded bg-blue-50">
+    <div class="mb-3 p-3 border rounded bg-blue-50" id="dp-section">
         <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-text-label text-sm mb-1">Tipe DP</label>
-                <select name="dp_type" id="dp-type" class="w-full border rounded p-2" onchange="calculateDP()">
+                <select name="dp_type" id="dp-type" class="w-full border rounded p-2" disabled onchange="calculateDP()">
                     <option value="">Tidak Ada DP</option>
                     <option value="percentage">Persentase (%)</option>
                     <option value="amount">Nominal (Rp)</option>
@@ -138,9 +137,9 @@
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Nilai DP</label>
-                <input type="text" inputmode="decimal" name="dp_value" id="dp-value"
+                <input type="text" inputmode="decimal" name="dp_value" id="dp-value" disabled
                     class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="0" oninput="calculateDP()">
+                    placeholder="0" oninput="formatDecimalInput(this); calculateDP()">
                 <small class="text-xs text-text-secondary" id="dp-helper">Tidak boleh 100% atau lebih untuk persentase. Boleh pakai
                     koma, contoh 1,5</small>
                 <div id="dp-error"

@@ -44,6 +44,16 @@ function parseDecimalInput(inputElement) {
     return parseFloat(rawValue.replace(',', '.')) || 0;
 }
 
+function formatDecimalInput(inputElement) {
+    if (!inputElement) return;
+    let value = String(inputElement.value).replace(/[^0-9.,]/g, '');
+    const lastSepIndex = Math.max(value.lastIndexOf(','), value.lastIndexOf('.'));
+    if (lastSepIndex !== -1) {
+        value = value.slice(0, lastSepIndex).replace(/[.,]/g, '') + value.slice(lastSepIndex);
+    }
+    inputElement.value = value;
+}
+
 function normalizeInvoicePriceFields(form) {
     form.querySelectorAll('input[name*="[harga]"]').forEach(input => {
         const value = parseCurrencyInput(input.value);
@@ -54,6 +64,7 @@ function normalizeInvoicePriceFields(form) {
 // Ekspos ke window untuk handler inline Blade
 window.parseCurrencyInput = parseCurrencyInput;
 window.formatCurrencyInput = formatCurrencyInput;
+window.formatDecimalInput = formatDecimalInput;
 
 // ==========================================
 // FUNGSI PERHITUNGAN LIVE
@@ -103,13 +114,6 @@ function updateInvoiceTotal() {
         totalPreview.textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
     }
 
-    const wordsElement = document.getElementById('invoice-total-words');
-    if (wordsElement && grandTotal > 0) {
-        wordsElement.textContent = 'Terbilang: ' + numberToWords(grandTotal) + ' rupiah';
-    } else if (wordsElement) {
-        wordsElement.textContent = '';
-    }
-
     calculateDiscount();
 }
 
@@ -132,6 +136,40 @@ function updateEditInvoiceTotal(input) {
     }
 
     calculateDiscountEdit(invoiceId);
+}
+
+function setAddDependentSections(hasTotal) {
+    ['discount-type', 'discount-value', 'dp-type', 'dp-value'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !hasTotal;
+    });
+    ['discount-section', 'dp-section'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('opacity-40', !hasTotal);
+    });
+    if (!hasTotal) {
+        ['discount-error', 'discount-amount-error', 'dp-error', 'dp-amount-error', 'discount-summary'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+    }
+}
+
+function setEditDependentSections(invoiceNumber, hasTotal) {
+    ['discount-type-edit-', 'discount-value-edit-', 'dp-type-edit-', 'dp-value-edit-'].forEach(prefix => {
+        const el = document.getElementById(prefix + invoiceNumber);
+        if (el) el.disabled = !hasTotal;
+    });
+    ['discount-section-edit-', 'dp-section-edit-'].forEach(prefix => {
+        const el = document.getElementById(prefix + invoiceNumber);
+        if (el) el.classList.toggle('opacity-40', !hasTotal);
+    });
+    if (!hasTotal) {
+        ['discount-error-edit-', 'discount-amount-error-edit-', 'dp-error-edit-', 'dp-amount-error-edit-', 'discount-summary-edit-'].forEach(prefix => {
+            const el = document.getElementById(prefix + invoiceNumber);
+            if (el) el.classList.add('hidden');
+        });
+    }
 }
 
 // ==========================================
@@ -158,6 +196,8 @@ function calculateDiscount() {
         baseTotal += (volume * harga);
     });
     baseTotal = Math.round(baseTotal);
+
+    setAddDependentSections(baseTotal > 0);
 
     const isOverLimitPercent = discountType === 'percentage' && discountValue >= 100;
     if (discountError) discountError.classList.toggle('hidden', !isOverLimitPercent);
@@ -218,6 +258,8 @@ function calculateDP() {
         baseTotal += (volume * harga);
     });
     baseTotal = Math.round(baseTotal);
+
+    setAddDependentSections(baseTotal > 0);
 
     const discountType = document.getElementById('discount-type')?.value;
     let discountValue = parseDecimalInput(document.getElementById('discount-value'));
@@ -295,6 +337,8 @@ function calculateDiscountEdit(invoiceNumber) {
     }
     baseTotal = Math.round(baseTotal);
 
+    setEditDependentSections(invoiceNumber, baseTotal > 0);
+
     const isOverLimitAmount = discountType === 'amount'
         && discountValue > 0
         && baseTotal > 0
@@ -356,6 +400,8 @@ function calculateDPEdit(invoiceNumber) {
     }
     baseTotal = Math.round(baseTotal);
 
+    setEditDependentSections(invoiceNumber, baseTotal > 0);
+
     const discountType = document.getElementById('discount-type-edit-' + invoiceNumber)?.value;
     let discountValue = parseDecimalInput(document.getElementById('discount-value-edit-' + invoiceNumber));
     if (discountType === 'percentage') discountValue = Math.min(discountValue, 100);
@@ -401,48 +447,6 @@ function calculateDPEdit(invoiceNumber) {
 
 window.calculateDiscountEdit = calculateDiscountEdit;
 window.calculateDPEdit = calculateDPEdit;
-
-// ==========================================
-// NUMBER TO WORDS
-// ==========================================
-
-function numberToWords(num) {
-    if (num === 0) return 'nol';
-
-    const units = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
-    const teens = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas',
-        'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'
-    ];
-    const tens = ['', '', 'dua puluh', 'tiga puluh', 'empat puluh', 'lima puluh',
-        'enam puluh', 'tujuh puluh', 'delapan puluh', 'sembilan puluh'
-    ];
-
-    if (num >= 1000000000) {
-        return Math.floor(num / 1000000000) + ' miliar ' + numberToWords(num % 1000000000);
-    }
-    if (num >= 1000000) {
-        return Math.floor(num / 1000000) + ' juta ' + numberToWords(num % 1000000);
-    }
-    if (num >= 1000) {
-        const thousands = Math.floor(num / 1000);
-        const remainder = num % 1000;
-        if (thousands === 1) return 'seribu ' + numberToWords(remainder);
-        return numberToWords(thousands) + ' ribu ' + numberToWords(remainder);
-    }
-    if (num >= 100) {
-        const hundreds = Math.floor(num / 100);
-        const remainder = num % 100;
-        if (hundreds === 1) return 'seratus ' + numberToWords(remainder);
-        return units[hundreds] + ' ratus ' + numberToWords(remainder);
-    }
-    if (num >= 20) {
-        return tens[Math.floor(num / 10)] + ' ' + units[num % 10];
-    }
-    if (num >= 10) {
-        return teens[num - 10];
-    }
-    return units[num];
-}
 
 // ==========================================
 // PAYMENT ACCOUNT VALIDATION

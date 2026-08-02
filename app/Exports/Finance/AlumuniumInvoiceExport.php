@@ -196,10 +196,6 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 ]);
                 $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FFFF00']
-                    ],
                     'borders' => [
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ],
@@ -234,10 +230,6 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     ]);
                     $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
-                        'fill' => [
-                            'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'FFE6E6']
-                        ],
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],
@@ -273,10 +265,6 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     ]);
                     $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
-                        'fill' => [
-                            'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'ADD8E6']
-                        ],
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],
@@ -317,10 +305,6 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     ]);
                     $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
-                        'fill' => [
-                            'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'E6FFE6']
-                        ],
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],

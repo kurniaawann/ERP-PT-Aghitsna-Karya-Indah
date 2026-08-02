@@ -382,12 +382,4 @@
     </div>
     @endif
 
-    {{-- Terbilang --}}
-    <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
-        <p class="text-sm text-gray-700">
-            <span class="font-semibold">Terbilang:</span>
-            <span class="italic">{{ terbilang($netAmount) }} Rupiah</span>
-        </p>
-    </div>
-
 </x-modal>
