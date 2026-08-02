@@ -334,7 +334,7 @@
                 </td>
                 <td>
                     <div>Direktur PT. Aghitsna</div>
-                    <div class="signature-line">( Zulkarnain,S.T )</div>
+                    <div class="signature-line">( Zulkarnain,ST.,MT )</div>
                 </td>
             </tr>
         </table>

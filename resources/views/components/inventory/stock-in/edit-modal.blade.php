@@ -65,9 +65,9 @@
 
                 <input type="hidden" class="item-select-hidden" value="{{ $record->id_item }}">
 
-                {{-- Field: Nama Barang --}}
+                {{-- Field: Nama Barang (disembunyikan saat Dari Stok, nama diisi dari dropdown) --}}
                 <input type="text" class="item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *"
-                    required oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
+                    required style="display: none;" oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
                     oninput="this.setCustomValidity('')" value="{{ $record->item->name_item }}">
 
                 {{-- Field: Qty & Harga Modal --}}

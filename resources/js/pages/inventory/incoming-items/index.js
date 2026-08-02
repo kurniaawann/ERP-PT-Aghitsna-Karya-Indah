@@ -166,12 +166,12 @@ function attachItemListeners(container) {
 
                 if (this.checked) {
                     selectWrapper.style.display = 'block';
-                    nameInput.readOnly = true;
-                    nameInput.classList.add('bg-gray-100');
+                    nameInput.style.display = 'none';
+                    nameInput.removeAttribute('required');
                 } else {
                     selectWrapper.style.display = 'none';
-                    nameInput.readOnly = false;
-                    nameInput.classList.remove('bg-gray-100');
+                    nameInput.style.display = 'block';
+                    nameInput.setAttribute('required', '');
                     nameInput.value = '';
                     capitalInput.value = '';
                     row.querySelector('.item-select-hidden').value = '';
