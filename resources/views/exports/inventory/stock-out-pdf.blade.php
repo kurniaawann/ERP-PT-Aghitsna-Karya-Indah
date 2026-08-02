@@ -73,30 +73,6 @@
             padding-top: 5px;
         }
 
-        .summary {
-            margin-top: 10px;
-            padding: 5px;
-            border: 1px solid #ddd;
-            background-color: #f9f9f9;
-            width: 25%;
-            float: right;
-        }
-
-        .summary table {
-            width: 100%;
-        }
-
-        .summary td {
-            border: none;
-            padding: 4px 0;
-        }
-
-        .clearfix::after {
-            content: "";
-            clear: both;
-            display: table;
-        }
-
         .info {
             margin-bottom: 20px;
         }
@@ -158,7 +134,7 @@
                         <td class="text-center">{{ $record->quantity }}</td>
                         <td class="text-center">{{ $record->remaining_quantity ?? '-' }}</td>
                         <td class="text-center">{{ $record->date->format('d M Y') }}</td>
-                        <td>{{ $record->project_name ?? '-' }}</td>
+                        <td class="text-center">{{ $record->project_name ?? '-' }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -166,17 +142,13 @@
                     </tr>
                 @endforelse
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" class="text-right"><strong>Total Barang Keluar:</strong></td>
+                    <td class="text-center"><strong>{{ number_format($stockOuts->sum('quantity'), 0, ',', '.') }}</strong></td>
+                </tr>
+            </tfoot>
         </table>
-
-        {{-- Ringkasan Total --}}
-        <div class="clearfix">
-            <div class="summary">
-                <div class="summary-item">
-                    <span>Total Kuantitas: </span>
-                    <span class="text-right"><strong>{{ number_format($stockOuts->sum('quantity'), 0, ',', '.') }}</strong></span>
-                </div>
-            </div>
-        </div>
     </div>
 
     {{-- Footer Laporan --}}

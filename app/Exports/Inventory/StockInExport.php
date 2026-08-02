@@ -149,19 +149,14 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
     /**
      * Lebar kolom Excel.
      *
+     * Lebar kolom dihitung otomatis mengikuti isi (header + data) di AfterSheet,
+     * agar nama kolom maupun nilai tidak terpotong.
+     *
      * @return array<string, int>
      */
     public function columnWidths(): array
     {
-        return [
-            'A' => 5,
-            'B' => 20,
-            'C' => 30,
-            'D' => 10,
-            'E' => 15,
-            'F' => 15,
-            'G' => 15,
-        ];
+        return [];
     }
 
     /**
@@ -215,18 +210,23 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
                 $lastRow = $sheet->getHighestRow();
                 $summaryStartRow = $lastRow + 2;
 
+                foreach (range('A', 'G') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                }
+
                 // Total Kuantitas
-                $sheet->setCellValue("E{$summaryStartRow}", 'Total Kuantitas:');
-                $sheet->setCellValue("F{$summaryStartRow}", $this->totalQuantity);
+                $sheet->setCellValue("F{$summaryStartRow}", 'Total Barang Masuk:');
+                $sheet->setCellValue("G{$summaryStartRow}", $this->totalQuantity);
 
                 // Total Keseluruhan
-                $sheet->setCellValue("E" . ($summaryStartRow + 1), 'Total Keseluruhan:');
-                $sheet->setCellValue("F" . ($summaryStartRow + 1), $this->totalOverall);
+                $sheet->setCellValue("F" . ($summaryStartRow + 1), 'Total Keseluruhan:');
+                $sheet->setCellValue("G" . ($summaryStartRow + 1), $this->totalOverall);
 
                 // Style summary
-                $sheet->getStyle("E{$summaryStartRow}:F" . ($summaryStartRow + 1))->getFont()->setBold(true);
-                $sheet->getStyle("F" . ($summaryStartRow + 1))->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"??_);_(@_)');
-                $sheet->getStyle("E{$summaryStartRow}:E" . ($summaryStartRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("F{$summaryStartRow}:G" . ($summaryStartRow + 1))->getFont()->setBold(true);
+                $sheet->getStyle("G" . ($summaryStartRow + 1))->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"??_);_(@_)');
+                $sheet->getStyle("F{$summaryStartRow}:F" . ($summaryStartRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("G{$summaryStartRow}:G" . ($summaryStartRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             },
         ];
     }

@@ -154,19 +154,14 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
     /**
      * Lebar kolom Excel.
      *
+     * Lebar kolom dihitung otomatis mengikuti isi (header + data) di AfterSheet,
+     * agar nama kolom maupun nilai tidak terpotong.
+     *
      * @return array<string, int>
      */
     public function columnWidths(): array
     {
-        return [
-            'A' => 5,
-            'B' => 20,
-            'C' => 30,
-            'D' => 10,
-            'E' => 15,
-            'F' => 25,
-            'G' => 15,
-        ];
+        return [];
     }
 
     /**
@@ -182,11 +177,16 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
                 $lastRow = $sheet->getHighestRow();
                 $summaryStartRow = $lastRow + 2;
 
-                $sheet->setCellValue("D{$summaryStartRow}", 'Total Kuantitas:');
-                $sheet->setCellValue("E{$summaryStartRow}", $this->totalQuantity);
+                foreach (range('A', 'G') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                }
 
-                $sheet->getStyle("D{$summaryStartRow}:E{$summaryStartRow}")->getFont()->setBold(true);
-                $sheet->getStyle("D{$summaryStartRow}:D{$summaryStartRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->setCellValue("F{$summaryStartRow}", 'Total Pengembalian Barang:');
+                $sheet->setCellValue("G{$summaryStartRow}", $this->totalQuantity);
+
+                $sheet->getStyle("F{$summaryStartRow}:G{$summaryStartRow}")->getFont()->setBold(true);
+                $sheet->getStyle("F{$summaryStartRow}:F{$summaryStartRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("G{$summaryStartRow}:G{$summaryStartRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             },
         ];
     }

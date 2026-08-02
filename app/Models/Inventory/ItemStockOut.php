@@ -104,13 +104,16 @@ class ItemStockOut extends Model
     }
 
     /**
-     * Sisa jumlah barang setelah dikurangi pengembalian.
+     * Sisa stok barang saat ini untuk item terkait.
+     *
+     * Mengambil nilai quantity dari master barang (Items),
+     * sehingga sesuai dengan data stok terkini di gudang.
      *
      * @return int
      */
     public function getRemainingQuantityAttribute()
     {
-        return $this->quantity - $this->total_returned;
+        return $this->item ? (int) $this->item->quantity : 0;
     }
 
     // ─── Scopes ───────────────────────────────────────────────────
