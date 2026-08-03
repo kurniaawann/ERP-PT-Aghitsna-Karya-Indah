@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Exceptions;
-
+use Illuminate\Support\Facades\Log;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -28,7 +30,7 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             // Log error untuk monitoring
-            \Log::error('Application Error: ' . $e->getMessage(), [
+            Log::error('Application Error: ' . $e->getMessage(), [
                 'exception' => get_class($e),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -66,6 +68,13 @@ class Handler extends ExceptionHandler
 
         // Catch all other exceptions
         $this->renderable(function (Throwable $e, $request) {
+            // Jangan override exception yang sudah ditangani khusus oleh Laravel,
+            // mis. AuthenticationException (harus redirect ke login) dan
+            // ValidationException (harus kembali ke form dengan error).
+            if ($e instanceof AuthenticationException || $e instanceof ValidationException) {
+                return null;
+            }
+
             if (!config('app.debug')) {
                 return response()->view('errors.500', ['exception' => $e], 500);
             }
