@@ -16,7 +16,7 @@
  * @returns {{ indexRoute: string, itemsDropdownRoute: string }}
  */
 function getConfig() {
-    return window.stockReportConfig || {
+    return window.stockReportConfig || { 
         indexRoute: '/stock-report',
         itemsDropdownRoute: '/stock-report/items-dropdown',
     };
@@ -153,7 +153,7 @@ async function fetchItems(state, list, append = false) {
                     );
                 });
 
-                list.appendChild(row);
+                list.appendChild(row); //tempel ke dropdown
             });
         }
 
