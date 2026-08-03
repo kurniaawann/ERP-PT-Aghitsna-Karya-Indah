@@ -46,9 +46,9 @@ class EmployeeService
     /**
      * Mendapatkan semua divisi yang diurutkan berdasarkan nama.
      *
-     * Logika: hasil di-cache 24 jam di key 'sdm:divisions:dropdown' (key yang
-     * sama dipakai DivisionService) — cache di-flush saat CRUD divisi. Fallback
-     * query langsung jika cache bermasalah.
+     * Logika: hasil di-cache 24 jam di key 'sdm:divisions:dropdown:{userId}'
+     * (key yang sama dipakai DivisionService saat flush) — cache di-flush saat
+     * CRUD divisi. Fallback query langsung jika cache bermasalah.
      *
      * @return \Illuminate\Support\Collection
      */

@@ -110,7 +110,7 @@ class DivisionService
     public function flushCache(): void
     {
         try {
-            Cache::forget('sdm:divisions:dropdown');
+            Cache::forget('sdm:divisions:dropdown:' . auth()->id());
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [sdm:divisions:dropdown]: ' . $e->getMessage());
         }
