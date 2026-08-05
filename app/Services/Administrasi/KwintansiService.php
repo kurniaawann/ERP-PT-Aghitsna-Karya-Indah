@@ -81,13 +81,15 @@ class KwintansiService
      *
      * @param  array<string, mixed>  $validatedData  Data yang sudah divalidasi
      * @param  bool  $includeBank  Apakah bank ditampilkan di PDF
+     * @param  array<string, mixed>  $paymentMethods  Metode pembayaran yang dipilih (is_tunai, is_cheque, is_bilyet_giro)
      * @return Kwintansi Model kwitansi yang baru dibuat
      */
-    public function create(array $validatedData, bool $includeBank = false): Kwintansi
+    public function create(array $validatedData, bool $includeBank = false, array $paymentMethods = []): Kwintansi
     {
         $validatedData['id_kwintansi'] = Kwintansi::generateKwintansiCode();
         $validatedData['location'] = $validatedData['location'] ?? self::DEFAULT_LOCATION;
         $validatedData['include_bank'] = $includeBank;
+        $this->applyPaymentMethods($validatedData, $paymentMethods);
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
         $validatedData['created_by'] = auth()->id();
@@ -101,18 +103,33 @@ class KwintansiService
      * @param  Kwintansi  $kwintansi  Model kwitansi yang akan diperbarui
      * @param  array<string, mixed>  $validatedData  Data yang sudah divalidasi
      * @param  bool  $includeBank  Apakah bank ditampilkan di PDF
+     * @param  array<string, mixed>  $paymentMethods  Metode pembayaran yang dipilih (is_tunai, is_cheque, is_bilyet_giro)
      * @return Kwintansi Model kwitansi yang sudah diperbarui
      */
-    public function update(Kwintansi $kwintansi, array $validatedData, bool $includeBank = false): Kwintansi
+    public function update(Kwintansi $kwintansi, array $validatedData, bool $includeBank = false, array $paymentMethods = []): Kwintansi
     {
         $validatedData['location'] = $validatedData['location'] ?? self::DEFAULT_LOCATION;
         $validatedData['include_bank'] = $includeBank;
+        $this->applyPaymentMethods($validatedData, $paymentMethods);
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
 
         $kwintansi->update($validatedData);
 
         return $kwintansi;
+    }
+
+    /**
+     * Menetapkan metode pembayaran (TUNAI, CHEQUE, BILYET GIRO) ke data validasi.
+     *
+     * @param  array<string, mixed>  $validatedData  Data yang sudah divalidasi
+     * @param  array<string, mixed>  $paymentMethods  Metode pembayaran yang dipilih
+     */
+    private function applyPaymentMethods(array &$validatedData, array $paymentMethods): void
+    {
+        $validatedData['is_tunai'] = (bool) ($paymentMethods['is_tunai'] ?? false);
+        $validatedData['is_cheque'] = (bool) ($paymentMethods['is_cheque'] ?? false);
+        $validatedData['is_bilyet_giro'] = (bool) ($paymentMethods['is_bilyet_giro'] ?? false);
     }
 
     /**

@@ -52,6 +52,9 @@ class Kwintansi extends Model
         'amount',
         'payment_account_id',
         'include_bank',
+        'is_tunai',
+        'is_cheque',
+        'is_bilyet_giro',
         'received_from',
         'payment_for',
         'remaining',
@@ -68,6 +71,9 @@ class Kwintansi extends Model
     protected $casts = [
         'kwintansi_date' => 'date',
         'include_bank' => 'boolean',
+        'is_tunai' => 'boolean',
+        'is_cheque' => 'boolean',
+        'is_bilyet_giro' => 'boolean',
         'amount' => 'integer',
         'remaining' => 'integer',
     ];

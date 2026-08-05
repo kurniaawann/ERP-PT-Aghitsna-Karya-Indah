@@ -49,7 +49,11 @@ class KwintansiController extends Controller
      */
     public function store(StoreKwitansiRequest $request)
     {
-        $this->service->create($request->validated(), $request->has('include_bank'));
+        $this->service->create(
+            $request->validated(),
+            $request->has('include_bank'),
+            $request->only(['is_tunai', 'is_cheque', 'is_bilyet_giro'])
+        );
 
         return redirect()->back()->with('success', 'Kwitansi berhasil ditambahkan!');
     }
@@ -64,7 +68,12 @@ class KwintansiController extends Controller
     public function update(UpdateKwitansiRequest $request, $id)
     {
         $kwintansi = Kwintansi::findOrFail($id);
-        $this->service->update($kwintansi, $request->validated(), $request->has('include_bank'));
+        $this->service->update(
+            $kwintansi,
+            $request->validated(),
+            $request->has('include_bank'),
+            $request->only(['is_tunai', 'is_cheque', 'is_bilyet_giro'])
+        );
 
         return redirect()->back()->with('success', 'Kwitansi berhasil diperbarui!');
     }

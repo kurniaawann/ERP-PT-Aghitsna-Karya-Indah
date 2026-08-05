@@ -417,7 +417,7 @@
                             </tr>
                             @endif
                             <tr class="total-row">
-                                <td class="summary-label">Jumlah *)</td>
+                                <td class="summary-label">Jumlah</td>
                                 <td class="summary-value">Rp {{ number_format($nota->total_with_ppn, 0, ',', '.') }}</td>
                             </tr>
                         </table>

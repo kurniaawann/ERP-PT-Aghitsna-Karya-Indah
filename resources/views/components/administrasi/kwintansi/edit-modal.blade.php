@@ -40,6 +40,27 @@
     </div>
 
     <div class="mb-3">
+        <label class="block text-text-primary mb-2">Metode Pembayaran</label>
+        <div class="flex flex-wrap items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="is_tunai" value="1"
+                    {{ $kwintansi->is_tunai ? 'checked' : '' }} class="w-4 h-4 accent-primary cursor-pointer">
+                <span class="text-text-primary">TUNAI</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="is_cheque" value="1"
+                    {{ $kwintansi->is_cheque ? 'checked' : '' }} class="w-4 h-4 accent-primary cursor-pointer">
+                <span class="text-text-primary">CHEQUE</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="is_bilyet_giro" value="1"
+                    {{ $kwintansi->is_bilyet_giro ? 'checked' : '' }} class="w-4 h-4 accent-primary cursor-pointer">
+                <span class="text-text-primary">BILYET GIRO</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="mb-3">
         <div class="flex items-center gap-2 mb-2">
             <input type="checkbox" name="include_bank" id="include_bank_edit_{{ $kwintansi->id_kwintansi }}"
                 value="1" {{ $kwintansi->include_bank ? 'checked' : '' }}

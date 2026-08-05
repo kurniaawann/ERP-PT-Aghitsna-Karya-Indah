@@ -18,7 +18,7 @@
         }
 
         body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             padding: 5mm;
             background: #ffffff;
             color: #0f386b; /* Warna biru khas cetakan kwitansi */
@@ -214,14 +214,36 @@
             margin-right: 25px;
         }
 
-        .checkbox {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 1.5px solid #0f386b;
-            vertical-align: middle;
-            margin-right: 5px;
-        }
+            .checkbox {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid #0f386b;
+    vertical-align: middle;
+    margin-right: 5px;
+    
+    /* Gunakan Flexbox untuk browser modern/PDF render berbasis Chromium */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Fallback positioning jika menggunakan✓ Dompdf */
+    text-align: center;
+    line-height: 12px; 
+    position: relative;
+    overflow: hidden;
+    font-family: 'DejaVu Sans', 'Arial', sans-serif;
+    
+}
+
+.checkmark {
+    font-size: 11px;
+    font-weight: bold;
+    color: #0f386b;
+    line-height: 1;
+    display: block;
+    margin: 0 auto;
+}
 
         .footer-layout {
             width: 100%;
@@ -395,11 +417,23 @@
             </div>
 
             <!-- PAYMENT METHOD -->
-            <div class="payment-methods">
-                <span class="checkbox-item"><span class="checkbox"></span> TUNAI</span>
-                <span class="checkbox-item"><span class="checkbox"></span> CHEQUE</span>
-                <span class="checkbox-item"><span class="checkbox"></span> BILYET GIRO</span>
-            </div>
+            <!-- PAYMENT METHOD -->
+<div class="payment-methods">
+    <span class="checkbox-item">
+        <span class="checkbox">@if($kwintansi->is_tunai)<span class="checkmark">&#10003;</span>@endif</span>
+        TUNAI
+    </span>
+
+    <span class="checkbox-item">
+        <span class="checkbox">@if($kwintansi->is_cheque)<span class="checkmark">&#10003;</span>@endif</span>
+        CHEQUE
+    </span>
+
+    <span class="checkbox-item">
+        <span class="checkbox">@if($kwintansi->is_bilyet_giro)<span class="checkmark">&#10003;</span>@endif</span>
+        BILYET GIRO
+    </span>
+</div>
 
             <!-- FOOTER (BANK DETAILS & SIGNATURE) -->
             <table class="footer-layout">
