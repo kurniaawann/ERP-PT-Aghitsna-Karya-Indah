@@ -252,13 +252,13 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
 
                 $currentRow += 4;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $signedBy = $invoice->signed_by ?? 'Akhmad Khaidir';
+                $signedBy = $invoice->signedBy?->name ?? 'Akhmad Khaidir';
                 $sheet->setCellValue("A{$currentRow}", $signedBy);
 
                 if ($invoice->division) {
                     $currentRow++;
-                    $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", $invoice->division);
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", $invoice->division->name);
                 }
             },
         ];

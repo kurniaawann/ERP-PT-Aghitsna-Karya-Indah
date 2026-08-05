@@ -10,6 +10,8 @@ use App\Http\Requests\Finance\ItemInvoiceUpdateRequest;
 use App\Models\Finance\InvoiceBarang;
 use App\Models\Inventory\Items;
 use App\Models\Report\SalesRecap;
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Executive;
 use App\Services\Finance\PaymentAccountService;
 use App\Services\Finance\ItemInvoiceService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -56,8 +58,10 @@ class ItemInvoiceController extends Controller
         }
 
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+        $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.finance.item-invoices', compact('invoices', 'totals', 'items', 'paymentAccounts'));
+        return view('pages.finance.item-invoices', compact('invoices', 'totals', 'items', 'paymentAccounts', 'executives', 'divisions'));
     }
 
     /**
@@ -119,8 +123,8 @@ class ItemInvoiceController extends Controller
                 'total_profit' => $totals['total_profit'],
                 'sales_recap_id' => $salesRecapId,
                 'selected_payment_accounts' => $request->selected_payment_accounts,
-                'signed_by' => $request->signed_by,
-                'division' => $request->division,
+                'signed_by_id' => $request->signed_by_id,
+                'division_id' => $request->division_id,
             ]);
 
             DB::commit();
@@ -206,8 +210,8 @@ class ItemInvoiceController extends Controller
                 'total_profit' => $totals['total_profit'],
                 'sales_recap_id' => $salesRecap?->id_sales_recap ?? $invoice->sales_recap_id,
                 'selected_payment_accounts' => $request->selected_payment_accounts,
-                'signed_by' => $request->signed_by,
-                'division' => $request->division,
+                'signed_by_id' => $request->signed_by_id,
+                'division_id' => $request->division_id,
             ]);
 
             DB::commit();

@@ -5,6 +5,9 @@ namespace App\Models\Finance;
 use App\Models\Report\SalesRecap;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Executive;
 
 class InvoiceBarang extends Model
 {
@@ -27,8 +30,8 @@ class InvoiceBarang extends Model
         'total_profit',
         'sales_recap_id',
         'selected_payment_accounts',
-        'signed_by',
-        'division',
+        'signed_by_id',
+        'division_id',
     ];
 
     protected $casts = [
@@ -48,6 +51,30 @@ class InvoiceBarang extends Model
     public function salesRecap()
     {
         return $this->belongsTo(SalesRecap::class, 'sales_recap_id', 'id_sales_recap');
+    }
+
+    /**
+     * Relasi ke petinggi (Nama Penandatangan) yang menandatangani invoice.
+     *
+     * Diambil dari data petinggi (executives) melalui foreign key signed_by_id.
+     *
+     * @return BelongsTo
+     */
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(Executive::class, 'signed_by_id');
+    }
+
+    /**
+     * Relasi ke divisi penandatangan invoice.
+     *
+     * Diambil dari submodul divisi (divisions) melalui foreign key division_id.
+     *
+     * @return BelongsTo
+     */
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class, 'division_id');
     }
 
     public function getNetAmount(): int

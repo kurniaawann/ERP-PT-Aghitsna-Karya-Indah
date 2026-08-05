@@ -77,11 +77,11 @@
     <x-pagination :paginator="$invoices" />
 
     {{-- ==================== Section: Modals ==================== --}}
-    <x-finance.item-invoices.add-modal :items="$items" :paymentAccounts="$paymentAccounts" />
+    <x-finance.item-invoices.add-modal :items="$items" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
 
     {{-- Modal Edit & Detail untuk setiap invoice --}}
     @foreach ($invoices as $invoice)
-        <x-finance.item-invoices.edit-modal :invoice="$invoice" :items="$items" :paymentAccounts="$paymentAccounts" />
+        <x-finance.item-invoices.edit-modal :invoice="$invoice" :items="$items" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
         <x-finance.item-invoices.detail-modal :invoice="$invoice" />
     @endforeach
 
