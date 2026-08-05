@@ -59,7 +59,7 @@
 
                                 {{-- Tombol Aksi: Detail, Edit, PDF, Excel --}}
                                 <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-1 flex-wrap">
+                                    <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto min-[1436px]:grid-cols-[auto_auto_auto_auto] min-[1436px]:gap-[5px]">
                                         {{-- Tombol Detail --}}
                                         <button type="button"
                                             onclick="openModal('detailModal-{{ $quotation->quotation_number }}')"

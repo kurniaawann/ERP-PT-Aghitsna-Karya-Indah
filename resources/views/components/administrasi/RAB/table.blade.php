@@ -43,7 +43,7 @@
                                     Rp {{ number_format($rab->incoming_payment ?? 0, 0, ',', '.') }}
                                 </td>
                                 <td class="p-3 text-center">
-                                    <div class="flex justify-center gap-1 flex-wrap">
+                                    <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto min-[1436px]:grid-cols-[auto_auto_auto_auto] min-[1436px]:gap-[5px]">
                                         {{-- Tombol Detail --}}
                                         <button type="button"
                                             onclick="openModal('detailRABModal{{ $rab->rab_number }}')"

@@ -296,7 +296,29 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
                 // Signature space
-                $currentRow += 4;
+                if ($quotation->signedBy?->signature_image) {
+                    $signaturePath = storage_path('app/public/' . $quotation->signedBy->signature_image);
+                    if (is_file($signaturePath)) {
+                        $currentRow += 2;
+                        $signatureDrawing = new Drawing();
+                        $signatureDrawing->setName('Tanda Tangan');
+                        $signatureDrawing->setDescription('Tanda Tangan ' . $quotation->signedBy->name);
+                        $signatureDrawing->setPath($signaturePath);
+                        $signatureDrawing->setHeight(55);
+                        $signatureDrawing->setCoordinates("A{$currentRow}");
+                        $signatureDrawing->setOffsetX(10);
+                        $signatureDrawing->setOffsetY(2);
+                        $signatureDrawing->setWorksheet($sheet);
+
+                        $sheet->getRowDimension($currentRow)->setRowHeight(45);
+                        $currentRow += 3;
+                    } else {
+                        $currentRow += 4;
+                    }
+                } else {
+                    $currentRow += 4;
+                }
+
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $signedBy = $quotation->signedBy?->name ?? 'Akhmad Khaidir';
                 $sheet->setCellValue("A{$currentRow}", $signedBy);

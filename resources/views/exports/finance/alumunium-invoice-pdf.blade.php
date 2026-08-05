@@ -397,7 +397,13 @@
                 <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
                     <div>Hormat Kami,</div>
                     <div style="font-weight: bold;">PT. AGHITSNA KARYA INDAH</div>
-                    <div style="margin-top: 60px;">{{ $invoice->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
+                    <div style="margin-top: {{ $invoice->signedBy?->signature_image ? '5px' : '60px' }};">
+                        @if ($invoice->signedBy?->signature_image)
+                            <img src="{{ storage_path('app/public/' . $invoice->signedBy->signature_image) }}"
+                                alt="Tanda Tangan" style="max-height: 55px; max-width: 160px;">
+                        @endif
+                        <div style="font-weight: bold;">{{ $invoice->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
+                    </div>
                     @if ($invoice->division)
                     <div style="margin-top: 5px;">{{ $invoice->division->name }}</div>
                     @endif

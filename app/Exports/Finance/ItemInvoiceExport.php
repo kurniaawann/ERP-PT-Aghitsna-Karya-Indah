@@ -250,7 +250,29 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
-                $currentRow += 4;
+                if ($invoice->signedBy?->signature_image) {
+                    $signaturePath = storage_path('app/public/' . $invoice->signedBy->signature_image);
+                    if (is_file($signaturePath)) {
+                        $currentRow += 2;
+                        $signatureDrawing = new Drawing();
+                        $signatureDrawing->setName('Tanda Tangan');
+                        $signatureDrawing->setDescription('Tanda Tangan ' . $invoice->signedBy->name);
+                        $signatureDrawing->setPath($signaturePath);
+                        $signatureDrawing->setHeight(55);
+                        $signatureDrawing->setCoordinates("A{$currentRow}");
+                        $signatureDrawing->setOffsetX(10);
+                        $signatureDrawing->setOffsetY(2);
+                        $signatureDrawing->setWorksheet($sheet);
+
+                        $sheet->getRowDimension($currentRow)->setRowHeight(45);
+                        $currentRow += 3;
+                    } else {
+                        $currentRow += 4;
+                    }
+                } else {
+                    $currentRow += 4;
+                }
+
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                 $signedBy = $invoice->signedBy?->name ?? 'Akhmad Khaidir';
                 $sheet->setCellValue("A{$currentRow}", $signedBy);

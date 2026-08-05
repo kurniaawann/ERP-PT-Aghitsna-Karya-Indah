@@ -342,8 +342,12 @@
         PT.AGHITSNA KARYA INDAH
     </div>
 
-    <div class="signature">
-        <div class="signature-line">{{ $q->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
+    <div class="signature" style="margin-top: {{ $q->signedBy?->signature_image ? '5px' : '15px' }};">
+        @if ($q->signedBy?->signature_image)
+            <img src="{{ storage_path('app/public/' . $q->signedBy->signature_image) }}" alt="Tanda Tangan"
+                style="max-height: 55px; max-width: 160px;">
+        @endif
+        <div class="signature-line" style="margin-top: {{ $q->signedBy?->signature_image ? '5px' : '50px' }};">{{ $q->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
         <div class="signature-division">{{ $q->division?->name ?? 'Divisi Alumunium' }}</div>
     </div>
     @endforeach
