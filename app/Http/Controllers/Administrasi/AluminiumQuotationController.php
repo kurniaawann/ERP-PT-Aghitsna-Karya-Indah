@@ -7,6 +7,8 @@ use App\Http\Requests\Administrasi\StoreAluminiumQuotationRequest;
 use App\Http\Requests\Administrasi\UpdateAluminiumQuotationRequest;
 use App\Models\Administrasi\AluminiumQuotation;
 use App\Services\Administrasi\AluminiumQuotationService;
+use App\Models\Sdm\Executive;
+use App\Models\Sdm\Division;
 use App\Exports\Administrasi\AluminiumQuotationExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -46,8 +48,10 @@ class AluminiumQuotationController extends Controller
         $search = $request->input('search');
         $quotations = $this->quotationService->getPaginatedSearch($search);
         $paymentAccounts = $this->quotationService->getActivePaymentAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+        $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.administrasi.aluminium-quotation', compact('quotations', 'paymentAccounts', 'search'));
+        return view('pages.administrasi.aluminium-quotation', compact('quotations', 'paymentAccounts', 'search', 'executives', 'divisions'));
     }
 
     /**

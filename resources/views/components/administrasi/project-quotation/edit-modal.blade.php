@@ -128,21 +128,31 @@
         {{-- Ditandatangani Oleh --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Ditandatangani Oleh</label>
-            <input type="text" name="signed_by"
-                class="w-full border border-border-strong rounded p-2 text-sm bg-surface-base text-text-input"
-                placeholder="Nama penandatangan" maxlength="255" value="{{ $quotation->signed_by }}"
-                oninvalid="this.setCustomValidity('Nama penandatangan maksimal 255 karakter')"
-                oninput="this.setCustomValidity('')">
+            <select name="signed_by_id"
+                class="w-full border border-border-strong rounded p-2 text-sm bg-surface-base text-text-input">
+                <option value="">-- Pilih Nama Penandatangan --</option>
+                @foreach ($executives as $executive)
+                    <option value="{{ $executive->id }}"
+                        {{ (int) $quotation->signed_by_id === (int) $executive->id ? 'selected' : '' }}>
+                        {{ $executive->name }} ({{ $executive->position }})
+                    </option>
+                @endforeach
+            </select>
         </div>
 
         {{-- Divisi --}}
         <div>
             <label class="block text-text-primary mb-1 text-sm font-medium">Divisi</label>
-            <input type="text" name="division"
-                class="w-full border border-border-strong rounded p-2 text-sm bg-surface-base text-text-input"
-                placeholder="Contoh: Divisi Alumunium" maxlength="255" value="{{ $quotation->division }}"
-                oninvalid="this.setCustomValidity('Nama divisi maksimal 255 karakter')"
-                oninput="this.setCustomValidity('')">
+            <select name="division_id"
+                class="w-full border border-border-strong rounded p-2 text-sm bg-surface-base text-text-input">
+                <option value="">-- Pilih Divisi --</option>
+                @foreach ($divisions as $division)
+                    <option value="{{ $division->id }}"
+                        {{ (int) $quotation->division_id === (int) $division->id ? 'selected' : '' }}>
+                        {{ $division->name }}
+                    </option>
+                @endforeach
+            </select>
         </div>
 
     </div>{{-- end space-y-5 --}}

@@ -37,8 +37,8 @@ class UpdateProjectQuotationRequest extends FormRequest
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',
             'project_description' => 'nullable|string|max:255',
-            'signed_by' => 'nullable|string|max:255',
-            'division' => 'nullable|string|max:255',
+            'signed_by_id' => 'nullable|exists:executives,id',
+            'division_id' => 'nullable|exists:divisions,id',
         ];
     }
 
@@ -63,8 +63,8 @@ class UpdateProjectQuotationRequest extends FormRequest
             'selected_payment_accounts.*.exists' => 'Rekening pembayaran yang dipilih tidak ditemukan.',
             'subject.max' => 'Perihal maksimal 255 karakter.',
             'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
-            'signed_by.max' => 'Nama penandatangan maksimal 255 karakter.',
-            'division.max' => 'Nama divisi maksimal 255 karakter.',
+            'signed_by_id.exists' => 'Nama penandatangan yang dipilih tidak ditemukan.',
+            'division_id.exists' => 'Divisi yang dipilih tidak ditemukan.',
         ];
     }
 

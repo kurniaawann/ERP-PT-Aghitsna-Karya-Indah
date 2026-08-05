@@ -4,7 +4,10 @@ namespace App\Models\Administrasi;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentAccount;
+use App\Models\Sdm\Executive;
+use App\Models\Sdm\Division;
 
 class AluminiumQuotation extends Model
 {
@@ -25,8 +28,8 @@ class AluminiumQuotation extends Model
         'total_amount',
         'amount_in_words',
         'selected_payment_accounts',
-        'signed_by',
-        'division',
+        'signed_by_id',
+        'division_id',
     ];
 
     protected $casts = [
@@ -56,6 +59,16 @@ class AluminiumQuotation extends Model
             return PaymentAccount::active()->get();
         }
         return PaymentAccount::whereIn('id', $ids)->orderBy('id')->get();
+    }
+
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(Executive::class, 'signed_by_id');
+    }
+
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class, 'division_id');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

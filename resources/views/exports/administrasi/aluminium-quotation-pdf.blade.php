@@ -343,8 +343,8 @@
     </div>
 
     <div class="signature">
-        <div class="signature-line">{{ $q->signed_by ?? 'Akhmad Khaidir' }}</div>
-        <div class="signature-division">Divisi Alumunium</div>
+        <div class="signature-line">{{ $q->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
+        <div class="signature-division">{{ $q->division?->name ?? 'Divisi Alumunium' }}</div>
     </div>
     @endforeach
 

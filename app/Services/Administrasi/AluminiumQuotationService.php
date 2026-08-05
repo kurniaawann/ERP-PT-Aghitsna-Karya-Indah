@@ -90,8 +90,8 @@ class AluminiumQuotationService
                 'total_amount' => $totalAmount,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
-                'signed_by' => $validated['signed_by'] ?? null,
-                'division' => $validated['division'] ?? null,
+                'signed_by_id' => $validated['signed_by_id'] ?? null,
+                'division_id' => $validated['division_id'] ?? null,
             ]);
 
             $this->syncGroups($quotation, $groups);
@@ -129,8 +129,8 @@ class AluminiumQuotationService
                 'total_amount' => $totalAmount,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
-                'signed_by' => $validated['signed_by'] ?? null,
-                'division' => $validated['division'] ?? null,
+                'signed_by_id' => $validated['signed_by_id'] ?? null,
+                'division_id' => $validated['division_id'] ?? null,
             ]);
 
             // Buat ulang groups + items

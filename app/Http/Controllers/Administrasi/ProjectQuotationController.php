@@ -7,6 +7,8 @@ use App\Http\Requests\Administrasi\StoreProjectQuotationRequest;
 use App\Http\Requests\Administrasi\UpdateProjectQuotationRequest;
 use App\Models\Administrasi\ProjectQuotation;
 use App\Models\Finance\PaymentAccount;
+use App\Models\Sdm\Executive;
+use App\Models\Sdm\Division;
 use App\Exports\Administrasi\ProjectQuotationExport;
 use App\Exports\Administrasi\ProjectQuotationMultiExport;
 use App\Services\Administrasi\ProjectQuotationService;
@@ -48,8 +50,10 @@ class ProjectQuotationController extends Controller
         $search = $request->input('search');
         $quotations = $this->service->getPaginatedSearch($search);
         $paymentAccounts = $this->service->getActivePaymentAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+        $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.administrasi.project-quotation', compact('quotations', 'paymentAccounts', 'search'));
+        return view('pages.administrasi.project-quotation', compact('quotations', 'paymentAccounts', 'search', 'executives', 'divisions'));
     }
 
     // ─── Get Next Number (AJAX) ───────────────────────────────────────────────
@@ -93,8 +97,8 @@ class ProjectQuotationController extends Controller
             'selected_payment_accounts' => is_string($quotation->selected_payment_accounts)
                 ? json_decode($quotation->selected_payment_accounts, true)
                 : $quotation->selected_payment_accounts,
-            'signed_by' => $quotation->signed_by,
-            'division' => $quotation->division,
+            'signed_by_id' => $quotation->signed_by_id,
+            'division_id' => $quotation->division_id,
             'items' => $quotation->items->map(function ($item) {
                 return [
                     'order_number' => $item->order_number,

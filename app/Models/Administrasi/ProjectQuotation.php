@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentAccount;
+use App\Models\Sdm\Executive;
+use App\Models\Sdm\Division;
 use App\Models\User;
 
 /**
@@ -35,8 +37,8 @@ class ProjectQuotation extends Model
         'total_amount',
         'amount_in_words',
         'selected_payment_accounts',
-        'signed_by',
-        'division',
+        'signed_by_id',
+        'division_id',
         'created_by',
     ];
 
@@ -82,6 +84,16 @@ class ProjectQuotation extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(Executive::class, 'signed_by_id');
+    }
+
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class, 'division_id');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

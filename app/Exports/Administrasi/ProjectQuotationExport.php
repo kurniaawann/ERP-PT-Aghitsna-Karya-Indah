@@ -272,13 +272,13 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                 // Signature space
                 $currentRow += 5;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $signedBy = $quotation->signed_by ?? 'Akhmad Khaidir';
+                $signedBy = $quotation->signedBy?->name ?? 'Akhmad Khaidir';
                 $sheet->setCellValue("A{$currentRow}", $signedBy);
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $division = $quotation->division ?? 'Divisi Alumunium';
+                $division = $quotation->division?->name ?? 'Divisi Alumunium';
                 $sheet->setCellValue("A{$currentRow}", $division);
             },
         ];
