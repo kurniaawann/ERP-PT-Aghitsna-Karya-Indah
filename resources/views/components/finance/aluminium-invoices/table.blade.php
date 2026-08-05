@@ -15,7 +15,7 @@
                             <th class="p-2 text-left">Proyek</th>
                             <th class="p-2 text-center">Total</th>
                             <th class="p-2 text-center">Terbayar</th>
-                            <th class="p-2 text-center">Sisa</th>
+                            <th class="p-2 text-center">Sisa Pembayaran</th>
                             <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>

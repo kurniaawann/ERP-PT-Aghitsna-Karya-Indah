@@ -4,7 +4,10 @@ namespace App\Models\Finance;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Finance\PaymentProof;
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Executive;
 use App\Services\Finance\InvoiceCalculatorService;
 use App\Services\Finance\PaymentProofService;
 
@@ -45,8 +48,8 @@ class InvoiceAlumunium extends Model
         'dp_value',
         'dp_amount',
         'selected_payment_accounts',
-        'signed_by',
-        'division',
+        'signed_by_id',
+        'division_id',
     ];
 
     protected $casts = [
@@ -59,6 +62,30 @@ class InvoiceAlumunium extends Model
         'dp_value' => 'decimal:2',
         'invoice_date' => 'date',
     ];
+
+    /**
+     * Relasi ke petinggi (Nama Penandatangan) yang menandatangani invoice.
+     *
+     * Diambil dari data petinggi (executives) melalui foreign key signed_by_id.
+     *
+     * @return BelongsTo
+     */
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(Executive::class, 'signed_by_id');
+    }
+
+    /**
+     * Relasi ke divisi penandatangan invoice.
+     *
+     * Diambil dari submodul divisi (divisions) melalui foreign key division_id.
+     *
+     * @return BelongsTo
+     */
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class, 'division_id');
+    }
 
     /**
      * Get the route key for the model.

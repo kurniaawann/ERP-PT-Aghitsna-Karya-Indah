@@ -63,14 +63,14 @@
     {{-- Modal Tambah Invoice --}}
     {{-- Modal Tambah Invoice: form input invoice alumunium baru, memakai
          daftar rekening pembayaran aktif untuk field pembayaran. --}}
-    <x-finance.aluminium-invoices.add-modal :paymentAccounts="$paymentAccounts" />
+    <x-finance.aluminium-invoices.add-modal :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
 
     {{-- Modal Edit & Detail untuk setiap invoice --}}
     {{-- Loop untuk membuat satu pasang modal Edit & Detail per invoice.
          Setiap invoice punya modal sendiri agar data terpisah dan form
          edit tidak tercampur antar baris. --}}
     @foreach ($invoices as $invoice)
-        <x-finance.aluminium-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" />
+        <x-finance.aluminium-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
         <x-finance.aluminium-invoices.detail-modal :invoice="$invoice" />
     @endforeach
 

@@ -170,13 +170,21 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
                 <label class="block text-text-label text-sm mb-1">Nama Penandatangan</label>
-                <input type="text" name="signed_by" class="w-full border rounded p-2"
-                    placeholder="Nama yang bertanda tangan">
+                <select name="signed_by_id" class="w-full border rounded p-2">
+                    <option value="">-- Pilih Nama Penandatangan --</option>
+                    @foreach ($executives as $executive)
+                        <option value="{{ $executive->id }}">{{ $executive->name }} ({{ $executive->position }})</option>
+                    @endforeach
+                </select>
             </div>
             <div>
                 <label class="block text-text-label text-sm mb-1">Divisi</label>
-                <input type="text" name="division" class="w-full border rounded p-2"
-                    placeholder="Contoh: Direktur, Manager, dll">
+                <select name="division_id" class="w-full border rounded p-2">
+                    <option value="">-- Pilih Divisi --</option>
+                    @foreach ($divisions as $division)
+                        <option value="{{ $division->id }}">{{ $division->name }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
     </div>

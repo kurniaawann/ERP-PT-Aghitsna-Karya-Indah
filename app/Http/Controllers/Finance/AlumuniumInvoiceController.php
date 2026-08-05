@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\AlumuniumInvoiceStoreRequest;
 use App\Http\Requests\Finance\AlumuniumInvoiceUpdateRequest;
 use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Executive;
 use App\Services\Finance\AlumuniumInvoiceService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -36,8 +38,10 @@ class AlumuniumInvoiceController extends Controller
     {
         $invoices = $this->service->baseQuery($request)->paginate(15);
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+        $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.finance.aluminium-invoices', compact('invoices', 'paymentAccounts'));
+        return view('pages.finance.aluminium-invoices', compact('invoices', 'paymentAccounts', 'executives', 'divisions'));
     }
 
     /**
@@ -82,8 +86,8 @@ class AlumuniumInvoiceController extends Controller
             : null;
         $data['dp_amount'] = $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null;
 
-        $data['signed_by'] = $request->signed_by;
-        $data['division'] = $request->division;
+        $data['signed_by_id'] = $request->signed_by_id;
+        $data['division_id'] = $request->division_id;
 
         InvoiceAlumunium::create($data);
 
@@ -139,8 +143,8 @@ class AlumuniumInvoiceController extends Controller
                 'dp_value' => $request->dp_value,
                 'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
                 'selected_payment_accounts' => $request->selected_payment_accounts,
-                'signed_by' => $request->signed_by,
-                'division' => $request->division,
+                'signed_by_id' => $request->signed_by_id,
+                'division_id' => $request->division_id,
             ]);
 
             return redirect()->route('alumunium-invoice.index')
