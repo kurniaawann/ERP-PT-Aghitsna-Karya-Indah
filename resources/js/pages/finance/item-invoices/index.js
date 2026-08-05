@@ -15,6 +15,14 @@
 
 // ─── Currency Helper (kompatibel dengan handler oninput inline di Blade) ─────
 
+/**
+ * Format input angka sebagai mata uang Indonesia (Rp X.XXX).
+ *
+ * Hanya menyisakan digit lalu diformat ke ribuan (id-ID) saat pengguna
+ * mengetik. Kompatibel dengan handler oninput inline di Blade.
+ *
+ * @param  {HTMLInputElement} input  Element input yang akan diformat
+ */
 function formatCurrencyInput(input) {
     if (!input) return;
     const numeric = String(input.value ?? '').replace(/[^\d]/g, '');
@@ -24,6 +32,22 @@ window.formatCurrencyInput = formatCurrencyInput;
 
 // ─── Pembuat Opsi Item ─────────────────────────────────────────────────────
 
+/**
+ * Membangun HTML opsi barang untuk dropdown pencarian.
+ *
+ * Alur:
+ * - Baca window._itemsData (array barang dari backend berisi id_item,
+ *   name_item, capital_price, selling_price, quantity).
+ * - Kelas opsi memakai prefix '-edit' untuk mode edit, else 'barang-option'.
+ * - Setiap opsi menyimpan data barang di data-* attribute (data-value,
+ *   data-name, data-capital, data-selling, data-stock, data-search) yang
+ *   nantinya dipakai initSearchableDropdown / initSearchableDropdownEdit
+ *   untuk auto-fill field baris.
+ * - Kembalian berupa gabungan HTML string (join).
+ *
+ * @param  {string} prefix  '' untuk add modal, '-edit' untuk edit modal
+ * @return {string} HTML string berisi daftar opsi barang
+ */
 function buildBarangOptionsHtml(prefix) {
     const items = window._itemsData || [];
     if (!Array.isArray(items) || items.length === 0) return '';
@@ -43,6 +67,9 @@ function buildBarangOptionsHtml(prefix) {
 
 // ─── Submit Form Hapus ───────────────────────────────────────────────────────
 
+/**
+ * Submit form hapus massal dengan indikator loading pada tombol konfirmasi.
+ */
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
     if (deleteBtn) {
@@ -59,6 +86,21 @@ window.submitDeleteForm = function () {
 
 // ─── MODE TAMBAH: Dropdown yang Dapat Dicari ────────────────────────────────
 
+/**
+ * Inisialisasi dropdown barang yang dapat dicari untuk satu baris (mode ADD).
+ *
+ * Alur:
+ * - Saat input pencarian fokus → dropdown ditampilkan.
+ * - Saat mengetik → opsi difilter berdasarkan data-search (nama barang
+ *   lowercase); bila tidak ada hasil tampilkan .barang-no-results.
+ * - Saat opsi diklik → AUTO-FILL field baris:
+ *   - searchInput = nama barang, hiddenInput (kode/id_item) = data-value.
+ *   - capitalInput & sellingInput diisi harga modal/jual lalu diformat Rp.
+ *   - row.dataset.stock = stok barang (dipakai validasi stok realtime).
+ * - Klik di luar baris → dropdown ditutup.
+ *
+ * @param  {HTMLElement} row  Elemen .barang-item-row yang diinisialisasi
+ */
 function initSearchableDropdown(row) {
     const searchInput = row.querySelector('.barang-search-input');
     const dropdown = row.querySelector('.barang-dropdown');
@@ -131,6 +173,16 @@ function initSearchableDropdown(row) {
 
 // ─── MODE TAMBAH: Toggle Dari Stok ───────────────────────────────────────────
 
+/**
+ * Toggle mode "Dari Stok" pada baris item (mode ADD).
+ *
+ * Saat dicentang:
+ * - Tampilkan dropdown pencarian barang dan sembunyikan input nama manual.
+ * - Harga modal/jual menjadi readonly (diambil dari data barang yang dipilih).
+ * Saat tidak dicentang:
+ * - Tampilkan kembali input nama manual, kosongkan pilihan dropdown, dan
+ *   kembalikan harga modal/jual menjadi editable.
+ */
 function toggleStockHandler() {
     const row = this.closest('.barang-item-row');
     const selectWrapper = row.querySelector('.barang-select-wrapper');
@@ -160,6 +212,14 @@ function toggleStockHandler() {
 
 // ─── MODE TAMBAH: Hapus Item ─────────────────────────────────────────────────
 
+/**
+ * Hapus baris item (mode ADD).
+ *
+ * Menjaga minimal 1 baris: bila tersisa ≤ 1 baris, tampilkan alert dan
+ * batalkan penghapusan.
+ *
+ * @param  {Event} e  Event klik
+ */
 function removeItemHandler(e) {
     e.preventDefault();
     const itemsContainer = document.getElementById('barang-items-list-add');
@@ -175,6 +235,18 @@ function removeItemHandler(e) {
 
 // ─── MODE TAMBAH: Validasi Harga ─────────────────────────────────────────────
 
+/**
+ * Inisialisasi validasi harga modal < harga jual (mode ADD).
+ *
+ * Alur:
+ * - Setiap input harga modal/jual memicu validatePrices().
+ * - Jika capital ≥ selling (dan selling > 0): tampilkan .barang-price-warning
+ *   dan nonaktifkan tombol submit #submit-btn-addModal.
+ * - Jika valid: cek ulang SEMUA baris item; submit diaktifkan kembali hanya
+ *   bila seluruh baris valid.
+ *
+ * @param  {HTMLElement} row  Elemen .barang-item-row yang divalidasi
+ */
 function initPriceValidation(row) {
     const capitalInput = row.querySelector('.barang-item-capital');
     const sellingInput = row.querySelector('.barang-item-selling');
@@ -215,6 +287,20 @@ function initPriceValidation(row) {
 
 // ─── MODE TAMBAH: Validasi Stok ──────────────────────────────────────────────
 
+/**
+ * Inisialisasi validasi stok realtime per baris (mode ADD).
+ *
+ * Alur:
+ * - Dipicu pada input qty dan perubahan checkbox "Dari Stok".
+ * - Bila "Dari Stok" aktif dan stok tersedia (row.dataset.stock) > 0 dan
+ *   qty > stok:
+ *   - Tampilkan .barang-stock-warning dengan teks berisi sisa stok.
+ *   - Nonaktifkan tombol submit agar form tidak terkirim.
+ * - Bila aman: cek ulang stok DAN harga di semua baris; submit diaktifkan
+ *   kembali hanya bila semuanya valid (mencegah konflik antar validasi).
+ *
+ * @param  {HTMLElement} row  Elemen .barang-item-row yang divalidasi
+ */
 function initStockValidation(row) {
     const qtyInput = row.querySelector('.barang-item-qty');
     const fromStockCheckbox = row.querySelector('.barang-from-stock');
@@ -269,6 +355,15 @@ function initStockValidation(row) {
 
 // ─── MODE TAMBAH: Pasang Listener ────────────────────────────────────────────
 
+/**
+ * Pasang listener item pada semua baris mode ADD.
+ *
+ * Alur:
+ * - Tombol .remove-barang-item → removeItemHandler (listener lama dilepas
+ *   dulu agar tidak dobel saat baris baru ditambahkan).
+ * - Checkbox .barang-from-stock → toggleStockHandler.
+ * - Setiap baris .barang-item-row → initSearchableDropdown(row).
+ */
 function attachItemListeners() {
     document.querySelectorAll('.remove-barang-item').forEach(function (btn) {
         btn.removeEventListener('click', removeItemHandler);
@@ -287,6 +382,16 @@ function attachItemListeners() {
 
 // ─── MODE EDIT: Dropdown yang Dapat Dicari ───────────────────────────────────
 
+/**
+ * Inisialisasi dropdown barang yang dapat dicari (mode EDIT).
+ *
+ * Mirip initSearchableDropdown() tetapi memakai selector ber-suffix "-edit"
+ * dan field name items[][...]. Saat opsi diklik, selain auto-fill harga
+ * dan stok, id_item juga disimpan ke .barang-id-item-hidden untuk dikirim
+ * saat submit.
+ *
+ * @param  {HTMLElement} row  Elemen .barang-item-row-edit yang diinisialisasi
+ */
 function initSearchableDropdownEdit(row) {
     const searchInput = row.querySelector('.barang-search-input-edit');
     const dropdown = row.querySelector('.barang-dropdown-edit');
@@ -362,6 +467,13 @@ function initSearchableDropdownEdit(row) {
 
 // ─── MODE EDIT: Toggle Dari Stok ─────────────────────────────────────────────
 
+/**
+ * Toggle mode "Dari Stok" pada baris item (mode EDIT).
+ *
+ * Selain menyembunyikan/menampilkan dropdown & input nama, nilai hidden
+ * .barang-from-stock-hidden dan .barang-id-item-hidden di-set ('true'/'false')
+ * agar saat submit backend tahu item berasal dari stok atau manual.
+ */
 function toggleEditStockHandler() {
     const row = this.closest('.barang-item-row-edit');
     const selectWrapper = row.querySelector('.barang-select-wrapper-edit');
@@ -397,6 +509,16 @@ function toggleEditStockHandler() {
 
 // ─── MODE EDIT: Validasi Harga ───────────────────────────────────────────────
 
+/**
+ * Inisialisasi validasi harga modal < harga jual (mode EDIT).
+ *
+ * Mirip initPriceValidation() tetapi menargetkan tombol submit per modal
+ * (#submit-btn-editModal-{invoiceNumber}) dan hanya mengecek baris di dalam
+ * container #barang-items-list-edit-{invoiceNumber}.
+ *
+ * @param  {HTMLElement} row            Elemen .barang-item-row-edit yang divalidasi
+ * @param  {string}      invoiceNumber  Nomor invoice untuk identifikasi modal
+ */
 function initPriceValidationEdit(row, invoiceNumber) {
     const capitalInput = row.querySelector('.barang-item-capital-edit');
     const sellingInput = row.querySelector('.barang-item-selling-edit');
@@ -440,6 +562,16 @@ function initPriceValidationEdit(row, invoiceNumber) {
 
 // ─── MODE EDIT: Validasi Stok ────────────────────────────────────────────────
 
+/**
+ * Inisialisasi validasi stok realtime per baris (mode EDIT).
+ *
+ * Sama seperti initStockValidation() tetapi per modal edit: warning
+ * .barang-stock-warning-edit, tombol submit per modal, dan pengecekan
+ * silang hanya pada baris di dalam modal tersebut.
+ *
+ * @param  {HTMLElement} row            Elemen .barang-item-row-edit yang divalidasi
+ * @param  {string}      invoiceNumber  Nomor invoice untuk identifikasi modal
+ */
 function initStockValidationEdit(row, invoiceNumber) {
     const qtyInput = row.querySelector('.barang-item-qty-edit');
     const fromStockCheckbox = row.querySelector('.barang-from-stock-edit');
@@ -499,6 +631,16 @@ function initStockValidationEdit(row, invoiceNumber) {
 
 // ─── MODE EDIT: Hapus Item ───────────────────────────────────────────────────
 
+/**
+ * Hapus baris item (mode EDIT) lalu re-index name field items.
+ *
+ * Alur:
+ * - Baris minimal 1 dijaga (alert bila tersisa ≤ 1 baris).
+ * - Hapus baris terdekat, lalu name seluruh input items[{index}][{field}]
+ *   diurutkan ulang agar konsisten saat submit.
+ *
+ * @param  {Event} e  Event klik
+ */
 function removeEditItemHandler(e) {
     e.preventDefault();
     const itemsContainer = this.closest('[id^="barang-items-list-edit-"]');
@@ -524,6 +666,14 @@ function removeEditItemHandler(e) {
 
 // ─── MODE EDIT: Pasang Listener ──────────────────────────────────────────────
 
+/**
+ * Pasang listener item pada semua baris mode EDIT.
+ *
+ * Alur:
+ * - Tombol .remove-barang-item-edit → removeEditItemHandler.
+ * - Checkbox .barang-from-stock-edit → toggleEditStockHandler.
+ * - Setiap baris .barang-item-row-edit → initSearchableDropdownEdit(row).
+ */
 function attachEditListeners() {
     document.querySelectorAll('.remove-barang-item-edit').forEach(function (btn) {
         btn.removeEventListener('click', removeEditItemHandler);
@@ -542,6 +692,14 @@ function attachEditListeners() {
 
 // ─── MODE TAMBAH: Tombol Tambah Item ─────────────────────────────────────────
 
+/**
+ * Inisialisasi tombol "Tambah Item" pada modal ADD.
+ *
+ * Membuat baris .barang-item-row baru lengkap dengan field qty, harga
+ * modal/jual, dropdown pencarian, warning stok & harga. Setelah baris
+ * dibuat, baris baru diinisialisasi: attachItemListeners() +
+ * initPriceValidation() + initStockValidation().
+ */
 function initAddItemButton() {
     var addBtn = document.querySelector('.add-barang-item');
     if (!addBtn) return;
@@ -602,6 +760,21 @@ function initAddItemButton() {
 
 // ─── MODE TAMBAH: Submit Form ────────────────────────────────────────────────
 
+/**
+ * Inisialisasi submit form modal ADD dengan validasi lengkap.
+ *
+ * Alur:
+ * - Validasi harga: bila ada baris dengan capital ≥ selling (dan selling > 0),
+ *   batalkan submit dan tampilkan alert.
+ * - Serialisasi tiap baris ke item JSON: name_item, quantity, capital_price,
+ *   selling_price, from_stock, id_item (id_item hanya diisi bila dari stok).
+ * - Bila tidak ada item valid, batalkan submit (minimal 1 item lengkap).
+ * - Tulis JSON ke #barang-items-json lalu panggil handleFormSubmit() untuk
+ *   proteksi submit ganda.
+ *
+ * Referensi backend: app/Services/Finance/ItemInvoiceService.php
+ * (normalizeInvoiceItems & processItemsForStore memvalidasi ulang + kurangi stok).
+ */
 function initAddFormSubmission() {
     var addModal = document.getElementById('addModal');
     if (!addModal) return;
@@ -667,6 +840,13 @@ function initAddFormSubmission() {
 
 // ─── MODE EDIT: Tombol Tambah Item ───────────────────────────────────────────
 
+/**
+ * Inisialisasi tombol "Tambah Item" pada modal EDIT.
+ *
+ * Membuat baris .barang-item-row-edit baru dengan name items[{index}][...],
+ * lalu pasang attachEditListeners() + initPriceValidationEdit() +
+ * initStockValidationEdit() untuk baris baru.
+ */
 function initEditItemButtons() {
     document.querySelectorAll('.add-barang-item-edit').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
@@ -733,6 +913,20 @@ function initEditItemButtons() {
 
 // ─── MODE EDIT: Submit Form ──────────────────────────────────────────────────
 
+/**
+ * Inisialisasi submit form semua modal EDIT dengan validasi harga.
+ *
+ * Alur:
+ * - Untuk tiap form di dalam [id^="editModal-"]:
+ *   - Validasi harga semua baris .barang-item-row-edit pada container
+ *     #barang-items-list-edit-{invoiceNumber}; bila ada yang invalid →
+ *     tampilkan alert dan batalkan submit.
+ *   - Panggil handleFormSubmit(submitBtn, ..., 'Update...') untuk proteksi
+ *     submit ganda.
+ *
+ * Referensi backend: app/Services/Finance/ItemInvoiceService.php
+ * (processItemsForStore melakukan restorasi & pengurangan stok).
+ */
 function initEditFormSubmissions() {
     document.querySelectorAll('[id^="editModal-"] form').forEach(function (form) {
         form.addEventListener('submit', function (e) {
@@ -770,6 +964,14 @@ function initEditFormSubmissions() {
 
 // ─── VALIDASI AKUN PEMBAYARAN ───────────────────────────────────────────────
 
+/**
+ * Validasi pemilihan rekening pembayaran pada modal ADD.
+ *
+ * Bila tidak ada checkbox .payment-account-checkbox tercentang, tampilkan
+ * error dan nonaktifkan tombol submit #submit-btn-addModal.
+ *
+ * @return {boolean} true bila minimal 1 rekening dipilih
+ */
 function validatePaymentSelection() {
     const addModal = document.getElementById('addModal');
     const checkboxes = addModal?.querySelectorAll('.payment-account-checkbox') ?? [];
@@ -793,6 +995,15 @@ function validatePaymentSelection() {
     return anyChecked;
 }
 
+/**
+ * Validasi pemilihan rekening pembayaran pada modal EDIT.
+ *
+ * Mirip validatePaymentSelection() tetapi per modal edit
+ * (#submit-btn-editModal-{invoiceNumber}).
+ *
+ * @param  {string} invoiceNumber  Nomor invoice untuk identifikasi modal
+ * @return {boolean} true bila minimal 1 rekening dipilih
+ */
 function validatePaymentSelectionEdit(invoiceNumber) {
     const modal = document.getElementById('editModal-' + invoiceNumber);
     const checkboxes = modal?.querySelectorAll('.payment-account-checkbox') ?? [];
@@ -814,6 +1025,15 @@ window.validatePaymentSelectionEdit = validatePaymentSelectionEdit;
 
 // ─── CHECKBOX SELECT ALL ─────────────────────────────────────────────────────
 
+/**
+ * Inisialisasi checkbox "Pilih Semua" untuk hapus massal.
+ *
+ * Alur:
+ * - Saat #selectAll berubah → semua checkbox invoice mengikuti.
+ * - Saat checkbox per baris berubah → status selectAll disinkronkan, dan
+ *   tombol hapus #delete-button diaktifkan/dinonaktifkan berdasarkan ada
+ *   tidaknya checkbox yang tercentang.
+ */
 function initSelectAllCheckbox() {
     var selectAllCheckbox = document.getElementById('selectAll');
     var invoiceCheckboxes = document.querySelectorAll('input[name="selected_invoices[]"]');
@@ -855,6 +1075,18 @@ function initSelectAllCheckbox() {
 
 // ─── INISIALISASI ────────────────────────────────────────────────────────────
 
+/**
+ * Inisialisasi seluruh modul setelah DOM siap.
+ *
+ * Alur:
+ * - Mode tambah: attachItemListeners, inisialisasi dropdown/harga/stok per
+ *   baris, tombol tambah item, dan submit form.
+ * - Mode edit: attachEditListeners, inisialisasi dropdown/harga/stok per
+ *   baris di tiap container edit, tombol tambah item, dan submit form.
+ * - Validasi rekening pembayaran (modal ADD & semua modal EDIT).
+ * - Checkbox select all untuk hapus massal.
+ * - Reset status submit saat navigasi kembali (pageshow).
+ */
 document.addEventListener('DOMContentLoaded', function () {
     // Mode tambah
     attachItemListeners();

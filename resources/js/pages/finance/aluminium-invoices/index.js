@@ -1,3 +1,19 @@
+/**
+ * Invoice Alumunium — JavaScript Halaman Index
+ *
+ * Modul ini menangani seluruh logika front-end halaman invoice alumunium:
+ * - Parsing & format input mata uang / desimal berformat Indonesia
+ * - Perhitungan live total per baris item dan grand total (mode tambah & edit)
+ * - Perhitungan diskon & DP secara live dengan validasi batas (warning)
+ * - Validasi pemilihan rekening pembayaran (submit dinonaktifkan bila kosong)
+ * - Tambah / hapus item row secara dinamis + re-index field items
+ * - Submit form dengan serialisasi item ke JSON + proteksi submit ganda
+ * - Checkbox select all untuk hapus massal
+ * - Filter URL bulan / tahun
+ *
+ * Referensi backend: app/Services/Finance/AlumuniumInvoiceService.php
+ */
+
 /* global parseCurrencyInput, handleFormSubmit, resetFormSubmitState */
 
 // ==========================================
@@ -38,12 +54,28 @@ function formatCurrencyInput(input) {
     input.value = num ? Math.round(num).toLocaleString('id-ID') : '';
 }
 
+/**
+ * Parsing nilai input desimal dengan dukungan koma sebagai pemisah desimal.
+ *
+ * @param  {HTMLInputElement} inputElement  Element input yang akan dibaca
+ * @return {number} Nilai desimal hasil parsing (0 bila kosong / tidak valid)
+ */
 function parseDecimalInput(inputElement) {
     const rawValue = String(inputElement?.value ?? '').trim();
     if (!rawValue) return 0;
     return parseFloat(rawValue.replace(',', '.')) || 0;
 }
 
+/**
+ * Format input desimal: hanya menyisakan angka, titik, dan koma.
+ *
+ * Alur:
+ * - Buang semua karakter selain angka, titik, dan koma.
+ * - Pertahankan hanya pemisah desimal TERAKHIR; pemisah sebelumnya dihapus
+ *   agar nilai seperti "1.000,5" tetap terbaca sebagai 1000,5.
+ *
+ * @param  {HTMLInputElement} inputElement  Element input yang akan diformat
+ */
 function formatDecimalInput(inputElement) {
     if (!inputElement) return;
     let value = String(inputElement.value).replace(/[^0-9.,]/g, '');
@@ -54,6 +86,14 @@ function formatDecimalInput(inputElement) {
     inputElement.value = value;
 }
 
+/**
+ * Normalisasi semua field harga pada form menjadi string numerik murni.
+ *
+ * Dipakai saat submit (terutama mode edit) agar harga berformat "1.000"
+ * tidak terkirim mentah ke server dan dihitung ulang sebagai angka.
+ *
+ * @param  {HTMLFormElement} form  Form element yang field harganya dinormalisasi
+ */
 function normalizeInvoicePriceFields(form) {
     form.querySelectorAll('input[name*="[harga]"]').forEach(input => {
         const value = parseCurrencyInput(input.value);
@@ -70,6 +110,17 @@ window.formatDecimalInput = formatDecimalInput;
 // FUNGSI PERHITUNGAN LIVE
 // ==========================================
 
+/**
+ * Hitung total per baris item pada modal ADD (volume × harga).
+ *
+ * Alur:
+ * - Cari baris .item-row terdekat dari input yang berubah.
+ * - Baca volume dan harga, hitung total = volume × harga.
+ * - Tampilkan total pada span .item-total baris tersebut.
+ * - Panggil updateInvoiceTotal() untuk menghitung ulang grand total.
+ *
+ * @param  {HTMLInputElement} input  Element input volume/harga yang berubah
+ */
 function calculateRowTotal(input) {
     const row = input.closest('.item-row');
     const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
@@ -84,6 +135,14 @@ function calculateRowTotal(input) {
     updateInvoiceTotal();
 }
 
+/**
+ * Hitung total per baris item pada modal EDIT (volume × harga).
+ *
+ * Mirip calculateRowTotal(), tetapi beroperasi pada baris .item-row-edit
+ * dan memperbarui grand total modal melalui updateEditInvoiceTotal().
+ *
+ * @param  {HTMLInputElement} input  Element input volume/harga yang berubah
+ */
 function calculateEditRowTotal(input) {
     const row = input.closest('.item-row-edit');
     const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
@@ -101,6 +160,15 @@ function calculateEditRowTotal(input) {
 window.calculateRowTotal = calculateRowTotal;
 window.calculateEditRowTotal = calculateEditRowTotal;
 
+/**
+ * Hitung grand total seluruh item pada modal ADD.
+ *
+ * Alur:
+ * - Iterasi semua baris .item-row dan akumulasi volume × harga.
+ * - Tampilkan hasil pada #invoice-total-preview.
+ * - Panggil calculateDiscount() agar diskon & DP ikut dihitung ulang
+ *   (DP selalu dihitung dari sisa setelah diskon).
+ */
 function updateInvoiceTotal() {
     let grandTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
@@ -117,6 +185,17 @@ function updateInvoiceTotal() {
     calculateDiscount();
 }
 
+/**
+ * Hitung grand total seluruh item pada modal EDIT.
+ *
+ * Alur:
+ * - Cari modal terdekat (id^="editModal-") dan ekstrak invoiceNumber.
+ * - Akumulasi volume × harga dari semua baris .item-row-edit di modal.
+ * - Tampilkan hasil pada #invoice-total-preview-edit-{invoiceNumber}.
+ * - Panggil calculateDiscountEdit() agar diskon & DP ikut dihitung ulang.
+ *
+ * @param  {HTMLInputElement} input  Element input yang memicu perhitungan
+ */
 function updateEditInvoiceTotal(input) {
     const modal = input.closest('[id^="editModal-"]');
     if (!modal) return;
@@ -138,6 +217,17 @@ function updateEditInvoiceTotal(input) {
     calculateDiscountEdit(invoiceId);
 }
 
+/**
+ * Aktifkan / nonaktifkan section & field diskon dan DP pada modal ADD.
+ *
+ * Alur:
+ * - Bila belum ada item (hasTotal = false): field tipe/nilai diskon & DP
+ *   dinonaktifkan (disabled), section diberi kelas opacity-40, dan semua
+ *   pesan error/summary disembunyikan.
+ * - Bila sudah ada total: field & section dikembalikan aktif.
+ *
+ * @param  {boolean} hasTotal  true bila total item > 0
+ */
 function setAddDependentSections(hasTotal) {
     ['discount-type', 'discount-value', 'dp-type', 'dp-value'].forEach(id => {
         const el = document.getElementById(id);
@@ -155,6 +245,15 @@ function setAddDependentSections(hasTotal) {
     }
 }
 
+/**
+ * Aktifkan / nonaktifkan section & field diskon dan DP pada modal EDIT.
+ *
+ * Versi edit memakai suffix "-{invoiceNumber}" pada seluruh id elemen,
+ * sehingga setiap modal dihitung dan divalidasi secara terpisah.
+ *
+ * @param  {string} invoiceNumber  Nomor invoice untuk identifikasi modal
+ * @param  {boolean} hasTotal      true bila total item > 0
+ */
 function setEditDependentSections(invoiceNumber, hasTotal) {
     ['discount-type-edit-', 'discount-value-edit-', 'dp-type-edit-', 'dp-value-edit-'].forEach(prefix => {
         const el = document.getElementById(prefix + invoiceNumber);
@@ -176,6 +275,28 @@ function setEditDependentSections(invoiceNumber, hasTotal) {
 // DISCOUNT & DP CALCULATIONS
 // ==========================================
 
+/**
+ * Hitung jumlah diskon dan total setelah diskon pada modal ADD.
+ *
+ * Alur:
+ * 1. Ambil tipe diskon (percentage | amount) dan nilai dari input.
+ *    Jika tipe kosong, nilai direset agar diskon tidak terhitung.
+ * 2. Hitung baseTotal = Σ(volume × harga) dari semua baris item.
+ * 3. Validasi batas (guard) — menampilkan warning dan men-cap nilai:
+ *    - percentage ≥ 100% → tampilkan #discount-error, nilai di-cap ke 100.
+ *    - amount ≥ baseTotal → tampilkan #discount-amount-error.
+ * 4. discountAmount = percentage ? round(baseTotal × nilai / 100) : nilai.
+ *    Untuk tipe amount, discountAmount di-cap agar tidak melebihi baseTotal.
+ * 5. totalAfterDiscount = baseTotal − discountAmount.
+ * 6. Tampilkan summary (nilai diskon & total setelah diskon) bila ada diskon.
+ * 7. PENTING: DP dihitung dari SISA SETELAH DISKON → panggil calculateDP().
+ *
+ * Catatan field nilai: untuk tipe 'percentage' nilai dibaca sebagai persen
+ * (mis. "1,5" = 1,5%, batas maksimal 100%), untuk tipe 'amount' dibaca
+ * sebagai nominal Rupiah.
+ *
+ * Referensi backend: InvoiceCalculatorService::calculateDiscountAmount().
+ */
 function calculateDiscount() {
     const discountType = document.getElementById('discount-type')?.value;
     const discountValueInput = document.getElementById('discount-value');
@@ -237,6 +358,28 @@ function calculateDiscount() {
     calculateDP();
 }
 
+/**
+ * Hitung jumlah DP pada modal ADD.
+ *
+ * Alur:
+ * 1. Ambil tipe DP (percentage | amount) dan nilai; reset bila tipe kosong.
+ * 2. Hitung baseTotal dari semua baris item.
+ * 3. Hitung ulang discountAmount (sama seperti calculateDiscount), lalu
+ *    totalAfterDiscount = baseTotal − discountAmount.
+ * 4. calculationBase = totalAfterDiscount bila > 0, else baseTotal.
+ *    PENTING: DP dihitung dari SISA SETELAH DISKON, bukan dari total kotor.
+ * 5. Validasi batas (guard) — warning + cap nilai:
+ *    - percentage ≥ 100% → tampilkan #dp-error, nilai di-cap ke 100.
+ *    - amount ≥ calculationBase → tampilkan #dp-amount-error.
+ * 6. dpAmount = percentage ? round(calculationBase × nilai / 100) : nilai,
+ *    di-cap agar tidak melebihi calculationBase untuk tipe amount.
+ * 7. Tampilkan hasil pada #dp-amount.
+ *
+ * Catatan field nilai: untuk tipe 'percentage' dibaca sebagai persen
+ * (maksimal 100%), untuk tipe 'amount' dibaca sebagai nominal Rupiah.
+ *
+ * Referensi backend: InvoiceCalculatorService::calculateDpAmount().
+ */
 function calculateDP() {
     const dpType = document.getElementById('dp-type')?.value;
     const dpValueInput = document.getElementById('dp-value');
@@ -307,6 +450,22 @@ function calculateDP() {
 window.calculateDiscount = calculateDiscount;
 window.calculateDP = calculateDP;
 
+/**
+ * Hitung jumlah diskon dan total setelah diskon pada modal EDIT.
+ *
+ * Versi edit dari calculateDiscount(); seluruh elemen memakai suffix
+ * "-{invoiceNumber}" (mis. discount-type-edit-X, discount-amount-edit-X)
+ * sehingga kalkulasi berjalan per modal tanpa saling mengganggu.
+ *
+ * Alur:
+ * - Ambil tipe/nilai diskon dari elemen ber-suffix edit.
+ * - Hitung baseTotal dari baris .item-row-edit di dalam modal.
+ * - Guard: percentage ≥ 100% → warning + cap; amount ≥ total → warning.
+ * - Hitung discountAmount, totalAfterDiscount, lalu tampilkan summary.
+ * - Panggil calculateDPEdit() (DP dihitung dari sisa setelah diskon).
+ *
+ * @param  {string} invoiceNumber  Nomor invoice untuk identifikasi modal
+ */
 function calculateDiscountEdit(invoiceNumber) {
     const typeEl = document.getElementById('discount-type-edit-' + invoiceNumber);
     const valueEl = document.getElementById('discount-value-edit-' + invoiceNumber);
@@ -374,6 +533,15 @@ function calculateDiscountEdit(invoiceNumber) {
     calculateDPEdit(invoiceNumber);
 }
 
+/**
+ * Hitung jumlah DP pada modal EDIT.
+ *
+ * Versi edit dari calculateDP() dengan suffix "-{invoiceNumber}" pada
+ * seluruh id elemen. DP dihitung dari total SETELAH diskon
+ * (calculationBase), bukan dari total kotor invoice.
+ *
+ * @param  {string} invoiceNumber  Nomor invoice untuk identifikasi modal
+ */
 function calculateDPEdit(invoiceNumber) {
     const typeEl = document.getElementById('dp-type-edit-' + invoiceNumber);
     const valueEl = document.getElementById('dp-value-edit-' + invoiceNumber);
@@ -452,6 +620,17 @@ window.calculateDPEdit = calculateDPEdit;
 // PAYMENT ACCOUNT VALIDATION
 // ==========================================
 
+/**
+ * Validasi pemilihan rekening pembayaran pada modal ADD.
+ *
+ * Alur:
+ * - Cek apakah minimal 1 checkbox .payment-account-checkbox tercentang.
+ * - Jika tidak ada: tampilkan #payment-account-error dan nonaktifkan tombol
+ *   submit (#submit-btn-addModal) agar form tidak bisa dikirim.
+ * - Jika ada: sembunyikan error dan aktifkan kembali tombol submit.
+ *
+ * @return {boolean} true bila minimal 1 rekening dipilih
+ */
 function validatePaymentSelection() {
     const addModal = document.getElementById('addModal');
     const checkboxes = addModal?.querySelectorAll('.payment-account-checkbox') ?? [];
@@ -475,6 +654,16 @@ function validatePaymentSelection() {
     return anyChecked;
 }
 
+/**
+ * Validasi pemilihan rekening pembayaran pada modal EDIT.
+ *
+ * Mirip validatePaymentSelection() tetapi beroperasi per modal edit
+ * (checkbox .payment-account-checkbox-edit dan tombol submit
+ * #submit-btn-editModal-{invoiceNumber}).
+ *
+ * @param  {string} invoiceNumber  Nomor invoice untuk identifikasi modal
+ * @return {boolean} true bila minimal 1 rekening dipilih
+ */
 function validatePaymentSelectionEdit(invoiceNumber) {
     const modal = document.getElementById('editModal-' + invoiceNumber);
     const checkboxes = modal?.querySelectorAll('.payment-account-checkbox-edit') ?? [];
@@ -498,6 +687,13 @@ window.validatePaymentSelectionEdit = validatePaymentSelectionEdit;
 // BULK DELETE
 // ==========================================
 
+/**
+ * Submit form hapus massal dengan indikator loading.
+ *
+ * Alur:
+ * - Tampilkan spinner "Menghapus..." pada tombol konfirmasi dan nonaktifkan.
+ * - Submit form #deleteForm (hanya invoice yang dicentang yang dikirim).
+ */
 function submitDeleteForm() {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
     if (deleteBtn) {
@@ -516,12 +712,28 @@ window.submitDeleteForm = submitDeleteForm;
 // DOM READY
 // ==========================================
 
+/**
+ * Inisialisasi seluruh fungsionalitas halaman setelah DOM siap.
+ *
+ * Alur inisialisasi:
+ * - Checkbox select all & tombol hapus massal.
+ * - Tambah/hapus item row (modal ADD & EDIT) + re-index field items.
+ * - Submit form ADD (serialisasi item ke JSON) & form EDIT (normalisasi harga).
+ * - Inisialisasi total, diskon/DP, dan status tombol rekening pembayaran.
+ * - Filter URL bulan/tahun.
+ * - Reset status submit saat navigasi kembali (pageshow).
+ */
 document.addEventListener('DOMContentLoaded', function () {
     // SELECT ALL CHECKBOX
     const selectAllCheckbox = document.getElementById('selectAll');
     const invoiceCheckboxes = document.querySelectorAll('input[name="selected_invoices[]"]');
     const deleteButton = document.getElementById('delete-button');
 
+    /**
+     * Update status tombol hapus massal berdasarkan checkbox tercentang.
+     *
+     * Tombol #delete-button dinonaktifkan bila tidak ada invoice dipilih.
+     */
     function updateDeleteButtonState() {
         const anyChecked = Array.from(invoiceCheckboxes).some(cb => cb.checked);
         if (deleteButton) deleteButton.disabled = !anyChecked;
@@ -548,6 +760,13 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDeleteButtonState();
 
     // ADD MODAL - ADD ITEM
+    /**
+     * Listener tombol "Tambah Item" (modal ADD).
+     *
+     * Membuat baris .item-row baru (keterangan, volume, satuan, harga),
+     * menempelkannya ke #items-list, memasang ulang listener hapus, dan
+     * menghitung ulang grand total.
+     */
     const addItemBtn = document.getElementById('add-item');
     if (addItemBtn) {
         addItemBtn.addEventListener('click', function (e) {
@@ -585,6 +804,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Pasang listener hapus untuk semua tombol .remove-item.
+     *
+     * removeEventListener + addEventListener dipakai untuk mencegah
+     * duplikasi listener saat baris item baru ditambahkan.
+     */
     function attachRemoveListener() {
         document.querySelectorAll('.remove-item').forEach(btn => {
             btn.removeEventListener('click', removeItemClickHandler);
@@ -592,6 +817,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Hapus baris item (modal ADD) saat tombol hapus diklik.
+     *
+     * Baris terdekat .item-row dihapus lalu grand total dihitung ulang.
+     *
+     * @param  {Event} e  Event klik
+     */
     function removeItemClickHandler(e) {
         e.preventDefault();
         this.closest('.item-row').remove();
@@ -606,6 +838,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // EDIT MODAL - ADD ITEM
+    /**
+     * Listener tombol "Tambah Item" pada modal EDIT.
+     *
+     * Membuat baris .item-row-edit baru dengan name field items[{index}][...]
+     * berdasarkan jumlah baris saat ini, lalu memasang listener hapus-edit.
+     */
     document.querySelectorAll('.add-item-edit').forEach(btn => {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
@@ -650,6 +888,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    /**
+     * Pasang listener hapus untuk semua tombol .remove-item-edit.
+     *
+     * Menghindari duplikasi listener dengan melepas handler lama terlebih
+     * dahulu sebelum memasang yang baru.
+     */
     function attachRemoveListenerEdit() {
         document.querySelectorAll('.remove-item-edit').forEach(btn => {
             btn.removeEventListener('click', removeItemEditClickHandler);
@@ -657,6 +901,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Hapus baris item (modal EDIT) saat tombol hapus-edit diklik.
+     *
+     * Alur:
+     * - Baris minimal 1 dijaga: bila tersisa ≤ 1 baris, tampilkan error
+     *   #items-error-edit dan batalkan penghapusan.
+     * - Hapus baris terdekat, lalu re-index semua name field items
+     *   (items[{index}][{field}]) agar urutan tetap konsisten saat submit.
+     * - Hitung ulang total modal.
+     *
+     * @param  {Event} e  Event klik
+     */
     function removeItemEditClickHandler(e) {
         e.preventDefault();
         const itemsContainer = this.closest('[id^="items-list-edit-"]');
@@ -686,6 +942,16 @@ document.addEventListener('DOMContentLoaded', function () {
     attachRemoveListenerEdit();
 
     // FORM SUBMIT - ADD MODAL
+    /**
+     * Submit form modal ADD.
+     *
+     * Alur:
+     * - Serialisasi setiap baris .item-row menjadi { keterangan, volume,
+     *   satuan, harga }; baris yang tidak lengkap dilewati.
+     * - Bila tidak ada item valid, tampilkan #items-error dan batalkan submit.
+     * - Tulis JSON ke field hidden #items-json.
+     * - Panggil handleFormSubmit() untuk proteksi submit ganda.
+     */
     const addModalElement = document.getElementById('addModal');
     if (addModalElement) {
         const addForm = addModalElement.querySelector('form');
@@ -738,6 +1004,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // FORM SUBMIT - EDIT MODALS
+    /**
+     * Submit form modal EDIT (PUT).
+     *
+     * Alur:
+     * - Pastikan minimal ada 1 baris .item-row-edit (jika tidak, tampilkan
+     *   #items-error-edit dan batalkan).
+     * - Normalisasi field harga via normalizeInvoicePriceFields().
+     * - Panggil handleFormSubmit() untuk proteksi submit ganda.
+     */
     document.querySelectorAll('form[action*="alumunium-invoice"]').forEach(form => {
         if (form.querySelector('[name="_method"][value="PUT"]')) {
             form.addEventListener('submit', function (e) {
@@ -785,6 +1060,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const monthSelect = document.getElementById('month-select');
     const yearSelect = document.getElementById('year-select');
 
+    /**
+     * Perbarui URL filter bulan/tahun lalu muat ulang halaman.
+     *
+     * Alur:
+     * - Set / delete query param 'month' dan 'year' dari URL saat ini.
+     * - Hapus param 'page' agar kembali ke halaman pertama hasil filter.
+     */
     function updateInvoiceFilterUrl() {
         const url = new URL(window.location.href);
 

@@ -1,3 +1,23 @@
+{{-- =====================================================================
+     Halaman: Rekening Pembayaran (Payment Accounts)
+     Tujuan: Mengelola daftar rekening pembayaran (bank/account) yang
+             dipakai pada form invoice dan dokumen finance lain, lengkap
+             dengan pencarian, tambah, edit, toggle aktif, dan hapus massal
+             dengan guard "minimal 1 rekening harus tetap ada".
+     Data dari PaymentAccountController@index:
+     - $accounts: Paginator PaymentAccount (15/halaman) hasil
+                  PaymentAccountService::buildFilteredQuery($request),
+                  difilter oleh request('search'), diurutkan by id.
+     - session('usage_error'): pesan error saat rekening yang masih
+                  dipakai tabel lain gagal dihapus (AJAX/non-AJAX).
+     Komponen yang di-include:
+     - x-filters.search-input                        : input pencarian
+     - components.finance.payment-accounts.table     : tabel rekening
+     - components.finance.payment-accounts.add-modal / edit-modal : modal CRUD
+     - x-pagination                                  : navigasi halaman
+     - x-modal (deleteModal & errorModal)            : konfirmasi hapus & error
+     JS: @vite('resources/js/pages/finance/payment-accounts/index.js')
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Rekening Pembayaran')
@@ -31,6 +51,8 @@
         </div>
 
         {{-- ==================== Tabel Rekening ==================== --}}
+        {{-- Tabel menampilkan daftar rekening dengan tombol edit/toggle
+             aktif per baris dan checkbox untuk seleksi hapus massal. --}}
         @include('components.finance.payment-accounts.table')
 
     </div>
@@ -42,6 +64,8 @@
     @include('components.finance.payment-accounts.add-modal')
 
     {{-- ==================== Modal Edit (per baris) ==================== --}}
+    {{-- Satu modal edit dirender untuk setiap rekening agar form tiap
+         baris terpisah dan data tidak tercampur. --}}
     @foreach ($accounts as $account)
         @include('components.finance.payment-accounts.edit-modal', ['account' => $account])
     @endforeach
@@ -53,6 +77,8 @@
     </x-modal>
 
     {{-- ==================== Modal Error Penggunaan ==================== --}}
+    {{-- Ditampilkan oleh JS ketika bulk delete ditolak karena rekening
+         masih dipakai di tabel lain; pesan disuntikkan ke #errorMessage. --}}
     <x-modal id="errorModal" title="Tidak Dapat Menghapus" :readonly="true">
         <div class="flex items-start gap-3">
             <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-error-light">
@@ -63,6 +89,9 @@
     </x-modal>
 
     {{-- ==================== Session Data untuk JavaScript ==================== --}}
+    {{-- Saat controller mengembalikan session('usage_error') (mis. dari
+         destroySelected non-AJAX), pesan dibungkus ke elemen tersembunyi
+         agar bisa dibaca & ditampilkan oleh JS di modal errorModal. --}}
     @if (session('usage_error'))
         <div id="usageErrorData" data-message="{{ session('usage_error') }}" class="hidden"></div>
     @endif

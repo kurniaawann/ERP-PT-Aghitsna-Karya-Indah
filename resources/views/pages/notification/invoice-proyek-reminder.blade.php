@@ -18,6 +18,22 @@
      - Controller → Service → Repository → Model
      - JavaScript modular: resources/js/pages/notification/invoice-proyek-reminder/index.js
      - Form validation: app/Http/Requests/Notification/
+
+     Data dari InvoiceProyekReminderController@index (logic di
+     InvoiceProyekReminderService):
+     - $reminders    : paginator daftar reminder (invoice_number, recipient,
+                       invoice_date, reminder_date, net_amount, paid_amount,
+                       remaining_amount, display_status, is_overdue,
+                       notification_sent_at)
+     - $totalReminders : total reminder sesuai filter
+     - $totalPending   : reminder berstatus pending (guard max(0))
+     - $totalExpired   : reminder lewat jatuh tempo dengan sisa tagihan
+     - $totalPaid      : reminder berstatus paid
+
+     Komponen yang di-include:
+     - layouts.app
+     JS yang di-load:
+     - resources/js/pages/notification/invoice-proyek-reminder/index.js
      ═══════════════════════════════════════════════════════════════════════ --}}
 
 @extends('layouts.app')
@@ -171,6 +187,16 @@
         @endif
 
         {{-- Table Section --}}
+        {{-- ============================================================
+             SECTION: DAFTAR REMINDER INVOICE PROYEK
+             Tabel daftar reminder jatuh tempo invoice proyek.
+             - Kolom status menampilkan BADGE warna sesuai
+               $reminder->display_status: Paid (hijau), Kadaluarsa (kuning),
+               Pending (kuning)
+             - Tanggal jatuh tempo yang lewat ditandai bold text-error
+             - Sisa pembayaran > 0 ditampilkan text-error, selainnya text-success
+             - Tanggal perubahan diisi dari notification_sent_at
+             ============================================================ --}}
         <div class="bg-surface-base rounded-xl shadow overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">

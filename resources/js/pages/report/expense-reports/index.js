@@ -18,6 +18,22 @@
 // INISIALISASI
 // ============================================================
 
+/**
+ * Inisialisasi halaman Laporan Pengeluaran setelah DOM selesai dimuat.
+ *
+ * Alur:
+ * 1. Bind event 'input' pada kolom pencarian (name="search") dengan debounce
+ *    500ms → form otomatis submit setelah user berhenti mengetik. Ini
+ *    melengkapi filter periode (bulan/tahun) dan kategori yang di-submit lewat
+ *    dropdown form sehingga halaman selalu menampilkan data terfilter
+ *    (backend: ExpenseReportService::buildFilteredQuery).
+ * 2. Render tiga grafik Chart.js bila data window globals tersedia:
+ *    - window.monthlyTrendData          → line chart trend pemasukan & pengeluaran bulanan.
+ *    - window.categoryDistributionData  → horizontal bar chart total pengeluaran per kategori.
+ *    - window.summaryData               → doughnut chart perbandingan pemasukan vs pengeluaran.
+ *
+ * @returns {void}
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
@@ -27,6 +43,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // Form akan submit setelah user berhenti mengetik 500ms.
     // ============================================================
 
+    /**
+     * Filter periode & kategori dengan debounce auto-submit.
+     *
+     * Alur: setiap keystroke pada input pencarian di-debounce 500ms
+     * (debounce() dari shared module) lalu memanggil this.form.requestSubmit().
+     * Form memuat parameter search beserta filter bulan/tahun/kategori, sehingga
+     * reload terjadi hanya ketika user selesai mengetik (mengurangi request server).
+     *
+     * @returns {void}
+     */
     const searchInput = document.querySelector('input[name="search"]');
     if (searchInput) {
         searchInput.addEventListener('input', debounce(function () {
@@ -41,6 +67,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // per bulan selama tahun yang dipilih.
     // ============================================================
 
+    /**
+     * Merender line chart trend pemasukan & pengeluaran bulanan.
+     *
+     * Data berasal dari window.monthlyTrendData (backend:
+     * ExpenseReportService::getMonthlyTrend): 12 titik bulan Jan-Des dengan
+     * nilai income & expense; bulan tanpa data diisi 0 oleh server. Tooltip
+     * sumbu Y diformat ringkas (Rp …jt).
+     *
+     * @returns {void}
+     */
     const monthlyTrendCanvas = document.getElementById('monthlyTrendChart');
     if (monthlyTrendCanvas && window.monthlyTrendData) {
         const ctx = monthlyTrendCanvas.getContext('2d');
@@ -113,6 +149,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // per kategori. Warna diambil dari categoryColors map.
     // ============================================================
 
+    /**
+     * Merender horizontal bar chart total pengeluaran per kategori.
+     *
+     * Data dari window.categoryDistributionData (backend:
+     * ExpenseReportService::getCategoryDistribution). Warna setiap bar
+     * dipetakan lewat map categoryColors; kategori yang tidak terdaftar
+     * memakai warna fallback abu-abu (#9ca3af).
+     *
+     * @returns {void}
+     */
     const categoryExpenseCanvas = document.getElementById('categoryExpenseChart');
     if (categoryExpenseCanvas && window.categoryDistributionData) {
         const categoryColors = {
@@ -177,6 +223,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // pemasukan vs total pengeluaran.
     // ============================================================
 
+    /**
+     * Merender doughnut chart perbandingan pemasukan vs pengeluaran.
+     *
+     * Data dari window.summaryData.total_income dan .total_expense (backend:
+     * ExpenseReportService::calculateSummary). Hijau untuk pemasukan, merah
+     * untuk pengeluaran.
+     *
+     * @returns {void}
+     */
     const incomeVsExpenseCanvas = document.getElementById('incomeVsExpenseChart');
     if (incomeVsExpenseCanvas && window.summaryData) {
         const ctx = incomeVsExpenseCanvas.getContext('2d');

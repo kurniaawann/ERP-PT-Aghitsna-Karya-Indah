@@ -1,3 +1,27 @@
+{{-- =====================================================================
+     Halaman: Laporan Rekap Penjualan (Sales Report)
+     Tujuan: Dashboard laporan penjualan untuk General Manager dengan filter,
+             summary cards, chart (trend bulanan & distribusi status), kartu
+             status pembayaran, top 5 proyek terbaik, dan detail transaksi.
+     Data dari SalesReportController@index (logic di SalesReportService):
+     - $salesRecaps        : paginator detail transaksi penjualan
+     - $summary            : total_selling, total_capital, total_profit,
+                             profit_margin, avg_transaction, total_transactions,
+                             paid_count, paid_amount, unpaid_count, unpaid_amount
+     - $monthlyTrend       : trend penjualan bulanan untuk chart
+     - $statusDistribution : distribusi status pembayaran (Lunas/Belum Lunas)
+     - $topProjects        : top 5 proyek berdasarkan profit
+     Filter (GET): month, year, status (Lunas/Belum Lunas), search
+     Komponen yang di-include:
+     - layouts.app
+     - x-report.sales-reports.summary-card (4 kartu ringkasan)
+     - x-report.sales-reports.status-badge (badge status per baris)
+     - x-buttons.print-dropdown (export PDF/Excel)
+     JS yang di-load:
+     - resources/js/pages/report/sales-reports/index.js (via @vite + @push)
+     - Data chart di-pass via window globals (monthlyTrendData,
+       statusDistributionData)
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Laporan Rekap Penjualan')

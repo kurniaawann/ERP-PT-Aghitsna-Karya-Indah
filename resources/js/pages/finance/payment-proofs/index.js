@@ -61,6 +61,14 @@ function getPaymentProofInvoiceData(prefix) {
 /**
  * Menambahkan opsi invoice ke dropdown secara bertahap (lazy loading).
  *
+ * Alur:
+ * 1. Ambil data invoice dari window.paymentProofInvoiceData (via getPaymentProofInvoiceData).
+ * 2. Baca jumlah item yang sudah dimuat dari dataset.loadedCount.
+ * 3. Ambil `count` item berikutnya (default chunk 10) via slice.
+ * 4. Untuk tiap item buat <option>: label (+ " (Lunas)" bila lunas), simpan
+ *    next_stage & remaining_amount ke dataset, dan disable jika sudah lunas.
+ * 5. Perbarui dataset.loadedCount dengan jumlah total yang sudah dimuat.
+ *
  * @param  {string}  prefix
  * @param  {number}  count  Jumlah item per chunk (default: 10)
  * @return {void}
@@ -100,6 +108,17 @@ function appendPaymentProofInvoiceOptions(prefix, count = PAYMENT_PROOF_INVOICE_
 
 /**
  * Memuat opsi invoice ke dropdown dan mengikat event scroll untuk lazy loading.
+ *
+ * Alur pemilihan multi-invoice (chunked 10):
+ * 1. Kosongkan dropdown lalu isi placeholder "Pilih invoice"; disable bila tidak ada data.
+ * 2. Reset dataset.loadedCount = 0 lalu panggil appendPaymentProofInvoiceOptions
+ *    untuk memuat chunk pertama (10 item).
+ * 3. Jika ada selectedInvoiceNumber (mode edit), terus muat chunk berikutnya
+ *    sampai opsi tersebut tersedia, lalu set nilai dropdown.
+ * 4. Tampilkan/sembunyikan section tahap pembayaran (hanya untuk tipe 'proyek').
+ * 5. Panggil updatePaymentProofStage untuk menyelaraskan tampilan.
+ * 6. Ikat event scroll sekali saja (flag __paymentProofScrollBound) untuk memuat
+ *    chunk berikutnya saat dropdown hampir habis di-scroll.
  *
  * @param  {string}      prefix
  * @param  {string|null} selectedInvoiceNumber  Invoice yang sudah dipilih (untuk edit mode)
@@ -172,6 +191,13 @@ function updatePaymentProofInvoices(prefix, selectedInvoiceNumber = null) {
 /**
  * Memperbarui tampilan tahap pembayaran berdasarkan invoice yang dipilih.
  *
+ * Alur tahap pembayaran (select -> amount -> done):
+ * 1. Ambil opsi invoice terpilih dan dataset.nextStage-nya.
+ * 2. Bila tipe bukan 'proyek': tampilkan "Tidak ada tahap pembayaran".
+ * 3. Bila ada nextStage: tampilkan "Pembayaran ke {n}" dan isi hidden input stage.
+ * 4. Selain itu tampilkan "-".
+ * 5. Teruskan ke updatePaymentProofAmountSection agar section nominal ikut sinkron.
+ *
  * @param  {string} prefix
  * @return {void}
  */
@@ -205,6 +231,13 @@ function updatePaymentProofStage(prefix) {
  *
  * Untuk invoice proyek: nominal bisa diubah manual.
  * Untuk tipe lain: nominal mengikuti sisa tagihan (readonly).
+ *
+ * Alur (membedakan 1 invoice vs banyak / proyek vs non-proyek):
+ * - Non-proyek: sembunyikan input nominal, set nilai readonly mengikuti sisa
+ *   tagihan, dan tampilkan bantuan "Nominal mengikuti sisa tagihan ...".
+ * - Proyek: tampilkan input nominal yang bisa diedit; bila belum ada invoice
+ *   terpilih tampilkan petunjuk memilih, bila sudah tampilkan sisa tagihan
+ *   invoice tersebut.
  *
  * @param  {string} prefix
  * @return {void}
@@ -246,6 +279,15 @@ function updatePaymentProofAmountSection(prefix) {
 
 /**
  * Memvalidasi nominal pembayaran apakah melebihi sisa tagihan.
+ *
+ * Alur:
+ * 1. Baca sisa tagihan (remaining_amount) dari opsi invoice terpilih.
+ * 2. Validasi hanya berlaku untuk tipe 'proyek' dengan invoice terpilih;
+ *    selain itu sembunyikan peringatan dan anggap valid.
+ * 3. Parse nominal input via parseCurrencyInput.
+ * 4. Jika nominal > sisa tagihan (dan sisa > 0): tampilkan pesan peringatan
+ *    dan kembalikan false (submit dibatalkan).
+ * 5. Selain itu sembunyikan peringatan dan kembalikan true.
  *
  * @param  {string}  prefix
  * @return {boolean} true jika valid, false jika melebihi
@@ -346,6 +388,10 @@ function initSelectAllCheckbox() {
     const itemCheckboxes = document.querySelectorAll('input[name="selected_items[]"]');
     const deleteButton = document.getElementById('delete-button');
 
+    /**
+     * Update status disabled tombol hapus berdasarkan checkbox yang dipilih.
+     * Aktif bila minimal ada 1 checkbox yang dicentang.
+     */
     function updateDeleteButtonState() {
         const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
         if (deleteButton) {
@@ -379,6 +425,16 @@ function initSelectAllCheckbox() {
 
 // ─── Inisialisasi ─────────────────────────────────────────────────────
 
+/**
+ * Inisialisasi logika halaman saat DOM siap.
+ *
+ * Alur:
+ * 1. Bind form bukti pembayaran mode create (module, tipe invoice, tahap,
+ *    nominal, dan validasi).
+ * 2. Ikat submit form modal Tambah: validasi nominal dahulu, jika tidak valid
+ *    batalkan submit dan scroll ke peringatan; jika valid tampilkan loading.
+ * 3. Inisialisasi checkbox pilih semua untuk hapus massal.
+ */
 document.addEventListener('DOMContentLoaded', function () {
     bindPaymentProofForm('create');
 

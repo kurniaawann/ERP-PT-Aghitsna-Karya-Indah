@@ -1,3 +1,19 @@
+{{-- =====================================================================
+     Halaman: Dashboard
+     Tujuan: Menampilkan dua kartu reminder utama di beranda —
+             (1) Reminder Gaji Karyawan yang belum dibayar pada periode
+             minggu berjalan, dan (2) Reminder Stok Menipis (item ≤ 5 unit).
+     Data dari PageController@dashboard:
+     - $employeesWithoutSalary : daftar karyawan + minggu-minggu yang gajinya
+                                 belum dibayar (employee, unpaid_weeks,
+                                 total_unpaid_weeks)
+     - $lowStockItems          : koleksi item inventori dengan quantity <= 5
+     - $isPayrollPeriod        : penanda periode payroll aktif
+     - $currentWeek            : nomor minggu berjalan dalam bulan ini
+     - $weekRange              : rentang tanggal minggu berjalan (start, end)
+     Komponen yang di-include: layouts.app
+     JS yang di-load: (tidak ada)
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah Dashboard')
@@ -6,6 +22,14 @@
     <!-- Reminder Cards Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <!-- Reminder Gaji Karyawan -->
+        {{-- ============================================================
+             SECTION: REMINDER GAJI KARYAWAN
+             Menampilkan karyawan yang gaji minggu berjalannya belum dibayar.
+             - Info periode payroll (minggu & rentang tanggal)
+             - Total karyawan belum dibayar + progress bar
+             - Daftar karyawan dengan badge minggu-minggu unpaid
+             - Kondisi kosong menampilkan pesan "Semua Gaji Sudah Dibayarkan"
+             ============================================================ --}}
         <div class="bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden">
             {{-- Reminder Payroll Mingguan --}}
             <div class="bg-warning-light px-6 py-4 border-b border-warning-light">
@@ -117,6 +141,14 @@
         </div>
 
         <!-- Reminder Stok Menipis -->
+        {{-- ============================================================
+             SECTION: REMINDER STOK MENIPIS
+             Menampilkan item inventori dengan stok <= 5 unit.
+             - Total item menipis + progress bar
+             - Daftar item (nama, ID item) dengan badge jumlah stok yang
+               warnanya berubah: 0 = error, 1-2 = warning, 3-5 = info
+             - Kondisi kosong menampilkan pesan "Semua Stok Aman"
+             ============================================================ --}}
         <div class="bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden">
             <div class="bg-error-light px-6 py-4 border-b border-error-light">
                 <div class="flex items-center gap-3">

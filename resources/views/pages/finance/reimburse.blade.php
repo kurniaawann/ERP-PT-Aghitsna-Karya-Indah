@@ -1,5 +1,29 @@
 {{-- ═══════════════════════════════════════════════════════════════════════════
      HALAMAN INDEX REIMBURSEMENT
+     Tujuan: Menampilkan daftar reimbursement dengan filter status/bulan/
+             tahun & pencarian, aksi CRUD, persetujuan (approve/reject),
+             dan export PDF/Excel.
+     Data dari ReimburseController@index:
+     - $reimburses: Paginator Reimburse (15/halaman) hasil
+                    ReimburseService::buildFilteredQuery($request),
+                    difilter search, status, month, year.
+     - $search / $status / $month / $year: nilai filter aktif dari
+                    request (dipakai untuk mempertahankan pilihan).
+     Logika role:
+     - superadmin: dapat menambah & mengedit reimburse (status draft).
+     - admin     : dapat menyetujui/menolak reimburse (bulk approve/reject).
+     Komponen yang di-include:
+     - x-filters.month-filter / year-filter / search-input : toolbar filter
+     - x-buttons.print-dropdown / add-button / delete-button : tombol aksi
+     - components.finance.reimburse.table                  : tabel reimburse
+     - components.finance.reimburse.add-modal / edit-modal : modal CRUD (superadmin)
+     - components.finance.reimburse.approve-modal / reject-modal : modal persetujuan (admin)
+     - x-modal                                             : konfirmasi hapus
+     - x-pagination                                        : navigasi halaman
+     JS: @vite('resources/js/pages/finance/reimburse/index.js')
+     ═══════════════════════════════════════════════════════════════════════════ --}}
+{{-- ═══════════════════════════════════════════════════════════════════════════
+     HALAMAN INDEX REIMBURSEMENT
      Menampilkan daftar reimbursement dengan filter, search, aksi CRUD,
      persetujuan (approve/reject), dan export.
      ═══════════════════════════════════════════════════════════════════════════ --}}
@@ -21,6 +45,9 @@
                 class="w-full min-[1520px]:w-auto min-[1520px]:flex-1 flex flex-col min-[1520px]:flex-row gap-3">
 
                 {{-- Filter Status --}}
+                {{-- Dropdown status yang auto-submit. Atribut selected
+                     memakai ternary request('status') === 'x' untuk
+                     mempertahankan nilai filter setelah reload. --}}
                 <div class="w-full min-[1520px]:w-auto">
                     <label for="status-select" class="sr-only">Semua Status</label>
                     <select name="status" id="status-select" onchange="this.form.requestSubmit()"
@@ -60,11 +87,16 @@
                         responsive="custom" />
 
                     {{-- Tombol Tambah (Super Admin only) --}}
+                    {{-- Hanya role superadmin yang boleh membuat pengajuan
+                         reimburse baru; selain itu tombol tidak dirender. --}}
                     @if (Auth::user()->role === 'superadmin')
                         <x-buttons.add-button modalId="addModal" text="Tambah Reimburse" responsive="custom" />
                     @endif
 
                     {{-- Dropdown Persetujuan (Admin only) --}}
+                    {{-- Alur: admin memilih baris reimburse lalu membuka
+                         dropdown ini (Setujui/Tolak). Tombol dinonaktifkan
+                         sampai JS menyalakannya setelah ada seleksi. --}}
                     @if (Auth::user()->role === 'admin')
                         <div class="relative inline-block text-left w-full min-[1520px]:w-auto">
                             <button type="button" id="approval-dropdown-button" disabled
@@ -99,6 +131,9 @@
         </div>
 
         {{-- ─── Ringkasan Data Terpilih (Admin) ────────────────────────────── --}}
+        {{-- Hanya dirender untuk admin: menampilkan jumlah & total nominal
+             reimburse yang dicentang; isinya diperbarui oleh JS saat
+             seleksi checkbox berubah. --}}
         @if (Auth::user()->role === 'admin')
             <div id="selected-info" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p class="text-sm text-text-primary">
@@ -121,6 +156,9 @@
     @endif
 
     {{-- ─── Modal Edit per baris (Super Admin only, status draft) ─────────── --}}
+    {{-- Alur: hanya superadmin yang boleh mengedit, dan hanya reimburse
+         berstatus 'draft' yang masih bisa diubah (sudah disetujui/ditolak
+         tidak boleh diedit lagi). --}}
     @foreach ($reimburses as $reimburse)
         @if ($reimburse->status === 'draft' && Auth::user()->role === 'superadmin')
             @include('components.finance.reimburse.edit-modal', ['reimburse' => $reimburse])

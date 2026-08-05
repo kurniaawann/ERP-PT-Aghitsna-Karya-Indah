@@ -1,3 +1,20 @@
+{{-- =====================================================================
+     Halaman: Faktur Pembelian (Purchase Invoices)
+     Tujuan: Menampilkan daftar faktur pembelian dengan filter bulan/tahun
+             & pencarian (material, barang, NPWP), export Excel/PDF,
+             serta CRUD (tambah, edit, hapus per baris & massal).
+     Data dari PurchaseInvoiceController@index:
+     - $invoices: Paginator PurchaseInvoice (15/halaman) hasil
+                  PurchaseInvoiceService::buildFilteredQuery($request)
+                  diurutkan created_at desc, difilter month/year/search.
+     Komponen yang di-include:
+     - x-filters.month-filter / year-filter / search-input : toolbar filter & pencarian
+     - x-buttons.print-dropdown / delete-button / add-button : tombol aksi
+     - x-finance.purchase-invoices.table / add-modal / edit-modal : UI CRUD
+     - x-pagination                                      : navigasi halaman
+     - x-modal                                           : konfirmasi hapus
+     JS: @vite('resources/js/pages/finance/purchase-invoices/index.js')
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Faktur Pembelian')
@@ -43,6 +60,8 @@
         </div>
 
         {{-- ==================== Tabel Data ==================== --}}
+        {{-- Tabel faktur pembelian dengan checkbox seleksi dan tombol
+             aksi (edit/hapus/print) per baris. --}}
         <x-finance.purchase-invoices.table :invoices="$invoices" />
     </div>
 
@@ -53,6 +72,8 @@
     <x-finance.purchase-invoices.add-modal />
 
     {{-- ==================== Modal Edit untuk setiap faktur ==================== --}}
+    {{-- Satu modal edit dibuat per baris faktur agar data form tiap
+         faktur tetap terpisah. --}}
     @foreach ($invoices as $invoice)
         <x-finance.purchase-invoices.edit-modal :invoice="$invoice" />
     @endforeach

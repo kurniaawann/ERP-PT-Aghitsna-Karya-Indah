@@ -20,6 +20,12 @@
  * Fungsi untuk submit form hapus dengan loading indicator.
  * Dipanggil dari onclick pada modal konfirmasi hapus.
  *
+ * Alur:
+ * 1. Ambil tombol konfirmasi sesuai buttonId.
+ * 2. Ganti isi tombol dengan spinner + loadingText, disable, dan
+ *    beri class opacity/cursor-not-allowed.
+ * 3. Submit form formId (default #deleteForm).
+ *
  * @param {string} buttonId - ID tombol konfirmasi (default: confirm-btn-deleteModal)
  * @param {string} formId - ID form yang akan di-submit (default: deleteForm)
  * @param {string} loadingText - Teks loading saat proses (default: Menghapus...)
@@ -46,6 +52,11 @@ window.submitDeleteForm = function (buttonId = 'confirm-btn-deleteModal', formId
  * Mengubah input angka menjadi format Rupiah dengan pemisah ribuan.
  * Contoh: 10000 -> "10.000"
  *
+ * Alur:
+ * 1. Ambil nilai input, buang semua karakter non-digit.
+ * 2. Format dengan Intl.NumberFormat('id-ID') agar muncul pemisah
+ *    ribuan titik; kosongkan input bila tidak ada digit.
+ *
  * @param {HTMLInputElement} input - Element input yang akan diformat
  */
 function formatCurrencyInput(input) {
@@ -64,7 +75,13 @@ function formatCurrencyInput(input) {
 
 /**
  * Memperbarui visibilitas tombol hapus pada setiap item row.
- * Tombol hapus hanya ditampilkan jika ada lebih dari 1 item.
+ *
+ * Alur:
+ * 1. Cari container #itemsContainer-{modalId}.
+ * 2. Hitung jumlah baris .item-row dan tombol .delete-btn.
+ * 3. Tampilkan tombol hapus (display: flex) bila jumlah item > 1;
+ *    sembunyikan bila hanya tersisa 1 baris (harus selalu ada
+ *    minimal 1 item).
  *
  * @param {string} modalId - ID modal (addModal atau editModal-{id})
  */
@@ -82,6 +99,20 @@ function updateDeleteButtons(modalId) {
 
 /**
  * Menghitung total per item (Qty × Harga Satuan) dan menampilkannya.
+ *
+ * Alur:
+ * 1. Baca nilai input name="item_banyaknya[]" pada baris tsb sebagai
+ *    integer (fallback 0).
+ * 2. Baca nilai input name="item_harga_satuan[]" lalu parse via
+ *    parseCurrencyInput() (dari shared/currency.js) yang membuang
+ *    pemisah ribuan dan karakter non-digit.
+ * 3. Hitung total = qty × harga.
+ * 4. Tampilkan total di elemen .item-total dengan format angka ribuan
+ *    Indonesia (Intl.NumberFormat 'id-ID'); tampilkan '0' bila nol.
+ * 5. Kembalikan total untuk diakumulasi calculateGrandTotal().
+ *
+ * Nilai 'jumlah' per item juga dihitung ulang server-side oleh
+ * NotaService::processItems() saat penyimpanan.
  *
  * @param {HTMLElement} row - Element baris item
  * @returns {number} Total jumlah item
@@ -102,6 +133,17 @@ function calculateItemTotal(row) {
 /**
  * Menghitung grand total dari seluruh items dalam satu modal.
  * Grand total = Σ (Qty × Harga Satuan) untuk setiap item.
+ *
+ * Alur:
+ * 1. Cari container #itemsContainer-{modalId}; return 0 bila tak ada.
+ * 2. Iterasi seluruh baris .item-row, akumulasi qty × hargaSatuan
+ *    (harga di-parse via parseCurrencyInput()).
+ * 3. Tampilkan hasil di elemen #grandTotal-{modalId} dengan format
+ *    ribuan Indonesia.
+ * 4. Kembalikan grand total.
+ *
+ * Catatan: ini hanya preview realtime. Saat submit, NotaService
+ * menghitung itemsTotal, biaya tambahan, dan PPN di server.
  *
  * @param {string} modalId - ID modal (addModal atau editModal-{id})
  * @returns {number} Grand total
@@ -129,8 +171,17 @@ function calculateGrandTotal(modalId) {
 
 /**
  * Mengikat event listener pada input qty dan harga satuan.
- * Listener akan memanggil calculateItemTotal dan calculateGrandTotal
- * setiap kali nilai berubah.
+ *
+ * Alur:
+ * 1. Ambil input qty (item_banyaknya[]) dan harga satuan
+ *    (item_harga_satuan[]) pada baris tsb.
+ * 2. Definisikan recalc() yang memanggil calculateItemTotal(row) lalu
+ *    calculateGrandTotal(modalId) — sehingga total item dan grand total
+ *    selalu sinkron.
+ * 3. Jika input qty ada, pasang listener 'input' -> recalc.
+ * 4. Jika input harga ada, pasang listener 'input' yang terlebih dahulu
+ *    memformat nilai dengan formatCurrencyInput() (pemisah ribuan)
+ *    kemudian memanggil recalc.
  *
  * @param {HTMLElement} row - Element baris item
  * @param {string} modalId - ID modal
@@ -159,6 +210,15 @@ function attachItemListeners(row, modalId) {
 /**
  * Menambahkan baris item baru ke dalam container items.
  * Baris baru memiliki input kosong yang siap diisi oleh user.
+ *
+ * Alur:
+ * 1. Cari container #itemsContainer-{modalId}.
+ * 2. Buat elemen div.item-row berisi input qty, nama barang, harga
+ *    satuan (class price-input), display total (.item-total), dan
+ *    tombol hapus (.delete-btn).
+ * 3. Append ke container.
+ * 4. Pasang listener item (attachItemListeners) dan tombol hapus.
+ * 5. Perbarui visibilitas tombol hapus tiap baris (updateDeleteButtons).
  *
  * @param {string} modalId - ID modal (addModal atau editModal-{id})
  */
@@ -219,7 +279,12 @@ function addItemRow(modalId) {
 
 /**
  * Menghapus baris item dari container.
- * Setelah penghapusan, grand total akan dihitung ulang.
+ *
+ * Alur:
+ * 1. Cari baris .item-row terdekat dari tombol; batal bila tak ada.
+ * 2. Tentukan modalId dari id container (itemsContainer-{modalId}).
+ * 3. Hapus baris, hitung ulang grand total, dan perbarui visibilitas
+ *    tombol hapus (minimal 1 baris tersisa).
  *
  * @param {HTMLElement} button - Tombol hapus yang diklik
  */
@@ -241,6 +306,15 @@ function removeItemRow(button) {
 
 /**
  * Mengaktifkan/menonaktifkan loading indicator pada tombol submit.
+ *
+ * Alur saat loading = true:
+ * 1. Simpan HTML asli tombol ke dataset.originalHtml (sekali saja).
+ * 2. Disable tombol, ganti isi dengan spinner + loadingText, dan
+ *    beri class opacity/cursor-not-allowed.
+ *
+ * Alur saat loading = false:
+ * 1. Kembalikan HTML asli, enable tombol, hapus class loading,
+ *    lalu buang dataset.originalHtml.
  *
  * @param {HTMLButtonElement} submitBtn - Tombol submit
  * @param {string} loadingText - Teks yang ditampilkan saat loading
@@ -273,6 +347,11 @@ function setButtonLoading(submitBtn, loading, loadingText = 'Menyimpan...') {
  * Fungsi untuk print nota yang dipilih.
  * Mengumpulkan checkbox yang dicentang, mengirim via AJAX, dan download PDF.
  *
+ * Alur:
+ * 1. Baca route print terpilih dari hidden input #nota-print-selected-route.
+ * 2. Delegasikan proses ke sharedPrintSelected() (dari shared/print.js)
+ *    yang menangani pengumpulan checkbox, request AJAX, dan download PDF.
+ *
  * @param {HTMLButtonElement} btn - Tombol yang diklik
  * @returns {boolean} true jika proses dimulai
  */
@@ -292,6 +371,36 @@ window.printSelected = printSelected;
  * INISIALISASI
  * ========================================== */
 
+/**
+ * Inisialisasi seluruh interaksi halaman nota saat DOM siap.
+ *
+ * Bagian penting:
+ *
+ * 1. Inisialisasi tombol hapus & grand total untuk modal add dan semua
+ *    modal edit (#itemsContainer-editModal-*).
+ *
+ * 2. Format currency pada semua input .price-input saat mengetik.
+ *
+ * 3. Pasang attachItemListeners() + listener tombol hapus pada setiap
+ *    baris item yang sudah ada di semua container items.
+ *
+ * 4. Tombol "Tambah Item" dengan DUA selector:
+ *    - Modal Tambah: tombol ber-id #addItemBtn-addModal
+ *      -> addItemRow('addModal').
+ *    - Modal Edit: semua tombol ber-class .addItemBtn. Karena bisa ada
+ *      banyak modal edit, modalId ditentukan dengan mencari container
+ *      items terdekat (btn.closest('.mb-4') lalu cari
+ *      [id^="itemsContainer-"]), agar tombol menambah item pada modal
+ *      yang benar.
+ *
+ * 5. Loading indicator pada submit form add & edit (setButtonLoading).
+ *
+ * 6. Checkbox "Pilih Semua", checkbox individual, dan updateButtonStates().
+ *
+ * 7. Pencegahan double submit pada form hapus.
+ *
+ * 8. Reset tombol submit saat backdrop modal diklik.
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     /* ─── Inisialisasi Tombol Hapus & Total untuk Modal Tambah ─── */
@@ -428,6 +537,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 /**
  * Memperbarui status tombol hapus dan tombol print berdasarkan checkbox yang dipilih.
+ *
+ * Alur:
+ * 1. Hitung jumlah checkbox ids[] tercentang.
+ * 2. Perbarui teks #selectedCountText dengan jumlah terpilih.
+ * 3. Tombol #delete-button: aktif bila count > 0, nonaktif + class
+ *    opacity bila tidak ada pilihan.
+ * 4. Tombol #printSelectedItem: ditampilkan bila ada pilihan,
+ *    disembunyikan bila tidak ada.
  */
 function updateButtonStates() {
     var deleteButton = document.getElementById('delete-button');

@@ -37,6 +37,15 @@ function getCurrentDates() {
  * Melakukan auto-filter (redirect) berdasarkan nilai form saat ini.
  * Dipanggil saat user memilih atau mereset barang.
  *
+ * Alur:
+ * 1. Ambil konfigurasi route dan tanggal mulai/akhir dari form.
+ * 2. Bangun URL index route dengan parameter start_date dan end_date
+ *    (hanya bila terisi).
+ * 3. Set parameter item_id dari nilai hidden input (boleh kosong
+ *    untuk filter "semua barang").
+ * 4. Hapus parameter page agar pagination kembali ke halaman 1.
+ * 5. Redirect browser ke URL tersebut untuk memuat ulang laporan.
+ *
  * @param {HTMLInputElement} hiddenInput  Hidden input untuk item_id
  */
 function autoFilterNow(hiddenInput) {
@@ -60,6 +69,12 @@ function autoFilterNow(hiddenInput) {
 /**
  * Mengatur pilihan barang pada dropdown dan memicu auto-filter.
  *
+ * Alur:
+ * 1. Set nilai hidden input item_id (kosong = reset ke "Semua Barang").
+ * 2. Perbarui teks label dropdown sesuai pilihan.
+ * 3. Tutup menu dropdown.
+ * 4. Panggil autoFilterNow() untuk melakukan redirect dengan filter terbaru.
+ *
  * @param {HTMLInputElement} hiddenInput  Hidden input untuk item_id
  * @param {HTMLElement}      label        Label dropdown untuk menampilkan teks terpilih
  * @param {HTMLElement}      menu         Container dropdown menu
@@ -78,6 +93,17 @@ function setSelected(hiddenInput, label, menu, id, text) {
 /**
  * Mengambil data barang dari server untuk dropdown.
  * Mendukung pencarian dan pagination (infinite scroll, 10 item per load).
+ *
+ * Alur:
+ * 1. Batal jika sedang loading, atau mode non-append yang sudah habis data.
+ * 2. Bangun parameter search, page, dan limit (10 item per request).
+ * 3. Tampilkan spinner loading pada list (kecuali mode append).
+ * 4. Fetch ke itemsDropdownRoute dengan header X-Requested-With (AJAX).
+ * 5. Render tiap item sebagai tombol; klik pada tombol memanggil
+ *    setSelected() untuk mengisi hidden input dan memicu auto-filter.
+ * 6. Update state.hasMore & increment state.page bila masih ada data.
+ * 7. Pada error, tampilkan pesan error + toast (bila window.showToast
+ *    tersedia), lalu reset state.loading di blok finally.
  *
  * @param {Object}     state              State dropdown
  * @param {number}     state.page         Halaman saat ini
@@ -185,6 +211,18 @@ async function fetchItems(state, list, append = false) {
  * Menginisialisasi dropdown barang dengan search dan infinite scroll.
  * Mengikat event listener untuk toggle menu, search input,
  * clear selection, infinite scroll, dan outside click.
+ *
+ * Alur dropdown item kustom:
+ * 1. Tombol toggle membuka/menutup menu; saat dibuka, fokus ke search
+ *    input dan memanggil resetAndFetch() untuk selalu memuat data terbaru.
+ * 2. Search input memakai debounce 300ms — fetch hanya dijalankan setelah
+ *    user berhenti mengetik 300ms dan query berubah dari state.search.
+ * 3. Infinite scroll pada list memuat batch berikutnya (10 item) ketika
+ *    scroll mendekati dasar list.
+ * 4. Tombol clear mereset search dan memanggil setSelected() dengan
+ *    nilai kosong untuk kembali ke "Semua Barang".
+ * 5. Klik di luar menu menutup dropdown; klik di dalam menu dicegah
+ *    agar tidak menutup.
  */
 function initItemDropdown() {
     const btn = document.getElementById('itemDropdownBtn');
@@ -294,6 +332,13 @@ function initItemDropdown() {
  * Menginisialisasi auto-submit pada input tanggal.
  * Saat user mengubah tanggal mulai atau tanggal akhir,
  * form akan otomatis disubmit untuk memperbarui laporan.
+ *
+ * Alur:
+ * 1. Cari input start_date dan end_date di dalam form terdekat.
+ * 2. Saat salah satu tanggal berubah (event change), validasi sisi
+ *    client: jika end_date < start_date, end_date disetel mengikuti
+ *    start_date agar rentang selalu valid.
+ * 3. Form disubmit otomatis untuk memuat ulang laporan stok.
  */
 function initDateFilter() {
     const startDate = document.getElementById('start_date');

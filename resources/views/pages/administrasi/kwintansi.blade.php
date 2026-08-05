@@ -2,6 +2,16 @@
      Halaman Utama Modul Kwitansi Administrasi
      PT Aghitsna Karya Indah
 
+     Tujuan: Menampilkan daftar kwitansi dengan pencarian, paginasi,
+             tambah/edit lewat modal, hapus massal, dan export PDF.
+
+     Data dari KwintansiController@index:
+     - $kwintansis : koleksi Kwintansi (paginate 15/halaman, eager-load
+                     relasi paymentAccount, hanya data milik user yang
+                     login, urut created_at terbaru; pencarian berdasarkan
+                     id_kwintansi, received_from, payment_for)
+     - $search     : keyword pencarian
+
      Komponen:
      - Header: Judul halaman
      - Toolbar: Form pencarian, tombol print, hapus massal, tambah
@@ -10,6 +20,10 @@
      - Modal Edit: Form edit kwitansi (satu per kwitansi)
      - Modal Hapus: Konfirmasi hapus massal
      - Pagination: Navigasi halaman
+
+     JS: @vite('resources/js/pages/administrasi/kwitansi/index.js')
+         + hidden input kwintansi-print-selected-route (route export PDF
+           data terpilih yang dipakai JS)
      ===================================================================== --}}
 
 @extends('layouts.app')
@@ -68,7 +82,9 @@
     @include('components.administrasi.kwintansi.add-modal')
 
     {{-- ═══════════════════════════════════════════════════════════════
-         MODAL EDIT: Form edit kwitansi (satu modal per kwitansi)
+         MODAL EDIT: Form edit kwitansi (satu modal per kwitansi).
+         Alur: iterasi setiap $kwintansi pada halaman aktif lalu render
+         satu modal edit per baris data.
          ═══════════════════════════════════════════════════════════════ --}}
     @foreach ($kwintansis as $kwintansi)
         @include('components.administrasi.kwintansi.edit-modal', ['kwintansi' => $kwintansi])
@@ -82,7 +98,9 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
-    {{-- Hidden input untuk route print selected (digunakan oleh JS) --}}
+    {{-- Hidden input untuk route print selected (digunakan oleh JS).
+         JS membaca nilai route ini saat user memilih baris lalu klik
+         "Print Selected" pada print-dropdown-with-selected. --}}
     <input type="hidden" id="kwintansi-print-selected-route" value="{{ route('kwintansi.export.pdf.selected') }}">
 
     {{-- ═══════════════════════════════════════════════════════════════

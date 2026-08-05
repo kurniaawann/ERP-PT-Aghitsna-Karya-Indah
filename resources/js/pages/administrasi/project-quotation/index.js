@@ -134,18 +134,29 @@ function resolveIds(prefix) {
 
 /**
  * Global state untuk add items.
+ *
+ * addItemsStore menyimpan item-item penawaran baru (modal add) di memory,
+ * sedangkan addNextItemId adalah counter untuk menghasilkan id unik item
+ * baru agar tidak bertabrakan saat add/hapus.
  */
 let addItemsStore = [];
 let addNextItemId = 1;
 
 /**
  * Edit items disimpan per quotation number.
+ *
+ * editItemsStore memetakan nomor penawaran -> array item (di-load oleh
+ * inline script di edit-modal Blade via window.editItemsStore), sedangkan
+ * editNextItemId menyimpan counter id unik untuk tiap quotation.
  */
 let editItemsStore = window.editItemsStore || {};
 let editNextItemId = {};
 
 /**
  * Mendapatkan items store berdasarkan prefix.
+ *
+ * Untuk 'add' mengembalikan addItemsStore; untuk 'edit-{n}' mengembalikan
+ * editItemsStore[n] (fallback array kosong).
  *
  * @param  {string} prefix  'add' atau 'edit-{quotNumber}'
  * @return {Array}          Array of items
@@ -160,6 +171,9 @@ function getItemsStore(prefix) {
 
 /**
  * Menyimpan items store berdasarkan prefix.
+ *
+ * Untuk 'add' menimpa addItemsStore; untuk 'edit-{n}' menimpa
+ * editItemsStore[n].
  *
  * @param  {string} prefix  'add' atau 'edit-{quotNumber}'
  * @param  {Array}  items   Array of items
@@ -178,7 +192,18 @@ function setItemsStore(prefix, items) {
  * ========================================== */
 
 /**
- * Menambahkan item baru ke dalam daftar.
+ * Menambahkan item baru ke dalam daftar (in-memory store).
+ *
+ * Alur:
+ * 1. Ambil items store sesuai prefix via getItemsStore().
+ * 2. Alokasikan id baru:
+ *    - Untuk 'add' gunakan counter global addNextItemId.
+ *    - Untuk 'edit-{n}' gunakan counter per-quotation editNextItemId[n],
+ *      diinisialisasi ke 1 bila belum ada.
+ * 3. Buat objek item baru dengan order_number = panjang store + 1,
+ *    field kosong, dan total_price 0.
+ * 4. Push ke store lalu simpan kembali via setItemsStore().
+ * 5. Render ulang seluruh daftar via renderItems().
  *
  * @param  {string} prefix  'add' atau 'edit-{quotNumber}'
  */
@@ -212,7 +237,13 @@ function addItem(prefix) {
 }
 
 /**
- * Menghapus item dari daftar.
+ * Menghapus item dari daftar (in-memory store).
+ *
+ * Alur:
+ * 1. Ambil store sesuai prefix.
+ * 2. Filter semua item yang id-nya bukan itemId.
+ * 3. Renumber ulang order_number agar berurutan (idx + 1).
+ * 4. Simpan store lalu render ulang.
  *
  * @param  {string} prefix  'add' atau 'edit-{quotNumber}'
  * @param  {number} itemId  ID item yang akan dihapus
@@ -231,7 +262,21 @@ function removeItem(prefix, itemId) {
 }
 
 /**
- * Memperbarui field item tertentu.
+ * Memperbarui field item tertentu di in-memory store.
+ *
+ * Alur:
+ * 1. Ambil store dan cari item berdasarkan itemId; batal bila tidak ada.
+ * 2. Set field baru pada item.
+ * 3. Hitung ulang total_price = Math.round(volume * hargaSatuan);
+ *    volume dianggap 1 bila kosong, koma dipetakan ke titik.
+ * 4. Simpan store.
+ * 5. Render:
+ *    - render = true (default): render ulang SELURUH daftar
+ *      (renderItems) sehingga struktur DOM dinormalisasi. Dipakai saat
+ *      onchange (input kehilangan fokus).
+ *    - render = false: PATCH minimal agar fokus/caret tidak hilang.
+ *      Hanya perbarui elemen .item-total-display pada baris item tsb
+ *      dan updateGrandTotal(). Dipakai saat oninput (sedang mengetik).
  *
  * @param  {string}  prefix   'add' atau 'edit-{quotNumber}'
  * @param  {number}  itemId   ID item
@@ -277,7 +322,25 @@ function updateItemField(prefix, itemId, field, value, render = true) {
  * ========================================== */
 
 /**
- * Merender semua item ke dalam container.
+ * Merender semua item dari in-memory store ke dalam container.
+ *
+ * Alur:
+ * 1. Resolve container berdasarkan prefix.
+ * 2. Kosongkan innerHTML container.
+ * 3. Jika store kosong, tampilkan placeholder dan perbarui grand total.
+ * 4. Untuk setiap item:
+ *    a. Buat kartu dengan atribut data-item-id = item.id.
+ *    b. Tampilkan label "Item {idx+1}" dan tombol hapus.
+ *    c. Buat input description, volume, satuan, harga satuan dengan
+ *       nilai dari store (description/unit di-escape via escHtml).
+ *    d. Pasang oninput -> updateItemField(..., false) untuk patch,
+ *       dan onchange -> updateItemField(...) untuk render penuh.
+ *    e. Tampilkan total_price dalam elemen .item-total-display.
+ * 5. Append kartu lalu updateGrandTotal().
+ *
+ * Catatan: render penuh menghilangkan fokus input, karena itu saat
+ * mengetik digunakan patch (render=false), sedangkan onchange
+ * menormalkan data dengan render penuh.
  *
  * @param  {string} prefix  'add' atau 'edit-{quotNumber}'
  */
@@ -372,7 +435,16 @@ function renderItems(prefix) {
  * ========================================== */
 
 /**
- * Menghitung dan menampilkan grand total.
+ * Menghitung dan menampilkan grand total dari in-memory store.
+ *
+ * Alur:
+ * 1. Resolve elemen grand total dari prefix.
+ * 2. Jumlahkan total_price seluruh item di store (reduce).
+ * 3. Tampilkan hasil dengan format Rupiah.
+ *
+ * Nilai akhir total_amount dihitung ulang server-side oleh
+ * ProjectQuotationService::calculateGrandTotal dari data JSON
+ * saat submit.
  *
  * @param  {string} prefix  'add' atau 'edit-{quotNumber}'
  */
@@ -393,6 +465,16 @@ function updateGrandTotal(prefix) {
 
 /**
  * Mengambil nomor penawaran berikutnya via AJAX.
+ *
+ * Alur:
+ * 1. Baca URL endpoint dari meta name="project-quotation-get-next-number".
+ *    Batal jika tidak tersedia.
+ * 2. Fetch URL dan parse response JSON.
+ * 3. Isi elemen #addQuotationNumberDisplay dengan data.quotation_number.
+ * 4. Tangani error dengan console.error agar proses tidak crash.
+ *
+ * Dipanggil oleh MutationObserver pada #addModal setiap kali modal tampil
+ * (lihat DOMContentLoaded), sehingga nomor selalu fresh saat modal dibuka.
  */
 function fetchNextQuotationNumber() {
     const url = document.querySelector('meta[name="project-quotation-get-next-number"]')?.content;
@@ -418,6 +500,14 @@ function fetchNextQuotationNumber() {
 /**
  * Merender items untuk modal edit berdasarkan data yang sudah di-load
  * dari inline script di edit-modal Blade component.
+ *
+ * Alur:
+ * 1. Pastikan editItemsStore[quotNum] ada (inisialisasi array kosong).
+ * 2. Hitung id item berikutnya:
+ *    - Jika store berisi item, ambil max(id) lalu + 1.
+ *    - Jika kosong, mulai dari 1.
+ *    Ini memastikan id baru tidak bertabrakan dengan id item lama.
+ * 3. Panggil renderItems('edit-' + quotNum).
  *
  * @param  {string} quotNum  Nomor penawaran
  */
@@ -445,6 +535,13 @@ function renderEditModalItems(quotNum) {
 /**
  * Memvalidasi bahwa minimal 1 rekening pembayaran dipilih dalam modal tertentu.
  *
+ * Alur:
+ * 1. Cari modal berdasarkan modalId.
+ * 2. Hitung checkbox .payment-account-checkbox yang tercentang.
+ * 3. Untuk setiap checkbox, tandai required bila tidak ada yang
+ *    tercentang, dan reset custom validity agar pesan bawaan browser
+ *    dapat muncul saat submit.
+ *
  * @param  {string} modalId  ID modal (contoh: 'addModal', 'editModal-1/1/PT.AKI/26')
  */
 function validatePaymentSelection(modalId) {
@@ -466,6 +563,17 @@ function validatePaymentSelection(modalId) {
 
 /**
  * Menyiapkan data sebelum submit form tambah penawaran.
+ *
+ * Alur:
+ * 1. Sembunyikan error modal add.
+ * 2. Validasi store: minimal 1 item.
+ * 3. Untuk setiap item, validasi:
+ *    - Keterangan tidak boleh kosong.
+ *    - Harga satuan harus > 0.
+ *    - Volume bila diisi harus numerik dan tidak negatif.
+ * 4. Tulis JSON.stringify(addItemsStore) ke hidden input #addItemsJson.
+ * 5. Tampilkan loading spinner via handleFormSubmit() dan cegah
+ *    double submit bila proses sudah berjalan.
  *
  * @return {boolean}  true jika valid, false jika tidak
  */
@@ -520,6 +628,14 @@ function prepareAddSubmit() {
 
 /**
  * Menyiapkan data sebelum submit form edit penawaran.
+ *
+ * Alur:
+ * 1. Sembunyikan error modal edit.
+ * 2. Ambil items dari editItemsStore[quotNum].
+ * 3. Validasi sama seperti prepareAddSubmit (minimal 1 item;
+ *    keterangan wajib; harga satuan > 0; volume numerik & non-negatif).
+ * 4. Tulis JSON.stringify(items) ke hidden input #editItemsJson-{quotNum}.
+ * 5. Tampilkan loading spinner via handleFormSubmit().
  *
  * @param  {string} quotNum  Nomor penawaran
  * @return {boolean}         true jika valid, false jika tidak
@@ -582,6 +698,14 @@ function prepareEditSubmit(quotNum) {
 
 /**
  * Submit form hapus setelah konfirmasi.
+ *
+ * Alur:
+ * 1. Kumpulkan checkbox ids[] tercentang di dalam #deleteForm.
+ * 2. Jika tidak ada, tampilkan alert dan tutup modal delete.
+ * 3. Set tombol konfirmasi ke state loading via handleFormSubmit()
+ *    untuk mencegah double click.
+ * 4. Submit form #deleteForm (dengan setTimeout kecil agar UI loading
+ *    sempat digambar).
  */
 function submitDeleteForm() {
     const checkboxes = document.querySelectorAll('#deleteForm input[name="ids[]"]:checked');
@@ -608,6 +732,11 @@ function submitDeleteForm() {
 
 /**
  * Memperbarui status tombol hapus berdasarkan checkbox yang dipilih.
+ *
+ * Alur:
+ * 1. Cari tombol #delete-button dan checkbox ids[] tercentang.
+ * 2. Jika ada yang tercentang, aktifkan tombol dan tambah class hover;
+ *    sebaliknya nonaktifkan dengan class opacity/cursor-not-allowed.
  */
 function updateDeleteButtonState() {
     const deleteButton = document.getElementById('delete-button');
@@ -630,6 +759,30 @@ function updateDeleteButtonState() {
  * INISIALISASI DOMCONTENTLOADED
  * ========================================== */
 
+/**
+ * Inisialisasi interaksi halaman saat DOM siap.
+ *
+ * Bagian penting:
+ *
+ * 1. MutationObserver pada #addModal: saat modal berubah menjadi tampil
+ *    (class tanpa 'hidden'), lakukan reset state dan render:
+ *    - Sembunyikan error modal.
+ *    - Ambil nomor penawaran berikutnya via fetchNextQuotationNumber().
+ *    - Kosongkan addItemsStore dan reset addNextItemId ke 1.
+ *    - Render ulang daftar item agar selalu kosong saat modal dibuka.
+ *
+ * 2. MutationObserver pada setiap modal edit (#editModal-{n}): saat modal
+ *    tampil, sembunyikan error dan render items dari data yang sudah
+ *    di-load inline script Blade (renderEditModalItems).
+ *
+ * 3. Checkbox "Pilih Semua": tandai semua ids[] dan perbarui tombol hapus.
+ *
+ * 4. Checkbox individual: sinkronkan status select all + tombol hapus.
+ *
+ * 5. Validasi rekening pembayaran untuk modal add dan semua modal edit.
+ *
+ * 6. Form hapus: cegah double submit saat tombol sedang disabled.
+ */
 document.addEventListener('DOMContentLoaded', function() {
     // ═══ Ambil otomatis nomor penawaran berikutnya untuk modal Add ═══
     const addModal = document.getElementById('addModal');
@@ -734,6 +887,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ─── Reset isSubmitting Flag Saat Halaman Dimuat Kembali ──────────────────
+/**
+ * Reset status submit & tombol hapus saat halaman dimuat dari cache
+ * (back/forward navigation).
+ *
+ * Memanggil resetFormSubmitState() (shared) agar flag isSubmitting
+ * tidak terkunci, dan updateDeleteButtonState() agar tombol hapus
+ * mengikuti kondisi checkbox.
+ */
 window.addEventListener('pageshow', function() {
     resetFormSubmitState();
     updateDeleteButtonState();

@@ -20,6 +20,12 @@
 /**
  * Inisialisasi checkbox Select All.
  * Ketika Select All di-check/un-check, semua checkbox individu mengikuti.
+ *
+ * Alur:
+ * 1. Saat #selectAll berubah, set checked semua checkbox #ids[] mengikuti.
+ * 2. Panggil updateButtonStates() untuk mengaktifkan/nonaktifkan tombol
+ *    Delete & Approval.
+ * 3. Panggil updateSelectedInfo() untuk memperbarui ringkasan total.
  */
 function initSelectAll() {
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -64,6 +70,13 @@ function initIndividualCheckboxes() {
 /**
  * Update state tombol Delete dan Approval berdasarkan checkbox yang dipilih.
  * Tombol akan aktif jika ada minimal 1 checkbox yang dicentang.
+ *
+ * Alur:
+ * 1. Hitung jumlah checkbox #ids[] yang dicentang.
+ * 2. Tombol Delete: aktif + tampilkan hover bila checkedCount > 0,
+ *    nonaktif + opacity + cursor-not-allowed bila 0.
+ * 3. Tombol dropdown persetujuan (Super Admin): aktif bila checkedCount > 0,
+ *    nonaktif bila 0.
  */
 function updateButtonStates() {
     var checkedCount = document.querySelectorAll('input[name="ids[]"]:checked').length;
@@ -220,6 +233,12 @@ function initEditFormSubmit() {
  * Injeksikan hidden inputs ke form approve/reject sebelum submit.
  * Hidden inputs berisi `ids[]` dari checkbox yang dipilih.
  *
+ * Alur persetujuan level 1 (submit form):
+ * 1. Saat form disubmit, kosongkan container hidden inputs.
+ * 2. Loop semua checkbox terpilih, buat <input type="hidden" name="ids[]">
+ *    untuk masing-masing, lalu masukkan ke container.
+ * 3. Panggil handleFormSubmit untuk menampilkan loading & mencegah double submit.
+ *
  * @param  {string} formSelector  CSS selector form target
  * @param  {string} containerId   ID container untuk hidden inputs
  * @param  {string} submitBtnId   ID tombol submit
@@ -259,6 +278,12 @@ function initApprovalFormSubmit(formSelector, containerId, submitBtnId, original
 /**
  * Inisialisasi dropdown persetujuan (approve/reject).
  * Toggle visibility saat tombol diklik, tutup saat klik di luar.
+ *
+ * Alur persetujuan level 2 (dropdown):
+ * 1. Klik tombol #approval-dropdown-button men-toggle menu (bila tombol aktif).
+ * 2. Klik di luar tombol & menu menutup dropdown.
+ * 3. Klik di dalam menu tidak menutup dropdown (stopPropagation) — user memilih
+ *    aksi Approve atau Reject dari menu tersebut.
  */
 function initApprovalDropdown() {
     var approvalButton = document.getElementById('approval-dropdown-button');
@@ -288,6 +313,17 @@ function initApprovalDropdown() {
 // INISIALISASI
 // ════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Inisialisasi logika halaman saat DOM siap.
+ *
+ * Alur:
+ * 1. Inisialisasi checkbox pilih semua dan checkbox individu.
+ * 2. Update state awal tombol & info terpilih.
+ * 3. Inisialisasi submit form Tambah, Edit, dan form persetujuan
+ *    (approve/reject — 2 level: submit form + dropdown).
+ * 4. Inisialisasi dropdown persetujuan.
+ * 5. Reset status submit saat halaman dimuat ulang (pageshow).
+ */
 document.addEventListener('DOMContentLoaded', function () {
     // Checkbox
     initSelectAll();

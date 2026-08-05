@@ -80,8 +80,10 @@ function initAddFormHandler() {
 }
 
 /**
- * Handle Edit Modal Submits
- * Mencegah double submit pada semua form edit divisi.
+ * Menangani submit semua form modal Edit divisi.
+ *
+ * Menerapkan handleFormSubmit untuk status memuat; bila ditolak,
+ * cegah pengiriman (anti double submit).
  */
 function initEditFormHandlers() {
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
@@ -100,7 +102,15 @@ function initEditFormHandlers() {
 // ==========================================
 
 /**
- * Initialize all division page functionality on DOM ready.
+ * Menginisialisasi seluruh fungsionalitas halaman divisi saat DOM siap.
+ *
+ * Alur inisialisasi:
+ * - Checkbox "Pilih Semua": centang/batalkan semua checkbox baris lalu
+ *   perbarui tombol hapus.
+ * - Checkbox baris: perbarui status Pilih Semua (tercentang bila semua
+ *   baris terpilih) dan tombol hapus.
+ * - Perbarui status tombol hapus di awal lalu daftarkan handler submit
+ *   form Tambah dan Edit.
  */
 document.addEventListener('DOMContentLoaded', function () {
     const selectAll = document.getElementById('selectAll');

@@ -2,6 +2,15 @@
      Halaman Utama Modul Nota Administrasi
      PT Aghitsna Karya Indah
 
+     Tujuan: Menampilkan daftar nota dengan pencarian, paginasi,
+             tambah/edit lewat modal, hapus massal, dan export PDF.
+
+     Data dari NotaController@index:
+     - $notas  : koleksi Nota (paginate 15/halaman, hanya data milik user
+                 yang login, urut created_at terbaru; pencarian berdasarkan
+                 id_nota, kepada, faktur_no, sj_no)
+     - $search : keyword pencarian
+
      Komponen:
      - Header: Judul halaman
      - Toolbar: Form pencarian, tombol print, hapus massal, tambah
@@ -10,6 +19,10 @@
      - Modal Edit: Form edit nota (satu per nota)
      - Modal Hapus: Konfirmasi hapus massal
      - Pagination: Navigasi halaman
+
+     JS: @vite('resources/js/pages/administrasi/nota/index.js')
+         + hidden input nota-print-selected-route (route export PDF data
+           terpilih yang dipakai JS)
      ===================================================================== --}}
 
 @extends('layouts.app')
@@ -68,7 +81,9 @@
     @include('components.administrasi.nota.add-modal')
 
     {{-- ═══════════════════════════════════════════════════════════════
-         MODAL EDIT: Form edit nota (satu modal per nota)
+         MODAL EDIT: Form edit nota (satu modal per nota).
+         Alur: iterasi setiap $nota pada halaman aktif lalu render satu
+         modal edit per baris data.
          ═══════════════════════════════════════════════════════════════ --}}
     @foreach ($notas as $nota)
         @include('components.administrasi.nota.edit-modal', ['nota' => $nota])
@@ -82,7 +97,9 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
-    {{-- Hidden input untuk route print selected (digunakan oleh JS) --}}
+    {{-- Hidden input untuk route print selected (digunakan oleh JS).
+         JS membaca nilai route ini saat user memilih baris lalu klik
+         "Print Selected" pada print-dropdown-with-selected. --}}
     <input type="hidden" id="nota-print-selected-route" value="{{ route('nota.administrasi.export.pdf.selected') }}">
 
     {{-- ═══════════════════════════════════════════════════════════════

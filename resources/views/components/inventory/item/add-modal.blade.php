@@ -24,18 +24,23 @@
             required inputmode="numeric" id="add-capital-price"
             oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
-
+    
     {{-- Field: Harga Jual --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Harga Jual <span class="text-error">*</span></label>
         <input type="text" name="selling_price" value="Rp 0" class="w-full border rounded p-2" placeholder="Rp 0"
-            required inputmode="numeric" id="add-selling-price"
-            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
-
+        required inputmode="numeric" id="add-selling-price"
+        oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        
         {{-- Peringatan: Harga Jual harus lebih besar dari Harga Modal --}}
         <p id="add-price-warning" class="text-error text-sm mt-1 hidden">
             <span class="font-semibold">Peringatan:</span> Harga modal tidak boleh lebih besar atau sama dengan harga
             jual!
         </p>
+    </div>
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Keterangan<span class="text-error">*</span></label>
+        <input type="text" name="keterangan" class="w-full border rounded p-2" placeholder="Masukkan keterangan"
+            maxlength="255" required>
     </div>
 </x-modal>

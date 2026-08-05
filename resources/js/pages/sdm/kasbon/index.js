@@ -17,10 +17,22 @@
 // ==========================================
 
 /**
- * Membaca token CSRF dan URL rute dari atribut data pada container halaman.
- * Ini diatur oleh template Blade untuk menghindari hardcoding URL di JS.
+ * Container halaman kasbon dan URL rute yang dibutuhkan untuk AJAX.
+ *
+ * Dibaca dari atribut data yang di-set template Blade agar URL tidak
+ * di-hardcode di dalam JS (lihat pageUrl()).
+ *
+ * @type {HTMLElement|null}
  */
 const pageContainer = document.getElementById('kasbon-page');
+
+/**
+ * URL endpoint payroll.get-weeks untuk penyelesaian tanggal periode.
+ *
+ * Diperoleh lewat pageUrl() dengan fallback '/payroll/weeks'.
+ *
+ * @type {string}
+ */
 const GET_WEEKS_URL = pageUrl('payroll.get-weeks');
 
 // ==========================================
@@ -59,15 +71,20 @@ window.formatCurrencyInput = function (input) {
 // ==========================================
 
 /**
- * Mengubah visibilitas field karyawan dan divisi berdasarkan jenis kasbon.
+ * Menampilkan/menyembunyikan field karyawan dan divisi sesuai jenis kasbon.
  *
- * Untuk 'pribadi': menampilkan select karyawan, menyembunyikan select divisi.
- * Untuk 'tim': menampilkan select divisi, menyembunyikan select karyawan.
- * Untuk kosong: menyembunyikan keduanya.
+ * Alur:
+ * - 'team': sembunyikan field karyawan, tampilkan field divisi; hapus
+ *   required + kosongkan hidden karyawan; set required pada hidden divisi;
+ *   inisialisasi ulang searchable select divisi; sembunyikan alert batas.
+ * - 'personal': kebalikannya (tampilkan karyawan, sembunyikan divisi,
+ *   set required pada karyawan, hidden divisi dibersihkan, init select
+ *   karyawan).
+ * - kosong: sembunyikan keduanya beserta alert batas.
  *
  * Ditugaskan ke window karena dipanggil dari atribut onchange inline.
  *
- * @param {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
+ * @param {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
  */
 window.toggleEmployeeSelect = function (prefix) {
     const kasbonTypeSelect = document.getElementById(prefix + '_kasbon_type');
@@ -120,12 +137,20 @@ window.toggleEmployeeSelect = function (prefix) {
 // ==========================================
 
 /**
- * Menyelesaikan period_start_date dan period_end_date dari bulan, tahun, dan kasbon_date.
+ * Menyelesaikan period_start_date/period_end_date + week_number dari bulan,
+ * tahun, dan tanggal kasbon yang dipilih.
  *
- * Mengambil minggu yang tersedia dari endpoint Payroll dan menemukan minggu
- * yang rentang tanggalnya mengandung kasbon_date.
+ * Alur:
+ * 1. Baca bulan, tahun, dan kasbon_date dari input form.
+ * 2. Jika salah satu kosong → kembalikan null.
+ * 3. AJAX GET ke GET_WEEKS_URL (rute payroll.get-weeks) dengan query
+ *    month & year.
+ * 4. Iterasi minggu yang dikembalikan; minggu pertama yang rentang
+ *    start_date..end_date mengandung kasbon_date menjadi hasil.
+ * 5. Jika tidak ada yang cocok, gunakan minggu terakhir sebagai fallback.
+ * 6. Kembalikan { start_date, end_date, week_number }; null saat error/kosong.
  *
- * @param  {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
+ * @param  {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
  * @returns {Promise<{start_date: string, end_date: string, week_number: number}|null>}
  */
 async function resolvePeriodStartDate(prefix) {
@@ -175,15 +200,19 @@ async function resolvePeriodStartDate(prefix) {
 // ==========================================
 
 /**
- * Memeriksa kasbon maksimal yang diizinkan untuk karyawan yang dipilih berdasarkan absensi.
+ * Memperbarui periode kasbon (week_number, tanggal mulai, tanggal akhir)
+ * sesuai bulan/tahun/tanggal kasbon yang dipilih.
  *
- * Menyelesaikan tanggal awal periode terlebih dahulu, lalu memanggil endpoint check-max.
- * Memperbarui UI peringatan batas dan menyimpan hasil di maxKasbonData.
- * Menonaktifkan tombol kirim jika payroll sudah dibayar atau tidak ada absensi.
+ * Alur:
+ * 1. Panggil resolvePeriodStartDate(prefix) yang melakukan AJAX ke
+ *    payroll.get-weeks untuk mencari minggu yang memuat kasbon_date.
+ * 2. Jika tidak ada hasil → keluar tanpa mengubah input.
+ * 3. Isi hidden week_number, period_start_date, dan period_end_date dengan
+ *    hasil periode.
  *
  * Ditugaskan ke window karena dipanggil dari atribut onchange inline.
  *
- * @param {string} prefix - Awalan formulir ('add' atau 'edit_KSB001')
+ * @param {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
  */
 window.checkMaxKasbon = async function (prefix) {
     const weekNumberInput = document.getElementById(prefix + '_week_number');
@@ -235,8 +264,13 @@ window.submitDeleteForm = function () {
 // ==========================================
 
 /**
- * Menginisialisasi checkbox pilih semua dan pendengar checkbox individu.
- * Memperbarui status tombol hapus berdasarkan pilihan.
+ * Menginisialisasi checkbox "Pilih Semua" dan pendengar checkbox individu.
+ *
+ * Alur:
+ * - Pilih Semua: centang semua checkbox baris yang tidak disabled lalu
+ *   perbarui tombol hapus.
+ * - Checkbox individu: perbarui tombol hapus dan status Pilih Semua
+ *   (tercentang bila semua baris aktif tercentang).
  */
 function initSelectAllCheckbox() {
     const selectAll = document.getElementById('select-all');
@@ -273,7 +307,10 @@ function initSelectAllCheckbox() {
 }
 
 /**
- * Memperbarui status tombol hapus berdasarkan pilihan checkbox.
+ * Memperbarui status tombol hapus berdasarkan checkbox baris yang dicentang.
+ *
+ * Tombol diaktifkan bila minimal satu checkbox aktif tercentang; selain itu
+ * dinonaktifkan dengan kelas opacity-50 dan cursor-not-allowed.
  */
 function updateDeleteButtonState() {
     const deleteButton = document.getElementById('delete-button')
@@ -298,8 +335,10 @@ function updateDeleteButtonState() {
 // ==========================================
 
 /**
- * Menginisialisasi penanganan pengiriman formulir untuk modal tambah dan edit.
- * Menangani status memuat melalui handleFormSubmit() dari modul bersama.
+ * Menginisialisasi penanganan submit form Tambah dan Edit kasbon.
+ *
+ * Menerapkan handleFormSubmit() untuk status memuat dan mencegah double
+ * submit; bila ditolak, pengiriman dibatalkan.
  */
 function initFormSubmitHandlers() {
     const addForm = document.querySelector('#addModal form');
@@ -330,6 +369,9 @@ function initFormSubmitHandlers() {
 
 /**
  * Menginisialisasi format mata uang pada semua input jumlah kasbon.
+ *
+ * Input dengan kelas .kasbon-amount-input diformat saat pertama kali dimuat
+ * (bila sudah berisi nilai) dan setiap kali user mengetik.
  */
 function initAmountFormatting() {
     document.querySelectorAll('.kasbon-amount-input').forEach(input => {
@@ -348,11 +390,16 @@ function initAmountFormatting() {
 // ==========================================
 
 /**
- * Mendapatkan URL untuk rute bernama dari atribut data.
- * Fallback ke pembacaan dari tag meta atau konfigurasi window.
+ * Mendapatkan URL untuk nama rute Laravel.
  *
- * @param  {string} routeName  Nama rute Laravel
- * @returns {string} URL rute
+ * Alur:
+ * - Peta nama rute → URL: 'payroll.get-weeks' dibaca dari
+ *   pageContainer.dataset.urlGetWeeks (di-set template Blade), fallback
+ *   '/payroll/weeks'.
+ * - Rute yang tidak dikenal mengembalikan '#'.
+ *
+ * @param  {string} routeName  Nama rute Laravel.
+ * @returns {string} URL rute.
  */
 function pageUrl(routeName) {
     const urlMap = {
@@ -367,6 +414,11 @@ function pageUrl(routeName) {
 
 /**
  * Menginisialisasi semua fungsionalitas halaman kasbon saat DOM siap.
+ *
+ * Alur inisialisasi:
+ * - initSelectAllCheckbox, initFormSubmitHandlers, initAmountFormatting.
+ * - toggleEmployeeSelect('add') untuk menyetel tampilan awal form Tambah.
+ * - Inisialisasi komponen searchable select.
  */
 document.addEventListener('DOMContentLoaded', function () {
     initSelectAllCheckbox();

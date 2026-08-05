@@ -6,6 +6,16 @@
  * - sharedPrintSelected: export data terpilih via AJAX menjadi file PDF
  */
 
+/**
+ * Mengambil token CSRF dari halaman.
+ *
+ * Alur:
+ * 1. Cari input tersembunyi bernama "_token"; jika ada dan berisi nilai, pakai nilainya.
+ * 2. Jika tidak ada, cari meta tag "csrf-token" dan ambil atribut content.
+ * 3. Fallback: string kosong.
+ *
+ * @returns {string}  Token CSRF yang ditemukan, atau '' bila tidak ada.
+ */
 function getCsrfToken() {
     const input = document.querySelector('input[name="_token"]');
     if (input && input.value) return input.value;
@@ -17,6 +27,30 @@ function getCsrfToken() {
  * PRINT SELECTED (Export Dipilih)
  * ========================================== */
 
+/**
+ * Export data terpilih (checkbox) via AJAX menjadi file PDF/Excel.
+ *
+ * Alur:
+ * 1. Kumpulkan semua checkbox tercentang sesuai checkboxSelector.
+ * 2. Jika tidak ada yang dipilih, tampilkan alert emptyMessage dan kembalikan false.
+ * 3. Jika triggerBtn sedang dalam proses (dataset.downloading === 'true'),
+ *    kembalikan false untuk mencegah klik ganda.
+ * 4. Tandai triggerBtn sebagai sedang download dan tampilkan loading.
+ * 5. Susun FormData berisi token CSRF dan semua nilai ids[].
+ * 6. Kirim POST ke route dengan header X-Requested-With: XMLHttpRequest.
+ * 7. Jika response tidak OK, lempar error.
+ * 8. Ubah response menjadi Blob, tentukan nama file via getFilenameFromResponse(),
+ *    buat object URL, simulasikan klik pada elemen <a> temp untuk memicu
+ *    download, lalu bersihkan elemen temp dan revoke object URL.
+ * 9. Bila error, catat di console.
+ * 10. Di finally: reset tanda downloading dan matikan mode loading tombol.
+ *
+ * @param  {string}      [route]           URL endpoint export.
+ * @param  {HTMLElement} [triggerBtn]      Tombol pemicu yang menampilkan loading.
+ * @param  {string}      [checkboxSelector] Selector checkbox yang dipakai untuk mengumpulkan ids[].
+ * @param  {string}      [emptyMessage]    Pesan alert bila tidak ada data terpilih.
+ * @returns {boolean}  true bila proses diteruskan (fetch dimulai), false bila dibatalkan.
+ */
 function sharedPrintSelected(route, triggerBtn = null, checkboxSelector = 'input[name="ids[]"]:checked', emptyMessage = 'Tidak ada data yang dipilih!') {
     const checkedCheckboxes = document.querySelectorAll(checkboxSelector);
 
@@ -73,12 +107,31 @@ function sharedPrintSelected(route, triggerBtn = null, checkboxSelector = 'input
     return true;
 }
 
+/**
+ * Ekspos sharedPrintSelected ke global window untuk dipanggil dari tombol
+ * "Cetak/Export Terpilih" pada halaman listing di Blade.
+ *
+ * @returns {void}
+ */
 window.sharedPrintSelected = sharedPrintSelected;
 
 /* ==========================================
  * DROPDOWN PRINT LAPORAN
  * ========================================== */
 
+/**
+ * Inisialisasi dropdown "Print Laporan" saat DOM siap.
+ *
+ * Alur:
+ * 1. Ambil tombol (printDropdownButton) dan menu (printDropdownMenu) berdasarkan id.
+ * 2. Jika keduanya ada:
+ *    - Klik tombol: toggle kelas 'hidden' pada menu (buka/tutup) dan hentikan
+ *      propagasi agar klik di dalam menu tidak menutupnya.
+ *    - Klik dokumen di luar tombol & menu: tutup menu (tambahkan 'hidden').
+ *    - Klik di dalam menu: stopPropagation agar menu tidak tertutup.
+ *
+ * @returns {void}
+ */
 document.addEventListener('DOMContentLoaded', function () {
     const printDropdownButton = document.getElementById('printDropdownButton');
     const printDropdownMenu = document.getElementById('printDropdownMenu');
@@ -107,6 +160,21 @@ document.addEventListener('DOMContentLoaded', function () {
  * GLOBAL DOWNLOAD LINK HANDLER
  * ========================================== */
 
+/**
+ * Global handler untuk semua link export/print PDF & Excel.
+ *
+ * Alur:
+ * 1. Saat DOM siap, pilih semua <a> yang href-nya mengandung pola
+ *    /export/pdf, /export/excel, /print/pdf, /print/excel, /export-pdf,
+ *    atau /export-excel.
+ * 2. Untuk setiap link, pasang event click:
+ *    - preventDefault dan stopPropagation agar navigasi default tidak terjadi.
+ *    - Jika link berada di dalam dropdown print, tutup dropdown tersebut.
+ *    - Panggil handleDownload(href link, elemen link, 'Downloading...') yang
+ *      memicu unduhan via AJAX sekaligus menampilkan loading pada link.
+ *
+ * @returns {void}
+ */
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('a[href*="/export/pdf"], a[href*="/export/excel"], a[href*="/print/pdf"], a[href*="/print/excel"], a[href*="/export-pdf"], a[href*="/export-excel"]').forEach(function (link) {
         link.addEventListener('click', function (e) {

@@ -12,6 +12,14 @@
 /**
  * Fungsi global yang dipanggil dari inline onclick pada Blade modal delete.
  * Menampilkan loading indicator pada tombol konfirmasi dan mengirim form hapus.
+ *
+ * Alur:
+ * 1. Ganti konten tombol #confirm-btn-deleteModal menjadi spinner "Menghapus..."
+ *    lalu nonaktifkan tombol (double-submit prevention).
+ * 2. Submit #deleteForm yang membawa ids[] terpilih ke server
+ *    (UserService::destroySelected → repository->deleteMany).
+ *
+ * @returns {void}
  */
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -30,6 +38,13 @@ window.submitDeleteForm = function () {
 /**
  * Mengupdate status tombol hapus berdasarkan checkbox yang dipilih.
  * Tombol aktif jika minimal satu checkbox dicentang.
+ *
+ * Alur: kumpulkan semua checkbox name="ids[]", cek minimal satu dicentang
+ * dengan Array.some(), lalu set disabled tombol #delete-button sesuai hasilnya.
+ * Dipanggil saat halaman dimuat dan setiap status checkbox berubah
+ * (termasuk lewat "Pilih Semua").
+ *
+ * @returns {void}
  */
 function updateDeleteButtonState() {
     const checkboxes = document.querySelectorAll('input[name="ids[]"]');
@@ -49,6 +64,7 @@ function updateDeleteButtonState() {
  *
  * @param {HTMLFormElement} form
  * @param {string} loadingText  Teks yang ditampilkan saat loading
+ * @returns {void}
  */
 function bindFormLoading(form, loadingText) {
     if (!form) return;
@@ -68,6 +84,16 @@ function bindFormLoading(form, loadingText) {
 /**
  * Inisialisasi halaman Manajemen User.
  * Dipanggil setelah DOM selesai dimuat.
+ *
+ * Alur:
+ * 1. Checkbox "Pilih Semua": sinkronisasi status dengan checkbox individual
+ *    (ids[]), lalu panggil updateDeleteButtonState() agar tombol hapus
+ *    mengikuti pilihan.
+ * 2. Binding loading indicator pada form tambah (#addModal) dan semua form
+ *    edit ([id^="editModal-"]) via bindFormLoading('Menyimpan...') untuk
+ *    double-submit prevention.
+ *
+ * @returns {void}
  */
 document.addEventListener('DOMContentLoaded', function () {
 

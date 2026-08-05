@@ -1,3 +1,23 @@
+{{-- =====================================================================
+     Halaman: Laporan Stok Barang
+     Tujuan: Menampilkan laporan pergerakan & nilai stok per periode
+             (stok awal, masuk, keluar, retur, stok akhir, harga, nilai)
+             dengan filter periode (start_date–end_date) & filter barang
+             (dropdown infinite scroll). Menyediakan export PDF/Excel.
+     Data dari StockReportController@index:
+     - $items           : koleksi berisi item terpilih saja (placeholder dropdown).
+     - $reportData      : LengthAwarePaginator manual hasil StockReportService::generateReport().
+     - $summary         : ringkasan agregat (total_items, total_beginning_stock,
+                          total_stock_in, total_stock_out, total_returns,
+                          total_ending_stock, total_stock_value).
+     - $startDate/$endDate : rentang periode filter.
+     - $selectedItemId  : id barang terpilih (opsional).
+     - $perPage         : jumlah baris per halaman (default 10, maks 100).
+     Endpoint AJAX: route('stock-report.items-dropdown') untuk dropdown infinite scroll.
+     Komponen yang di-include:
+     - x-buttons.print-dropdown (export PDF/Excel dengan seluruh query filter)
+     JS: inline window.stockReportConfig + @vite('resources/js/pages/inventory/stock-report.js')
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah Laporan Stok Barang')
@@ -5,7 +25,7 @@
 @section('content')
     <div class="px-4 py-4">
 
-        {{-- Header Halaman --}}
+        {{-- SECTION: Header Halaman --}}
         <div class="mb-6">
             <div>
                 <h2 class="text-2xl font-bold text-text-primary mb-1">📊 Laporan Stok Barang</h2>
@@ -13,11 +33,13 @@
             </div>
         </div>
 
-        {{-- Filter Card: Form filter periode dan barang --}}
+        {{-- SECTION: Filter — Form filter periode (tanggal mulai/akhir) & pilihan barang --}}
+        {{-- Auto-submit: modul stock-report.js mengirim form saat tanggal atau barang berubah
+             (initDateFilter untuk tanggal, setSelected → autoFilterNow untuk pilihan barang). --}}
         <div class="bg-surface-base rounded-lg shadow-sm p-6 mb-6">
             <form method="GET" action="{{ route('stock-report.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-                {{-- Filter Tanggal Mulai --}}
+                {{-- Filter Tanggal Mulai: wajib (required); value $startDate (default awal bulan berjalan) --}}
                 <div>
                     <label for="start_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Mulai</label>
                     <input type="date"
@@ -25,7 +47,8 @@
                         id="start_date" name="start_date" value="{{ $startDate }}" required>
                 </div>
 
-                {{-- Filter Tanggal Akhir --}}
+                {{-- Filter Tanggal Akhir: wajib (required); value $endDate (default hari ini).
+                     Validasi client-side memastikan end_date >= start_date. --}}
                 <div>
                     <label for="end_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Akhir</label>
                     <input type="date"
@@ -33,14 +56,22 @@
                         id="end_date" name="end_date" value="{{ $endDate }}" required>
                 </div>
 
-                {{-- Filter Pilihan Barang (Dropdown Infinite Scroll) --}}
+                {{-- SECTION: Filter Pilihan Barang (Dropdown Infinite Scroll) --}}
+                {{-- Dropdown kustom, bukan <select> biasa:
+                     - hidden input 'item_id' menyimpan pilihan untuk form submission.
+                     - daftar barang dimuat via AJAX ke route('stock-report.items-dropdown')
+                       dengan pencarian & infinite scroll (10 item per load).
+                     - label menampilkan item terpilih atau '- Semua Barang -' bila kosong.
+                     - memilih/mereset barang memicu auto-filter (redirect ke index). --}}
                 <div>
                     <label class="block text-sm font-semibold text-text-primary mb-2">Pilih Barang (Opsional)</label>
 
-                    {{-- Hidden input untuk form submission --}}
+                    {{-- Hidden input untuk form submission: value diisi JS saat user memilih barang --}}
                     <input type="hidden" name="item_id" id="item_id" value="{{ $selectedItemId ?? '' }}">
 
-                    {{-- Custom dropdown dengan infinite scroll --}}
+                    {{-- Custom dropdown (infinite scroll): container relatif berisi tombol toggle,
+                         menu dropdown (#itemDropdownMenu), input pencarian, daftar barang,
+                         dan tombol reset — semua logika di modul stock-report.js. --}}
                     <div class="relative">
                         <button type="button" id="itemDropdownBtn"
                             class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary">
@@ -75,7 +106,8 @@
                     </div>
                 </div>
 
-                {{-- Print Dropdown --}}
+                {{-- Print Dropdown: queryParams = request()->except([]) → seluruh filter aktif
+                     (start_date, end_date, item_id, page, per_page) diteruskan ke export. --}}
                 <div class="flex items-end">
                     <x-buttons.print-dropdown
                         :pdfRoute="route('stock-report.export.pdf')"
@@ -88,10 +120,10 @@
             </form>
         </div>
 
-        {{-- Summary Cards: Ringkasan cepat stok --}}
+        {{-- SECTION: Summary Cards — Ringkasan cepat stok dari $summary (seluruh data, bukan per halaman) --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-            {{-- Card 1: Total Jumlah Barang --}}
+            {{-- Card 1: Total Jumlah Barang ($summary['total_items']) --}}
             <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-primary">
                 <div class="flex justify-between items-center">
                     <div>
@@ -103,7 +135,7 @@
                 </div>
             </div>
 
-            {{-- Card 2: Stok Akhir Total --}}
+            {{-- Card 2: Stok Akhir Total ($summary['total_ending_stock']) --}}
             <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-success">
                 <div class="flex justify-between items-center">
                     <div>
@@ -115,7 +147,7 @@
                 </div>
             </div>
 
-            {{-- Card 3: Nilai Stok Total --}}
+            {{-- Card 3: Nilai Stok Total dalam rupiah ($summary['total_stock_value']) --}}
             <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-warning">
                 <div class="flex justify-between items-center">
                     <div>
@@ -128,7 +160,9 @@
             </div>
         </div>
 
-        {{-- Detail Summary: Ringkasan pergerakan stok per periode --}}
+        {{-- SECTION: Detail Summary — Ringkasan pergerakan stok per periode --}}
+        {{-- Menampilkan Stok Awal, Masuk, Keluar, Retur, dan Stok Akhir agregat.
+             Rumus Stok Akhir: awal + masuk - keluar - retur (lihat StockReportService). --}}
         <div class="bg-surface-base rounded-lg shadow-sm mb-6 overflow-hidden">
             <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
                 <h6 class="text-sm font-semibold text-text-primary mb-0">📈 Ringkasan Pergerakan Stok Periode
@@ -157,6 +191,7 @@
                     <div>
                         <h6 class="text-text-secondary text-sm mb-2">Stok Akhir</h6>
                         <h5 class="text-xl font-bold text-primary">
+                            {{-- Rumus: Stok Akhir = Stok Awal + Masuk - Keluar - Retur --}}
                             {{ number_format($summary['total_beginning_stock'] + $summary['total_stock_in'] - $summary['total_stock_out'] - $summary['total_returns']) }}
                         </h5>
                     </div>
@@ -164,7 +199,10 @@
             </div>
         </div>
 
-        {{-- Tabel Laporan Stok: Detail data per barang --}}
+        {{-- SECTION: Tabel Laporan Stok — Detail data per barang --}}
+        {{-- Kolom: No (nomor global memakai currentPage & perPage), ID/Nama Barang,
+             Stok Awal, Masuk, Keluar, Retur, Stok Akhir, Harga Satuan, Nilai Stok.
+             Data dari $reportData (LengthAwarePaginator hasil StockReportService::generateReport()). --}}
         <div class="bg-surface-base rounded-lg shadow-sm overflow-hidden">
             <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
                 <h6 class="text-sm font-semibold text-text-primary mb-0">📋 Detail Laporan Stok</h6>
@@ -192,6 +230,8 @@
                         <tbody class="divide-y divide-gray-200">
                             @forelse($reportData as $index => $item)
                                 <tr class="hover:bg-surface-secondary transition-colors">
+                                    {{-- Nomor urut global: ((halaman-1) * perPage) + index + 1,
+                                         agar penomoran berlanjut antar halaman. --}}
                                     <td class="px-6 py-4 text-center text-sm text-text-secondary">
                                         {{ ($reportData->currentPage() - 1) * $perPage + $index + 1 }}
                                     </td>
@@ -239,7 +279,9 @@
                 </div>
             </div>
 
-            {{-- Pagination --}}
+            {{-- SECTION: Pagination (manual LengthAwarePaginator) --}}
+            {{-- Paginasi manual dari StockReportController (default 10 per halaman, maks 100);
+                 appends() mempertahankan seluruh query filter saat pindah halaman. --}}
             <div class="px-6 py-4 border-t border-border-light">
                 {{ $reportData->appends(request()->query())->links() }}
             </div>
@@ -247,7 +289,9 @@
 
     </div>
 
-    {{-- Konfigurasi route untuk JavaScript module --}}
+    {{-- SECTION: Scripts — Konfigurasi route untuk JavaScript module --}}
+    {{-- window.stockReportConfig menyuplai route index & items-dropdown ke modul
+         stock-report.js (dipakai untuk auto-filter & fetch data dropdown). --}}
     @push('scripts')
         <script>
             window.stockReportConfig = {

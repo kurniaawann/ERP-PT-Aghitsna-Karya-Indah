@@ -1,19 +1,26 @@
-{{--
-    Halaman Data Absensi
+{{-- =====================================================================
+     Halaman: Data Absensi (attendance)
+     Tujuan: Menampilkan daftar absensi karyawan dengan fitur pencarian,
+             tambah massal (bulk create), edit per record, hapus massal,
+             dan pagination.
 
-    Menampilkan daftar absensi karyawan dengan fitur:
-    - Pencarian (nama karyawan, kode, atau tanggal)
-    - Tambah data (bulk create untuk multiple karyawan)
-    - Edit data (single record)
-    - Hapus data (bulk delete)
-    - Pagination
+     Data dari AttendanceController@index:
+     - $attendances        : LengthAwarePaginator record absensi (sudah dipaginasi)
+     - $employees          : Collection seluruh karyawan untuk pilihan di form modal
+     - $search             : Kata kunci pencarian saat ini (nullable)
+     - $existingAttendance : Data absensi yang sudah ada, untuk validasi duplikat
+                             di sisi klien (via window.attendanceConfig)
 
-    Variables:
-    - $attendances: LengthAwarePaginator attendance records
-    - $employees: Collection of all employees for form selects
-    - $search: Current search keyword (nullable)
-    - $existingAttendance: Array of existing attendance for duplicate validation
---}}
+     Komponen yang di-include:
+     - components.sdm.attendance.table      : tabel daftar absensi
+     - components.sdm.attendance.add-modal  : modal tambah massal
+     - components.sdm.attendance.edit-modal : modal edit per record (loop)
+     - x-pagination                         : kontrol pagination
+     - x-modal (deleteModal)                : konfirmasi hapus massal
+
+     JS yang di-load:
+     - @vite('resources/js/pages/sdm/attendance/index.js')
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Data Absensi')
@@ -22,6 +29,11 @@
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Absensi</h1>
 
+        {{-- ============================================================
+             SECTION: Header / Toolbar
+             Berisi judul halaman, form pencarian (GET ke attendance.index),
+             serta tombol aksi hapus & tambah data.
+             ============================================================ --}}
         {{-- Pencarian & Tombol Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian --}}
@@ -39,13 +51,29 @@
             </div>
         </div>
 
+        {{-- ============================================================
+             SECTION: Table
+             Menampilkan daftar absensi. Komponen tabel juga menyertakan
+             checkbox untuk seleksi massal.
+             ============================================================ --}}
         {{-- Komponen Tabel --}}
         @include('components.sdm.attendance.table', ['attendances' => $attendances])
     </div>
 
+    {{-- ============================================================
+         SECTION: Pagination
+         Kontrol navigasi halaman. Karena query 'search' di-append,
+         pindah halaman tetap mempertahankan kata kunci pencarian.
+         ============================================================ --}}
     {{-- Paginasi --}}
     <x-pagination :paginator="$attendances" />
 
+    {{-- ============================================================
+         SECTION: Modals
+         - add-modal   : form tambah massal (pilih karyawan + rentang tanggal)
+         - edit-modal  : satu modal per record absensi (loop)
+         - deleteModal : konfirmasi hapus massal sebelum submitDeleteForm()
+         ============================================================ --}}
     {{-- Modal Tambah --}}
     @include('components.sdm.attendance.add-modal', ['employees' => $employees])
 
@@ -67,6 +95,11 @@
         ]);
     </script>
 
+    {{-- ============================================================
+         SECTION: Scripts
+         Modul JS halaman absensi (diproses oleh Vite). Data konfigurasi
+         diteruskan lewat window.attendanceConfig.
+         ============================================================ --}}
     {{-- JavaScript --}}
     @vite('resources/js/pages/sdm/attendance/index.js')
 @endsection

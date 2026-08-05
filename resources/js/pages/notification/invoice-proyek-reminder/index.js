@@ -10,6 +10,16 @@
 /**
  * Inisialisasi halaman Reminder Jatuh Tempo Invoice Proyek.
  * Dipanggil setelah DOM selesai dimuat.
+ *
+ * Alur:
+ * 1. Cari form filter (#filterForm); bila tidak ada, hentikan inisialisasi.
+ * 2. Auto-submit dropdown: event 'change' pada tiap <select> (bulan/tahun/status)
+ *    langsung mem-submit form → data reminder ter-refresh sesuai filter
+ *    (backend: InvoiceProyekReminderService::getPaginatedReminders).
+ * 3. Debounce pencarian: input name="search" mem-submit form 500ms setelah user
+ *    berhenti mengetik sehingga tidak ada request per karakter.
+ *
+ * @returns {void}
  */
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -17,6 +27,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!filterForm) return;
 
     // ─── Kirim otomatis pada filter dropdown ───────────────────────────
+    /**
+     * Auto-submit form saat nilai dropdown filter berubah.
+     *
+     * Alur: event 'change' pada setiap <select> dalam #filterForm memanggil
+     * filterForm.submit(), sehingga daftar reminder di-reload dengan filter
+     * bulan/tahun/status terbaru tanpa tombol submit manual.
+     *
+     * @param {HTMLSelectElement} select  Elemen dropdown filter yang berubah
+     * @returns {void}
+     */
     var filterSelects = filterForm.querySelectorAll('select');
     filterSelects.forEach(function (select) {
         select.addEventListener('change', function () {
@@ -25,6 +45,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ─── Debounce pada input pencarian ─────────────────────────────────
+    /**
+     * Debounce pencarian invoice/penerima (500ms).
+     *
+     * Alur: setiap keystroke pada input name="search" membatalkan timer
+     * sebelumnya (clearTimeout) lalu membuat timer baru 500ms; jika user
+     * berhenti mengetik dalam rentang itu, form di-submit sehingga pencarian
+     * hanya memicu satu request setelah jeda.
+     *
+     * @returns {void}
+     */
     var searchInput = filterForm.querySelector('input[name="search"]');
     var searchTimeout = null;
 

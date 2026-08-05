@@ -1,3 +1,25 @@
+{{-- =====================================================================
+     Halaman: Rekap Proyek
+     Tujuan: Menampilkan rekap/ringkasan invoice proyek dengan summary
+             cards, filter bulan/tahun & pencarian, export Excel/PDF,
+             dan modal detail untuk setiap invoice pada halaman ini.
+     Data dari RecapProyekController@index:
+     - $invoices   : Paginator InvoiceProyek dari
+                     RecapProyekService::getPaginatedInvoices(),
+                     difilter oleh search, month, year.
+     - $totals     : Ringkasan hasil RecapProyekService::buildTotals()
+                     untuk seluruh data pada periode filter.
+     - $periodTitle: Label periode (bulan/tahun) hasil
+                     RecapProyekService::buildPeriodTitle().
+     Komponen yang di-include:
+     - x-filters.month-filter / year-filter / search-input : toolbar filter & pencarian
+     - x-buttons.print-dropdown                            : export Excel/PDF
+     - x-finance.project-recaps.summary-cards              : kartu ringkasan
+     - x-finance.project-recaps.table                      : tabel rekap
+     - components.finance.project-invoices.detail-modal    : modal detail per invoice
+     - x-pagination                                        : navigasi halaman
+     JS: Tidak ada module khusus (modal bawaan yang dipakai).
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Rekap Proyek')
@@ -33,9 +55,12 @@
         </div>
 
         {{-- ==================== Ringkasan Rekap ==================== --}}
+        {{-- Summary cards: menampilkan ringkasan nominal/kuantitas dari
+             $totals untuk periode yang sedang difilter. --}}
         <x-finance.project-recaps.summary-cards :totals="$totals" />
 
         {{-- ==================== Tabel Rekap Proyek ==================== --}}
+        {{-- Tabel rekap; menerima $totals untuk kolom total di akhir. --}}
         <x-finance.project-recaps.table :invoices="$invoices" :totals="$totals" />
     </div>
 
@@ -43,6 +68,8 @@
     <x-pagination :paginator="$invoices" />
 
     {{-- ==================== Modal Detail Invoice ==================== --}}
+    {{-- Satu modal detail dibuat untuk tiap invoice pada halaman ini agar
+         data detail yang dibuka sesuai baris yang diklik. --}}
     @foreach ($invoices as $invoice)
         @include('components.finance.project-invoices.detail-modal', ['invoice' => $invoice])
     @endforeach

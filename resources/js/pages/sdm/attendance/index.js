@@ -1,20 +1,37 @@
 /**
- * Attendance Index Page - JavaScript Module
+ * Halaman Indeks Absensi - Modul JavaScript
  *
- * Handles all interactive functionality for the Data Absensi page:
- * - Select All checkbox & bulk delete
- * - Client-side duplicate attendance validation
- * - Add form validation (employee selection + date range)
- * - Date range validation with auto-correct
- * - Edit form submit handlers
+ * Menangani semua fungsionalitas interaktif untuk halaman Data Absensi:
+ * - Checkbox Pilih Semua & hapus massal
+ * - Validasi duplikat absensi di sisi klien
+ * - Validasi form Tambah (pemilihan karyawan + rentang tanggal)
+ * - Validasi rentang tanggal dengan koreksi otomatis
+ * - Penanganan submit form Edit
  *
- * Server data is passed via window.attendanceConfig (set in pages/sdm/attendance.blade.php).
- * Functions called from inline HTML attributes are exposed on window
- * because Vite loads JS as ES module, not global.
+ * Data server dikirim lewat window.attendanceConfig (di-set di
+ * pages/sdm/attendance.blade.php). Fungsi yang dipanggil dari atribut HTML
+ * inline diekspos ke window karena Vite memuat JS sebagai ES module,
+ * bukan global.
  */
 
+/**
+ * Konfigurasi halaman absensi dari backend.
+ *
+ * Berisi data yang di-set Blade, termasuk existingAttendance (hasil
+ * AttendanceService::getExistingAttendance) untuk validasi duplikat.
+ *
+ * @type {Object<string, *>}
+ */
 const config = window.attendanceConfig || {};
 
+/**
+ * Data absensi yang sudah ada, dikelompokkan per kode karyawan.
+ *
+ * Struktur: { 'EMP001': ['2025-01-01', '2025-01-02'], ... }
+ * Dipakai validasi duplikat sisi klien (validateDuplicateAttendance).
+ *
+ * @type {Object<string, string[]>}
+ */
 const existingAttendance = config.existingAttendance || {};
 
 // ==========================================
@@ -22,8 +39,11 @@ const existingAttendance = config.existingAttendance || {};
 // ==========================================
 
 /**
- * Update delete button state based on number of checked row checkboxes.
- * Enables the button only when at least one row is selected.
+ * Memperbarui status tombol Hapus berdasarkan jumlah checkbox baris yang dicentang.
+ *
+ * Tombol hanya diaktifkan saat minimal satu baris terpilih; jika tidak ada
+ * yang tercentang, tombol dinonaktifkan dengan kelas opacity-50 dan
+ * cursor-not-allowed.
  */
 function updateDeleteButtonState() {
     var deleteButton = document.getElementById('delete-button');
@@ -43,10 +63,14 @@ function updateDeleteButtonState() {
 }
 
 /**
- * Submit the bulk delete form with loading state on the confirm button.
+ * Mengirim form hapus massal dengan status memuat pada tombol konfirmasi.
  *
- * Assigned to window because it's called from an inline onclick attribute
- * in the delete confirmation modal (Vite loads JS as ES module, not global).
+ * Alur:
+ * - Ganti isi tombol konfirmasi dengan spinner "Menghapus..." lalu nonaktifkan.
+ * - Submit form #deleteForm.
+ *
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline pada
+ * modal konfirmasi hapus (Vite memuat JS sebagai ES module, bukan global).
  */
 window.submitDeleteForm = function () {
     var deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -63,10 +87,25 @@ window.submitDeleteForm = function () {
 // ==========================================
 
 /**
- * Validate selected employees + date range against existing attendance data.
- * Shows a warning and disables submit if duplicates are found.
+ * Memvalidasi kombinasi karyawan terpilih + rentang tanggal terhadap data
+ * absensi yang sudah ada; menampilkan peringatan dan menonaktifkan tombol
+ * submit bila ditemukan duplikat.
  *
- * @returns {boolean} true if no duplicates, false otherwise
+ * Alur:
+ * 1. Baca ID karyawan terpilih dari hidden input komponen searchable-multi
+ *    (.searchable-multi-hidden-inputs).
+ * 2. Jika tanggal atau karyawan belum lengkap, tampilkan form normal dan
+ *    kembalikan true (belum perlu validasi).
+ * 3. Untuk setiap karyawan, ambil label/nama dari elemen option untuk pesan
+ *    yang mudah dibaca.
+ * 4. Jika karyawan ada di existingAttendance, loop tanggal dari start_date
+ *    sampai end_date; format Y-m-d (UTC) dibandingkan dengan array tanggal
+ *    existing; tanggal yang cocok dicatat sebagai duplikat.
+ * 5. Bila ada duplikat: tampilkan maksimal 5 nama + tanggal, tambahkan
+ *    keterangan sisa, tampilkan peringatan, nonaktifkan tombol submit → false.
+ * 6. Bila tidak ada: sembunyikan peringatan, aktifkan tombol submit → true.
+ *
+ * @returns {boolean} true jika tidak ada duplikat, false jika ada.
  */
 function validateDuplicateAttendance() {
     var duplicateWarning = document.getElementById('duplicate-warning');
@@ -162,8 +201,16 @@ function validateDuplicateAttendance() {
 // ==========================================
 
 /**
- * Add form submit handler - validates employee selection and duplicate attendance
- * before allowing form submission.
+ * Menangani submit form modal Tambah: memvalidasi pemilihan karyawan dan
+ * duplikat absensi sebelum form dikirim.
+ *
+ * Alur:
+ * - Tanpa karyawan terpilih → cegah submit dan tampilkan error multi-select.
+ * - Gagal validasi duplikat → cegah submit.
+ * - Sukses → terapkan status memuat via handleFormSubmit; bila ditolak
+ *   cegah submit.
+ * - Saat checkbox multi-select berubah dan sudah ada karyawan terpilih,
+ *   sembunyikan error multi-select.
  */
 function initAddFormHandler() {
     var addModalForm = document.querySelector('#addModal form');
@@ -216,10 +263,18 @@ function initAddFormHandler() {
 // ==========================================
 
 /**
- * Date range validation:
- * - end_date minimum is set to start_date
- * - If end_date < start_date, auto-correct
- * - Re-validates duplicate attendance after date change
+ * Validasi rentang tanggal (start_date/end_date) dengan koreksi otomatis.
+ *
+ * Alur:
+ * - Saat start_date berubah: tetapkan min end_date = start_date; jika
+ *   end_date < start_date, koreksi end_date = start_date; sembunyikan pesan
+ *   error tanggal; jalankan ulang validateDuplicateAttendance().
+ * - Saat end_date berubah: jika end_date < start_date, tampilkan pesan error
+ *   lalu koreksi end_date = start_date; selain itu sembunyikan pesan error;
+ *   jalankan ulang validateDuplicateAttendance().
+ *
+ * Validasi ulang di kedua arah memastikan peringatan duplikat selalu sinkron
+ * dengan rentang tanggal terbaru yang dipilih user.
  */
 function initDateValidation() {
     var startDateInput = document.getElementById('start_date');
@@ -261,7 +316,10 @@ function initDateValidation() {
 // ==========================================
 
 /**
- * Edit form submit handlers - applies loading state during form submission.
+ * Menangani submit semua form modal Edit dengan status memuat.
+ *
+ * Untuk tiap form [id^="editModal-"]: terapkan handleFormSubmit pada tombol
+ * submit; bila ditolak, cegah pengiriman (anti double submit).
  */
 function initEditFormHandlers() {
     document.querySelectorAll('[id^="editModal-"] form').forEach(function(form) {
@@ -280,7 +338,16 @@ function initEditFormHandlers() {
 // ==========================================
 
 /**
- * Initialize all attendance page functionality on DOM ready.
+ * Menginisialisasi seluruh fungsionalitas halaman absensi saat DOM siap.
+ *
+ * Alur inisialisasi:
+ * - Checkbox "Pilih Semua": centang/batalkan semua checkbox baris lalu
+ *   perbarui tombol hapus.
+ * - Checkbox baris: perbarui status Pilih Semua (tercentang bila semua
+ *   baris terpilih) dan tombol hapus.
+ * - Perbarui status tombol hapus di awal (halaman dimuat).
+ * - Daftarkan initAddFormHandler, initDateValidation, initEditFormHandlers.
+ * - Inisialisasi searchable single-select untuk modal edit.
  */
 document.addEventListener('DOMContentLoaded', function () {
     var selectAll = document.getElementById('selectAll');

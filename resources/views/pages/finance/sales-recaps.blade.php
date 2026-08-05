@@ -1,3 +1,27 @@
+{{-- =====================================================================
+     Halaman: Rekap Penjualan (Sales Recaps)
+     Tujuan: Menampilkan daftar rekap penjualan dengan filter bulan/tahun
+             & pencarian proyek, export Excel/PDF, CRUD, ubah status
+             (Lunas/Belum Lunas), dan hapus massal.
+     Data dari RecapSalesController@index:
+     - $salesRecaps: Paginator SalesRecap (10/halaman) hasil
+                     RecapSalesService::buildFilteredQuery($request)
+                     diurutkan created_at/date desc, difilter month/year/search.
+     - $items      : Daftar item inventory (Items) diurutkan name_item,
+                     dipakai dropdown modal tambah/edit dan
+                     window._itemsData untuk autofill harga.
+     - $grandTotals: Grand totals hasil RecapSalesService::getGrandTotals()
+                     (kapital, penjualan, laba) dengan filter yang sama.
+     Komponen yang di-include:
+     - x-filters.month-filter / year-filter / search-input : toolbar filter & pencarian
+     - x-buttons.print-dropdown / delete-button / add-button : tombol aksi
+     - components.finance.sales-recaps.table               : tabel rekap + grand totals
+     - components.finance.sales-recaps.add-modal / edit-modal / status-modal : modal CRUD
+     - x-pagination                                        : navigasi halaman
+     - x-modal                                             : konfirmasi hapus
+     JS: @vite('resources/js/pages/finance/sales-recaps/index.js')
+         (+ window._itemsData inline)
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Rekap Penjualan')
@@ -27,6 +51,8 @@
         </div>
 
         {{-- ==================== Tabel Rekap Penjualan ==================== --}}
+        {{-- Tabel rekap; menerima $grandTotals untuk menampilkan baris
+             total (kapital, penjualan, laba) di akhir tabel. --}}
         @include('components.finance.sales-recaps.table', [
             'salesRecaps' => $salesRecaps,
             'grandTotals' => $grandTotals,
@@ -40,6 +66,9 @@
     @include('components.finance.sales-recaps.add-modal', ['items' => $items])
 
     {{-- ==================== Modal Edit & Status (hanya untuk yang belum lunas) ==================== --}}
+    {{-- Modal edit & ubah status hanya dirender untuk data yang belum lunas
+         (!isLunas()); rekap yang sudah lunas bersifat read-only karena
+         tidak boleh diubah lagi (dijaga juga di controller). --}}
     @foreach ($salesRecaps as $sale)
         @if (!$sale->isLunas())
             @include('components.finance.sales-recaps.edit-modal', ['sale' => $sale, 'items' => $items])
@@ -54,6 +83,9 @@
     </x-modal>
 
     {{-- ==================== JavaScript ==================== --}}
+    {{-- Data item inventory di-expose ke window._itemsData sebagai array
+         JSON untuk autofill harga (capital/selling) & quantity saat
+         memilih item pada dropdown modal tambah/edit. --}}
     <script>
         window._itemsData = {!! json_encode($items->map(fn($item) => [
             'id_item' => $item->id_item,

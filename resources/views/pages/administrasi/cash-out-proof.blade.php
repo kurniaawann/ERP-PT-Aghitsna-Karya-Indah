@@ -1,5 +1,5 @@
-{{-- ============================================================
-     HALAMAN BUKTI KAS KELUAR
+{{-- =====================================================================
+     HALAMAN BUKTI KAS KELUAR (Cash Out Proof)
      Menampilkan daftar bukti kas keluar dengan fitur:
      - Pencarian data
      - Tambah bukti kas keluar baru (modal)
@@ -7,7 +7,20 @@
      - Hapus beberapa data sekaligus (bulk delete)
      - Export PDF (semua data atau data terpilih)
      - Paginasi (15 data per halaman)
-============================================================ --}}
+
+     Data dari CashOutProofController@index:
+     - $cashOuts : koleksi CashOutProof (paginate 15/halaman, hanya data
+                   milik user yang login, urut created_at terbaru;
+                   pencarian berdasarkan bkk_no, cek_no, paid_to,
+                   description)
+     - $search   : keyword pencarian
+
+     Komponen: table, add-modal, edit-modal (per baris), deleteModal,
+               print-dropdown-with-selected
+     JS: @vite('resources/js/pages/administrasi/cash-out-proof/index.js')
+         + hidden input cash-out-proof-print-selected-route (route export
+           PDF data terpilih yang dipakai JS)
+     ===================================================================== --}}
 
 @extends('layouts.app')
 
@@ -16,8 +29,16 @@
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
 
+        {{-- ═══════════════════════════════════════════════════════════
+             HEADER: Container utama dengan background surface
+             ═══════════════════════════════════════════════════════════ --}}
+
         {{-- Header Halaman --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Bukti Kas Keluar</h1>
+
+        {{-- ═══════════════════════════════════════════════════════════
+             TOOLBAR: Filter Pencarian & Tombol Aksi
+             ═══════════════════════════════════════════════════════════ --}}
 
         {{-- Filter Pencarian dan Tombol Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -43,21 +64,41 @@
             </div>
         </div>
 
+        {{-- ═══════════════════════════════════════════════════════════
+             TABEL: Daftar bukti kas keluar
+             ═══════════════════════════════════════════════════════════ --}}
+
         {{-- Tabel Data Bukti Kas Keluar --}}
         @include('components.administrasi.cash-out-proof.table', ['cashOuts' => $cashOuts])
 
     </div>
 
+    {{-- ═══════════════════════════════════════════════════════════════
+         PAGINATION: Navigasi halaman data
+         ═══════════════════════════════════════════════════════════════ --}}
+
     {{-- Pagination --}}
     <x-pagination :paginator="$cashOuts" />
+
+    {{-- ═══════════════════════════════════════════════════════════════
+         MODAL TAMBAH: Form tambah bukti kas keluar baru
+         ═══════════════════════════════════════════════════════════════ --}}
 
     {{-- Modal Form Tambah Bukti Kas Keluar --}}
     @include('components.administrasi.cash-out-proof.add-modal')
 
-    {{-- Modal Form Edit Bukti Kas Keluar (satu modal per baris data) --}}
+    {{-- ═══════════════════════════════════════════════════════════════
+         MODAL EDIT: Form edit bukti kas keluar (satu modal per baris).
+         Alur: iterasi setiap $cashOut pada halaman aktif lalu render
+         modal edit untuk masing-masing baris data.
+         ═══════════════════════════════════════════════════════════════ --}}
     @foreach ($cashOuts as $cashOut)
         @include('components.administrasi.cash-out-proof.edit-modal', ['cashOut' => $cashOut])
     @endforeach
+
+    {{-- ═══════════════════════════════════════════════════════════════
+         MODAL HAPUS: Konfirmasi hapus massal
+         ═══════════════════════════════════════════════════════════════ --}}
 
     {{-- Modal Konfirmasi Hapus Massal --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true"
@@ -65,10 +106,14 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
-    {{-- Hidden input untuk route print selected (digunakan oleh JS) --}}
+    {{-- Hidden input untuk route print selected (digunakan oleh JS).
+         JS membaca nilai route ini saat user memilih baris lalu klik
+         "Print Selected" pada print-dropdown-with-selected. --}}
     <input type="hidden" id="cash-out-proof-print-selected-route" value="{{ route('cash-out-proof.export.pdf.selected') }}">
 
-    {{-- JavaScript: Load via Vite (modular) --}}
+    {{-- ═══════════════════════════════════════════════════════════════
+         JAVASCRIPT: Load via Vite (modular)
+         ═══════════════════════════════════════════════════════════════ --}}
     @push('scripts')
         @vite('resources/js/pages/administrasi/cash-out-proof/index.js')
     @endpush

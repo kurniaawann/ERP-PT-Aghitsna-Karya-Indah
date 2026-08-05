@@ -1,19 +1,28 @@
 /**
- * Payroll Index Page - JavaScript Module
+ * Halaman Indeks Payroll - Modul JavaScript
  *
- * Handles all interactive functionality for the Data Payroll page:
- * - Dynamic week loading (get-weeks API)
- * - Attendance auto-check before generate
- * - Filter week dropdown
- * - Select All checkbox & bulk actions (delete, pay)
- * - Generate/Edit form submit handlers
- * - Dynamic expense items (Pengeluaran Tambahan)
+ * Menangani semua fungsionalitas interaktif untuk halaman Data Payroll:
+ * - Pemuatan minggu dinamis (API get-weeks)
+ * - Pengecekan absensi otomatis sebelum generate
+ * - Dropdown filter minggu
+ * - Checkbox Pilih Semua & aksi massal (hapus, bayar)
+ * - Handler submit form Generate/Edit
+ * - Item pengeluaran tambahan dinamis (Pengeluaran Tambahan)
  *
- * Server data is passed via window.payrollConfig (set in pages/sdm/payroll.blade.php).
- * Functions called from inline HTML attributes are exposed on window
- * because Vite loads JS as ES module, not global.
+ * Data server dikirim lewat window.payrollConfig (di-set di
+ * pages/sdm/payroll.blade.php). Fungsi yang dipanggil dari atribut HTML
+ * inline diekspos ke window karena Vite memuat JS sebagai ES module,
+ * bukan global.
  */
 
+/**
+ * Konfigurasi halaman payroll dari backend.
+ *
+ * Berisi URL get-weeks, URL cek absensi, token CSRF, dan nilai filter awal
+ * (filterMonth/filterYear/filterWeek/currentYear) yang di-set Blade.
+ *
+ * @type {Object<string, *>}
+ */
 const config = window.payrollConfig || {};
 
 // ==========================================
@@ -21,8 +30,17 @@ const config = window.payrollConfig || {};
 // ==========================================
 
 /**
- * Fetch week options from the server for a given month/year.
- * Returns array of { week_number, label, start, end }.
+ * Mengambil daftar minggu (Senin-Sabtu) dari server untuk bulan/tahun tertentu.
+ *
+ * Alur:
+ * - Validasi input bulan (1-12) dan tahun (≥ 2000); jika invalid → [].
+ * - AJAX GET ke config.getWeeksUrl dengan query month & year.
+ * - Mengembalikan array { week_number, label, start, end } (bersumber dari
+ *   PayrollService::getWeeksInMonth); [] saat terjadi error.
+ *
+ * @param {string|number} month  Bulan (1-12).
+ * @param {string|number} year   Tahun.
+ * @returns {Promise<Array<{week_number: number, label: string, start: string, end: string}>>}
  */
 async function fetchWeeks(month, year) {
     if (!month || !year || month < 1 || month > 12 || year < 2000) {
@@ -40,8 +58,17 @@ async function fetchWeeks(month, year) {
 }
 
 /**
- * Populate a <select> element with week options.
- * Preserves the current selection if it still exists in the new options.
+ * Mengisi elemen <select> dengan opsi minggu.
+ *
+ * Alur:
+ * - Mulai dengan opsi placeholder "Pilih".
+ * - Tambahkan satu <option> per minggu (nilai = week_number, teks = label).
+ * - Pertahankan seleksi sebelumnya bila nilainya masih ada di daftar baru.
+ * - Jika seleksi sebelumnya tidak lagi tersedia, kosongkan nilai select.
+ *
+ * @param {HTMLSelectElement} selectEl        Elemen select yang diisi.
+ * @param {Array}             weeks           Daftar minggu hasil fetchWeeks.
+ * @param {string|number}     [selectedValue] Nilai minggu yang sedang terpilih.
  */
 function populateWeekDropdown(selectEl, weeks, selectedValue) {
     selectEl.innerHTML = '<option value="">Pilih</option>';
@@ -68,6 +95,14 @@ function populateWeekDropdown(selectEl, weeks, selectedValue) {
 // AUTO-CHECK ATTENDANCE SAAT PILIH BULAN/TAHUN/MINGGU
 // ==========================================
 
+/**
+ * Referensi elemen modal Generate yang di-cache saat DOM siap.
+ *
+ * Menghindari query DOM berulang pada setiap event; dipakai oleh
+ * loadGenerateWeeks, updatePeriodDateInputs, dan checkAttendanceData.
+ *
+ * @type {HTMLElement|null}
+ */
 let periodMonthSelect = null;
 let periodYearInput = null;
 let weekNumberSelect = null;
@@ -83,11 +118,31 @@ let completeList = null;
 let alreadyGeneratedList = null;
 let generateSubmitBtn = null;
 
+/**
+ * Timer debounce (setTimeout) untuk checkAttendanceData agar tidak membanjiri
+ * server saat user cepat mengubah bulan/tahun/minggu.
+ *
+ * @type {number|null}
+ */
 let checkTimeout = null;
+
+/**
+ * Cache daftar minggu dari loadGenerateWeeks; dipakai updatePeriodDateInputs
+ * untuk mencari tanggal mulai/akhir dari minggu yang terpilih.
+ *
+ * @type {Array<{week_number: number, label: string, start: string, end: string}>}
+ */
 let cachedWeeksData = [];
 
 /**
- * Load week options for the generate modal based on selected month/year.
+ * Memuat opsi minggu untuk modal Generate berdasarkan bulan/tahun terpilih.
+ *
+ * Alur:
+ * - Bulan/tahun belum dipilih → reset dropdown (pesan placeholder), kosongkan
+ *   cache dan hidden tanggal.
+ * - Ambil minggu via fetchWeeks, simpan di cachedWeeksData, isi dropdown
+ *   (mempertahankan minggu yang sedang terpilih), lalu sinkronkan tanggal
+ *   periode via updatePeriodDateInputs().
  */
 async function loadGenerateWeeks() {
     const month = periodMonthSelect.value;
@@ -109,7 +164,13 @@ async function loadGenerateWeeks() {
 }
 
 /**
- * Populate hidden inputs period_start_date / period_end_date based on selected week.
+ * Mengisi hidden input period_start_date/period_end_date sesuai minggu terpilih.
+ *
+ * Alur:
+ * - Ambil week_number dari select; jika kosong → kosongkan kedua hidden.
+ * - Cari minggu dengan week_number yang sama di cachedWeeksData.
+ * - Ketemu → isi hidden dengan start_date dan end_date minggu tersebut;
+ *   tidak ketemu → kosongkan keduanya.
  */
 function updatePeriodDateInputs() {
     const selectedWeekNum = parseInt(weekNumberSelect.value);
@@ -129,6 +190,29 @@ function updatePeriodDateInputs() {
     }
 }
 
+/**
+ * Memeriksa kelengkapan absensi periode terpilih sebelum generate payroll.
+ *
+ * Alur:
+ * 1. Sembunyikan semua panel status (lengkap/tidak lengkap/sudah digenerate).
+ * 2. Bulan/tahun/minggu belum lengkap → nonaktifkan tombol generate,
+ *    kosongkan hidden tanggal, keluar.
+ * 3. Sinkronkan tanggal periode via updatePeriodDateInputs; jika kosong →
+ *    nonaktifkan tombol, keluar.
+ * 4. Tampilkan loader, lalu POST period_start_date & period_end_date ke
+ *    config.checkAttendanceUrl (dengan token CSRF) → hasil dari
+ *    PayrollService::validateAttendanceCompleteness.
+ * 5. Render daftar karyawan lengkap (completeList) + info periode.
+ * 6. Ada karyawan incomplete → tampilkan warning + daftar tanggal kosong
+ *    (generate diblokir).
+ * 7. Sudah digenerate tanpa karyawan baru → warning blokir; dengan karyawan
+ *    baru → info bahwa generate boleh dilanjutkan untuk karyawan baru.
+ * 8. Tidak ada karyawan baru & tidak ada yang digenerate → pesan tidak ada
+ *    karyawan.
+ * 9. can_generate = true → tampilkan panel lengkap & aktifkan tombol;
+ *    selain itu nonaktifkan tombol dengan tooltip alasan (disableReason).
+ * 10. Error → sembunyikan loader dan nonaktifkan tombol.
+ */
 async function checkAttendanceData() {
     const month = periodMonthSelect.value;
     const year = periodYearInput.value;
@@ -342,10 +426,25 @@ async function checkAttendanceData() {
 // FILTER WEEK DROPDOWN (Index Page)
 // ==========================================
 
+/**
+ * Referensi elemen dropdown filter minggu halaman index yang di-cache saat
+ * DOM siap, dipakai oleh loadFilterWeeks.
+ *
+ * @type {HTMLElement|null}
+ */
 let filterMonthSelect = null;
 let filterYearInput = null;
 let filterWeekSelect = null;
 
+/**
+ * Memuat opsi minggu untuk dropdown filter halaman index.
+ *
+ * Alur:
+ * - Bulan/tahun belum dipilih → dropdown berisi "Semua Minggu".
+ * - Ambil minggu via fetchWeeks; tambahkan opsi per minggu.
+ * - Tandai opsi yang sesuai filter aktif (filterWeek + filterMonth +
+ *   filterYear) agar seleksi dipertahankan saat halaman dimuat.
+ */
 async function loadFilterWeeks() {
     if (!filterMonthSelect || !filterYearInput || !filterWeekSelect) return;
 
@@ -379,8 +478,11 @@ async function loadFilterWeeks() {
 // ==========================================
 
 /**
- * Update Button States (Delete & Bulk Pay)
- * Aktifkan/nonaktifkan tombol aksi berdasarkan checkbox yang dipilih.
+ * Memperbarui status tombol Hapus & Bayar Massal berdasarkan checkbox terpilih.
+ *
+ * Tombol diaktifkan bila minimal satu checkbox (tidak disabled) tercentang;
+ * selain itu keduanya dinonaktifkan dengan kelas opacity-50 dan
+ * cursor-not-allowed.
  */
 function updateButtonStates() {
     const deleteButton = document.getElementById('delete-button');
@@ -411,11 +513,17 @@ function updateButtonStates() {
 }
 
 /**
- * Submit Delete Form
- * Menampilkan loading spinner pada tombol konfirmasi lalu submit form hapus.
+ * Mengirim form hapus massal dengan status memuat.
  *
- * Assigned to window because it's called from an inline onclick attribute
- * in the delete confirmation modal (Vite loads JS as ES module, not global).
+ * Alur:
+ * - Ambil checkbox payroll yang tercentang; jika kosong → batal.
+ * - Bersihkan hidden input ids[] lama pada form, lalu buat ulang dari
+ *   checkbox tercentang (nilai = ID payroll).
+ * - Ganti isi tombol konfirmasi dengan spinner "Menghapus..." dan nonaktifkan.
+ * - Submit form #deleteForm.
+ *
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline pada
+ * modal konfirmasi hapus (Vite memuat JS sebagai ES module, bukan global).
  */
 window.submitDeleteForm = function () {
     const checkedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
@@ -451,11 +559,19 @@ window.submitDeleteForm = function () {
 };
 
 /**
- * Submit Bulk Pay Form
- * Menampilkan loading spinner pada tombol konfirmasi lalu submit form bayar massal.
+ * Mengirim form bayar massal dengan status memuat.
  *
- * Assigned to window because it's called from an inline onclick attribute
- * in the bulk pay confirmation modal (Vite loads JS as ES module, not global).
+ * Alur:
+ * - Ambil checkbox payroll yang tercentang; jika kosong → batal.
+ * - Bersihkan hidden ids[] dan payment_date lama pada form.
+ * - Buat ulang hidden ids[] dari checkbox tercentang.
+ * - Tambahkan hidden payment_date berisi tanggal hari ini (Y-m-d) yang
+ *   dipakai PayrollService::bulkPayPayrolls.
+ * - Ganti isi tombol konfirmasi dengan spinner "Memproses..." dan nonaktifkan.
+ * - Submit form #bulkPayForm.
+ *
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline pada
+ * modal konfirmasi bayar massal (Vite memuat JS sebagai ES module, bukan global).
  */
 window.submitBulkPayForm = function () {
     const checkedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
@@ -504,8 +620,12 @@ window.submitBulkPayForm = function () {
 // ==========================================
 
 /**
- * Init form submit handlers for generate and edit modals.
- * Uses handleFormSubmit() (shared helper) for loading states / double-submit prevention.
+ * Menginisialisasi handler submit form modal Generate, Edit, dan Edit
+ * Pengeluaran Operasional.
+ *
+ * Semua memakai handleFormSubmit() (helper bersama) untuk status memuat
+ * dengan label "Memproses..." dan pencegahan double submit; bila ditolak,
+ * pengiriman dibatalkan.
  */
 function initFormSubmitHandlers() {
     // Handle Generate Modal Submit
@@ -575,16 +695,31 @@ function initExpensePanelScroll() {
 // DYNAMIC EXPENSE ITEMS
 // ==========================================
 
+/**
+ * Penghitung ID item pengeluaran dan wadah item untuk modal Generate/Edit.
+ *
+ * expenseItemCounter menghasilkan id unik per baris item; expenseItems
+ * menjaga agregasi item lintas container.
+ *
+ * @type {number}
+ */
 let expenseItemCounter = 0;
 const expenseItems = [];
 
 /**
- * Add a new expense item row to the given container (generate or edit modal).
+ * Menambahkan baris item pengeluaran baru ke container tertentu.
  *
- * Assigned to window because it's called from an inline onclick attribute
- * in the generate/edit modals (Vite loads JS as ES module, not global).
+ * Alur:
+ * 1. Increment expenseItemCounter → id unik per baris.
+ * 2. Ambil container #expense-items-container-{context}; jika tidak ada → batal.
+ * 3. Sembunyikan teks "tidak ada pengeluaran" (no-expense-text).
+ * 4. Sisipkan HTML baris (nama, jumlah, tombol hapus) via insertAdjacentHTML;
+ *    input memicu updateExpenseData saat diisi.
+ * 5. Panggil updateExpenseData(context) agar total langsung tersinkron.
  *
- * @param {string} context - Container id suffix (e.g. 'generate' or payroll id)
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline.
+ *
+ * @param {string} context - Akhiran id container ('generate' atau id payroll).
  */
 window.addExpenseItem = function (context) {
     expenseItemCounter++;
@@ -635,13 +770,19 @@ window.addExpenseItem = function (context) {
 };
 
 /**
- * Remove an expense item row from the given container.
+ * Menghapus satu baris item pengeluaran dari container tertentu.
  *
- * Assigned to window because it's called from an inline onclick attribute
- * in the generate/edit modals (Vite loads JS as ES module, not global).
+ * Alur:
+ * - Cari baris berdasarkan data-item-id di container; jika tidak ada → batal.
+ * - Hapus baris, lalu panggil updateExpenseData(context) agar total
+ *   diperbarui.
+ * - Jika tidak ada item tersisa, tampilkan kembali teks "tidak ada
+ *   pengeluaran".
  *
- * @param {string|number} itemId  - The data-item-id of the row to remove
- * @param {string}        context - Container id suffix (e.g. 'generate' or payroll id)
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline.
+ *
+ * @param {string|number} itemId   Nilai data-item-id baris yang dihapus.
+ * @param {string}        context  Akhiran id container.
  */
 window.removeExpenseItem = function (itemId, context) {
     const container = document.getElementById(`expense-items-container-${context}`);
@@ -663,12 +804,20 @@ window.removeExpenseItem = function (itemId, context) {
 };
 
 /**
- * Recalculate totals and update hidden inputs for the given container.
+ * Menghitung ulang total dan memperbarui hidden input pengeluaran tambahan.
  *
- * Assigned to window because it's called from inline oninput attributes
- * in the generate/edit modals (Vite loads JS as ES module, not global).
+ * Alur:
+ * 1. Loop semua .expense-item di container.
+ * 2. Kumpulkan item dengan nama terisi DAN amount > 0; akumulasi total.
+ * 3. Isi hidden total_additional_expenses_{context} = total.
+ * 4. Isi hidden additional_expenses_notes_{context} = JSON.stringify(items)
+ *    (atau '' jika kosong) — dikirim ke PayrollService::generatePayroll lalu
+ *    divalidasi ulang oleh PayrollService::validateAdditionalExpenses.
+ * 5. Perbarui teks total pada total-expense-display-{context}.
  *
- * @param {string} context - Container id suffix (e.g. 'generate' or payroll id)
+ * Ditugaskan ke window karena dipanggil dari atribut oninput inline.
+ *
+ * @param {string} context - Akhiran id container.
  */
 window.updateExpenseData = function (context) {
     const container = document.getElementById(`expense-items-container-${context}`);
@@ -704,7 +853,18 @@ window.updateExpenseData = function (context) {
 // ==========================================
 
 /**
- * Initialize all payroll page functionality on DOM ready.
+ * Menginisialisasi semua fungsionalitas halaman payroll saat DOM siap.
+ *
+ * Alur inisialisasi:
+ * - Cache referensi elemen modal Generate (select bulan/tahun/minggu, hidden
+ *   tanggal, loader, panel status, tombol generate).
+ * - Bulan/tahun/minggu berubah → muat minggu + debounce pengecekan absensi.
+ * - Nonaktifkan tombol generate di awal.
+ * - Reset tampilan saat modal Generate ditutup (event modalClosed).
+ * - Dropdown filter minggu (halaman index) + muat filter awal bila ada.
+ * - Checkbox Pilih Semua & individu → perbarui status tombol aksi.
+ * - Daftarkan handler submit form; batasi tinggi panel pengeluaran operasional.
+ * - Sembunyikan no-expense-text pada container yang sudah punya item.
  */
 document.addEventListener('DOMContentLoaded', function () {
     periodMonthSelect = document.getElementById('period_month');

@@ -1,23 +1,42 @@
-{{--
-    Payroll Index Page
+{{-- =====================================================================
+     Halaman: Data Payroll (payroll)
+     Tujuan: Halaman utama pengelolaan payroll karyawan. Menampilkan daftar
+             payroll (paginasi) dengan pencarian & filter (bulan, tahun,
+             minggu), aksi bulk (Bayar/Hapus/Generate), panel pengeluaran
+             operasional proyek, dan ekspor (Excel/PDF).
 
-    Main page for managing employee payroll.
-    Displays a paginated list of payroll records with:
-    - Search by employee name or code
-    - Filter by month, year, and week number
-    - Bulk actions: Pay selected, Delete selected, Generate new
+     Data dari PayrollController@index:
+     - $payrolls            : LengthAwarePaginator daftar payroll (relasi employee)
+     - $operationalExpenses : Collection pengeluaran operasional proyek per
+                              periode; setiap item punya atribut period_locked
+                              (true jika periode sudah tidak punya payroll draft)
+     - $search, $month, $year, $weekNumber : nilai filter yang aktif (nullable)
 
-    Business logic: PayrollService
-    Controller: PayrollController@index
+     Komponen yang di-include:
+     - components.sdm.payroll.operational-expense-panel : ringkasan biaya operasional
+     - components.sdm.payroll.table                     : tabel daftar payroll
+     - components.sdm.payroll.generate-modal            : modal generate payroll
+     - components.sdm.payroll.edit-modal                : modal edit payroll draft (loop)
+     - components.sdm.payroll.detail-modal              : modal detail payroll (loop)
+     - components.sdm.payroll.operational-expense-edit-modal : modal edit biaya operasional
+     - x-pagination                                     : kontrol pagination
+     - x-modal (deleteModal / bulkPayModal)             : konfirmasi hapus & bayar massal
 
-    Flow:
-    1. Generate payroll via modal (validates attendance first)
-    2. Edit draft payroll (project name, additional expenses only)
-    3. View detail (read-only)
-    4. Bulk pay selected draft records
-    5. Delete selected draft records
-    6. Export to Excel or PDF
---}}
+     Alur logika yang perlu diperhatikan:
+     - Dropdown minggu diisi secara dinamis via AJAX ke route payroll.get-weeks
+       (dipicu saat bulan/tahun dipilih).
+     - Bulk Pay: tombol "Bayar Terpilih" membuka bulkPayModal lalu submit
+       submitBulkPayForm() dengan daftar ID terpilih (PATCH).
+     - Generate Payroll memvalidasi kelengkapan absensi terlebih dahulu
+       (route payroll.check-attendance) sebelum menciptakan payroll draft.
+     - Panel pengeluaran operasional hanya bisa diedit jika periode masih
+       punya payroll draft (period_locked = false).
+     - Konfigurasi diteruskan ke JS via @json($payrollConfig) →
+       window.payrollConfig (URL AJAX + nilai filter aktif).
+
+     JS yang di-load:
+     - @vite('resources/js/pages/sdm/payroll/index.js')
+     ===================================================================== --}}
 
 @extends('layouts.app')
 
@@ -25,8 +44,17 @@
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
+        {{-- ============================================================
+             SECTION: Header
+             Judul halaman.
+             ============================================================ --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Payroll</h1>
 
+        {{-- ============================================================
+             SECTION: Filter / Toolbar
+             Form filter (bulan, tahun, minggu, pencarian) + aksi kanan
+             (ekspor Excel/PDF, Bayar Terpilih, Hapus, Generate Payroll).
+             ============================================================ --}}
         {{-- Search & Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian dan Filter --}}
@@ -40,6 +68,8 @@
                 <x-filters.year-filter :value="request('year')" fill />
 
                 {{-- Filter Minggu --}}
+                {{-- Dropdown ini diisi secara dinamis oleh JS via route
+                     payroll.get-weeks (bergantung bulan + tahun terpilih). --}}
                 <div class="flex-1">
                     <select name="week_number" id="filter_week_number"
                         class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
@@ -62,6 +92,9 @@
                         'week_number' => request('week_number'),
                     ]" responsive="custom" fill />
 
+                    {{-- Tombol Bulk Pay: disabled selama tidak ada baris yang
+                         dipilih; diaktifkan oleh JS setelah seleksi. Membuka
+                         bulkPayModal lalu submitBulkPayForm(). --}}
                     <button type="button" id="bulk-pay-button" onclick="openModal('bulkPayModal')"
                         class="w-full min-[1560px]:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium opacity-50 cursor-not-allowed"
                         disabled>
@@ -80,17 +113,41 @@
             </div>
         </div>
 
+        {{-- ============================================================
+             SECTION: Panel Pengeluaran Operasional Proyek
+             Ringkasan biaya operasional (air minum, material tambahan, dll)
+             yang disimpan SEKALI per periode payroll, bukan per karyawan.
+             ============================================================ --}}
         {{-- Pengeluaran Operasional Proyek (sekali per periode) --}}
         @include('components.sdm.payroll.operational-expense-panel', ['operationalExpenses' => $operationalExpenses])
 
+        {{-- ============================================================
+             SECTION: Table
+             Menampilkan daftar payroll dengan checkbox seleksi massal
+             (hanya payroll draft yang dapat dihapus/dibayar).
+             ============================================================ --}}
         {{-- Table Component --}}
         @include('components.sdm.payroll.table', ['payrolls' => $payrolls])
 
     </div>
 
+    {{-- ============================================================
+         SECTION: Pagination
+         Kontrol navigasi halaman daftar payroll.
+         ============================================================ --}}
     {{-- Pagination --}}
     <x-pagination :paginator="$payrolls" />
 
+    {{-- ============================================================
+         SECTION: Modals
+         - generate-modal : wizard generate payroll (validasi absensi dulu).
+         - edit-modal     : modal edit payroll draft (loop, hanya status draft).
+         - detail-modal   : modal detail read-only (loop).
+         - operational-expense-edit-modal : edit biaya operasional per periode
+           (loop, hanya bila !period_locked).
+         - deleteModal    : konfirmasi hapus massal (hanya draft).
+         - bulkPayModal   : konfirmasi bayar massal (PATCH).
+         ============================================================ --}}
     {{-- Modal Generate Payroll --}}
     @include('components.sdm.payroll.generate-modal')
 
@@ -125,6 +182,13 @@
         <p class="text-text-primary">Apakah kamu yakin ingin membayar payroll yang dipilih?</p>
     </x-modal>
 
+    {{-- ============================================================
+         SECTION: Scripts
+         $payrollConfig berisi URL endpoint AJAX (get-weeks &
+         check-attendance), CSRF token, serta nilai filter aktif, lalu
+         diteruskan ke JS melalui @json → window.payrollConfig.
+         Modul JS halaman payroll di-load via Vite.
+         ============================================================ --}}
     {{-- Pass server data to JavaScript --}}
     @php
         $payrollConfig = [

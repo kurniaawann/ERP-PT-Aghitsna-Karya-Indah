@@ -1,3 +1,29 @@
+{{-- =====================================================================
+     Halaman: Kategori Transaksi
+     Tujuan: Mengelola daftar kategori transaksi (Pemasukan/Pengeluaran):
+             pencarian & filter tipe, toggle status aktif/nonaktif, edit,
+             tambah kategori, dan hapus massal dengan modal warning untuk
+             kategori yang sedang digunakan.
+     Data dari TransactionCategoryController@index (logic di
+     TransactionCategoryService):
+     - $categories    : paginator kategori (kolom: name, code, type,
+                        sort_order, is_active)
+     - $existingCodes : map [id => code] untuk validasi kode duplikat
+                        di frontend
+     - $usedCategoryIds : daftar id kategori yang sedang dipakai transaksi
+     Filter (GET): type (INCOME/EXPENSE), search
+     Komponen yang di-include:
+     - layouts.app
+     - x-filters.select-filter & x-filters.search-input (toolbar filter)
+     - x-buttons.add-button (buka modal tambah)
+     - components.report.transaction-category.table (daftar kategori)
+     - x-pagination
+     - components.report.transaction-category.add-modal
+     - components.report.transaction-category.edit-modal (per kategori)
+     - x-modal (konfirmasi hapus massal) + modal warning "sedang digunakan"
+     JS yang di-load:
+     - resources/js/pages/report/transaction-categories/index.js
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Kategori Transaksi')
@@ -40,6 +66,9 @@
         </div>
 
         {{-- Tabel Kategori Transaksi --}}
+        {{-- Daftar kategori dengan checkbox (untuk hapus massal), toggle
+             status aktif/nonaktif (dipanggil via JS toggleStatus()),
+             dan tombol edit yang membuka modal editModal-{id}. --}}
         @include('components.report.transaction-category.table')
     </div>
 
@@ -63,6 +92,9 @@
     </x-modal>
 
     {{-- Modal Peringatan Kategori Sedang Digunakan --}}
+    {{-- Ditampilkan saat user mencoba menghapus kategori yang sedang
+         dipakai transaksi. Daftar nama kategori diisi dinamis oleh JS
+         (getUsedCategoryIds dari server) ke elemen #usedCategoriesList. --}}
     <div id="warningUsedModal"
         class="fixed inset-0 bg-surface-hover bg-opacity-50 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
         <div

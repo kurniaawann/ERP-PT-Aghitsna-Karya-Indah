@@ -63,6 +63,16 @@ function submitDeleteForm() {
 // Pendengar Event
 // ==========================================
 
+/**
+ * Menginisialisasi seluruh fungsionalitas halaman karyawan saat DOM siap.
+ *
+ * Alur inisialisasi:
+ * - Ekspos submitDeleteForm ke window (dipanggil dari onclick inline).
+ * - Checkbox "Pilih Semua": centang/batalkan semua checkbox baris.
+ * - Checkbox baris: perbarui status Pilih Semua dan tombol hapus.
+ * - Format mata uang pada semua input .daily-wage-input (nilai awal + tiap input).
+ * - Daftarkan handler submit form Tambah/Edit dengan pencegahan double submit.
+ */
 document.addEventListener('DOMContentLoaded', function () {
     window.submitDeleteForm = submitDeleteForm;
 

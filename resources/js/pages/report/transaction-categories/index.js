@@ -17,6 +17,17 @@
 /**
  * Mengecek apakah ada kategori yang sedang digunakan sebelum menampilkan
  * modal konfirmasi hapus. Jika ada, tampilkan modal peringatan.
+ *
+ * Alur:
+ * 1. Kumpulkan semua checkbox tercentang (.category-checkbox:checked).
+ * 2. Untuk tiap checkbox, periksa flag data-is-used yang di-set server dari
+ *    TransactionCategoryService::getUsedCategoryIds() (fetch kategori yang
+ *    sedang dipakai di expense reports).
+ * 3. Jika ada kategori terpakai → tampilkan showWarningModal() berisi daftar
+ *    nama kategori yang tidak boleh dihapus.
+ * 4. Jika tidak ada → langsung buka modal konfirmasi hapus (openModal('deleteModal')).
+ *
+ * @returns {void}
  */
 function checkAndDelete() {
     const checkboxes = document.querySelectorAll('.category-checkbox:checked');
@@ -38,7 +49,14 @@ window.checkAndDelete = checkAndDelete;
 
 /**
  * Menampilkan modal peringatan untuk kategori yang sedang digunakan.
+ *
+ * Alur: kosongkan daftar #usedCategoriesList, render satu <li> per nama
+ * kategori, tampilkan modal #warningUsedModal (hapus 'hidden', tambah 'flex'),
+ * lalu animasikan konten modal dari scale-95/opacity-0 ke scale-100/opacity-100
+ * setelah 10ms (agar transisi CSS berjalan).
+ *
  * @param {string[]} usedCategories Array nama kategori yang sedang digunakan
+ * @returns {void}
  */
 function showWarningModal(usedCategories) {
     const modal = document.getElementById('warningUsedModal');
@@ -65,6 +83,12 @@ function showWarningModal(usedCategories) {
 
 /**
  * Menutup modal peringatan kategori yang sedang digunakan.
+ *
+ * Alur: animasikan konten modal keluar (scale-100/opacity-100 →
+ * scale-95/opacity-0), lalu sembunyikan modal (tambah 'hidden', hapus 'flex')
+ * setelah 300ms menunggu transisi selesai.
+ *
+ * @returns {void}
  */
 function closeWarningModal() {
     const modal = document.getElementById('warningUsedModal');
@@ -82,6 +106,13 @@ window.closeWarningModal = closeWarningModal;
 
 /**
  * Mengirim form hapus massal dengan indikator loading.
+ *
+ * Alur: tampilkan spinner "Menghapus..." dan nonaktifkan tombol konfirmasi
+ * #confirm-btn-deleteModal (double-submit prevention), lalu submit #deleteForm
+ * yang membawa selected_categories[] ke server
+ * (TransactionCategoryService::deleteSelected).
+ *
+ * @returns {void}
  */
 function submitDeleteForm() {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -105,7 +136,17 @@ window.submitDeleteForm = submitDeleteForm;
 /**
  * Mengubah status aktif/nonaktif kategori menggunakan temporary form
  * dengan method spoofing PATCH.
+ *
+ * Alur:
+ * 1. Buat element <form> temporary dengan method POST ke
+ *    /transaction-category/{id}/toggle-status.
+ * 2. Tambahkan input hidden _token (window.csrfToken) dan _method = 'PATCH'
+ *    (Laravel method spoofing agar route menerima PATCH).
+ * 3. Append form ke document.body lalu submit → server memanggil
+ *    TransactionCategoryService::toggleStatus() yang membalik nilai is_active.
+ *
  * @param {number} categoryId ID kategori yang akan di-toggle
+ * @returns {void}
  */
 function toggleStatus(categoryId) {
     const form = document.createElement('form');
@@ -133,6 +174,21 @@ window.toggleStatus = toggleStatus;
 // INISIALISASI
 // ============================================================
 
+/**
+ * Inisialisasi halaman Kategori Transaksi setelah DOM selesai dimuat.
+ *
+ * Alur:
+ * 1. Validasi kode duplikat (client-side) untuk modal tambah (validateAddCode)
+ *    dan semua modal edit (validateEditCode) via event 'input' dan 'blur'.
+ * 2. Pengiriman form modal tambah: validasi ulang kode, lalu handleFormSubmit()
+ *    (double-submit prevention); semua modal edit: handleFormSubmit().
+ * 3. Checkbox "Pilih Semua": sinkronisasi status dengan checkbox individual
+ *    plus updateDeleteButtonState().
+ * 4. Reset state tombol submit saat navigasi kembali via tombol back browser
+ *    (event 'pageshow').
+ *
+ * @returns {void}
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
@@ -142,6 +198,14 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Validasi kode kategori duplikat untuk modal tambah.
      * Membandingkan input dengan daftar kode yang sudah ada (client-side).
+     *
+     * Alur: baca nilai input #add-code (di-trim + uppercase), lalu bandingkan
+     * dengan existingCodes (window.existingCodes dari
+     * TransactionCategoryService::getExistingCodes()). Jika duplikat →
+     * tampilkan warning + border merah + nonaktifkan tombol submit; jika unik →
+     * sembunyikan warning + aktifkan kembali tombol submit.
+     *
+     * @returns {boolean} true bila kode valid/unik, false bila duplikat
      */
     const existingCodes = window.existingCodes || [];
     const addCodeInput = document.getElementById('add-code');
@@ -188,6 +252,14 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Validasi kode kategori duplikat untuk modal edit.
      * Mengecualikan kategori yang sedang diedit dari pengecekan.
+     *
+     * Alur: baca nilai input edit-code-{id} (di-trim + uppercase), lalu iterasi
+     * existingCodesWithId (window.existingCodesWithId: map [id => code]).
+     * Kode kategori yang sedang diedit (id == data-category-id) dikecualikan.
+     * Jika duplikat → tampilkan warning + nonaktifkan tombol submit; jika unik →
+     * sembunyikan warning + aktifkan kembali tombol submit.
+     *
+     * @returns {boolean} true bila kode valid/unik, false bila duplikat
      */
     const existingCodesWithId = window.existingCodesWithId || {};
     const editCodeInputs = document.querySelectorAll('[id^="edit-code-"]');
@@ -294,6 +366,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const categoryCheckboxes = document.querySelectorAll('input[name="selected_categories[]"]');
     const deleteButton = document.getElementById('delete-button');
 
+    /**
+     * Menyinkronkan state tombol "Hapus" dengan checkbox yang dipilih.
+     *
+     * Alur: tombol #delete-button aktif (disabled = false) hanya jika minimal
+     * satu checkbox selected_categories[] dicentang (cek via Array.some()).
+     * Dipanggil saat halaman dimuat dan setiap status checkbox berubah
+     * (termasuk lewat "Pilih Semua").
+     *
+     * @returns {void}
+     */
     function updateDeleteButtonState() {
         const anyChecked = Array.from(categoryCheckboxes).some(cb => cb.checked);
         if (deleteButton) {

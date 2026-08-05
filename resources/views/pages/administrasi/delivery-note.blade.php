@@ -2,14 +2,28 @@
      Halaman Utama Modul Surat Jalan (Delivery Note)
      PT Aghitsna Karya Indah
 
+     Tujuan: Menampilkan daftar surat jalan dengan pencarian, paginasi,
+             tambah/edit/detail lewat modal, hapus massal, dan export PDF.
+
+     Data dari DeliveryNoteController@index:
+     - $deliveryNotes : koleksi DeliveryNote (paginate 15/halaman, hanya
+                        data milik user yang login, urut created_at
+                        terbaru; pencarian berdasarkan id_delivery_note,
+                        document_number, receiver_name, shipper_name)
+     - $search        : keyword pencarian
+
      Komponen:
      - Header: Judul halaman
      - Toolbar: Form pencarian, tombol print, hapus massal, tambah
      - Tabel: Daftar surat jalan dengan checkbox
      - Modal Tambah: Form tambah surat jalan baru
+     - Modal Detail: Tampilan detail surat jalan (read-only)
      - Modal Edit: Form edit surat jalan (satu per data)
      - Modal Hapus: Konfirmasi hapus massal
      - Pagination: Navigasi halaman
+
+     JS: @vite('resources/js/pages/administrasi/delivery-notes/index.js')
+         + inline fungsi showDetailModal() untuk membuka modal detail per ID
      ===================================================================== --}}
 
 @extends('layouts.app')
@@ -68,14 +82,20 @@
     @include('components.administrasi.delivery-note.add-modal')
 
     {{-- ═══════════════════════════════════════════════════════════════
-         MODAL DETAIL: Tampilan detail surat jalan (read-only)
+         MODAL DETAIL: Tampilan detail surat jalan (read-only).
+         Alur: iterasi setiap $deliveryNote pada halaman aktif lalu render
+         satu modal detail per baris (id modal: detailModal-{id}).
+         Dibuka dari tabel lewat fungsi showDetailModal(id).
          ═══════════════════════════════════════════════════════════════ --}}
     @foreach ($deliveryNotes as $deliveryNote)
         @include('components.administrasi.delivery-note.detail-modal', ['deliveryNote' => $deliveryNote])
     @endforeach
 
     {{-- ═══════════════════════════════════════════════════════════════
-         MODAL EDIT: Form edit surat jalan (satu modal per data)
+         MODAL EDIT: Form edit surat jalan (satu modal per data).
+         Alur: iterasi ulang $deliveryNotes lalu render satu modal edit
+         per baris; data sudah dibawa dari server sehingga form langsung
+         terisi nilai lama.
          ═══════════════════════════════════════════════════════════════ --}}
     @foreach ($deliveryNotes as $deliveryNote)
         @include('components.administrasi.delivery-note.edit-modal', ['deliveryNote' => $deliveryNote])
@@ -95,6 +115,10 @@
     @push('scripts')
         @vite('resources/js/pages/administrasi/delivery-notes/index.js')
 
+        {{-- Fungsi inline pembuka modal detail.
+             Dipanggil oleh tombol "Detail" pada tabel; menghapus kelas
+             'hidden' dan menambah 'flex' agar modal tampil + kunci scroll
+             body agar halaman tidak ikut tergulir. --}}
         <script>
             /**
              * Membuka modal detail surat jalan berdasarkan ID.

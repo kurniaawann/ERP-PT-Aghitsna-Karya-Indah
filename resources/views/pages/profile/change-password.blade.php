@@ -1,9 +1,28 @@
+{{-- =====================================================================
+     Halaman: Ubah Password (Profile)
+     Tujuan: Form untuk mengganti password akun user yang sedang login,
+             berisi field Password Saat Ini, Password Baru, dan Konfirmasi.
+     Data dari ProfileController@showChangePassword:
+     - Tidak ada data khusus; form menggunakan auth()->user() secara implisit
+     Route tujuan: profile.change-password.update (PUT)
+     Komponen yang di-include:
+     - layouts.app
+     - partials.password-visibility-toggle (per field password)
+     - partials.loading-submit-button (tombol submit dengan loading state)
+     JS yang di-load: (tidak ada file khusus, inline dari partials)
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'Ubah Password | ERP PT Aghitsna Karya Indah')
 
 @section('content')
     <div class="max-w-lg mx-auto">
+        {{-- ============================================================
+             SECTION: FORM GANTI PASSWORD
+             Card berisi form yang di-submit ke profile.change-password.update
+             dengan method PUT. Setiap field menampilkan pesan error
+             (@error) jika validasi gagal di ChangePasswordRequest.
+             ============================================================ --}}
         <div class="bg-surface-base rounded-2xl shadow-sm border border-border-light p-8">
             <div class="flex items-center mb-6">
                 <div class="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center mr-3">

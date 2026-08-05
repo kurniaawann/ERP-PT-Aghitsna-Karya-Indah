@@ -34,6 +34,13 @@ window.formatCurrencyInput = formatCurrencyInput;
  * Sinkronkan form (tambah/edit) berdasarkan tipe kategori terpilih.
  * - INCOME: label "Jumlah Pemasukan", bagian No. Faktur disembunyikan (di-generate otomatis).
  * - EXPENSE: label "Jumlah Pengeluaran", bagian No. Faktur ditampilkan.
+ *
+ * Alur:
+ * 1. Baca <select name="transaction_category_id"> dari form dan ambil opsi terpilih.
+ * 2. Tentukan isIncome dari dataset.type === 'INCOME'.
+ * 3. Update label .amount-label sesuai tipe (Jumlah Pemasukan / Jumlah Pengeluaran).
+ * 4. Toggle class 'hidden' pada .invoice-section — disembunyikan jika INCOME.
+ *
  * @param {HTMLFormElement} form
  */
 function syncCategoryFields(form) {
@@ -78,6 +85,18 @@ window.submitDeleteForm = submitDeleteForm;
 // INISIALISASI
 // ============================================================
 
+/**
+ * Inisialisasi seluruh interaktivitas halaman Rekap Pengeluaran.
+ *
+ * Alur:
+ * 1. Sinkronkan label form tambah/edit berdasarkan tipe kategori
+ *    (syncCategoryFields) + ikat event 'change' pada tiap select kategori.
+ * 2. Ikat checkbox pilih semua dan update status tombol hapus massal.
+ * 3. Format input currency untuk semua .expense-amount-input.
+ * 4. Ikat auto-submit form filter (kategori, bulan, tahun).
+ * 5. Ikat submit form modal Tambah dan semua modal Edit (cegah double submit).
+ * 6. Reset status submit saat halaman dimuat ulang (pageshow).
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
@@ -181,6 +200,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // PENANGANAN SUBMIT FORM — MODAL TAMBAH
     // ============================================================
 
+    /**
+     * Binding submit form modal Tambah — cegah double submit.
+     *
+     * Saat submit: handleFormSubmit mengubah tombol menjadi loading
+     * (spinner + disabled). Jika proses submit sudah berjalan,
+     * submit dibatalkan dengan preventDefault.
+     */
     const addForm = document.querySelector('#addModal form');
     if (addForm) {
         addForm.addEventListener('submit', function (e) {
@@ -198,6 +224,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // PENANGANAN SUBMIT FORM — MODAL EDIT
     // ============================================================
 
+    /**
+     * Binding submit untuk semua form modal Edit — cegah double submit.
+     * Logika sama dengan modal Tambah (handleFormSubmit + preventDefault).
+     */
     const editForms = document.querySelectorAll('[id^="editModal-"] form');
     editForms.forEach(function (form) {
         form.addEventListener('submit', function (e) {

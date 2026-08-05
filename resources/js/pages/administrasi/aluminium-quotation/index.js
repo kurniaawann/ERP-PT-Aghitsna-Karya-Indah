@@ -134,8 +134,22 @@ function resolveIds(prefix) {
 /**
  * Menghitung ulang total_price satu item berdasarkan volume x unit_price.
  *
+ * Alur:
+ * 1. Baca nilai input volume (.item-volume) lalu parse sebagai float
+ *    dengan koma sebagai pemisah desimal (format Indonesia);
+ *    fallback 0 jika kosong atau tidak valid.
+ * 2. Baca nilai input harga satuan (.item-unit-price) via parseAmount()
+ *    yang membuang pemisah ribuan (titik).
+ * 3. Hitung total = Math.round(volume * hargaSatuan) dan tampilkan
+ *    di elemen .item-total-display dengan format Rupiah.
+ * 4. Kembalikan nilai total untuk diakumulasi oleh recalcGroup().
+ *
+ * Catatan: nilai ini hanya preview client-side; saat submit server
+ * (AluminiumQuotationService) menghitung ulang subtotal group dan
+ * total_amount dari total_price item yang dikirim via JSON.
+ *
  * @param  {HTMLElement} itemEl  Element item row
- * @return {number}              Total price item
+ * @return {number}              Total price item (pembulatan integer)
  */
 function recalcItem(itemEl) {
     const volInput = itemEl.querySelector('.item-volume');
@@ -153,6 +167,15 @@ function recalcItem(itemEl) {
 /**
  * Menghitung ulang subtotal satu group berdasarkan total semua items.
  *
+ * Alur:
+ * 1. Iterasi semua baris item (.item-row) di dalam group.
+ * 2. Akumulasi hasil recalcItem() setiap item ke variabel subtotal.
+ * 3. Tampilkan subtotal di elemen .group-subtotal dengan format Rupiah.
+ * 4. Kembalikan subtotal untuk diakumulasi oleh updateGrandTotal().
+ *
+ * Server (AluminiumQuotationService::syncGroups) juga menghitung subtotal
+ * yang sama dari total_price item saat data disimpan.
+ *
  * @param  {HTMLElement} groupEl  Element group card
  * @return {number}               Subtotal group
  */
@@ -168,6 +191,17 @@ function recalcGroup(groupEl) {
 
 /**
  * Menghitung ulang grand total dari semua groups.
+ *
+ * Alur:
+ * 1. Resolve ID container dan elemen grand total dari prefix.
+ * 2. Iterasi semua group card (.group-card) di dalam container.
+ * 3. Akumulasi hasil recalcGroup() setiap group ke variabel grand.
+ * 4. Tampilkan grand di elemen grand total dengan format Rupiah.
+ *
+ * Dipanggil dari berbagai event (input volume/harga, tambah/hapus item
+ * maupun group) sehingga angka selalu sinkron dengan DOM. Server
+ * menghitung ulang total_amount via AluminiumQuotationService dari
+ * data JSON yang dikirim pada saat submit.
  *
  * @param  {string} prefix  'add' atau 'edit-{quotationNumber}'
  */
@@ -186,6 +220,18 @@ function updateGrandTotal(prefix) {
 
 /**
  * Menambahkan satu baris item ke dalam container items.
+ *
+ * Alur:
+ * 1. Buat elemen div.item-row berisi input keterangan, volume, satuan,
+ *    harga satuan, display total, dan tombol hapus.
+ * 2. Jika ada prefillData, isi nilai input; description/unit di-escape
+ *    via escHtml() demi keamanan terhadap injeksi HTML.
+ * 3. Pasang listener pada input harga: format pemisah ribuan via
+ *    formatPriceInput() lalu updateGrandTotal().
+ * 4. Pasang listener pada input volume: filter karakter non-digit/desimal
+ *    lalu updateGrandTotal().
+ * 5. Append baris ke itemsContainer; jika ada harga pra-isi,
+ *    hitung ulang grand total agar tampilan langsung akurat.
  *
  * @param  {HTMLElement} itemsContainer  Container items dalam group
  * @param  {string}      prefix          'add' atau 'edit-{quotationNumber}'
@@ -267,6 +313,11 @@ function addItem(itemsContainer, prefix, prefillData) {
 /**
  * Menghapus satu baris item.
  *
+ * Alur:
+ * 1. Hapus elemen .item-row terdekat dari tombol yang diklik.
+ * 2. Hitung ulang grand total (subtotal group ikut terhitung ulang
+ *    karena updateGrandTotal memanggil recalcGroup pada tiap group).
+ *
  * @param  {HTMLElement} button  Tombol hapus yang diklik
  * @param  {string}      prefix  'add' atau 'edit-{quotationNumber}'
  */
@@ -281,6 +332,15 @@ function removeItem(btn, prefix) {
 
 /**
  * Menambahkan satu group card baru.
+ *
+ * Alur:
+ * 1. Resolve container dari prefix; hitung jumlah group saat ini + 1
+ *    untuk label "Kelompok N".
+ * 2. Bangun elemen group card berisi input nama kelompok, daftar item
+ *    (.items-list), tombol "Tambah Item", dan display subtotal.
+ * 3. Append ke container; jika prefillData memiliki items, render
+ *    masing-masing item via addItem() (dipakai saat modal edit dibuka).
+ * 4. Hitung ulang grand total.
  *
  * @param  {string} prefix       'add' atau 'edit-{quotationNumber}'
  * @param  {object} prefillData  Data pra-isi (opsional)
@@ -338,6 +398,11 @@ function addGroup(prefix, prefillData) {
 /**
  * Menambahkan item baru ke group via tombol "+ Tambah Item".
  *
+ * Alur:
+ * 1. Cari group card terdekat dari tombol yang diklik.
+ * 2. Ambil elemen .items-list di dalam group.
+ * 3. Tambahkan satu item kosong via addItem().
+ *
  * @param  {HTMLElement} btn    Tombol yang diklik
  * @param  {string}      prefix 'add' atau 'edit-{quotationNumber}'
  */
@@ -349,6 +414,12 @@ function addItemToGroup(btn, prefix) {
 
 /**
  * Menghapus satu group card.
+ *
+ * Alur:
+ * 1. Hapus elemen .group-card yang menampung tombol yang diklik.
+ * 2. Renumber ulang label "Kelompok N" pada semua group yang tersisa
+ *    sesuai urutan DOM (idx + 1).
+ * 3. Hitung ulang grand total.
  *
  * @param  {HTMLElement} button  Tombol hapus yang diklik
  * @param  {string}      prefix  'add' atau 'edit-{quotationNumber}'
@@ -370,6 +441,23 @@ function removeGroup(btn, prefix) {
 
 /**
  * Mengubah semua groups + items dalam container menjadi array of objects.
+ *
+ * Alur (DOM-walk ke struktur JSON):
+ * 1. Resolve container berdasarkan prefix.
+ * 2. Iterasi setiap .group-card:
+ *    a. Buat array kosong untuk items.
+ *    b. Iterasi setiap .item-row di dalam group:
+ *       - Baca description (trim) dan unit (trim, null bila kosong).
+ *       - Baca volume sebagai string mentah (null bila kosong agar
+ *         tidak terkirim string kosong).
+ *       - Parse harga satuan via parseAmount() (buang pemisah ribuan).
+ *       - Konversi volume koma -> titik lalu parse float.
+ *       - total_price = Math.round(volume * hargaSatuan).
+ *       - Push objek item {description, volume, unit, unit_price, total_price}.
+ *    c. Push objek group {name, items}.
+ * 3. Kembalikan array groups; hasil ini lalu di-JSON.stringify dan
+ *    disimpan ke hidden input (addGroupsJson / editGroupsJson-{n})
+ *    pada saat submit agar backend menerima struktur yang sama.
  *
  * @param  {string} prefix  'add' atau 'edit-{quotationNumber}'
  * @return {array}          Array of group objects
@@ -410,6 +498,15 @@ function serializeGroups(prefix) {
 /**
  * Menyiapkan dan memvalidasi form tambah sebelum submission.
  * Dipanggil dari onsubmit modal add.
+ *
+ * Alur:
+ * 1. Sembunyikan error modal add.
+ * 2. Serialisasi groups via serializeGroups('add').
+ * 3. Validasi: minimal 1 group; nama group tidak boleh kosong;
+ *    setiap group minimal punya 1 item.
+ * 4. Tulis hasil JSON.stringify(groups) ke hidden input #addGroupsJson.
+ * 5. Tampilkan loading spinner pada tombol submit via handleFormSubmit()
+ *    (dari shared module) untuk mencegah double submit.
  *
  * @return {boolean} true jika valid, false jika gagal
  */
@@ -458,6 +555,15 @@ function prepareAddSubmit() {
 /**
  * Menyiapkan dan memvalidasi form edit sebelum submission.
  * Dipanggil dari onsubmit modal edit.
+ *
+ * Alur:
+ * 1. Sembunyikan error modal edit (prefix editModal-{quotNum}).
+ * 2. Serialisasi groups via serializeGroups('edit-{quotNum}').
+ * 3. Validasi sama seperti prepareAddSubmit (minimal 1 group,
+ *    nama group wajib, tiap group minimal 1 item).
+ * 4. Tulis hasil JSON.stringify(groups) ke hidden input
+ *    #editGroupsJson-{quotNum}.
+ * 5. Tampilkan loading spinner pada tombol submit via handleFormSubmit().
  *
  * @param  {string} quotNum  Nomor penawaran
  * @return {boolean}         true jika valid, false jika gagal
@@ -510,6 +616,14 @@ function prepareEditSubmit(quotNum) {
  * Memvalidasi rekening pembayaran dalam modal tertentu.
  * Tombol submit akan di-disable jika tidak ada checkbox yang dicentang.
  *
+ * Alur:
+ * 1. Cari modal berdasarkan modalId; jika tidak ada, langsung return.
+ * 2. Kumpulkan semua checkbox .payment-account-checkbox di dalam modal
+ *    dan cek apakah minimal satu tercentang.
+ * 3. Tentukan tombol submit berdasarkan modalId (addModal vs edit).
+ * 4. Disable / beri class opacity saat tidak ada yang dipilih.
+ * 5. Kembalikan status anyChecked.
+ *
  * @param  {string} modalId  ID modal (contoh: 'addModal' atau 'editModal-1/1/ALU/26')
  */
 function validatePaymentSelection(modalId) {
@@ -543,6 +657,11 @@ function validatePaymentSelection(modalId) {
 /**
  * Submit form hapus dengan loading indicator.
  * Dipanggil dari onclick pada modal konfirmasi hapus.
+ *
+ * Alur:
+ * 1. Set tombol konfirmasi (#confirm-btn-deleteModal) ke state loading:
+ *    spinner, disabled, dan class opacity/cursor-not-allowed.
+ * 2. Submit form #deleteForm.
  */
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -579,6 +698,32 @@ function updateDeleteButtonState() {
  * INISIALISASI HALAMAN
  * ========================================== */
 
+/**
+ * Inisialisasi seluruh interaksi halaman saat DOM siap.
+ *
+ * Bagian-bagian penting:
+ *
+ * 1. Override openModal global: setiap kali modal add/edit dibuka,
+ *    error lama disembunyikan dan status checkbox rekening diperbarui.
+ *
+ * 2. Auto-generate nomor penawaran (MutationObserver):
+ *    Alur:
+ *    a. Observer dipasang pada #addModal dengan filter atribut 'class'.
+ *    b. Setiap kali class berubah, periksa apakah modal menjadi tampil
+ *       (tidak mengandung kelas 'hidden').
+ *    c. Jika tampil, fetch URL dari meta aluminium-quotation-get-next-number.
+ *    d. Isi #addQuotationNumberDisplay dengan quotation_number hasil fetch,
+ *       sehingga nomor otomatis selalu fresh setiap kali modal dibuka.
+ *
+ * 3. Checkbox "Pilih Semua": tandai/batalkan semua checkbox ids[] dan
+ *    perbarui tombol hapus.
+ *
+ * 4. Checkbox individual: sinkronkan status select all.
+ *
+ * 5. Validasi rekening pembayaran untuk modal add dan semua modal edit.
+ *
+ * 6. Form hapus: cegah double submit saat tombol sedang disabled.
+ */
 document.addEventListener('DOMContentLoaded', function() {
 
     // ─── Override openModal untuk menyembunyikan error & init checkboxes ───
@@ -677,6 +822,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ─── Reset isSubmitting Flag Saat Halaman Dimuat Kembali ──────────────────
+/**
+ * Reset status submit & tombol hapus saat halaman dimuat dari cache
+ * (browser back/forward navigation).
+ *
+ * Memanggil resetFormSubmitState() (shared) agar flag isSubmitting
+ * tidak terkunci, dan updateDeleteButtonState() agar tombol hapus
+ * mengikuti kondisi checkbox terkini.
+ */
 window.addEventListener('pageshow', function() {
     resetFormSubmitState();
     updateDeleteButtonState();

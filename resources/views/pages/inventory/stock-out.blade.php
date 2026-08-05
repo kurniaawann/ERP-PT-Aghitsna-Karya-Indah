@@ -1,3 +1,15 @@
+{{-- =====================================================================
+     Halaman: Barang Keluar (Stock Out) — read-only
+     Tujuan: Menampilkan daftar barang keluar dengan filter bulan/tahun +
+             pencarian, dan export PDF/Excel. Tidak ada aksi tambah/edit/
+             hapus (data dibuat dari modul penjualan/proyek).
+     Data dari ItemStockOutController@index:
+     - $stockOuts : LengthAwarePaginator hasil baseQuery (search, month, year)
+                    + eager load relasi item, salesRecap, returns.
+     Komponen yang di-include:
+     - x-filters.*, x-buttons.print-dropdown, x-pagination
+     JS: @vite('resources/js/pages/inventory/outgoing-items/index.js')
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Barang Keluar')
@@ -5,27 +17,29 @@
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
 
-        {{-- Header Halaman --}}
+        {{-- SECTION: Header Halaman --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Barang Keluar</h1>
 
-        {{-- Toolbar: Filter & Pencarian --}}
+        {{-- SECTION: Filter & Pencarian --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
 
             {{-- Form Filter & Pencarian --}}
             <form method="GET" action="{{ route('stock-out.index') }}" id="filterForm"
                 class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
 
-                {{-- Filter Bulan --}}
+                {{-- Filter Bulan: onchange langsung submit form (#filterForm) = auto filter --}}
                 <x-filters.month-filter :value="request('month')" onchange="document.getElementById('filterForm').submit()" responsive="custom" />
 
-                {{-- Filter Tahun --}}
+                {{-- Filter Tahun: onchange langsung submit form (#filterForm) = auto filter --}}
                 <x-filters.year-filter :value="request('year')" onchange="document.getElementById('filterForm').submit()" responsive="custom" />
 
-                {{-- Input Pencarian --}}
+                {{-- Input Pencarian: kata kunci via request('search') (scope search di model) --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari barang keluar..." responsive="custom" />
             </form>
 
             {{-- Tombol Export --}}
+            {{-- Dropdown Export (PDF & Excel): queryParams membawa filter aktif
+                 (search, month, year) agar export konsisten dengan daftar tampil. --}}
             <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
                 <x-buttons.print-dropdown
                     :excelRoute="route('stock-out.export.excel')"
@@ -35,7 +49,9 @@
             </div>
         </div>
 
-        {{-- Tabel Data Barang Keluar --}}
+        {{-- SECTION: Tabel Data Barang Keluar --}}
+        {{-- Tabel read-only (tanpa checkbox/aksi): menampilkan sisa barang
+             ($record->remaining_quantity) dan nama proyek ($record->project_name). --}}
         <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <div class="inline-block min-w-full align-middle">
                 <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
@@ -54,7 +70,8 @@
                             </tr>
                         </thead>
 
-                        {{-- Body Tabel --}}
+                        {{-- Body Tabel: iterasi $stockOuts; tiap baris menampilkan record barang keluar.
+                             Tanggal diformat 'd M Y', relasi item untuk nama barang. --}}
                         <tbody>
                             @forelse($stockOuts as $record)
                                 <tr class="border-t hover:bg-surface-secondary">
@@ -82,10 +99,12 @@
 
     </div>
 
-    {{-- Pagination --}}
+    {{-- SECTION: Pagination --}}
+    {{-- Paginasi data $stockOuts (LengthAwarePaginator, 15 per halaman) --}}
     <x-pagination :paginator="$stockOuts" />
 
-    {{-- JavaScript --}}
+    {{-- SECTION: Scripts --}}
+    {{-- Modul outgoing-items/index.js dipakai untuk keperluan interaksi halaman (mis. export). --}}
     @push('scripts')
         @vite('resources/js/pages/inventory/outgoing-items/index.js')
     @endpush

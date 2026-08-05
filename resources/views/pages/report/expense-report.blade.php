@@ -1,3 +1,29 @@
+{{-- =====================================================================
+     Halaman: Laporan Rekap Pengeluaran (Expense Report)
+     Tujuan: Dashboard laporan pemasukan/pengeluaran dengan filter,
+             summary cards, chart (trend bulanan, distribusi kategori,
+             perbandingan), rincian cash flow, tabel ringkasan kategori,
+             dan tabel detail transaksi dengan pagination.
+     Data dari ExpenseReportController@index (logic di ExpenseReportService):
+     - $expenseRecaps        : paginator detail transaksi (dengan relasi category)
+     - $summary              : total_transactions, total_income, total_expense,
+                               balance, income_count, expense_count
+     - $monthlyTrend         : trend 12 bulan (month_name, count, income,
+                               expense, balance)
+     - $categoryDistribution : agregasi per kategori (category_name,
+                               category_type, count, income, expense, total)
+     - $cashFlow             : opening_balance, total_income, total_expense,
+                               net_cash_flow, closing_balance
+     - $categories           : daftar kategori aktif untuk dropdown filter
+     Filter (GET): month, year, category, type (income/expense), search
+     Komponen yang di-include:
+     - layouts.app
+     - x-buttons.print-dropdown (export PDF/Excel)
+     JS yang di-load:
+     - resources/js/pages/report/expense-reports/index.js (via @vite + @push)
+     - Data chart di-pass via window globals (monthlyTrendData,
+       categoryDistributionData, summaryData)
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Laporan Rekap Pengeluaran')

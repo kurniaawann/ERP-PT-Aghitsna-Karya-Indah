@@ -1,13 +1,13 @@
 /**
- * Overtime Index Page - JavaScript Module
+ * Halaman Indeks Lembur - Modul JavaScript
  *
- * Handles all interactive functionality for the Data Lembur page:
- * - Searchable Select initialization
- * - Client-side duplicate attendance validation
- * - Select All checkbox logic
- * - Overtime total calculation (hours × rate)
- * - Delete button state management
- * - Form submit handlers with loading states
+ * Menangani semua fungsionalitas interaktif untuk halaman Data Lembur:
+ * - Inisialisasi Searchable Select
+ * - Validasi duplikat absensi di sisi klien
+ * - Logika checkbox Pilih Semua
+ * - Perhitungan total lembur (jam × tarif)
+ * - Manajemen status tombol hapus
+ * - Penanganan submit form dengan status memuat
  */
 
 // ==========================================
@@ -15,9 +15,10 @@
 // ==========================================
 
 /**
- * Initialize searchable select components on page load.
- * The searchable-select.js shared module provides the initSearchableSelects() function.
- * This re-initializes after DOM is ready to ensure all modals' selects work.
+ * Menginisialisasi komponen searchable select saat DOM siap.
+ *
+ * Modul bersama searchable-select.js menyediakan initSearchableSelects().
+ * Inisialisasi ulang setelah DOM siap agar select pada semua modal berfungsi.
  */
 document.addEventListener('DOMContentLoaded', function () {
     if (typeof initSearchableSelects === 'function') {
@@ -30,25 +31,35 @@ document.addEventListener('DOMContentLoaded', function () {
 // ==========================================
 
 /**
- * Existing attendance data passed from PHP via Blade.
- * Structure: { 'EMP001': { '2025-01-01': { id: 1, status: 'hadir' }, ... }, ... }
- * Used to prevent:
- * - Duplicate overtime (same employee + date with status 'lembur')
- * - Overtime for employees with status izin/sakit/cuti
+ * Data absensi yang sudah ada, di-seed dari PHP via Blade
+ * (window.overtimeExistingAttendance).
+ *
+ * Struktur: { 'EMP001': { '2025-01-01': { id: 1, status: 'hadir' }, ... }, ... }
+ * Disiapkan oleh OvertimeService::getExistingAttendance dan dipakai untuk
+ * mencegah:
+ * - Duplikat lembur (karyawan + tanggal sama dengan status 'lembur')
+ * - Lembur untuk karyawan berstatus izin/sakit/cuti
+ *
+ * @type {Object<string, Object<string, {id: number, status: string}>>}
  */
 const existingAttendance = window.overtimeExistingAttendance || {};
 
 // --- Add Modal Duplicate Validation ---
 
 /**
- * Validate the add overtime form for duplicate attendance.
+ * Memvalidasi form lembur Tambah terhadap data absensi yang sudah ada.
  *
- * Checks if the selected employee already has an attendance record
- * for the selected date. If the existing record is 'lembur', it blocks
- * submission (duplicate). If it's 'izin', 'sakit', or 'cuti', it blocks
- * submission (overtime not allowed). If it's 'hadir', it allows submission.
+ * Alur:
+ * 1. Baca employee_id (hidden searchable-select) dan tanggal dari modal Tambah.
+ * 2. Jika kosong → sembunyikan peringatan dan izinkan (belum bisa divalidasi).
+ * 3. Cari existingAttendance[employeeId][date]:
+ *    - status 'lembur' → blokir submit (data lembur sudah ada untuk
+ *      karyawan + tanggal tersebut).
+ *    - status 'izin'/'sakit'/'cuti' → blokir submit (lembur hanya untuk
+ *      karyawan yang hadir).
+ * 4. Tidak ada record / status 'hadir' → izinkan dan sembunyikan peringatan.
  *
- * @returns {boolean} true if validation passes, false if blocked
+ * @returns {boolean} true jika valid, false jika diblokir.
  */
 function validateAddOvertime() {
     const addEmployeeHidden = document.querySelector('#addModal .searchable-select-hidden');
@@ -99,12 +110,15 @@ function validateAddOvertime() {
 }
 
 /**
- * Show the duplicate warning banner in the add modal.
+ * Menampilkan banner peringatan duplikat pada modal Tambah.
  *
- * @param {HTMLElement} warningEl     The warning container element
- * @param {HTMLElement} textEl        The text content element
- * @param {HTMLElement} submitBtn     The submit button to disable
- * @param {string}      message       The warning message to display
+ * Mengisi teks peringatan, menampilkan elemen warning, dan menonaktifkan
+ * tombol submit agar form tidak bisa dikirim.
+ *
+ * @param {HTMLElement} warningEl  Elemen kontainer peringatan.
+ * @param {HTMLElement} textEl     Elemen teks peringatan.
+ * @param {HTMLElement} submitBtn  Tombol submit yang dinonaktifkan.
+ * @param {string}      message    Pesan peringatan yang ditampilkan.
  */
 function showAddDuplicateWarning(warningEl, textEl, submitBtn, message) {
     textEl.textContent = message;
@@ -116,9 +130,10 @@ function showAddDuplicateWarning(warningEl, textEl, submitBtn, message) {
 }
 
 /**
- * Hide the duplicate warning banner in the add modal.
+ * Menyembunyikan banner peringatan duplikat pada modal Tambah dan
+ * mengaktifkan kembali tombol submit.
  *
- * @param {HTMLElement} submitBtn  The submit button to re-enable
+ * @param {HTMLElement} submitBtn  Tombol submit yang diaktifkan kembali.
  */
 function hideAddDuplicateWarning(submitBtn) {
     const addDuplicateWarning = document.getElementById('add-duplicate-warning');
@@ -132,8 +147,13 @@ function hideAddDuplicateWarning(submitBtn) {
 }
 
 /**
- * Initialize add modal duplicate validation event listeners.
- * Uses MutationObserver to detect searchable-select hidden input changes.
+ * Menginisialisasi pendengar validasi duplikat pada modal Tambah.
+ *
+ * Alur:
+ * - MutationObserver memantau atribut value hidden input searchable-select;
+ *   setiap perubahan memicu validateAddOvertime() (komponen searchable-select
+ *   memperbarui hidden input tanpa event input/change biasa).
+ * - Event change pada input tanggal juga memicu validateAddOvertime().
  */
 function initAddModalValidation() {
     const addEmployeeHidden = document.querySelector('#addModal .searchable-select-hidden');
@@ -156,8 +176,19 @@ function initAddModalValidation() {
 // --- Edit Modal Duplicate Validation ---
 
 /**
- * Initialize edit modal duplicate validation event listeners.
- * Each edit modal has its own date input with data attributes for tracking.
+ * Menginisialisasi validasi duplikat untuk semua modal Edit.
+ *
+ * Setiap modal edit memiliki input tanggal dengan data attribute
+ * (data-overtime-id, data-original-date) untuk keperluan validasi.
+ *
+ * Alur per modal (lihat validateEditOvertime):
+ * 1. Tanggal kosong → izinkan.
+ * 2. Tanggal sama dengan tanggal asli (tidak berubah) → izinkan.
+ * 3. Cek existingAttendance[employeeId][date]:
+ *    - record id yang sama (data yang sedang diedit) → izinkan.
+ *    - status 'lembur' → blokir (duplikat).
+ *    - status izin/sakit/cuti → blokir (lembur hanya untuk hadir).
+ * 4. Selain itu → izinkan dan sembunyikan peringatan.
  */
 function initEditModalValidation() {
     document.querySelectorAll('[id^="edit-attendance-date-"]').forEach(function (dateInput) {
@@ -169,6 +200,11 @@ function initEditModalValidation() {
         var duplicateWarningText = document.getElementById('edit-duplicate-warning-text-' + overtimeId);
         var submitBtn = document.querySelector('#editModal-' + overtimeId + ' button[type="submit"]');
 
+        /**
+         * Memvalidasi satu input tanggal edit terhadap data existing.
+         *
+         * @returns {boolean} true jika valid, false jika diblokir.
+         */
         function validateEditOvertime() {
             var date = dateInput.value;
 
@@ -223,12 +259,15 @@ function initEditModalValidation() {
 }
 
 /**
- * Show the duplicate warning banner in an edit modal.
+ * Menampilkan banner peringatan duplikat pada modal Edit.
  *
- * @param {HTMLElement} warningEl     The warning container element
- * @param {HTMLElement} textEl        The text content element
- * @param {HTMLElement} submitBtn     The submit button to disable
- * @param {string}      message       The warning message to display
+ * Mengisi teks peringatan, menampilkan elemen warning, dan menonaktifkan
+ * tombol submit agar form tidak bisa dikirim.
+ *
+ * @param {HTMLElement} warningEl  Elemen kontainer peringatan.
+ * @param {HTMLElement} textEl     Elemen teks peringatan.
+ * @param {HTMLElement} submitBtn  Tombol submit yang dinonaktifkan.
+ * @param {string}      message    Pesan peringatan yang ditampilkan.
  */
 function showEditDuplicateWarning(warningEl, textEl, submitBtn, message) {
     textEl.textContent = message;
@@ -240,10 +279,11 @@ function showEditDuplicateWarning(warningEl, textEl, submitBtn, message) {
 }
 
 /**
- * Hide the duplicate warning banner in an edit modal.
+ * Menyembunyikan banner peringatan duplikat pada modal Edit dan
+ * mengaktifkan kembali tombol submit.
  *
- * @param {HTMLElement} warningEl  The warning container element
- * @param {HTMLElement} submitBtn  The submit button to re-enable
+ * @param {HTMLElement} warningEl  Elemen kontainer peringatan.
+ * @param {HTMLElement} submitBtn  Tombol submit yang diaktifkan kembali.
  */
 function hideEditDuplicateWarning(warningEl, submitBtn) {
     if (warningEl) {
@@ -260,9 +300,12 @@ function hideEditDuplicateWarning(warningEl, submitBtn) {
 // ==========================================
 
 /**
- * Initialize select-all checkbox and individual checkbox listeners.
- * The select-all checkbox toggles all individual checkboxes.
- * Individual checkboxes update the select-all state and delete button.
+ * Menginisialisasi checkbox "Pilih Semua" dan pendengar checkbox individu.
+ *
+ * Alur:
+ * - Pilih Semua: centang/batalkan semua checkbox baris lalu perbarui tombol hapus.
+ * - Checkbox individu: perbarui status Pilih Semua (tercentang bila semua
+ *   baris tercentang) dan tombol hapus.
  */
 function initSelectAllCheckbox() {
     var selectAll = document.getElementById('selectAll');
@@ -291,13 +334,13 @@ function initSelectAllCheckbox() {
 // ==========================================
 
 /**
- * Format an input field value as IDR currency (e.g., 15000 -> "15.000").
- * Strips all non-digit characters and re-formats with Indonesian locale.
+ * Memformat nilai input field sebagai mata uang IDR (misalnya, 15000 -> "15.000").
+ * Menghapus semua karakter non-digit dan memformat ulang dengan lokal Indonesia.
  *
- * Assigned to window because it's called from inline oninput attributes
- * in the Blade templates (Vite loads JS as ES module, not global).
+ * Ditugaskan ke window karena dipanggil dari atribut oninput inline
+ * di template Blade (Vite memuat JS sebagai ES module, bukan global).
  *
- * @param {HTMLInputElement} input - The input element to format
+ * @param {HTMLInputElement} input - Elemen input yang akan diformat.
  */
 window.formatCurrencyInput = function (input) {
     if (!input) return;
@@ -307,11 +350,12 @@ window.formatCurrencyInput = function (input) {
 };
 
 /**
- * Parse a formatted currency string back to a raw integer.
- * Handles Indonesian format with dots as thousands separator.
+ * Mengurai string mata uang yang sudah diformat menjadi integer mentah.
+ * Menangani format Indonesia dengan titik sebagai pemisah ribuan dan
+ * tanda minus untuk nilai negatif.
  *
- * @param  {string} value - Formatted currency string (e.g., "15.000")
- * @returns {number} Raw integer value (e.g., 15000)
+ * @param  {string} value - String mata uang yang sudah diformat (misalnya, "15.000").
+ * @returns {number} Nilai integer mentah (misalnya, 15000).
  */
 function parseCurrencyInput(value) {
     var rawValue = String(value || '').trim();
@@ -324,11 +368,14 @@ function parseCurrencyInput(value) {
 }
 
 /**
- * Calculate overtime total for the add modal.
- * Parses formatted currency values and computes: hours × rate.
- * Updates the readonly total display field.
+ * Menghitung total lembur pada modal Tambah.
  *
- * Assigned to window because it's called from inline oninput attributes.
+ * Alur:
+ * - Baca jam lembur (parseFloat) dan tarif per jam (parseCurrencyInput).
+ * - total = jam × tarif.
+ * - Tampilkan hasil berformat 'Rp ...' (locale id-ID) pada field total.
+ *
+ * Ditugaskan ke window karena dipanggil dari atribut oninput inline.
  */
 window.calculateAddOvertimeTotal = function () {
     var addHoursInput = document.getElementById('add-overtime-hours');
@@ -345,12 +392,17 @@ window.calculateAddOvertimeTotal = function () {
 };
 
 /**
- * Calculate overtime total for a specific edit modal.
- * Parses formatted currency values and computes: hours × rate.
+ * Menghitung total lembur pada modal Edit tertentu.
  *
- * Assigned to window because it's called from inline oninput attributes.
+ * Alur:
+ * - Baca jam lembur dan tarif dari input modal dengan id
+ *   edit-overtime-hours-{id} / edit-overtime-rate-{id}.
+ * - total = jam × tarif; hasil ditulis ke edit-overtime-total-{id}
+ *   berformat 'Rp ...' (locale id-ID).
  *
- * @param {string} id - The overtime record ID to target the correct edit modal
+ * Ditugaskan ke window karena dipanggil dari atribut oninput inline.
+ *
+ * @param {string} id - ID record lembur (menargetkan modal edit yang benar).
  */
 window.calculateEditOvertimeTotal = function (id) {
     var hoursInput = document.getElementById('edit-overtime-hours-' + id);
@@ -371,9 +423,10 @@ window.calculateEditOvertimeTotal = function (id) {
 // ==========================================
 
 /**
- * Update the delete button state based on checkbox selection.
- * Enables the button when at least one checkbox is checked,
- * disables it when no checkboxes are checked.
+ * Memperbarui status tombol Hapus berdasarkan checkbox yang dicentang.
+ *
+ * Tombol diaktifkan saat minimal satu checkbox tercentang dan dinonaktifkan
+ * (opacity-50, cursor-not-allowed) saat tidak ada yang tercentang.
  */
 function updateDeleteButtonState() {
     var deleteButton = document.getElementById('delete-button');
@@ -393,11 +446,12 @@ function updateDeleteButtonState() {
 }
 
 /**
- * Submit the bulk delete form with loading state.
- * Shows a loading spinner on the confirm button while the form is being submitted.
+ * Mengirim form hapus massal dengan status memuat.
  *
- * Assigned to window because it's called from an inline onclick attribute
- * in the delete confirmation modal (Vite loads JS as ES module, not global).
+ * Menampilkan spinner pada tombol konfirmasi lalu mengirim form #deleteForm.
+ *
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline pada
+ * modal konfirmasi hapus (Vite memuat JS sebagai ES module, bukan global).
  */
 window.submitDeleteForm = function () {
     var deleteBtn = document.getElementById('confirm-btn-deleteModal');
@@ -414,8 +468,13 @@ window.submitDeleteForm = function () {
 // ==========================================
 
 /**
- * Initialize form submit handlers for add and edit modals.
- * Handles duplicate validation and loading state via handleFormSubmit().
+ * Menginisialisasi handler submit untuk form modal Tambah dan Edit.
+ *
+ * Alur:
+ * - Form Tambah: validasi duplikat dulu (validateAddOvertime), lalu terapkan
+ *   status memuat via handleFormSubmit; bila ditolak, cegah pengiriman.
+ * - Form Edit: terapkan status memuat via handleFormSubmit; bila ditolak,
+ *   cegah pengiriman.
  */
 function initFormSubmitHandlers() {
     // Add modal submit handler
@@ -452,10 +511,10 @@ function initFormSubmitHandlers() {
 // ==========================================
 
 /**
- * Format a date string to Indonesian locale format (dd/mm/yyyy).
+ * Memformat string tanggal (Y-m-d) ke format lokal Indonesia (dd/mm/yyyy).
  *
- * @param  {string}  dateStr  Date string in Y-m-d format
- * @returns {string} Formatted date string (dd/mm/yyyy)
+ * @param  {string}  dateStr  String tanggal format Y-m-d.
+ * @returns {string} String tanggal terformat (dd/mm/yyyy).
  */
 function formatDateIndonesian(dateStr) {
     return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -470,7 +529,11 @@ function formatDateIndonesian(dateStr) {
 // ==========================================
 
 /**
- * Initialize all overtime page functionality on DOM ready.
+ * Menginisialisasi semua fungsionalitas halaman lembur saat DOM siap.
+ *
+ * Alur inisialisasi: initAddModalValidation, initEditModalValidation,
+ * initSelectAllCheckbox, initFormSubmitHandlers, dan inisialisasi status
+ * tombol hapus.
  */
 document.addEventListener('DOMContentLoaded', function () {
     initAddModalValidation();

@@ -1,7 +1,33 @@
 {{-- ═══════════════════════════════════════════════════════════════════════
-     Halaman Index Kasbon
-     Halaman utama untuk mengelola kasbon.
-     Menampilkan daftar kasbon yang sudah difilter/dicari dengan fitur tambah, edit, dan hapus massal.
+     Halaman: Index Kasbon (kasbon)
+     Tujuan: Halaman utama untuk mengelola kasbon (cash advance).
+     Menampilkan daftar kasbon yang sudah difilter/dicari dengan fitur
+     tambah, edit, hapus massal, dan pembayaran cicilan.
+
+     Data dari KasbonController@index:
+     - $kasbons   : LengthAwarePaginator daftar kasbon (dengan relasi employee)
+     - $employees : Collection seluruh karyawan (dropdown pemilih di modal)
+     - $divisions : Collection seluruh divisi (dropdown untuk kasbon tipe Tim)
+
+     Komponen yang di-include:
+     - components.sdm.kasbon.table      : tabel daftar kasbon
+     - components.sdm.kasbon.add-modal  : modal tambah kasbon
+     - components.sdm.kasbon.edit-modal : modal edit per kasbon (loop)
+     - components.sdm.kasbon.pay-modal  : modal bayar cicilan
+     - x-pagination                     : kontrol pagination
+     - x-modal (deleteModal)            : konfirmasi hapus massal
+
+     Alur logika yang perlu diperhatikan:
+     - Dropdown karyawan di modal menyesuaikan TIPE kasbon: kasbon "Per Orang"
+       memilih satu karyawan (employee_id), sedangkan kasbon "Per Tim"
+       memilih divisi (division) — logika disetel lewat JS modul.
+     - Validasi max kasbon via endpoint AJAX checkMaxKasbon (dicek saat
+       memilih karyawan/periode pada modal tambah).
+     - Filter bulan/tahun berdasar period_start_date (periode payroll),
+       bukan tanggal kasbon.
+
+     JS yang di-load:
+     - @vite('resources/js/pages/sdm/kasbon/index.js')
      ═══════════════════════════════════════════════════════════════════════ --}}
 @extends('layouts.app')
 
@@ -9,9 +35,19 @@
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
+        {{-- ============================================================
+             SECTION: Header
+             Judul halaman.
+             ============================================================ --}}
         {{-- Header Halaman --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Kasbon</h1>
 
+        {{-- ============================================================
+             SECTION: Filter / Toolbar
+             Form filter lengkap (bulan, tahun, status, payment_status,
+             jenis, pencarian) yang auto-submit saat berubah, plus tombol
+             reset dan tombol aksi tambah/hapus.
+             ============================================================ --}}
         {{-- Pencarian, Filter & Tombol Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Filter & Pencarian --}}
@@ -67,13 +103,30 @@
             </div>
         </div>
 
+        {{-- ============================================================
+             SECTION: Table
+             Menampilkan daftar kasbon sesuai filter yang aktif.
+             ============================================================ --}}
         {{-- Tabel Data --}}
         @include('components.sdm.kasbon.table', ['kasbons' => $kasbons])
     </div>
 
+    {{-- ============================================================
+         SECTION: Pagination
+         Kontrol navigasi halaman; filter dipertahankan pada URL pagination.
+         ============================================================ --}}
     {{-- Paginasi --}}
     <x-pagination :paginator="$kasbons" />
 
+    {{-- ============================================================
+         SECTION: Modals
+         - add-modal   : form tambah kasbon (dropdown karyawan/divisi
+                         menyesuaikan tipe, validasi max kasbon via AJAX).
+         - edit-modal  : satu modal edit per kasbon (loop).
+         - pay-modal   : modal bayar cicilan kasbon.
+         - deleteModal : konfirmasi hapus massal (kasbon yang sudah
+                         dipotong tidak bisa dihapus).
+         ============================================================ --}}
     {{-- Modal Tambah Kasbon --}}
     @include('components.sdm.kasbon.add-modal', ['employees' => $employees])
 
@@ -96,6 +149,12 @@
         <span class="text-error text-sm">Catatan: Kasbon yang sudah dipotong tidak bisa dihapus.</span>
     </x-modal>
 
+    {{-- ============================================================
+         SECTION: Scripts
+         Kontainer #kasbon-page menyediakan data-url-get-weeks agar modul
+         JS bisa mengambil daftar minggu (untuk dropdown periode payroll
+         pada modal tambah). Modul JS di-load via Vite.
+         ============================================================ --}}
     {{-- Kontainer halaman dengan atribut data untuk modul JavaScript --}}
     <div id="kasbon-page"
         data-url-get-weeks="{{ route('payroll.get-weeks') }}"

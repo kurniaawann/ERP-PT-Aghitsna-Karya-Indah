@@ -5,6 +5,28 @@
  * Penggunaan: panggil initSearchableSelects() setelah DOM siap atau setelah modal terbuka.
  */
 
+/**
+ * Menginisialisasi seluruh komponen searchable select dalam container
+ * (atau seluruh dokumen bila container kosong).
+ *
+ * Alur:
+ * 1. Kumpulkan semua wrapper `.searchable-select-wrapper` dari container.
+ * 2. Untuk setiap wrapper yang belum diinisialisasi (dataset.searchableInitialized
+ *    != 'true'), tandai sebagai sudah diinisialisasi.
+ * 3. Ambil elemen penting wrapper: input pencarian, dropdown, opsi
+ *    (.searchable-option), pesan "no results", dan hidden input penyimpan nilai.
+ * 4. Bila input pencarian/dropdown tidak ada, lewati wrapper ini.
+ * 5. Registrasi event:
+ *    - focus input -> tampilkan dropdown.
+ *    - input pencarian -> saring opsi berdasarkan dataset.search; tampilkan/
+ *      sembunyikan opsi dan pesan "no results" sesuai hasil pencarian.
+ *    - klik opsi -> isi searchInput dengan label, hiddenInput dengan value,
+ *      lalu tutup dropdown (pilih satu nilai saja).
+ *    - klik di luar wrapper -> tutup dropdown.
+ *
+ * @param  {HTMLElement|Document}  [container]  Elemen pencarian; default document.
+ * @returns {void}
+ */
 function initSearchableSelects(container) {
     const wrappers = (container || document).querySelectorAll('.searchable-select-wrapper');
 
@@ -73,9 +95,22 @@ function initSearchableSelects(container) {
     });
 }
 
+/**
+ * Ekspos initSearchableSelects ke global window agar bisa dipanggil manual
+ * setelah modal terbuka / konten di-render dinamis.
+ *
+ * @returns {void}
+ */
 window.initSearchableSelects = initSearchableSelects;
 
-// Inisialisasi otomatis saat DOM siap
+/**
+ * Inisialisasi otomatis saat DOM siap.
+ *
+ * Jika dokumen masih loading, tunggu event DOMContentLoaded; jika sudah siap,
+ * langsung jalankan agar komponen yang sudah dirender langsung berfungsi.
+ *
+ * @returns {void}
+ */
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initSearchableSelects();

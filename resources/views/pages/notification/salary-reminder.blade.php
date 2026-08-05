@@ -1,3 +1,26 @@
+{{-- =====================================================================
+     Halaman: Reminder Gaji Karyawan
+     Tujuan: Menampilkan daftar pengingat gaji karyawan (salary reminder)
+             dengan filter bulan/tahun/status/pencarian, kartu ringkasan
+             (Total, Draft, Paid), tabel reminder, serta section terpisah
+             "Pengingat Payroll Belum Dibuat" untuk karyawan yang sudah
+             absen minggu 1-4 namun payrollnya belum dibuat.
+     Data dari SalaryReminderController@index (logic di SalaryReminderService):
+     - $reminders           : paginator salary reminder (employee_id, periode,
+                              gaji, reminder_date, status, notification_sent_at)
+     - $totalReminders      : total reminder sesuai filter
+     - $totalDraft          : reminder berstatus draft (belum dibayar)
+     - $totalPaid           : reminder berstatus paid
+     - $attendanceReminders : karyawan sudah absen minggu 1-4 tapi payroll
+                              belum dibuat (employee_id, employee_name,
+                              period_month, period_year, week_number,
+                              first/last_attendance_date)
+     Filter (GET): month, year, status (draft/paid), search
+     Komponen yang di-include:
+     - layouts.app
+     JS yang di-load:
+     - resources/js/pages/notification/salary-reminder/index.js
+     ===================================================================== --}}
 @extends('layouts.app')
 
 {{-- Judul Halaman --}}
@@ -122,6 +145,15 @@
         </div>
 
         {{-- Tabel Data Salary Reminder --}}
+        {{-- ============================================================
+             SECTION: DAFTAR REMINDER GAJI
+             Tabel daftar reminder gaji karyawan.
+             - Kolom status menampilkan BADGE warna: Draft (kuning) jika
+               $reminder->status === 'draft', selainnya Paid (hijau)
+             - Gaji diambil dari relasi payroll->base_salary, fallback ke
+               daily_wage/base_salary employee
+             - Tanggal perubahan diisi dari notification_sent_at
+             ============================================================ --}}
         <div class="bg-surface-base rounded-xl shadow overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">

@@ -10,6 +10,14 @@
  */
 
 /* global submitDeleteForm - dipanggil dari inline onclick pada Blade modal */
+/**
+ * Submit form hapus (bulk delete) dengan loading state pada tombol konfirmasi.
+ *
+ * Dipanggil dari inline onclick pada Blade modal. Menampilkan spinner
+ * "Menghapus...", menonaktifkan tombol, lalu submit form deleteForm.
+ *
+ * @returns {void}
+ */
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
     if (deleteBtn) {
@@ -28,10 +36,19 @@ window.submitDeleteForm = function () {
  * Memvalidasi pasangan harga modal dan harga jual.
  * Harga modal tidak boleh lebih besar atau sama dengan harga jual.
  *
- * @param {HTMLInputElement} capitalInput
- * @param {HTMLInputElement} sellingInput
- * @param {HTMLElement}      warningEl
- * @param {HTMLElement|null} submitBtn
+ * Alur:
+ * 1. Parse nilai kedua input (currency string → angka) via
+ *    parseCurrencyInput().
+ * 2. Tandai invalid bila capitalPrice >= sellingPrice dan sellingPrice > 0
+ *    (harga modal harus lebih kecil dari harga jual).
+ * 3. Bila invalid: tampilkan elemen warning, nonaktifkan tombol submit
+ *    (opacity + cursor-not-allowed), kembalikan false.
+ * 4. Bila valid: sembunyikan warning, aktifkan tombol submit, true.
+ *
+ * @param {HTMLInputElement} capitalInput  Input harga modal
+ * @param {HTMLInputElement} sellingInput  Input harga jual
+ * @param {HTMLElement}      warningEl     Elemen warning yang ditampilkan/disembunyikan
+ * @param {HTMLElement|null} submitBtn     Tombol submit yang dinonaktifkan
  * @returns {boolean} true jika valid
  */
 function validatePricePair(capitalInput, sellingInput, warningEl, submitBtn) {
@@ -70,11 +87,19 @@ function bindCurrencyInput(input) {
 /**
  * Mengikat validasi harga dan format currency pada pasangan input.
  *
- * @param {HTMLInputElement} capitalInput
- * @param {HTMLInputElement} sellingInput
- * @param {HTMLElement}      warningEl
- * @param {HTMLElement|null} submitBtn
- * @param {HTMLFormElement|null} form
+ * Alur:
+ * 1. Bind format currency pada kedua input via bindCurrencyInput().
+ * 2. Setiap input pada harga modal/jual memicu validatePricePair() untuk
+ *    menampilkan warning dan mengontrol tombol submit secara real-time.
+ * 3. Saat form disubmit, validasi dijalankan ulang; bila tidak valid,
+ *    submit dibatalkan dan warning discroll ke tengah layar.
+ * 4. Bila valid, handleFormSubmit() mencegah double-submit (spinner).
+ *
+ * @param {HTMLInputElement} capitalInput  Input harga modal
+ * @param {HTMLInputElement} sellingInput  Input harga jual
+ * @param {HTMLElement}      warningEl     Elemen warning harga
+ * @param {HTMLElement|null} submitBtn     Tombol submit modal
+ * @param {HTMLFormElement|null} form      Form modal (opsional)
  */
 function bindPriceValidation(capitalInput, sellingInput, warningEl, submitBtn, form) {
     bindCurrencyInput(capitalInput);
@@ -107,6 +132,16 @@ function bindPriceValidation(capitalInput, sellingInput, warningEl, submitBtn, f
     }
 }
 
+/**
+ * Inisialisasi halaman Data Barang.
+ *
+ * Alur:
+ * 1. Modal tambah: pasangan input harga modal/jual divalidasi via
+ *    bindPriceValidation() dengan elemen warning & tombol submit.
+ * 2. Modal edit (per item): untuk setiap input harga modal, cari pasangan
+ *    harga jual, warning, tombol submit, dan form, lalu bind validasi.
+ * 3. Checkbox select all & per-item mengontrol status tombol hapus bulk.
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ─── Validasi Harga pada Modal Tambah ───────────────────────────────

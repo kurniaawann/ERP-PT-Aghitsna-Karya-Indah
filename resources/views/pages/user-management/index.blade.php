@@ -1,3 +1,24 @@
+{{-- =====================================================================
+     Halaman: Manajemen User
+     Tujuan: Mengelola daftar user (nama, email, role) dengan pencarian,
+             tambah user, edit user, dan hapus massal. User yang sedang
+             login tidak dapat dipilih untuk dihapus.
+     Data dari UserController@index (logic di UserService/UserRepository):
+     - $users : paginator user (kolom: name, email, role; role_label untuk
+                badge role di tabel)
+     Filter (GET): search (nama/email)
+     Komponen yang di-include:
+     - layouts.app
+     - x-filters.search-input (toolbar pencarian)
+     - x-buttons.delete-button & x-buttons.add-button (aksi toolbar)
+     - components.user-management.table (daftar user + checkbox hapus)
+     - x-pagination
+     - components.user-management.add-modal
+     - components.user-management.edit-modal (satu modal per user)
+     - x-modal (konfirmasi hapus massal)
+     JS yang di-load:
+     - resources/js/pages/user-management/index.js
+     ===================================================================== --}}
 @extends('layouts.app')
 
 {{-- Judul Halaman --}}
@@ -32,6 +53,9 @@
         </div>
 
         {{-- Tabel Data User --}}
+        {{-- Daftar user dengan checkbox hapus massal (user sendiri
+             disembunyikan), badge role per user, dan tombol aksi Edit
+             yang membuka modal editModal-{id}. --}}
         @include('components.user-management.table', ['users' => $users])
     </div>
 

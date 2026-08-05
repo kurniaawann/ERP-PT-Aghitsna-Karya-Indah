@@ -2,6 +2,17 @@
      Halaman Utama Modul Penawaran Aluminium (Aluminium Quotation)
      PT Aghitsna Karya Indah
 
+     Tujuan: Menampilkan daftar penawaran aluminium dengan pencarian,
+             paginasi, tambah/edit/detail lewat modal, dan hapus massal.
+
+     Data dari AluminiumQuotationController@index:
+     - $quotations      : koleksi AluminiumQuotation (paginate 15/halaman,
+                          eager-load relasi groups.items, diurutkan
+                          berdasarkan sequence_number menurun)
+     - $paymentAccounts : daftar rekening pembayaran aktif (opsi form)
+     - $search          : keyword pencarian (quotation_number, recipient,
+                          subject)
+
      Komponen:
      - Header: Judul halaman
      - Toolbar: Form pencarian, tombol hapus massal, tambah
@@ -11,6 +22,10 @@
      - Modal Detail: Tampilan detail penawaran (read-only)
      - Modal Hapus: Konfirmasi hapus massal
      - Pagination: Navigasi halaman
+
+     JS: @vite('resources/js/pages/administrasi/aluminium-quotation/index.js')
+         + meta aluminium-quotation-get-next-number untuk nomor otomatis
+           via AJAX (AluminiumQuotationController@getNextQuotationNumber)
      ===================================================================== --}}
 
 @extends('layouts.app')
@@ -66,7 +81,11 @@
     @include('components.administrasi.aluminium-quotation.add-modal')
 
     {{-- ═══════════════════════════════════════════════════════════════
-         MODAL DETAIL & EDIT: Satu modal per data penawaran
+         MODAL DETAIL & EDIT: Satu modal per data penawaran.
+         Alur: iterasi setiap $quotation pada halaman aktif, lalu render
+         sepasang modal detail (read-only) dan modal edit untuk baris tsb.
+         ID modal dibangun per baris di komponen table/edit-modal agar
+         tombol "Detail"/"Edit" pada setiap baris membuka modal yang sesuai.
          ═══════════════════════════════════════════════════════════════ --}}
     @foreach ($quotations as $quotation)
         @include('components.administrasi.aluminium-quotation.detail-modal', ['quotation' => $quotation])

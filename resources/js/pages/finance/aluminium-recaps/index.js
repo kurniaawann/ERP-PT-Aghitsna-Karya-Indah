@@ -44,6 +44,15 @@ function resetFormSubmitState() {
 // INISIALISASI
 // ============================================================
 
+/**
+ * Inisialisasi logika halaman saat DOM siap.
+ *
+ * Alur:
+ * 1. Mengikat event 'change' pada dropdown bulan dan tahun; saat berubah,
+ *    form filter langsung di-submit (auto-submit).
+ * 2. Mengikat event 'pageshow' untuk mereset status submit agar tombol
+ *    tidak terkunci ketika halaman dimuat ulang (tombol back browser).
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================

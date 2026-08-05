@@ -23,6 +23,13 @@ function parseDecimalInput(value) {
 /**
  * Hitung PPN dari harga jual dan persentase PPN.
  *
+ * Alur kalkulasi PPN:
+ * 1. Ambil elemen input harga jual, persentase PPN, dan field hasil PPN.
+ * 2. Parse harga jual dengan parseCurrencyInput (format Rupiah).
+ * 3. Parse persentase PPN dengan parseDecimalInput (dukung koma desimal).
+ * 4. Hitung PPN = round((harga jual * persentase) / 100).
+ * 5. Tulis hasil ke input PPN dalam format Rupiah (formatRupiah).
+ *
  * @param  {string} sellingPriceId    ID input harga jual
  * @param  {string} ppnPercentageId   ID input persentase PPN
  * @param  {string} ppnTaxId          ID input PPN pajak (readonly)
@@ -43,6 +50,12 @@ function calculatePpnTax(sellingPriceId, ppnPercentageId, ppnTaxId) {
 
 /**
  * Inisialisasi event listener kalkulasi PPN untuk ADD modal.
+ *
+ * Alur:
+ * 1. Cari input harga jual (#addSellingPrice) dan persentase PPN (#addPpnPercentage).
+ * 2. Saat harga jual di-input: format ke Rupiah lalu hitung ulang PPN.
+ * 3. Saat persentase PPN di-input: hitung ulang PPN.
+ * 4. Hitung nilai PPN awal saat modal pertama kali dibuka.
  */
 function initAddModalPpnCalculation() {
     const addSellingPrice = document.getElementById('addSellingPrice');
@@ -65,6 +78,13 @@ function initAddModalPpnCalculation() {
 
 /**
  * Inisialisasi event listener kalkulasi PPN untuk semua EDIT modal.
+ *
+ * Alur:
+ * 1. Loop semua input harga jual edit (#editSellingPrice-{id}).
+ * 2. Ekstrak invoiceId dari id input dan cari input persentase PPN terkait.
+ * 3. Saat harga jual di-input: format ke Rupiah lalu hitung ulang PPN.
+ * 4. Saat persentase PPN di-input: hitung ulang PPN.
+ * 5. Hitung nilai PPN awal untuk setiap modal edit.
  */
 function initEditModalsPpnCalculation() {
     document.querySelectorAll('[id^="editSellingPrice-"]').forEach(sellingPriceInput => {
@@ -112,6 +132,18 @@ window.submitDeleteForm = submitDeleteForm;
 // DOM READY
 // ==========================================
 
+/**
+ * Inisialisasi logika halaman saat DOM siap.
+ *
+ * Alur:
+ * 1. Inisialisasi kalkulasi PPN untuk modal Tambah dan semua modal Edit.
+ * 2. Ikat checkbox pilih semua + update status tombol hapus massal.
+ * 3. Ikat submit form modal Tambah & Edit (loading state via handleFormSubmit).
+ * 4. Auto-dismiss alert error/success.
+ * 5. Auto-scroll ke alert error jika ada.
+ * 6. Ikat auto-submit form filter bulan & tahun.
+ * 7. Reset status submit saat halaman dimuat ulang (pageshow).
+ */
 document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     // INITIALIZE PPN CALCULATION
@@ -127,6 +159,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const invoiceCheckboxes = document.querySelectorAll('input[name="selected_invoices[]"]');
     const deleteButton = document.getElementById('delete-button');
 
+    /**
+     * Update status tombol hapus berdasarkan checkbox invoice yang dipilih.
+     * Aktif bila minimal ada 1 checkbox dicentang; nonaktif + opacity bila 0.
+     */
     function updateDeleteButtonState() {
         const anyChecked = Array.from(invoiceCheckboxes).some(cb => cb.checked);
         if (deleteButton) {
@@ -191,6 +227,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // AUTO-DISMISS ALERT MESSAGES
     // ==========================================
 
+    /**
+     * Menyembunyikan alert setelah durasi tertentu (auto-dismiss).
+     *
+     * @param  {string} alertId  ID elemen alert yang akan disembunyikan
+     * @param  {number} delay    Waktu tunggu dalam ms (default: 5000)
+     */
     function autoDismissAlert(alertId, delay = 5000) {
         const alert = document.getElementById(alertId);
         if (alert) {

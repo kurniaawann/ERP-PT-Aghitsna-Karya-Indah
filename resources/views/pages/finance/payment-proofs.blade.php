@@ -1,3 +1,36 @@
+{{-- =====================================================================
+     Halaman: Bukti Pembayaran (Payment Proofs)
+     Tujuan: Mengelola bukti pembayaran untuk invoice proyek, invoice
+             alumunium, dan rekap penjualan, dengan hero header, summary
+             cards, filter modul/jenis invoice & pencarian, CRUD bukti
+             (upload gambar), dan hapus massal.
+     Data dari PaymentProofController@index:
+     - $paymentProofs    : Paginator PaymentProof (10/halaman) hasil filter
+                           module_type, invoice_type, search; untuk admin
+                           hanya menampilkan bukti miliknya (created_by).
+     - $totalProofs      : Total jumlah bukti hasil filter.
+     - $projectProofs    : Jumlah bukti bertipe invoice 'proyek'.
+     - $alumuniumProofs  : Jumlah bukti bertipe 'alumunium' (non-admin).
+     - $salesRecapProofs : Jumlah bukti bertipe 'rekap_penjualan'.
+     - $moduleOptions    : Opsi filter modul ('finance' = Keuangan).
+     - $invoiceTypeOptions: Opsi filter jenis invoice; berbeda antara
+                            admin (Invoice, Rekap Penjualan) dan non-admin
+                            (Invoice Proyek, Alumunium, Rekap Penjualan).
+     - $salesRecapOptions: Koleksi SalesRecap dari cache untuk pilihan
+                           dropdown saat membuat bukti rekap penjualan.
+     - $availableInvoices: Data invoice yang tersedia untuk dipilih pada
+                           form tambah/edit; di-expose ke
+                           window.paymentProofInvoiceData via @json.
+     - $invoiceLookup     : Struktur lookup invoice per modul (dipakai JS).
+     Komponen yang di-include:
+     - components.finance.payment-proofs.table     : tabel bukti pembayaran
+     - components.finance.payment-proofs.add-modal / edit-modal : modal CRUD
+     - x-buttons.delete-button / add-button        : tombol aksi header
+     - x-pagination                                : navigasi halaman
+     - x-modal (deleteModal)                       : konfirmasi hapus
+     JS: @vite('resources/js/pages/finance/payment-proofs/index.js')
+         + inline script @push('scripts') untuk bind submit form edit.
+     ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Bukti Pembayaran')
@@ -5,6 +38,12 @@
 @section('content')
     <div class="space-y-4">
         {{-- Section: Header --}}
+        {{-- Hero header: teks dan penjelasan disesuaikan per role.
+             Alur auth()->user()->isAdmin():
+             - Admin  : kelola bukti 'invoice dan rekap penjualan',
+                        tahap pembayaran hanya untuk 'invoice'.
+             - Non-admin: kelola bukti 'invoice proyek dan alumunium',
+                        tahap pembayaran hanya untuk 'invoice proyek'. --}}
         <div
             class="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-5 sm:p-6 text-white shadow-xl overflow-hidden relative">
             <div class="absolute inset-0 opacity-20"
@@ -28,6 +67,9 @@
         </div>
 
         {{-- Section: Summary Cards --}}
+        {{-- Empat kartu ringkasan (Total Bukti, Invoice/Proyek, Alumunium,
+             Rekap Penjualan). Kartu kedua memakai nama berbeda sesuai role:
+             admin = 'Invoice', non-admin = 'Invoice Proyek'. --}}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div
                 class="group rounded-2xl border border-border-strong bg-surface-base p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
@@ -91,6 +133,10 @@
         </div>
 
         {{-- Section: Filter --}}
+        {{-- Form GET yang auto-submit (requestSubmit) saat input search
+             berubah atau select modul/jenis invoice dipilih.
+             Select dipakai @selected untuk mempertahankan nilai filter
+             yang sedang aktif saat halaman direload. --}}
         <div class="rounded-xl border border-border-strong bg-surface-base p-4 shadow-sm">
             <form method="GET" action="{{ route('payment-proofs.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -122,6 +168,8 @@
         </div>
 
         {{-- Section: Table --}}
+        {{-- Tabel daftar bukti pembayaran hasil filter (lihat komponen
+             components.finance.payment-proofs.table). --}}
         @include('components.finance.payment-proofs.table')
     </div>
 
@@ -131,12 +179,16 @@
     </div>
 
     {{-- Section: Modals --}}
+    {{-- Modal tambah bukti pembayaran (pilih invoice + upload gambar). --}}
     @include('components.finance.payment-proofs.add-modal')
 
+    {{-- Satu modal edit dirender untuk setiap bukti di halaman ini agar
+         data form (termasuk invoice terpilih) terpisah antar baris. --}}
     @foreach ($paymentProofs as $paymentProof)
         @include('components.finance.payment-proofs.edit-modal', ['paymentProof' => $paymentProof])
     @endforeach
 
+    {{-- Section: Modal Konfirmasi Hapus --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
@@ -144,11 +196,22 @@
 @endsection
 
 @push('scripts')
+    {{-- ==================== Section: Scripts ==================== --}}
+    {{-- Data invoice yang tersedia untuk dipilih di form tambah/edit
+         di-expose ke window.paymentProofInvoiceData.
+         Alur @json($availableInvoices): array berstruktur
+         ['finance' => ['proyek' => [...], 'alumunium' => [...],
+         'rekap_penjualan' => [...]]], berisi daftar invoice beserta
+         sisa tagihan/payment stage yang sudah dihitung service. --}}
     <script>
         /* global handleFormSubmit, parseCurrencyInput, formatRupiah, bindPaymentProofForm, validatePaymentProofAmount */
         window.paymentProofInvoiceData = @json($availableInvoices);
     </script>
     @vite('resources/js/pages/finance/payment-proofs/index.js')
+
+    {{-- Bind event submit untuk setiap form edit modal (satu per bukti).
+         Alur: setelah DOM ready, tiap #editModal-{id} form diberi listener
+         yang mencegah submit ganda via handleFormSubmit() saat menyimpan. --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             @foreach ($paymentProofs as $paymentProof)

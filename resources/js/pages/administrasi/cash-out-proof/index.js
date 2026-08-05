@@ -14,6 +14,15 @@
  * STATUS TOMBOL AKSI
  * ========================================== */
 
+/**
+ * Memperbarui status tombol aksi (hapus, cetak terpilih) dan jumlah terpilih.
+ *
+ * Alur:
+ * 1. Hitung jumlah checkbox `input[name="ids[]"]` yang dicentang.
+ * 2. Nonaktifkan tombol hapus (dengan kelas opacity/cursor) jika tidak ada yang dipilih.
+ * 3. Tampilkan/sembunyikan tombol cetak terpilih berdasarkan jumlah terpilih.
+ * 4. Perbarui teks jumlah terpilih pada `selectedCountText`.
+ */
 function updateButtonStates() {
     const deleteButton = document.getElementById('delete-button');
     const printSelectedItem = document.getElementById('printSelectedItem');
@@ -44,6 +53,18 @@ function updateButtonStates() {
  * CETAK TERPILIH
  * ========================================== */
 
+/**
+ * Mencetak bukti kas keluar terpilih sebagai PDF.
+ *
+ * Alur:
+ * 1. Ambil route cetak dari hidden input `cash-out-proof-print-selected-route`.
+ * 2. Jika route kosong, hentikan proses.
+ * 3. Delegasikan ke sharedPrintSelected(route, btn) yang mengumpulkan
+ *    checkbox tercentang, mengirim via AJAX, dan mengunduh file PDF.
+ *
+ * @param {HTMLButtonElement} btn - Tombol yang diklik.
+ * @returns {boolean} true jika proses dimulai; false jika route kosong.
+ */
 function printSelected(btn) {
     const printRoute = document.getElementById('cash-out-proof-print-selected-route');
     const route = printRoute ? printRoute.value : '';
@@ -60,6 +81,19 @@ window.printSelected = printSelected;
  * LABEL DIREKTUR / MANAGER
  * ========================================== */
 
+/**
+ * Menginisialisasi label Direktur/Manager pada form tambah & edit
+ * berdasarkan tipe template BKK.
+ *
+ * Alur:
+ * 1. `bindLabel(templateSelect, labelEl, inputEl)`:
+ *    - Jika tipe template `hollow` -> label "Manager", placeholder "SISWORO SUBENO (default)".
+ *    - Selain itu -> label "Direktur", placeholder "Zulkarnain,ST.,MT (default)".
+ *    - Listener `change` pada select langsung menerapkan label.
+ * 2. Bind ke form tambah (`addTemplateType`) dan semua form edit
+ *    (`editTemplateType-{suffix}`) beserta label/input pasangannya.
+ * 3. Panggil `apply()` sekali di awal untuk menampilkan label default.
+ */
 function initDirectorLabel() {
     const bindLabel = function (templateSelect, labelEl, inputEl) {
         if (!templateSelect || !labelEl || !inputEl) return;
@@ -93,6 +127,16 @@ function initDirectorLabel() {
  * INISIALISASI
  * ========================================== */
 
+/**
+ * Inisialisasi interaksi halaman index BKK.
+ *
+ * Alur:
+ * 1. Checkbox "Pilih Semua" -> set semua checkbox dan perbarui status tombol.
+ * 2. Checkbox individual -> sinkronkan status selectAll dan perbarui status tombol.
+ * 3. Format input currency `.cash-out-amount-input` dengan format Rupiah.
+ * 4. Cegah double submit pada form modal tambah & edit via handleFormSubmit.
+ * 5. Inisialisasi label Direktur/Manager berdasarkan tipe template.
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     /* ─── Checkbox Pilih Semua ─── */

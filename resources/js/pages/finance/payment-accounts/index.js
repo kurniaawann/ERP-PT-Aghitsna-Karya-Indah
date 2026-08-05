@@ -8,6 +8,14 @@
  * Toggle status aktif/nonaktif rekening pembayaran.
  * Mengirim form POST ke route toggle dengan CSRF token.
  *
+ * Alur:
+ * 1. Buat elemen <form> dinamis dengan method POST menuju
+ *    /payment-accounts/{id}/toggle.
+ * 2. Salin token CSRF dari #deleteForm sebagai hidden input _token.
+ * 3. Append form ke <body> lalu submit — request dikirim sebagai
+ *    full page submit, server men-toggle is_active lalu me-redirect
+ *    kembali ke halaman index.
+ *
  * @param  {number} accountId  ID rekening yang akan di-toggle
  */
 function toggleActive(accountId) {
@@ -34,6 +42,11 @@ window.toggleActive = toggleActive;
 
 /**
  * Reset tombol delete ke state semula.
+ *
+ * Alur: kembalikan innerHTML tombol #confirm-btn-deleteModal menjadi
+ * "Ya, Hapus", aktifkan kembali, dan hapus class opacity/cursor-not-allowed.
+ * Dipanggil setelah operasi hapus selesai atau gagal agar tombol tidak
+ * terkunci dalam kondisi loading.
  */
 function resetDeleteButton() {
     const btn = document.getElementById('confirm-btn-deleteModal');
@@ -106,6 +119,16 @@ window.submitDeleteForm = submitDeleteForm;
 // DOM SIAP
 // ==========================================
 
+/**
+ * Inisialisasi logika halaman saat DOM siap.
+ *
+ * Alur:
+ * 1. Ikat checkbox pilih semua (#selectAll) dan update status tombol delete
+ *    berdasarkan checkbox rekening yang dipilih.
+ * 2. Ikat submit form modal Tambah dan semua modal Edit (cegah double submit).
+ * 3. Jika ada #usageErrorData, tampilkan modal error "rekening masih digunakan".
+ * 4. Reset status submit saat halaman dimuat ulang (pageshow).
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ==========================================

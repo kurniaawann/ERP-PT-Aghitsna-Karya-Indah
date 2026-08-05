@@ -43,6 +43,12 @@ window.submitDeleteForm = function (buttonId = 'confirm-btn-deleteModal', formId
 /**
  * Memperbarui status tombol hapus dan tombol print
  * berdasarkan checkbox yang dipilih.
+ *
+ * Alur:
+ * 1. Hitung jumlah checkbox `input[name="ids[]"]` yang dicentang.
+ * 2. Perbarui teks `selectedCountText`.
+ * 3. Aktifkan/nonaktifkan tombol hapus beserta kelas visualnya.
+ * 4. Tampilkan/sembunyikan tombol cetak terpilih.
  */
 function updateButtonStates() {
     const deleteButton = document.getElementById('delete-button');
@@ -82,6 +88,11 @@ function updateButtonStates() {
  * Fungsi untuk print dokumen yang dipilih.
  * Mengumpulkan checkbox yang dicentang, mengirim via AJAX, dan download PDF.
  *
+ * Alur:
+ * 1. Ambil route dari hidden input `document-receipt-print-selected-route`.
+ * 2. Jika route kosong, hentikan proses.
+ * 3. Delegasikan ke sharedPrintSelected(route, btn).
+ *
  * @param {HTMLButtonElement} btn - Tombol yang diklik
  * @returns {boolean} true jika proses dimulai
  */
@@ -101,6 +112,16 @@ window.printSelected = printSelected;
  * INISIALISASI
  * ========================================== */
 
+/**
+ * Inisialisasi interaksi pada halaman index Tanda Terima Dokumen.
+ *
+ * Alur:
+ * 1. Pasang handler checkbox "Pilih Semua" dan sinkronisasi checkbox individual.
+ * 2. Inisialisasi status awal tombol aksi.
+ * 3. Loading indicator pada submit form modal tambah & edit.
+ * 4. Cegah pengiriman ganda pada form hapus (jika tombol sudah disabled).
+ * 5. Reset state tombol submit ketika modal ditutup via klik backdrop.
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     /* ─── Checkbox Pilih Semua ─── */

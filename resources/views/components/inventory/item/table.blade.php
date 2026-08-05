@@ -18,6 +18,7 @@
                             <th class="p-2 text-left">Jumlah</th>
                             <th class="p-2 text-center">Harga Modal</th>
                             <th class="p-2 text-center">Harga Jual</th>
+                            <th class="p-2 text-center">Keterangan</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -51,6 +52,9 @@
                                 <td class="p-2 text-right">
                                     {{ 'Rp ' . number_format($item->selling_price, 0, ',', '.') }}
                                 </td>
+
+                                {{-- Keterangan --}}
+                                <td class="p-2 text-left">{{ $item->keterangan }}</td>
 
                                 {{-- Tombol Aksi --}}
                                 <td class="p-2 text-center">

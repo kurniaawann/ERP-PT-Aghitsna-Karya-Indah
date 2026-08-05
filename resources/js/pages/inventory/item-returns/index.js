@@ -47,6 +47,22 @@ const addDropdownState = {
     displayedCount: 0,
 };
 
+/**
+ * Membangun isi dropdown pilih barang berdasarkan tipe retur.
+ *
+ * Alur pilih tipe retur (stock in vs stock out):
+ * 1. Pilih sumber data: stockInsData untuk tipe 'masuk',
+ *    stockOutsData untuk tipe 'keluar'.
+ * 2. Agregasi record per id_item (unik) dengan nama dari itemsData,
+ *    quantity stok, dan id sumber (stock-in / stock-out).
+ * 3. Simpan ke addDropdownState, reset state filter & pagination,
+ *    lalu render batch pertama (10 item).
+ * 4. Search input direset, hidden input id/stock dihapus, dan
+ *    dropdown/load-more/no-results dikembalikan ke kondisi awal.
+ *
+ * @param {string} returnType  Tipe retur: 'masuk' (stock in) atau 'keluar' (stock out)
+ * @returns {void}
+ */
 function buildAddItemDropdown(returnType) {
     const searchInput = document.getElementById('addItemSearch');
     const filterInput = document.getElementById('addItemFilter');
@@ -92,6 +108,17 @@ function buildAddItemDropdown(returnType) {
     renderAddDropdownItems();
 }
 
+/**
+ * Merender batch item berikutnya pada dropdown berpaginasi (10 item per batch).
+ *
+ * Alur:
+ * 1. Ambil batch berikutnya dari filteredItems berdasarkan displayedCount.
+ * 2. Render tiap item sebagai opsi; klik memanggil selectAddItem().
+ * 3. Tambah displayedCount; tampilkan/sembunyikan tombol "load more"
+ *    sesuai sisa data, dan area "no results" bila tidak ada item.
+ *
+ * @returns {void}
+ */
 function renderAddDropdownItems() {
     const optionsContainer = document.getElementById('add-item-options');
     const loadMoreBtn = document.getElementById('add-item-load-more');
@@ -132,6 +159,18 @@ function renderAddDropdownItems() {
     }
 }
 
+/**
+ * Mengisi nilai item yang dipilih ke search input dan hidden input.
+ *
+ * Alur:
+ * 1. Tampilkan nama item terpilih pada search input dan set readOnly.
+ * 2. Simpan id_item, id stock-in/stock-out ke hidden input.
+ * 3. Tutup dropdown lalu jalankan validateAddQuantity() agar stok
+ *    tersedia langsung divalidasi.
+ *
+ * @param {HTMLElement} optionEl  Elemen opsi yang diklik
+ * @returns {void}
+ */
 function selectAddItem(optionEl) {
     const searchInput = document.getElementById('addItemSearch');
     const dropdown = document.getElementById('add-item-dropdown');
@@ -149,6 +188,18 @@ function selectAddItem(optionEl) {
     validateAddQuantity();
 }
 
+/**
+ * Memfilter daftar item berdasarkan kata kunci pencarian.
+ *
+ * Alur:
+ * 1. Filter addDropdownState.items berdasarkan teks "id_item nama"
+ *    yang mengandung kata kunci (case-insensitive).
+ * 2. Reset pagination (displayedCount = 0), kosongkan container,
+ *    lalu render ulang batch pertama.
+ *
+ * @param {string} searchTerm  Kata kunci pencarian
+ * @returns {void}
+ */
 function filterAddDropdown(searchTerm) {
     const optionsContainer = document.getElementById('add-item-options');
     const loadMoreBtn = document.getElementById('add-item-load-more');
@@ -165,6 +216,18 @@ function filterAddDropdown(searchTerm) {
     renderAddDropdownItems();
 }
 
+/**
+ * Menangani perubahan tipe retur pada modal.
+ *
+ * Alur pilih tipe retur:
+ * 1. Untuk modal 'add', baca nilai select tipe retur
+ *    (masuk = stock in, keluar = stock out).
+ * 2. Panggil buildAddItemDropdown() untuk mengisi ulang daftar item
+ *    dari sumber data yang sesuai (stock in / stock out).
+ *
+ * @param {string} modalPrefix  Prefix ID modal ('add')
+ * @returns {void}
+ */
 function handleReturnTypeChange(modalPrefix) {
     if (modalPrefix === 'add') {
         const returnTypeSelect = document.getElementById(modalPrefix + 'ReturnType');
@@ -178,12 +241,20 @@ function handleReturnTypeChange(modalPrefix) {
 // ==========================================
 
 /**
- * Memvalidasi input quantity tidak melebihi stok tersedia.
+ * Memvalidasi input quantity tidak melebihi stok sumber.
  *
- * @param {HTMLInputElement} quantityInput
- * @param {HTMLElement} warningEl
- * @param {HTMLButtonElement} submitBtn
- * @param {number} maxQuantity
+ * Alur:
+ * 1. Parse quantity dari input (0 bila tidak valid).
+ * 2. Tandai isExceeded bila quantity > stok sumber (maxQuantity > 0).
+ * 3. Jika melebihi: tampilkan warning, nonaktifkan tombol submit dengan
+ *    gaya visual (opacity + cursor-not-allowed), kembalikan false.
+ * 4. Jika valid: sembunyikan warning, aktifkan kembali submit, true.
+ *
+ * @param {HTMLInputElement} quantityInput  Input quantity yang divalidasi
+ * @param {HTMLElement} warningEl           Elemen warning yang ditampilkan/disembunyikan
+ * @param {HTMLButtonElement} submitBtn     Tombol submit yang dinonaktifkan
+ * @param {number} maxQuantity              Stok sumber maksimum
+ * @returns {boolean} true jika quantity valid
  */
 function validateQuantity(quantityInput, warningEl, submitBtn, maxQuantity) {
     if (!quantityInput) return true;
@@ -213,6 +284,15 @@ function validateQuantity(quantityInput, warningEl, submitBtn, maxQuantity) {
 // Dipanggil oleh x-modal component via onConfirm="submitDeleteForm()"
 // ==========================================
 
+/**
+ * Submit form hapus (bulk delete) dengan loading state pada tombol konfirmasi.
+ *
+ * Dipanggil oleh x-modal component via onConfirm="submitDeleteForm()".
+ * Menampilkan spinner "Menghapus...", menonaktifkan tombol, lalu submit
+ * form deleteForm.
+ *
+ * @returns {void}
+ */
 window.submitDeleteForm = function () {
     const deleteBtn = document.getElementById('confirm-btn-deleteModal');
     if (deleteBtn) {
@@ -231,6 +311,20 @@ window.submitDeleteForm = function () {
 // INITIALIZATION
 // ==========================================
 
+/**
+ * Inisialisasi halaman Pengembalian Barang (Item Return).
+ *
+ * Alur:
+ * 1. Modal tambah: perubahan tipe retur memicu handleReturnTypeChange();
+ *    focus search memuat ulang dropdown; filter input memfilter item;
+ *    tombol load more menambah batch 10 item; klik di luar menutup dropdown.
+ * 2. Submit modal tambah memastikan item terpilih, memvalidasi quantity,
+ *    scroll ke warning bila tidak valid, lalu showSpinner() saat valid.
+ * 3. Modal edit: quantity divalidasi real-time dan saat submit.
+ * 4. Form hapus menampilkan spinner saat submit.
+ * 5. Filter bulan/tahun/tipe auto-submit saat berubah.
+ * 6. Checkbox select all & per-item mengontrol tombol hapus bulk delete.
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ==========================================
@@ -288,6 +382,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    /**
+     * Memvalidasi quantity pada modal tambah terhadap stok sumber terpilih.
+     *
+     * Alur:
+     * 1. Cari maxQuantity dari addDropdownState berdasarkan id_item yang
+     *    tersimpan di hidden input addItemId.
+     * 2. Panggil validateQuantity() yang menampilkan warning dan
+     *    menonaktifkan tombol submit bila quantity melebihi stok.
+     * 3. Tampilkan teks "Stok tersedia: N" bila ada stok, atau kosongkan.
+     *
+     * @returns {void}
+     */
     function validateAddQuantity() {
         if (!addQuantityInput) return;
 
@@ -347,6 +453,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const maxQuantity = parseInt(quantityInput.dataset.maxQuantity) || 0;
 
+        /**
+         * Memvalidasi quantity pada modal edit terhadap stok sumber.
+         *
+         * maxQuantity diambil dari dataset attribute pada input quantity,
+         * lalu diteruskan ke validateQuantity() untuk menampilkan warning
+         * dan mengontrol tombol submit.
+         *
+         * @returns {void}
+         */
         function validateEditQuantity() {
             validateQuantity(quantityInput, quantityWarning, editButton, maxQuantity);
         }
@@ -403,6 +518,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const itemCheckboxes = document.querySelectorAll('input[name="selected_returns[]"]');
     const bulkDeleteButton = document.getElementById('delete-button');
 
+    /**
+     * Mengupdate status tombol hapus bulk berdasarkan checkbox terpilih.
+     *
+     * Tombol hapus dinonaktifkan (dan diberi gaya opacity/cursor-not-allowed)
+     * saat tidak ada checkbox yang dicentang.
+     *
+     * @returns {void}
+     */
     function updateBulkDeleteButtonState() {
         const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
         if (bulkDeleteButton) {

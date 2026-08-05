@@ -45,6 +45,14 @@ window.submitDeleteForm = function (buttonId = 'confirm-btn-deleteModal', formId
  * Menghasilkan nomor dokumen otomatis dengan format DN-YYYYMMDD-XXXX.
  * XXXX adalah nomor random 4 digit.
  *
+ * Catatan client vs server:
+ * - Client-side: fungsi ini hanya mengisi field `documentNumber` pada form
+ *   sebagai nilai tampilan awal (preview). Format `DN-{tanggal}-{random 4 digit}`.
+ * - Server-side: `DeliveryNoteService::create()` memanggil
+ *   `DeliveryNote::generateDeliveryNoteId()` yang menghasilkan ID unik
+ *   `id_delivery_note` sebagai kunci utama record. Nilai hasil generate di sini
+ *   tidak dijadikan referensi unik di database; uniqueness ditentukan server.
+ *
  * @returns {string} Nomor dokumen
  */
 function generateDocumentNumber() {
@@ -60,6 +68,16 @@ function generateDocumentNumber() {
 
 /**
  * Menambahkan baris item baru ke dalam container items.
+ *
+ * Alur:
+ * 1. Ambil kontainer `itemsContainer-{modalId}` (addModal atau editModal-{id}).
+ * 2. Tentukan nomor urut baru dari jumlah `.item-row` existing + 1.
+ * 3. Bangun elemen `.item-row` berisi input no (readonly), nama barang,
+ *    jumlah, satuan, catatan, dan tombol hapus.
+ * 4. Append ke kontainer lalu panggil `updateDeleteButtonVisibility(modalId)`.
+ *
+ * Catatan backend: input dengan nama `item_no[]`, `item_name[]`, `quantity[]`,
+ * `unit[]`, `item_notes[]` akan diolah oleh `DeliveryNoteService::processItems()`.
  *
  * @param {string} modalId - ID modal (addModal atau editModal-{id})
  */
@@ -122,6 +140,11 @@ function addItemRow(modalId) {
 /**
  * Menghapus baris item dari container.
  *
+ * Alur:
+ * 1. Cari `.item-row` terdekat dari tombol dan hapus dari DOM.
+ * 2. Cari modal induk (`[id^="addModal"]` atau `[id^="editModal-"]`).
+ * 3. Perbarui visibilitas tombol hapus pada seluruh baris (minimal 1 baris).
+ *
  * @param {HTMLElement} button - Tombol hapus yang diklik
  */
 function removeItemRow(button) {
@@ -138,6 +161,13 @@ function removeItemRow(button) {
 /**
  * Memperbarui visibilitas tombol hapus pada setiap item row.
  * Tombol hapus hanya ditampilkan jika ada lebih dari 1 item.
+ *
+ * Alur:
+ * 1. Ambil kontainer `itemsContainer-{modalId}`.
+ * 2. Hitung jumlah `.item-row` yang ada.
+ * 3. Untuk tiap baris, tampilkan tombol hapus (`display: flex`) jika jumlah
+ *    item > 1, atau sembunyikan (`display: none`) jika hanya tersisa 1 item
+ *    agar tidak ada surat jalan tanpa minimal satu baris.
  *
  * @param {string} modalId - ID modal (addModal atau editModal-{id})
  */
@@ -161,6 +191,12 @@ function updateDeleteButtonVisibility(modalId) {
 
 /**
  * Memperbarui status tombol hapus dan tombol print berdasarkan checkbox yang dipilih.
+ *
+ * Alur:
+ * 1. Hitung jumlah `.row-checkbox` yang dicentang.
+ * 2. Perbarui teks `selectedCountText`.
+ * 3. Aktifkan/nonaktifkan tombol hapus beserta kelas visualnya.
+ * 4. Tampilkan/sembunyikan tombol cetak terpilih.
  */
 function updateButtonStates() {
     const deleteButton = document.getElementById('delete-button');
@@ -200,6 +236,11 @@ function updateButtonStates() {
  * Fungsi untuk print surat jalan yang dipilih.
  * Mengumpulkan checkbox yang dicentang, mengirim via AJAX, dan download PDF.
  *
+ * Alur:
+ * 1. Ambil route dari meta `print-selected-route` (fallback ke endpoint PDF terpilih).
+ * 2. Delegasikan ke sharedPrintSelected(route, btn) yang memposting `ids[]`
+ *    tercentang lalu mengunduh file PDF.
+ *
  * @param {HTMLButtonElement} btn - Tombol yang diklik
  * @returns {boolean} true jika proses dimulai
  */
@@ -215,6 +256,16 @@ function printSelected(btn) {
  * INISIALISASI HALAMAN
  * ========================================== */
 
+/**
+ * Inisialisasi interaksi pada halaman index Surat Jalan.
+ *
+ * Alur:
+ * 1. Auto-generate nomor dokumen awal pada field `documentNumber`.
+ * 2. Pasang handler checkbox "Pilih Semua" dan sinkronisasi checkbox individual.
+ * 3. Inisialisasi visibilitas tombol hapus item pada seluruh modal.
+ * 4. Pasang loading indicator pada submit form tambah & edit, serta
+ *    cegah double submit pada form hapus.
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ─── Auto-generate Nomor Dokumen ─────────────────────────────────
@@ -295,6 +346,13 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ─── Reset isSubmitting Flag Saat Halaman Dimuat Kembali ──────────────
+/**
+ * Reset state isSubmitting ketika halaman dimuat ulang (mis. dari cache bfcache).
+ *
+ * Alur:
+ * 1. Panggil `resetFormSubmitState()` untuk membuka kembali kunci double submit
+ *    dan mengembalikan tombol submit ke kondisi awal.
+ */
 window.addEventListener('pageshow', function () {
     resetFormSubmitState();
 });

@@ -12,6 +12,21 @@
 // INISIALISASI
 // ============================================================
 
+/**
+ * Inisialisasi halaman Laporan Penjualan setelah DOM selesai dimuat.
+ *
+ * Alur:
+ * 1. Filter periode (bulan/tahun) dan status diterapkan di sisi server
+ *    (SalesReportService::buildFilteredQuery) dan hasilnya di-pass ke skrip
+ *    ini lewat window globals; perubahan filter disubmit otomatis via form
+ *    (bulan/tahun/status) termasuk pencarian dengan debounce di Blade.
+ * 2. Bila window.monthlyTrendData tersedia → render line chart trend
+ *    penjualan & profit bulanan.
+ * 3. Bila window.statusDistributionData tersedia → render doughnut chart
+ *    proporsi pembayaran Lunas vs Belum Lunas.
+ *
+ * @returns {void}
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
@@ -21,6 +36,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // per bulan selama tahun yang dipilih.
     // ============================================================
 
+    /**
+     * Merender line chart trend penjualan & profit bulanan.
+     *
+     * Data dari window.monthlyTrendData (backend: SalesReportService::
+     * getMonthlyTrend): 12 titik bulan dengan nilai selling & profit; bulan
+     * tanpa data diisi 0 oleh server. Tooltip sumbu Y diformat ringkas (Rp …jt).
+     *
+     * @returns {void}
+     */
     const monthlySalesCanvas = document.getElementById('monthlySalesChart');
     if (monthlySalesCanvas && window.monthlyTrendData) {
         const ctx = monthlySalesCanvas.getContext('2d');
@@ -93,6 +117,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // pembayaran Lunas vs Belum Lunas.
     // ============================================================
 
+    /**
+     * Merender doughnut chart distribusi status pembayaran.
+     *
+     * Data dari window.statusDistributionData (backend:
+     * SalesReportService::getStatusDistribution): status (Lunas/Belum Lunas)
+     * beserta jumlahnya. Warna: hijau (#10b981) untuk Lunas, merah (#ef4444)
+     * untuk Belum Lunas.
+     *
+     * @returns {void}
+     */
     const statusDistributionCanvas = document.getElementById('statusDistributionChart');
     if (statusDistributionCanvas && window.statusDistributionData) {
         const statusLabels = window.statusDistributionData.map(item => item.status);
