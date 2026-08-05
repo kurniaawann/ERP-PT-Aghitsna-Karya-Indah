@@ -24,15 +24,38 @@
                 <small class="text-text-secondary text-xs">Contoh: Jakarta, Depok, Bogor</small>
             </div>
 
-            <div>
-                <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-                <input type="date" name="nota_date"
-                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-                    value="{{ $nota->nota_date->format('Y-m-d') }}"
-                    oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
-                    oninput="this.setCustomValidity('')">
-            </div>
+        <div>
+            <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
+            <input type="date" name="nota_date"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
+                value="{{ $nota->nota_date->format('Y-m-d') }}"
+                oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
+                oninput="this.setCustomValidity('')">
         </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
+         FIELD: Periode (Awal s/d Akhir)
+         ═══════════════════════════════════════════════════════ --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 items-end">
+        <div>
+            <label class="block text-text-primary mb-1">Periode Awal</label>
+            <input type="date" name="periode_start"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                value="{{ $nota->periode_start?->format('Y-m-d') }}"
+                oninvalid="this.setCustomValidity('Format tanggal periode tidak valid')"
+                oninput="this.setCustomValidity('')">
+        </div>
+
+        <div>
+            <label class="block text-text-primary mb-1">s/d</label>
+            <input type="date" name="periode_end"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                value="{{ $nota->periode_end?->format('Y-m-d') }}"
+                oninvalid="this.setCustomValidity('Format tanggal periode tidak valid')"
+                oninput="this.setCustomValidity('')">
+        </div>
+    </div>
 
         {{-- ═══════════════════════════════════════════════════════
              FIELD: Kepada (Penerima)

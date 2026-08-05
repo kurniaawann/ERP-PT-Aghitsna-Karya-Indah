@@ -43,6 +43,27 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════
+         FIELD: Periode (Awal s/d Akhir)
+         ═══════════════════════════════════════════════════════════ --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 items-end">
+        <div>
+            <label class="block text-text-primary mb-1">Periode Awal</label>
+            <input type="date" name="periode_start"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                oninvalid="this.setCustomValidity('Format tanggal periode tidak valid')"
+                oninput="this.setCustomValidity('')">
+        </div>
+
+        <div>
+            <label class="block text-text-primary mb-1">s/d</label>
+            <input type="date" name="periode_end"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                oninvalid="this.setCustomValidity('Format tanggal periode tidak valid')"
+                oninput="this.setCustomValidity('')">
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════════
          FIELD: Kepada (Penerima)
          ═══════════════════════════════════════════════════════════ --}}
     <div class="mb-3">

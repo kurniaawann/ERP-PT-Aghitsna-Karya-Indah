@@ -115,6 +115,8 @@ class NotaService
             'id_nota' => $notaCode,
             'location' => $location,
             'nota_date' => $validated['nota_date'],
+            'periode_start' => $validated['periode_start'] ?? null,
+            'periode_end' => $validated['periode_end'] ?? null,
             'kepada' => $validated['kepada'],
             'faktur_no' => $validated['faktur_no'],
             'sj_no' => $validated['sj_no'],
@@ -163,6 +165,8 @@ class NotaService
         $nota->update([
             'location' => $location,
             'nota_date' => $validated['nota_date'],
+            'periode_start' => $validated['periode_start'] ?? null,
+            'periode_end' => $validated['periode_end'] ?? null,
             'kepada' => $validated['kepada'],
             'faktur_no' => $validated['faktur_no'],
             'sj_no' => $validated['sj_no'],

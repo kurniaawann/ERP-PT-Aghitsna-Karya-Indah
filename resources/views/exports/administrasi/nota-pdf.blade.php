@@ -364,7 +364,7 @@
                     <!-- KIRI: Periode, Rekening, Catatan & Penerima (TANPA BORDER) -->
                     <td class="bottom-left-cell">
                         <div class="period-text">
-                            Periode : <span class="period-line">{{ $nota->period ?? '' }}</span> s/d <span class="period-line"></span>
+                            Periode : <span class="period-line">{{ $nota->periode_start ? \Carbon\Carbon::parse($nota->periode_start)->format('d/m/Y') : '' }}</span> s/d <span class="period-line">{{ $nota->periode_end ? \Carbon\Carbon::parse($nota->periode_end)->format('d/m/Y') : '' }}</span>
                         </div>
 
                         @php $banks = $nota->paymentAccounts(); @endphp

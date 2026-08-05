@@ -30,6 +30,8 @@ class StoreNotaRequest extends FormRequest
         return [
             'location' => 'nullable|string|max:100',
             'nota_date' => 'required|date',
+            'periode_start' => 'nullable|date',
+            'periode_end' => 'nullable|date',
             'kepada' => 'required|string|max:255',
             'faktur_no' => 'required|string|max:100',
             'sj_no' => 'required|string|max:100',
@@ -61,6 +63,8 @@ class StoreNotaRequest extends FormRequest
         return [
             'nota_date.required' => 'Tanggal nota tidak boleh kosong.',
             'nota_date.date' => 'Format tanggal tidak valid.',
+            'periode_start.date' => 'Format tanggal periode tidak valid.',
+            'periode_end.date' => 'Format tanggal periode tidak valid.',
             'kepada.required' => 'Kepada tidak boleh kosong.',
             'kepada.max' => 'Kepada maksimal 255 karakter.',
             'faktur_no.required' => 'Faktur No tidak boleh kosong.',
@@ -84,5 +88,25 @@ class StoreNotaRequest extends FormRequest
             'ppn_percentage.max' => 'Persentase PPN maksimal 100.',
             'location.max' => 'Lokasi maksimal 100 karakter.',
         ];
+    }
+
+    /**
+     * Validasi tambahan setelah aturan utama dijalankan.
+     *
+     * Memastikan periode akhir tidak mendahului periode awal.
+     *
+     * @param  \Illuminate\Validation\Validator  $validator
+     * @return void
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $start = $this->input('periode_start');
+            $end = $this->input('periode_end');
+
+            if ($start && $end && strtotime($end) < strtotime($start)) {
+                $validator->errors()->add('periode_end', 'Periode "s/d" tidak boleh sebelum periode awal.');
+            }
+        });
     }
 }

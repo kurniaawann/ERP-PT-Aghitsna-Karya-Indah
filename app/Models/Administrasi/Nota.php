@@ -47,6 +47,8 @@ class Nota extends Model
         'id_nota',
         'location',
         'nota_date',
+        'periode_start',
+        'periode_end',
         'kepada',
         'faktur_no',
         'sj_no',
@@ -76,6 +78,8 @@ class Nota extends Model
      */
     protected $casts = [
         'nota_date' => 'date',
+        'periode_start' => 'date',
+        'periode_end' => 'date',
         'items' => 'array',
         'sewa_jual' => 'integer',
         'ongkos_kirim' => 'integer',
