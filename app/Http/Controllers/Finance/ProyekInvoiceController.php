@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreProyekInvoiceRequest;
 use App\Http\Requests\Finance\UpdateProyekInvoiceRequest;
 use App\Models\Finance\InvoiceProyek;
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Executive;
 use App\Exports\Finance\ProyekInvoiceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -50,8 +52,10 @@ class ProyekInvoiceController extends Controller
     {
         $invoices = $this->service->baseQuery($request)->paginate(15);
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+        $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.finance.project-invoices', compact('invoices', 'paymentAccounts'));
+        return view('pages.finance.project-invoices', compact('invoices', 'paymentAccounts', 'executives', 'divisions'));
     }
 
     /**

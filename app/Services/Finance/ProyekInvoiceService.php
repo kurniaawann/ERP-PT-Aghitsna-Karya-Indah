@@ -197,8 +197,8 @@ class ProyekInvoiceService
                 ? $calculations['dpAmount']
                 : null,
             'selected_payment_accounts' => json_encode($data['selected_payment_accounts'] ?? []),
-            'signed_by' => $data['signed_by'] ?? null,
-            'division' => $data['division'] ?? null,
+            'signed_by_id' => $data['signed_by_id'] ?? null,
+            'division_id' => $data['division_id'] ?? null,
         ]);
     }
 

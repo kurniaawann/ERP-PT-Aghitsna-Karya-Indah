@@ -61,13 +61,13 @@
 
     {{-- ==================== Section: Modals ==================== --}}
     {{-- Modal Tambah Invoice --}}
-    <x-finance.project-invoices.add-modal :paymentAccounts="$paymentAccounts" />
+    <x-finance.project-invoices.add-modal :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
 
     {{-- Modal Edit & Detail untuk setiap invoice --}}
     {{-- Modal Edit, Detail, & Delete untuk setiap invoice: satu set modal
          dibuat per baris agar data tiap invoice tetap terpisah. --}}
     @foreach ($invoices as $invoice)
-        <x-finance.project-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" />
+        <x-finance.project-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
         <x-finance.project-invoices.detail-modal :invoice="$invoice" />
         <x-finance.project-invoices.delete-modal :invoice="$invoice" />
     @endforeach

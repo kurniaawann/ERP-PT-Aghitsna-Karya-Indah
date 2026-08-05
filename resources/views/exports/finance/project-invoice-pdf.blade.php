@@ -362,7 +362,7 @@
                 @if ($hasDiscountOrDp)
                     <tr>
                         <td colspan="4" style="border: none; background-color: #fff;"></td>
-                        <td class="right" style="border: 1px solid #000;"><strong>Tersisa</strong></td>
+                        <td class="right" style="border: 1px solid #000;"><strong>Sisa Pembayaran</strong></td>
                         <td class="right" style="border: 1px solid #000;"><strong>Rp {{ number_format($remainingAmount, 0, ',', '.') }}</strong></td>
                     </tr>
                 @endif
@@ -432,9 +432,9 @@
                 <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
                     <div>Hormat Kami,</div>
                     <div style="font-weight: bold;">PT. AGHITSNA KARYA INDAH</div>
-                    <div style="margin-top: 60px;">{{ $invoice->signed_by ?? 'Akhmad Khaidir' }}</div>
+                    <div style="margin-top: 60px;">{{ $invoice->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
                     @if ($invoice->division)
-                    <div style="margin-top: 5px;">{{ $invoice->division }}</div>
+                    <div style="margin-top: 5px;">{{ $invoice->division->name }}</div>
                     @endif
                 </td>
                 @if($invoice->isFullyPaid())

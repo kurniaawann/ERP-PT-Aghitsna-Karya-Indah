@@ -293,7 +293,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->setCellValue("B{$currentRow}", '');
                     $sheet->setCellValue("C{$currentRow}", '');
                     $sheet->setCellValue("D{$currentRow}", '');
-                    $sheet->setCellValue("E{$currentRow}", 'Tersisa');
+                    $sheet->setCellValue("E{$currentRow}", 'Sisa Pembayaran');
                     $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($remainingAmount, 0, ',', '.'));
 
                     $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
@@ -411,13 +411,13 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 $currentRow += 4;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $signedBy = $invoice->signed_by ?? 'Akhmad Khaidir';
+                $signedBy = $invoice->signedBy?->name ?? 'Akhmad Khaidir';
                 $sheet->setCellValue("A{$currentRow}", $signedBy);
 
                 if ($invoice->division) {
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", $invoice->division);
+                    $sheet->setCellValue("A{$currentRow}", $invoice->division->name);
                 }
             },
         ];

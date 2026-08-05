@@ -4,8 +4,11 @@ namespace App\Models\Finance;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
 use App\Models\Finance\PaymentProof;
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Executive;
 use App\Models\User;
 use App\Services\Finance\InvoiceCalculatorService;
 
@@ -42,8 +45,8 @@ class InvoiceProyek extends Model
         'dp_amount',
         'selected_payment_accounts',
         'created_by',
-        'signed_by',
-        'division',
+        'signed_by_id',
+        'division_id',
     ];
 
     protected $casts = [
@@ -100,6 +103,30 @@ class InvoiceProyek extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke petinggi (Nama Penandatangan) yang menandatangani invoice.
+     *
+     * Diambil dari data petinggi (executives) melalui foreign key signed_by_id.
+     *
+     * @return BelongsTo
+     */
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(Executive::class, 'signed_by_id');
+    }
+
+    /**
+     * Relasi ke divisi penandatangan invoice.
+     *
+     * Diambil dari submodul divisi (divisions) melalui foreign key division_id.
+     *
+     * @return BelongsTo
+     */
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class, 'division_id');
     }
 
     /**

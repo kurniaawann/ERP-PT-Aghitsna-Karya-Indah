@@ -38,8 +38,8 @@ class StoreProyekInvoiceRequest extends FormRequest
             'dp_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
-            'signed_by' => 'nullable|string|max:255',
-            'division' => 'nullable|string|max:255',
+            'signed_by_id' => 'nullable|exists:executives,id',
+            'division_id' => 'nullable|exists:divisions,id',
         ];
     }
 
