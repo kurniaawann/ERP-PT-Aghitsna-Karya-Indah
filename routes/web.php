@@ -29,6 +29,7 @@ use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
 use App\Http\Controllers\Sdm\KasbonController;
 use App\Http\Controllers\Sdm\DivisionController;
+use App\Http\Controllers\Sdm\ExecutiveController;
 use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
@@ -352,6 +353,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/division', [DivisionController::class, 'store'])->name('division.store');
         Route::put('/division/{division}', [DivisionController::class, 'update'])->name('division.update');
         Route::delete('/division', [DivisionController::class, 'destroy'])->name('division.destroy');
+
+        // Route Executive (Data Petinggi)
+        Route::get('/executive', [ExecutiveController::class, 'index'])->name('executive.index');
+        Route::post('/executive', [ExecutiveController::class, 'store'])->name('executive.store');
+        Route::put('/executive/{executive}', [ExecutiveController::class, 'update'])->name('executive.update');
+        Route::delete('/executive', [ExecutiveController::class, 'destroy'])->name('executive.destroy');
 
         // ============================================
         // Administrasi Routes
