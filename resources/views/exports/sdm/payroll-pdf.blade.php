@@ -406,6 +406,14 @@
                 <div class="s-label">Total Kasbon</div>
                 <div class="s-value">- {{ number_format($totalKasbon, 0, ',', '.') }}</div>
             </div>
+            @if (($teamKasbonRecap ?? collect())->isNotEmpty())
+                @foreach ($teamKasbonRecap as $divisionName => $amount)
+                    <div class="summary-row" style="color: #c0392b;">
+                        <div class="s-label">Kasbon Divisi {{ $divisionName }}</div>
+                        <div class="s-value">{{ number_format($amount, 0, ',', '.') }}</div>
+                    </div>
+                @endforeach
+            @endif
             <div class="summary-row" style="border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 5px;">
                 <div class="s-label font-bold">Total Upah Pekerja</div>
                 <div class="s-value font-bold">{{ number_format($totalWages, 0, ',', '.') }}</div>

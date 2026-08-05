@@ -307,7 +307,9 @@ class PayrollController extends Controller
             $weekNumber ? (int) $weekNumber : null,
         );
 
-        return Excel::download(new PayrollExport($payrolls, $month, $year, null, $operationalExpenses), $fileName);
+        $teamKasbonRecap = $this->payrollService->getTeamKasbonRecap($payrolls);
+
+        return Excel::download(new PayrollExport($payrolls, $month, $year, null, $operationalExpenses, $teamKasbonRecap), $fileName);
     }
 
     /**
@@ -384,6 +386,8 @@ class PayrollController extends Controller
             $weekNumber,
         );
 
+        $teamKasbonRecap = $this->payrollService->getTeamKasbonRecap($payrolls);
+
         $data = [
             'payrolls' => $payrolls,
             'periodText' => $periodText,
@@ -395,6 +399,7 @@ class PayrollController extends Controller
             'totalOvertime' => $totalOvertime,
             'totalNetSalary' => $totalNetSalary,
             'operationalExpenses' => $operationalExpenses,
+            'teamKasbonRecap' => $teamKasbonRecap,
         ];
 
         $pdf = Pdf::loadView('exports.sdm.payroll-pdf', $data);

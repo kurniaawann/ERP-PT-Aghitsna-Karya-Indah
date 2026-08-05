@@ -146,13 +146,14 @@ class KasbonService
      *
      * Bisnis Logika:
      * - Menghasilkan kode kasbon unik (KSB001, KSB002, ...)
-     * - Mendeteksi week_number secara otomatis dari period_start_date
+     * - Mendeteksi week_number, period_month, dan period_year secara
+     *   otomatis dari period_start_date
      * - Untuk kasbon personal: memvalidasi batas maksimal berdasarkan absensi
      * - Untuk kasbon team: mengatur employee_id menjadi null
      * - Untuk kasbon personal: mengatur division menjadi null
      * - Status default adalah 'pending'
      *
-     * @param  array{kasbon_type: string, employee_id: string|null, division: string|null, amount: int, kasbon_date: string, period_month: int, period_year: int, period_start_date: string, period_end_date: string, notes: string|null}  $data  Data input yang sudah divalidasi
+     * @param  array{kasbon_type: string, employee_id: string|null, division: string|null, amount: int, kasbon_date: string, period_start_date: string, period_end_date: string, notes: string|null}  $data  Data input yang sudah divalidasi
      * @return Kasbon  Data kasbon yang dibuat
      *
      * @throws \Illuminate\Validation\ValidationException  Jika validasi berdasarkan absensi gagal
@@ -165,9 +166,11 @@ class KasbonService
         $data['paid_amount'] = 0;
         $data['remaining_amount'] = $data['amount'];
         $data['payment_status'] = 'unpaid';
-        $data['week_number'] = Carbon::parse($data['period_start_date'])->weekOfMonth;
+        $periodStart = Carbon::parse($data['period_start_date']);
+        $data['period_month'] = $periodStart->month;
+        $data['period_year'] = $periodStart->year;
+        $data['week_number'] = $periodStart->weekOfMonth;
         $data['created_by'] = auth()->id();
-
         if ($data['kasbon_type'] === 'team') {
             $data['employee_id'] = null;
         } else {
@@ -270,6 +273,13 @@ class KasbonService
             $data['employee_id'] = null;
         } else {
             $data['division'] = null;
+        }
+
+        if (!empty($data['period_start_date'])) {
+            $periodStart = Carbon::parse($data['period_start_date']);
+            $data['period_month'] = $periodStart->month;
+            $data['period_year'] = $periodStart->year;
+            $data['week_number'] = $periodStart->weekOfMonth;
         }
 
         return $kasbon->update($data);

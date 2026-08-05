@@ -13,9 +13,8 @@
             <div class="text-sm text-primary">
                 <p class="font-semibold mb-1">Informasi Kasbon:</p>
                 <ul class="list-disc list-inside space-y-1">
-                    <li><strong>Personal:</strong> Kasbon untuk 1 orang karyawan</li>
-                    <li><strong>Tim:</strong> Kasbon untuk divisi tertentu (dibagi rata saat payroll)</li>
-                    <li>Kasbon akan otomatis dipotong saat generate payroll</li>
+                    <li><strong>Personal:</strong> Kasbon untuk 1 orang karyawan (otomatis dipotong saat generate payroll)</li>
+                    <li><strong>Tim:</strong> Kasbon untuk divisi tertentu (direkap di cetakan payroll, tidak dipotong per karyawan)</li>
                 </ul>
             </div>
         </div>
@@ -67,36 +66,13 @@
             placeholder="Masukkan jumlah kasbon" required min="1000" step="1000">
     </div>
 
-    {{-- Tanggal Kasbon --}}
+    {{-- Periode Kasbon --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
         <input type="date" name="kasbon_date" id="add_kasbon_date"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            value="{{ date('Y-m-d') }}" required oninvalid="this.setCustomValidity('Tanggal kasbon tidak boleh kosong')"
+            value="{{ date('Y-m-d') }}" required oninvalid="this.setCustomValidity('Periode kasbon tidak boleh kosong')"
             oninput="this.setCustomValidity('')" onchange="checkMaxKasbon('add')">
-    </div>
-
-    {{-- Periode Bulan & Tahun --}}
-    <div class="grid grid-cols-2 gap-3 mb-3">
-        <div>
-            <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
-            <select name="period_month" id="add_period_month"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-                onchange="checkMaxKasbon('add')">
-                <option value="">Pilih</option>
-                @for ($i = 1; $i <= 12; $i++)
-                    <option value="{{ $i }}" {{ date('n') == $i ? 'selected' : '' }}>
-                        {{ DateTime::createFromFormat('!m', $i)->format('M') }}
-                    </option>
-                @endfor
-            </select>
-        </div>
-        <div>
-            <label class="block text-text-primary mb-1">Tahun <span class="text-error">*</span></label>
-            <input type="number" name="period_year" id="add_period_year"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                value="{{ date('Y') }}" required min="2020" max="2100" onchange="checkMaxKasbon('add')">
-        </div>
     </div>
 
     {{-- Bidang Tersembunyi (dihapus otomatis dari tanggal periode) --}}

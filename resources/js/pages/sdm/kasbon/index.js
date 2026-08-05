@@ -137,32 +137,33 @@ window.toggleEmployeeSelect = function (prefix) {
 // ==========================================
 
 /**
- * Menyelesaikan period_start_date/period_end_date + week_number dari bulan,
- * tahun, dan tanggal kasbon yang dipilih.
+ * Menyelesaikan period_start_date/period_end_date + week_number dari
+ * tanggal kasbon yang dipilih.
  *
  * Alur:
- * 1. Baca bulan, tahun, dan kasbon_date dari input form.
- * 2. Jika salah satu kosong → kembalikan null.
- * 3. AJAX GET ke GET_WEEKS_URL (rute payroll.get-weeks) dengan query
+ * 1. Baca kasbon_date dari input form.
+ * 2. Jika kosong → kembalikan null.
+ * 3. Bulan & tahun diambil dari kasbon_date (format YYYY-MM-DD).
+ * 4. AJAX GET ke GET_WEEKS_URL (rute payroll.get-weeks) dengan query
  *    month & year.
- * 4. Iterasi minggu yang dikembalikan; minggu pertama yang rentang
+ * 5. Iterasi minggu yang dikembalikan; minggu pertama yang rentang
  *    start_date..end_date mengandung kasbon_date menjadi hasil.
- * 5. Jika tidak ada yang cocok, gunakan minggu terakhir sebagai fallback.
- * 6. Kembalikan { start_date, end_date, week_number }; null saat error/kosong.
+ * 6. Jika tidak ada yang cocok, gunakan minggu terakhir sebagai fallback.
+ * 7. Kembalikan { start_date, end_date, week_number }; null saat error/kosong.
  *
  * @param  {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
  * @returns {Promise<{start_date: string, end_date: string, week_number: number}|null>}
  */
 async function resolvePeriodStartDate(prefix) {
-    const monthSelect = document.getElementById(prefix + '_period_month');
-    const yearInput = document.getElementById(prefix + '_period_year');
     const kasbonDateInput = document.getElementById(prefix + '_kasbon_date');
-
-    const month = monthSelect ? monthSelect.value : '';
-    const year = yearInput ? yearInput.value : '';
     const kasbonDate = kasbonDateInput ? kasbonDateInput.value : '';
 
-    if (!month || !year || !kasbonDate) return null;
+    if (!kasbonDate) return null;
+
+    const parts = kasbonDate.split('-');
+    const year = parts[0];
+    const month = parts[1];
+    if (!month || !year) return null;
 
     try {
         const response = await fetch(`${GET_WEEKS_URL}?month=${month}&year=${year}`);
@@ -426,6 +427,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initAmountFormatting();
 
     toggleEmployeeSelect('add');
+    checkMaxKasbon('add');
 
     if (typeof initSearchableSelects === 'function') {
         initSearchableSelects();

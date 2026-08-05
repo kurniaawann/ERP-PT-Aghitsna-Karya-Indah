@@ -52,46 +52,21 @@
             value="{{ $kasbon->amount }}" required min="1000" step="1000">
     </div>
 
-    {{-- Tanggal Kasbon --}}
+    {{-- Periode Kasbon --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
-        <input type="date" name="kasbon_date" class="w-full border rounded p-2"
-            value="{{ $kasbon->kasbon_date->format('Y-m-d') }}" required>
+        <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
+        <input type="date" name="kasbon_date" id="edit_{{ $kasbon->kasbon_code }}_kasbon_date"
+            class="w-full border rounded p-2"
+            value="{{ $kasbon->kasbon_date->format('Y-m-d') }}" required
+            onchange="checkMaxKasbon('edit_{{ $kasbon->kasbon_code }}')">
     </div>
 
-    {{-- Periode Bulan, Tahun, Minggu --}}
-    <div class="grid grid-cols-3 gap-3 mb-3">
-        <div>
-            <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
-            <select name="period_month" class="w-full border rounded p-2" required>
-                @for ($i = 1; $i <= 12; $i++)
-                    <option value="{{ $i }}" {{ $kasbon->period_month == $i ? 'selected' : '' }}>
-                        {{ DateTime::createFromFormat('!m', $i)->format('M') }}
-                    </option>
-                @endfor
-            </select>
-        </div>
-        <div>
-            <label class="block text-text-primary mb-1">Tahun <span class="text-error">*</span></label>
-            <input type="number" name="period_year" class="w-full border rounded p-2"
-                value="{{ $kasbon->period_year }}" required min="2020" max="2100">
-        </div>
-        <div>
-            <label class="block text-text-primary mb-1">Minggu</label>
-            <select name="week_number" class="w-full border rounded p-2">
-                <option value="">-</option>
-                <option value="1" {{ $kasbon->week_number == 1 ? 'selected' : '' }}>1</option>
-                <option value="2" {{ $kasbon->week_number == 2 ? 'selected' : '' }}>2</option>
-                <option value="3" {{ $kasbon->week_number == 3 ? 'selected' : '' }}>3</option>
-                <option value="4" {{ $kasbon->week_number == 4 ? 'selected' : '' }}>4</option>
-            </select>
-        </div>
-    </div>
-
-    {{-- Bidang Tersembunyi untuk Rentang Tanggal Periode --}}
-    <input type="hidden" name="period_start_date"
+    {{-- Bidang Tersembunyi untuk Periode (diisi ulang dari kasbon_date) --}}
+    <input type="hidden" name="week_number" id="edit_{{ $kasbon->kasbon_code }}_week_number"
+        value="{{ $kasbon->week_number }}">
+    <input type="hidden" name="period_start_date" id="edit_{{ $kasbon->kasbon_code }}_period_start_date"
         value="{{ $kasbon->period_start_date ? $kasbon->period_start_date->format('Y-m-d') : '' }}">
-    <input type="hidden" name="period_end_date"
+    <input type="hidden" name="period_end_date" id="edit_{{ $kasbon->kasbon_code }}_period_end_date"
         value="{{ $kasbon->period_end_date ? $kasbon->period_end_date->format('Y-m-d') : '' }}">
 
     {{-- Catatan --}}

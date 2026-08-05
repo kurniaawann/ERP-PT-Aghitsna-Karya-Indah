@@ -229,10 +229,11 @@ class PayrollService
      * - Hanya KasbonPayment manual yang BELUM di-assign ke payroll
      *   (payroll_id IS NULL) yang dipotong — mencegah potongan ganda.
      * - Kasbon personal dipotong penuh dari gaji karyawan terkait.
-     * - Kasbon team dibagi rata ke setiap karyawan di divisi yang sama
-     *   (total team / jumlah karyawan divisi).
+     * - Kasbon divisi (team) TIDAK dibagi rata ke karyawan — hanya ditandai
+     *   sudah diproses (payroll_id di-assign) dan dimunculkan sebagai rekap
+     *   pada cetakan payroll (REKAPITULASI DANA), tidak memotong upah per orang.
      * - Rumus: net_salary = (daily_wage × present_days) + overtime_total
-     *   - kasbon_deduction.
+     *   - kasbon_deduction (personal saja).
      * - week_number dideteksi dari getWeeksInMonth() dengan mencocokkan
      *   tanggal mulai periode.
      *
@@ -377,16 +378,6 @@ class PayrollService
             ->get()
             ->groupBy('kasbon.division');
 
-        $teamKasbonPerDivision = [];
-        foreach ($pendingTeamPayments as $division => $payments) {
-            $teamKasbonPerDivision[$division] = $payments->sum('amount');
-        }
-
-        // Hitung jumlah karyawan per divisi untuk pembagian kasbon team
-        $divisionCounts = $employees->groupBy('division')
-            ->map(fn($group) => $group->count())
-            ->toArray();
-
         // === BUAT PAYROLL PER KARYAWAN ===
         $payrolls = [];
 
@@ -412,13 +403,10 @@ class PayrollService
 
             $personalKasbon = $personalKasbonPerEmployee[$employee->employee_code] ?? 0;
 
-            $teamKasbonPerPerson = 0;
-            if ($employee->division && isset($teamKasbonPerDivision[$employee->division])) {
-                $empCount = $divisionCounts[$employee->division] ?? 1;
-                $teamKasbonPerPerson = $teamKasbonPerDivision[$employee->division] / $empCount;
-            }
-
-            $totalKasbonDeduction = $personalKasbon + $teamKasbonPerPerson;
+            // Kasbon divisi (team) TIDAK dibagi rata ke setiap karyawan divisi.
+            // Kasbon divisi hanya dimunculkan sebagai rekap pada cetakan payroll
+            // (section REKAPITULASI DANA), bukan memotong upah per orang.
+            $totalKasbonDeduction = $personalKasbon;
             $netWage = $grossWage - $totalKasbonDeduction;
 
             $payroll = Payroll::create([
@@ -658,6 +646,35 @@ class PayrollService
             ->get();
 
         return $payrolls->isEmpty() ? null : $payrolls;
+    }
+
+    /**
+     * Mendapatkan rekap kasbon divisi (team) untuk payroll yang diexport.
+     *
+     * Kasbon divisi tidak dibagi rata ke karyawan, melainkan hanya
+     * dimunculkan sebagai informasi pada section REKAPITULASI DANA saat
+     * mencetak payroll (PDF/Excel). Data diambil dari KasbonPayment yang
+     * sudah di-assign (payroll_id) ke payroll terpilih, dikelompokkan
+     * per divisi.
+     *
+     * @param  Collection  $payrolls  Koleksi payroll yang diexport
+     * @return Collection  Collection mapping nama divisi -> total kasbon
+     */
+    public function getTeamKasbonRecap(Collection $payrolls): Collection
+    {
+        $payrollIds = $payrolls->pluck('id');
+
+        if ($payrollIds->isEmpty()) {
+            return collect();
+        }
+
+        return KasbonPayment::whereIn('payroll_id', $payrollIds)
+            ->whereHas('kasbon', fn ($q) => $q->where('kasbon_type', 'team'))
+            ->with('kasbon')
+            ->get()
+            ->groupBy('kasbon.division')
+            ->map(fn ($payments) => (int) $payments->sum('amount'))
+            ->filter(fn ($total) => $total > 0);
     }
 
     /**

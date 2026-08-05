@@ -56,6 +56,13 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
     protected $operationalExpenses;
 
     /**
+     * Rekap kasbon divisi (team) untuk section REKAPITULASI DANA.
+     *
+     * @var \Illuminate\Support\Collection|null
+     */
+    protected $teamKasbon;
+
+    /**
      * Calculated totals for the summary section.
      *
      * @var array|null
@@ -70,12 +77,14 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
      * @param  int|null                        $year       Filter by year (optional)
      * @param  string|null                     $projectName  Project name for header (optional)
      * @param  \Illuminate\Support\Collection|null $operationalExpenses  Biaya operasional proyek per periode (optional)
+     * @param  \Illuminate\Support\Collection|null $teamKasbon  Rekap kasbon divisi (optional)
      */
-    public function __construct($payrolls, $month = null, $year = null, $projectName = null, $operationalExpenses = null)
+    public function __construct($payrolls, $month = null, $year = null, $projectName = null, $operationalExpenses = null, $teamKasbon = null)
     {
         $this->payrolls = $payrolls;
         $this->projectName = $projectName;
         $this->operationalExpenses = $operationalExpenses ?? collect();
+        $this->teamKasbon = $teamKasbon ?? collect();
 
         $monthNames = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
@@ -328,6 +337,19 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 );
                 $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
+
+                foreach ($this->teamKasbon as $divisionName => $amount) {
+                    $sheet->setCellValue("H{$rekapRow}", "Kasbon Divisi " . $divisionName);
+                    $sheet->setCellValue("K{$rekapRow}", $amount);
+                    $sheet->getStyle("H{$rekapRow}")->getFont()->setColor(
+                        new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
+                    );
+                    $sheet->getStyle("K{$rekapRow}")->getFont()->setColor(
+                        new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
+                    );
+                    $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+                    $rekapRow++;
+                }
 
                 $sheet->setCellValue("H{$rekapRow}", "Total Upah Pekerja");
                 $sheet->setCellValue("K{$rekapRow}", $this->totals['net_salary']);
