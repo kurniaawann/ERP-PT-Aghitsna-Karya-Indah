@@ -35,6 +35,7 @@ class InvoiceAlumunium extends Model
 
     protected $fillable = [
         'invoice_number',
+        'quotation_number',
         'invoice_date',
         'recipient',
         'regarding',
@@ -73,6 +74,17 @@ class InvoiceAlumunium extends Model
     public function signedBy(): BelongsTo
     {
         return $this->belongsTo(Executive::class, 'signed_by_id');
+    }
+
+    /**
+     * Penawaran (quotation) yang membuat invoice ini secara otomatis.
+     * Null bila invoice dibuat mandiri tanpa penawaran.
+     *
+     * @return BelongsTo
+     */
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Administrasi\AluminiumQuotation::class, 'quotation_number', 'quotation_number');
     }
 
     /**

@@ -206,8 +206,10 @@
             <div class="page-break"></div>
         @endif
         @php
-            $groups = $q->groups;
+            $items = $q->items ?? [];
             $grandTotal = $q->total_amount;
+            $discountAmount = ($q->discount_type && (float) $q->discount_value > 0) ? $q->getDiscountAmount() : 0;
+            $dpAmount = ($q->dp_type && (float) $q->dp_value > 0) ? $q->getDpAmount() : 0;
             $selectedIds = $q->selected_payment_accounts ?? [];
             if (!empty($selectedIds)) {
                 $payAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedIds)->orderBy('id')->get();
@@ -293,26 +295,33 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($groups as $groupIndex => $group)
-                {{-- Group header row --}}
-                <tr class="row-group-header">
-                    <td class="c">{{ $groupIndex + 1 }}.</td>
-                    <td colspan="5" class="l">{{ $group->name }}</td>
+            @foreach ($items as $index => $item)
+                <tr>
+                    <td class="c">{{ $index + 1 }}.</td>
+                    <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
+                    <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
+                    <td class="c">{{ $item['satuan'] ?? '-' }}</td>
+                    <td class="r">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="r">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
                 </tr>
-
-                {{-- Item rows --}}
-                @foreach ($group->items as $item)
-                    <tr>
-                        <td class="c"></td>
-                        <td class="l">&nbsp;&nbsp;&nbsp;{{ $item->description }}</td>
-                        <td class="c">{{ $item->volume ?? '-' }}</td>
-                        <td class="c">{{ $item->unit ?? '-' }}</td>
-                        <td class="r">Rp &nbsp;{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                        <td class="r">Rp &nbsp;{{ number_format($item->total_price, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-
             @endforeach
+
+            @if ($discountAmount > 0)
+                <tr>
+                    <td colspan="4" class="empty-cell"></td>
+                    <td class="c">Discount
+                        {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
+                    <td class="r">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
+                </tr>
+            @endif
+
+            @if ($dpAmount > 0)
+                <tr>
+                    <td colspan="4" class="empty-cell"></td>
+                    <td class="c">DP</td>
+                    <td class="r">Rp &nbsp;-{{ number_format($dpAmount, 0, ',', '.') }}</td>
+                </tr>
+            @endif
 
             {{-- Grand Total --}}
             <tr class="row-grand-total">

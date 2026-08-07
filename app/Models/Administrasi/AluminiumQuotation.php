@@ -26,6 +26,13 @@ class AluminiumQuotation extends Model
         'recipient',
         'project_description',
         'total_amount',
+        'items',
+        'discount_type',
+        'discount_value',
+        'total_after_discount',
+        'dp_type',
+        'dp_value',
+        'dp_amount',
         'amount_in_words',
         'selected_payment_accounts',
         'signed_by_id',
@@ -36,6 +43,11 @@ class AluminiumQuotation extends Model
         'date' => 'date',
         'total_amount' => 'integer',
         'sequence_number' => 'integer',
+        'items' => 'json',
+        'total_after_discount' => 'integer',
+        'dp_amount' => 'integer',
+        'discount_value' => 'decimal:2',
+        'dp_value' => 'decimal:2',
         'selected_payment_accounts' => 'array',
     ];
 
@@ -50,6 +62,21 @@ class AluminiumQuotation extends Model
     {
         return $this->hasMany(AluminiumQuotationGroup::class, 'quotation_number', 'quotation_number')
             ->orderBy('order_number');
+    }
+
+    /**
+     * Invoice Alumunium yang dibuat otomatis dari penawaran ini.
+     *
+     * Relasi inverse dari InvoiceAlumunium::quotation(). Berdasarkan design
+     * snapshot, invoice tetap ada meski penawaran dihapus (FK ON DELETE SET
+     * NULL), sehingga relasi ini bisa bernilai kosong setelah penawaran
+     * dihapus.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function invoices()
+    {
+        return $this->hasMany(\App\Models\Finance\InvoiceAlumunium::class, 'quotation_number', 'quotation_number');
     }
 
     public function paymentAccounts()
@@ -69,6 +96,39 @@ class AluminiumQuotation extends Model
     public function division(): BelongsTo
     {
         return $this->belongsTo(Division::class, 'division_id');
+    }
+
+    // ─── Calculator Helpers ───────────────────────────────────────────────────
+
+    protected function getCalculator(): \App\Services\Finance\InvoiceCalculatorService
+    {
+        return app(\App\Services\Finance\InvoiceCalculatorService::class);
+    }
+
+    /**
+     * Menghitung jumlah discount berdasarkan total amount.
+     */
+    public function getDiscountAmount(float $totalAmount = null): float
+    {
+        return $this->getCalculator()->calculateDiscountAmount(
+            $totalAmount ?? (float) ($this->total_amount ?? 0),
+            $this->discount_type,
+            $this->discount_value ? (float) $this->discount_value : null
+        );
+    }
+
+    /**
+     * Menghitung jumlah DP berdasarkan total setelah discount.
+     */
+    public function getDpAmount(float $baseAmount = null): float
+    {
+        return $this->getCalculator()->calculateDpAmount(
+            (float) ($this->total_amount ?? 0),
+            $this->total_after_discount,
+            $this->dp_type,
+            $this->dp_value ? (float) $this->dp_value : null,
+            $baseAmount
+        );
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

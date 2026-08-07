@@ -77,7 +77,7 @@ class AluminiumQuotationController extends Controller
         $quotation = $this->quotationService->create($request->validated());
 
         return redirect()->route('aluminium-quotation.index')
-            ->with('success', "Penawaran {$quotation->quotation_number} berhasil ditambahkan!");
+            ->with('success', "Penawaran {$quotation->quotation_number} berhasil ditambahkan! Invoice Alumunium otomatis dibuat.");
     }
 
     /**

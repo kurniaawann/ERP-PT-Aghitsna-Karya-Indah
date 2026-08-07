@@ -7,8 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Form Request untuk validasi pembaruan Penawaran Aluminium.
  *
- * Memastikan semua field wajib terisi, minimal 1 rekening pembayaran
- * dipilih, data groups valid, dan volume bernilai numerik.
+ * Sama seperti store, namun items dikirim sebagai array (form edit
+ * memakai field items[{index}][keterangan/volume/satuan/harga]).
  */
 class UpdateAluminiumQuotationRequest extends FormRequest
 {
@@ -32,7 +32,11 @@ class UpdateAluminiumQuotationRequest extends FormRequest
         return [
             'recipient' => 'required|string|max:255',
             'date' => 'required|date',
-            'groups_json' => 'required|string',
+            'items' => 'required|array|min:1',
+            'discount_type' => 'nullable|in:percentage,amount',
+            'discount_value' => 'nullable|numeric|min:0',
+            'dp_type' => 'nullable|in:percentage,amount',
+            'dp_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',
@@ -54,8 +58,9 @@ class UpdateAluminiumQuotationRequest extends FormRequest
             'recipient.max' => 'Nama penerima maksimal 255 karakter.',
             'date.required' => 'Tanggal penawaran harus diisi.',
             'date.date' => 'Format tanggal tidak valid.',
-            'groups_json.required' => 'Data kelompok item harus diisi.',
-            'groups_json.string' => 'Data kelompok item harus berupa string JSON.',
+            'items.required' => 'Minimal harus ada 1 item.',
+            'items.array' => 'Format item tidak valid.',
+            'items.min' => 'Minimal harus ada 1 item.',
             'selected_payment_accounts.required' => 'Minimal 1 rekening pembayaran harus dipilih.',
             'selected_payment_accounts.array' => 'Data rekening pembayaran tidak valid.',
             'selected_payment_accounts.min' => 'Minimal 1 rekening pembayaran harus dipilih.',
@@ -66,53 +71,5 @@ class UpdateAluminiumQuotationRequest extends FormRequest
             'signed_by_id.exists' => 'Nama penandatangan yang dipilih tidak ditemukan.',
             'division_id.exists' => 'Divisi yang dipilih tidak ditemukan.',
         ];
-    }
-
-    /**
-     * Menambahkan validasi custom setelah aturan utama dijalankan.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function withValidator($validator): void
-    {
-        $validator->after(function ($validator) {
-            $groupsJson = $this->input('groups_json');
-
-            if (!$groupsJson) {
-                return;
-            }
-
-            $groups = json_decode($groupsJson, true);
-
-            if (!is_array($groups) || count($groups) === 0) {
-                $validator->errors()->add('groups_json', 'Minimal 1 kelompok harus ditambahkan.');
-                return;
-            }
-
-            foreach ($groups as $groupIndex => $group) {
-                if (empty($group['name'])) {
-                    $validator->errors()->add('groups_json', 'Nama kelompok tidak boleh kosong.');
-                    return;
-                }
-
-                if (empty($group['items']) || count($group['items']) === 0) {
-                    $validator->errors()->add('groups_json', 'Kelompok "' . ($group['name'] ?? '') . '" harus memiliki minimal 1 item.');
-                    return;
-                }
-
-                foreach ($group['items'] as $item) {
-                    if (!empty($item['volume']) && !is_numeric($item['volume'])) {
-                        $validator->errors()->add('groups_json', 'Volume harus berupa angka.');
-                        return;
-                    }
-
-                    if (isset($item['volume']) && is_numeric($item['volume']) && $item['volume'] < 0) {
-                        $validator->errors()->add('groups_json', 'Volume tidak boleh bernilai negatif.');
-                        return;
-                    }
-                }
-            }
-        });
     }
 }

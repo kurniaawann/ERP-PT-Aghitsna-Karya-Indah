@@ -21,8 +21,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
 
     public function __construct($quotationNumber)
     {
-        $this->quotation = AluminiumQuotation::with(['groups.items'])
-            ->where('quotation_number', $quotationNumber)
+        $this->quotation = AluminiumQuotation::where('quotation_number', $quotationNumber)
             ->firstOrFail();
     }
 
@@ -158,39 +157,28 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     ]
                 ]);
 
-                // Groups and Items
-                $groups = $quotation->groups()->orderBy('order_number')->get();
-                $grandTotal = 0;
+                // Items and financial summary
+                $items = $quotation->items ?? [];
+                $grandTotal = (int) ($quotation->total_amount ?? 0);
+                $discountAmount = ($quotation->discount_type && (float) $quotation->discount_value > 0) ? (int) $quotation->getDiscountAmount() : 0;
+                $dpAmount = ($quotation->dp_type && (float) $quotation->dp_value > 0) ? (int) $quotation->getDpAmount() : 0;
                 $itemStartRow = $currentRow + 1;
 
-                foreach ($groups as $groupIndex => $group) {
-                    // Group header row
+                foreach ($items as $index => $item) {
                     $currentRow++;
-                    $sheet->setCellValue("A{$currentRow}", ($groupIndex + 1) . '.');
-                    $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
-                    $sheet->setCellValue("B{$currentRow}", $group->name);
-                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->setCellValue("A{$currentRow}", ($index + 1) . '.');
+                    $sheet->setCellValue("B{$currentRow}", '   ' . ($item['keterangan'] ?? ''));
+                    $volume = $item['volume'] ?? 0;
+                    $sheet->setCellValue("C{$currentRow}", ($volume !== null && $volume !== '') ? number_format((float) $volume, 2, ',', '.') : '-');
+                    $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '-');
+                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'] ?? 0, 0, ',', '.'));
+                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.'));
 
-                    // Group items
-                    $items = $group->items()->orderBy('order_number')->get();
-                    foreach ($items as $item) {
-                        $currentRow++;
-                        $sheet->setCellValue("A{$currentRow}", '');
-                        $sheet->setCellValue("B{$currentRow}", '   ' . $item->description);
-                        $sheet->setCellValue("C{$currentRow}", $item->volume ? number_format($item->volume, 2, ',', '.') : '-');
-                        $sheet->setCellValue("D{$currentRow}", $item->unit ?? '-');
-                        $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item->unit_price, 0, ',', '.'));
-                        $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($item->total_price, 0, ',', '.'));
-
-                        // Style alignment
-                        $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                        $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    }
-
-                    $grandTotal += $group->subtotal;
+                    // Style alignment
+                    $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
                 $itemEndRow = $currentRow;
@@ -201,6 +189,28 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ]
                 ]);
+
+                // Discount row (optional)
+                if ($discountAmount > 0) {
+                    $currentRow++;
+                    $sheet->setCellValue("E{$currentRow}", 'Discount' . ($quotation->discount_type === 'percentage' ? ' (' . number_format((float) $quotation->discount_value, 2, ',', '.') . '%)' : ''));
+                    $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($discountAmount, 0, ',', '.'));
+                    $sheet->getStyle("E{$currentRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                }
+
+                // DP row (optional)
+                if ($dpAmount > 0) {
+                    $currentRow++;
+                    $sheet->setCellValue("E{$currentRow}", 'DP');
+                    $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($dpAmount, 0, ',', '.'));
+                    $sheet->getStyle("E{$currentRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                }
 
                 // Grand Total row - match PDF layout: empty 4 cols + "Total" in E + amount in F
                 $currentRow++;
