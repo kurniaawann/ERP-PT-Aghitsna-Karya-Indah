@@ -7,7 +7,7 @@ use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\KasbonPayment;
 use App\Models\Sdm\ProjectOperationalExpense;
-use App\Models\Notification\SalaryReminder;
+
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -219,10 +219,9 @@ class PayrollService
      * 1. Validasi kelengkapan absensi (tolak jika tidak lengkap)
      * 2. Hitung kasbon team per divisi
      * 3. Untuk setiap karyawan: gaji harian × hari hadir + lembur - kasbon
-     * 4. Buat data payroll dengan status 'draft'
-     * 5. Buat data SalaryReminder
-     * 6. Tandai kasbon personal dan team sebagai sudah dipotong
-     * 7. Simpan pengeluaran operasional proyek SEKALI per periode
+ * 4. Buat data payroll dengan status 'draft'
+ * 5. Tandai kasbon personal dan team sebagai sudah dipotong
+ * 6. Simpan pengeluaran operasional proyek SEKALI per periode
      *    (tabel project_operational_expenses), bukan per karyawan
      *
      * Logika potongan kasbon:
@@ -433,20 +432,6 @@ class PayrollService
                 'created_by' => auth()->id(),
             ]);
 
-            SalaryReminder::updateOrCreate(
-                ['payroll_id' => $payroll->id],
-                [
-                    'employee_id' => $employee->employee_code,
-                    'period_month' => $periodMonth,
-                    'period_year' => $periodYear,
-                    'reminder_date' => Carbon::now(),
-                    'status' => $payroll->status ?? 'draft',
-                    'notification_sent_at' => null,
-                    'notes' => 'Reminder gaji untuk periode ' . $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
-                    'created_by' => auth()->id(),
-                ]
-            );
-
             $payrolls[] = $payroll;
 
             // Assign KasbonPayment personal ke payroll ini
@@ -509,13 +494,10 @@ class PayrollService
      * Membayar beberapa data payroll secara massal.
      *
      * Memperbarui status dari 'draft' menjadi 'paid' dan mengatur tanggal pembayaran.
-     * Juga menyinkronkan status SalaryReminder untuk payroll yang sudah dibayar.
      *
      * Logika:
      * - UPDATE massal dijalankan hanya untuk id terpilih yang masih berstatus
      *   'draft' → payroll 'paid' tidak mungkin dibayar dua kali.
-     * - SalaryReminder ikut di-update menjadi 'paid' + notification_sent_at
-     *   diisi sekarang, sehingga reminder tidak mengirim ulang notifikasi.
      *
      * @param  array   $ids     Array ID payroll
      * @param  string  $paymentDate  Tanggal pembayaran (Y-m-d)
@@ -536,11 +518,6 @@ class PayrollService
             ]);
 
         if ($updated > 0) {
-            SalaryReminder::whereIn('payroll_id', $ids)->update([
-                'status' => 'paid',
-                'notification_sent_at' => now(),
-            ]);
-
             return [
                 'success' => true,
                 'message' => "Berhasil membayar {$updated} payroll!",

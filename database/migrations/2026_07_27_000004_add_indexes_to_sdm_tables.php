@@ -95,19 +95,6 @@ return new class extends Migration
         });
 
         // ═══════════════════════════════════════════════════════════════
-        // salary_reminders — 1 index
-        // ═══════════════════════════════════════════════════════════════
-        // idx_sal_period
-        // Digunakan oleh: SalaryReminderService → scopeForPeriod()
-        //   → WHERE period_month = X AND period_year = Y
-        //   + scopeByStatus() → WHERE status = Z
-        // Alasan: Composite index untuk kombinasi filter bulan + tahun
-        //   yang dipakai di setiap request listing salary reminder.
-        Schema::table('salary_reminders', function (Blueprint $table) {
-            $table->index(['period_month', 'period_year'], 'idx_sal_period');
-        });
-
-        // ═══════════════════════════════════════════════════════════════
         // kasbon_payments — 1 index
         // ═══════════════════════════════════════════════════════════════
         // idx_kp_kasbon_date
@@ -142,10 +129,6 @@ return new class extends Migration
 
         Schema::table('employees', function (Blueprint $table) {
             $table->dropIndex('idx_emp_division');
-        });
-
-        Schema::table('salary_reminders', function (Blueprint $table) {
-            $table->dropIndex('idx_sal_period');
         });
 
         Schema::table('kasbon_payments', function (Blueprint $table) {

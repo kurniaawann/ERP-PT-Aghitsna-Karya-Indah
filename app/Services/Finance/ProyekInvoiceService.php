@@ -207,7 +207,7 @@ class ProyekInvoiceService
      *
      * PENTING (kenapa foreach, bukan mass delete):
      * - InvoiceProyek punya InvoiceProyekObserver. Event 'deleted' di observer
-     *   membersihkan InvoiceProyekReminder dan file bukti pembayaran terkait.
+     *   membersihkan file bukti pembayaran terkait.
      * - foreach + $invoice->delete() memicu observer tersebut; mass delete tidak.
      *
      * @param  array  $ids  Daftar invoice_number yang akan dihapus

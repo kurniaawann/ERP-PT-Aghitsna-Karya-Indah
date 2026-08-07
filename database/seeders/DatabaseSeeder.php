@@ -24,7 +24,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PayrollSeeder::class);
         $this->call(KasbonSeeder::class);
         $this->call(KasbonPaymentSeeder::class);
-        $this->call(SalaryReminderSeeder::class);
 
         // 4. Inventory
         $this->call(ItemStockInSeeder::class);
@@ -51,6 +50,5 @@ class DatabaseSeeder extends Seeder
         $this->call(RABSeeder::class);
         $this->call(ProjectQuotationSeeder::class);
         $this->call(AluminiumQuotationSeeder::class);
-        $this->call(InvoiceProyekReminderSeeder::class);
     }
 }

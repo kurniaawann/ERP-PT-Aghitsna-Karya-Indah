@@ -958,52 +958,6 @@
                 </li>
             @endif
 
-            {{-- Notification & Reminders Dropdown --}}
-            @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
-            <li>
-                <button onclick="toggleDropdown('notificationDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
-
-                    <div class="flex items-center">
-                        <i class="fas fa-bell w-5 text-text-tertiary group-hover:text-primary">
-                        </i>
-                        <span class="ml-3 font-medium">Notification</span>
-                    </div>
-
-                    <i id="notificationDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
-                    </i>
-                </button>
-
-                {{-- Submenu --}}
-                <ul id="notificationDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('notification*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ route('notification.salary-reminder') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('notification/salary-reminder*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-invoice-dollar w-4 
-                                {{ request()->is('notification/salary-reminder*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Reminder Gaji Karyawan</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('notification.invoice-proyek-reminder') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('notification/invoice-proyek-reminder*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-clock w-4 
-                                {{ request()->is('notification/invoice-proyek-reminder*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Reminder Jatuh Tempo Invoice</span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            @endif
-
         </ul>
     </nav>
 </aside>
