@@ -30,9 +30,6 @@ class AluminiumQuotation extends Model
         'discount_type',
         'discount_value',
         'total_after_discount',
-        'dp_type',
-        'dp_value',
-        'dp_amount',
         'amount_in_words',
         'selected_payment_accounts',
         'signed_by_id',
@@ -45,9 +42,7 @@ class AluminiumQuotation extends Model
         'sequence_number' => 'integer',
         'items' => 'json',
         'total_after_discount' => 'integer',
-        'dp_amount' => 'integer',
         'discount_value' => 'decimal:2',
-        'dp_value' => 'decimal:2',
         'selected_payment_accounts' => 'array',
     ];
 
@@ -114,20 +109,6 @@ class AluminiumQuotation extends Model
             $totalAmount ?? (float) ($this->total_amount ?? 0),
             $this->discount_type,
             $this->discount_value ? (float) $this->discount_value : null
-        );
-    }
-
-    /**
-     * Menghitung jumlah DP berdasarkan total setelah discount.
-     */
-    public function getDpAmount(float $baseAmount = null): float
-    {
-        return $this->getCalculator()->calculateDpAmount(
-            (float) ($this->total_amount ?? 0),
-            $this->total_after_discount,
-            $this->dp_type,
-            $this->dp_value ? (float) $this->dp_value : null,
-            $baseAmount
         );
     }
 

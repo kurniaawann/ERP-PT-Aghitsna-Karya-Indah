@@ -9,7 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
  *
  * Memastikan semua field wajib terisi, minimal 1 rekening pembayaran
  * dipilih, data items (JSON flat, format sama seperti Invoice Alumunium)
- * valid, dan discount/DP memiliki tipe yang diperbolehkan.
+ * valid, dan discount memiliki tipe yang diperbolehkan. Penawaran TIDAK
+ * memiliki DP — DP adalah konsep pembayaran invoice.
  */
 class StoreAluminiumQuotationRequest extends FormRequest
 {
@@ -36,8 +37,6 @@ class StoreAluminiumQuotationRequest extends FormRequest
             'items' => 'required|json',
             'discount_type' => 'nullable|in:percentage,amount',
             'discount_value' => 'nullable|numeric|min:0',
-            'dp_type' => 'nullable|in:percentage,amount',
-            'dp_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',

@@ -10,8 +10,9 @@ return new class extends Migration {
      * Run the migrations.
      *
      * 1. aluminium_quotations: tambah kolom items (JSON, format flat seperti
-     *    invoice), discount, dan DP agar form penawaran identik dengan
-     *    Invoice Alumunium.
+     *    invoice) dan discount agar form penawaran identik dengan Invoice
+     *    Alumunium. Catatan: TIDAK ada DP pada penawaran — DP adalah konsep
+     *    pembayaran invoice, bukan penawaran.
      * 2. alumunium_invoices: tambah kolom quotation_number (nullable) sebagai
      *    penghubung ke penawaran yang membuat invoice secara otomatis.
      * 3. Backfill: konversi data lama (kelompok/items) menjadi items JSON.
@@ -23,9 +24,6 @@ return new class extends Migration {
             $table->string('discount_type')->nullable()->after('items');
             $table->decimal('discount_value', 15, 2)->nullable()->after('discount_type');
             $table->integer('total_after_discount')->nullable()->after('discount_value');
-            $table->string('dp_type')->nullable()->after('total_after_discount');
-            $table->decimal('dp_value', 15, 2)->nullable()->after('dp_type');
-            $table->integer('dp_amount')->nullable()->after('dp_value');
         });
 
         Schema::table('alumunium_invoices', function (Blueprint $table) {
@@ -52,9 +50,6 @@ return new class extends Migration {
                 'discount_type',
                 'discount_value',
                 'total_after_discount',
-                'dp_type',
-                'dp_value',
-                'dp_amount',
             ]);
         });
     }

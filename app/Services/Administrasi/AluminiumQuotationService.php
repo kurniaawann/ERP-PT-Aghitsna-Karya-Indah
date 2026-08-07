@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * Service untuk mengelola business logic Penawaran Aluminium (Aluminium Quotation).
  *
  * Service ini bertanggung jawab atas operasi CRUD, generasi nomor penawaran,
- * perhitungan total/discount/DP, pengelolaan items (format flat JSON seperti
+ * perhitungan total & discount, pengelolaan items (format flat JSON seperti
  * Invoice Alumunium), dan pembuatan Invoice Alumunium otomatis (snapshot)
  * setiap kali penawaran baru disimpan.
  *
@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\DB;
  *   lunas) pada transaksi DB yang sama.
  * - Invoice tetap dapat dibuat mandiri tanpa penawaran (modul Finance).
  * - Edit/hapus penawaran TIDAK mengubah invoice yang sudah dibuat (snapshot).
+ * - TIDAK ada DP pada penawaran: DP adalah konsep pembayaran invoice, bukan
+ *   penawaran. Bila perlu, DP ditambahkan nanti pada invoice-nya.
  */
 class AluminiumQuotationService
 {
@@ -91,9 +93,16 @@ class AluminiumQuotationService
         $seqNumber = (int) $matches[1];
 
         $totalAmount = $this->calculateItemsTotal($items);
-        $calculations = $this->calculateDiscountAndDp($validated, $totalAmount);
+        $discountAmount = $this->calculator->calculateDiscountAmount(
+            $totalAmount,
+            $validated['discount_type'] ?? null,
+            isset($validated['discount_value']) && $validated['discount_value'] !== '' ? (float) $validated['discount_value'] : null
+        );
+        $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
+            ? $totalAmount - (int) $discountAmount
+            : null;
 
-        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $calculations, $items) {
+        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $discountAmount, $totalAfterDiscount, $items) {
             $quotation = AluminiumQuotation::create([
                 'quotation_number' => $quotationNumber,
                 'sequence_number' => $seqNumber,
@@ -105,17 +114,14 @@ class AluminiumQuotationService
                 'items' => $items,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? null,
-                'total_after_discount' => $calculations['totalAfterDiscount'],
-                'dp_type' => $validated['dp_type'] ?? null,
-                'dp_value' => $validated['dp_value'] ?? null,
-                'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
+                'total_after_discount' => $totalAfterDiscount,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
                 'division_id' => $validated['division_id'] ?? null,
             ]);
 
-            $this->createLinkedInvoice($quotation, $validated, $items, $totalAmount, $calculations);
+            $this->createLinkedInvoice($quotation, $items, $totalAmount, $discountAmount, $totalAfterDiscount);
 
             return $quotation;
         });
@@ -135,9 +141,16 @@ class AluminiumQuotationService
     {
         $items = $this->normalizeItems($validated['items'] ?? []);
         $totalAmount = $this->calculateItemsTotal($items);
-        $calculations = $this->calculateDiscountAndDp($validated, $totalAmount);
+        $discountAmount = $this->calculator->calculateDiscountAmount(
+            $totalAmount,
+            $validated['discount_type'] ?? null,
+            isset($validated['discount_value']) && $validated['discount_value'] !== '' ? (float) $validated['discount_value'] : null
+        );
+        $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
+            ? $totalAmount - (int) $discountAmount
+            : null;
 
-        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $calculations, $items) {
+        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $totalAfterDiscount, $items) {
             $quotation->update([
                 'date' => $validated['date'],
                 'subject' => $validated['subject'] ?? 'Penawaran Harga',
@@ -147,10 +160,7 @@ class AluminiumQuotationService
                 'items' => $items,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? null,
-                'total_after_discount' => $calculations['totalAfterDiscount'],
-                'dp_type' => $validated['dp_type'] ?? null,
-                'dp_value' => $validated['dp_value'] ?? null,
-                'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
+                'total_after_discount' => $totalAfterDiscount,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
@@ -251,71 +261,45 @@ class AluminiumQuotationService
     // ═══════════════════════════════════════════════════════════════
 
     /**
-     * Menghitung discount & DP dari data form (selaras InvoiceCalculatorService).
-     *
-     * @param  array  $data  Data penawaran (discount_type, discount_value, dp_type, dp_value)
-     * @param  int    $totalAmount  Total amount sebelum discount
-     * @return array{discountAmount: int, totalAfterDiscount: int|null, dpAmount: int}
-     */
-    private function calculateDiscountAndDp(array $data, int $totalAmount): array
-    {
-        $discountAmount = $this->calculator->calculateDiscountAmount(
-            $totalAmount,
-            $data['discount_type'] ?? null,
-            isset($data['discount_value']) && $data['discount_value'] !== '' ? (float) $data['discount_value'] : null
-        );
-
-        $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
-            ? $totalAmount - (int) $discountAmount
-            : null;
-
-        $dpAmount = $this->calculator->calculateDpAmount(
-            $totalAmount,
-            $totalAfterDiscount ?? $totalAmount,
-            $data['dp_type'] ?? null,
-            isset($data['dp_value']) && $data['dp_value'] !== '' ? (float) $data['dp_value'] : null
-        );
-
-        return [
-            'discountAmount' => (int) $discountAmount,
-            'totalAfterDiscount' => $totalAfterDiscount,
-            'dpAmount' => (int) $dpAmount,
-        ];
-    }
-
-    /**
      * Membuat Invoice Alumunium (snapshot) dari penawaran yang baru dibuat.
      *
      * Seluruh field disalin dari penawaran; invoice berstatus "Belum Lunas".
      * Kolom quotation_number menautkan invoice ke penawaran asal.
+     * Invoice TIDAK mewarisi DP dari penawaran (penawaran memang tidak punya
+     * DP); DP bila diperlukan ditambahkan nanti langsung pada invoice.
      *
      * @param  AluminiumQuotation  $quotation  Penawaran yang baru dibuat
-     * @param  array               $data       Data form (sudah divalidasi)
      * @param  array               $items      Items ter-normalisasi
      * @param  int                 $totalAmount  Total amount
-     * @param  array               $calculations  Hasil kalkulasi discount/DP
+     * @param  int                 $discountAmount  Besaran diskon (0 bila tidak ada)
+     * @param  int|null            $totalAfterDiscount  Total setelah diskon
      * @return InvoiceAlumunium
      */
-    private function createLinkedInvoice(AluminiumQuotation $quotation, array $data, array $items, int $totalAmount, array $calculations): InvoiceAlumunium
-    {
+    private function createLinkedInvoice(
+        AluminiumQuotation $quotation,
+        array $items,
+        int $totalAmount,
+        int $discountAmount,
+        ?int $totalAfterDiscount
+    ): InvoiceAlumunium {
         return InvoiceAlumunium::create([
             'invoice_number' => $this->invoiceService->generateInvoiceNumber(),
             'quotation_number' => $quotation->quotation_number,
-            'invoice_date' => $data['date'],
-            'recipient' => $data['recipient'],
-            'regarding' => $data['subject'] ?? 'Penawaran Harga',
+            'invoice_date' => $quotation->date,
+            'recipient' => $quotation->recipient,
+            'regarding' => $quotation->subject,
             'project_description' => $quotation->project_description,
             'items' => $items,
             'total_amount' => $totalAmount,
-            'discount_type' => $data['discount_type'] ?? null,
-            'discount_value' => $data['discount_value'] ?? null,
-            'total_after_discount' => $calculations['totalAfterDiscount'],
-            'dp_type' => $data['dp_type'] ?? null,
-            'dp_value' => $data['dp_value'] ?? null,
-            'dp_amount' => $calculations['dpAmount'] > 0 ? $calculations['dpAmount'] : null,
-            'selected_payment_accounts' => $data['selected_payment_accounts'] ?? [],
-            'signed_by_id' => $data['signed_by_id'] ?? null,
-            'division_id' => $data['division_id'] ?? null,
+            'discount_type' => $quotation->discount_type,
+            'discount_value' => $quotation->discount_value,
+            'total_after_discount' => $totalAfterDiscount,
+            'dp_type' => null,
+            'dp_value' => null,
+            'dp_amount' => null,
+            'selected_payment_accounts' => $quotation->selected_payment_accounts ?? [],
+            'signed_by_id' => $quotation->signed_by_id,
+            'division_id' => $quotation->division_id,
         ]);
     }
 }

@@ -35,8 +35,6 @@ class UpdateAluminiumQuotationRequest extends FormRequest
             'items' => 'required|array|min:1',
             'discount_type' => 'nullable|in:percentage,amount',
             'discount_value' => 'nullable|numeric|min:0',
-            'dp_type' => 'nullable|in:percentage,amount',
-            'dp_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',

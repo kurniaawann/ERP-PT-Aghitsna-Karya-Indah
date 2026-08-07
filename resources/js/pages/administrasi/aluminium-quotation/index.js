@@ -2,11 +2,12 @@
  * Penawaran Aluminium (Aluminium Quotation) — JavaScript Halaman Index
  *
  * Modul ini menangani seluruh logika front-end halaman penawaran aluminium.
- * Diadaptasi dari modul Invoice Alumunium (Finance) karena format item,
- * discount, dan DP kini identik:
+ * Diadaptasi dari modul Invoice Alumunium (Finance) karena format item dan
+ * discount kini identik:
  * - Parsing & format input mata uang / desimal berformat Indonesia
  * - Perhitungan live total per baris item dan grand total (mode tambah & edit)
- * - Perhitungan diskon & DP secara live dengan validasi batas (warning)
+ * - Perhitungan diskon secara live dengan validasi batas (warning)
+ *   (catatan: penawaran TIDAK memiliki DP — DP adalah konsep invoice)
  * - Auto-generate nomor penawaran saat modal tambah dibuka (AJAX)
  * - Validasi pemilihan rekening pembayaran (submit dinonaktifkan bila kosong)
  * - Tambah / hapus item row secara dinamis + re-index field items
@@ -141,7 +142,7 @@ window.calculateEditRowTotal = calculateEditRowTotal;
 /**
  * Hitung grand total seluruh item pada modal ADD.
  * Menampilkan hasil pada #invoice-total-preview lalu memanggil
- * calculateDiscount() agar diskon & DP ikut dihitung ulang.
+ * calculateDiscount() agar diskon ikut dihitung ulang.
  */
 function updateInvoiceTotal() {
     let grandTotal = 0;
@@ -185,19 +186,19 @@ function updateEditInvoiceTotal(input) {
 }
 
 /**
- * Aktifkan / nonaktifkan section & field diskon dan DP pada modal ADD.
+ * Aktifkan / nonaktifkan section & field diskon pada modal ADD.
  */
 function setAddDependentSections(hasTotal) {
-    ['discount-type', 'discount-value', 'dp-type', 'dp-value'].forEach(id => {
+    ['discount-type', 'discount-value'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = !hasTotal;
     });
-    ['discount-section', 'dp-section'].forEach(id => {
+    ['discount-section'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('opacity-40', !hasTotal);
     });
     if (!hasTotal) {
-        ['discount-error', 'discount-amount-error', 'dp-error', 'dp-amount-error', 'discount-summary'].forEach(id => {
+        ['discount-error', 'discount-amount-error', 'discount-summary'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.add('hidden');
         });
@@ -205,19 +206,19 @@ function setAddDependentSections(hasTotal) {
 }
 
 /**
- * Aktifkan / nonaktifkan section & field diskon dan DP pada modal EDIT.
+ * Aktifkan / nonaktifkan section & field diskon pada modal EDIT.
  */
 function setEditDependentSections(quotationNumber, hasTotal) {
-    ['discount-type-edit-', 'discount-value-edit-', 'dp-type-edit-', 'dp-value-edit-'].forEach(prefix => {
+    ['discount-type-edit-', 'discount-value-edit-'].forEach(prefix => {
         const el = document.getElementById(prefix + quotationNumber);
         if (el) el.disabled = !hasTotal;
     });
-    ['discount-section-edit-', 'dp-section-edit-'].forEach(prefix => {
+    ['discount-section-edit-'].forEach(prefix => {
         const el = document.getElementById(prefix + quotationNumber);
         if (el) el.classList.toggle('opacity-40', !hasTotal);
     });
     if (!hasTotal) {
-        ['discount-error-edit-', 'discount-amount-error-edit-', 'dp-error-edit-', 'dp-amount-error-edit-', 'discount-summary-edit-'].forEach(prefix => {
+        ['discount-error-edit-', 'discount-amount-error-edit-', 'discount-summary-edit-'].forEach(prefix => {
             const el = document.getElementById(prefix + quotationNumber);
             if (el) el.classList.add('hidden');
         });
@@ -225,13 +226,12 @@ function setEditDependentSections(quotationNumber, hasTotal) {
 }
 
 // ==========================================
-// DISCOUNT & DP CALCULATIONS
+// DISCOUNT CALCULATIONS
 // ==========================================
 
 /**
  * Hitung jumlah diskon dan total setelah diskon pada modal ADD.
  * Guard: percentage >= 100% -> warning + cap; amount >= total -> warning.
- * PENTING: DP dihitung dari sisa setelah diskon -> panggil calculateDP().
  */
 function calculateDiscount() {
     const discountType = document.getElementById('discount-type')?.value;
@@ -290,83 +290,9 @@ function calculateDiscount() {
     const hasDiscount = discountType && discountValue > 0;
     const discountSummaryEl = document.getElementById('discount-summary');
     if (discountSummaryEl) discountSummaryEl.classList.toggle('hidden', !hasDiscount);
-
-    calculateDP();
-}
-
-/**
- * Hitung jumlah DP pada modal ADD.
- * DP dihitung dari SISA SETELAH DISKON (calculationBase), bukan total kotor.
- */
-function calculateDP() {
-    const dpType = document.getElementById('dp-type')?.value;
-    const dpValueInput = document.getElementById('dp-value');
-    let dpValue = parseDecimalInput(dpValueInput);
-    const dpError = document.getElementById('dp-error');
-    const dpAmountError = document.getElementById('dp-amount-error');
-
-    if (dpValueInput) {
-        if (!dpType) {
-            dpValueInput.value = '';
-            dpValue = 0;
-        }
-    }
-
-    let baseTotal = 0;
-    document.querySelectorAll('.item-row').forEach(row => {
-        const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-        baseTotal += (volume * harga);
-    });
-    baseTotal = Math.round(baseTotal);
-
-    setAddDependentSections(baseTotal > 0);
-
-    const discountType = document.getElementById('discount-type')?.value;
-    let discountValue = parseDecimalInput(document.getElementById('discount-value'));
-    if (discountType === 'percentage') discountValue = Math.min(discountValue, 100);
-
-    let discountAmount = 0;
-    if (discountType && discountValue > 0) {
-        discountAmount = discountType === 'percentage'
-            ? Math.round((baseTotal * discountValue) / 100)
-            : Math.round(discountValue);
-    }
-    if (discountType === 'amount' && discountAmount > baseTotal) {
-        discountAmount = baseTotal;
-    }
-
-    const totalAfterDiscount = Math.round(baseTotal - discountAmount);
-    const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
-
-    const isOverLimitPercent = dpType === 'percentage' && dpValue >= 100;
-    if (dpError) dpError.classList.toggle('hidden', !isOverLimitPercent);
-    if (dpType === 'percentage' && dpValue >= 100) {
-        dpValue = 100;
-    }
-
-    const isOverLimitAmount = dpType === 'amount'
-        && dpValue > 0
-        && calculationBase > 0
-        && dpValue >= calculationBase;
-    if (dpAmountError) dpAmountError.classList.toggle('hidden', !isOverLimitAmount);
-
-    let dpAmount = 0;
-    if (dpType && dpValue > 0) {
-        dpAmount = dpType === 'percentage'
-            ? Math.round((calculationBase * dpValue) / 100)
-            : Math.round(dpValue);
-    }
-    if (dpType === 'amount' && dpAmount > calculationBase) {
-        dpAmount = calculationBase;
-    }
-
-    const dpAmountEl = document.getElementById('dp-amount');
-    if (dpAmountEl) dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
 }
 
 window.calculateDiscount = calculateDiscount;
-window.calculateDP = calculateDP;
 
 /**
  * Hitung jumlah diskon dan total setelah diskon pada modal EDIT.
@@ -435,87 +361,9 @@ function calculateDiscountEdit(quotationNumber) {
     const hasDiscount = discountType && discountValue > 0;
     const discountSummaryEl = document.getElementById('discount-summary-edit-' + quotationNumber);
     if (discountSummaryEl) discountSummaryEl.classList.toggle('hidden', !hasDiscount);
-
-    calculateDPEdit(quotationNumber);
-}
-
-/**
- * Hitung jumlah DP pada modal EDIT.
- * DP dihitung dari total SETELAH diskon (calculationBase).
- */
-function calculateDPEdit(quotationNumber) {
-    const typeEl = document.getElementById('dp-type-edit-' + quotationNumber);
-    const valueEl = document.getElementById('dp-value-edit-' + quotationNumber);
-    const dpType = typeEl?.value;
-    let dpValue = parseDecimalInput(valueEl);
-    const dpError = document.getElementById('dp-error-edit-' + quotationNumber);
-    const dpAmountError = document.getElementById('dp-amount-error-edit-' + quotationNumber);
-
-    if (valueEl) {
-        if (!dpType) {
-            valueEl.value = 0;
-            dpValue = 0;
-        }
-    }
-
-    const modal = document.getElementById('editModal-' + quotationNumber);
-    let baseTotal = 0;
-    if (modal) {
-        modal.querySelectorAll('.item-row-edit').forEach(row => {
-            const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-            baseTotal += (volume * harga);
-        });
-    }
-    baseTotal = Math.round(baseTotal);
-
-    setEditDependentSections(quotationNumber, baseTotal > 0);
-
-    const discountType = document.getElementById('discount-type-edit-' + quotationNumber)?.value;
-    let discountValue = parseDecimalInput(document.getElementById('discount-value-edit-' + quotationNumber));
-    if (discountType === 'percentage') discountValue = Math.min(discountValue, 100);
-
-    let discountAmount = 0;
-    if (discountType && discountValue > 0) {
-        discountAmount = discountType === 'percentage'
-            ? Math.round((baseTotal * discountValue) / 100)
-            : Math.round(discountValue);
-    }
-    if (discountType === 'amount' && discountAmount > baseTotal) {
-        discountAmount = baseTotal;
-    }
-
-    const totalAfterDiscount = Math.round(baseTotal - discountAmount);
-    const calculationBase = totalAfterDiscount > 0 ? totalAfterDiscount : baseTotal;
-
-    const isOverLimitPercent = dpType === 'percentage' && dpValue >= 100;
-    if (dpError) dpError.classList.toggle('hidden', !isOverLimitPercent);
-    if (dpType === 'percentage' && dpValue >= 100) {
-        dpValue = 100;
-    }
-
-    const isOverLimitAmount = dpType === 'amount'
-        && dpValue > 0
-        && calculationBase > 0
-        && dpValue >= calculationBase;
-    if (dpAmountError) dpAmountError.classList.toggle('hidden', !isOverLimitAmount);
-
-    let dpAmount = 0;
-    if (dpType && dpValue > 0) {
-        dpAmount = dpType === 'percentage'
-            ? Math.round((calculationBase * dpValue) / 100)
-            : Math.round(dpValue);
-    }
-    if (dpType === 'amount' && dpAmount > calculationBase) {
-        dpAmount = calculationBase;
-    }
-
-    const dpAmountEl = document.getElementById('dp-amount-edit-' + quotationNumber);
-    if (dpAmountEl) dpAmountEl.textContent = 'Rp ' + dpAmount.toLocaleString('id-ID');
 }
 
 window.calculateDiscountEdit = calculateDiscountEdit;
-window.calculateDPEdit = calculateDPEdit;
 
 // ==========================================
 // PAYMENT ACCOUNT VALIDATION

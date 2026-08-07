@@ -161,7 +161,6 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $items = $quotation->items ?? [];
                 $grandTotal = (int) ($quotation->total_amount ?? 0);
                 $discountAmount = ($quotation->discount_type && (float) $quotation->discount_value > 0) ? (int) $quotation->getDiscountAmount() : 0;
-                $dpAmount = ($quotation->dp_type && (float) $quotation->dp_value > 0) ? (int) $quotation->getDpAmount() : 0;
                 $itemStartRow = $currentRow + 1;
 
                 foreach ($items as $index => $item) {
@@ -195,17 +194,6 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     $currentRow++;
                     $sheet->setCellValue("E{$currentRow}", 'Discount' . ($quotation->discount_type === 'percentage' ? ' (' . number_format((float) $quotation->discount_value, 2, ',', '.') . '%)' : ''));
                     $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($discountAmount, 0, ',', '.'));
-                    $sheet->getStyle("E{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                }
-
-                // DP row (optional)
-                if ($dpAmount > 0) {
-                    $currentRow++;
-                    $sheet->setCellValue("E{$currentRow}", 'DP');
-                    $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($dpAmount, 0, ',', '.'));
                     $sheet->getStyle("E{$currentRow}")->getFont()->setBold(true);
                     $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true);
                     $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);

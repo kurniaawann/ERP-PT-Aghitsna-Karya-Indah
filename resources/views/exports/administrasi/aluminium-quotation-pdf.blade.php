@@ -209,7 +209,6 @@
             $items = $q->items ?? [];
             $grandTotal = $q->total_amount;
             $discountAmount = ($q->discount_type && (float) $q->discount_value > 0) ? $q->getDiscountAmount() : 0;
-            $dpAmount = ($q->dp_type && (float) $q->dp_value > 0) ? $q->getDpAmount() : 0;
             $selectedIds = $q->selected_payment_accounts ?? [];
             if (!empty($selectedIds)) {
                 $payAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedIds)->orderBy('id')->get();
@@ -312,14 +311,6 @@
                     <td class="c">Discount
                         {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
                     <td class="r">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
-                </tr>
-            @endif
-
-            @if ($dpAmount > 0)
-                <tr>
-                    <td colspan="4" class="empty-cell"></td>
-                    <td class="c">DP</td>
-                    <td class="r">Rp &nbsp;-{{ number_format($dpAmount, 0, ',', '.') }}</td>
                 </tr>
             @endif
 

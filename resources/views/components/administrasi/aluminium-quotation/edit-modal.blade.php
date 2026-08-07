@@ -4,8 +4,11 @@
      Form edit penawaran — pola identik dengan Invoice Alumunium:
      - Data terisi otomatis dari penawaran yang dipilih
      - Daftar Item (flat, dinamis via JS, pre-populated)
-     - Total, Discount (opsional), DP (opsional)
+     - Total & Discount (opsional)
      - Tanda Tangan (opsional), Rekening Pembayaran (pre-selected)
+
+     Catatan: penawaran TIDAK memiliki DP — DP adalah konsep pembayaran
+     invoice, ditambahkan nanti pada Invoice Alumunium jika diperlukan.
 
      Seluruh elemen memakai suffix -{quotation_number} agar kalkulasi
      berjalan per modal tanpa saling mengganggu.
@@ -156,49 +159,6 @@
                 <span class="text-sm font-bold text-text-primary">Total Setelah Discount:</span>
                 <span id="total-after-discount-edit-{{ $quotation->quotation_number }}"
                     class="text-sm font-bold text-green-600">Rp 0</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- DP Section -->
-    <div class="mb-3 p-3 border rounded bg-blue-50" id="dp-section-edit-{{ $quotation->quotation_number }}">
-        <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div>
-                <label class="block text-text-label text-sm mb-1">Tipe DP</label>
-                <select name="dp_type" id="dp-type-edit-{{ $quotation->quotation_number }}"
-                    class="w-full border rounded p-2"
-                    onchange="calculateDPEdit('{{ $quotation->quotation_number }}')">
-                    <option value="" {{ !$quotation->dp_type ? 'selected' : '' }}>Tidak Ada DP</option>
-                    <option value="percentage" {{ $quotation->dp_type == 'percentage' ? 'selected' : '' }}>Persentase
-                        (%)</option>
-                    <option value="amount" {{ $quotation->dp_type == 'amount' ? 'selected' : '' }}>Nominal (Rp)
-                    </option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-text-label text-sm mb-1">Nilai DP</label>
-                <input type="text" inputmode="decimal" name="dp_value"
-                    id="dp-value-edit-{{ $quotation->quotation_number }}"
-                    value="{{ $quotation->dp_value ?? 0 }}" class="w-full border rounded p-2" placeholder="0"
-                    oninput="formatDecimalInput(this); calculateDPEdit('{{ $quotation->quotation_number }}')">
-                <div id="dp-error-edit-{{ $quotation->quotation_number }}"
-                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                    <i class="fa-solid fa-exclamation-circle"></i>
-                    <span>Persentase DP tidak boleh 100% atau lebih</span>
-                </div>
-                <div id="dp-amount-error-edit-{{ $quotation->quotation_number }}"
-                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                    <i class="fa-solid fa-exclamation-circle"></i>
-                    <span>Nominal DP tidak boleh lebih dari atau sama dengan total</span>
-                </div>
-            </div>
-        </div>
-        <div class="mt-2 p-2 bg-white rounded">
-            <div class="flex justify-between">
-                <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
-                <span id="dp-amount-edit-{{ $quotation->quotation_number }}"
-                    class="text-sm font-bold text-blue-600">Rp 0</span>
             </div>
         </div>
     </div>
