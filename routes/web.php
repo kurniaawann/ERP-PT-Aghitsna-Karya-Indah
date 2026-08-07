@@ -21,6 +21,7 @@ use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Report\TransactionCategoryController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
+use App\Http\Controllers\Report\FinalReportController;
 use App\Http\Controllers\Sdm\EmployeeController;
 use App\Http\Controllers\Sdm\AttendanceController;
 use App\Http\Controllers\Sdm\OvertimeController;
@@ -131,6 +132,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/stock-report/items-dropdown', [StockReportController::class, 'itemsDropdown'])->name('stock-report.items-dropdown');
     Route::get('/stock-report/export/pdf', [StockReportController::class, 'exportPdf'])->name('stock-report.export.pdf');
     Route::get('/stock-report/export/excel', [StockReportController::class, 'exportExcel'])->name('stock-report.export.excel');
+
+    // Route Laporan Akhir (Gabungan: Stok, Penjualan, Pengeluaran) — semua role yang punya akses ke salah satu laporan
+    Route::get('/report/final', [FinalReportController::class, 'index'])->name('report.final');
 
     // Route Item Invoice
     Route::get('/item-invoice', [ItemInvoiceController::class, 'index'])->name('item-invoice.index');

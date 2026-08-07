@@ -56,7 +56,7 @@ class User extends Authenticatable
             return '/proyek-invoice';
         }
         if ($this->isGeneralManager()) {
-            return '/report/sales';
+            return '/report/final';
         }
         return '/dashboard';
     }

@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * @returns {void}
      */
     const searchInput = document.querySelector('input[name="search"]');
-    if (searchInput) {
+    if (searchInput && !searchInput.hasAttribute('data-search-debounce')) {
         searchInput.addEventListener('input', debounce(function () {
             this.form.requestSubmit();
         }, 500));

@@ -64,7 +64,7 @@
 
                 {{-- Submenu --}}
                 <ul id="inventoryDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') || request()->is('stock-report*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -107,17 +107,6 @@
                                 {{ request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Pengembalian Barang</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('stock-report.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('stock-report*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-chart-bar w-4 
-                                {{ request()->is('stock-report*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Stok</span>
                         </a>
                     </li>
                 </ul>
@@ -409,94 +398,7 @@
             </li>
             @endif
 
-            {{-- Report Dropdown --}}
-            @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
-            <li>
-                <button onclick="toggleDropdown('laporanDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
-
-                    <div class="flex items-center">
-                        <i class="fas fa-chart-line w-5 text-text-tertiary group-hover:text-primary">
-                        </i>
-                        <span class="ml-3 font-medium">Report</span>
-                    </div>
-
-                    <i id="laporanDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
-                    </i>
-                </button>
-
-                @if ($isAdmin)
-                {{-- Admin: Report without Laporan Penjualan --}}
-                <ul id="laporanDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/expense*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/transaction-category') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-tags w-4 
-                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('report.expense') }}"
-                            class="flex items-center px-4 py-2 rounded-lg group
-                                {{ request()->is('report/expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-chart-pie w-4 
-                                {{ request()->is('report/expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
-                        </a>
-                    </li>
-                </ul>
-                @else
-                {{-- Super Admin: Full Report menu --}}
-                <ul id="laporanDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/sales*') || request()->is('report/expense*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/transaction-category') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-tags w-4 
-                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('report.sales') }}"
-                            class="flex items-center px-4 py-2 rounded-lg group
-                                {{ request()->is('report/sales*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-chart-line w-4 
-                                {{ request()->is('report/sales*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Penjualan</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('report.expense') }}"
-                            class="flex items-center px-4 py-2 rounded-lg group
-                                {{ request()->is('report/expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-chart-pie w-4 
-                                {{ request()->is('report/expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
-                        </a>
-                    </li>
-                </ul>
-                @endif
-            </li>
-            @endif
-
-            {{-- Report Module ONLY for General Manager --}}
-            @if ($isGeneralManager)
+            {{-- Report Dropdown (Laporan Akhir untuk semua role yang punya akses laporan) --}}
             <li>
                 <button onclick="toggleDropdown('laporanDropdown')"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
@@ -513,32 +415,37 @@
                 </button>
 
                 <ul id="laporanDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('report/sales*') || request()->is('report/expense*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/final*') ? '' : 'hidden' }}">
+
+                    {{-- Kategori Transaksi: hanya Super Admin & Admin (bukan General Manager) --}}
+                    @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
                     <li>
-                        <a href="{{ route('report.sales') }}"
-                            class="flex items-center px-4 py-2 rounded-lg group
-                                {{ request()->is('report/sales*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                        <a href="{{ url('/transaction-category') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('transaction-category*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-chart-line w-4 
-                                {{ request()->is('report/sales*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                class="fas fa-tags w-4 
+                                {{ request()->is('transaction-category*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Penjualan</span>
+                            <span class="ml-3 text-sm font-medium">Kategori Transaksi</span>
                         </a>
                     </li>
+                    @endif
+
+                    {{-- Laporan Akhir: gabungan Laporan Stok, Penjualan, Pengeluaran --}}
                     <li>
-                        <a href="{{ route('report.expense') }}"
-                            class="flex items-center px-4 py-2 rounded-lg group
-                                {{ request()->is('report/expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                        <a href="{{ route('report.final') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('report/final*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <i
-                                class="fas fa-chart-pie w-4 
-                                {{ request()->is('report/expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                class="fas fa-file-alt w-4 
+                                {{ request()->is('report/final*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Pengeluaran</span>
+                            <span class="ml-3 text-sm font-medium">Laporan Akhir</span>
                         </a>
                     </li>
                 </ul>
             </li>
-            @endif
 
             {{-- SDM (Sumber Daya Manusia) Dropdown --}}
             @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
