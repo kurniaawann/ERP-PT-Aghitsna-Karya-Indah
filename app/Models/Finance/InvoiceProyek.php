@@ -31,6 +31,7 @@ class InvoiceProyek extends Model
 
     protected $fillable = [
         'invoice_number',
+        'quotation_number',
         'invoice_date',
         'recipient',
         'regarding',
@@ -93,6 +94,20 @@ class InvoiceProyek extends Model
         return $this->hasMany(PaymentProof::class, 'invoice_number', 'invoice_number')
             ->where('invoice_type', 'proyek')
             ->orderByDesc('created_at');
+    }
+
+    /**
+     * Penawaran Proyek yang menjadi sumber invoice ini (snapshot).
+     *
+     * Relasi inverse dari ProjectQuotation::invoices(). Berdasarkan design
+     * snapshot, relasi ini bisa bernilai null jika penawaran sumber sudah
+     * dihapus (FK ON DELETE SET NULL).
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function quotation()
+    {
+        return $this->belongsTo(\App\Models\Administrasi\ProjectQuotation::class, 'quotation_number', 'quotation_number');
     }
 
     /**

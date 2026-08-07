@@ -8,7 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
  * Form Request untuk validasi pembaruan Penawaran Proyek.
  *
  * Memastikan semua field wajib terisi, minimal 1 rekening pembayaran
- * dipilih, data items valid, dan volume bernilai numerik.
+ * dipilih, data items valid, dan discount memiliki tipe yang diperbolehkan.
+ * Penawaran TIDAK memiliki DP — DP adalah konsep pembayaran invoice.
  */
 class UpdateProjectQuotationRequest extends FormRequest
 {
@@ -32,7 +33,13 @@ class UpdateProjectQuotationRequest extends FormRequest
         return [
             'recipient' => 'required|string|max:255',
             'date' => 'required|date',
-            'items_json' => 'required|string',
+            'items' => 'required|array|min:1',
+            'items.*.keterangan' => 'required|string|max:255',
+            'items.*.volume' => 'required|numeric|min:0',
+            'items.*.satuan' => 'nullable|string|max:255',
+            'items.*.harga' => 'required|numeric|min:0',
+            'discount_type' => 'nullable|in:percentage,amount',
+            'discount_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',
@@ -54,8 +61,11 @@ class UpdateProjectQuotationRequest extends FormRequest
             'recipient.max' => 'Nama penerima maksimal 255 karakter.',
             'date.required' => 'Tanggal penawaran harus diisi.',
             'date.date' => 'Format tanggal tidak valid.',
-            'items_json.required' => 'Data item harus diisi.',
-            'items_json.string' => 'Data item harus berupa string JSON.',
+            'items.required' => 'Minimal harus ada 1 item.',
+            'items.min' => 'Minimal harus ada 1 item.',
+            'items.*.keterangan.required' => 'Keterangan item wajib diisi.',
+            'items.*.volume.required' => 'Volume item wajib diisi.',
+            'items.*.harga.required' => 'Harga item wajib diisi.',
             'selected_payment_accounts.required' => 'Minimal 1 rekening pembayaran harus dipilih.',
             'selected_payment_accounts.array' => 'Data rekening pembayaran tidak valid.',
             'selected_payment_accounts.min' => 'Minimal 1 rekening pembayaran harus dipilih.',
@@ -66,51 +76,5 @@ class UpdateProjectQuotationRequest extends FormRequest
             'signed_by_id.exists' => 'Nama penandatangan yang dipilih tidak ditemukan.',
             'division_id.exists' => 'Divisi yang dipilih tidak ditemukan.',
         ];
-    }
-
-    /**
-     * Menambahkan validasi custom setelah aturan utama dijalankan.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function withValidator($validator): void
-    {
-        $validator->after(function ($validator) {
-            $itemsJson = $this->input('items_json');
-
-            if (!$itemsJson) {
-                return;
-            }
-
-            $items = json_decode($itemsJson, true);
-
-            if (!is_array($items) || count($items) === 0) {
-                $validator->errors()->add('items_json', 'Minimal 1 item harus ditambahkan.');
-                return;
-            }
-
-            foreach ($items as $index => $item) {
-                if (empty($item['description'])) {
-                    $validator->errors()->add('items_json', 'Item ' . ($index + 1) . ': Keterangan harus diisi.');
-                    return;
-                }
-
-                if (empty($item['unit_price']) || (int) $item['unit_price'] <= 0) {
-                    $validator->errors()->add('items_json', 'Item ' . ($index + 1) . ': Harga satuan harus lebih dari 0.');
-                    return;
-                }
-
-                if (!empty($item['volume']) && !is_numeric($item['volume'])) {
-                    $validator->errors()->add('items_json', 'Volume harus berupa angka.');
-                    return;
-                }
-
-                if (isset($item['volume']) && is_numeric($item['volume']) && $item['volume'] < 0) {
-                    $validator->errors()->add('items_json', 'Volume tidak boleh bernilai negatif.');
-                    return;
-                }
-            }
-        });
     }
 }

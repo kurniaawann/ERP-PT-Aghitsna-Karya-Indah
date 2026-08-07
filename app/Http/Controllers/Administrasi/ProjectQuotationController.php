@@ -91,24 +91,18 @@ class ProjectQuotationController extends Controller
             'date' => $quotation->date,
             'subject' => $quotation->subject,
             'recipient' => $quotation->recipient,
-                'project_description' => $quotation->project_description,
+            'project_description' => $quotation->project_description,
             'total_amount' => $quotation->total_amount,
+            'discount_type' => $quotation->discount_type,
+            'discount_value' => $quotation->discount_value,
+            'total_after_discount' => $quotation->total_after_discount,
             'amount_in_words' => $quotation->amount_in_words,
             'selected_payment_accounts' => is_string($quotation->selected_payment_accounts)
                 ? json_decode($quotation->selected_payment_accounts, true)
                 : $quotation->selected_payment_accounts,
             'signed_by_id' => $quotation->signed_by_id,
             'division_id' => $quotation->division_id,
-            'items' => $quotation->items->map(function ($item) {
-                return [
-                    'order_number' => $item->order_number,
-                    'description' => $item->description,
-                    'volume' => $item->volume,
-                    'unit' => $item->unit,
-                    'unit_price' => $item->unit_price,
-                    'total_price' => $item->total_price,
-                ];
-            })->toArray(),
+            'items' => $quotation->items ?? [],
         ]);
     }
 
@@ -125,7 +119,7 @@ class ProjectQuotationController extends Controller
         $quotation = $this->service->create($request->validated());
 
         return redirect()->route('project-quotation.index')
-            ->with('success', "Penawaran {$quotation->quotation_number} berhasil ditambahkan!");
+            ->with('success', "Penawaran {$quotation->quotation_number} berhasil ditambahkan! Invoice Proyek otomatis dibuat.");
     }
 
     // ─── Update ───────────────────────────────────────────────────────────────
@@ -198,7 +192,7 @@ class ProjectQuotationController extends Controller
                 $paymentAccounts = PaymentAccount::where('is_active', true)->get();
             }
 
-            $items = $quotation->items()->orderBy('order_number')->get();
+            $items = $quotation->items ?? [];
 
             $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
                 ->setPaper('a4', 'portrait');
@@ -272,8 +266,6 @@ class ProjectQuotationController extends Controller
             } else {
                 $quotation->paymentAccounts = PaymentAccount::where('is_active', true)->get();
             }
-
-            $quotation->items = $quotation->items()->orderBy('order_number')->get();
         }
 
         // Single PDF view or bulk view

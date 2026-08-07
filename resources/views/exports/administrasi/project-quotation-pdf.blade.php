@@ -212,12 +212,12 @@
             <div class="page-break"></div>
         @endif
         @php
-            $items = $q->items()->orderBy('order_number')->get();
-            $selectedAccountIds = is_string($q->selected_payment_accounts)
-                ? json_decode($q->selected_payment_accounts, true)
-                : ($q->selected_payment_accounts ?? []);
-            if (!empty($selectedAccountIds)) {
-                $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+            $items = $q->items ?? [];
+            $grandTotal = $q->total_amount;
+            $discountAmount = ($q->discount_type && (float) $q->discount_value > 0) ? $q->getDiscountAmount() : 0;
+            $selectedIds = $q->selected_payment_accounts ?? [];
+            if (!empty($selectedIds)) {
+                $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedIds)
                     ->orderBy('id')
                     ->get();
             } else {
@@ -304,19 +304,28 @@
             @foreach ($items as $idx => $item)
                 <tr>
                     <td class="c">{{ $idx + 1 }}.</td>
-                    <td class="l">{{ $item->description }}</td>
-                    <td class="c">{{ $item->volume ?? '-' }}</td>
-                    <td class="c">{{ $item->unit ?? '-' }}</td>
-                    <td class="r">Rp &nbsp;{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                    <td class="r">Rp &nbsp;{{ number_format($item->total_price, 0, ',', '.') }}</td>
+                    <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
+                    <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
+                    <td class="c">{{ $item['satuan'] ?? '-' }}</td>
+                    <td class="r">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="r">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
                 </tr>
             @endforeach
 
+            @if ($discountAmount > 0)
+                <tr>
+                    <td colspan="4" class="empty-cell"></td>
+                    <td class="c">Discount
+                        {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
+                    <td class="r">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
+                </tr>
+            @endif
+
             {{-- Grand Total --}}
             <tr class="row-grand-total">
-                <td colspan="3" class="empty-cell"></td>
-                <td colspan="2" class="c yellow-cell">Jumlah</td>
-                <td class="r yellow-cell">Rp &nbsp;{{ number_format($q->total_amount, 0, ',', '.') }}</td>
+                <td colspan="4" class="empty-cell"></td>
+                <td class="c yellow-cell">Total</td>
+                <td class="r yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
@@ -347,7 +356,7 @@
                 style="max-height: 55px; max-width: 160px;">
         @endif
         <div class="signature-line">{{ $q->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
-        <div class="signature-division">{{ $q->division?->name ?? 'Divisi Alumunium' }}</div>
+        <div class="signature-division">{{ $q->division?->name ?? 'Divisi Proyek' }}</div>
     </div>
     @endforeach
 

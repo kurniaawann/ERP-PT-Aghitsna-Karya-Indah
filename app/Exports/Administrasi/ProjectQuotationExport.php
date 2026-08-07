@@ -21,7 +21,7 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
 
     public function __construct($quotationNumber)
     {
-        $this->quotation = ProjectQuotation::with(['items'])
+        $this->quotation = ProjectQuotation::query()
             ->where('quotation_number', $quotationNumber)
             ->firstOrFail();
     }
@@ -158,21 +158,23 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                     ]
                 ]);
 
-                // Items (Flat structure)
-                $items = $quotation->items()->orderBy('order_number')->get();
+                // Items and financial summary
+                $items = $quotation->items ?? [];
+                $grandTotal = (int) ($quotation->total_amount ?? 0);
+                $discountAmount = ($quotation->discount_type && (float) $quotation->discount_value > 0) ? (int) $quotation->getDiscountAmount() : 0;
                 $itemStartRow = $currentRow + 1;
 
                 foreach ($items as $index => $item) {
                     $currentRow++;
                     $sheet->setCellValue("A{$currentRow}", ($index + 1) . '.');
-                    $sheet->setCellValue("B{$currentRow}", $item->description);
-                    $sheet->setCellValue("C{$currentRow}", $item->volume ?? '-');
-                    $sheet->setCellValue("D{$currentRow}", $item->unit ?? '-');
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item->unit_price, 0, ',', '.'));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($item->total_price, 0, ',', '.'));
+                    $sheet->setCellValue("B{$currentRow}", '   ' . ($item['keterangan'] ?? ''));
+                    $volume = $item['volume'] ?? 0;
+                    $sheet->setCellValue("C{$currentRow}", ($volume !== null && $volume !== '') ? number_format((float) $volume, 2, ',', '.') : '-');
+                    $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '-');
+                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'] ?? 0, 0, ',', '.'));
+                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.'));
 
                     // Style alignment
-                    $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -188,22 +190,39 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                     ]
                 ]);
 
-                // Grand Total row
+                // Discount row (optional)
+                if ($discountAmount > 0) {
+                    $currentRow++;
+                    $sheet->setCellValue("E{$currentRow}", 'Discount' . ($quotation->discount_type === 'percentage' ? ' (' . number_format((float) $quotation->discount_value, 2, ',', '.') . '%)' : ''));
+                    $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($discountAmount, 0, ',', '.'));
+                    $sheet->getStyle("E{$currentRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                }
+
+                // Grand Total row - match PDF layout: empty 4 cols + "Total" in E + amount in F
                 $currentRow++;
 
-                // Empty cells for No, Keterangan, Volume (no background)
-                $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
+                // Empty cells for No, Keterangan, Volume, Satuan (no background, no border)
+                $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", '');
 
-                // Jumlah spanning Satuan + Harga
-                $sheet->mergeCells("D{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("D{$currentRow}", 'Jumlah');
+                // "Total" label in Harga column
+                $sheet->setCellValue("E{$currentRow}", 'Total');
 
                 // Amount
-                $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($quotation->total_amount, 0, ',', '.'));
+                $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($grandTotal, 0, ',', '.'));
 
-                // Style only the yellow cells (D-F)
-                $sheet->getStyle("D{$currentRow}:F{$currentRow}")->applyFromArray([
+                // Style empty cells (no border)
+                $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                    'borders' => [
+                        'outline' => ['borderStyle' => Border::BORDER_NONE]
+                    ]
+                ]);
+
+                // Style yellow cells (E-F)
+                $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true, 'size' => 12],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
@@ -214,14 +233,7 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
                     ]
                 ]);
 
-                // Remove borders from empty cells (A-C)
-                $sheet->getStyle("A{$currentRow}:C{$currentRow}")->applyFromArray([
-                    'borders' => [
-                        'outline' => ['borderStyle' => Border::BORDER_NONE]
-                    ]
-                ]);
-
-                $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 // Terbilang
@@ -300,7 +312,7 @@ class ProjectQuotationExport implements FromCollection, WithEvents, WithTitle, W
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $division = $quotation->division?->name ?? 'Divisi Alumunium';
+                $division = $quotation->division?->name ?? 'Divisi Proyek';
                 $sheet->setCellValue("A{$currentRow}", $division);
             },
         ];

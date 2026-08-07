@@ -13,8 +13,10 @@ use App\Models\User;
 /**
  * Model untuk data Penawaran Proyek (Project Quotation).
  *
- * Model ini menyimpan data header penawaran proyek,
- * termasuk nomor penawaran, tanggal, penerima, total, dan relasi ke items.
+ * Model ini menyimpan data header penawaran proyek, termasuk nomor
+ * penawaran, tanggal, penerima, total, dan items (format flat JSON
+ * {keterangan, volume, satuan, harga}) serta discount opsional.
+ * Penawaran TIDAK memiliki DP — DP adalah konsep pembayaran invoice.
  *
  * Primary key: quotation_number (string, bukan auto-increment)
  */
@@ -35,6 +37,10 @@ class ProjectQuotation extends Model
         'recipient',
         'project_description',
         'total_amount',
+        'items',
+        'discount_type',
+        'discount_value',
+        'total_after_discount',
         'amount_in_words',
         'selected_payment_accounts',
         'signed_by_id',
@@ -46,6 +52,9 @@ class ProjectQuotation extends Model
         'date' => 'date',
         'total_amount' => 'integer',
         'sequence_number' => 'integer',
+        'items' => 'json',
+        'total_after_discount' => 'integer',
+        'discount_value' => 'decimal:2',
         'selected_payment_accounts' => 'array',
     ];
 
@@ -57,14 +66,18 @@ class ProjectQuotation extends Model
     // ─── Relationships ────────────────────────────────────────────────────────
 
     /**
-     * Relasi ke items penawaran.
+     * Invoice Proyek yang dibuat otomatis dari penawaran ini.
+     *
+     * Relasi inverse dari InvoiceProyek::quotation(). Berdasarkan design
+     * snapshot, invoice tetap ada meski penawaran dihapus (FK ON DELETE SET
+     * NULL), sehingga relasi ini bisa bernilai kosong setelah penawaran
+     * dihapus.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function items()
+    public function invoices()
     {
-        return $this->hasMany(ProjectQuotationItem::class, 'quotation_number', 'quotation_number')
-            ->orderBy('order_number');
+        return $this->hasMany(\App\Models\Finance\InvoiceProyek::class, 'quotation_number', 'quotation_number');
     }
 
     /**
@@ -94,6 +107,20 @@ class ProjectQuotation extends Model
     public function division(): BelongsTo
     {
         return $this->belongsTo(Division::class, 'division_id');
+    }
+
+    // ─── Calculator Helpers ───────────────────────────────────────────────────
+
+    /**
+     * Menghitung jumlah discount berdasarkan total amount.
+     */
+    public function getDiscountAmount(float $totalAmount = null): float
+    {
+        return app(\App\Services\Finance\InvoiceCalculatorService::class)->calculateDiscountAmount(
+            $totalAmount ?? (float) ($this->total_amount ?? 0),
+            $this->discount_type,
+            $this->discount_value ? (float) $this->discount_value : null
+        );
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
