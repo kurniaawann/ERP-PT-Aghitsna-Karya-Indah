@@ -115,7 +115,7 @@ class SalesReportService
             ->paginate(10)
             ->appends($request->all());
 
-        $fakturYear = $request->get('year', date('Y'));
+        $fakturYear = $request->filled('year') ? $request->input('year') : date('Y');
         $offset = ($paginator->currentPage() - 1) * $paginator->perPage();
         $fakturA = 317 + $offset;
         $fakturB = 598 + $offset;
@@ -199,7 +199,7 @@ class SalesReportService
      */
     public function getMonthlyTrend(Request $request): array
     {
-        $year = $request->get('year', date('Y'));
+        $year = $request->filled('year') ? $request->input('year') : date('Y');
 
         $trend = SalesRecap::whereYear('date', $year)
             ->when($request->filled('status'), function ($q) use ($request) {
@@ -282,7 +282,7 @@ class SalesReportService
             ->limit($limit)
             ->get();
 
-        $fakturYear = $request->get('year', date('Y'));
+        $fakturYear = $request->filled('year') ? $request->input('year') : date('Y');
         $fakturA = 317;
         $fakturB = 598;
         foreach ($projects as $item) {
@@ -332,7 +332,7 @@ class SalesReportService
         $projects = [];
         $grandTotal = 0;
 
-        $fakturYear = $request->get('year', date('Y'));
+        $fakturYear = $request->filled('year') ? $request->input('year') : date('Y');
         $fakturA = 317;
         $fakturB = 598;
 

@@ -213,7 +213,7 @@
 
             {{-- Category Expense Chart --}}
             <div class="bg-surface-base p-6 rounded-xl shadow">
-                <h3 class="text-lg font-semibold text-text-primary mb-4">📊 Total Pengeluaran Per Kategori</h3>
+                <h3 class="text-lg font-semibold text-text-primary mb-4">📊 Pemasukan & Pengeluaran Per Kategori</h3>
                 <div style="position: relative; height: 400px;">
                     <canvas id="categoryExpenseChart"></canvas>
                 </div>

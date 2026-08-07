@@ -143,51 +143,50 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // GRAFIK PENGELUARAN PER KATEGORI
+    // GRAFIK PEMASUKAN & PENGELUARAN PER KATEGORI
     //
-    // Horizontal bar chart yang menampilkan total pengeluaran
-    // per kategori. Warna diambil dari categoryColors map.
+    // Horizontal bar chart yang menampilkan total pemasukan (hijau) dan
+    // total pengeluaran (merah) per kategori. Satu kategori hanya mengisi
+    // salah satu dataset (income ATAU expense) karena tiap kategori sudah
+    // memiliki tipe sendiri (INCOME/EXPENSE).
     // ============================================================
 
     /**
-     * Merender horizontal bar chart total pengeluaran per kategori.
+     * Merender horizontal bar chart pemasukan & pengeluaran per kategori.
      *
      * Data dari window.categoryDistributionData (backend:
-     * ExpenseReportService::getCategoryDistribution). Warna setiap bar
-     * dipetakan lewat map categoryColors; kategori yang tidak terdaftar
-     * memakai warna fallback abu-abu (#9ca3af).
+     * ExpenseReportService::getCategoryDistribution). Hijau untuk pemasukan,
+     * merah untuk pengeluaran; kategori yang tidak terdaftar menampilkan 0.
      *
      * @returns {void}
      */
     const categoryExpenseCanvas = document.getElementById('categoryExpenseChart');
     if (categoryExpenseCanvas && window.categoryDistributionData) {
-        const categoryColors = {
-            'UANG MASUK PENJUALAN': '#22c55e',
-            'UPAH KERJA / KASBON': '#ff6b6b',
-            'ATK / OPERASIONAL & ALAT': '#3b82f6',
-            'PENGELUARAN MATERIAL': '#8b5cf6',
-            'PENGELUARAN PEMBELIAN COIL': '#f59e0b',
-            'TRANSPORT': '#14b8a6',
-            'TOKEN LISTRIK': '#06b6d4',
-            'LAIN - LAIN': '#ec4899',
-        };
-
         const categoryNames = window.categoryDistributionData.map(item => item.category_name);
+        const categoryIncomes = window.categoryDistributionData.map(item => item.income);
         const categoryExpenses = window.categoryDistributionData.map(item => item.expense);
-        const categoryChartColors = categoryNames.map(name => categoryColors[name] || '#9ca3af');
 
         const ctx = categoryExpenseCanvas.getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: categoryNames,
-                datasets: [{
-                    label: 'Total Pengeluaran (Rp)',
-                    data: categoryExpenses,
-                    backgroundColor: categoryChartColors,
-                    borderRadius: 6,
-                    borderSkipped: false,
-                }]
+                datasets: [
+                    {
+                        label: 'Pemasukan (Rp)',
+                        data: categoryIncomes,
+                        backgroundColor: '#22c55e',
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    },
+                    {
+                        label: 'Pengeluaran (Rp)',
+                        data: categoryExpenses,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }
+                ]
             },
             options: {
                 indexAxis: 'y',

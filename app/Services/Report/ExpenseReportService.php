@@ -196,7 +196,7 @@ class ExpenseReportService
      */
     public function getMonthlyTrend(Request $request): array
     {
-        $year = $request->get('year', date('Y'));
+        $year = $request->filled('year') ? $request->input('year') : date('Y');
 
         $trend = ExpenseRecap::whereYear('transaction_date', $year)
             ->where(function ($q) {
@@ -474,7 +474,7 @@ class ExpenseReportService
         }
 
         if (!empty($month)) {
-            $year = $request->get('year', date('Y'));
+        $year = $request->filled('year') ? $request->input('year') : date('Y');
             $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
             return 'BULAN ' . strtoupper($monthName) . ' ' . $year;
         }

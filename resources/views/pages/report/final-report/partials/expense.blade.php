@@ -24,17 +24,9 @@
                 {{-- Filter Tahun --}}
                 <x-filters.year-filter :value="request('year')" responsive="custom" />
 
-                {{-- Filter Kategori --}}
+                {{-- Filter Kategori (tipe transaksi sudah melekat pada tiap kategori) --}}
                 <x-filters.select-filter name="category" :value="request('category')" :options="$categories"
                     placeholder="Semua Kategori" :autoSubmit="true" responsive="custom" />
-
-                {{-- Filter Tipe --}}
-                <x-filters.select-filter name="type" :value="request('type')"
-                    :options="collect([
-                        (object) ['id' => 'income', 'name' => 'Pemasukan'],
-                        (object) ['id' => 'expense', 'name' => 'Pengeluaran'],
-                    ])"
-                    placeholder="Semua Tipe" :autoSubmit="true" responsive="custom" />
 
                 {{-- Search (debounce via JS, 500ms) --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari transaksi..." responsive="custom" />
@@ -49,7 +41,6 @@
                         'month' => request('month'),
                         'year' => request('year'),
                         'category' => request('category'),
-                        'type' => request('type'),
                         'search' => request('search'),
                     ]"
                     size="sm" responsive="custom" />
@@ -141,7 +132,7 @@
 
         {{-- Category Expense Chart --}}
         <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4">📊 Total Pengeluaran Per Kategori</h3>
+            <h3 class="text-lg font-semibold text-text-primary mb-4">📊 Pemasukan & Pengeluaran Per Kategori</h3>
             <div style="position: relative; height: 400px;">
                 <canvas id="categoryExpenseChart"></canvas>
             </div>
