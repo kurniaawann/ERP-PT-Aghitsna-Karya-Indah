@@ -99,6 +99,11 @@ class PaymentProofService
     /**
      * Memvalidasi apakah nominal pembayaran melebihi sisa tagihan.
      *
+     * Perhitungan sisa tagihan konsisten dengan InvoiceCalculatorService::getRemainingAmount,
+     * yaitu (total + PPN) - diskon - DP - terbayar. PPN dimasukkan karena merupakan
+     * bagian tagihan kepada pelanggan; sebelumnya PPN tidak dihitung sehingga nominal
+     * yang sah di depan (frontend) ditolak di belakang (backend).
+     *
      * @param  \Illuminate\Database\Eloquent\Model $invoice
      * @param  int                                 $amount
      * @param  int|null                            $excludePaymentProofId  ID yang dikecualikan (untuk update)
@@ -107,7 +112,8 @@ class PaymentProofService
     public function validatePaymentAmount($invoice, int $amount, ?int $excludePaymentProofId = null): ?string
     {
         $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
-        $grandTotal = (int) ($invoice->total_amount ?? 0);
+        $ppnAmount = (int) (method_exists($invoice, 'getPpnAmount') ? $invoice->getPpnAmount() : 0);
+        $grandTotal = (int) ($invoice->total_amount ?? 0) + $ppnAmount;
         $dpAmount = (int) $this->calculator->getDpAmount($invoice);
         $discountAmount = (int) $this->calculator->getDiscountAmount($invoice);
         $remainingAmount = max(0, $grandTotal - $discountAmount - $dpAmount - $paidAmount);
