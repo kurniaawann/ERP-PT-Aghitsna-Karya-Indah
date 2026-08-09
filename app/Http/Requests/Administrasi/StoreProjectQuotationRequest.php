@@ -43,6 +43,7 @@ class StoreProjectQuotationRequest extends FormRequest
             'attachment' => 'nullable|string|max:255',
             'project_description' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
             'signed_by_id' => 'nullable|exists:executives,id',
             'division_id' => 'nullable|exists:divisions,id',
         ];
@@ -71,6 +72,7 @@ class StoreProjectQuotationRequest extends FormRequest
             'attachment.max' => 'Lampiran maksimal 255 karakter.',
             'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
             'location.max' => 'Lokasi maksimal 255 karakter.',
+            'city.max' => 'Kota maksimal 255 karakter.',
             'signed_by_id.exists' => 'Nama penandatangan yang dipilih tidak ditemukan.',
             'division_id.exists' => 'Divisi yang dipilih tidak ditemukan.',
         ];

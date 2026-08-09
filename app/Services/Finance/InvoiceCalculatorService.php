@@ -194,7 +194,9 @@ class InvoiceCalculatorService
      *
      * Logika: SalesRecap dihitung beda dari invoice biasa.
      * - SalesRecap: sisa = total_selling - total bayar (tidak ada diskon/DP).
-     * - Invoice lain: sisa = total - diskon - DP - total bayar.
+     * - Invoice lain: sisa = (total - diskon + PPN) - DP - total bayar.
+     *   PPN dimasukkan karena merupakan bagian tagihan kepada pelanggan
+     *   (konsisten dengan grand total di detail modal & PDF/Excel).
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @return int  Sisa tagihan
@@ -205,8 +207,10 @@ class InvoiceCalculatorService
             return (int) max(0, ($invoice->total_selling ?? 0) - $this->getTotalPaidAmount($invoice));
         }
 
+        $ppnAmount = (int) (method_exists($invoice, 'getPpnAmount') ? $invoice->getPpnAmount() : 0);
+
         return $this->calculateRemainingAmount(
-            (int) ($invoice->total_amount ?? 0),
+            (int) ($invoice->total_amount ?? 0) + $ppnAmount,
             (int) $this->getDiscountAmount($invoice),
             (int) $this->getDpAmount($invoice),
             $this->getTotalPaidAmount($invoice)

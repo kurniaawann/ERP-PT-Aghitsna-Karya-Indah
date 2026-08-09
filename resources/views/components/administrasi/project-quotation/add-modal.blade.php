@@ -70,6 +70,12 @@
             <input type="text" name="location" class="w-full border rounded p-2"
                 placeholder="Contoh: Jl. Karbela 3, Jakarta Selatan">
         </div>
+
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Kota</label>
+            <input type="text" name="city" class="w-full border rounded p-2"
+                placeholder="Contoh: Jakarta (default)">
+        </div>
     @endif
 
     <div id="items-container" class="mb-4">

@@ -349,7 +349,7 @@
         {{-- ═══ TANDA TANGAN ═════════════════════════════════════════════════════════ --}}
         <div class="signature-container clearfix">
             <div class="signature-box">
-                <div>Jakarta, {{ \Carbon\Carbon::parse($q->date)->isoFormat('D MMMM YYYY') }}</div>
+                <div>{{ $q->city ?? 'Jakarta' }}, {{ \Carbon\Carbon::parse($q->date)->isoFormat('D MMMM YYYY') }}</div>
                 <div>Hormat Kami,</div>
                 <div>{{ $q->division?->name ?? 'Pelaksana Pekerjaan' }}</div>
                 <div class="signature-img-wrapper">

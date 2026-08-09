@@ -60,6 +60,11 @@
             <label class="block text-text-primary mb-1">Lokasi</label>
             <input type="text" name="location" value="{{ $quotation->location }}" class="w-full border rounded p-2">
         </div>
+
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Kota</label>
+            <input type="text" name="city" value="{{ $quotation->city ?? 'Jakarta' }}" class="w-full border rounded p-2">
+        </div>
     @endif
 
     <div id="items-container-edit-{{ $quotation->quotation_number }}" class="mb-4">

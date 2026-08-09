@@ -242,7 +242,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 }
 
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
-                    $dpAmount = $invoice->getDpAmount($totalAmount);
+                    $dpAmount = $invoice->getDpAmount();
 
                     $currentRow++;
                     $dpLabel = 'DP';
@@ -278,14 +278,15 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 $discountAmountVal = 0;
                 $dpAmountVal = 0;
+                $ppnAmountVal = $invoice->getPpnAmount();
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
                     $discountAmountVal = $invoice->getDiscountAmount($totalAmount);
                 }
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
-                    $dpAmountVal = $invoice->getDpAmount($totalAmount);
+                    $dpAmountVal = $invoice->getDpAmount();
                 }
-                $hasDiscountOrDp = $discountAmountVal > 0 || $dpAmountVal > 0;
-                $remainingAmount = $totalAmount - $discountAmountVal - $dpAmountVal;
+                $hasDiscountOrDp = $discountAmountVal > 0 || $dpAmountVal > 0 || $ppnAmountVal > 0;
+                $remainingAmount = $totalAmount - $discountAmountVal + $ppnAmountVal - $dpAmountVal;
 
                 if ($hasDiscountOrDp) {
                     $currentRow++;
@@ -359,7 +360,8 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($totalAmount)) . ' rupiah');
+                $grandTotalVal = $totalAmount - $discountAmountVal + $ppnAmountVal;
+                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($grandTotalVal)) . ' rupiah');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
 
                 $currentRow += 2;

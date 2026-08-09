@@ -240,7 +240,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 }
 
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
-                    $dpAmount = $invoice->getDpAmount($totalAmount);
+                    $dpAmount = $invoice->getDpAmount();
 
                     $currentRow++;
                     $dpLabel = 'DP';
@@ -280,7 +280,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $discountAmountVal = $invoice->getDiscountAmount($totalAmount);
                 }
                 if ($invoice->dp_value && $invoice->dp_value > 0) {
-                    $dpAmountVal = $invoice->getDpAmount($totalAmount);
+                    $dpAmountVal = $invoice->getDpAmount();
                 }
                 $hasDiscountOrDp = $discountAmountVal > 0 || $dpAmountVal > 0;
                 $remainingAmount = $totalAmount - $discountAmountVal - $dpAmountVal;

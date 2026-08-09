@@ -312,7 +312,7 @@
 
                 @if ($invoice->dp_value && $invoice->dp_value > 0)
                     @php
-                        $dpAmount = $invoice->getDpAmount($totalAmount);
+                        $dpAmount = $invoice->getDpAmount();
                     @endphp
 
                     <!-- DP Row -->

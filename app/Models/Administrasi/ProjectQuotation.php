@@ -40,6 +40,7 @@ class ProjectQuotation extends Model
         'recipient',
         'project_description',
         'location',
+        'city',
         'total_amount',
         'items',
         'discount_type',

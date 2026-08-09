@@ -8,6 +8,7 @@ use App\Http\Requests\Finance\UpdateProyekInvoiceRequest;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Sdm\Division;
 use App\Models\Sdm\Executive;
+use App\Exports\Finance\ProyekInvoiceAdminExport;
 use App\Exports\Finance\ProyekInvoiceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -181,10 +182,15 @@ class ProyekInvoiceController extends Controller
      */
     public function printExcel($invoiceNumber)
     {
+        $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+        $export = $isAdmin
+            ? new ProyekInvoiceAdminExport($invoiceNumber)
+            : new ProyekInvoiceExport($invoiceNumber);
+
         $safeFileName = str_replace(['/', '\\'], '-', $invoiceNumber);
         $date = date('Y-m-d');
-        $prefix = (auth()->check() && auth()->user()->role === 'admin') ? 'Invoice' : 'Invoice_Proyek';
+        $prefix = $isAdmin ? 'Invoice' : 'Invoice_Proyek';
 
-        return Excel::download(new ProyekInvoiceExport($invoiceNumber), "{$prefix}_{$safeFileName}_{$date}.xlsx");
+        return Excel::download($export, "{$prefix}_{$safeFileName}_{$date}.xlsx");
     }
 }

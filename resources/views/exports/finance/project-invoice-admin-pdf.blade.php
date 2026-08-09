@@ -85,7 +85,7 @@
         }
 
         .meta-info {
-            width: 45%;
+            width: 20%;
         }
 
         .meta-table {
@@ -244,7 +244,7 @@
             ? $invoice->getDiscountAmount($totalAmount)
             : 0;
         $dpAmount = ($invoice->dp_value && $invoice->dp_value > 0)
-            ? $invoice->getDpAmount($totalAmount)
+            ? $invoice->getDpAmount()
             : 0;
         $ppnAmount = $invoice->getPpnAmount();
         $hasAdjustments = $discountAmount > 0 || $dpAmount > 0 || $ppnAmount > 0;
@@ -315,7 +315,7 @@
     {{-- ═══ PARAGRAF PEMBUKA ══════════════════════════════════════════════════════ --}}
     <div class="opening-text">
         Dengan Hormat,<br>
-        Dengan ini kami sampaikan Invoice untuk pekerjaan <strong>{{ $invoice->project_description }},</strong> <strong>{{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}</strong>, sebagai berikut :
+        Dengan ini kami sampaikan Invoice untuk pekerjaan {{ $invoice->project_description }},<strong>Lokasi {{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}, </strong>sebagai berikut : 
     </div>
 
     {{-- ═══ TABEL ITEMS (TIDAK DIUBAH) ════════════════════════════════════════════ --}}
@@ -415,9 +415,9 @@
             <table class="bank-table">
                 @foreach ($paymentAccounts as $acc)
                     <tr>
-                        <td><strong>{{ $acc->bank_name }}</strong></td>
-                        <td><strong>{{ $acc->account_number }}</strong></td>
-                        <td><strong>{{ $acc->account_holder }}</strong></td>
+                        <td>{{ $acc->bank_name }}</td>
+                        <td>{{ $acc->account_number }}</td>
+                        <td>{{ $acc->account_holder }}</td>
                     </tr>
                 @endforeach
             </table>
@@ -428,7 +428,7 @@
     <div class="signature-container clearfix">
         <div class="signature-box">
             <div>Hormat Kami,</div>
-            <div><strong>PT. AGHITSNA KARYA INDAH</strong></div>
+            <div>PT. AGHITSNA KARYA INDAH</div>
             <div class="signature-img-wrapper">
                 @if ($invoice->signedBy?->signature_image)
                     <img src="{{ storage_path('app/public/' . $invoice->signedBy->signature_image) }}" alt="Tanda Tangan">

@@ -314,7 +314,7 @@
                         $discountAmount = $invoice->getDiscountAmount($totalAmount);
                     }
                     if ($invoice->dp_value && $invoice->dp_value > 0) {
-                        $dpAmount = $invoice->getDpAmount($totalAmount);
+                        $dpAmount = $invoice->getDpAmount();
                     }
                     $ppnAmount = $invoice->getPpnAmount();
                     $hasDiscountDpOrPpn = $discountAmount > 0 || $dpAmount > 0 || $ppnAmount > 0;
@@ -347,7 +347,7 @@
 
                 @if ($invoice->dp_value && $invoice->dp_value > 0)
                     @php
-                        $dpAmount = $invoice->getDpAmount($totalAmount);
+                        $dpAmount = $invoice->getDpAmount();
                     @endphp
 
                     <!-- DP Row -->
