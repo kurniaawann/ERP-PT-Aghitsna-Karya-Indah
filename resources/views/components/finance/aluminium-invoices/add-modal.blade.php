@@ -30,6 +30,12 @@
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Nama Proyek</label>
+        <input type="text" name="proyek" class="w-full border rounded p-2"
+            placeholder="Contoh: Rumah Kost" oninput="this.setCustomValidity('')">
+    </div>
+
     <div id="items-container" class="mb-4">
         <div id="items-error"
             class="hidden mb-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">

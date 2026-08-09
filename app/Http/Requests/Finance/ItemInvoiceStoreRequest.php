@@ -34,6 +34,7 @@ class ItemInvoiceStoreRequest extends FormRequest
             'recipient' => 'required|string|max:255',
             'regarding' => 'nullable|string|max:255',
             'project_description' => 'required|string|max:255',
+            'proyek' => 'nullable|string|max:255',
             'items' => 'required|json',
             'selected_payment_accounts' => 'nullable|array',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
@@ -56,6 +57,7 @@ class ItemInvoiceStoreRequest extends FormRequest
             'recipient.max' => 'Nama penerima maksimal 255 karakter.',
             'project_description.required' => 'Deskripsi proyek wajib diisi.',
             'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
+            'proyek.max' => 'Nama proyek maksimal 255 karakter.',
             'items.required' => 'Minimal harus ada 1 item.',
             'items.json' => 'Format item tidak valid.',
         ];

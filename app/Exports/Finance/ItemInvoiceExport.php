@@ -103,17 +103,23 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
                 $currentRow = 7;
-                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", '            ' . $invoice->recipient);
+                $sheet->setCellValue("B{$currentRow}", $invoice->recipient);
+                $sheet->mergeCells("B{$currentRow}:E{$currentRow}");
+
+                if (!empty($invoice->proyek)) {
+                    $currentRow++;
+                    $sheet->setCellValue("B{$currentRow}", $invoice->proyek);
+                    $sheet->mergeCells("B{$currentRow}:E{$currentRow}");
+                }
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan ' . ($invoice->project_description ?? ''));
+                $sheet->setCellValue("A{$currentRow}", !empty($invoice->proyek)
+                    ? 'Dengan ini kami sampaikan invoice proyek ' . $invoice->proyek . ', ' . ($invoice->project_description ?? '')
+                    : 'Dengan ini kami sampaikan ' . ($invoice->project_description ?? ''));
 
                 $currentRow += 2;
                 $sheet->setCellValue("A{$currentRow}", 'No');

@@ -41,6 +41,7 @@ class ProjectQuotation extends Model
         'project_description',
         'location',
         'city',
+        'proyek',
         'total_amount',
         'items',
         'discount_type',

@@ -5,11 +5,6 @@
     <meta charset="UTF-8">
     <title>Penawaran Proyek</title>
     <style>
-        /* @page {
-            size: A4;
-            margin: 1.5cm 1.5cm 1.5cm 1.5cm;
-        } */
-
         * {
             margin: 0;
             padding: 0;
@@ -21,7 +16,7 @@
             font-size: 11px;
             line-height: 1.5;
             color: #000;
-            padding: 15mm 15mm 15mm 15mm;
+            padding: 15mm;
         }
 
         /* ── Header (Table Layout) ──────────────────────────── */
@@ -93,6 +88,27 @@
             margin-left: 80px;
         }
 
+        .recipient-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .recipient-table td {
+            border: none;
+            padding: 2px 0;
+            vertical-align: top;
+        }
+
+        .recipient-table .recipient-label-cell {
+            font-weight: bold;
+            width: 80px;
+            white-space: nowrap;
+        }
+
+        .recipient-table .recipient-name-cell {
+            padding-left: 5px;
+        }
+
         .ditempat {
             margin: 8px 0;
             font-size: 11px;
@@ -136,12 +152,13 @@
             padding: 8px 5px;
         }
 
-        .items-table tbody tr.row-grand-total td.empty-cell {
-            background-color: transparent;
-            border: none;
+        /* Menghilangkan border pada cell kosong (No, Keterangan, Volume, Satuan) */
+        .items-table td.empty-cell {
+            background-color: transparent !important;
+            border: none !important;
         }
 
-        .items-table tbody tr.row-grand-total td.yellow-cell {
+        .items-table td.yellow-cell {
             background-color: #FFFF00;
         }
 
@@ -235,7 +252,7 @@
             </td>
             <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
                 <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                    PENAWARAN PROYEK
+                    PENAWARAN
                 </div>
             </td>
             <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
@@ -256,17 +273,17 @@
                         <tr>
                             <td style="padding-right: 5px;" valign="top">No</td>
                             <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ $q->quotation_number }}</td>
+                            <td valign="top">{{ $q->quotation_number }}</td>
                         </tr>
                         <tr>
                             <td style="padding-right: 5px;" valign="top">Tanggal</td>
                             <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ \Carbon\Carbon::parse($q->date)->isoFormat('DD MMMM YYYY') }}</td>
+                            <td valign="top">{{ \Carbon\Carbon::parse($q->date)->isoFormat('DD MMMM YYYY') }}</td>
                         </tr>
                         <tr>
                             <td style="padding-right: 5px;" valign="top">Hal</td>
                             <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ $q->subject }}</td>
+                            <td valign="top">{{ $q->subject }}</td>
                         </tr>
                     </table>
                 </div>
@@ -276,16 +293,25 @@
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <div class="recipient-label">
-            <strong>Kepada Yth :</strong>
-        </div>
-        <div class="recipient-name">
-            {{ $q->recipient }}
-        </div>
+        <table class="recipient-table">
+            <tr>
+                <td class="recipient-label-cell"><strong>Kepada Yth :</strong></td>
+                <td class="recipient-name-cell">
+                    <div>{{ $q->recipient }}</div>
+                    @if (!empty($q->proyek))
+                        <div>{{ $q->proyek }}</div>
+                    @endif
+                </td>
+            </tr>
+        </table>
     </div>
 
     <div class="opening">
-        Dengan ini kami sampaikan {{ $q->project_description }}
+        @if (!empty($q->proyek))
+            Dengan ini kami sampaikan penawaran proyek {{ $q->proyek }}, {{ $q->project_description }}
+        @else
+            Dengan ini kami sampaikan {{ $q->project_description }}
+        @endif
     </div>
 
     {{-- ═══ ITEMS TABLE (FLAT - NO GROUPING) ═══════════════════════════════════════ --}}
@@ -307,16 +333,16 @@
                     <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
                     <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
                     <td class="c">{{ $item['satuan'] ?? '-' }}</td>
-                    <td class="r">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="c">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
                     <td class="r">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
                 </tr>
             @endforeach
 
+            {{-- Baris Discount (Kolom 1-4 tanpa border/garis) --}}
             @if ($discountAmount > 0)
                 <tr>
                     <td colspan="4" class="empty-cell"></td>
-                    <td class="c">Discount
-                        {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
+                    <td class="c">Discount {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
                     <td class="r">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
                 </tr>
             @endif
@@ -332,8 +358,7 @@
 
     {{-- ═══ FOOTER ══════════════════════════════════════════════════════════════════ --}}
     <div class="terbilang">
-        <em>Terbilang :
-            {{ $q->amount_in_words ?? ucwords(terbilang($q->total_amount)) . ' rupiah' }}</em>
+        <em>Terbilang : {{ $q->amount_in_words ?? ucwords(terbilang($q->total_amount)) . ' rupiah' }}</em>
     </div>
 
     <div class="payment-info">

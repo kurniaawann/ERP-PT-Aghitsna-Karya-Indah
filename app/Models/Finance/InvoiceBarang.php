@@ -24,6 +24,7 @@ class InvoiceBarang extends Model
         'recipient',
         'regarding',
         'project_description',
+        'proyek',
         'items',
         'total_capital',
         'total_selling',

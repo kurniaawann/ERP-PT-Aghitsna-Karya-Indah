@@ -116,19 +116,26 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
 
                 // Recipient (Row 8)
                 $currentRow = 8;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
-                // Recipient Name (Row 9)
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", '            ' . $quotation->recipient);
+                // Recipient Name (Row 8, kolom B)
+                $sheet->setCellValue("B{$currentRow}", $quotation->recipient);
+                $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
+
+                // Nama Proyek (Row 9, kolom B)
+                if (!empty($quotation->proyek)) {
+                    $currentRow++;
+                    $sheet->setCellValue("B{$currentRow}", $quotation->proyek);
+                    $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
+                }
 
                 // Opening text (Row 11)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan ' . ($quotation->project_description ?? ''));
+                $sheet->setCellValue("A{$currentRow}", !empty($quotation->proyek)
+                    ? 'Dengan ini kami sampaikan penawaran proyek ' . $quotation->proyek . ', ' . ($quotation->project_description ?? '')
+                    : 'Dengan ini kami sampaikan ' . ($quotation->project_description ?? ''));
 
                 // Table Header (Row 14)
                 $currentRow += 2;

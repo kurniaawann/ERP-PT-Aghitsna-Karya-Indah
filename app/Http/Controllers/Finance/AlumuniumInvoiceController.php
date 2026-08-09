@@ -132,6 +132,7 @@ class AlumuniumInvoiceController extends Controller
                 'recipient' => $request->recipient,
                 'regarding' => $request->regarding ?? null,
                 'project_description' => $request->project_description,
+                'proyek' => $request->proyek,
                 'items' => $items,
                 'total_amount' => $totalAmount,
                 'discount_type' => $request->discount_type,

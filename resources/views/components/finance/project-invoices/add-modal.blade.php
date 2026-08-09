@@ -31,6 +31,14 @@
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
+    @if (auth()->user()->role === 'superadmin')
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Nama Proyek</label>
+            <input type="text" name="proyek" class="w-full border rounded p-2"
+                placeholder="Contoh: Rumah Kost" oninput="this.setCustomValidity('')">
+        </div>
+    @endif
+
     @if (auth()->user()->isAdmin())
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Lokasi (Opsional)</label>

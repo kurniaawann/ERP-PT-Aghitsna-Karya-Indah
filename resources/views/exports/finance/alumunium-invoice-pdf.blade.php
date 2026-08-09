@@ -105,6 +105,28 @@
             margin-bottom: 10px;
         }
 
+        .recipient-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0;
+        }
+
+        .recipient-table td {
+            border: none;
+            padding: 2px 0;
+            vertical-align: top;
+        }
+
+        .recipient-table .recipient-label-cell {
+            font-weight: bold;
+            width: 80px;
+            white-space: nowrap;
+        }
+
+        .recipient-table .recipient-name-cell {
+            padding-left: 5px;
+        }
+
         .description {
             margin: 5px 0;
             text-align: justify;
@@ -244,13 +266,26 @@
 </div>
         <!-- Recipient -->
         <div class="recipient">
-            <div class="recipient-label">Kepada Yth :</div>
-            <div class="recipient-name">{{ $invoice->recipient }}</div>
+            <table class="recipient-table">
+                <tr>
+                    <td class="recipient-label-cell">Kepada Yth :</td>
+                    <td class="recipient-name-cell">
+                        <div>{{ $invoice->recipient }}</div>
+                        @if (!empty($invoice->proyek))
+                            <div>{{ $invoice->proyek }}</div>
+                        @endif
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <!-- Description -->
         <div class="description">
-            Dengan ini kami sampaikan {{ $invoice->project_description }}
+            @if (!empty($invoice->proyek))
+                Dengan ini kami sampaikan invoice proyek {{ $invoice->proyek }}, {{ $invoice->project_description }}
+            @else
+                Dengan ini kami sampaikan {{ $invoice->project_description }}
+            @endif
         </div>
 
         <!-- Items Table -->

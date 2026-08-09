@@ -162,6 +162,7 @@ class ProyekInvoiceService
             ? $calculations['dpAmount']
             : null;
         $data['created_by'] = auth()->id();
+        $data['proyek'] = (auth()->check() && auth()->user()->role === 'superadmin') ? ($data['proyek'] ?? null) : null;
 
         return InvoiceProyek::create($data);
     }
@@ -187,6 +188,7 @@ class ProyekInvoiceService
             'recipient' => $data['recipient'],
             'regarding' => $data['regarding'] ?? null,
             'project_description' => $data['project_description'],
+            'proyek' => (auth()->check() && auth()->user()->role === 'superadmin') ? ($data['proyek'] ?? null) : null,
             'location' => $data['location'] ?? null,
             'items' => json_encode($items),
             'total_amount' => $totalAmount,

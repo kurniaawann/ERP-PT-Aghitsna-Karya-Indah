@@ -38,6 +38,12 @@
             oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Nama Proyek</label>
+        <input type="text" name="proyek" value="{{ $invoice->proyek }}" class="w-full border rounded p-2"
+            placeholder="Contoh: Rumah Kost" oninput="this.setCustomValidity('')">
+    </div>
+
     <div id="barang-items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
         <label class="block text-text-primary font-semibold mb-2">Item-Item Invoice <span
                 class="text-error">*</span></label>

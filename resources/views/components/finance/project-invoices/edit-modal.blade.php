@@ -41,6 +41,15 @@
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
+    @if (auth()->user()->role === 'superadmin')
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Nama Proyek</label>
+            <input type="text" name="proyek" value="{{ $invoice->proyek }}"
+                class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input"
+                placeholder="Contoh: Rumah Kost" oninput="this.setCustomValidity('')">
+        </div>
+    @endif
+
     @if (auth()->user()->isAdmin())
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Lokasi (Opsional)</label>

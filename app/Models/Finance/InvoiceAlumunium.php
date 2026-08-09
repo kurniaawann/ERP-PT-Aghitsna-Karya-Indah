@@ -40,6 +40,7 @@ class InvoiceAlumunium extends Model
         'recipient',
         'regarding',
         'project_description',
+        'proyek',
         'items',
         'total_amount',
         'discount_type',

@@ -25,6 +25,7 @@ class AluminiumQuotation extends Model
         'subject',
         'recipient',
         'project_description',
+        'proyek',
         'total_amount',
         'items',
         'discount_type',

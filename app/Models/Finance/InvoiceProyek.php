@@ -36,6 +36,7 @@ class InvoiceProyek extends Model
         'recipient',
         'regarding',
         'project_description',
+        'proyek',
         'location',
         'items',
         'total_amount',

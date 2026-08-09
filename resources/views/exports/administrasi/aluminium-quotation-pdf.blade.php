@@ -93,6 +93,27 @@
             margin-left: 80px;
         }
 
+        .recipient-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .recipient-table td {
+            border: none;
+            padding: 2px 0;
+            vertical-align: top;
+        }
+
+        .recipient-table .recipient-label-cell {
+            font-weight: bold;
+            width: 80px;
+            white-space: nowrap;
+        }
+
+        .recipient-table .recipient-name-cell {
+            padding-left: 5px;
+        }
+
         /* ── Opening text ───────────────────────────────────── */
         .opening {
             font-size: 10px;
@@ -269,16 +290,25 @@
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <div class="recipient-label">
-            <strong>Kepada Yth :</strong>
-        </div>
-        <div class="recipient-name">
-            {{ $q->recipient }}
-        </div>
+        <table class="recipient-table">
+            <tr>
+                <td class="recipient-label-cell"><strong>Kepada Yth :</strong></td>
+                <td class="recipient-name-cell">
+                    <div>{{ $q->recipient }}</div>
+                    @if (!empty($q->proyek))
+                        <div>{{ $q->proyek }}</div>
+                    @endif
+                </td>
+            </tr>
+        </table>
     </div>
 
     <div class="opening">
-        Dengan ini kami sampaikan {{ $q->project_description }}
+        @if (!empty($q->proyek))
+            Dengan ini kami sampaikan penawaran proyek {{ $q->proyek }}, {{ $q->project_description }}
+        @else
+            Dengan ini kami sampaikan {{ $q->project_description }}
+        @endif
     </div>
 
     {{-- ═══ ITEMS TABLE ═════════════════════════════════════════════════════════════ --}}
