@@ -4,6 +4,7 @@ namespace App\Models\Finance;
 
 use App\Models\Report\SalesRecap;
 use App\Services\Finance\InvoiceCalculatorService;
+use App\Services\Finance\PaymentProofService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,18 @@ use App\Models\Sdm\Executive;
 class InvoiceBarang extends Model
 {
     use HasFactory;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($invoice) {
+            foreach ($invoice->paymentProofs as $proof) {
+                app(PaymentProofService::class)->delete($proof->file_path);
+                $proof->delete();
+            }
+        });
+    }
 
     protected $table = 'barang_invoices';
     protected $primaryKey = 'invoice_number';
