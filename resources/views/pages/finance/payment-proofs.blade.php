@@ -1,7 +1,7 @@
 {{-- =====================================================================
      Halaman: Bukti Pembayaran (Payment Proofs)
      Tujuan: Mengelola bukti pembayaran untuk invoice proyek, invoice
-             alumunium, invoice barang, dan rekap penjualan, dengan hero
+             alumunium, dan invoice barang, dengan hero
              header, summary cards, filter modul/jenis invoice & pencarian,
              CRUD bukti (upload gambar), dan hapus massal.
      Data dari PaymentProofController@index:
@@ -11,13 +11,11 @@
      - $totalProofs      : Total jumlah bukti hasil filter.
      - $projectProofs    : Jumlah bukti bertipe invoice 'proyek'.
      - $alumuniumProofs  : Jumlah bukti bertipe 'alumunium' (non-admin).
-     - $salesRecapProofs : Jumlah bukti bertipe 'rekap_penjualan'.
+     - $barangProofs     : Jumlah bukti bertipe 'barang' (non-admin).
      - $moduleOptions    : Opsi filter modul ('finance' = Keuangan).
      - $invoiceTypeOptions: Opsi filter jenis invoice; berbeda antara
-                            admin (Invoice, Rekap Penjualan) dan non-admin
-                           (Invoice Proyek, Alumunium, Barang, Rekap Penjualan).
-     - $salesRecapOptions: Koleksi SalesRecap dari cache untuk pilihan
-                           dropdown saat membuat bukti rekap penjualan.
+                            admin (Invoice) dan non-admin
+                            (Invoice Proyek, Alumunium, Barang).
      - $availableInvoices: Data invoice yang tersedia untuk dipilih pada
                            form tambah/edit; di-expose ke
                            window.paymentProofInvoiceData via @json.
@@ -40,10 +38,8 @@
         {{-- Section: Header --}}
         {{-- Hero header: teks dan penjelasan disesuaikan per role.
              Alur auth()->user()->isAdmin():
-             - Admin  : kelola bukti 'invoice dan rekap penjualan',
-                        tahap pembayaran hanya untuk 'invoice'.
-             - Non-admin: kelola bukti 'invoice proyek dan alumunium',
-                        tahap pembayaran hanya untuk 'invoice proyek'. --}}
+             - Admin  : kelola bukti 'invoice'.
+             - Non-admin: kelola bukti 'invoice proyek, alumunium, dan barang'. --}}
         <div
             class="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-5 sm:p-6 text-white shadow-xl overflow-hidden relative">
             <div class="absolute inset-0 opacity-20"
@@ -56,7 +52,7 @@
                         Module</span>
                     <div>
                         <h1 class="text-3xl font-bold tracking-tight">Bukti Pembayaran</h1>
-                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()->isAdmin() ? 'invoice dan rekap penjualan' : 'invoice proyek, alumunium, dan barang' }}. Tahap pembayaran hanya berlaku untuk {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
+                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek, alumunium, dan barang' }}. Tahap pembayaran hanya berlaku untuk {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -68,7 +64,7 @@
 
         {{-- Section: Summary Cards --}}
         {{-- Empat kartu ringkasan (Total Bukti, Invoice/Proyek, Alumunium,
-             Rekap Penjualan). Kartu kedua memakai nama berbeda sesuai role:
+             Invoice Barang). Kartu kedua memakai nama berbeda sesuai role:
              admin = 'Invoice', non-admin = 'Invoice Proyek'. --}}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div
@@ -120,13 +116,13 @@
                 class="group rounded-2xl border border-secondary/20 bg-gradient-to-br from-secondary-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">Rekap Penjualan</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">Invoice Barang</p>
                         <p class="mt-2 text-3xl font-bold tracking-tight text-secondary">
-                            {{ number_format($salesRecapProofs) }}</p>
+                            {{ number_format($barangProofs) }}</p>
                     </div>
                     <div
                         class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-secondary ring-1 ring-secondary/10 transition-colors group-hover:bg-secondary group-hover:text-white">
-                        <i class="fa-solid fa-chart-line text-base"></i>
+                        <i class="fa-solid fa-box-open text-base"></i>
                     </div>
                 </div>
             </div>
@@ -201,7 +197,7 @@
          di-expose ke window.paymentProofInvoiceData.
          Alur @json($availableInvoices): array berstruktur
          ['finance' => ['proyek' => [...], 'alumunium' => [...],
-         'rekap_penjualan' => [...]]], berisi daftar invoice beserta
+         'barang' => [...]]], berisi daftar invoice beserta
          sisa tagihan/payment stage yang sudah dihitung service. --}}
     <script>
         /* global handleFormSubmit, parseCurrencyInput, formatRupiah, bindPaymentProofForm, validatePaymentProofAmount */

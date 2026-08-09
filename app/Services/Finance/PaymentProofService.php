@@ -44,9 +44,8 @@ class PaymentProofService
      * - 'proyek'          → tabel proyek_invoices, kolom invoice_number
      * - 'alumunium'       → tabel alumunium_invoices, kolom invoice_number
      * - 'barang'          → tabel barang_invoices, kolom invoice_number
-     * - 'rekap_penjualan' → tabel sales_recaps, kolom id_sales_recap
      *
-     * @param  string $invoiceType   Tipe invoice: proyek|alumunium|barang|rekap_penjualan
+     * @param  string $invoiceType   Tipe invoice: proyek|alumunium|barang
      * @param  string $invoiceNumber Nomor atau ID invoice
      * @return \Illuminate\Database\Eloquent\Model|null
      */
@@ -56,7 +55,6 @@ class PaymentProofService
             'proyek'           => InvoiceProyek::where('invoice_number', $invoiceNumber)->first(),
             'alumunium'        => InvoiceAlumunium::where('invoice_number', $invoiceNumber)->first(),
             'barang'           => InvoiceBarang::where('invoice_number', $invoiceNumber)->first(),
-            'rekap_penjualan'  => SalesRecap::where('id_sales_recap', $invoiceNumber)->first(),
             default            => null,
         };
     }
@@ -199,7 +197,7 @@ class PaymentProofService
             return ['success' => false, 'message' => $amount];
         }
 
-        $salesRecapId = $validated['invoice_type'] === 'rekap_penjualan' ? $validated['invoice_number'] : null;
+        $salesRecapId = null;
         $storedFile = null;
         $paymentStage = null;
 
@@ -290,7 +288,7 @@ class PaymentProofService
         $originalInvoiceType = $paymentProof->invoice_type;
         $originalInvoiceNumber = $paymentProof->invoice_number;
         $originalSalesRecapId = $paymentProof->sales_recap_id;
-        $salesRecapId = $validated['invoice_type'] === 'rekap_penjualan' ? $validated['invoice_number'] : null;
+        $salesRecapId = null;
         $storedFile = null;
 
         try {
@@ -522,7 +520,7 @@ class PaymentProofService
      */
     public function buildInvoiceOption($invoice, string $moduleType, string $invoiceType, $proofStageMap, array &$invoiceLookup): array
     {
-        $invoiceKey = $invoice instanceof SalesRecap ? $invoice->id_sales_recap : $invoice->invoice_number;
+        $invoiceKey = $invoice->invoice_number;
         $mapKey = $moduleType . '|' . $invoiceType . '|' . $invoiceKey;
         $proofMeta = $proofStageMap->get($mapKey);
         $nextStage = $invoiceType === 'proyek'
@@ -530,11 +528,9 @@ class PaymentProofService
             : null;
         $calcData = $this->calculator->buildInvoiceOptionData($invoice, $moduleType, $invoiceType);
 
-        $label = $invoice instanceof SalesRecap
-            ? $invoice->id_sales_recap . ' - ' . $invoice->name_proyek
-            : $invoice->invoice_number . ' - ' . $invoice->recipient;
+        $label = $invoice->invoice_number . ' - ' . $invoice->recipient;
 
-        if (!$invoice instanceof SalesRecap && !empty($invoice->project_description)) {
+        if (!empty($invoice->project_description)) {
             $label .= ' - ' . $invoice->project_description;
         }
 
@@ -551,46 +547,6 @@ class PaymentProofService
         $invoiceLookup[$moduleType][$invoiceType][$invoiceKey] = [
             'label'            => $label,
             'next_stage'       => $nextStage,
-            'paid_amount'      => $calcData['paid_amount'],
-            'net_amount'       => $calcData['net_amount'],
-            'remaining_amount' => $calcData['remaining_amount'],
-            'is_fully_paid'    => $calcData['is_fully_paid'],
-        ];
-
-        return $option;
-    }
-
-    /**
-     * Membangun data opsi sales recap untuk dropdown/modal.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @param  string                         $moduleType
-     * @param  string                         $invoiceType
-     * @param  \Illuminate\Support\Collection $proofStageMap
-     * @param  array                          &$invoiceLookup
-     * @return array
-     */
-    public function buildSalesRecapOption(SalesRecap $salesRecap, string $moduleType, string $invoiceType, $proofStageMap, array &$invoiceLookup): array
-    {
-        $mapKey = $moduleType . '|' . $invoiceType . '|' . $salesRecap->id_sales_recap;
-        $proofMeta = $proofStageMap->get($mapKey);
-        $calcData = $this->calculator->buildInvoiceOptionData($salesRecap, $moduleType, $invoiceType);
-
-        $label = $salesRecap->id_sales_recap . ' - ' . $salesRecap->name_proyek;
-
-        $option = [
-            'value'            => $salesRecap->id_sales_recap,
-            'label'            => $label,
-            'next_stage'       => null,
-            'paid_amount'      => $calcData['paid_amount'],
-            'net_amount'       => $calcData['net_amount'],
-            'remaining_amount' => $calcData['remaining_amount'],
-            'is_fully_paid'    => $calcData['is_fully_paid'],
-        ];
-
-        $invoiceLookup[$moduleType][$invoiceType][$salesRecap->id_sales_recap] = [
-            'label'            => $label,
-            'next_stage'       => null,
             'paid_amount'      => $calcData['paid_amount'],
             'net_amount'       => $calcData['net_amount'],
             'remaining_amount' => $calcData['remaining_amount'],
@@ -630,7 +586,6 @@ class PaymentProofService
      * - Invoice proyek: sinkronkan status SalesRecap terkait (via syncSalesRecapStatus).
      *   Jika salesRecapId berubah (update), status sales recap LAMA juga ikut
      *   disinkronkan ulang agar tidak ada yang tersisa "Lunas" padahal proof sudah pindah.
-     * - Invoice rekap_penjualan: sinkronkan status sales recap langsung.
      *
      * @param  string      $invoiceType
      * @param  string      $invoiceNumber
@@ -654,8 +609,6 @@ class PaymentProofService
             }
         } elseif ($invoiceType === 'barang') {
             $this->syncBarangSalesRecapStatus($invoice);
-        } elseif ($invoiceType === 'rekap_penjualan') {
-            $this->syncSalesRecapProofStatus($invoice);
         }
     }
 
@@ -725,24 +678,6 @@ class PaymentProofService
 
         $salesRecap->update([
             'status' => $invoice->isFullyPaid() ? 'Lunas' : 'Belum Lunas',
-        ]);
-    }
-
-    /**
-     * Sinkronisasi status sales recap dari payment proof rekap_penjualan.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @return void
-     */
-    private function syncSalesRecapProofStatus(SalesRecap $salesRecap): void
-    {
-        $totalPaid = (int) PaymentProof::query()
-            ->where('invoice_type', 'rekap_penjualan')
-            ->where('invoice_number', $salesRecap->id_sales_recap)
-            ->sum('amount');
-
-        $salesRecap->update([
-            'status' => $totalPaid >= (int) ($salesRecap->total_selling ?? 0) ? 'Lunas' : 'Belum Lunas',
         ]);
     }
 

@@ -11,7 +11,7 @@ class PaymentProofFactory extends Factory
     {
         return [
             'module_type' => fake()->randomElement(['finance', 'administrasi']),
-            'invoice_type' => fake()->randomElement(['proyek', 'alumunium', 'barang', 'rekap_penjualan']),
+            'invoice_type' => fake()->randomElement(['proyek', 'alumunium', 'barang']),
             'invoice_number' => null,
             'sales_recap_id' => null,
             'payment_stage' => fake()->optional()->numberBetween(1, 5),

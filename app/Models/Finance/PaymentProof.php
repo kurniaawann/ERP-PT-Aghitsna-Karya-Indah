@@ -11,13 +11,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Model untuk tabel payment_proofs (Bukti Pembayaran).
  *
  * Menyimpan data bukti pembayaran yang terkait dengan invoice
- * (Invoice Proyek, Invoice Alumunium, atau Rekap Penjualan).
+ * (Invoice Proyek, Invoice Alumunium, atau Invoice Barang).
  *
  * @property int         $id
  * @property string      $module_type    >Nama modul (finance)
- * @property string      $invoice_type    Tipe invoice: proyek|alumunium|rekap_penjualan
+ * @property string      $invoice_type    Tipe invoice: proyek|alumunium|barang
  * @property string      $invoice_number  Nomor atau ID invoice
- * @property string|null $sales_recap_id  ID sales recap (untuk tipe rekap_penjualan)
+ * @property string|null $sales_recap_id  ID sales recap (untuk sinkronisasi status)
  * @property int|null    $payment_stage   Tahap pembayaran (untuk invoice proyek)
  * @property int         $amount          Nominal pembayaran
  * @property string      $file_name       Nama file asli

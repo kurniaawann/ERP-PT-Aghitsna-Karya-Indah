@@ -6,13 +6,12 @@ use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
-use App\Models\Report\SalesRecap;
 
 /**
  * Service untuk perhitungan finansial invoice.
  *
  * Menyediakan method-method kalkulasi yang digunakan oleh berbagai model invoice
- * (InvoiceProyek, InvoiceAlumunium, SalesRecap) untuk menghitung:
+ * (InvoiceProyek, InvoiceAlumunium, InvoiceBarang) untuk menghitung:
  * - Discount amount
  * - DP amount
  * - Net amount
@@ -193,8 +192,8 @@ class InvoiceCalculatorService
     /**
      * Mendapatkan sisa tagihan dari model invoice.
      *
-     * Logika: SalesRecap dihitung beda dari invoice biasa.
-     * - SalesRecap: sisa = total_selling - total bayar (tidak ada diskon/DP).
+     * Logika: SalesRecap tidak lagi didukung di bukti pembayaran.
+     * - InvoiceBarang: sisa = total_selling - total bayar (tidak ada diskon/DP).
      * - Invoice lain: sisa = (total - diskon + PPN) - DP - total bayar.
      *   PPN dimasukkan karena merupakan bagian tagihan kepada pelanggan
      *   (konsisten dengan grand total di detail modal & PDF/Excel).
@@ -204,10 +203,6 @@ class InvoiceCalculatorService
      */
     public function getRemainingAmount($invoice): int
     {
-        if ($invoice instanceof SalesRecap) {
-            return (int) max(0, ($invoice->total_selling ?? 0) - $this->getTotalPaidAmount($invoice));
-        }
-
         if ($invoice instanceof InvoiceBarang) {
             return (int) max(0, ($invoice->total_selling ?? 0) - $this->getTotalPaidAmount($invoice));
         }
@@ -321,16 +316,13 @@ class InvoiceCalculatorService
     }
 
     /**
-     * Mendapatkan net amount dari invoice (atau total_selling untuk SalesRecap).
+     * Mendapatkan net amount dari invoice (atau total_selling untuk InvoiceBarang).
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @return int
      */
     public function getInvoiceNetAmount($invoice): int
     {
-        if ($invoice instanceof SalesRecap) {
-            return (int) max(0, $invoice->total_selling ?? 0);
-        }
         if ($invoice instanceof InvoiceBarang) {
             return (int) max(0, $invoice->total_selling ?? 0);
         }
@@ -341,9 +333,9 @@ class InvoiceCalculatorService
      * Mendapatkan total pembayaran untuk invoice, dengan opsi exclude payment proof tertentu.
      *
      * Logika:
-     * - Jika tidak perlu exclude dan bukan SalesRecap, langsung pakai getTotalPaidAmount()
+     * - Jika tidak perlu exclude, langsung pakai getTotalPaidAmount()
      *   (menggunakan relasi eager-load — lebih cepat).
-     * - SalesRecap & invoice lain dihitung dengan query SUM langsung ke tabel payment_proofs,
+     * - InvoiceBarang dihitung dengan query SUM langsung ke tabel payment_proofs,
      *   karena butuh filter invoice_type + invoice_number (dan opsi exclude id).
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
@@ -352,18 +344,8 @@ class InvoiceCalculatorService
      */
     public function getPaidAmountForInvoice($invoice, ?int $excludePaymentProofId = null): int
     {
-        if ($excludePaymentProofId === null && !($invoice instanceof SalesRecap)) {
+        if ($excludePaymentProofId === null) {
             return $this->getTotalPaidAmount($invoice);
-        }
-
-        if ($invoice instanceof SalesRecap) {
-            $query = PaymentProof::query()
-                ->where('invoice_type', 'rekap_penjualan')
-                ->where('invoice_number', $invoice->id_sales_recap);
-            if ($excludePaymentProofId) {
-                $query->where('id', '!=', $excludePaymentProofId);
-            }
-            return (int) $query->sum('amount');
         }
 
         if ($invoice instanceof InvoiceBarang) {
@@ -409,7 +391,7 @@ class InvoiceCalculatorService
     {
         $paidAmount = $this->getPaidAmountForInvoice($invoice);
 
-        if ($invoice instanceof SalesRecap || $invoice instanceof InvoiceBarang) {
+        if ($invoice instanceof InvoiceBarang) {
             $grandTotal = $this->getInvoiceNetAmount($invoice);
             $remainingAmount = $this->getRemainingAmountForPayment($grandTotal, $paidAmount);
         } else {

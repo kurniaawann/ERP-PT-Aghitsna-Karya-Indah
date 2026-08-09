@@ -9,12 +9,9 @@ use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
-use App\Models\Report\SalesRecap;
 use App\Services\Finance\InvoiceCalculatorService;
 use App\Services\Finance\PaymentProofService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Controller untuk modul Bukti Pembayaran (Payment Proof).
@@ -47,28 +44,15 @@ class PaymentProofController extends Controller
         $invoiceTypeOptions = $isAdmin
             ? [
                 ['value' => 'proyek', 'label' => 'Invoice'],
-                ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
             ]
             : [
                 ['value' => 'proyek', 'label' => 'Invoice Proyek'],
                 ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
                 ['value' => 'barang', 'label' => 'Invoice Barang'],
-                ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
             ];
 
         if (in_array(auth()->user()?->role, ['admin', 'superadmin'], true)) {
             $query->where('created_by', auth()->id());
-        }
-
-        try {
-            $salesRecapOptions = Cache::remember(
-                'finance:sales-recap-options',
-                now()->addHour(),
-                fn () => SalesRecap::query()->orderByDesc('date')->get()
-            );
-        } catch (\Exception $e) {
-            Log::warning('Cache READ error [finance:sales-recap-options]: ' . $e->getMessage());
-            $salesRecapOptions = SalesRecap::query()->orderByDesc('date')->get();
         }
 
         if ($request->filled('module_type')) {
@@ -95,7 +79,7 @@ class PaymentProofController extends Controller
         $totalProofs = (clone $query)->count();
         $projectProofs = (clone $query)->where('invoice_type', 'proyek')->count();
         $alumuniumProofs = (clone $query)->where('invoice_type', 'alumunium')->count();
-        $salesRecapProofs = (clone $query)->where('invoice_type', 'rekap_penjualan')->count();
+        $barangProofs = (clone $query)->where('invoice_type', 'barang')->count();
 
         $proofStageMap = $this->service->buildProofStageMap();
 
@@ -104,7 +88,6 @@ class PaymentProofController extends Controller
                 'proyek'           => [],
                 'alumunium'        => [],
                 'barang'           => [],
-                'rekap_penjualan'  => [],
             ],
         ];
 
@@ -114,9 +97,6 @@ class PaymentProofController extends Controller
                     InvoiceProyek::query()->with('paymentProofs')->where('created_by', auth()->id())->orderByDesc('invoice_date')->get()
                 )->map(
                     fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'proyek', $proofStageMap, $invoiceLookup)
-                )->values()->all(),
-                'rekap_penjualan' => collect($salesRecapOptions)->map(
-                    fn ($salesRecap) => $this->service->buildSalesRecapOption($salesRecap, 'finance', 'rekap_penjualan', $proofStageMap, $invoiceLookup)
                 )->values()->all(),
             ],
         ];
@@ -140,10 +120,9 @@ class PaymentProofController extends Controller
             'totalProofs',
             'projectProofs',
             'alumuniumProofs',
-            'salesRecapProofs',
+            'barangProofs',
             'moduleOptions',
             'invoiceTypeOptions',
-            'salesRecapOptions',
             'availableInvoices',
             'invoiceLookup'
         ));
