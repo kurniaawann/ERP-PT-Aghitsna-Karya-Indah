@@ -475,57 +475,61 @@
                     <td colspan="6" class="label">TOTAL ANGGARAN BIAYA</td>
                     <td class="value">Rp. {{ number_format($totalAnggaranBiaya, 0, ',', '.') }}</td>
                 </tr>
-                <tr class="summary-row terbilang-row">
-                    <td colspan="6" class="label">TERBILANG</td>
-                    <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
-                </tr>
-                @php
-                    $incomingPayment = $rab->incoming_payment ?? 0;
-                    $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
-                @endphp
-                @if ($incomingPayment > 0)
-                    <tr class="summary-row" style="background-color: #edbcbc;">
-                        <td colspan="6" class="label">UANG MASUK</td>
-                        <td class="value">Rp. {{ number_format($incomingPayment, 0, ',', '.') }}</td>
-                    </tr>
-                    <tr class="summary-row total-amount-row" style="background-color: #FFE0B2;">
-                        <td colspan="6" class="label">SISA PEMBAYARAN</td>
-                        <td class="value">Rp. {{ number_format($sisaPembayaran, 0, ',', '.') }}</td>
-                    </tr>
+                @if (!auth()->user()->isAdmin())
                     <tr class="summary-row terbilang-row">
                         <td colspan="6" class="label">TERBILANG</td>
-                        <td class="value">{{ ucwords(terbilang($sisaPembayaran)) }} rupiah</td>
+                        <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
                     </tr>
+                    @php
+                        $incomingPayment = $rab->incoming_payment ?? 0;
+                        $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
+                    @endphp
+                    @if ($incomingPayment > 0)
+                        <tr class="summary-row" style="background-color: #edbcbc;">
+                            <td colspan="6" class="label">UANG MASUK</td>
+                            <td class="value">Rp. {{ number_format($incomingPayment, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr class="summary-row total-amount-row" style="background-color: #FFE0B2;">
+                            <td colspan="6" class="label">SISA PEMBAYARAN</td>
+                            <td class="value">Rp. {{ number_format($sisaPembayaran, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr class="summary-row terbilang-row">
+                            <td colspan="6" class="label">TERBILANG</td>
+                            <td class="value">{{ ucwords(terbilang($sisaPembayaran)) }} rupiah</td>
+                        </tr>
+                    @endif
                 @endif
             </tbody>
         </table>
 
-        <div class="footer-section">
-            <p><strong>Pembayaran dapat ditransfer melalui nomor rekening :</strong></p>
-            @php
-                $accountIds = is_string($rab->selected_payment_accounts)
-                    ? json_decode($rab->selected_payment_accounts, true)
-                    : $rab->selected_payment_accounts;
+        @if (!auth()->user()->isAdmin())
+            <div class="footer-section">
+                <p><strong>Pembayaran dapat ditransfer melalui nomor rekening :</strong></p>
+                @php
+                    $accountIds = is_string($rab->selected_payment_accounts)
+                        ? json_decode($rab->selected_payment_accounts, true)
+                        : $rab->selected_payment_accounts;
 
-                // Fetch full account data from database using the IDs
-                $accounts = [];
-                if (is_array($accountIds) && count($accountIds) > 0) {
-                    $accounts = \App\Models\Finance\PaymentAccount::whereIn('id', $accountIds)->get();
-                }
-            @endphp
-            @if (count($accounts) > 0)
-                <div class="payment-accounts-list">
-                    @foreach ($accounts as $account)
-                        <div class="payment-account-item">
-                            <div class="bank-info">{{ $account->bank_name }} - {{ $account->account_number }} <span
-                                    class="account-holder">a/n {{ $account->account_holder }}</span></div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p><em>Tidak ada rekening pembayaran yang dipilih</em></p>
-            @endif
-        </div>
+                    // Fetch full account data from database using the IDs
+                    $accounts = [];
+                    if (is_array($accountIds) && count($accountIds) > 0) {
+                        $accounts = \App\Models\Finance\PaymentAccount::whereIn('id', $accountIds)->get();
+                    }
+                @endphp
+                @if (count($accounts) > 0)
+                    <div class="payment-accounts-list">
+                        @foreach ($accounts as $account)
+                            <div class="payment-account-item">
+                                <div class="bank-info">{{ $account->bank_name }} - {{ $account->account_number }} <span
+                                        class="account-holder">a/n {{ $account->account_holder }}</span></div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p><em>Tidak ada rekening pembayaran yang dipilih</em></p>
+                @endif
+            </div>
+        @endif
 
         <div class="footer-section">
             <p>Demikian rencana anggaran biaya ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima

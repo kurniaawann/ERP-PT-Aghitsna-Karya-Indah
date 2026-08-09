@@ -69,8 +69,9 @@ class RAB extends Model
     public static function generateRABNumber()
     {
         $year = date('Y');
+        $month = (int) date('n');
         $sequence = self::getNextSequenceNumber();
-        return str_pad($sequence, 3, '0', STR_PAD_LEFT) . "/RAB/III/{$year}";
+        return str_pad($sequence, 3, '0', STR_PAD_LEFT) . "/RAB/" . self::arabicToRoman($month) . "/{$year}";
     }
 
     public static function getNextSequenceNumber()

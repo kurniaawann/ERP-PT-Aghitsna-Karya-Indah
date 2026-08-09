@@ -21,7 +21,7 @@
         </div>
     </div>
 
-    @if ($rab->incoming_payment > 0)
+    @if (!auth()->user()->isAdmin() && $rab->incoming_payment > 0)
         <div class="mb-2 p-2 bg-primary-light rounded border border-primary text-xs">
             <p class="text-primary"><strong>Uang Masuk:</strong> Rp {{ number_format($rab->incoming_payment, 0, ',', '.') }}</p>
         </div>
@@ -156,25 +156,27 @@
         </div>
     </div>
 
-    {{-- Rekening Pembayaran --}}
-    @php
-        $selectedAccounts = $rab->selected_payment_accounts ?? [];
-    @endphp
-    @if (!empty($selectedAccounts))
-        <hr class="my-2">
-        <div class="text-xs">
-            <p class="font-semibold text-text-primary mb-1">Rekening Pembayaran</p>
-            <div class="space-y-1">
-                @foreach ($paymentAccounts as $account)
-                    @if (in_array($account->id, $selectedAccounts))
-                        <div class="p-1 bg-surface-secondary rounded border border-border-light text-xs">
-                            <p class="font-semibold">{{ $account->bank_name }} - {{ $account->account_number }}</p>
-                            <p class="text-text-secondary text-xs">a/n {{ $account->account_holder }}</p>
-                        </div>
-                    @endif
-                @endforeach
+    @if (!auth()->user()->isAdmin())
+        {{-- Rekening Pembayaran --}}
+        @php
+            $selectedAccounts = $rab->selected_payment_accounts ?? [];
+        @endphp
+        @if (!empty($selectedAccounts))
+            <hr class="my-2">
+            <div class="text-xs">
+                <p class="font-semibold text-text-primary mb-1">Rekening Pembayaran</p>
+                <div class="space-y-1">
+                    @foreach ($paymentAccounts as $account)
+                        @if (in_array($account->id, $selectedAccounts))
+                            <div class="p-1 bg-surface-secondary rounded border border-border-light text-xs">
+                                <p class="font-semibold">{{ $account->bank_name }} - {{ $account->account_number }}</p>
+                                <p class="text-text-secondary text-xs">a/n {{ $account->account_holder }}</p>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
             </div>
-        </div>
+        @endif
     @endif
 
 </x-modal>

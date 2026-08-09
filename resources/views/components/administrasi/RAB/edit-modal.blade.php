@@ -35,14 +35,16 @@
         <small class="text-text-secondary text-xs">Maksimal 500 karakter</small>
     </div>
 
-    {{-- Uang Masuk --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Uang Masuk</label>
-        <input type="number" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            name="incoming_payment" placeholder="0" min="0" step="0" value="{{ $rab->incoming_payment ?? 0 }}"
-            oninvalid="this.setCustomValidity('Uang masuk harus berupa angka')" oninput="this.setCustomValidity('')">
-        <small class="text-text-secondary text-xs">Masukkan jumlah uang masuk (Rp)</small>
-    </div>
+    @if (!auth()->user()->isAdmin())
+        {{-- Uang Masuk --}}
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Uang Masuk</label>
+            <input type="number" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                name="incoming_payment" placeholder="0" min="0" step="0" value="{{ $rab->incoming_payment ?? 0 }}"
+                oninvalid="this.setCustomValidity('Uang masuk harus berupa angka')" oninput="this.setCustomValidity('')">
+            <small class="text-text-secondary text-xs">Masukkan jumlah uang masuk (Rp)</small>
+        </div>
+    @endif
 
     {{-- Teks Pengantar --}}
     <div class="mb-3">
@@ -69,24 +71,26 @@
             name="division" placeholder="Nama divisi" value="{{ $rab->division ?? '' }}" maxlength="255">
     </div>
 
-    {{-- Rekening Pembayaran --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
-        <div id="paymentAccountsList" class="space-y-2" required>
-            <small class="text-text-secondary text-xs">Pilih minimal 1 rekening pembayaran</small>
-            @foreach ($paymentAccounts as $account)
-                <div class="flex items-center">
-                    <input class="form-check-input" type="checkbox" name="selected_payment_accounts[]"
-                        value="{{ $account->id }}" id="editPaymentAccount{{ $rab->rab_number }}_{{ $account->id }}"
-                        {{ in_array($account->id, (array) ($rab->selected_payment_accounts ?? [])) ? 'checked' : '' }}>
-                    <label class="form-check-label ml-2 cursor-pointer text-sm"
-                        for="editPaymentAccount{{ $rab->rab_number }}_{{ $account->id }}">
-                        <span class="font-medium">{{ $account->bank_name }}</span> - {{ $account->account_number }}
-                    </label>
-                </div>
-            @endforeach
+    @if (!auth()->user()->isAdmin())
+        {{-- Rekening Pembayaran --}}
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
+            <div id="paymentAccountsList" class="space-y-2" required>
+                <small class="text-text-secondary text-xs">Pilih minimal 1 rekening pembayaran</small>
+                @foreach ($paymentAccounts as $account)
+                    <div class="flex items-center">
+                        <input class="form-check-input" type="checkbox" name="selected_payment_accounts[]"
+                            value="{{ $account->id }}" id="editPaymentAccount{{ $rab->rab_number }}_{{ $account->id }}"
+                            {{ in_array($account->id, (array) ($rab->selected_payment_accounts ?? [])) ? 'checked' : '' }}>
+                        <label class="form-check-label ml-2 cursor-pointer text-sm"
+                            for="editPaymentAccount{{ $rab->rab_number }}_{{ $account->id }}">
+                            <span class="font-medium">{{ $account->bank_name }}</span> - {{ $account->account_number }}
+                        </label>
+                    </div>
+                @endforeach
+            </div>
         </div>
-    </div>
+    @endif
 
     <hr class="my-4">
 

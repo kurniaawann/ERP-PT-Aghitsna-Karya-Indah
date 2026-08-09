@@ -19,6 +19,8 @@ class RABUpdateRequest extends FormRequest
 
     public function rules(): array
     {
+        $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+
         return [
             'recipient' => 'required|string|max:255',
             'date' => 'required|date',
@@ -26,7 +28,9 @@ class RABUpdateRequest extends FormRequest
             'recipient_address' => 'nullable|string|max:500',
             'signed_by' => 'nullable|string|max:255',
             'division' => 'nullable|string|max:255',
-            'selected_payment_accounts' => 'required|array|min:1',
+            'selected_payment_accounts' => $isAdmin
+                ? ['array']
+                : ['required', 'array', 'min:1'],
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'rab_data' => 'required|string',
             'misc_costs_data' => 'nullable|string',

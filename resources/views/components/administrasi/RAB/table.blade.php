@@ -20,7 +20,9 @@
                             <th class="p-3 text-left">Penerima</th>
                             <th class="p-3 text-left">Tanggal</th>
                             <th class="p-3 text-right">Total Biaya</th>
-                            <th class="p-3 text-right">Uang Masuk</th>
+                            @if (!auth()->user()->isAdmin())
+                                <th class="p-3 text-right">Uang Masuk</th>
+                            @endif
                             <th class="p-3 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -39,9 +41,11 @@
                                 <td class="p-3 text-right font-semibold text-success">
                                     Rp {{ number_format($rab->total_amount, 0, ',', '.') }}
                                 </td>
-                                <td class="p-3 text-right font-semibold text-primary">
-                                    Rp {{ number_format($rab->incoming_payment ?? 0, 0, ',', '.') }}
-                                </td>
+                                @if (!auth()->user()->isAdmin())
+                                    <td class="p-3 text-right font-semibold text-primary">
+                                        Rp {{ number_format($rab->incoming_payment ?? 0, 0, ',', '.') }}
+                                    </td>
+                                @endif
                                 <td class="p-3 text-center">
                                     <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto min-[1436px]:grid-cols-[auto_auto_auto_auto] min-[1436px]:gap-[5px]">
                                         {{-- Tombol Detail --}}
@@ -81,7 +85,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
+                                <td colspan="{{ auth()->user()->isAdmin() ? 6 : 7 }}" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
                             </tr>
                         @endforelse
                     </tbody>

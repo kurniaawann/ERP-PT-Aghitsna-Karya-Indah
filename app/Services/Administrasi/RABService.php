@@ -144,8 +144,9 @@ class RABService
     public function storeRAB(array $validatedData, array $rabData, array $miscCostsData): RAB
     {
         $seqNumber = RAB::getNextSequenceNumber();
-        $year = date('Y');
-        $rabNumber = str_pad($seqNumber, 3, '0', STR_PAD_LEFT) . "/RAB/III/{$year}";
+        $year = date('Y', strtotime($validatedData['date']));
+        $month = (int) date('n', strtotime($validatedData['date']));
+        $rabNumber = str_pad($seqNumber, 3, '0', STR_PAD_LEFT) . '/RAB/' . $this->arabicToRoman($month) . "/{$year}";
 
         $totalAmount = $this->calculateTotalAmount($rabData);
         $miscCostsTotal = $this->calculateMiscCostsTotal($miscCostsData);
@@ -195,15 +196,21 @@ class RABService
         $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
 
         DB::transaction(function () use ($rab, $validatedData, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
+            $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+
             $rab->update([
                 'date' => $validatedData['date'],
                 'recipient' => $validatedData['recipient'],
                 'recipient_address' => $validatedData['recipient_address'] ?? 'Ditempat',
                 'intro_text' => $validatedData['intro_text'],
                 'total_amount' => $totalAnggaranBiaya,
-                'incoming_payment' => $validatedData['incoming_payment'] ?? 0,
+                'incoming_payment' => $isAdmin
+                    ? $rab->incoming_payment
+                    : ($validatedData['incoming_payment'] ?? 0),
                 'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
-                'selected_payment_accounts' => $validatedData['selected_payment_accounts'] ?? [],
+                'selected_payment_accounts' => $isAdmin
+                    ? $rab->selected_payment_accounts
+                    : ($validatedData['selected_payment_accounts'] ?? []),
                 'signed_by' => $validatedData['signed_by'] ?? null,
                 'division' => $validatedData['division'] ?? null,
             ]);

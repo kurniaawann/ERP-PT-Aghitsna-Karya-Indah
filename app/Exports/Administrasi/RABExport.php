@@ -354,95 +354,102 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                 ]);
                 $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'TERBILANG');
-                $amountInWords = $rab->amount_in_words ?? ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah';
-                $sheet->setCellValue("G{$currentRow}", $amountInWords);
-                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
-                    'font' => ['bold' => true, 'italic' => true],
-                    'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
-                    ],
-                ]);
+                if (!auth()->user() || auth()->user()->role !== 'admin') {
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", 'TERBILANG');
+                    $amountInWords = $rab->amount_in_words ?? ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah';
+                    $sheet->setCellValue("G{$currentRow}", $amountInWords);
+                    $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true, 'italic' => true],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        ],
+                    ]);
 
-                $incomingPayment = $rab->incoming_payment ?? 0;
-                $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
+                    $incomingPayment = $rab->incoming_payment ?? 0;
+                    $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'UANG MASUK');
-                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($incomingPayment, 0, ',', '.'));
-                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
-                    'font' => ['bold' => true],
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'E8F5E9'],
-                    ],
-                    'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
-                    ],
-                ]);
-                $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", 'UANG MASUK');
+                    $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($incomingPayment, 0, ',', '.'));
+                    $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'E8F5E9'],
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        ],
+                    ]);
+                    $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'SISA PEMBAYARAN');
-                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($sisaPembayaran, 0, ',', '.'));
-                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
-                    'font' => ['bold' => true],
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FFE0B2'],
-                    ],
-                    'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
-                    ],
-                ]);
-                $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", 'SISA PEMBAYARAN');
+                    $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($sisaPembayaran, 0, ',', '.'));
+                    $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FFE0B2'],
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        ],
+                    ]);
+                    $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'TERBILANG');
-                $sheet->setCellValue("G{$currentRow}", ucwords(terbilang($sisaPembayaran)) . ' rupiah');
-                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
-                    'font' => ['bold' => true, 'italic' => true],
-                    'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
-                    ],
-                ]);
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", 'TERBILANG');
+                    $sheet->setCellValue("G{$currentRow}", ucwords(terbilang($sisaPembayaran)) . ' rupiah');
+                    $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true, 'italic' => true],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        ],
+                    ]);
 
-                $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Pembayaran dapat ditransfer melalui nomor rekening :');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                    $currentRow += 2;
+                    $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", 'Pembayaran dapat ditransfer melalui nomor rekening :');
+                    $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
-                $accountIds = [];
-                $selectedPaymentAccounts = $rab->selected_payment_accounts;
+                    $accountIds = [];
+                    $selectedPaymentAccounts = $rab->selected_payment_accounts;
 
-                if (is_array($selectedPaymentAccounts)) {
-                    $accountIds = $selectedPaymentAccounts;
-                } else {
-                    $selectedPaymentAccounts = is_string($selectedPaymentAccounts) ? $selectedPaymentAccounts : '';
-                    $accountIds = json_decode($selectedPaymentAccounts, true) ?: [];
-                }
+                    if (is_array($selectedPaymentAccounts)) {
+                        $accountIds = $selectedPaymentAccounts;
+                    } else {
+                        $selectedPaymentAccounts = is_string($selectedPaymentAccounts) ? $selectedPaymentAccounts : '';
+                        $accountIds = json_decode($selectedPaymentAccounts, true) ?: [];
+                    }
 
-                $accounts = [];
-                if (is_array($accountIds) && count($accountIds) > 0) {
-                    $accounts = PaymentAccount::whereIn('id', $accountIds)->orderBy('id')->get();
-                }
+                    $accounts = [];
+                    if (is_array($accountIds) && count($accountIds) > 0) {
+                        $accounts = PaymentAccount::whereIn('id', $accountIds)->orderBy('id')->get();
+                    }
 
-                if (count($accounts) > 0) {
-                    foreach ($accounts as $account) {
+                    if (count($accounts) > 0) {
+                        foreach ($accounts as $account) {
+                            $currentRow++;
+                            $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
+                            $sheet->setCellValue("A{$currentRow}", "Bank {$account->bank_name} / No : {$account->account_number} a/n {$account->account_holder}");
+                            $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
+                                'borders' => [
+                                    'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                                ],
+                            ]);
+                        }
+                    } else {
                         $currentRow++;
                         $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                        $sheet->setCellValue("A{$currentRow}", "Bank {$account->bank_name} / No : {$account->account_number} a/n {$account->account_holder}");
+                        $sheet->setCellValue("A{$currentRow}", 'Tidak ada rekening pembayaran yang dipilih');
+                        $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
                     }
-                } else {
-                    $currentRow++;
-                    $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", 'Tidak ada rekening pembayaran yang dipilih');
-                    $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
                 }
 
                 $currentRow += 2;

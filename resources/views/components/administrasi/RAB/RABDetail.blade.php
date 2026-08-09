@@ -119,6 +119,7 @@
         </div>
 
         {{-- Summary --}}
+        @if (!auth()->user()->isAdmin())
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <div class="mb-4 p-3 bg-surface-secondary border border-border rounded">
@@ -153,6 +154,7 @@
                 @endif
             </div>
         </div>
+        @endif
 
         {{-- Signature & Notes --}}
         <div class="mt-8 pt-6 border-t border-gray-300">
