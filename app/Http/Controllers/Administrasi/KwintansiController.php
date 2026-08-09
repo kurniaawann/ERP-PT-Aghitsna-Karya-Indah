@@ -86,8 +86,28 @@ class KwintansiController extends Controller
 
         $deletedCount = $this->service->destroySelected($ids);
 
+        $autoCount = Kwintansi::whereIn('id_kwintansi', $ids)
+            ->where('created_by', auth()->id())
+            ->whereNotNull('payment_proof_id')
+            ->count();
+
+        if ($deletedCount > 0 && $autoCount > 0) {
+            return redirect()->route('kwintansi.index')
+                ->with('success', "{$deletedCount} data terpilih berhasil dihapus. {$autoCount} kwitansi otomatis (dari bukti pembayaran) tidak dapat dihapus langsung.");
+        }
+
+        if ($deletedCount > 0) {
+            return redirect()->route('kwintansi.index')
+                ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
+        }
+
+        if ($autoCount > 0) {
+            return redirect()->route('kwintansi.index')
+                ->with('error', "{$autoCount} kwitansi terpilih tidak dapat dihapus karena dibuat otomatis dari bukti pembayaran.");
+        }
+
         return redirect()->route('kwintansi.index')
-            ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
+            ->with('error', 'Tidak ada data yang dapat dihapus.');
     }
 
     /**

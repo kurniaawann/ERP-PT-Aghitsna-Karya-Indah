@@ -29,7 +29,14 @@
                                 <td class="p-2 font-medium text-primary">
                                     {{ $kwintansi->payment_sequence ? str_pad((string) $kwintansi->payment_sequence, 3, '0', STR_PAD_LEFT) : '-' }}
                                 </td>
-                                <td class="p-2">{{ $kwintansi->invoice_number ?? '-' }}</td>
+                                <td class="p-2">
+                                    {{ $kwintansi->invoice_number ?? '-' }}
+                                    @if ($kwintansi->payment_proof_id)
+                                        <span
+                                            class="ml-1 inline-flex items-center rounded-md bg-info-light px-1.5 py-0.5 text-[10px] font-semibold text-info"
+                                            title="Dibuat otomatis dari bukti pembayaran">Auto</span>
+                                    @endif
+                                </td>
                                 <td class="p-2">{{ $kwintansi->received_from }}</td>
                                 <td class="p-2">{{ Str::limit($kwintansi->payment_for, 50) }}</td>
 

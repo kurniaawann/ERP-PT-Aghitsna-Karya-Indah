@@ -186,6 +186,10 @@ class KwintansiService
     /**
      * Menghapus beberapa kwitansi sekaligus (bulk delete).
      *
+     * Kwitansi yang dibuat otomatis dari bukti pembayaran (payment_proof_id
+     * tidak null) TIDAK dihapus di sini — kwitansi tersebut hanya terhapus
+     * mengikuti bukti pembayarannya. Hanya kwitansi manual yang bisa dihapus.
+     *
      * @param  array  $ids  Daftar id_kwintansi yang akan dihapus
      * @return int  Jumlah record yang dihapus
      */
@@ -193,6 +197,7 @@ class KwintansiService
     {
         return Kwintansi::whereIn('id_kwintansi', $ids)
             ->where('created_by', auth()->id())
+            ->whereNull('payment_proof_id')
             ->delete();
     }
 

@@ -421,6 +421,9 @@ class PaymentProofService
     /**
      * Menghapus bukti pembayaran tunggal.
      *
+     * Kwitansi yang dibuat otomatis dari bukti ini (payment_proof_id) ikut
+     * dihapus bersama, karena kwitansi tersebut tidak bisa dihapus terpisah.
+     *
      * @param  \App\Models\Finance\PaymentProof $paymentProof
      * @return array{success: bool, message: string}
      */
@@ -431,6 +434,10 @@ class PaymentProofService
         $salesRecapId = $paymentProof->sales_recap_id;
 
         DB::transaction(function () use ($paymentProof, $invoiceType, $invoiceNumber, $salesRecapId) {
+            Kwintansi::query()
+                ->where('payment_proof_id', $paymentProof->id)
+                ->delete();
+
             $paymentProof->delete();
             $this->syncPaymentStatuses($invoiceType, $invoiceNumber, $salesRecapId);
         });
@@ -466,6 +473,10 @@ class PaymentProofService
 
         DB::transaction(function () use ($paymentProofs, $affectedInvoices) {
             foreach ($paymentProofs as $proof) {
+                Kwintansi::query()
+                    ->where('payment_proof_id', $proof->id)
+                    ->delete();
+
                 $proof->delete();
             }
 
