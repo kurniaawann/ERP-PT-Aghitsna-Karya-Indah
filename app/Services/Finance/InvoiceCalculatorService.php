@@ -3,6 +3,7 @@
 namespace App\Services\Finance;
 
 use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Report\SalesRecap;
@@ -207,6 +208,10 @@ class InvoiceCalculatorService
             return (int) max(0, ($invoice->total_selling ?? 0) - $this->getTotalPaidAmount($invoice));
         }
 
+        if ($invoice instanceof InvoiceBarang) {
+            return (int) max(0, ($invoice->total_selling ?? 0) - $this->getTotalPaidAmount($invoice));
+        }
+
         $ppnAmount = (int) (method_exists($invoice, 'getPpnAmount') ? $invoice->getPpnAmount() : 0);
 
         return $this->calculateRemainingAmount(
@@ -326,6 +331,9 @@ class InvoiceCalculatorService
         if ($invoice instanceof SalesRecap) {
             return (int) max(0, $invoice->total_selling ?? 0);
         }
+        if ($invoice instanceof InvoiceBarang) {
+            return (int) max(0, $invoice->total_selling ?? 0);
+        }
         return (int) max(0, $invoice->total_amount ?? 0);
     }
 
@@ -352,6 +360,16 @@ class InvoiceCalculatorService
             $query = PaymentProof::query()
                 ->where('invoice_type', 'rekap_penjualan')
                 ->where('invoice_number', $invoice->id_sales_recap);
+            if ($excludePaymentProofId) {
+                $query->where('id', '!=', $excludePaymentProofId);
+            }
+            return (int) $query->sum('amount');
+        }
+
+        if ($invoice instanceof InvoiceBarang) {
+            $query = PaymentProof::query()
+                ->where('invoice_type', 'barang')
+                ->where('invoice_number', $invoice->invoice_number);
             if ($excludePaymentProofId) {
                 $query->where('id', '!=', $excludePaymentProofId);
             }
@@ -391,7 +409,7 @@ class InvoiceCalculatorService
     {
         $paidAmount = $this->getPaidAmountForInvoice($invoice);
 
-        if ($invoice instanceof SalesRecap) {
+        if ($invoice instanceof SalesRecap || $invoice instanceof InvoiceBarang) {
             $grandTotal = $this->getInvoiceNetAmount($invoice);
             $remainingAmount = $this->getRemainingAmountForPayment($grandTotal, $paidAmount);
         } else {

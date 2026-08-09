@@ -213,6 +213,14 @@
     @foreach ($kwintansis as $index => $kwintansi)
         <div class="container {{ $index < count($kwintansis) - 1 ? 'page-break' : '' }}">
 
+            @php
+                $sourceInvoice = match ($kwintansi->invoice_type) {
+                    'alumunium' => $kwintansi->invoiceAlumunium,
+                    'barang' => $kwintansi->invoiceBarang,
+                    default => $kwintansi->invoiceProyek,
+                };
+            @endphp
+
             <!-- HEADER (LOGO & META KWITANSI) -->
             <table class="header-table">
                 <tr>
@@ -267,24 +275,24 @@
                     </td>
                 </tr>
 
-                <!-- BARIS 3: KETERANGAN (PEMBAYARAN KE BERAPA) -->
+                <!-- BARIS 3: KETERANGAN (PEMBAYARAN) -->
                 <tr>
                     <td class="label-col">Keterangan</td>
                     <td class="colon-col">:</td>
                     <td class="value-col">
-                        {{ $kwintansi->payment_sequence ? 'Uang Masuk ke '.$kwintansi->payment_sequence : ($kwintansi->payment_for ?? '-') }}
+                        {{ $kwintansi->invoice_type === 'proyek' && $kwintansi->payment_sequence ? 'Uang Masuk ke '.$kwintansi->payment_sequence : ($kwintansi->payment_for ?? '-') }}
                     </td>
                 </tr>
 
-                <!-- BARIS 4: INFO PROYEK (DESKRIPSI + LOKASI) -->
-                @if (in_array(auth()->user()?->role, ['admin', 'superadmin'], true) && (!empty($kwintansi->invoiceProyek?->project_description) || !empty($kwintansi->invoiceProyek?->location)))
+                <!-- BARIS 4: INFO PROYEK (DESKRIPSI + LOKASI) - hanya untuk invoice proyek -->
+                @if ($kwintansi->invoice_type === 'proyek' && in_array(auth()->user()?->role, ['admin', 'superadmin'], true) && (!empty($sourceInvoice?->project_description) || !empty($sourceInvoice?->location)))
                     <tr>
                         <td class="label-col"></td>
                         <td class="colon-col"></td>
                         <td class="value-col">
-                            {{ $kwintansi->invoiceProyek->project_description ?? '' }}
-                            @if (!empty($kwintansi->invoiceProyek->location))
-                                {{ $kwintansi->invoiceProyek->location }}
+                            {{ $sourceInvoice->project_description ?? '' }}
+                            @if (!empty($sourceInvoice->location))
+                                {{ $sourceInvoice->location }}
                             @endif
                         </td>
                     </tr>
@@ -296,7 +304,7 @@
                 <tr>
                     <td style="vertical-align: middle;">
                         @php
-                            $invoicePaidTotal = $kwintansi->invoiceProyek ? (int) $kwintansi->invoiceProyek->getTotalPaidAmount() : 0;
+                            $invoicePaidTotal = $sourceInvoice ? (int) $sourceInvoice->getTotalPaidAmount() : 0;
                         @endphp
                         @if ($invoicePaidTotal > 0)
                             <span class="highlight-text">
@@ -319,8 +327,8 @@
                     <td style="vertical-align: top; width: 65%;">
                         <div class="bank-info">
                             @php
-                                $bankAccounts = $kwintansi->invoiceProyek?->selected_payment_accounts
-                                    ? \App\Models\Finance\PaymentAccount::whereIn('id', (array) $kwintansi->invoiceProyek->selected_payment_accounts)->orderBy('id')->get()
+                                $bankAccounts = $sourceInvoice?->selected_payment_accounts
+                                    ? \App\Models\Finance\PaymentAccount::whereIn('id', (array) $sourceInvoice->selected_payment_accounts)->orderBy('id')->get()
                                     : collect([$kwintansi->include_bank ? $kwintansi->paymentAccount : null]);
                                 $bankAccounts = $bankAccounts->filter();
                             @endphp
@@ -341,13 +349,13 @@
                     <td class="signature-cell">
                         <div class="signature-title">Signature,</div>
                         <div style="min-height: 50px;">
-                            @if ($kwintansi->invoiceProyek?->signedBy?->signature_image)
-                                <img src="{{ storage_path('app/public/' . $kwintansi->invoiceProyek->signedBy->signature_image) }}"
+                            @if ($sourceInvoice?->signedBy?->signature_image)
+                                <img src="{{ storage_path('app/public/' . $sourceInvoice->signedBy->signature_image) }}"
                                     alt="Tanda Tangan" style="max-height: 50px; max-width: 130px;">
                             @endif
                         </div>
                         <div class="signature-name">
-                            ( {{ $kwintansi->invoiceProyek?->signedBy?->name ?? 'Zulkarnain,S.T.,M.T.' }} )
+                            ( {{ $sourceInvoice?->signedBy?->name ?? 'Zulkarnain,S.T.,M.T.' }} )
                         </div>
                     </td>
                 </tr>

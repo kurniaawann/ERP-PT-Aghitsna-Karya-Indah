@@ -54,8 +54,8 @@
                                 <td class="p-3 text-sm">
                                     <div class="flex flex-col gap-1">
                                         <span
-                                            class="inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-primary-light text-primary' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-warning-light text-warning' : 'bg-secondary-light text-secondary') }}">
-                                            {{ $paymentProof->invoice_type === 'proyek' ? (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek') : ($paymentProof->invoice_type === 'alumunium' ? 'Invoice Alumunium' : 'Rekap Penjualan') }}
+                                            class="inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-primary-light text-primary' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-warning-light text-warning' : ($paymentProof->invoice_type === 'barang' ? 'bg-info-light text-info' : 'bg-secondary-light text-secondary')) }}">
+                                            {{ $paymentProof->invoice_type === 'proyek' ? (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek') : ($paymentProof->invoice_type === 'alumunium' ? 'Invoice Alumunium' : ($paymentProof->invoice_type === 'barang' ? 'Invoice Barang' : 'Rekap Penjualan')) }}
                                         </span>
                                         <span class="text-xs text-text-label">
                                             {{ $paymentProof->module_type === 'finance' ? 'Keuangan' : ucfirst($paymentProof->module_type) }}

@@ -2,6 +2,8 @@
 
 namespace App\Models\Administrasi;
 
+use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentAccount;
 use App\Models\Finance\PaymentProof;
@@ -63,6 +65,7 @@ class Kwintansi extends Model
         'kwintansi_date',
         'location',
         'invoice_number',
+        'invoice_type',
         'payment_proof_id',
         'created_by',
     ];
@@ -102,6 +105,26 @@ class Kwintansi extends Model
         return $this->belongsTo(InvoiceProyek::class, 'invoice_number', 'invoice_number');
     }
 
+    /**
+     * Relasi ke Invoice Alumunium yang menjadi sumber kwitansi (auto-generate).
+     *
+     * @return BelongsTo
+     */
+    public function invoiceAlumunium(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceAlumunium::class, 'invoice_number', 'invoice_number');
+    }
+
+    /**
+     * Relasi ke Invoice Barang yang menjadi sumber kwitansi (auto-generate).
+     *
+     * @return BelongsTo
+     */
+    public function invoiceBarang(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceBarang::class, 'invoice_number', 'invoice_number');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -133,8 +156,14 @@ class Kwintansi extends Model
             return null;
         }
 
-        $orderedIds = static::query()
-            ->where('invoice_number', $this->invoice_number)
+        $query = static::query()
+            ->where('invoice_number', $this->invoice_number);
+
+        if (!empty($this->invoice_type)) {
+            $query->where('invoice_type', $this->invoice_type);
+        }
+
+        $orderedIds = $query
             ->orderBy('created_at')
             ->orderBy('id_kwintansi')
             ->pluck('id_kwintansi');

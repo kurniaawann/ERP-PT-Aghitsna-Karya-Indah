@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StorePaymentProofRequest;
 use App\Http\Requests\Finance\UpdatePaymentProofRequest;
 use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Report\SalesRecap;
@@ -51,6 +52,7 @@ class PaymentProofController extends Controller
             : [
                 ['value' => 'proyek', 'label' => 'Invoice Proyek'],
                 ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
+                ['value' => 'barang', 'label' => 'Invoice Barang'],
                 ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
             ];
 
@@ -101,6 +103,7 @@ class PaymentProofController extends Controller
             'finance' => [
                 'proyek'           => [],
                 'alumunium'        => [],
+                'barang'           => [],
                 'rekap_penjualan'  => [],
             ],
         ];
@@ -123,6 +126,12 @@ class PaymentProofController extends Controller
                 InvoiceAlumunium::query()->with('paymentProofs')->orderByDesc('invoice_date')->get()
             )->map(
                 fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'alumunium', $proofStageMap, $invoiceLookup)
+            )->values()->all();
+
+            $availableInvoices['finance']['barang'] = collect(
+                InvoiceBarang::query()->with('paymentProofs')->orderByDesc('invoice_date')->get()
+            )->map(
+                fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'barang', $proofStageMap, $invoiceLookup)
             )->values()->all();
         }
 

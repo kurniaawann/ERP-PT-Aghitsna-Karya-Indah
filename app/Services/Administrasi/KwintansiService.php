@@ -40,7 +40,7 @@ class KwintansiService
      */
     public function getPaginated(?string $search): LengthAwarePaginator
     {
-        return Kwintansi::with(['paymentAccount', 'invoiceProyek'])
+        return Kwintansi::with(['paymentAccount', 'invoiceProyek', 'invoiceAlumunium', 'invoiceBarang'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
@@ -55,7 +55,7 @@ class KwintansiService
      */
     public function getAllForExport(?string $search): Collection
     {
-        return Kwintansi::with(['paymentAccount', 'invoiceProyek'])
+        return Kwintansi::with(['paymentAccount', 'invoiceProyek', 'invoiceAlumunium', 'invoiceBarang'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
@@ -70,7 +70,7 @@ class KwintansiService
      */
     public function getByIds(array $ids): Collection
     {
-        return Kwintansi::with(['paymentAccount', 'invoiceProyek'])
+        return Kwintansi::with(['paymentAccount', 'invoiceProyek', 'invoiceAlumunium', 'invoiceBarang'])
             ->whereIn('id_kwintansi', $ids)
             ->where('created_by', auth()->id())
             ->latest('created_at')
@@ -99,30 +99,32 @@ class KwintansiService
     }
 
     /**
-     * Membuat kwitansi secara otomatis dari pembayaran (payment proof) invoice proyek.
+     * Membuat kwitansi secara otomatis dari pembayaran (payment proof) invoice.
      *
-     * Dipanggil saat bukti pembayaran invoice proyek berhasil di-upload.
-     * Nomor kwitansi, penerima, keperluan, sisa tagihan, dan tanggal diambil
-     * dari data invoice serta pembayaran yang bersangkutan.
+     * Dipanggil saat bukti pembayaran invoice proyek/alumunium/barang berhasil
+     * di-upload. Nomor kwitansi, penerima, keperluan, sisa tagihan, dan tanggal
+     * diambil dari data invoice serta pembayaran yang bersangkutan.
      *
-     * @param  \App\Models\Finance\InvoiceProyek  $invoice  Invoice proyek sumber
-     * @param  int                                 $amount   Nominal pembayaran
-     * @param  int                                 $remaining  Sisa tagihan setelah pembayaran ini
-     * @param  string|null                         $paymentDate  Tanggal pembayaran (Y-m-d); default hari ini
-     * @param  int|null                            $paymentProofId  ID bukti pembayaran sumber
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice  Invoice sumber
+     * @param  string                                $invoiceType  Tipe invoice: proyek|alumunium|barang
+     * @param  int                                   $amount   Nominal pembayaran
+     * @param  int                                   $remaining  Sisa tagihan setelah pembayaran ini
+     * @param  string|null                           $paymentDate  Tanggal pembayaran (Y-m-d); default hari ini
+     * @param  int|null                              $paymentProofId  ID bukti pembayaran sumber
      * @return Kwintansi Model kwitansi yang baru dibuat
      */
-    public function createFromPaymentProof(InvoiceProyek $invoice, int $amount, int $remaining, ?string $paymentDate = null, ?int $paymentProofId = null): Kwintansi
+    public function createFromPaymentProof($invoice, string $invoiceType, int $amount, int $remaining, ?string $paymentDate = null, ?int $paymentProofId = null): Kwintansi
     {
         return Kwintansi::create([
             'id_kwintansi' => Kwintansi::generateKwintansiCode(),
             'amount' => $amount,
             'remaining' => $remaining,
             'received_from' => $invoice->recipient,
-            'payment_for' => $this->buildPaymentFor($invoice),
+            'payment_for' => $this->buildPaymentFor($invoice, $invoiceType),
             'kwintansi_date' => $paymentDate ?? now()->toDateString(),
             'location' => self::DEFAULT_LOCATION,
             'invoice_number' => $invoice->invoice_number,
+            'invoice_type' => $invoiceType,
             'payment_proof_id' => $paymentProofId,
             'include_bank' => false,
             'is_tunai' => true,
@@ -135,11 +137,27 @@ class KwintansiService
     /**
      * Membangun keterangan "Untuk Pembayaran" untuk kwitansi otomatis.
      *
-     * @param  \App\Models\Finance\InvoiceProyek  $invoice
+     * - Invoice proyek: pakai regarding (Hal/keterangan), fallback project_description.
+     * - Invoice alumunium/barang: "Pelunasan pembayaran {project_description}".
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @param  string                                $invoiceType
      * @return string
      */
-    private function buildPaymentFor(InvoiceProyek $invoice): string
+    private function buildPaymentFor($invoice, string $invoiceType): string
     {
+        if (in_array($invoiceType, ['alumunium', 'barang'], true)) {
+            $description = trim((string) ($invoice->project_description ?? ''));
+
+            if ($description === '') {
+                $description = trim((string) ($invoice->regarding ?? ''));
+            }
+
+            return $description !== ''
+                ? 'Pelunasan pembayaran ' . $description
+                : 'Pelunasan pembayaran Invoice '.$invoice->invoice_number;
+        }
+
         return trim((string) ($invoice->regarding ?? '')) !== ''
             ? $invoice->regarding
             : (trim((string) ($invoice->project_description ?? '')) !== ''
@@ -200,6 +218,16 @@ class KwintansiService
                 ->orWhere('received_from', 'like', "%{$escapedSearch}%")
                 ->orWhere('payment_for', 'like', "%{$escapedSearch}%")
                 ->orWhereHas('invoiceProyek', function ($invoiceQuery) use ($escapedSearch) {
+                    $invoiceQuery->where('recipient', 'like', "%{$escapedSearch}%")
+                        ->orWhere('proyek', 'like', "%{$escapedSearch}%")
+                        ->orWhere('project_description', 'like', "%{$escapedSearch}%");
+                })
+                ->orWhereHas('invoiceAlumunium', function ($invoiceQuery) use ($escapedSearch) {
+                    $invoiceQuery->where('recipient', 'like', "%{$escapedSearch}%")
+                        ->orWhere('proyek', 'like', "%{$escapedSearch}%")
+                        ->orWhere('project_description', 'like', "%{$escapedSearch}%");
+                })
+                ->orWhereHas('invoiceBarang', function ($invoiceQuery) use ($escapedSearch) {
                     $invoiceQuery->where('recipient', 'like', "%{$escapedSearch}%")
                         ->orWhere('proyek', 'like', "%{$escapedSearch}%")
                         ->orWhere('project_description', 'like', "%{$escapedSearch}%");

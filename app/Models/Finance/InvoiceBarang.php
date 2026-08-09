@@ -3,6 +3,7 @@
 namespace App\Models\Finance;
 
 use App\Models\Report\SalesRecap;
+use App\Services\Finance\InvoiceCalculatorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -81,6 +82,47 @@ class InvoiceBarang extends Model
     public function getNetAmount(): int
     {
         return (int) max(0, $this->total_selling ?? 0);
+    }
+
+    /**
+     * Bukti pembayaran untuk invoice barang.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function paymentProofs()
+    {
+        return $this->hasMany(PaymentProof::class, 'invoice_number', 'invoice_number')
+            ->where('invoice_type', 'barang')
+            ->orderByDesc('created_at');
+    }
+
+    protected function getCalculator(): InvoiceCalculatorService
+    {
+        return app(InvoiceCalculatorService::class);
+    }
+
+    /**
+     * Total pembayaran dari bukti pembayaran yang sudah masuk.
+     */
+    public function getTotalPaidAmount(): int
+    {
+        return $this->getCalculator()->getTotalPaidAmount($this);
+    }
+
+    /**
+     * Sisa tagihan: total_selling - total_payment.
+     */
+    public function getRemainingAmount(): int
+    {
+        return $this->getCalculator()->getRemainingAmount($this);
+    }
+
+    /**
+     * Cek apakah invoice sudah lunas.
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->getCalculator()->isFullyPaidForInvoice($this);
     }
 
     public function getStatusLabelAttribute(): string

@@ -4,6 +4,7 @@ namespace App\Services\Finance;
 
 use App\Models\Administrasi\Kwintansi;
 use App\Models\Finance\InvoiceAlumunium;
+use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Report\SalesRecap;
@@ -39,12 +40,13 @@ class PaymentProofService
     /**
      * Resolusi model invoice berdasarkan tipe dan nomor.
      *
-     * Tiga tipe invoice yang didukung:
+     * Empat tipe invoice yang didukung:
      * - 'proyek'          → tabel proyek_invoices, kolom invoice_number
      * - 'alumunium'       → tabel alumunium_invoices, kolom invoice_number
+     * - 'barang'          → tabel barang_invoices, kolom invoice_number
      * - 'rekap_penjualan' → tabel sales_recaps, kolom id_sales_recap
      *
-     * @param  string $invoiceType   Tipe invoice: proyek|alumunium|rekap_penjualan
+     * @param  string $invoiceType   Tipe invoice: proyek|alumunium|barang|rekap_penjualan
      * @param  string $invoiceNumber Nomor atau ID invoice
      * @return \Illuminate\Database\Eloquent\Model|null
      */
@@ -53,6 +55,7 @@ class PaymentProofService
         return match ($invoiceType) {
             'proyek'           => InvoiceProyek::where('invoice_number', $invoiceNumber)->first(),
             'alumunium'        => InvoiceAlumunium::where('invoice_number', $invoiceNumber)->first(),
+            'barang'           => InvoiceBarang::where('invoice_number', $invoiceNumber)->first(),
             'rekap_penjualan'  => SalesRecap::where('id_sales_recap', $invoiceNumber)->first(),
             default            => null,
         };
@@ -131,8 +134,8 @@ class PaymentProofService
      * Logika:
      * - Invoice 'proyek': amount berasal dari input user (dari form). Divalidasi
      *   tidak melebihi sisa tagihan. Jika amount <= 0 → null (tidak valid).
-     * - Invoice lain (alumunium/rekap): amount otomatis = seluruh sisa tagihan
-     *   (pembayaran dianggap lunas). Dikembalikan sebagai int.
+     * - Invoice lain (alumunium/barang/rekap): amount otomatis = seluruh sisa
+     *   tagihan (pembayaran dianggap lunas). Dikembalikan sebagai int.
      *
      * Return union:
      * - int (amount valid) / string (pesan error validasi) / null (amount <= 0).
@@ -232,9 +235,10 @@ class PaymentProofService
                     'payment_date'   => $validated['payment_date'] ?? now()->toDateString(),
                 ]);
 
-                if ($validated['invoice_type'] === 'proyek' && $invoice instanceof InvoiceProyek) {
+                if (in_array($validated['invoice_type'], ['proyek', 'alumunium', 'barang'], true)) {
                     $this->kwintansiService->createFromPaymentProof(
                         $invoice,
+                        $validated['invoice_type'],
                         $amount,
                         $invoice->getRemainingAmount(),
                         $validated['payment_date'] ?? now()->toDateString(),
@@ -396,7 +400,7 @@ class PaymentProofService
                 $paymentProof->update($data);
             }
 
-            if ($paymentDate !== null && $paymentProof->invoice_type === 'proyek') {
+            if ($paymentDate !== null) {
                 Kwintansi::query()
                     ->where('payment_proof_id', $paymentProof->id)
                     ->update(['kwintansi_date' => $paymentDate]);

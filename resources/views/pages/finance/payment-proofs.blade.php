@@ -1,9 +1,9 @@
 {{-- =====================================================================
      Halaman: Bukti Pembayaran (Payment Proofs)
      Tujuan: Mengelola bukti pembayaran untuk invoice proyek, invoice
-             alumunium, dan rekap penjualan, dengan hero header, summary
-             cards, filter modul/jenis invoice & pencarian, CRUD bukti
-             (upload gambar), dan hapus massal.
+             alumunium, invoice barang, dan rekap penjualan, dengan hero
+             header, summary cards, filter modul/jenis invoice & pencarian,
+             CRUD bukti (upload gambar), dan hapus massal.
      Data dari PaymentProofController@index:
      - $paymentProofs    : Paginator PaymentProof (10/halaman) hasil filter
                            module_type, invoice_type, search; untuk admin
@@ -15,7 +15,7 @@
      - $moduleOptions    : Opsi filter modul ('finance' = Keuangan).
      - $invoiceTypeOptions: Opsi filter jenis invoice; berbeda antara
                             admin (Invoice, Rekap Penjualan) dan non-admin
-                            (Invoice Proyek, Alumunium, Rekap Penjualan).
+                           (Invoice Proyek, Alumunium, Barang, Rekap Penjualan).
      - $salesRecapOptions: Koleksi SalesRecap dari cache untuk pilihan
                            dropdown saat membuat bukti rekap penjualan.
      - $availableInvoices: Data invoice yang tersedia untuk dipilih pada
@@ -56,7 +56,7 @@
                         Module</span>
                     <div>
                         <h1 class="text-3xl font-bold tracking-tight">Bukti Pembayaran</h1>
-                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()->isAdmin() ? 'invoice dan rekap penjualan' : 'invoice proyek dan alumunium' }}. Tahap pembayaran hanya berlaku untuk {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
+                        <p class="mt-2 text-sm sm:text-base text-white/80">Kelola bukti pembayaran {{ auth()->user()->isAdmin() ? 'invoice dan rekap penjualan' : 'invoice proyek, alumunium, dan barang' }}. Tahap pembayaran hanya berlaku untuk {{ auth()->user()->isAdmin() ? 'invoice' : 'invoice proyek' }}.</p>
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
