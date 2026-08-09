@@ -13,7 +13,7 @@
     $grandTotal = $netAmount - $discountAmount + $ppnAmount;
     $remaining = max(0, $grandTotal - $dpAmount - $totalPaid);
     $isFullyPaid = $remaining <= 0;
-    $progressPercent = $grandTotal > 0 ? min(100, (int) round(($totalPaid / $grandTotal) * 100)) : 0;
+    $progressPercent = $grandTotal > 0 ? min(100, (int) round((($totalPaid + $dpAmount) / $grandTotal) * 100)) : 0;
 
     $discountValueDisplay = rtrim(rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'), ',');
     $dpValueDisplay = rtrim(rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'), ',');

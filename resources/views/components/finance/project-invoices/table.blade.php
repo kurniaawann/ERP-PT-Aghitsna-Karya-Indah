@@ -27,7 +27,12 @@
                                 $netAmount = $invoice->getNetAmount();
                                 $remaining = $invoice->getRemainingAmount();
                                 $isFullyPaid = $invoice->isFullyPaid();
-                                $progressPercent = $netAmount > 0 ? min(100, (int) round(($totalPaid / $netAmount) * 100)) : 0;
+
+                                $dpAmount = (int) $invoice->getDpAmount();
+                                $discountAmount = (int) $invoice->getDiscountAmount();
+                                $ppnAmount = (int) $invoice->getPpnAmount();
+                                $grandTotal = $netAmount - $discountAmount + $ppnAmount;
+                                $progressPercent = $grandTotal > 0 ? min(100, (int) round((($totalPaid + $dpAmount) / $grandTotal) * 100)) : 0;
 
                                 if ($isFullyPaid) {
                                     $statusLabel = 'Sudah Lunas';
