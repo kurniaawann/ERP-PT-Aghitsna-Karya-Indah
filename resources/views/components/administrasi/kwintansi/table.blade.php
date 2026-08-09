@@ -9,7 +9,8 @@
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
-                            <th class="p-2 text-left">No. Kwintansi</th>
+                            <th class="p-2 text-left">No</th>
+                            <th class="p-2 text-left">Kwitansi No.</th>
                             <th class="p-2 text-left">Sudah Terima Dari</th>
                             <th class="p-2 text-left">Uang Pembayaran</th>
                             <th class="p-2 text-right">Jumlah</th>
@@ -25,7 +26,10 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
-                                <td class="p-2 font-medium text-primary">{{ $kwintansi->id_kwintansi }}</td>
+                                <td class="p-2 font-medium text-primary">
+                                    {{ $kwintansi->payment_sequence ? str_pad((string) $kwintansi->payment_sequence, 3, '0', STR_PAD_LEFT) : '-' }}
+                                </td>
+                                <td class="p-2">{{ $kwintansi->invoice_number ?? '-' }}</td>
                                 <td class="p-2">{{ $kwintansi->received_from }}</td>
                                 <td class="p-2">{{ Str::limit($kwintansi->payment_for, 50) }}</td>
 
@@ -55,7 +59,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center p-4 text-text-secondary">
+                                <td colspan="8" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

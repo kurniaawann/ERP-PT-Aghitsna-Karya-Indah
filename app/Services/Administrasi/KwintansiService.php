@@ -108,9 +108,10 @@ class KwintansiService
      * @param  \App\Models\Finance\InvoiceProyek  $invoice  Invoice proyek sumber
      * @param  int                                 $amount   Nominal pembayaran
      * @param  int                                 $remaining  Sisa tagihan setelah pembayaran ini
+     * @param  string|null                         $paymentDate  Tanggal pembayaran (Y-m-d); default hari ini
      * @return Kwintansi Model kwitansi yang baru dibuat
      */
-    public function createFromPaymentProof(InvoiceProyek $invoice, int $amount, int $remaining): Kwintansi
+    public function createFromPaymentProof(InvoiceProyek $invoice, int $amount, int $remaining, ?string $paymentDate = null): Kwintansi
     {
         return Kwintansi::create([
             'id_kwintansi' => Kwintansi::generateKwintansiCode(),
@@ -118,7 +119,7 @@ class KwintansiService
             'remaining' => $remaining,
             'received_from' => $invoice->recipient,
             'payment_for' => $this->buildPaymentFor($invoice),
-            'kwintansi_date' => now()->toDateString(),
+            'kwintansi_date' => $paymentDate ?? now()->toDateString(),
             'location' => self::DEFAULT_LOCATION,
             'invoice_number' => $invoice->invoice_number,
             'include_bank' => false,

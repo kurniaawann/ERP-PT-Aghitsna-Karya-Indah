@@ -154,7 +154,7 @@ class PaymentProofController extends Controller
     }
 
     /**
-     * Memperbarui gambar bukti pembayaran.
+     * Memperbarui gambar dan/atau tanggal pembayaran bukti pembayaran.
      *
      * @param  \App\Http\Requests\Finance\UpdatePaymentProofRequest $request
      * @param  \App\Models\Finance\PaymentProof                     $payment_proof
@@ -162,7 +162,11 @@ class PaymentProofController extends Controller
      */
     public function update(UpdatePaymentProofRequest $request, PaymentProof $payment_proof)
     {
-        $result = $this->service->updateImage($payment_proof, $request->file('proof_image'));
+        $result = $this->service->updateImage(
+            $payment_proof,
+            $request->file('proof_image'),
+            $request->validated()['payment_date'] ?? null
+        );
 
         return back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }

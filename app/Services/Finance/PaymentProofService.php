@@ -222,13 +222,15 @@ class PaymentProofService
                     'mime_type'      => $storedFile['mime_type'],
                     'file_size'      => $storedFile['file_size'],
                     'created_by'     => auth()->id(),
+                    'payment_date'   => $validated['payment_date'] ?? now()->toDateString(),
                 ]);
 
                 if ($validated['invoice_type'] === 'proyek' && $invoice instanceof InvoiceProyek) {
                     $this->kwintansiService->createFromPaymentProof(
                         $invoice,
                         $amount,
-                        $invoice->getRemainingAmount()
+                        $invoice->getRemainingAmount(),
+                        $validated['payment_date'] ?? now()->toDateString()
                     );
                 }
 
@@ -341,41 +343,61 @@ class PaymentProofService
     }
 
     /**
-     * Memperbarui hanya gambar bukti pembayaran.
+     * Memperbarui gambar dan/atau tanggal pembayaran bukti pembayaran.
+     *
+     * Tanggal pembayaran (payment_date) boleh diubah manual tanpa harus
+     * mengganti gambar; begitu juga sebaliknya. Param $proofImage dan
+     * $paymentDate bersifat opsional.
      *
      * @param  \App\Models\Finance\PaymentProof  $paymentProof
-     * @param  \Illuminate\Http\UploadedFile     $proofImage
+     * @param  \Illuminate\Http\UploadedFile|null $proofImage
+     * @param  string|null                        $paymentDate  Format Y-m-d
      * @return array{success: bool, message: string}
      */
-    public function updateImage(PaymentProof $paymentProof, UploadedFile $proofImage): array
+    public function updateImage(PaymentProof $paymentProof, ?UploadedFile $proofImage = null, ?string $paymentDate = null): array
     {
         $oldFilePath = $paymentProof->file_path;
 
         try {
-            $storedFile = $this->storeFile(
-                $proofImage,
-                $paymentProof->module_type,
-                $paymentProof->invoice_type,
-                $paymentProof->invoice_number
-            );
+            $storedFile = null;
 
-            $paymentProof->update([
-                'file_name' => $storedFile['file_name'],
-                'file_path' => $storedFile['file_path'],
-                'mime_type' => $storedFile['mime_type'],
-                'file_size' => $storedFile['file_size'],
-            ]);
+            if ($proofImage) {
+                $storedFile = $this->storeFile(
+                    $proofImage,
+                    $paymentProof->module_type,
+                    $paymentProof->invoice_type,
+                    $paymentProof->invoice_number
+                );
+            }
 
-            if ($oldFilePath && $oldFilePath !== $storedFile['file_path']) {
+            $data = [];
+            if ($storedFile) {
+                $data = array_merge($data, [
+                    'file_name' => $storedFile['file_name'],
+                    'file_path' => $storedFile['file_path'],
+                    'mime_type' => $storedFile['mime_type'],
+                    'file_size' => $storedFile['file_size'],
+                ]);
+            }
+
+            if ($paymentDate !== null) {
+                $data['payment_date'] = $paymentDate;
+            }
+
+            if ($data) {
+                $paymentProof->update($data);
+            }
+
+            if ($storedFile && $oldFilePath && $oldFilePath !== $storedFile['file_path']) {
                 $this->deleteFile($oldFilePath);
             }
         } catch (\Throwable $throwable) {
             Log::error('Payment Proof image update failed', ['error' => $throwable->getMessage(), 'trace' => $throwable->getTraceAsString()]);
 
-            return ['success' => false, 'message' => 'Gagal mengupdate gambar bukti pembayaran. Silakan coba lagi.'];
+            return ['success' => false, 'message' => 'Gagal mengupdate bukti pembayaran. Silakan coba lagi.'];
         }
 
-        return ['success' => true, 'message' => 'Gambar bukti pembayaran berhasil diupdate.'];
+        return ['success' => true, 'message' => 'Bukti pembayaran berhasil diupdate.'];
     }
 
     /**

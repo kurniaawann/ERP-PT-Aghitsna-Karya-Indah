@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string      $file_path       Path relatif file gambar
  * @property string      $mime_type       Tipe MIME file
  * @property int|null    $file_size       Ukuran file dalam byte
+ * @property \Carbon\Carbon|null $payment_date Tanggal pembayaran (manual, default created_at)
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -50,6 +51,7 @@ class PaymentProof extends Model
         'mime_type',
         'file_size',
         'created_by',
+        'payment_date',
     ];
 
     /**
@@ -61,6 +63,7 @@ class PaymentProof extends Model
         'payment_stage' => 'integer',
         'amount'        => 'integer',
         'file_size'     => 'integer',
+        'payment_date'  => 'date',
     ];
 
     /**

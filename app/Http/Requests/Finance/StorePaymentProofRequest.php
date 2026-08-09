@@ -38,6 +38,7 @@ class StorePaymentProofRequest extends FormRequest
             'invoice_type' => ['required', Rule::in($allowedInvoiceTypes)],
             'invoice_number' => ['required', 'string'],
             'amount'       => ['nullable'],
+            'payment_date' => ['nullable', 'date'],
             'proof_image'  => ['required', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
         ];
     }
@@ -55,6 +56,7 @@ class StorePaymentProofRequest extends FormRequest
             'invoice_type.required' => 'Tipe invoice wajib diisi.',
             'invoice_type.in'       => 'Tipe invoice tidak valid.',
             'invoice_number.required' => 'Nomor invoice wajib diisi.',
+            'payment_date.date'       => 'Format tanggal pembayaran tidak valid.',
             'proof_image.required'  => 'Bukti pembayaran wajib diupload.',
             'proof_image.image'     => 'File harus berupa gambar.',
             'proof_image.mimes'     => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WEBP.',

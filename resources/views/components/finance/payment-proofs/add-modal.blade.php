@@ -51,6 +51,14 @@
         <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek.</p>
     </div>
 
+    {{-- Section: Payment Date --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Tanggal Pembayaran</label>
+        <input type="date" name="payment_date" value="{{ old('payment_date', now()->toDateString()) }}"
+            class="w-full border rounded p-2">
+        <p class="text-xs text-text-secondary mt-1">Isi manual jika tanggal pembayaran berbeda dari hari ini.</p>
+    </div>
+
     {{-- Section: File Upload --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Bukti Gambar <span class="text-error">*</span></label>

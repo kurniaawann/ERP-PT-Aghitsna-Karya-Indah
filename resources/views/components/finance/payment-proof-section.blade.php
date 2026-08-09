@@ -22,7 +22,7 @@
                         <div>
                             <p class="text-sm font-semibold text-text-primary truncate">{{ $proof->file_name }}</p>
                             <p class="text-xs text-text-label">
-                                {{ $proof->created_at ? $proof->created_at->format('d M Y H:i') : '-' }}
+                                {{ optional($proof->payment_date ?? $proof->created_at)->format('d M Y') }}
                                 @if ($proof->file_size)
                                     • {{ number_format($proof->file_size / 1024, 1, ',', '.') }} KB
                                 @endif
@@ -59,6 +59,13 @@
         @csrf
         <input type="hidden" name="invoice_type" value="{{ $invoiceType }}">
         <input type="hidden" name="invoice_number" value="{{ $invoice->invoice_number }}">
+
+        <div>
+            <label class="block text-sm font-medium text-text-primary mb-1">Tanggal Pembayaran</label>
+            <input type="date" name="payment_date" value="{{ now()->toDateString() }}"
+                class="block w-full rounded border border-border-strong p-2 text-sm">
+            <p class="mt-1 text-xs text-text-label">Isi manual jika tanggal pembayaran berbeda dari hari ini.</p>
+        </div>
 
         <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Upload Gambar</label>

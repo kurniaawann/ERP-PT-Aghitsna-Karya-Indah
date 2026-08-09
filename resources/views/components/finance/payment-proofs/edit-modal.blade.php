@@ -42,6 +42,15 @@
             class="w-full border rounded p-2 bg-gray-100" readonly>
     </div>
 
+    {{-- Section: Payment Date --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Tanggal Pembayaran</label>
+        <input type="date" name="payment_date"
+            value="{{ optional($paymentProof->payment_date ?? $paymentProof->created_at)->format('Y-m-d') }}"
+            class="w-full border rounded p-2">
+        <p class="text-xs text-text-secondary mt-1">Ubah tanggal pembayaran sesuai kebutuhan.</p>
+    </div>
+
     {{-- Section: Current File --}}
     <div class="mb-3 p-3 border rounded bg-blue-50">
         <label class="block text-text-primary mb-1">File Saat Ini</label>
@@ -49,11 +58,12 @@
             class="text-blue-600 hover:underline text-sm">{{ $paymentProof->file_name }}</a>
     </div>
 
-    {{-- Section: Replace File --}}
+    {{-- Section: Replace File (opsional, untuk ubah tanggal tanpa ganti gambar) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Ganti Gambar <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Ganti Gambar</label>
         <input type="file" name="proof_image" accept="image/jpeg,image/png,image/gif,image/webp"
-            class="w-full border rounded p-2" required>
-        <p class="text-xs text-text-secondary mt-1">Format: JPG, PNG, GIF, WEBP. Maksimal 5 MB.</p>
+            class="w-full border rounded p-2">
+        <p class="text-xs text-text-secondary mt-1">Format: JPG, PNG, GIF, WEBP. Maksimal 5 MB. Kosongkan jika hanya
+            mengubah tanggal.</p>
     </div>
 </x-modal>

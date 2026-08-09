@@ -49,7 +49,7 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
                                 <td class="p-3 text-sm whitespace-nowrap">
-                                    {{ $paymentProof->created_at?->format('d-m-Y H:i') }}</td>
+                                    {{ optional($paymentProof->payment_date ?? $paymentProof->created_at)->format('d-m-Y') }}</td>
                                 <td class="p-3 text-sm font-medium text-primary">{{ $invoiceLabel }}</td>
                                 <td class="p-3 text-sm">
                                     <div class="flex flex-col gap-1">

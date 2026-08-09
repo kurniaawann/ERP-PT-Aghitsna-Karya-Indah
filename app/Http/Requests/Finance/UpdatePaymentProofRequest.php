@@ -7,7 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Form Request untuk validasi pembaruan Bukti Pembayaran.
  *
- * Hanya memvalidasi gambar bukti pembayaran karena field lain bersifat read-only.
+ * Memvalidasi tanggal pembayaran (manual) dan gambar bukti pembayaran.
+ * Gambar bersifat opsional; pengguna dapat mengubah tanggal saja.
  */
 class UpdatePaymentProofRequest extends FormRequest
 {
@@ -22,14 +23,18 @@ class UpdatePaymentProofRequest extends FormRequest
     }
 
     /**
-     * Aturan validasi untuk update Payment Proof (hanya gambar).
+     * Aturan validasi untuk update Payment Proof.
+     *
+     * Gambar bersifat opsional (nullable) agar pengguna dapat mengubah
+     * tanggal pembayaran (payment_date) tanpa harus mengganti gambar.
      *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'proof_image' => ['required', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
+            'payment_date' => ['nullable', 'date'],
+            'proof_image'  => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
         ];
     }
 
@@ -41,7 +46,7 @@ class UpdatePaymentProofRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'proof_image.required' => 'Gambar bukti pembayaran wajib diunggah.',
+            'payment_date.date'    => 'Format tanggal pembayaran tidak valid.',
             'proof_image.image'    => 'File harus berupa gambar.',
             'proof_image.mimes'    => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WEBP.',
             'proof_image.max'      => 'Ukuran gambar maksimal 5MB.',
