@@ -7,6 +7,7 @@ use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentAccount;
 use App\Models\Finance\PaymentProof;
+use App\Models\Sdm\Executive;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -55,6 +56,7 @@ class Kwintansi extends Model
         'id_kwintansi',
         'amount',
         'payment_account_id',
+        'selected_payment_accounts',
         'include_bank',
         'is_tunai',
         'is_cheque',
@@ -67,6 +69,7 @@ class Kwintansi extends Model
         'invoice_number',
         'invoice_type',
         'payment_proof_id',
+        'signed_by_id',
         'created_by',
     ];
 
@@ -83,6 +86,7 @@ class Kwintansi extends Model
         'is_bilyet_giro' => 'boolean',
         'amount' => 'integer',
         'remaining' => 'integer',
+        'selected_payment_accounts' => 'array',
     ];
 
     /**
@@ -128,6 +132,19 @@ class Kwintansi extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke penandatangan (petinggi) kwitansi.
+     *
+     * Kwitansi manual memilih Nama Tanda Tangan dari data petinggi
+     * (executives). Kwitansi otomatis mengikuti penandatangan invoice sumber.
+     *
+     * @return BelongsTo
+     */
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(Executive::class, 'signed_by_id');
     }
 
     /**

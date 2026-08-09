@@ -12,7 +12,7 @@
                             <th class="p-2 text-left">No</th>
                             <th class="p-2 text-left">Kwitansi No.</th>
                             <th class="p-2 text-left">Sudah Terima Dari</th>
-                            <th class="p-2 text-left">Uang Pembayaran</th>
+                            <th class="p-2 text-left">Keterangan</th>
                             <th class="p-2 text-right">Jumlah</th>
                             <th class="p-2 text-center">Tanggal</th>
                             <th class="p-2 text-center">Aksi</th>

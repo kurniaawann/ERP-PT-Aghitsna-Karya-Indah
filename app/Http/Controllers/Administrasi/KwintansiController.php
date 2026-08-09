@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\StoreKwitansiRequest;
 use App\Http\Requests\Administrasi\UpdateKwitansiRequest;
 use App\Models\Administrasi\Kwintansi;
+use App\Models\Sdm\Executive;
 use App\Services\Administrasi\KwintansiService;
+use App\Services\Finance\PaymentAccountService;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -24,7 +26,8 @@ class KwintansiController extends Controller
      * @param  KwintansiService  $service  Service layer modul kwitansi
      */
     public function __construct(
-        private readonly KwintansiService $service
+        private readonly KwintansiService $service,
+        private readonly PaymentAccountService $paymentAccountService
     ) {}
 
     /**
@@ -36,9 +39,18 @@ class KwintansiController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $kwintansis = $this->service->getPaginated($search);
 
-        return view('pages.administrasi.kwintansi', compact('kwintansis', 'search'));
+        $isSuperadmin = auth()->user()?->role === 'superadmin';
+        $invoiceType = $isSuperadmin ? $request->input('invoice_type') : null;
+
+        $kwintansis = $this->service->getPaginated($search, $invoiceType);
+        $executives = Executive::query()
+            ->where('created_by', auth()->id())
+            ->orderBy('name')
+            ->get();
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+
+        return view('pages.administrasi.kwintansi', compact('kwintansis', 'search', 'executives', 'paymentAccounts', 'invoiceType'));
     }
 
     /**
@@ -118,7 +130,8 @@ class KwintansiController extends Controller
      */
     public function exportPdfAll(Request $request)
     {
-        $kwintansis = $this->service->getAllForExport($request->input('search'));
+        $invoiceType = auth()->user()?->role === 'superadmin' ? $request->input('invoice_type') : null;
+        $kwintansis = $this->service->getAllForExport($request->input('search'), $invoiceType);
         $pdf = Pdf::loadView('exports.administrasi.kwintansi-pdf', compact('kwintansis'));
         $pdf->setPaper('a4', 'portrait');
 

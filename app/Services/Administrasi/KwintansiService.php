@@ -36,13 +36,15 @@ class KwintansiService
      * Mengambil data kwitansi dengan filter pencarian dan paginasi.
      *
      * @param  string|null  $search  Keyword pencarian (id_kwintansi, received_from, payment_for)
+     * @param  string|null  $invoiceType  Filter jenis invoice (proyek|alumunium|barang) — opsional
      * @return LengthAwarePaginator Hasil pencarian dengan paginasi
      */
-    public function getPaginated(?string $search): LengthAwarePaginator
+    public function getPaginated(?string $search, ?string $invoiceType = null): LengthAwarePaginator
     {
         return Kwintansi::with(['paymentAccount', 'invoiceProyek', 'invoiceAlumunium', 'invoiceBarang'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($invoiceType, fn ($query, $type) => $query->where('invoice_type', $type))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
     }
@@ -51,13 +53,15 @@ class KwintansiService
      * Mengambil seluruh data kwitansi untuk ekspor PDF.
      *
      * @param  string|null  $search  Keyword pencarian (opsional)
+     * @param  string|null  $invoiceType  Filter jenis invoice (proyek|alumunium|barang) — opsional
      * @return Collection Koleksi seluruh data kwitansi
      */
-    public function getAllForExport(?string $search): Collection
+    public function getAllForExport(?string $search, ?string $invoiceType = null): Collection
     {
         return Kwintansi::with(['paymentAccount', 'invoiceProyek', 'invoiceAlumunium', 'invoiceBarang'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($invoiceType, fn ($query, $type) => $query->where('invoice_type', $type))
             ->latest('created_at')
             ->get();
     }
@@ -87,7 +91,10 @@ class KwintansiService
     {
         $validatedData['id_kwintansi'] = Kwintansi::generateKwintansiCode();
         $validatedData['location'] = $validatedData['location'] ?? self::DEFAULT_LOCATION;
-        $validatedData['include_bank'] = false;
+        $validatedData['signed_by_id'] = !empty($validatedData['signed_by_id']) ? $validatedData['signed_by_id'] : null;
+        $validatedData['selected_payment_accounts'] = $this->normalizeSelectedPaymentAccounts($validatedData['selected_payment_accounts'] ?? null);
+        $validatedData['payment_account_id'] = $validatedData['selected_payment_accounts'][0] ?? null;
+        $validatedData['include_bank'] = !empty($validatedData['selected_payment_accounts']);
         $validatedData['is_tunai'] = true;
         $validatedData['is_cheque'] = false;
         $validatedData['is_bilyet_giro'] = false;
@@ -126,6 +133,7 @@ class KwintansiService
             'invoice_number' => $invoice->invoice_number,
             'invoice_type' => $invoiceType,
             'payment_proof_id' => $paymentProofId,
+            'signed_by_id' => $invoice->signed_by_id ?? null,
             'include_bank' => false,
             'is_tunai' => true,
             'is_cheque' => false,
@@ -175,6 +183,10 @@ class KwintansiService
     public function update(Kwintansi $kwintansi, array $validatedData): Kwintansi
     {
         $validatedData['location'] = $validatedData['location'] ?? self::DEFAULT_LOCATION;
+        $validatedData['signed_by_id'] = !empty($validatedData['signed_by_id']) ? $validatedData['signed_by_id'] : null;
+        $validatedData['selected_payment_accounts'] = $this->normalizeSelectedPaymentAccounts($validatedData['selected_payment_accounts'] ?? null);
+        $validatedData['payment_account_id'] = $validatedData['selected_payment_accounts'][0] ?? null;
+        $validatedData['include_bank'] = !empty($validatedData['selected_payment_accounts']);
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
 
@@ -199,6 +211,25 @@ class KwintansiService
             ->where('created_by', auth()->id())
             ->whereNull('payment_proof_id')
             ->delete();
+    }
+
+    /**
+     * Menormalkan daftar rekening pembayaran terpilih menjadi array id unik.
+     *
+     * Mengembalikan null jika tidak ada rekening yang dipilih.
+     *
+     * @param  mixed  $selectedPaymentAccounts
+     * @return array<int, int>|null
+     */
+    private function normalizeSelectedPaymentAccounts($selectedPaymentAccounts): ?array
+    {
+        if (empty($selectedPaymentAccounts)) {
+            return null;
+        }
+
+        $ids = array_values(array_unique(array_map('intval', (array) $selectedPaymentAccounts)));
+
+        return $ids ?: null;
     }
 
     /**

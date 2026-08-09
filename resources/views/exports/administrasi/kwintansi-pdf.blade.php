@@ -179,6 +179,11 @@
             width: 200px;
         }
 
+        /* Kwitansi manual: blok tanda tangan diturunkan 30px */
+        .signature-cell-manual {
+            padding-top: 30px;
+        }
+
         .signature-title {
             font-size: 11pt;
             margin-bottom: 12px;
@@ -187,6 +192,12 @@
         .signature-name {
             font-weight: bold;
             margin-top: 5px;
+        }
+
+        .signature-position {
+            font-weight: bold;
+            font-size: 9.5pt;
+            margin-top: 2px;
         }
 
         .page-break {
@@ -327,10 +338,12 @@
                     <td style="vertical-align: top; width: 65%;">
                         <div class="bank-info">
                             @php
-                                $bankAccounts = $sourceInvoice?->selected_payment_accounts
-                                    ? \App\Models\Finance\PaymentAccount::whereIn('id', (array) $sourceInvoice->selected_payment_accounts)->orderBy('id')->get()
-                                    : collect([$kwintansi->include_bank ? $kwintansi->paymentAccount : null]);
-                                $bankAccounts = $bankAccounts->filter();
+                                $accountIds = $sourceInvoice?->selected_payment_accounts
+                                    ? (array) $sourceInvoice->selected_payment_accounts
+                                    : (array) ($kwintansi->selected_payment_accounts ?? []);
+                                $bankAccounts = $accountIds
+                                    ? \App\Models\Finance\PaymentAccount::whereIn('id', $accountIds)->orderBy('id')->get()
+                                    : collect();
                             @endphp
 
                             @forelse ($bankAccounts as $bankAccount)
@@ -346,17 +359,24 @@
                     </td>
 
                     <!-- TANDA TANGAN -->
-                    <td class="signature-cell">
+                    @php
+                        $signatory = $sourceInvoice?->signedBy ?? $kwintansi->signedBy;
+                        $isManualKwintansi = empty($kwintansi->payment_proof_id);
+                    @endphp
+                    <td class="signature-cell {{ $isManualKwintansi ? 'signature-cell-manual' : '' }}">
                         <div class="signature-title">Signature,</div>
                         <div style="min-height: 50px;">
-                            @if ($sourceInvoice?->signedBy?->signature_image)
-                                <img src="{{ storage_path('app/public/' . $sourceInvoice->signedBy->signature_image) }}"
+                            @if ($signatory?->signature_image)
+                                <img src="{{ storage_path('app/public/' . $signatory->signature_image) }}"
                                     alt="Tanda Tangan" style="max-height: 50px; max-width: 130px;">
                             @endif
                         </div>
                         <div class="signature-name">
-                            ( {{ $sourceInvoice?->signedBy?->name ?? 'Zulkarnain,S.T.,M.T.' }} )
+                            ( {{ $signatory?->name ?? 'Zulkarnain,S.T.,M.T.' }} )
                         </div>
+                        @if (! $isManualKwintansi && !empty($signatory?->position))
+                            <div class="signature-position">{{ $signatory->position }}</div>
+                        @endif
                     </td>
                 </tr>
             </table>

@@ -44,18 +44,34 @@
              ═══════════════════════════════════════════════════════════ --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
 
-            {{-- Form Pencarian --}}
+            {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('kwintansi.index') }}"
-                class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                {{-- Filter Jenis Invoice: hanya untuk role superadmin (paling kiri) --}}
+                @if (auth()->user()?->role === 'superadmin')
+                    <div class="w-full min-[1530px]:w-auto">
+                        <label for="invoice-type-select" class="sr-only">Filter Jenis Invoice</label>
+                        <select name="invoice_type" id="invoice-type-select"
+                            onchange="this.form.requestSubmit()"
+                            class="block w-full min-[1530px]:w-48 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input 
+                                   focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                            <option value="">Semua Jenis Invoice</option>
+                            <option value="proyek" @selected(request('invoice_type') === 'proyek')>Invoice Proyek</option>
+                            <option value="alumunium" @selected(request('invoice_type') === 'alumunium')>Invoice Alumunium</option>
+                            <option value="barang" @selected(request('invoice_type') === 'barang')>Invoice Barang</option>
+                        </select>
+                    </div>
+                @endif
+
                 <x-filters.search-input :value="request('search')" placeholder="Cari kwintansi..." />
             </form>
 
             {{-- Tombol Aksi: Print, Hapus, Tambah --}}
-            <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
-                <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
 
                     {{-- Dropdown Export PDF --}}
-                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('kwintansi.export.pdf')" :queryParams="['search' => request('search')]" responsive="custom" fill />
+                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('kwintansi.export.pdf')" :queryParams="['search' => request('search'), 'invoice_type' => request('invoice_type')]" responsive="custom" fill />
 
                     {{-- Tombol Hapus Massal --}}
                     <x-buttons.delete-button modalId="deleteModal" />
@@ -79,7 +95,7 @@
     {{-- ═══════════════════════════════════════════════════════════════
          MODAL TAMBAH: Form tambah kwitansi baru
          ═══════════════════════════════════════════════════════════════ --}}
-    @include('components.administrasi.kwintansi.add-modal')
+    @include('components.administrasi.kwintansi.add-modal', ['executives' => $executives, 'paymentAccounts' => $paymentAccounts])
 
     {{-- ═══════════════════════════════════════════════════════════════
          MODAL EDIT: Form edit kwitansi (satu modal per kwitansi).

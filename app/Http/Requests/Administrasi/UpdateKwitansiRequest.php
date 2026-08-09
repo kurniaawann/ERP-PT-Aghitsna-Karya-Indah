@@ -33,7 +33,9 @@ class UpdateKwitansiRequest extends FormRequest
             'amount' => 'required|min:0',
             'remaining' => 'nullable|min:0',
             'kwintansi_date' => 'required|date',
-            'location' => 'nullable|string|max:100',
+            'signed_by_id' => 'nullable|integer|exists:executives,id',
+            'selected_payment_accounts' => 'nullable|array',
+            'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
         ];
     }
 
@@ -47,13 +49,15 @@ class UpdateKwitansiRequest extends FormRequest
         return [
             'received_from.required' => 'Sudah terima dari tidak boleh kosong.',
             'received_from.max' => 'Sudah terima dari maksimal 255 karakter.',
-            'payment_for.required' => 'Uang pembayaran tidak boleh kosong.',
+            'payment_for.required' => 'Keterangan tidak boleh kosong.',
             'amount.required' => 'Jumlah tidak boleh kosong.',
             'amount.min' => 'Jumlah minimal 0.',
             'remaining.min' => 'Sisa minimal 0.',
             'kwintansi_date.required' => 'Tanggal tidak boleh kosong.',
             'kwintansi_date.date' => 'Format tanggal tidak valid.',
-            'location.max' => 'Lokasi maksimal 100 karakter.',
+            'signed_by_id.exists' => 'Nama tanda tangan tidak valid.',
+            'selected_payment_accounts.array' => 'Rekening pembayaran tidak valid.',
+            'selected_payment_accounts.*.exists' => 'Rekening pembayaran tidak valid.',
         ];
     }
 }
