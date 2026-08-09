@@ -111,6 +111,9 @@ class ProjectQuotationController extends Controller
     /**
      * Menyimpan penawaran baru.
      *
+     * Catatan: penawaran TIDAK otomatis membuat invoice. Invoice dibuat
+     * lewat aksi eksplisit "Buat Invoice" (createInvoiceFromQuotation).
+     *
      * @param  StoreProjectQuotationRequest  $request
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -119,7 +122,31 @@ class ProjectQuotationController extends Controller
         $quotation = $this->service->create($request->validated());
 
         return redirect()->route('project-quotation.index')
-            ->with('success', "Penawaran {$quotation->quotation_number} berhasil ditambahkan! Invoice Proyek otomatis dibuat.");
+            ->with('success', "Penawaran {$quotation->quotation_number} berhasil ditambahkan!");
+    }
+
+    /**
+     * Membuat Invoice Proyek (snapshot) dari penawaran yang diterima.
+     *
+     * @param  string  $quotationNumber
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function createInvoiceFromQuotation(string $quotationNumber)
+    {
+        $quotation = $this->service->findByNumber($quotationNumber);
+
+        if (!$quotation) {
+            return back()->with('error', 'Data tidak ditemukan!');
+        }
+
+        if ($quotation->invoices()->exists()) {
+            return back()->with('error', "Invoice untuk penawaran {$quotation->quotation_number} sudah pernah dibuat.");
+        }
+
+        $invoice = $this->service->createInvoiceFromQuotation($quotation);
+
+        return redirect()->route('proyek-invoice.index')
+            ->with('success', "Invoice {$invoice->invoice_number} berhasil dibuat dari penawaran {$quotation->quotation_number}. Silakan lengkapi PPN, DP, dan rekening pembayaran pada modul Finance.");
     }
 
     // ─── Update ───────────────────────────────────────────────────────────────

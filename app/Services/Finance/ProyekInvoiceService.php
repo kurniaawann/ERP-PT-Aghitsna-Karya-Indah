@@ -109,6 +109,9 @@ class ProyekInvoiceService
      *
      * Logika:
      * - Cari invoice terakhir tahun ini (filter '%/PT.AKI/{yy}').
+     * - Urutkan berdasarkan PANJANG string DESC lalu string DESC (bukan hanya
+     *   string DESC) karena orderBy string murni salah saat melewati batas
+     *   digit (mis. "9/14/..." dianggap lebih besar dari "10/15/...").
      * - Parse dua angka depan lewat regex /^(\d+)\/(\d+)\//, lalu increment keduanya.
      * - Jika belum ada invoice tahun ini, mulai dari A=1, B=6.
      *
@@ -119,6 +122,7 @@ class ProyekInvoiceService
         $year = date('y');
 
         $lastInvoice = InvoiceProyek::where('invoice_number', 'like', "%/PT.AKI/{$year}")
+            ->orderByRaw('LENGTH(invoice_number) DESC')
             ->orderByDesc('invoice_number')
             ->first();
 

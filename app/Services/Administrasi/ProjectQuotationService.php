@@ -17,18 +17,20 @@ use Illuminate\Support\Facades\DB;
 /**
  * Service untuk mengelola business logic Penawaran Proyek (Project Quotation).
  *
- * Service ini bertanggung jawab atas operasi CRUD, generasi nomor penawaran,
- * perhitungan total & discount, pengelolaan items (format flat JSON seperti
- * Invoice Proyek), dan pembuatan Invoice Proyek otomatis (snapshot) setiap
- * kali penawaran baru disimpan.
+ * Service untuk mengelola business logic Penawaran Proyek (Project Quotation).
  *
- * Alur best practice:
- * - Penawaran yang disimpan otomatis membuat Invoice Proyek (status belum
- *   lunas) pada transaksi DB yang sama.
- * - Invoice tetap dapat dibuat mandiri tanpa penawaran (modul Finance).
+ * Service ini bertanggung jawab atas operasi CRUD, generasi nomor penawaran,
+ * perhitungan total & discount, dan pengelolaan items (format flat JSON seperti
+ * Invoice Proyek).
+ *
+ * Alur best practice (separasi ketat):
+ * - Penawaran hanya menyimpan kebutuhan PDF penawaran (TANPA PPN/DP).
+ * - PPN & DP adalah konsep penagihan — hanya diisi pada Invoice (modul Finance).
+ * - Invoice dibuat dari penawaran yang sudah diterima lewat aksi eksplisit
+ *   "Buat Invoice" (createInvoiceFromQuotation), bukan otomatis saat penawaran
+ *   disimpan.
  * - Edit/hapus penawaran TIDAK mengubah invoice yang sudah dibuat (snapshot).
- * - DP & PPN dapat diisi pada penawaran dan ikut terbawa ke invoice otomatis
- *   (snapshot). Invoice tetap dapat dibuat mandiri tanpa penawaran.
+ * - Invoice tetap dapat dibuat mandiri tanpa penawaran (modul Finance).
  */
 class ProjectQuotationService
 {
@@ -61,6 +63,7 @@ class ProjectQuotationService
     public function getPaginatedSearch(?string $search): LengthAwarePaginator
     {
         return ProjectQuotation::query()
+            ->with('invoices')
             ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
                 $escapedSearch = $this->escapeLikeWildcards($search);
@@ -93,8 +96,10 @@ class ProjectQuotationService
     }
 
     /**
-     * Menyimpan penawaran baru beserta items (flat JSON) dan otomatis
-     * membuat Invoice Proyek (snapshot) dalam satu transaksi DB.
+     * Menyimpan penawaran baru beserta items (flat JSON).
+     *
+     * Catatan: penawaran TIDAK otomatis membuat invoice. Invoice dibuat
+     * lewat aksi eksplisit "Buat Invoice" (createInvoiceFromQuotation).
      *
      * @param  array  $validated  Data yang sudah divalidasi oleh FormRequest
      * @return ProjectQuotation
@@ -116,15 +121,9 @@ class ProjectQuotationService
         $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
             ? $totalAmount - (int) $discountAmount
             : null;
-        $dpAmount = $this->calculator->calculateDpAmount(
-            $totalAmount,
-            $totalAfterDiscount,
-            $validated['dp_type'] ?? null,
-            isset($validated['dp_value']) && $validated['dp_value'] !== '' ? (float) $validated['dp_value'] : null
-        );
 
-        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $discountAmount, $totalAfterDiscount, $dpAmount, $items) {
-            $quotation = ProjectQuotation::create([
+        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $discountAmount, $totalAfterDiscount, $items) {
+            return ProjectQuotation::create([
                 'quotation_number' => $quotationNumber,
                 'sequence_number' => $seqNumber,
                 'date' => $validated['date'],
@@ -137,21 +136,13 @@ class ProjectQuotationService
                 'items' => $items,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? null,
-                'ppn' => $validated['ppn'] ?? null,
                 'total_after_discount' => $totalAfterDiscount,
-                'dp_type' => $validated['dp_type'] ?? null,
-                'dp_value' => $validated['dp_value'] ?? null,
-                'dp_amount' => $dpAmount > 0 ? (int) $dpAmount : null,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
                 'division_id' => $validated['division_id'] ?? null,
                 'created_by' => auth()->id(),
             ]);
-
-            $this->createLinkedInvoice($quotation, $items, $totalAmount, $discountAmount, $totalAfterDiscount);
-
-            return $quotation;
         });
     }
 
@@ -159,7 +150,7 @@ class ProjectQuotationService
      * Memperbarui penawaran yang sudah ada.
      *
      * Catatan: snapshot — memperbarui penawaran TIDAK mengubah invoice
-     * otomatis yang telah dibuat sebelumnya.
+     * yang telah dibuat sebelumnya.
      *
      * @param  ProjectQuotation  $quotation  Model penawaran
      * @param  array              $validated  Data yang sudah divalidasi oleh FormRequest
@@ -177,14 +168,8 @@ class ProjectQuotationService
         $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
             ? $totalAmount - (int) $discountAmount
             : null;
-        $dpAmount = $this->calculator->calculateDpAmount(
-            $totalAmount,
-            $totalAfterDiscount,
-            $validated['dp_type'] ?? null,
-            isset($validated['dp_value']) && $validated['dp_value'] !== '' ? (float) $validated['dp_value'] : null
-        );
 
-        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $totalAfterDiscount, $dpAmount, $items) {
+        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $totalAfterDiscount, $items) {
             $quotation->update([
                 'date' => $validated['date'],
                 'subject' => $validated['subject'] ?? 'Penawaran Harga',
@@ -196,11 +181,7 @@ class ProjectQuotationService
                 'items' => $items,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? null,
-                'ppn' => $validated['ppn'] ?? null,
                 'total_after_discount' => $totalAfterDiscount,
-                'dp_type' => $validated['dp_type'] ?? null,
-                'dp_value' => $validated['dp_value'] ?? null,
-                'dp_amount' => $dpAmount > 0 ? (int) $dpAmount : null,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
@@ -347,31 +328,33 @@ class ProjectQuotationService
         return (int) round($total);
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // PRIVATE HELPERS
-    // ═══════════════════════════════════════════════════════════════
-
     /**
-     * Membuat Invoice Proyek (snapshot) dari penawaran yang baru dibuat.
+     * Membuat Invoice Proyek (snapshot) dari penawaran yang diterima.
      *
-     * Seluruh field disalin dari penawaran; invoice berstatus "Belum Lunas".
-     * Kolom quotation_number menautkan invoice ke penawaran asal.
-     * Discount, DP, dan PPN dari penawaran ikut terbawa ke invoice (snapshot).
+     * Dipanggil lewat aksi eksplisit "Buat Invoice" pada modul penawaran.
+     * Seluruh field penawaran yang relevan disalin ke invoice; invoice
+     * berstatus "Belum Lunas" dan menautkan quotation_number ke penawaran
+     * asal (snapshot — perubahan penawaran tidak mengubah invoice).
      *
-     * @param  ProjectQuotation  $quotation  Penawaran yang baru dibuat
-     * @param  array             $items      Items ter-normalisasi
-     * @param  int               $totalAmount  Total amount
-     * @param  int               $discountAmount  Besaran diskon (0 bila tidak ada)
-     * @param  int|null          $totalAfterDiscount  Total setelah diskon
+     * Separasi ketat: PPN & DP TIDAK ikut disalin — keduanya diisi langsung
+     * pada form invoice (modul Finance).
+     *
+     * @param  ProjectQuotation  $quotation  Penawaran yang diterima
      * @return InvoiceProyek
      */
-    private function createLinkedInvoice(
-        ProjectQuotation $quotation,
-        array $items,
-        int $totalAmount,
-        int $discountAmount,
-        ?int $totalAfterDiscount
-    ): InvoiceProyek {
+    public function createInvoiceFromQuotation(ProjectQuotation $quotation): InvoiceProyek
+    {
+        $items = $this->normalizeItems($quotation->items ?? []);
+        $totalAmount = $this->calculateItemsTotal($items);
+        $discountAmount = $this->calculator->calculateDiscountAmount(
+            $totalAmount,
+            $quotation->discount_type,
+            $quotation->discount_value ? (float) $quotation->discount_value : null
+        );
+        $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
+            ? $totalAmount - (int) $discountAmount
+            : null;
+
         return InvoiceProyek::create([
             'invoice_number' => $this->invoiceService->generateInvoiceNumber(),
             'quotation_number' => $quotation->quotation_number,
@@ -385,16 +368,16 @@ class ProjectQuotationService
             'discount_type' => $quotation->discount_type,
             'discount_value' => $quotation->discount_value,
             'total_after_discount' => $totalAfterDiscount,
-            'dp_type' => $quotation->dp_type,
-            'dp_value' => $quotation->dp_value,
-            'dp_amount' => $quotation->dp_amount,
-            'ppn' => $quotation->ppn,
             'selected_payment_accounts' => $quotation->selected_payment_accounts ?? [],
             'signed_by_id' => $quotation->signed_by_id,
             'division_id' => $quotation->division_id,
             'created_by' => auth()->id(),
         ]);
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PRIVATE HELPERS
+    // ═══════════════════════════════════════════════════════════════
 
     /**
      * Meng-escape karakter wildcard LIKE untuk mencegah hasil pencarian yang tidak diinginkan.

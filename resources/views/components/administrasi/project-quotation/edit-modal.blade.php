@@ -1,17 +1,20 @@
 {{-- =====================================================================
      Komponen Modal Edit Penawaran Proyek (Project Quotation)
 
-     Form edit penawaran — pola identik dengan Invoice Proyek:
+     Form edit penawaran — hanya menyimpan kebutuhan PDF penawaran:
      - Data terisi otomatis dari penawaran yang dipilih
      - Daftar Item (flat, dinamis via JS, pre-populated)
-     - Total, Discount, DP, dan PPN (opsional)
+     - Total & Discount (opsional)
      - Tanda Tangan (opsional), Rekening Pembayaran (pre-selected)
+
+     Separasi ketat: PPN & DP TIDAK ada di penawaran — keduanya diisi
+     pada Invoice (modul Finance).
 
      Seluruh elemen memakai suffix -{quotation_number} agar kalkulasi
      berjalan per modal tanpa saling mengganggu.
 
      Catatan: memperbarui penawaran TIDAK mengubah invoice yang sudah
-     dibuat otomatis (snapshot).
+     dibuat (snapshot).
      ===================================================================== --}}
 
 <x-modal id="editModal-{{ $quotation->quotation_number }}"
@@ -170,86 +173,6 @@
             <div class="flex justify-between mt-1">
                 <span class="text-sm font-bold text-text-primary">Total Setelah Discount:</span>
                 <span id="total-after-discount-edit-{{ $quotation->quotation_number }}"
-                    class="text-sm font-bold text-green-600">Rp 0</span>
-            </div>
-        </div>
-    </div>
-
-    {{-- DP / Uang Muka Section --}}
-    <div class="mb-3 p-3 border border-info-light rounded-lg bg-info-light"
-        id="dp-section-edit-{{ $quotation->quotation_number }}">
-        <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div>
-                <label class="block text-text-label text-sm mb-1">Tipe DP</label>
-                <select name="dp_type" id="dp-type-edit-{{ $quotation->quotation_number }}"
-                    class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input"
-                    onchange="calculateDPEdit('{{ $quotation->quotation_number }}')">
-                    <option value="" {{ !$quotation->dp_type ? 'selected' : '' }}>Tidak Ada DP</option>
-                    <option value="percentage" {{ $quotation->dp_type == 'percentage' ? 'selected' : '' }}>
-                        Persentase (%)</option>
-                    <option value="amount" {{ $quotation->dp_type == 'amount' ? 'selected' : '' }}>Nominal (Rp)
-                    </option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-text-label text-sm mb-1">Nilai DP</label>
-                <input type="text" inputmode="decimal" name="dp_value"
-                    id="dp-value-edit-{{ $quotation->quotation_number }}"
-                    value="{{ $quotation->dp_value ?? 0 }}"
-                    class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
-                    placeholder="0"
-                    oninput="formatDecimalInput(this); calculateDPEdit('{{ $quotation->quotation_number }}')">
-                <div id="dp-error-edit-{{ $quotation->quotation_number }}"
-                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                    <i class="fa-solid fa-exclamation-circle"></i>
-                    <span>Persentase DP tidak boleh 100% atau lebih</span>
-                </div>
-                <div id="dp-amount-error-edit-{{ $quotation->quotation_number }}"
-                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                    <i class="fa-solid fa-exclamation-circle"></i>
-                    <span>Nominal DP tidak boleh lebih dari atau sama dengan total</span>
-                </div>
-            </div>
-        </div>
-        <div class="mt-2 p-2 bg-surface-base rounded-lg">
-            <div class="flex justify-between">
-                <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
-                <span id="dp-amount-edit-{{ $quotation->quotation_number }}"
-                    class="text-sm font-bold text-info">Rp 0</span>
-            </div>
-        </div>
-    </div>
-
-    {{-- PPN Section --}}
-    <div class="mb-3 p-3 border border-purple-300 rounded-lg bg-purple-50"
-        id="ppn-section-edit-{{ $quotation->quotation_number }}">
-        <label class="block text-text-primary font-semibold mb-2">PPN (Opsional)</label>
-        <div>
-            <label class="block text-text-label text-sm mb-1">Persentase PPN (%)</label>
-            <input type="text" inputmode="decimal" name="ppn" id="ppn-value-edit-{{ $quotation->quotation_number }}"
-                value="{{ $quotation->ppn ?? '' }}"
-                class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
-                placeholder="Contoh: 11"
-                oninput="formatDecimalInput(this); calculatePPNEdit('{{ $quotation->quotation_number }}')">
-            <small class="text-xs text-text-secondary">Dihitung dari total setelah diskon. Kosongkan jika tidak
-                dikenakan PPN.</small>
-            <div id="ppn-error-edit-{{ $quotation->quotation_number }}"
-                class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                <i class="fa-solid fa-exclamation-circle"></i>
-                <span>PPN tidak boleh 100% atau lebih</span>
-            </div>
-        </div>
-        <div class="mt-2 p-2 bg-surface-base rounded-lg hidden"
-            id="ppn-summary-edit-{{ $quotation->quotation_number }}">
-            <div class="flex justify-between">
-                <span class="text-sm text-text-label">PPN:</span>
-                <span id="ppn-amount-edit-{{ $quotation->quotation_number }}"
-                    class="text-sm font-semibold text-error">Rp 0</span>
-            </div>
-            <div class="flex justify-between mt-1">
-                <span class="text-sm font-bold text-text-primary">Total Setelah PPN:</span>
-                <span id="total-after-ppn-edit-{{ $quotation->quotation_number }}"
                     class="text-sm font-bold text-green-600">Rp 0</span>
             </div>
         </div>

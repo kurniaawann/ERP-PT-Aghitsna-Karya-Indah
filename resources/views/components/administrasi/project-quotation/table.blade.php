@@ -1,8 +1,9 @@
-{{-- Project Quotation Table Component --}}
-<form id="deleteForm" method="POST" action="{{ route('project-quotation.destroySelected') }}">
-    @csrf
-    @method('DELETE')
-    <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+{{-- Project Quotation Table Component
+     Form hapus massal (#deleteForm) TIDAK membungkus tabel agar tidak
+     bertabrakan dengan form "Buat Invoice" per baris (form tidak boleh
+     bersarang). Checkbox memakai atribut form="deleteForm" untuk tetap
+     ter-submit oleh form hapus. --}}
+<div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div class="inline-block min-w-full align-middle">
             <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
                 <table class="min-w-full divide-y divide-border-light">
@@ -22,7 +23,7 @@
                             <tr class="border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="ids[]" value="{{ $quotation->quotation_number }}"
-                                        class="w-4 h-4 accent-primary cursor-pointer">
+                                        form="deleteForm" class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
                                 <td class="p-2 font-medium text-primary">{{ $quotation->quotation_number }}</td>
@@ -39,6 +40,29 @@
 
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
+                                        {{-- Buat Invoice dari Penawaran --}}
+                                        @if ($quotation->invoices->isEmpty())
+                                            <form method="POST"
+                                                action="{{ route('project-quotation.invoice.create', $quotation->quotation_number) }}"
+                                                class="inline"
+                                                onsubmit="this.querySelector('button').disabled = true;">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                    title="Buat Invoice dari Penawaran ini">
+                                                    <i class="fa-solid fa-file-invoice w-3 h-3"></i>
+                                                    Buat Invoice
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span
+                                                class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-lg text-xs"
+                                                title="Invoice sudah dibuat dari penawaran ini">
+                                                <i class="fa-solid fa-check w-3 h-3"></i>
+                                                Sudah dibuat
+                                            </span>
+                                        @endif
+
                                         {{-- Edit --}}
                                         <button type="button"
                                             onclick="openModal('editModal-{{ $quotation->quotation_number }}')"
@@ -76,4 +100,10 @@
             </div>
         </div>
     </div>
-</form>
+
+    {{-- Form hapus massal — di luar tabel agar form "Buat Invoice" per baris
+         tidak bersarang. Checkbox name="ids[]" terhubung via form="deleteForm". --}}
+    <form id="deleteForm" method="POST" action="{{ route('project-quotation.destroySelected') }}" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>

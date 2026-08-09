@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
  *
  * Memastikan semua field wajib terisi, minimal 1 rekening pembayaran
  * dipilih, data items valid, dan discount memiliki tipe yang diperbolehkan.
- * DP & PPN bersifat opsional.
+ * PPN & DP tidak ada pada penawaran — keduanya diisi pada Invoice (modul Finance).
  */
 class UpdateProjectQuotationRequest extends FormRequest
 {
@@ -40,9 +40,6 @@ class UpdateProjectQuotationRequest extends FormRequest
             'items.*.harga' => 'required|numeric|min:0',
             'discount_type' => 'nullable|in:percentage,amount',
             'discount_value' => 'nullable|numeric|min:0',
-            'ppn' => 'nullable|numeric|min:0|max:100',
-            'dp_type' => 'nullable|in:percentage,amount',
-            'dp_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',
@@ -80,7 +77,6 @@ class UpdateProjectQuotationRequest extends FormRequest
             'attachment.max' => 'Lampiran maksimal 255 karakter.',
             'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
             'location.max' => 'Lokasi maksimal 255 karakter.',
-            'ppn.max' => 'PPN tidak boleh lebih dari 100%.',
             'signed_by_id.exists' => 'Nama penandatangan yang dipilih tidak ditemukan.',
             'division_id.exists' => 'Divisi yang dipilih tidak ditemukan.',
         ];

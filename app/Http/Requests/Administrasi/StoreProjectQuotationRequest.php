@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Memastikan semua field wajib terisi, data items (JSON flat, format sama
  * seperti Invoice Proyek) valid, dan discount memiliki tipe yang diperbolehkan.
  * Pemilihan rekening pembayaran wajib dipilih minimal 1 (sama seperti Invoice).
- * DP & PPN bersifat opsional dan ikut terbawa ke invoice otomatis.
+ * PPN & DP tidak ada pada penawaran — keduanya diisi pada Invoice (modul Finance).
  */
 class StoreProjectQuotationRequest extends FormRequest
 {
@@ -37,9 +37,6 @@ class StoreProjectQuotationRequest extends FormRequest
             'items' => 'required|json',
             'discount_type' => 'nullable|in:percentage,amount',
             'discount_value' => 'nullable|numeric|min:0',
-            'ppn' => 'nullable|numeric|min:0|max:100',
-            'dp_type' => 'nullable|in:percentage,amount',
-            'dp_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',
@@ -74,7 +71,6 @@ class StoreProjectQuotationRequest extends FormRequest
             'attachment.max' => 'Lampiran maksimal 255 karakter.',
             'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
             'location.max' => 'Lokasi maksimal 255 karakter.',
-            'ppn.max' => 'PPN tidak boleh lebih dari 100%.',
             'signed_by_id.exists' => 'Nama penandatangan yang dipilih tidak ditemukan.',
             'division_id.exists' => 'Divisi yang dipilih tidak ditemukan.',
         ];

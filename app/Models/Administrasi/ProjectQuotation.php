@@ -15,7 +15,10 @@ use App\Models\User;
  *
  * Model ini menyimpan data header penawaran proyek, termasuk nomor
  * penawaran, tanggal, penerima, total, dan items (format flat JSON
- * {keterangan, volume, satuan, harga}) serta discount, DP, dan PPN opsional.
+ * {keterangan, volume, satuan, harga}) serta discount opsional.
+ *
+ * Design separasi ketat: tabel ini hanya menyimpan apa yang dibutuhkan
+ * PDF penawaran. PPN & DP adalah konsep penagihan — hanya milik invoice.
  *
  * Primary key: quotation_number (string, bukan auto-increment)
  */
@@ -41,11 +44,7 @@ class ProjectQuotation extends Model
         'items',
         'discount_type',
         'discount_value',
-        'ppn',
         'total_after_discount',
-        'dp_type',
-        'dp_value',
-        'dp_amount',
         'amount_in_words',
         'selected_payment_accounts',
         'signed_by_id',
@@ -60,9 +59,6 @@ class ProjectQuotation extends Model
         'items' => 'json',
         'total_after_discount' => 'integer',
         'discount_value' => 'decimal:2',
-        'ppn' => 'decimal:2',
-        'dp_value' => 'decimal:2',
-        'dp_amount' => 'integer',
         'selected_payment_accounts' => 'array',
     ];
 
@@ -131,53 +127,16 @@ class ProjectQuotation extends Model
         );
     }
 
-    /**
-     * Menghitung jumlah PPN berdasarkan total setelah diskon (dasar pengenaan).
-     *
-     * PPN disimpan sebagai persentase. Base PPN = total_after_discount jika
-     * ada, selain itu fallback ke total_amount.
-     *
-     * @return float  Jumlah PPN
-     */
-    public function getPpnAmount(): float
-    {
-        if (!$this->ppn || (float) $this->ppn <= 0) {
-            return 0;
-        }
-
-        $base = ($this->total_after_discount !== null && (float) $this->total_after_discount !== (float) ($this->total_amount ?? 0))
-            ? (float) $this->total_after_discount
-            : (float) ($this->total_amount ?? 0);
-
-        return round(($base * (float) $this->ppn) / 100);
-    }
-
-    /**
-     * Menghitung jumlah DP berdasarkan total setelah diskon.
-     *
-     * DP dihitung dari total SETELAH diskon (jika ada), selain itu fallback
-     * ke total_amount — pola yang sama dengan InvoiceProyek.
-     *
-     * @param  float|null  $baseAmount  Base amount untuk perhitungan DP (opsional)
-     * @return float  Jumlah DP
-     */
-    public function getDpAmount(float $baseAmount = null): float
-    {
-        return app(\App\Services\Finance\InvoiceCalculatorService::class)->calculateDpAmount(
-            (float) ($this->total_amount ?? 0),
-            $this->total_after_discount,
-            $this->dp_type,
-            $this->dp_value ? (float) $this->dp_value : null,
-            $baseAmount
-        );
-    }
-
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
      * Generate nomor penawaran berikutnya: {A}/{B}/PT.AKI/{yy}
      * Kedua angka (A dan B) diincrement secara terpisah.
      * Contoh: 275/310/PT.AKI/26 -> 276/311/PT.AKI/26
+     *
+     * Urutkan berdasarkan PANJANG string DESC lalu string DESC agar benar
+     * saat melewati batas digit (orderBy string murni salah, mis. "9/..."
+     * dianggap lebih besar dari "10/...").
      *
      * @return string  Nomor penawaran yang sudah di-generate
      */
@@ -186,6 +145,7 @@ class ProjectQuotation extends Model
         $year = date('y');
 
         $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
+            ->orderByRaw('LENGTH(quotation_number) DESC')
             ->orderByDesc('quotation_number')
             ->first();
 
@@ -210,6 +170,7 @@ class ProjectQuotation extends Model
     {
         $year = date('y');
         $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
+            ->orderByRaw('LENGTH(quotation_number) DESC')
             ->orderByDesc('quotation_number')
             ->first();
 

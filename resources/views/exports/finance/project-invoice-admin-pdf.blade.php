@@ -33,7 +33,8 @@
         }
 
         .logo-cell {
-            width: 50%;
+            width: 25%;
+            text-align: left;
         }
 
         .logo-cell img {
@@ -45,10 +46,14 @@
 
         .title-cell {
             width: 50%;
-            text-align: right;
+            text-align: center;
             font-size: 18px;
             font-weight: bold;
             letter-spacing: 1px;
+        }
+
+        .dummy-cell {
+            width: 25%;
         }
 
         .header-divider {
@@ -263,6 +268,7 @@
             <td class="title-cell">
                 INVOICE
             </td>
+            <td class="dummy-cell"></td>
         </tr>
     </table>
     <div class="header-divider"></div>
@@ -307,11 +313,10 @@
     </div>
 
     {{-- ═══ PARAGRAF PEMBUKA ══════════════════════════════════════════════════════ --}}
-<div class="opening-text">
-    Dengan Hormat,<br>
-    Dengan ini kami sampaikan Invoice untuk pekerjaan <strong>{{ $invoice->project_description }},</strong> <strong>{{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}</strong>, sebagai berikut :
-</div>
-
+    <div class="opening-text">
+        Dengan Hormat,<br>
+        Dengan ini kami sampaikan Invoice untuk pekerjaan <strong>{{ $invoice->project_description }},</strong> <strong>{{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}</strong>, sebagai berikut :
+    </div>
 
     {{-- ═══ TABEL ITEMS (TIDAK DIUBAH) ════════════════════════════════════════════ --}}
     <table class="items-table">
