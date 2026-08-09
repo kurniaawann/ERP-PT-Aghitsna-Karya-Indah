@@ -18,8 +18,22 @@
             font-size: 11px;
             line-height: 1.4;
             padding: 15mm 15mm 15mm 15mm;
+            position: relative;
         }
-       
+
+        /* Stempel LUNAS di Paling Depan & Transparan */
+        .stamp-lunas-overlay {
+            position: fixed;
+            top: 28%;
+            left: 10%;
+            width: 80%;
+            max-width: 550px;
+            opacity: 0.35; /* Tingkat transparan (0.3 - 0.4 agar teks dibelakangnya tetap terbaca) */
+            transform: rotate(-25deg);
+            -webkit-transform: rotate(-25deg);
+            z-index: 9999; /* Memastikan berada di PALING DEPAN */
+            pointer-events: none;
+        }
 
         .container {
             max-width: 210mm;
@@ -206,6 +220,11 @@
 </head>
 
 <body>
+    <!-- Gambar Stempel Lunas di Lapisan Paling Depan -->
+    @if($invoice->isFullyPaid())
+        <img src="{{ public_path('images/status_paid_alumunium.jpeg') }}" class="stamp-lunas-overlay" alt="LUNAS">
+    @endif
+
     <div class="container">
             <!-- Header -->
     <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -439,11 +458,6 @@
                     <div style="margin-top: 5px;">{{ $invoice->division->name }}</div>
                     @endif
                 </td>
-                @if($invoice->isFullyPaid())
-                <td style="width: 50%; border: none; vertical-align: top; text-align: center;">
-                    <img src="{{ public_path('images/status_paid_alumunium.jpeg') }}" style="height: 100px;">
-                </td>
-                @endif
             </tr>
         </table>
     </div>

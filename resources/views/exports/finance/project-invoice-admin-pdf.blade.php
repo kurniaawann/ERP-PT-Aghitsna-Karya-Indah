@@ -213,25 +213,32 @@
             text-decoration: underline;
         }
 
-        .paid-stamp {
-            float: right;
-            width: 150px;
-            text-align: center;
-        }
-
-        .paid-stamp img {
-            height: 90px;
-        }
-
         .clearfix::after {
             content: "";
             clear: both;
             display: table;
         }
+
+         /* Stempel LUNAS di Paling Depan & Transparan */
+        .stamp-lunas-overlay {
+            position: fixed;
+            top: 28%;
+            left: 10%;
+            width: 80%;
+            max-width: 550px;
+            opacity: 0.35; /* Tingkat transparan (0.3 - 0.4 agar teks dibelakangnya tetap terbaca) */
+            transform: rotate(-25deg);
+            -webkit-transform: rotate(-25deg);
+            z-index: 9999; /* Memastikan berada di PALING DEPAN */
+            pointer-events: none;
+        }
     </style>
 </head>
 
 <body>
+    @if ($invoice->isFullyPaid())
+        <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" class="stamp-lunas-overlay" alt="LUNAS">
+    @endif
 
     @php
         $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
@@ -437,11 +444,6 @@
             <div class="signature-name">{{ $invoice->signedBy?->name ?? 'Zulkarnain,S.T.,M.T.' }}</div>
             <div>{{ $invoice->signedBy?->position ?? 'Direktur' }}</div>
         </div>
-        @if ($invoice->isFullyPaid())
-            <div class="paid-stamp">
-                <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" alt="LUNAS">
-            </div>
-        @endif
     </div>
 
 </body>

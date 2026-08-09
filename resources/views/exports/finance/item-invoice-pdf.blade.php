@@ -12,14 +12,27 @@
             box-sizing: border-box;
         }
 
-       
         body {
             font-family: 'Times New Roman', Times, serif;
             font-size: 11px;
             line-height: 1.4;
             padding: 15mm 15mm 15mm 15mm;
+            position: relative;
         }
-       
+
+        /* Stempel LUNAS di Paling Depan & Transparan */
+        .stamp-lunas-overlay {
+            position: fixed;
+            top: 28%;
+            left: 10%;
+            width: 80%;
+            max-width: 550px;
+            opacity: 0.35; /* Tingkat transparan (0.3 - 0.4 agar teks dibelakangnya tetap terbaca) */
+            transform: rotate(-25deg);
+            -webkit-transform: rotate(-25deg);
+            z-index: 9999; /* Memastikan berada di PALING DEPAN */
+            pointer-events: none;
+        }
 
         .container {
             max-width: 210mm;
@@ -74,11 +87,6 @@
             line-height: 1.8;
         }
 
-        .invoice-info table {
-            margin-left: 0;
-            /* margin-right: 15px; */
-        }
-
         .invoice-info td {
             padding: 2px 0;
         }
@@ -93,38 +101,6 @@
 
         .recipient {
             margin: 5px 0;
-        }
-
-        .recipient-label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .recipient-name {
-            margin-left: 80px;
-            margin-bottom: 10px;
-        }
-
-        .recipient-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 5px 0;
-        }
-
-        .recipient-table td {
-            border: none;
-            padding: 2px 0;
-            vertical-align: top;
-        }
-
-        .recipient-table .recipient-label-cell {
-            font-weight: bold;
-            width: 80px;
-            white-space: nowrap;
-        }
-
-        .recipient-table .recipient-name-cell {
-            padding-left: 5px;
         }
 
         .recipient-table {
@@ -183,123 +159,81 @@
             text-align: right;
         }
 
-        .items-table td.left {
-            text-align: left;
-        }
-
-        .total-row {
-            background-color: #FFFF00;
-            font-weight: bold;
-        }
-
         .terbilang {
             font-style: italic;
             margin: 5px 0;
             font-size: 10px;
         }
 
-        .payment-info {
-            margin: 5px 0;
-            line-height: 1.8;
-        }
-
         .closing {
             margin: 5px 0;
             text-align: justify;
-        }
-
-        .signature {
-            margin-top: 5px;
-            text-align: left;
-        }
-
-        .signature-line {
-            margin-top: 60px;
-            font-weight: bold;
-        }
-
-        .bold {
-            font-weight: bold;
-        }
-
-        .italic {
-            font-style: italic;
         }
     </style>
 </head>
 
 <body>
+
+    <!-- Gambar Stempel Lunas di Lapisan Paling Depan -->
+    @if($invoice->salesRecap?->status === 'Lunas')
+        <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" class="stamp-lunas-overlay" alt="LUNAS">
+    @endif
+
     <div class="container">
-            <!-- Header -->
-    <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
-        
-        <tr>
-            <td width="45%" valign="top" style="padding-bottom: 15px;">
-                <div class="logo-cell">
-                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
-                </div>
-            </td>
-            
-            <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
-                <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                    INVOICE
-                </div>
-            </td>
-            
-            <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
-        </tr>
-
-        <tr>
-            <td valign="top">
-              {{-- <div>
-                    PT. AGHITSNA KARYA INDAH
-                    <div>
-                         JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT 
+        <!-- Header -->
+        <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+                <td width="45%" valign="top" style="padding-bottom: 15px;">
+                    <div class="logo-cell">
+                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
                     </div>
-                    <div>
-                         Telp. 021 - 29034923 - 0812 9596 552 
+                </td>
+                
+                <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
+                    <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
+                        INVOICE
                     </div>
-                    <div>
-                         Email : Design@aghitsna.id
+                </td>
+                
+                <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
+            </tr>
+
+            <tr>
+                <td valign="top">
+                    <div class="company-info" style="white-space: pre-line">
+                        PT. AGHITSNA KARYA INDAH
+                        JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT
+                        Telp. 021 - 29034923 - 0812 9596 552
+                        Email : Design@aghitsna.id
                     </div>
-                    
-                </div> --}}
-                <div class="company-info" style="white-space: pre-line">
-                PT. AGHITSNA KARYA INDAH
-                JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT
-                Telp. 021 - 29034923 - 0812 9596 552
-                Email : Design@aghitsna.id
-     </div>
-            </td>
+                </td>
 
-            <!-- Tengah: Dikosongkan -->
-            <td valign="top"></td>
+                <td valign="top"></td>
 
-            <td valign="top">
-                <div class="invoice-info" style="font-size: 12px;">
-                    <table cellpadding="0" cellspacing="0" border="0" align="right">
-                        <tr>
-                            <td style="padding-right: 5px;" valign="top">No</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top">{{ $invoice->invoice_number }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding-right: 5px;" valign="top">Tanggal</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top">{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding-right: 5px;" valign="top">Hal</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top">{{ $invoice->regarding ?? '-' }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </td>
-        </tr>
+                <td valign="top">
+                    <div class="invoice-info" style="font-size: 12px;">
+                        <table cellpadding="0" cellspacing="0" border="0" align="right">
+                            <tr>
+                                <td style="padding-right: 5px;" valign="top">No</td>
+                                <td style="padding-right: 5px;" valign="top">:</td>
+                                <td valign="top">{{ $invoice->invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-right: 5px;" valign="top">Tanggal</td>
+                                <td style="padding-right: 5px;" valign="top">:</td>
+                                <td valign="top">{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-right: 5px;" valign="top">Hal</td>
+                                <td style="padding-right: 5px;" valign="top">:</td>
+                                <td valign="top">{{ $invoice->regarding ?? '-' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
-    </table>
-</div>
         <!-- Recipient -->
         <div class="recipient">
             <table class="recipient-table">
@@ -363,8 +297,7 @@
 
         <div class="terbilang">Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</div>
 
-        <div class="closing">Demikian invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima
-            kasih.</div>
+        <div class="closing">Demikian invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.</div>
 
         <table style="width: 100%; border: none; margin-top: 5px;">
             <tr>
@@ -382,11 +315,6 @@
                     <div style="margin-top: 5px;">{{ $invoice->division->name }}</div>
                     @endif
                 </td>
-                @if($invoice->salesRecap?->status === 'Lunas')
-                <td style="width: 50%; border: none; vertical-align: top; text-align: center;">
-                    <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" style="height: 100px;">
-                </td>
-                @endif
             </tr>
         </table>
     </div>
