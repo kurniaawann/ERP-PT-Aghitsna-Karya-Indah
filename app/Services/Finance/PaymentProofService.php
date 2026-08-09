@@ -652,9 +652,34 @@ class PaymentProofService
             if ($oldSalesRecapId && $oldSalesRecapId !== $salesRecapId) {
                 $this->syncSalesRecapStatus($invoice, $oldSalesRecapId);
             }
+        } elseif ($invoiceType === 'barang') {
+            $this->syncBarangSalesRecapStatus($invoice);
         } elseif ($invoiceType === 'rekap_penjualan') {
             $this->syncSalesRecapProofStatus($invoice);
         }
+    }
+
+    /**
+     * Sinkronisasi status sales recap otomatis dari invoice barang.
+     *
+     * Rekap penjualan yang digenerate otomatis saat invoice barang dibuat
+     * (relasi sales_recap_id) di-update statusnya mengikuti status pembayaran
+     * invoice barang: 'Lunas' jika invoice sudah lunas, 'Belum Lunas' sebaliknya.
+     *
+     * @param  \App\Models\Finance\InvoiceBarang $invoice
+     * @return void
+     */
+    private function syncBarangSalesRecapStatus(InvoiceBarang $invoice): void
+    {
+        $salesRecap = $invoice->salesRecap;
+
+        if (!$salesRecap) {
+            return;
+        }
+
+        $salesRecap->update([
+            'status' => $invoice->isFullyPaid() ? 'Lunas' : 'Belum Lunas',
+        ]);
     }
 
     /**
