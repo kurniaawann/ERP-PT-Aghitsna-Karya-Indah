@@ -5,6 +5,7 @@ namespace App\Services\Finance;
 use App\Models\Report\ExpenseRecap;
 use App\Models\Report\TransactionCategory;
 use App\Services\InputNormalizer;
+use App\Services\Report\TransactionCategoryService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -149,7 +150,11 @@ class RecapExpenseService
 
         $data['created_by'] = auth()->id();
 
-        return ExpenseRecap::create($data);
+        $recap = ExpenseRecap::create($data);
+
+        app(TransactionCategoryService::class)->flushCache();
+
+        return $recap;
     }
 
     /**
@@ -188,7 +193,11 @@ class RecapExpenseService
             $data['expense_amount'] = $amount;
         }
 
-        return $expenseRecap->update($data);
+        $updated = $expenseRecap->update($data);
+
+        app(TransactionCategoryService::class)->flushCache();
+
+        return $updated;
     }
 
     /**
@@ -211,6 +220,8 @@ class RecapExpenseService
                 $deletedCount++;
             }
         });
+
+        app(TransactionCategoryService::class)->flushCache();
 
         return $deletedCount;
     }

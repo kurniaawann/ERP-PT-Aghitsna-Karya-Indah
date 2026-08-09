@@ -79,6 +79,8 @@ class SalesRecapObserver
             app(PaymentProofService::class)->delete($proof->file_path);
             $proof->delete();
         }
+
+        app(TransactionCategoryService::class)->flushCache();
     }
 
     /**
@@ -148,6 +150,8 @@ class SalesRecapObserver
             'sales_recap_id' => $salesRecapId,
             'notes' => 'Auto-generated from sales recap',
         ]);
+
+        app(TransactionCategoryService::class)->flushCache();
     }
 
     /**
