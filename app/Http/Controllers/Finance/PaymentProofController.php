@@ -54,7 +54,7 @@ class PaymentProofController extends Controller
                 ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'],
             ];
 
-        if ($isAdmin) {
+        if (in_array(auth()->user()?->role, ['admin', 'superadmin'], true)) {
             $query->where('created_by', auth()->id());
         }
 
