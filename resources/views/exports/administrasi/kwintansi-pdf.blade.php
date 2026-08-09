@@ -134,6 +134,7 @@
         .highlight-text {
             background-color: #ffff00;
             font-weight: bold;
+            font-style: italic;
             font-size: 11pt;
             padding: 3px 6px;
             display: inline-block;
@@ -294,13 +295,12 @@
             <table class="middle-table">
                 <tr>
                     <td style="vertical-align: middle;">
-                        @if (isset($kwintansi->total_accumulated) && $kwintansi->total_accumulated)
+                        @php
+                            $invoicePaidTotal = $kwintansi->invoiceProyek ? (int) $kwintansi->invoiceProyek->getTotalPaidAmount() : 0;
+                        @endphp
+                        @if ($invoicePaidTotal > 0)
                             <span class="highlight-text">
-                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->translatedFormat('j F Y') }} = Rp. {{ number_format($kwintansi->total_accumulated, 0, ',', '.') }},-
-                            </span>
-                        @elseif($kwintansi->remaining)
-                            <span class="highlight-text">
-                                *Total Uang Masuk Per = Rp. {{ number_format($kwintansi->remaining, 0, ',', '.') }},-
+                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->translatedFormat('j F Y') }} = Rp. {{ number_format($invoicePaidTotal, 0, ',', '.') }},-
                             </span>
                         @endif
                     </td>

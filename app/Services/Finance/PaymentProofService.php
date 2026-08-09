@@ -2,6 +2,7 @@
 
 namespace App\Services\Finance;
 
+use App\Models\Administrasi\Kwintansi;
 use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
@@ -210,7 +211,7 @@ class PaymentProofService
             );
 
             DB::transaction(function () use ($validated, $storedFile, $paymentStage, $amount, $salesRecapId, $invoice) {
-                PaymentProof::create([
+                $paymentProof = PaymentProof::create([
                     'module_type'    => $validated['module_type'],
                     'invoice_type'   => $validated['invoice_type'],
                     'invoice_number' => $validated['invoice_number'],
@@ -230,7 +231,8 @@ class PaymentProofService
                         $invoice,
                         $amount,
                         $invoice->getRemainingAmount(),
-                        $validated['payment_date'] ?? now()->toDateString()
+                        $validated['payment_date'] ?? now()->toDateString(),
+                        $paymentProof->id
                     );
                 }
 
@@ -386,6 +388,12 @@ class PaymentProofService
 
             if ($data) {
                 $paymentProof->update($data);
+            }
+
+            if ($paymentDate !== null && $paymentProof->invoice_type === 'proyek') {
+                Kwintansi::query()
+                    ->where('payment_proof_id', $paymentProof->id)
+                    ->update(['kwintansi_date' => $paymentDate]);
             }
 
             if ($storedFile && $oldFilePath && $oldFilePath !== $storedFile['file_path']) {

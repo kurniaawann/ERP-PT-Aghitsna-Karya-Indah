@@ -63,6 +63,7 @@ class Kwintansi extends Model
         'kwintansi_date',
         'location',
         'invoice_number',
+        'payment_proof_id',
         'created_by',
     ];
 
@@ -104,6 +105,16 @@ class Kwintansi extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke bukti pembayaran (PaymentProof) sumber auto-generate kwitansi.
+     *
+     * @return BelongsTo
+     */
+    public function paymentProof(): BelongsTo
+    {
+        return $this->belongsTo(PaymentProof::class, 'payment_proof_id');
     }
 
     /**
