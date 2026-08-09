@@ -62,6 +62,32 @@ class SalesRecapObserver
     }
 
     /**
+     * Handle the SalesRecap "deleting" event.
+     *
+     * Mem-flush cache kategori milik user yang ExpenseRecap-nya akan ikut
+     * terhapus (cascade) SEBELUM record dihapus. Dilakukan di sini (bukan di
+     * "deleted") karena observer di-resolve ulang per event, sehingga data
+     * antar-hook tidak bisa dibawa lewat property instance. Sales recap tidak
+     * punya created_by sehingga bisa dihapus oleh user lain.
+     *
+     * @param  \App\Models\Report\SalesRecap $salesRecap
+     * @return void
+     */
+    public function deleting(SalesRecap $salesRecap): void
+    {
+        $ownerIds = ExpenseRecap::where('sales_recap_id', $salesRecap->getKey())
+            ->whereNotNull('created_by')
+            ->pluck('created_by')
+            ->unique()
+            ->values()
+            ->all();
+
+        foreach ($ownerIds as $ownerId) {
+            app(TransactionCategoryService::class)->flushCache($ownerId);
+        }
+    }
+
+    /**
      * Handle the SalesRecap "deleted" event.
      *
      * Menghapus stock out records dan file payment proof terkait.
@@ -80,6 +106,7 @@ class SalesRecapObserver
             $proof->delete();
         }
 
+        // Cache kategori milik user yang menginisiasi delete juga di-invalidate.
         app(TransactionCategoryService::class)->flushCache();
     }
 
@@ -148,10 +175,11 @@ class SalesRecapObserver
             'expense_amount' => null,
             'money_source' => null,
             'sales_recap_id' => $salesRecapId,
+            'created_by' => $incomeCategory->created_by,
             'notes' => 'Auto-generated from sales recap',
         ]);
 
-        app(TransactionCategoryService::class)->flushCache();
+        app(TransactionCategoryService::class)->flushCache($incomeCategory->created_by);
     }
 
     /**

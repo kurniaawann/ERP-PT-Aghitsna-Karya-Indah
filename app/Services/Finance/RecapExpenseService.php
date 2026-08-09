@@ -36,9 +36,11 @@ class RecapExpenseService
      * Membangun query dasar untuk listing rekap pengeluaran.
      *
      * Logika filter penting:
-     * - Data yang terlihat = milik user login ATAU auto-generated dari sales recap
-     *   (created_by = user OR sales_recap_id NOT NULL). Ini agar rekap otomatis
-     *   dari sales report tetap muncul untuk semua user terkait.
+     * - Data yang terlihat = milik user login (created_by = user). Ini berlaku
+     *   untuk input manual maupun rekap otomatis dari sales recap, karena
+     *   auto-generated kini mencatat created_by = user yang memicu status Lunas
+     *   (diisi SalesRecapObserver). Dengan begitu data rekap pengeluaran
+     *   konsisten: setiap user hanya melihat datanya sendiri.
      * - Filter month, year, category, search opsional.
      *
      * @param  \Illuminate\Http\Request $request  Request yang berisi parameter filter
@@ -52,10 +54,7 @@ class RecapExpenseService
         $search = $request->get('search');
 
         return ExpenseRecap::query()
-            ->where(function ($query) {
-                $query->where('created_by', auth()->id())
-                    ->orWhereNotNull('sales_recap_id');
-            })
+            ->where('created_by', auth()->id())
             ->when($month, function ($query, $month) {
                 $query->whereMonth('transaction_date', $month);
             })

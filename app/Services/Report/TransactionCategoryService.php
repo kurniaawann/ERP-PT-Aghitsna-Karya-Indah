@@ -71,8 +71,11 @@ class TransactionCategoryService
      * Mengambil ID kategori yang sedang digunakan di expense reports.
      *
      * Logika:
-     * - has('expenseRecaps') menghasilkan subquery EXISTS — hanya kategori yang
-     *   punya minimal satu expense recap yang diambil.
+     * - whereHas('expenseRecaps') menghasilkan subquery EXISTS — hanya kategori
+     *   yang punya minimal satu expense recap milik user saat ini yang diambil.
+     *   Scoping per-user konsisten dengan buildFilteredQuery milik
+     *   RecapExpenseService: setiap user hanya melihat rekap pengeluaran
+     *   (created_by = user), termasuk rekap otomatis yang kini mencatat pemilik.
      * - Cache 1 JAM (lebih pendek dari kategori) karena data ini berubah setiap
      *   ada transaksi pengeluaran baru, bukan hanya saat CRUD kategori.
      *
@@ -80,38 +83,46 @@ class TransactionCategoryService
      */
     public function getUsedCategoryIds(): array
     {
+        $cacheKey = 'report:category-used-ids:' . auth()->id();
+
         try {
             return (array) Cache::remember(
-                'report:category-used-ids',
+                $cacheKey,
                 now()->addHour(),
-                fn () => TransactionCategory::has('expenseRecaps')->pluck('id')->toArray()
+                fn () => TransactionCategory::whereHas('expenseRecaps', function ($query) {
+                    $query->where('created_by', auth()->id());
+                })->pluck('id')->toArray()
             );
         } catch (\Exception $e) {
-            Log::warning('Cache READ error [report:category-used-ids]: ' . $e->getMessage());
-            return TransactionCategory::has('expenseRecaps')->pluck('id')->toArray();
+            Log::warning('Cache READ error [' . $cacheKey . ']: ' . $e->getMessage());
+            return TransactionCategory::whereHas('expenseRecaps', function ($query) {
+                $query->where('created_by', auth()->id());
+            })->pluck('id')->toArray();
         }
     }
 
     /**
      * Invalidate semua cache kategori transaksi.
      *
-     * CATATAN: menghapus key per-user milik modul Report
-     * (expense-categories, category-lookup) plus key global
-     * (category-codes, category-used-ids) dan key per-user milik modul Finance
-     * (finance:expense-categories). Wajib dipanggil di setiap operasi CRUD
-     * kategori agar semua modul tidak menyajikan data basi.
+     * Menghapus key per-user milik modul Report (expense-categories,
+     * category-lookup, category-used-ids) plus key per-user milik modul Finance
+     * (finance:expense-categories) untuk user yang bersangkutan, dan key global
+     * (category-codes). Wajib dipanggil di setiap operasi yang mengubah data
+     * kategori atau rekap pengeluaran agar modul tidak menyajikan data basi.
      *
+     * @param  string|null $userId  ID user yang cache-nya di-invalidate.
+     *                              Default: user yang sedang login.
      * @return void
      */
-    public function flushCache(): void
+    public function flushCache(?string $userId = null): void
     {
-        $userId = auth()->id();
+        $userId = $userId ?? auth()->id();
 
         try {
             Cache::forget('report:expense-categories:' . $userId);
             Cache::forget('report:category-lookup:' . $userId);
             Cache::forget('report:category-codes');
-            Cache::forget('report:category-used-ids');
+            Cache::forget('report:category-used-ids:' . $userId);
             Cache::forget('finance:expense-categories:' . $userId);
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [report:categories]: ' . $e->getMessage());
@@ -206,13 +217,15 @@ class TransactionCategoryService
      * - Hanya jika tidak ada yang terpakai, mass delete dijalankan.
      * - Pemanggil wajib memanggil flushCache() setelah operasi ini.
      *
-     * @param array<int> $selectedIds Array berisi ID kategori yang akan dihapus
+     * @param  array<int> $selectedIds Array berisi ID kategori yang akan dihapus
      * @return array{deleted: int, used: array<string>}
      */
     public function deleteSelected(array $selectedIds): array
     {
         $usedCategories = TransactionCategory::whereIn('id', $selectedIds)
-            ->has('expenseRecaps')
+            ->whereHas('expenseRecaps', function ($query) {
+                $query->where('created_by', auth()->id());
+            })
             ->pluck('name')
             ->toArray();
 
