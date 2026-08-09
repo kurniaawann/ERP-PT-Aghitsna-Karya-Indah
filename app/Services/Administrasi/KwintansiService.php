@@ -3,6 +3,7 @@
 namespace App\Services\Administrasi;
 
 use App\Models\Administrasi\Kwintansi;
+use App\Models\Finance\InvoiceProyek;
 use App\Services\InputNormalizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -39,7 +40,7 @@ class KwintansiService
      */
     public function getPaginated(?string $search): LengthAwarePaginator
     {
-        return Kwintansi::with('paymentAccount')
+        return Kwintansi::with(['paymentAccount', 'invoiceProyek'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
@@ -54,7 +55,7 @@ class KwintansiService
      */
     public function getAllForExport(?string $search): Collection
     {
-        return Kwintansi::with('paymentAccount')
+        return Kwintansi::with(['paymentAccount', 'invoiceProyek'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->latest('created_at')
@@ -69,7 +70,7 @@ class KwintansiService
      */
     public function getByIds(array $ids): Collection
     {
-        return Kwintansi::with('paymentAccount')
+        return Kwintansi::with(['paymentAccount', 'invoiceProyek'])
             ->whereIn('id_kwintansi', $ids)
             ->where('created_by', auth()->id())
             ->latest('created_at')
@@ -77,19 +78,19 @@ class KwintansiService
     }
 
     /**
-     * Membuat data kwitansi baru.
+     * Membuat data kwitansi baru (manual via form).
      *
      * @param  array<string, mixed>  $validatedData  Data yang sudah divalidasi
-     * @param  bool  $includeBank  Apakah bank ditampilkan di PDF
-     * @param  array<string, mixed>  $paymentMethods  Metode pembayaran yang dipilih (is_tunai, is_cheque, is_bilyet_giro)
      * @return Kwintansi Model kwitansi yang baru dibuat
      */
-    public function create(array $validatedData, bool $includeBank = false, array $paymentMethods = []): Kwintansi
+    public function create(array $validatedData): Kwintansi
     {
         $validatedData['id_kwintansi'] = Kwintansi::generateKwintansiCode();
         $validatedData['location'] = $validatedData['location'] ?? self::DEFAULT_LOCATION;
-        $validatedData['include_bank'] = $includeBank;
-        $this->applyPaymentMethods($validatedData, $paymentMethods);
+        $validatedData['include_bank'] = false;
+        $validatedData['is_tunai'] = true;
+        $validatedData['is_cheque'] = false;
+        $validatedData['is_bilyet_giro'] = false;
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
         $validatedData['created_by'] = auth()->id();
@@ -98,38 +99,67 @@ class KwintansiService
     }
 
     /**
+     * Membuat kwitansi secara otomatis dari pembayaran (payment proof) invoice proyek.
+     *
+     * Dipanggil saat bukti pembayaran invoice proyek berhasil di-upload.
+     * Nomor kwitansi, penerima, keperluan, sisa tagihan, dan tanggal diambil
+     * dari data invoice serta pembayaran yang bersangkutan.
+     *
+     * @param  \App\Models\Finance\InvoiceProyek  $invoice  Invoice proyek sumber
+     * @param  int                                 $amount   Nominal pembayaran
+     * @param  int                                 $remaining  Sisa tagihan setelah pembayaran ini
+     * @return Kwintansi Model kwitansi yang baru dibuat
+     */
+    public function createFromPaymentProof(InvoiceProyek $invoice, int $amount, int $remaining): Kwintansi
+    {
+        return Kwintansi::create([
+            'id_kwintansi' => Kwintansi::generateKwintansiCode(),
+            'amount' => $amount,
+            'remaining' => $remaining,
+            'received_from' => $invoice->recipient,
+            'payment_for' => $this->buildPaymentFor($invoice),
+            'kwintansi_date' => now()->toDateString(),
+            'location' => self::DEFAULT_LOCATION,
+            'invoice_number' => $invoice->invoice_number,
+            'include_bank' => false,
+            'is_tunai' => true,
+            'is_cheque' => false,
+            'is_bilyet_giro' => false,
+            'created_by' => auth()->id(),
+        ]);
+    }
+
+    /**
+     * Membangun keterangan "Untuk Pembayaran" untuk kwitansi otomatis.
+     *
+     * @param  \App\Models\Finance\InvoiceProyek  $invoice
+     * @return string
+     */
+    private function buildPaymentFor(InvoiceProyek $invoice): string
+    {
+        return trim((string) ($invoice->regarding ?? '')) !== ''
+            ? $invoice->regarding
+            : (trim((string) ($invoice->project_description ?? '')) !== ''
+                ? $invoice->project_description
+                : 'Pembayaran Invoice '.$invoice->invoice_number);
+    }
+
+    /**
      * Memperbarui data kwitansi yang sudah ada.
      *
      * @param  Kwintansi  $kwintansi  Model kwitansi yang akan diperbarui
      * @param  array<string, mixed>  $validatedData  Data yang sudah divalidasi
-     * @param  bool  $includeBank  Apakah bank ditampilkan di PDF
-     * @param  array<string, mixed>  $paymentMethods  Metode pembayaran yang dipilih (is_tunai, is_cheque, is_bilyet_giro)
      * @return Kwintansi Model kwitansi yang sudah diperbarui
      */
-    public function update(Kwintansi $kwintansi, array $validatedData, bool $includeBank = false, array $paymentMethods = []): Kwintansi
+    public function update(Kwintansi $kwintansi, array $validatedData): Kwintansi
     {
         $validatedData['location'] = $validatedData['location'] ?? self::DEFAULT_LOCATION;
-        $validatedData['include_bank'] = $includeBank;
-        $this->applyPaymentMethods($validatedData, $paymentMethods);
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
 
         $kwintansi->update($validatedData);
 
         return $kwintansi;
-    }
-
-    /**
-     * Menetapkan metode pembayaran (TUNAI, CHEQUE, BILYET GIRO) ke data validasi.
-     *
-     * @param  array<string, mixed>  $validatedData  Data yang sudah divalidasi
-     * @param  array<string, mixed>  $paymentMethods  Metode pembayaran yang dipilih
-     */
-    private function applyPaymentMethods(array &$validatedData, array $paymentMethods): void
-    {
-        $validatedData['is_tunai'] = (bool) ($paymentMethods['is_tunai'] ?? false);
-        $validatedData['is_cheque'] = (bool) ($paymentMethods['is_cheque'] ?? false);
-        $validatedData['is_bilyet_giro'] = (bool) ($paymentMethods['is_bilyet_giro'] ?? false);
     }
 
     /**
@@ -148,7 +178,10 @@ class KwintansiService
     /**
      * Menerapkan filter pencarian pada query builder.
      *
-     * Pencarian dilakukan pada kolom: id_kwintansi, received_from, payment_for.
+     * Pencarian dilakukan pada:
+     * - Kolom kwitansi: id_kwintansi, received_from, payment_for.
+     * - Kolom invoice proyek terkait (via relasi invoiceProyek): recipient
+     *   (Kepada Yth), proyek (nama proyek/perusahaan), dan project_description.
      * Karakter wildcard LIKE (% dan _) di-escape untuk mencegah hasil yang tidak diinginkan.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query  Query builder
@@ -159,9 +192,16 @@ class KwintansiService
     {
         $escapedSearch = $this->escapeLikeWildcards($search);
 
-        return $query->where('id_kwintansi', 'like', "%{$escapedSearch}%")
-            ->orWhere('received_from', 'like', "%{$escapedSearch}%")
-            ->orWhere('payment_for', 'like', "%{$escapedSearch}%");
+        return $query->where(function ($groupQuery) use ($escapedSearch) {
+            $groupQuery->where('id_kwintansi', 'like', "%{$escapedSearch}%")
+                ->orWhere('received_from', 'like', "%{$escapedSearch}%")
+                ->orWhere('payment_for', 'like', "%{$escapedSearch}%")
+                ->orWhereHas('invoiceProyek', function ($invoiceQuery) use ($escapedSearch) {
+                    $invoiceQuery->where('recipient', 'like', "%{$escapedSearch}%")
+                        ->orWhere('proyek', 'like', "%{$escapedSearch}%")
+                        ->orWhere('project_description', 'like', "%{$escapedSearch}%");
+                });
+        });
     }
 
     /**

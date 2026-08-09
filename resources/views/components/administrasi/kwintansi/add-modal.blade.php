@@ -30,48 +30,6 @@
         </div>
     </div>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-2">Metode Pembayaran</label>
-        <div class="flex flex-wrap items-center gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="is_tunai" value="1" checked
-                    class="w-4 h-4 accent-primary cursor-pointer">
-                <span class="text-text-primary">TUNAI</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="is_cheque" value="1"
-                    class="w-4 h-4 accent-primary cursor-pointer">
-                <span class="text-text-primary">CHEQUE</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="is_bilyet_giro" value="1"
-                    class="w-4 h-4 accent-primary cursor-pointer">
-                <span class="text-text-primary">BILYET GIRO</span>
-            </label>
-        </div>
-    </div>
-
-    <div class="mb-3">
-        <div class="flex items-center gap-2 mb-2">
-            <input type="checkbox" name="include_bank" id="include_bank_add" value="1" checked
-                class="w-4 h-4 accent-primary cursor-pointer">
-            <label for="include_bank_add" class="text-text-primary cursor-pointer">Tampilkan Bank di PDF</label>
-        </div>
-    </div>
-
-    <div class="mb-3" id="bank_section_add">
-        <label class="block text-text-primary mb-1">Bank <span class="text-error">*</span></label>
-        <select name="payment_account_id" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Bank tidak boleh kosong')" oninput="this.setCustomValidity('')">
-            <option value="">Pilih Bank</option>
-            @foreach (\App\Models\Finance\PaymentAccount::active()->get() as $account)
-                <option value="{{ $account->id }}">
-                    {{ $account->bank_name }} - {{ $account->account_number }} ({{ $account->account_holder }})
-                </option>
-            @endforeach
-        </select>
-    </div>
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
@@ -88,22 +46,3 @@
         </div>
     </div>
 </x-modal>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkbox = document.getElementById('include_bank_add');
-        const bankSection = document.getElementById('bank_section_add');
-        const bankSelect = bankSection.querySelector('select');
-
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                bankSection.style.display = 'block';
-                bankSelect.required = true;
-            } else {
-                bankSection.style.display = 'none';
-                bankSelect.required = false;
-                bankSelect.value = '';
-            }
-        });
-    });
-</script>

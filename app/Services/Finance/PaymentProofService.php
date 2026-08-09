@@ -6,6 +6,7 @@ use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Report\SalesRecap;
+use App\Services\Administrasi\KwintansiService;
 use App\Services\InputNormalizer;
 use GdImage;
 use Illuminate\Http\UploadedFile;
@@ -28,7 +29,8 @@ use RuntimeException;
 class PaymentProofService
 {
     public function __construct(
-        private InvoiceCalculatorService $calculator
+        private InvoiceCalculatorService $calculator,
+        private KwintansiService $kwintansiService
     ) {}
 
     // ─── Invoice Resolution ───────────────────────────────────────────────
@@ -207,7 +209,7 @@ class PaymentProofService
                 $validated['invoice_number']
             );
 
-            DB::transaction(function () use ($validated, $storedFile, $paymentStage, $amount, $salesRecapId) {
+            DB::transaction(function () use ($validated, $storedFile, $paymentStage, $amount, $salesRecapId, $invoice) {
                 PaymentProof::create([
                     'module_type'    => $validated['module_type'],
                     'invoice_type'   => $validated['invoice_type'],
@@ -221,6 +223,14 @@ class PaymentProofService
                     'file_size'      => $storedFile['file_size'],
                     'created_by'     => auth()->id(),
                 ]);
+
+                if ($validated['invoice_type'] === 'proyek' && $invoice instanceof InvoiceProyek) {
+                    $this->kwintansiService->createFromPaymentProof(
+                        $invoice,
+                        $amount,
+                        $invoice->getRemainingAmount()
+                    );
+                }
 
                 $this->syncPaymentStatuses($validated['invoice_type'], $validated['invoice_number'], $salesRecapId);
             });

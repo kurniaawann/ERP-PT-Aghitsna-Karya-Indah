@@ -2,7 +2,9 @@
 
 namespace App\Models\Administrasi;
 
+use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentAccount;
+use App\Models\Finance\PaymentProof;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -60,6 +62,7 @@ class Kwintansi extends Model
         'remaining',
         'kwintansi_date',
         'location',
+        'invoice_number',
         'created_by',
     ];
 
@@ -88,9 +91,68 @@ class Kwintansi extends Model
         return $this->belongsTo(PaymentAccount::class, 'payment_account_id');
     }
 
+    /**
+     * Relasi ke Invoice Proyek yang menjadi sumber kwitansi (auto-generate).
+     *
+     * @return BelongsTo
+     */
+    public function invoiceProyek(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceProyek::class, 'invoice_number', 'invoice_number');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Accessor untuk nomor urut pembayaran per invoice.
+     *
+     * "No." pada kwitansi menampilkan urutan pembayaran untuk invoice terkait
+     * (001 = pembayaran pertama, 002 = pembayaran kedua, dst), bukan nomor
+     * unik. Urutan dihitung berdasarkan urutan pembuatan kwitansi pada
+     * invoice yang sama. Kwitansi manual (tanpa invoice) bernilai null.
+     *
+     * @return int|null
+     */
+    public function getPaymentSequenceAttribute(): ?int
+    {
+        if (empty($this->invoice_number)) {
+            return null;
+        }
+
+        $orderedIds = static::query()
+            ->where('invoice_number', $this->invoice_number)
+            ->orderBy('created_at')
+            ->orderBy('id_kwintansi')
+            ->pluck('id_kwintansi');
+
+        $position = $orderedIds->search($this->id_kwintansi);
+
+        return $position === false ? null : (int) $position + 1;
+    }
+
+    /**
+     * Accessor untuk total uang masuk (total terbayar) kumulatif per tanggal kwitansi.
+     *
+     * Menjumlahkan seluruh bukti pembayaran (PaymentProof) invoice proyek
+     * terkait yang dibuat sampai dengan tanggal kwitansi ini. Nilai ini sama
+     * dengan "Terbayar" yang tampil pada invoice proyek.
+     *
+     * @return int
+     */
+    public function getTotalAccumulatedAttribute(): int
+    {
+        if (empty($this->invoice_number)) {
+            return 0;
+        }
+
+        return (int) PaymentProof::query()
+            ->where('invoice_type', 'proyek')
+            ->where('invoice_number', $this->invoice_number)
+            ->whereDate('created_at', '<=', $this->kwintansi_date?->toDateString())
+            ->sum('amount');
     }
 
     /**

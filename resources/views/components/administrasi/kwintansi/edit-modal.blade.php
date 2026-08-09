@@ -8,6 +8,14 @@
             disabled>
     </div>
 
+    @if ($kwintansi->invoice_number)
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Kwitansi No.</label>
+            <input type="text" class="w-full border rounded p-2 bg-gray-100"
+                value="{{ $kwintansi->invoice_number }}" disabled>
+        </div>
+    @endif
+
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Sudah Terima Dari <span class="text-error">*</span></label>
         <input type="text" name="received_from" class="w-full border rounded p-2"
@@ -39,54 +47,6 @@
         </div>
     </div>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-2">Metode Pembayaran</label>
-        <div class="flex flex-wrap items-center gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="is_tunai" value="1"
-                    {{ $kwintansi->is_tunai ? 'checked' : '' }} class="w-4 h-4 accent-primary cursor-pointer">
-                <span class="text-text-primary">TUNAI</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="is_cheque" value="1"
-                    {{ $kwintansi->is_cheque ? 'checked' : '' }} class="w-4 h-4 accent-primary cursor-pointer">
-                <span class="text-text-primary">CHEQUE</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="is_bilyet_giro" value="1"
-                    {{ $kwintansi->is_bilyet_giro ? 'checked' : '' }} class="w-4 h-4 accent-primary cursor-pointer">
-                <span class="text-text-primary">BILYET GIRO</span>
-            </label>
-        </div>
-    </div>
-
-    <div class="mb-3">
-        <div class="flex items-center gap-2 mb-2">
-            <input type="checkbox" name="include_bank" id="include_bank_edit_{{ $kwintansi->id_kwintansi }}"
-                value="1" {{ $kwintansi->include_bank ? 'checked' : '' }}
-                class="w-4 h-4 accent-primary cursor-pointer">
-            <label for="include_bank_edit_{{ $kwintansi->id_kwintansi }}" class="text-text-primary cursor-pointer">
-                Tampilkan Bank di PDF
-            </label>
-        </div>
-    </div>
-
-    <div class="mb-3" id="bank_section_edit_{{ $kwintansi->id_kwintansi }}"
-        style="display: {{ $kwintansi->include_bank ? 'block' : 'none' }}">
-        <label class="block text-text-primary mb-1">Bank <span class="text-error">*</span></label>
-        <select name="payment_account_id" class="w-full border rounded p-2"
-            {{ $kwintansi->include_bank ? 'required' : '' }}
-            oninvalid="this.setCustomValidity('Bank tidak boleh kosong')" oninput="this.setCustomValidity('')">
-            <option value="">Pilih Bank</option>
-            @foreach (\App\Models\Finance\PaymentAccount::active()->get() as $account)
-                <option value="{{ $account->id }}"
-                    {{ $kwintansi->payment_account_id == $account->id ? 'selected' : '' }}>
-                    {{ $account->bank_name }} - {{ $account->account_number }} ({{ $account->account_holder }})
-                </option>
-            @endforeach
-        </select>
-    </div>
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
@@ -102,24 +62,3 @@
         </div>
     </div>
 </x-modal>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkbox = document.getElementById('include_bank_edit_{{ $kwintansi->id_kwintansi }}');
-        const bankSection = document.getElementById('bank_section_edit_{{ $kwintansi->id_kwintansi }}');
-        const bankSelect = bankSection.querySelector('select');
-
-        if (checkbox) {
-            checkbox.addEventListener('change', function() {
-                if (this.checked) {
-                    bankSection.style.display = 'block';
-                    bankSelect.required = true;
-                } else {
-                    bankSection.style.display = 'none';
-                    bankSelect.required = false;
-                    bankSelect.value = '';
-                }
-            });
-        }
-    });
-</script>

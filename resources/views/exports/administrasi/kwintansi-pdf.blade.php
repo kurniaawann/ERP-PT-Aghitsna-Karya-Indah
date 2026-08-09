@@ -7,8 +7,8 @@
     <title>Kwitansi - PT. Aghitsna Karya Indah</title>
     <style>
         @page {
-            size: A4;
-            margin: 0.5cm;
+            size: A4 portrait;
+            margin: 1cm;
         }
 
         * {
@@ -18,298 +18,174 @@
         }
 
         body {
-            font-family: 'Times New Roman', Times, serif;
-            padding: 5mm;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 20px;
             background: #ffffff;
-            color: #0f386b; /* Warna biru khas cetakan kwitansi */
+            color: #000000;
+            font-size: 11pt;
         }
 
         .container {
-            border: 2px solid #0f386b;
-            padding: 14px;
-            margin-bottom: 20px;
+            padding: 12px;
             position: relative;
+            border: 2px solid #000000;
         }
 
-        /* HEADER TABLE */
+        /* HEADER */
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
-        }
-
-        .company-cell {
-            vertical-align: top;
-            width: 65%;
-        }
-
-        .company-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
+            margin-bottom: 12px;
         }
 
         .logo {
-            width: 55px;
+            max-width: 160px;
             height: auto;
         }
 
-        .company-title {
-            font-size: 15px;
-            font-weight: 900;
-            color: #0f386b;
-            letter-spacing: 0.5px;
-            margin-bottom: 3px;
-        }
-
-        .company-details {
-            font-size: 8.5px;
-            line-height: 1.35;
-            color: #0f386b;
-            font-weight: 600;
-        }
-
-        .title-meta-cell {
-            vertical-align: top;
-            text-align: right;
-            width: 35%;
-        }
-
-        .title-kwitansi {
-            font-size: 20px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: #0f386b;
-            margin-bottom: 6px;
-        }
-
+        /* META BOX (KANAN ATAS) - Garis bawah hanya dari : sampai value */
         .meta-table {
-            float: right;
             border-collapse: collapse;
+            float: right;
         }
 
         .meta-table td {
-            font-size: 10px;
+            padding: 3px 4px;
+            font-size: 10pt;
             font-weight: bold;
-            padding: 2px 0;
-            color: #0f386b;
+            vertical-align: bottom;
         }
 
         .meta-label {
-            width: 35px;
-            text-align: left;
+            width: 90px;
+            border: none; /* Tanpa garis pada label */
         }
 
         .meta-colon {
-            width: 10px;
+            width: 15px;
             text-align: center;
+            border-bottom: 1px solid #000000; /* Garis bawah mulai dari : */
         }
 
         .meta-value {
-            border-bottom: 1px dotted #0f386b;
-            min-width: 130px;
-            text-align: left;
-            padding-left: 4px;
+            min-width: 140px;
+            border-bottom: 1px solid #000000; /* Garis bawah dilanjutkan ke value */
         }
 
-        /* FORM CONTENT BOX */
-        .content-box {
-            border: 1.5px solid #0f386b;
-            padding: 10px;
-            margin-bottom: 8px;
+        /* JUDUL KWITANSI */
+        .title-kwitansi {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 15px 0 15px 0;
         }
 
+        /* FORM ISIAN UTAMA - Garis bawah dari : sampai ke value */
         .form-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 15px;
         }
 
         .form-table td {
-            padding: 5px 0;
+            padding: 6px 4px;
             vertical-align: bottom;
-            font-size: 11px;
-            color: #0f386b;
+            font-size: 11pt;
         }
 
         .label-col {
-            width: 125px;
+            width: 140px;
             font-weight: bold;
-            white-space: nowrap;
+            border: none; /* Tanpa garis pada label */
         }
 
         .colon-col {
             width: 15px;
             text-align: center;
             font-weight: bold;
+            border-bottom: 1px solid #000000; /* Garis bawah mulai dari : */
         }
 
         .value-col {
-            border-bottom: 1px dotted #0f386b;
-            padding-left: 6px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .multiline-dots {
-            border-bottom: 1px dotted #0f386b;
-            height: 22px;
-        }
-
-        /* AMOUNT BOX (NOMINAL & SISA) */
-        .amount-box {
-            border: 3px double #0f386b; /* Garis ganda khas fisik kwitansi */
-            padding: 6px 12px;
-            margin-bottom: 10px;
-        }
-
-        .amount-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .amount-table td {
-            vertical-align: middle;
-        }
-
-        .rp-cell {
-            width: 45%;
-            font-size: 18px;
-            font-weight: 900;
-            color: #0f386b;
-        }
-
-        .rp-slash {
-            display: inline-block;
-            margin: 0 4px;
-            font-size: 20px;
             font-weight: normal;
+            border-bottom: 1px solid #000000; /* Garis bawah dilanjutkan ke value */
         }
 
-        .remainder-cell {
-            width: 55%;
-            text-align: right;
-            font-size: 13px;
+        /* SHADING PADA JUMLAH DIBAYAR (TERBILANG) */
+        .terbilang-box {
+            background-color: #e6e6e6;
+            font-style: italic;
             font-weight: bold;
-            color: #0f386b;
-        }
-
-        .remainder-dots {
+            padding: 2px 6px;
             display: inline-block;
-            border-bottom: 1px dotted #0f386b;
-            /* min-width: 160px; */
-            height: 14px;
-            margin-left: 6px;
+            width: 98%;
+            box-sizing: border-box;
         }
 
-        /* PAYMENT METHOD & BANK / SIGNATURE */
-        .payment-methods {
-            margin-bottom: 8px;
-            font-size: 10px;
-            font-weight: bold;
-            color: #0f386b;
-        }
-
-        .checkbox-item {
-            display: inline-block;
-            margin-right: 25px;
-        }
-
-            .checkbox {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 1.5px solid #0f386b;
-    vertical-align: middle;
-    margin-right: 5px;
-    
-    /* Gunakan Flexbox untuk browser modern/PDF render berbasis Chromium */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    
-    /* Fallback positioning jika menggunakan✓ Dompdf */
-    text-align: center;
-    line-height: 12px; 
-    position: relative;
-    overflow: hidden;
-    font-family: 'DejaVu Sans', 'Arial', sans-serif;
-    
-}
-
-.checkmark {
-    font-size: 11px;
-    font-weight: bold;
-    color: #0f386b;
-    line-height: 1;
-    display: block;
-    margin: 0 auto;
-}
-
-        .footer-layout {
+        /* SECTION HIGHLIGHT & NOMINAL */
+        .middle-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 20px;
+            margin-top: 12px;
         }
 
-        .bank-cell {
-            vertical-align: top;
-            width: 60%;
-        }
-
-        .bank-table {
-            width: 90%;
-            border-collapse: collapse;
-        }
-
-        .bank-table td {
-            padding: 3px 0;
-            font-size: 10px;
+        .highlight-text {
+            background-color: #ffff00;
             font-weight: bold;
-            color: #0f386b;
-            vertical-align: bottom;
+            font-size: 11pt;
+            padding: 3px 6px;
+            display: inline-block;
         }
 
-        .bank-label {
-            width: 45px;
-        }
-
-        .bank-colon {
-            width: 12px;
+        .amount-box {
+            background-color: #ffffcc;
+            border: 1px solid #000000;
+            font-size: 14pt;
+            font-weight: bold;
+            font-style: italic;
             text-align: center;
+            padding: 8px 15px;
+            display: inline-block;
+            float: right;
         }
 
-        .bank-value {
-            border-bottom: 1px dotted #0f386b;
-            padding-left: 4px;
+        /* FOOTER (BANK & TANDA TANGAN) */
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .bank-info {
+            font-size: 10pt;
+            font-weight: bold;
+            line-height: 1.6;
+        }
+
+        .disclaimer {
+            color: #d90000;
+            font-style: italic;
+            font-size: 9pt;
+            margin-top: 15px;
+            max-width: 90%;
         }
 
         .signature-cell {
-            vertical-align: top;
             text-align: center;
-            width: 40%;
+            vertical-align: top;
+            width: 200px;
         }
 
         .signature-title {
-            font-size: 11px;
+            font-size: 11pt;
+            margin-bottom: 12px;
+        }
+
+        .signature-name {
             font-weight: bold;
-            letter-spacing: 1px;
-            color: #0f386b;
-            margin-bottom: 50px;
-        }
-
-        .signature-line {
-            font-size: 11px;
-            color: #0f386b;
-        }
-
-        /* FOOTER NOTE */
-        .footer-note {
-            margin-top: 10px;
-            font-size: 8px;
-            font-style: italic;
-            text-align: center;
-            color: #0f386b;
-            padding-top: 5px;
-            border-top: 1px solid #0f386b;
+            margin-top: 5px;
         }
 
         .page-break {
@@ -335,146 +211,147 @@
 <body>
     @foreach ($kwintansis as $index => $kwintansi)
         <div class="container {{ $index < count($kwintansis) - 1 ? 'page-break' : '' }}">
-            
-            <!-- HEADER -->
+
+            <!-- HEADER (LOGO & META KWITANSI) -->
             <table class="header-table">
                 <tr>
-                    <!-- LOGO & PERUSAHAAN (KIRI) -->
-                    <td class="company-cell">
-                        <table style="width: 100%;">
-                            <tr>
-                                <td style="width: 60px; vertical-align: top;">
-                                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
-                                </td>
-                                <td style="vertical-align: top;">
-                                    <div class="company-title">PT. AGHITSNA KARYA INDAH</div>
-                                    <div class="company-details">
-                                        JL. TANAH BARU RAYA PERTIWI RT.01/05, BEJI, DEPOK, JAWA BARAT<br>
-                                        Telp. 021-29034923 - 0812.9596.552<br>
-                                        Email : design@aghitsna.id
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
+                    <!-- LOGO + NAMA PERUSAHAAN -->
+                    <td style="vertical-align: top;">
+                        <img src="{{ public_path('images/logo.jpeg') }}" alt="PT. AGHITSNA KARYA INDAH" class="logo">
                     </td>
 
-                    <!-- JUDUL & META NO/TGL (KANAN) -->
-                    <td class="title-meta-cell">
-                        <div class="title-kwitansi">KWITANSI</div>
+                    <!-- META NO / TANGGAL -->
+                    <td style="vertical-align: top; text-align: right;">
                         <table class="meta-table">
+                            <tr>
+                                <td class="meta-label">Kwitansi No.</td>
+                                <td class="meta-colon">:</td>
+                                <td class="meta-value">{{ $kwintansi->invoice_number ?? '-' }}</td>
+                            </tr>
                             <tr>
                                 <td class="meta-label">No.</td>
                                 <td class="meta-colon">:</td>
-                                <td class="meta-value">{{ $kwintansi->id_kwintansi }}</td>
+                                <td class="meta-value">{{ $kwintansi->payment_sequence ? str_pad((string) $kwintansi->payment_sequence, 3, '0', STR_PAD_LEFT) : $kwintansi->id_kwintansi }}</td>
                             </tr>
                             <tr>
-                                <td class="meta-label">Tgl.</td>
+                                <td class="meta-label">Tanggal</td>
                                 <td class="meta-colon">:</td>
-                                <td class="meta-value">{{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->format('d F Y') }}</td>
+                                <td class="meta-value">{{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->translatedFormat('j F Y') }}</td>
                             </tr>
                         </table>
                     </td>
                 </tr>
             </table>
 
-            <!-- CONTENT BOX -->
-            <div class="content-box">
-                <table class="form-table">
-                    <tr>
-                        <td class="label-col">Sudah terima dari</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col">{{ $kwintansi->received_from }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label-col">Banyaknya uang</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col">{{ ucfirst(terbilang($kwintansi->amount)) }} rupiah</td>
-                    </tr>
-                    <tr>
-                        <td class="label-col">Untuk Pembayaran</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col">{{ $kwintansi->payment_for }}</td>
-                    </tr>
-                    <!-- Garis titik-titik tambahan untuk catatan panjang -->
-                    <tr>
-                        <td colspan="3" class="multiline-dots"></td>
-                    </tr>
-                </table>
-            </div>
+            <!-- JUDUL -->
+            <div class="title-kwitansi">KWITANSI</div>
 
-            <!-- AMOUNT BOX (Rp. & Sisa) -->
-            <div class="amount-box">
-                <table class="amount-table">
+            <!-- FORM ISIAN UTAMA -->
+            <table class="form-table">
+                <!-- BARIS 1: TELAH TERIMA DARI -->
+                <tr>
+                    <td class="label-col">Telah Terima Dari</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col">{{ $kwintansi->received_from }}</td>
+                </tr>
+
+                <!-- BARIS 2: JUMLAH DIBAYAR -->
+                <tr>
+                    <td class="label-col">Jumlah Dibayar</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col">
+                        <div class="terbilang-box">
+                            {{ ucfirst(terbilang($kwintansi->amount)) }} Rupiah
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- BARIS 3: KETERANGAN (PEMBAYARAN KE BERAPA) -->
+                <tr>
+                    <td class="label-col">Keterangan</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col">
+                        {{ $kwintansi->payment_sequence ? 'Uang Masuk ke '.$kwintansi->payment_sequence : ($kwintansi->payment_for ?? '-') }}
+                    </td>
+                </tr>
+
+                <!-- BARIS 4: INFO PROYEK (DESKRIPSI + LOKASI) -->
+                @if (in_array(auth()->user()?->role, ['admin', 'superadmin'], true) && (!empty($kwintansi->invoiceProyek?->project_description) || !empty($kwintansi->invoiceProyek?->location)))
                     <tr>
-                        <td class="rp-cell">
-                            Rp. {{ number_format($kwintansi->amount, 0, ',', '.') }}
+                        <td class="label-col"></td>
+                        <td class="colon-col"></td>
+                        <td class="value-col">
+                            {{ $kwintansi->invoiceProyek->project_description ?? '' }}
+                            @if (!empty($kwintansi->invoiceProyek->location))
+                                {{ $kwintansi->invoiceProyek->location }}
+                            @endif
                         </td>
-                        <td class="remainder-cell">
-                            Sisa : <span class="remainder-dots">{{ $kwintansi->remaining ? 'Rp. ' . number_format($kwintansi->remaining, 0, ',', '.') : '' }}</span>
-                        </td>
                     </tr>
-                </table>
-            </div>
+                @endif
+            </table>
 
-            <!-- PAYMENT METHOD -->
-            <!-- PAYMENT METHOD -->
-<div class="payment-methods">
-    <span class="checkbox-item">
-        <span class="checkbox">@if($kwintansi->is_tunai)<span class="checkmark">&#10003;</span>@endif</span>
-        TUNAI
-    </span>
-
-    <span class="checkbox-item">
-        <span class="checkbox">@if($kwintansi->is_cheque)<span class="checkmark">&#10003;</span>@endif</span>
-        CHEQUE
-    </span>
-
-    <span class="checkbox-item">
-        <span class="checkbox">@if($kwintansi->is_bilyet_giro)<span class="checkmark">&#10003;</span>@endif</span>
-        BILYET GIRO
-    </span>
-</div>
+            <!-- MIDDLE SECTION (TOTAL UANG MASUK & AMOUNT BOX) -->
+            <table class="middle-table">
+                <tr>
+                    <td style="vertical-align: middle;">
+                        @if (isset($kwintansi->total_accumulated) && $kwintansi->total_accumulated)
+                            <span class="highlight-text">
+                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->translatedFormat('j F Y') }} = Rp. {{ number_format($kwintansi->total_accumulated, 0, ',', '.') }},-
+                            </span>
+                        @elseif($kwintansi->remaining)
+                            <span class="highlight-text">
+                                *Total Uang Masuk Per = Rp. {{ number_format($kwintansi->remaining, 0, ',', '.') }},-
+                            </span>
+                        @endif
+                    </td>
+                    <td style="vertical-align: middle; text-align: right; width: 40%;">
+                        <div class="amount-box">
+                            Rp. {{ number_format($kwintansi->amount, 0, ',', '.') }},-
+                        </div>
+                    </td>
+                </tr>
+            </table>
 
             <!-- FOOTER (BANK DETAILS & SIGNATURE) -->
-            <table class="footer-layout">
+            <table class="footer-table">
                 <tr>
-                    <td class="bank-cell">
-                        <table class="bank-table">
-                            <tr>
-                                <td class="bank-label">BANK</td>
-                                <td class="bank-colon">:</td>
-                                <td class="bank-value">
-                                    {{ $kwintansi->include_bank && $kwintansi->paymentAccount ? $kwintansi->paymentAccount->bank_name : '' }}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="bank-label">NO.</td>
-                                <td class="bank-colon">:</td>
-                                <td class="bank-value">
-                                    {{ $kwintansi->include_bank && $kwintansi->paymentAccount ? $kwintansi->paymentAccount->account_number : '' }}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="bank-label">TGL.</td>
-                                <td class="bank-colon">:</td>
-                                <td class="bank-value">
-                                    {{ $kwintansi->include_bank ? \Carbon\Carbon::parse($kwintansi->kwintansi_date)->format('d/m/Y') : '' }}
-                                </td>
-                            </tr>
-                        </table>
+                    <!-- REKENING BANK & DISCLAIMER -->
+                    <td style="vertical-align: top; width: 65%;">
+                        <div class="bank-info">
+                            @php
+                                $bankAccounts = $kwintansi->invoiceProyek?->selected_payment_accounts
+                                    ? \App\Models\Finance\PaymentAccount::whereIn('id', (array) $kwintansi->invoiceProyek->selected_payment_accounts)->orderBy('id')->get()
+                                    : collect([$kwintansi->include_bank ? $kwintansi->paymentAccount : null]);
+                                $bankAccounts = $bankAccounts->filter();
+                            @endphp
+
+                            @forelse ($bankAccounts as $bankAccount)
+                                <div>{{ $bankAccount->bank_name }} &nbsp;/&nbsp; {{ $bankAccount->account_number }} &nbsp;/&nbsp; {{ $bankAccount->account_holder }}</div>
+                            @empty
+                                <div>-</div>
+                            @endforelse
+                        </div>
+
+                        <div class="disclaimer">
+                            *Kwitansi ini baru di anggap sah, setelah pembayaran dengan Bilyet Giro/Cheque tersebut dapat di uangkan.
+                        </div>
                     </td>
 
+                    <!-- TANDA TANGAN -->
                     <td class="signature-cell">
-                        <div class="signature-title">SIGNATURE,</div>
-                        <div class="signature-line">( ____________________ )</div>
+                        <div class="signature-title">Signature,</div>
+                        <div style="min-height: 50px;">
+                            @if ($kwintansi->invoiceProyek?->signedBy?->signature_image)
+                                <img src="{{ storage_path('app/public/' . $kwintansi->invoiceProyek->signedBy->signature_image) }}"
+                                    alt="Tanda Tangan" style="max-height: 50px; max-width: 130px;">
+                            @endif
+                        </div>
+                        <div class="signature-name">
+                            ( {{ $kwintansi->invoiceProyek?->signedBy?->name ?? 'Zulkarnain,S.T.,M.T.' }} )
+                        </div>
                     </td>
                 </tr>
             </table>
-
-            <!-- FOOTER NOTE -->
-            <div class="footer-note">
-                Kwitansi ini baru dianggap sah, setelah Pembayaran dengan Bilyet Giro / Cheque tsb, dapat di uangkan.
-            </div>
 
         </div>
     @endforeach

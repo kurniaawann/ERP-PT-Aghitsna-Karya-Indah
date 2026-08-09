@@ -13,7 +13,6 @@
                             <th class="p-2 text-left">Sudah Terima Dari</th>
                             <th class="p-2 text-left">Uang Pembayaran</th>
                             <th class="p-2 text-right">Jumlah</th>
-                            <th class="p-2 text-left">Bank</th>
                             <th class="p-2 text-center">Tanggal</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
@@ -33,17 +32,6 @@
                                 {{-- Jumlah --}}
                                 <td class="p-2 text-right font-semibold">
                                     Rp {{ number_format($kwintansi->amount, 0, ',', '.') }}
-                                </td>
-
-                                {{-- Bank --}}
-                                <td class="p-2">
-                                    @if ($kwintansi->include_bank && $kwintansi->paymentAccount)
-                                        {{ $kwintansi->paymentAccount->bank_name }}<br>
-                                        <small
-                                            class="text-gray-500">{{ $kwintansi->paymentAccount->account_number }}</small>
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
                                 </td>
 
                                 {{-- Tanggal --}}
@@ -67,7 +55,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center p-4 text-text-secondary">
+                                <td colspan="7" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>
