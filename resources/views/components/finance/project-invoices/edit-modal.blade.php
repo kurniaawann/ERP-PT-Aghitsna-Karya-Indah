@@ -41,6 +41,15 @@
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
     </div>
 
+    @if (auth()->user()->isAdmin())
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Lokasi (Opsional)</label>
+            <input type="text" name="location" value="{{ $invoice->location }}"
+                class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input"
+                placeholder="Contoh: Jl. Melati No. 1, Depok">
+        </div>
+    @endif
+
     {{-- Detail Item Invoice --}}
     <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
         <div id="items-error-edit-{{ $invoice->invoice_number }}"
@@ -202,6 +211,40 @@
                 <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
                 <span id="dp-amount-edit-{{ $invoice->invoice_number }}" class="text-sm font-bold text-info">Rp
                     0</span>
+            </div>
+        </div>
+    </div>
+
+    {{-- PPN Section --}}
+    <div class="mb-3 p-3 border border-purple-300 rounded-lg bg-purple-50"
+        id="ppn-section-edit-{{ $invoice->invoice_number }}">
+        <label class="block text-text-primary font-semibold mb-2">PPN (Opsional)</label>
+        <div>
+            <label class="block text-text-label text-sm mb-1">Persentase PPN (%)</label>
+            <input type="text" inputmode="decimal" name="ppn" id="ppn-value-edit-{{ $invoice->invoice_number }}"
+                value="{{ $invoice->ppn ?? '' }}"
+                class="w-full border border-border-strong rounded-lg p-2 bg-surface-base text-text-input disabled:bg-surface-disabled disabled:cursor-not-allowed"
+                placeholder="Contoh: 11"
+                oninput="formatDecimalInput(this); calculatePPNEdit('{{ $invoice->invoice_number }}')">
+            <small class="text-xs text-text-secondary">Dihitung dari total setelah diskon. Kosongkan jika tidak
+                dikenakan PPN.</small>
+            <div id="ppn-error-edit-{{ $invoice->invoice_number }}"
+                class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                <i class="fa-solid fa-exclamation-circle"></i>
+                <span>PPN tidak boleh 100% atau lebih</span>
+            </div>
+        </div>
+        <div class="mt-2 p-2 bg-surface-base rounded-lg hidden"
+            id="ppn-summary-edit-{{ $invoice->invoice_number }}">
+            <div class="flex justify-between">
+                <span class="text-sm text-text-label">PPN:</span>
+                <span id="ppn-amount-edit-{{ $invoice->invoice_number }}"
+                    class="text-sm font-semibold text-error">Rp 0</span>
+            </div>
+            <div class="flex justify-between mt-1">
+                <span class="text-sm font-bold text-text-primary">Total Setelah PPN:</span>
+                <span id="total-after-ppn-edit-{{ $invoice->invoice_number }}"
+                    class="text-sm font-bold text-success">Rp 0</span>
             </div>
         </div>
     </div>

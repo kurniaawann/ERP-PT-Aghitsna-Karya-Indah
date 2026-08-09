@@ -183,6 +183,7 @@ class ProyekInvoiceService
             'recipient' => $data['recipient'],
             'regarding' => $data['regarding'] ?? null,
             'project_description' => $data['project_description'],
+            'location' => $data['location'] ?? null,
             'items' => json_encode($items),
             'total_amount' => $totalAmount,
             'discount_type' => $data['discount_type'] ?? null,
@@ -196,6 +197,7 @@ class ProyekInvoiceService
             'dp_amount' => $calculations['dpAmount'] > 0
                 ? $calculations['dpAmount']
                 : null,
+            'ppn' => $data['ppn'] ?? null,
             'selected_payment_accounts' => json_encode($data['selected_payment_accounts'] ?? []),
             'signed_by_id' => $data['signed_by_id'] ?? null,
             'division_id' => $data['division_id'] ?? null,

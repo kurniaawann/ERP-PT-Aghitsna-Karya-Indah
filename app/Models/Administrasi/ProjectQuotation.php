@@ -15,8 +15,7 @@ use App\Models\User;
  *
  * Model ini menyimpan data header penawaran proyek, termasuk nomor
  * penawaran, tanggal, penerima, total, dan items (format flat JSON
- * {keterangan, volume, satuan, harga}) serta discount opsional.
- * Penawaran TIDAK memiliki DP — DP adalah konsep pembayaran invoice.
+ * {keterangan, volume, satuan, harga}) serta discount, DP, dan PPN opsional.
  *
  * Primary key: quotation_number (string, bukan auto-increment)
  */
@@ -34,13 +33,19 @@ class ProjectQuotation extends Model
         'sequence_number',
         'date',
         'subject',
+        'attachment',
         'recipient',
         'project_description',
+        'location',
         'total_amount',
         'items',
         'discount_type',
         'discount_value',
+        'ppn',
         'total_after_discount',
+        'dp_type',
+        'dp_value',
+        'dp_amount',
         'amount_in_words',
         'selected_payment_accounts',
         'signed_by_id',
@@ -55,6 +60,9 @@ class ProjectQuotation extends Model
         'items' => 'json',
         'total_after_discount' => 'integer',
         'discount_value' => 'decimal:2',
+        'ppn' => 'decimal:2',
+        'dp_value' => 'decimal:2',
+        'dp_amount' => 'integer',
         'selected_payment_accounts' => 'array',
     ];
 
@@ -120,6 +128,47 @@ class ProjectQuotation extends Model
             $totalAmount ?? (float) ($this->total_amount ?? 0),
             $this->discount_type,
             $this->discount_value ? (float) $this->discount_value : null
+        );
+    }
+
+    /**
+     * Menghitung jumlah PPN berdasarkan total setelah diskon (dasar pengenaan).
+     *
+     * PPN disimpan sebagai persentase. Base PPN = total_after_discount jika
+     * ada, selain itu fallback ke total_amount.
+     *
+     * @return float  Jumlah PPN
+     */
+    public function getPpnAmount(): float
+    {
+        if (!$this->ppn || (float) $this->ppn <= 0) {
+            return 0;
+        }
+
+        $base = ($this->total_after_discount !== null && (float) $this->total_after_discount !== (float) ($this->total_amount ?? 0))
+            ? (float) $this->total_after_discount
+            : (float) ($this->total_amount ?? 0);
+
+        return round(($base * (float) $this->ppn) / 100);
+    }
+
+    /**
+     * Menghitung jumlah DP berdasarkan total setelah diskon.
+     *
+     * DP dihitung dari total SETELAH diskon (jika ada), selain itu fallback
+     * ke total_amount — pola yang sama dengan InvoiceProyek.
+     *
+     * @param  float|null  $baseAmount  Base amount untuk perhitungan DP (opsional)
+     * @return float  Jumlah DP
+     */
+    public function getDpAmount(float $baseAmount = null): float
+    {
+        return app(\App\Services\Finance\InvoiceCalculatorService::class)->calculateDpAmount(
+            (float) ($this->total_amount ?? 0),
+            $this->total_after_discount,
+            $this->dp_type,
+            $this->dp_value ? (float) $this->dp_value : null,
+            $baseAmount
         );
     }
 

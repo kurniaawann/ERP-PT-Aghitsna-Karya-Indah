@@ -31,6 +31,14 @@
             oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
     </div>
 
+    @if (auth()->user()->isAdmin())
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Lokasi (Opsional)</label>
+            <input type="text" name="location" class="w-full border rounded p-2"
+                placeholder="Contoh: Jl. Melati No. 1, Depok">
+        </div>
+    @endif
+
     {{-- Detail Item Invoice --}}
     <div id="items-container" class="mb-4">
         <div id="items-error"
@@ -163,6 +171,34 @@
             <div class="flex justify-between">
                 <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
                 <span id="dp-amount" class="text-sm font-bold text-blue-600">Rp 0</span>
+            </div>
+        </div>
+    </div>
+
+    {{-- PPN Section --}}
+    <div class="mb-3 p-3 border rounded bg-purple-50" id="ppn-section">
+        <label class="block text-text-primary font-semibold mb-2">PPN (Opsional)</label>
+        <div>
+            <label class="block text-text-label text-sm mb-1">Persentase PPN (%)</label>
+            <input type="text" inputmode="decimal" name="ppn" id="ppn-value"
+                class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="Contoh: 11" oninput="formatDecimalInput(this); calculatePPN()">
+            <small class="text-xs text-text-secondary" id="ppn-helper">Dihitung dari total setelah diskon. Kosongkan
+                jika tidak dikenakan PPN.</small>
+            <div id="ppn-error"
+                class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                <i class="fa-solid fa-exclamation-circle"></i>
+                <span id="ppn-error-text">PPN tidak boleh 100% atau lebih</span>
+            </div>
+        </div>
+        <div class="mt-2 p-2 bg-white rounded hidden" id="ppn-summary">
+            <div class="flex justify-between">
+                <span class="text-sm text-text-label">PPN:</span>
+                <span id="ppn-amount" class="text-sm font-semibold text-error">Rp 0</span>
+            </div>
+            <div class="flex justify-between mt-1">
+                <span class="text-sm font-bold text-text-primary">Total Setelah PPN:</span>
+                <span id="total-after-ppn" class="text-sm font-bold text-green-600">Rp 0</span>
             </div>
         </div>
     </div>

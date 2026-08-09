@@ -9,8 +9,6 @@ use App\Models\Administrasi\ProjectQuotation;
 use App\Models\Finance\PaymentAccount;
 use App\Models\Sdm\Executive;
 use App\Models\Sdm\Division;
-use App\Exports\Administrasi\ProjectQuotationExport;
-use App\Exports\Administrasi\ProjectQuotationMultiExport;
 use App\Services\Administrasi\ProjectQuotationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -90,8 +88,10 @@ class ProjectQuotationController extends Controller
             'quotation_number' => $quotation->quotation_number,
             'date' => $quotation->date,
             'subject' => $quotation->subject,
+            'attachment' => $quotation->attachment,
             'recipient' => $quotation->recipient,
             'project_description' => $quotation->project_description,
+            'location' => $quotation->location,
             'total_amount' => $quotation->total_amount,
             'discount_type' => $quotation->discount_type,
             'discount_value' => $quotation->discount_value,
@@ -194,7 +194,7 @@ class ProjectQuotationController extends Controller
 
             $items = $quotation->items ?? [];
 
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
+            $pdf = Pdf::loadView($this->service->getPdfView(), compact('quotation'))
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
@@ -224,7 +224,7 @@ class ProjectQuotationController extends Controller
         $safeFileName = str_replace(['/', '\\'], '-', $quotationNumber);
         $date = date('Y-m-d');
         return Excel::download(
-            new ProjectQuotationExport($quotationNumber),
+            $this->service->getExcelExport($quotationNumber),
             "Penawaran_Proyek_{$safeFileName}_{$date}.xlsx"
         );
     }
@@ -272,7 +272,7 @@ class ProjectQuotationController extends Controller
         if (count($quotationNumbers) === 1) {
             $quotation = $quotations->first();
 
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotation'))
+            $pdf = Pdf::loadView($this->service->getPdfView(), compact('quotation'))
                 ->setPaper('a4', 'portrait');
 
             $safeNumber = str_replace(['/', '\\'], '-', $quotation->quotation_number);
@@ -285,7 +285,7 @@ class ProjectQuotationController extends Controller
             ]);
         } else {
             // Multiple quotations - create separate pages
-            $pdf = Pdf::loadView('exports.administrasi.project-quotation-pdf', compact('quotations'))
+            $pdf = Pdf::loadView($this->service->getPdfView(), compact('quotations'))
                 ->setPaper('a4', 'portrait');
 
             return response()->streamDownload(function () use ($pdf) {
@@ -317,13 +317,13 @@ class ProjectQuotationController extends Controller
             $safeFileName = str_replace(['/', '\\'], '-', $quotationNumbers[0]);
             $date = date('Y-m-d');
             return Excel::download(
-                new ProjectQuotationExport($quotationNumbers[0]),
+                $this->service->getExcelExport($quotationNumbers[0]),
                 "Penawaran_Proyek_{$safeFileName}_{$date}.xlsx"
             );
         } else {
             // For multiple, create a multi-sheet Excel file
             return Excel::download(
-                new ProjectQuotationMultiExport($quotationNumbers),
+                $this->service->getExcelMultiExport($quotationNumbers),
                 'Penawaran_Proyek_' . date('Y-m-d') . '.xlsx'
             );
         }

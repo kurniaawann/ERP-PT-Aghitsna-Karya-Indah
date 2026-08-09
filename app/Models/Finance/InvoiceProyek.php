@@ -36,6 +36,7 @@ class InvoiceProyek extends Model
         'recipient',
         'regarding',
         'project_description',
+        'location',
         'items',
         'total_amount',
         'discount_type',
@@ -44,6 +45,7 @@ class InvoiceProyek extends Model
         'dp_type',
         'dp_value',
         'dp_amount',
+        'ppn',
         'selected_payment_accounts',
         'created_by',
         'signed_by_id',
@@ -59,6 +61,7 @@ class InvoiceProyek extends Model
         'dp_amount' => 'integer',
         'discount_value' => 'decimal:2',
         'dp_value' => 'decimal:2',
+        'ppn' => 'decimal:2',
         'invoice_date' => 'date',
     ];
 
@@ -221,6 +224,27 @@ class InvoiceProyek extends Model
             $this->dp_value ? (float) $this->dp_value : null,
             $baseAmount
         );
+    }
+
+    /**
+     * Menghitung jumlah PPN berdasarkan total setelah diskon (dasar pengenaan).
+     *
+     * PPN disimpan sebagai persentase. Base PPN mengikuti pola DP: pakai
+     * total_after_discount jika ada, selain itu fallback ke total_amount.
+     *
+     * @return float  Jumlah PPN
+     */
+    public function getPpnAmount(): float
+    {
+        if (!$this->ppn || (float) $this->ppn <= 0) {
+            return 0;
+        }
+
+        $base = ($this->total_after_discount !== null && (float) $this->total_after_discount !== (float) ($this->total_amount ?? 0))
+            ? (float) $this->total_after_discount
+            : (float) ($this->total_amount ?? 0);
+
+        return round(($base * (float) $this->ppn) / 100);
     }
 
     /**

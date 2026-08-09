@@ -355,30 +355,24 @@
         </div>
 
         <!-- Payment Information -->
-        <div class="payment-info">
-            Pembayaran dapat ditransfer melalui nomor rekening<br>
-            @php
-                $selectedAccountIds = is_string($invoice->selected_payment_accounts)
-                    ? json_decode($invoice->selected_payment_accounts, true)
-                    : $invoice->selected_payment_accounts ?? [];
+        @php
+            $selectedAccountIds = is_string($invoice->selected_payment_accounts)
+                ? json_decode($invoice->selected_payment_accounts, true)
+                : $invoice->selected_payment_accounts ?? [];
 
-                if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
-                        ->orderBy('id')
-                        ->get();
-                } else {
-                    // Fallback ke semua rekening aktif jika tidak ada yang dipilih
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
-                }
-            @endphp
-            @foreach ($paymentAccounts as $account)
-                <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
-                <strong>{{ $account->account_holder }}</strong><br>
-            @endforeach
-            @if ($paymentAccounts->isEmpty())
-                <em>Tidak ada rekening pembayaran yang tersedia</em>
-            @endif
-        </div>
+            $paymentAccounts = !empty($selectedAccountIds)
+                ? \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)->orderBy('id')->get()
+                : collect();
+        @endphp
+        @if ($paymentAccounts->isNotEmpty())
+            <div class="payment-info">
+                Pembayaran dapat ditransfer melalui nomor rekening<br>
+                @foreach ($paymentAccounts as $account)
+                    <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
+                    <strong>{{ $account->account_holder }}</strong><br>
+                @endforeach
+            </div>
+        @endif
 
         <!-- Closing -->
         <div class="closing">

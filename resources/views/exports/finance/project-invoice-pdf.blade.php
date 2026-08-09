@@ -309,14 +309,17 @@
                 @php
                     $discountAmount = 0;
                     $dpAmount = 0;
+                    $ppnAmount = 0;
                     if ($invoice->discount_value && $invoice->discount_value > 0) {
                         $discountAmount = $invoice->getDiscountAmount($totalAmount);
                     }
                     if ($invoice->dp_value && $invoice->dp_value > 0) {
                         $dpAmount = $invoice->getDpAmount($totalAmount);
                     }
-                    $hasDiscountOrDp = $discountAmount > 0 || $dpAmount > 0;
-                    $remainingAmount = $totalAmount - $discountAmount - $dpAmount;
+                    $ppnAmount = $invoice->getPpnAmount();
+                    $hasDiscountDpOrPpn = $discountAmount > 0 || $dpAmount > 0 || $ppnAmount > 0;
+                    $remainingAmount = $totalAmount - $discountAmount + $ppnAmount - $dpAmount;
+                    $grandTotal = $totalAmount - $discountAmount + $ppnAmount;
                 @endphp
 
                 <tr>
@@ -359,7 +362,17 @@
                     </tr>
                 @endif
 
-                @if ($hasDiscountOrDp)
+                @if ($invoice->ppn && $invoice->ppn > 0)
+                    <!-- PPN Row -->
+                    <tr>
+                        <td colspan="4" style="border: none; background-color: #fff;"></td>
+                        <td class="right" style="border: 1px solid #000;"><strong>PPN
+                                ({{ number_format($invoice->ppn, 0) }}%)</strong></td>
+                        <td class="right" style="border: 1px solid #000;"><strong>Rp {{ number_format($ppnAmount, 0, ',', '.') }}</strong></td>
+                    </tr>
+                @endif
+
+                @if ($hasDiscountDpOrPpn)
                     <tr>
                         <td colspan="4" style="border: none; background-color: #fff;"></td>
                         <td class="right" style="border: 1px solid #000;"><strong>Sisa Pembayaran</strong></td>
@@ -393,33 +406,28 @@
 
         <!-- Terbilang -->
         <div class="terbilang">
-            Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah
+            Terbilang : {{ ucwords(terbilang($grandTotal)) }} rupiah
         </div>
 
         <!-- Payment Information -->
-        <div class="payment-info">
-            Pembayaran dapat ditransfer melalui nomor rekening<br>
-            @php
-                $selectedAccountIds = is_string($invoice->selected_payment_accounts)
-                    ? json_decode($invoice->selected_payment_accounts, true)
-                    : $invoice->selected_payment_accounts ?? [];
+        @php
+            $selectedAccountIds = is_string($invoice->selected_payment_accounts)
+                ? json_decode($invoice->selected_payment_accounts, true)
+                : $invoice->selected_payment_accounts ?? [];
 
-                if (!empty($selectedAccountIds)) {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
-                        ->orderBy('id')
-                        ->get();
-                } else {
-                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
-                }
-            @endphp
-            @foreach ($paymentAccounts as $account)
-                <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
-                <strong>{{ $account->account_holder }}</strong><br>
-            @endforeach
-            @if ($paymentAccounts->isEmpty())
-                <em>Tidak ada rekening pembayaran yang tersedia</em>
-            @endif
-        </div>
+            $paymentAccounts = !empty($selectedAccountIds)
+                ? \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)->orderBy('id')->get()
+                : collect();
+        @endphp
+        @if ($paymentAccounts->isNotEmpty())
+            <div class="payment-info">
+                Pembayaran dapat ditransfer melalui nomor rekening<br>
+                @foreach ($paymentAccounts as $account)
+                    <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
+                    <strong>{{ $account->account_holder }}</strong><br>
+                @endforeach
+            </div>
+        @endif
 
         <!-- Closing -->
         <div class="closing">

@@ -5,11 +5,8 @@
      - Nomor penawaran auto-generated (readonly)
      - Tanggal, Perihal, Kepada, Deskripsi Proyek
      - Daftar Item (flat, dinamis via JS)
-     - Total & Discount (opsional)
+     - Total, Discount, DP, dan PPN (opsional)
      - Tanda Tangan (opsional), Rekening Pembayaran (wajib minimal 1)
-
-     Catatan: penawaran TIDAK memiliki DP — DP adalah konsep pembayaran
-     invoice, ditambahkan nanti pada Invoice Proyek jika diperlukan.
 
      Data items dikirim via hidden field `items` (JSON) dengan format
      {keterangan, volume, satuan, harga} — sama seperti invoice.
@@ -28,6 +25,14 @@
             </p>
         </div>
     </div>
+
+    @if (auth()->user()->isAdmin())
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Lampiran</label>
+            <input type="text" name="attachment" class="w-full border rounded p-2"
+                placeholder="Contoh: 1 (satu) set gambar kerja">
+        </div>
+    @endif
 
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
@@ -51,10 +56,18 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Deskripsi Proyek</label>
+        <label class="block text-text-primary mb-1">{{ auth()->user()->isAdmin() ? 'Pembangunan untuk' : 'Deskripsi Proyek' }}</label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2"
             placeholder="Contoh: Proyek Karbela 3 / Pak Sis"></textarea>
     </div>
+
+    @if (auth()->user()->isAdmin())
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Lokasi</label>
+            <input type="text" name="location" class="w-full border rounded p-2"
+                placeholder="Contoh: Jl. Karbela 3, Jakarta Selatan">
+        </div>
+    @endif
 
     <div id="items-container" class="mb-4">
         <div id="items-error"
@@ -152,6 +165,73 @@
         </div>
     </div>
 
+    {{-- DP / Uang Muka Section --}}
+    <div class="mb-3 p-3 border rounded bg-blue-50" id="dp-section">
+        <label class="block text-text-primary font-semibold mb-2">DP / Uang Muka (Opsional)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+                <label class="block text-text-label text-sm mb-1">Tipe DP</label>
+                <select name="dp_type" id="dp-type" class="w-full border rounded p-2" disabled onchange="calculateDP()">
+                    <option value="">Tidak Ada DP</option>
+                    <option value="percentage">Persentase (%)</option>
+                    <option value="amount">Nominal (Rp)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-text-label text-sm mb-1">Nilai DP</label>
+                <input type="text" inputmode="decimal" name="dp_value" id="dp-value" disabled
+                    class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="0" oninput="formatDecimalInput(this); calculateDP()">
+                <small class="text-xs text-text-secondary" id="dp-helper">Tidak boleh 100% atau lebih untuk persentase. Boleh pakai
+                    koma, contoh 1,5</small>
+                <div id="dp-error"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span id="dp-error-text">Persentase DP tidak boleh 100% atau lebih</span>
+                </div>
+                <div id="dp-amount-error"
+                    class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <span id="dp-amount-error-text">Nominal DP tidak boleh lebih dari atau sama dengan total</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-2 p-2 bg-white rounded">
+            <div class="flex justify-between">
+                <span class="text-sm font-bold text-text-primary">Nilai DP:</span>
+                <span id="dp-amount" class="text-sm font-bold text-blue-600">Rp 0</span>
+            </div>
+        </div>
+    </div>
+
+    {{-- PPN Section --}}
+    <div class="mb-3 p-3 border rounded bg-purple-50" id="ppn-section">
+        <label class="block text-text-primary font-semibold mb-2">PPN (Opsional)</label>
+        <div>
+            <label class="block text-text-label text-sm mb-1">Persentase PPN (%)</label>
+            <input type="text" inputmode="decimal" name="ppn" id="ppn-value"
+                class="w-full border rounded p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="Contoh: 11" oninput="formatDecimalInput(this); calculatePPN()">
+            <small class="text-xs text-text-secondary" id="ppn-helper">Dihitung dari total setelah diskon. Kosongkan
+                jika tidak dikenakan PPN.</small>
+            <div id="ppn-error"
+                class="hidden mt-1 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                <i class="fa-solid fa-exclamation-circle"></i>
+                <span id="ppn-error-text">PPN tidak boleh 100% atau lebih</span>
+            </div>
+        </div>
+        <div class="mt-2 p-2 bg-white rounded hidden" id="ppn-summary">
+            <div class="flex justify-between">
+                <span class="text-sm text-text-label">PPN:</span>
+                <span id="ppn-amount" class="text-sm font-semibold text-error">Rp 0</span>
+            </div>
+            <div class="flex justify-between mt-1">
+                <span class="text-sm font-bold text-text-primary">Total Setelah PPN:</span>
+                <span id="total-after-ppn" class="text-sm font-bold text-green-600">Rp 0</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Signature Section (Opsional) -->
     <div class="mb-3 p-3 border rounded bg-purple-50">
         <label class="block text-text-primary font-semibold mb-2">Tanda Tangan (Opsional)</label>
@@ -177,7 +257,7 @@
         </div>
     </div>
 
-    <!-- Payment Accounts Selection -->
+    {{-- Payment Accounts Selection --}}
     <div class="mb-3 p-3 border rounded bg-green-50">
         <label class="block text-text-primary font-semibold mb-2">
             Pilih Rekening Pembayaran <span class="text-error">*</span>

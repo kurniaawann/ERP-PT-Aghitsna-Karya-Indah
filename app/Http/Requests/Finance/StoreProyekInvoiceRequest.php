@@ -31,11 +31,13 @@ class StoreProyekInvoiceRequest extends FormRequest
             'recipient' => 'required|string|max:255',
             'regarding' => 'nullable|string|max:255',
             'project_description' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
             'items' => 'required|json',
             'discount_type' => 'nullable|in:percentage,amount',
             'discount_value' => 'nullable|numeric|min:0',
             'dp_type' => 'nullable|in:percentage,amount',
             'dp_value' => 'nullable|numeric|min:0',
+            'ppn' => 'nullable|numeric|min:0|max:100',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'signed_by_id' => 'nullable|exists:executives,id',
@@ -60,6 +62,7 @@ class StoreProyekInvoiceRequest extends FormRequest
             'selected_payment_accounts.required' => 'Minimal 1 rekening pembayaran harus dipilih.',
             'selected_payment_accounts.array' => 'Format rekening pembayaran tidak valid.',
             'selected_payment_accounts.min' => 'Minimal 1 rekening pembayaran harus dipilih.',
+            'ppn.max' => 'PPN tidak boleh lebih dari 100%.',
         ];
     }
 }

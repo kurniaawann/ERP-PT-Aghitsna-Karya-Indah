@@ -8,10 +8,12 @@ use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 class ProjectQuotationMultiExport implements WithMultipleSheets
 {
     protected $quotationNumbers;
+    protected $exportClass;
 
-    public function __construct(array $quotationNumbers)
+    public function __construct(array $quotationNumbers, string $exportClass = ProjectQuotationExport::class)
     {
         $this->quotationNumbers = $quotationNumbers;
+        $this->exportClass = $exportClass;
     }
 
     public function sheets(): array
@@ -19,7 +21,7 @@ class ProjectQuotationMultiExport implements WithMultipleSheets
         $sheets = [];
 
         foreach ($this->quotationNumbers as $number) {
-            $sheets[] = new ProjectQuotationExport($number);
+            $sheets[] = new $this->exportClass($number);
         }
 
         return $sheets;

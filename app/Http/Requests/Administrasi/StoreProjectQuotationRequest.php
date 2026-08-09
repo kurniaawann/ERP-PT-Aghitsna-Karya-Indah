@@ -7,10 +7,10 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Form Request untuk validasi penyimpanan Penawaran Proyek.
  *
- * Memastikan semua field wajib terisi, minimal 1 rekening pembayaran
- * dipilih, data items (JSON flat, format sama seperti Invoice Proyek)
- * valid, dan discount memiliki tipe yang diperbolehkan. Penawaran TIDAK
- * memiliki DP — DP adalah konsep pembayaran invoice.
+ * Memastikan semua field wajib terisi, data items (JSON flat, format sama
+ * seperti Invoice Proyek) valid, dan discount memiliki tipe yang diperbolehkan.
+ * Pemilihan rekening pembayaran wajib dipilih minimal 1 (sama seperti Invoice).
+ * DP & PPN bersifat opsional dan ikut terbawa ke invoice otomatis.
  */
 class StoreProjectQuotationRequest extends FormRequest
 {
@@ -37,10 +37,15 @@ class StoreProjectQuotationRequest extends FormRequest
             'items' => 'required|json',
             'discount_type' => 'nullable|in:percentage,amount',
             'discount_value' => 'nullable|numeric|min:0',
+            'ppn' => 'nullable|numeric|min:0|max:100',
+            'dp_type' => 'nullable|in:percentage,amount',
+            'dp_value' => 'nullable|numeric|min:0',
             'selected_payment_accounts' => 'required|array|min:1',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'subject' => 'nullable|string|max:255',
+            'attachment' => 'nullable|string|max:255',
             'project_description' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
             'signed_by_id' => 'nullable|exists:executives,id',
             'division_id' => 'nullable|exists:divisions,id',
         ];
@@ -66,7 +71,10 @@ class StoreProjectQuotationRequest extends FormRequest
             'selected_payment_accounts.*.integer' => 'ID rekening pembayaran tidak valid.',
             'selected_payment_accounts.*.exists' => 'Rekening pembayaran yang dipilih tidak ditemukan.',
             'subject.max' => 'Perihal maksimal 255 karakter.',
+            'attachment.max' => 'Lampiran maksimal 255 karakter.',
             'project_description.max' => 'Deskripsi proyek maksimal 255 karakter.',
+            'location.max' => 'Lokasi maksimal 255 karakter.',
+            'ppn.max' => 'PPN tidak boleh lebih dari 100%.',
             'signed_by_id.exists' => 'Nama penandatangan yang dipilih tidak ditemukan.',
             'division_id.exists' => 'Divisi yang dipilih tidak ditemukan.',
         ];

@@ -2,6 +2,9 @@
 
 namespace App\Services\Administrasi;
 
+use App\Exports\Administrasi\ProjectQuotationAdminExport;
+use App\Exports\Administrasi\ProjectQuotationExport;
+use App\Exports\Administrasi\ProjectQuotationMultiExport;
 use App\Models\Administrasi\ProjectQuotation;
 use App\Models\Finance\InvoiceProyek;
 use App\Services\Finance\InvoiceCalculatorService;
@@ -24,8 +27,8 @@ use Illuminate\Support\Facades\DB;
  *   lunas) pada transaksi DB yang sama.
  * - Invoice tetap dapat dibuat mandiri tanpa penawaran (modul Finance).
  * - Edit/hapus penawaran TIDAK mengubah invoice yang sudah dibuat (snapshot).
- * - TIDAK ada DP pada penawaran: DP adalah konsep pembayaran invoice, bukan
- *   penawaran. Bila perlu, DP ditambahkan nanti pada invoice-nya.
+ * - DP & PPN dapat diisi pada penawaran dan ikut terbawa ke invoice otomatis
+ *   (snapshot). Invoice tetap dapat dibuat mandiri tanpa penawaran.
  */
 class ProjectQuotationService
 {
@@ -113,20 +116,32 @@ class ProjectQuotationService
         $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
             ? $totalAmount - (int) $discountAmount
             : null;
+        $dpAmount = $this->calculator->calculateDpAmount(
+            $totalAmount,
+            $totalAfterDiscount,
+            $validated['dp_type'] ?? null,
+            isset($validated['dp_value']) && $validated['dp_value'] !== '' ? (float) $validated['dp_value'] : null
+        );
 
-        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $discountAmount, $totalAfterDiscount, $items) {
+        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $discountAmount, $totalAfterDiscount, $dpAmount, $items) {
             $quotation = ProjectQuotation::create([
                 'quotation_number' => $quotationNumber,
                 'sequence_number' => $seqNumber,
                 'date' => $validated['date'],
                 'subject' => $validated['subject'] ?? 'Penawaran Harga',
+                'attachment' => $validated['attachment'] ?? null,
                 'recipient' => $validated['recipient'],
                 'project_description' => $validated['project_description'] ?? 'Ditempat',
+                'location' => $validated['location'] ?? null,
                 'total_amount' => $totalAmount,
                 'items' => $items,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? null,
+                'ppn' => $validated['ppn'] ?? null,
                 'total_after_discount' => $totalAfterDiscount,
+                'dp_type' => $validated['dp_type'] ?? null,
+                'dp_value' => $validated['dp_value'] ?? null,
+                'dp_amount' => $dpAmount > 0 ? (int) $dpAmount : null,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
@@ -162,18 +177,30 @@ class ProjectQuotationService
         $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
             ? $totalAmount - (int) $discountAmount
             : null;
+        $dpAmount = $this->calculator->calculateDpAmount(
+            $totalAmount,
+            $totalAfterDiscount,
+            $validated['dp_type'] ?? null,
+            isset($validated['dp_value']) && $validated['dp_value'] !== '' ? (float) $validated['dp_value'] : null
+        );
 
-        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $totalAfterDiscount, $items) {
+        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $totalAfterDiscount, $dpAmount, $items) {
             $quotation->update([
                 'date' => $validated['date'],
                 'subject' => $validated['subject'] ?? 'Penawaran Harga',
+                'attachment' => $validated['attachment'] ?? null,
                 'recipient' => $validated['recipient'],
                 'project_description' => $validated['project_description'] ?? 'Ditempat',
+                'location' => $validated['location'] ?? null,
                 'total_amount' => $totalAmount,
                 'items' => $items,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? null,
+                'ppn' => $validated['ppn'] ?? null,
                 'total_after_discount' => $totalAfterDiscount,
+                'dp_type' => $validated['dp_type'] ?? null,
+                'dp_value' => $validated['dp_value'] ?? null,
+                'dp_amount' => $dpAmount > 0 ? (int) $dpAmount : null,
                 'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
@@ -223,6 +250,52 @@ class ProjectQuotationService
         return ProjectQuotation::query()
             ->where('created_by', auth()->id())
             ->find($quotationNumber);
+    }
+
+    /**
+     * Menentukan view PDF yang dipakai saat cetak berdasarkan role user.
+     *
+     * Role 'admin' menggunakan desain khusus (project-quotation-admin-pdf).
+     *
+     * @return string
+     */
+    public function getPdfView(): string
+    {
+        return auth()->check() && auth()->user()->role === 'admin'
+            ? 'exports.administrasi.project-quotation-admin-pdf'
+            : 'exports.administrasi.project-quotation-pdf';
+    }
+
+    /**
+     * Menentukan class export Excel yang dipakai saat cetak berdasarkan role user.
+     *
+     * Role 'admin' menggunakan desain khusus (ProjectQuotationAdminExport).
+     *
+     * @param  string  $quotationNumber
+     * @return ProjectQuotationExport|ProjectQuotationAdminExport
+     */
+    public function getExcelExport(string $quotationNumber)
+    {
+        $exportClass = auth()->check() && auth()->user()->role === 'admin'
+            ? ProjectQuotationAdminExport::class
+            : ProjectQuotationExport::class;
+
+        return new $exportClass($quotationNumber);
+    }
+
+    /**
+     * Membuat multi-export Excel (beberapa penawaran) sesuai role user.
+     *
+     * @param  array  $quotationNumbers
+     * @return ProjectQuotationMultiExport
+     */
+    public function getExcelMultiExport(array $quotationNumbers): ProjectQuotationMultiExport
+    {
+        $exportClass = auth()->check() && auth()->user()->role === 'admin'
+            ? ProjectQuotationAdminExport::class
+            : ProjectQuotationExport::class;
+
+        return new ProjectQuotationMultiExport($quotationNumbers, $exportClass);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -283,8 +356,7 @@ class ProjectQuotationService
      *
      * Seluruh field disalin dari penawaran; invoice berstatus "Belum Lunas".
      * Kolom quotation_number menautkan invoice ke penawaran asal.
-     * Invoice TIDAK mewarisi DP dari penawaran (penawaran memang tidak punya
-     * DP); DP bila diperlukan ditambahkan nanti langsung pada invoice.
+     * Discount, DP, dan PPN dari penawaran ikut terbawa ke invoice (snapshot).
      *
      * @param  ProjectQuotation  $quotation  Penawaran yang baru dibuat
      * @param  array             $items      Items ter-normalisasi
@@ -307,17 +379,20 @@ class ProjectQuotationService
             'recipient' => $quotation->recipient,
             'regarding' => $quotation->subject,
             'project_description' => $quotation->project_description,
+            'location' => $quotation->location,
             'items' => $items,
             'total_amount' => $totalAmount,
             'discount_type' => $quotation->discount_type,
             'discount_value' => $quotation->discount_value,
             'total_after_discount' => $totalAfterDiscount,
-            'dp_type' => null,
-            'dp_value' => null,
-            'dp_amount' => null,
+            'dp_type' => $quotation->dp_type,
+            'dp_value' => $quotation->dp_value,
+            'dp_amount' => $quotation->dp_amount,
+            'ppn' => $quotation->ppn,
             'selected_payment_accounts' => $quotation->selected_payment_accounts ?? [],
             'signed_by_id' => $quotation->signed_by_id,
             'division_id' => $quotation->division_id,
+            'created_by' => auth()->id(),
         ]);
     }
 

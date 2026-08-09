@@ -159,12 +159,16 @@ class ProyekInvoiceController extends Controller
         $invoice = InvoiceProyek::where('invoice_number', $invoiceNumber)->firstOrFail();
         $invoice->items = $this->service->normalizeInvoiceItems($invoice->items);
 
-        $pdf = Pdf::loadView('exports.finance.project-invoice-pdf', compact('invoice'));
+        $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+        $pdf = Pdf::loadView(
+            $isAdmin ? 'exports.finance.project-invoice-admin-pdf' : 'exports.finance.project-invoice-pdf',
+            compact('invoice')
+        );
         $pdf->setPaper('a4', 'portrait');
 
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);
         $date = date('Y-m-d');
-        $prefix =(auth()->check() && auth()->user()->role === 'admin') ? 'Invoice' : 'Invoice_Proyek';
+        $prefix = $isAdmin ? 'Invoice' : 'Invoice_Proyek';
 
         return $pdf->download("{$prefix}_{$safeFileName}_{$date}.pdf");
     }

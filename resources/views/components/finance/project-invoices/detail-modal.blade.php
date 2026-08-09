@@ -3,15 +3,21 @@
     $totalAmount = (int) ($invoice->total_amount ?? 0);
     $netAmount = $invoice->getNetAmount();
     $totalPaid = $invoice->getTotalPaidAmount();
-    $remaining = $invoice->getRemainingAmount();
-    $isFullyPaid = $invoice->isFullyPaid();
 
     $discountAmount = (int) $invoice->getDiscountAmount();
     $dpAmount = (int) $invoice->getDpAmount();
-    $progressPercent = $netAmount > 0 ? min(100, (int) round(($totalPaid / $netAmount) * 100)) : 0;
+    $ppnAmount = (int) $invoice->getPpnAmount();
+
+    // Grand total PPN-inclusive, konsisten dengan PDF:
+    // grandTotal = total_amount - discount + ppn; sisa = grandTotal - dp - terbayar.
+    $grandTotal = $netAmount - $discountAmount + $ppnAmount;
+    $remaining = max(0, $grandTotal - $dpAmount - $totalPaid);
+    $isFullyPaid = $remaining <= 0;
+    $progressPercent = $grandTotal > 0 ? min(100, (int) round(($totalPaid / $grandTotal) * 100)) : 0;
 
     $discountValueDisplay = rtrim(rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'), ',');
     $dpValueDisplay = rtrim(rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'), ',');
+    $ppnValueDisplay = rtrim(rtrim(number_format((float) $invoice->ppn, 2, ',', '.'), '0'), ',');
 
     $paymentProofs = $invoice->relationLoaded('paymentProofs')
         ? $invoice->paymentProofs
@@ -138,11 +144,25 @@
                 </div>
             @endif
 
+            @if ($invoice->ppn && $invoice->ppn > 0)
+                <div class="flex justify-between items-center py-1.5 px-3 bg-purple-50 rounded-lg">
+                    <span class="text-sm text-purple-700">
+                        <i class="fa-solid fa-percent mr-1"></i>PPN ({{ $ppnValueDisplay }}%)
+                    </span>
+                    <span class="text-sm font-semibold text-purple-700">+Rp {{ number_format($ppnAmount, 0, ',', '.') }}</span>
+                </div>
+            @else
+                <div class="flex justify-between items-center py-1.5 px-3 bg-gray-50 rounded-lg">
+                    <span class="text-sm text-gray-400"><i class="fa-regular fa-circle-xmark mr-1"></i>PPN</span>
+                    <span class="text-sm text-gray-400 italic">Tidak ada PPN</span>
+                </div>
+            @endif
+
             <hr class="border-gray-200">
 
             <div class="flex justify-between items-center">
                 <span class="text-base font-bold text-gray-800">Grand Total</span>
-                <span class="text-base font-bold text-gray-900">Rp {{ number_format($netAmount, 0, ',', '.') }}</span>
+                <span class="text-base font-bold text-gray-900">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
             </div>
         </div>
     </div>
@@ -194,6 +214,12 @@
                     <span class="text-gray-400">→</span>
                     <span class="text-red-600 font-medium">Discount</span>
                     <span class="text-red-600 font-semibold">-Rp {{ number_format($discountAmount, 0, ',', '.') }}</span>
+                @endif
+
+                @if ($ppnAmount > 0)
+                    <span class="text-gray-400">→</span>
+                    <span class="text-purple-600 font-medium">PPN</span>
+                    <span class="text-purple-600 font-semibold">+Rp {{ number_format($ppnAmount, 0, ',', '.') }}</span>
                 @endif
 
                 @if ($dpAmount > 0)
