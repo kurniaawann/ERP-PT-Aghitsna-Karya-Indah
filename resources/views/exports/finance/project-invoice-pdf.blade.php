@@ -301,11 +301,7 @@
 
         <!-- Description -->
         <div class="description">
-            @if (!empty($invoice->proyek))
-                Dengan ini kami sampaikan invoice proyek {{ $invoice->proyek }}, {{ $invoice->project_description }}
-            @else
-                Dengan ini kami sampaikan {{ $invoice->project_description }}
-            @endif
+            Dengan ini kami sampaikan invoice untuk proyek {{ $invoice->project_description }} sebagai berikut :
         </div>
 
         <!-- Items Table -->

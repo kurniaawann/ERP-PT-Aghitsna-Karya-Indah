@@ -127,6 +127,28 @@
             padding-left: 5px;
         }
 
+        .recipient-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0;
+        }
+
+        .recipient-table td {
+            border: none;
+            padding: 2px 0;
+            vertical-align: top;
+        }
+
+        .recipient-table .recipient-label-cell {
+            font-weight: bold;
+            width: 80px;
+            white-space: nowrap;
+        }
+
+        .recipient-table .recipient-name-cell {
+            padding-left: 5px;
+        }
+
         .description {
             margin: 5px 0;
             text-align: justify;
@@ -295,11 +317,7 @@
 
         <!-- Description -->
         <div class="description">
-            @if (!empty($invoice->proyek))
-                Dengan ini kami sampaikan invoice proyek {{ $invoice->proyek }}, {{ $invoice->project_description }}
-            @else
-                Dengan ini kami sampaikan {{ $invoice->project_description }}
-            @endif
+            Dengan ini kami sampaikan invoice untuk proyek {{ $invoice->project_description }} sebagai berikut :
         </div>
 
         <!-- Items Table -->

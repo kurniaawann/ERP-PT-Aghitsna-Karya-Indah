@@ -117,9 +117,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:E{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", !empty($invoice->proyek)
-                    ? 'Dengan ini kami sampaikan invoice proyek ' . $invoice->proyek . ', ' . ($invoice->project_description ?? '')
-                    : 'Dengan ini kami sampaikan ' . ($invoice->project_description ?? ''));
+                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan invoice untuk proyek ' . ($invoice->project_description ?? '') . ' sebagai berikut :');
 
                 $currentRow += 2;
                 $sheet->setCellValue("A{$currentRow}", 'No');
