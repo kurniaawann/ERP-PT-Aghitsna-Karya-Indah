@@ -131,18 +131,22 @@ function categoryOptionsHtml(categories, selectedId) {
 /**
  * Bangun HTML satu blok transaksi.
  *
- * Nama input memakai array `items[][...]` agar PHP/Laravel menerima banyak
- * transaksi dalam satu submit. Item existing menyertakan hidden `items[][id]`.
+ * Nama input memakai array `items[{index}][...]` dengan indeks numerik yang
+ * sama dalam satu blok, agar PHP/Laravel mengelompokkan seluruh field satu
+ * transaksi ke satu entri array (bukan `items[][...]` yang terpecah per field).
+ * Item existing menyertakan hidden `items[{index}][id]`.
  *
  * @param {Array<{id:number,name:string,type:string}>} categories
  * @param {Object} [data] Data transaksi existing (untuk modal edit).
+ * @param {number} [index] Indeks baris transaksi pada array `items`.
  * @returns {string}
  */
-function transactionBlockHtml(categories, data) {
+function transactionBlockHtml(categories, data, index) {
     data = data || {};
+    index = index == null ? 0 : index;
 
     const idHidden = data.id
-        ? '<input type="hidden" name="items[][id]" value="' + escapeHtml(data.id) + '">'
+        ? '<input type="hidden" name="items[' + index + '][id]" value="' + escapeHtml(data.id) + '">'
         : '';
 
     const proofNotice = (data.proof_url && data.proof_file_name)
@@ -166,7 +170,7 @@ function transactionBlockHtml(categories, data) {
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Kategori <span class="text-error">*</span></label>
-            <select name="items[][transaction_category_id]"
+            <select name="items[${index}][transaction_category_id]"
                 class="w-full border rounded p-2 transaction-category-select" required
                 oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
                 oninput="this.setCustomValidity('')">
@@ -176,7 +180,7 @@ function transactionBlockHtml(categories, data) {
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-            <input type="date" name="items[][transaction_date]" class="w-full border rounded p-2"
+            <input type="date" name="items[${index}][transaction_date]" class="w-full border rounded p-2"
                 value="${escapeHtml(data.transaction_date || '')}" required
                 oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
                 oninput="this.setCustomValidity('')">
@@ -184,7 +188,7 @@ function transactionBlockHtml(categories, data) {
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Keterangan <span class="text-error">*</span></label>
-            <textarea name="items[][description]" class="w-full border rounded p-2" rows="3" required maxlength="1000"
+            <textarea name="items[${index}][description]" class="w-full border rounded p-2" rows="3" required maxlength="1000"
                 placeholder="Contoh: Kasbon Transport Tukang"
                 oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                 oninput="this.setCustomValidity('')">${escapeHtml(data.description || '')}</textarea>
@@ -192,7 +196,7 @@ function transactionBlockHtml(categories, data) {
 
         <div class="mb-3">
             <label class="amount-label block text-text-primary mb-1">Jumlah Pengeluaran <span class="text-error">*</span></label>
-            <input type="text" inputmode="numeric" name="items[][expense_amount]"
+            <input type="text" inputmode="numeric" name="items[${index}][expense_amount]"
                 class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000"
                 value="${escapeHtml(formatNumber(data.amount))}" required min="0"
                 oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
@@ -200,14 +204,14 @@ function transactionBlockHtml(categories, data) {
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Keterangan Bon</label>
-            <input type="text" name="items[][keterangan_bon]" class="w-full border rounded p-2"
+            <input type="text" name="items[${index}][keterangan_bon]" class="w-full border rounded p-2"
                 value="${escapeHtml(data.keterangan_bon || '')}"
                 placeholder="Contoh: Bon Pembelian Material" maxlength="255">
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Bukti Pembayaran</label>
-            <input type="file" name="items[][proof_file]"
+            <input type="file" name="items[${index}][proof_file]"
                 accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
                 class="w-full border rounded p-2">
             <p class="text-xs text-text-secondary mt-1">Opsional. Format gambar: JPG, PNG, GIF, WEBP, BMP. Maksimal 5 MB.
@@ -215,6 +219,30 @@ function transactionBlockHtml(categories, data) {
             ${proofNotice}
         </div>
     `;
+}
+
+/**
+ * Menentukan indeks array `items` untuk blok transaksi berikutnya.
+ *
+ * Indeks diambil dari nilai maksimum yang sudah dipakai + 1 agar tidak
+ * bertabrakan walau ada blok yang dihapus (indeks non-kontigu tetap aman
+ * karena tiap field dalam satu blok memakai indeks yang sama).
+ *
+ * @param {HTMLElement} container - Kontainer transaksi.
+ * @returns {number}
+ */
+function getNextTransactionIndex(container) {
+    let next = 0;
+
+    container.querySelectorAll('.transaction-block [name^="items["]').forEach(function (input) {
+        const match = input.name.match(/^items\[(\d+)\]/);
+        if (match) {
+            const used = parseInt(match[1], 10);
+            if (used >= next) next = used + 1;
+        }
+    });
+
+    return next;
 }
 
 /**
@@ -229,7 +257,7 @@ function addTransactionBlock(containerId, data) {
 
     const block = document.createElement('div');
     block.className = 'transaction-block border border-border-strong rounded p-3 bg-surface-base';
-    block.innerHTML = transactionBlockHtml(getTransactionCategories(container), data);
+    block.innerHTML = transactionBlockHtml(getTransactionCategories(container), data, getNextTransactionIndex(container));
 
     container.appendChild(block);
     renumberTransactionBlocks(container);
