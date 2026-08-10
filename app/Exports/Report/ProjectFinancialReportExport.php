@@ -13,41 +13,24 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
  * Export class untuk Laporan Keuangan Proyek ke Excel.
  *
- * Format mirip Rekap Pengeluaran (expense recap):
- * - Header: PT. AGHITSNA KARYA INDAH / LAPORAN KEUANGAN / NAMA PROYEK + LOKASI
- * - Data: Grouped by kategori dengan subtotal per kategori
- * - Grand Total: Jumlah keseluruhan
- * - Rekapitulasi: Ringkasan uang masuk, uang keluar, saldo
- * - Tanda tangan: Dibuat/Diperiksa & Direktur
- *
- * Kolom: NO | TANGGAL | KETERANGAN | UANG MASUK | UANG KELUAR | KETERANGAN BON
- * Penomoran baris: "1 Bon 1", "1 Bon 2" (indeks kategori . indeks bon).
- *
- * @property \App\Models\Finance\ProjectRecap $recap
- * @property \Illuminate\Database\Eloquent\Collection $items
- * @property object $totals
+ * Kolom (8 Kolom):
+ * A: NO | B: BON | C: TANGGAL | D: KETERANGAN | E: UANG MASUK | F: UANG KELUAR | G: SALDO | H: KETERANGAN BON
  */
 class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, WithEvents, WithHeadings, WithStyles, WithTitle
 {
-    /** @var \App\Models\Finance\ProjectRecap Rekap proyek pemilik laporan */
     protected $recap;
-
-    /** @var \Illuminate\Database\Eloquent\Collection Item-item laporan keuangan */
     protected $items;
-
-    /** @var object Total income, expense, dan balance */
     protected $totals;
 
-    /**
-     * @param  \App\Models\Finance\ProjectRecap  $recap  Rekap proyek
-     * @param  \Illuminate\Database\Eloquent\Collection  $items  Item-item laporan
-     * @param  object  $totals  Total income, expense, balance
-     */
+    /** @var array Menyimpan metadata tipe baris untuk styling dinamis di AfterSheet */
+    protected $rowMetadata = [];
+
     public function __construct($recap, $items, $totals)
     {
         $this->recap = $recap;
@@ -58,8 +41,9 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
     public function collection()
     {
         $data = [];
-        $currentRow = 5;
+        $currentRow = 5; // Data dimulai dari baris ke-5 (Row 1-3 Header, Row 4 Table Header)
         $catNo = 1;
+        $runningBalance = 0;
 
         $itemsByCategory = $this->items->groupBy('transaction_category_id');
         $categories = $this->items->pluck('category')->filter()->unique('id');
@@ -69,218 +53,192 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
             $categoryIncome = 0;
             $categoryExpense = 0;
             $bonNo = 1;
+            $isFirstItem = true;
 
-            // Category header row
+            // Baris Header Kategori (Hijau)
             $data[] = [
                 'no' => '',
+                'bon' => '',
                 'date' => '',
-                'description' => strtoupper($category->name ?? 'LAIN-LAIN'),
+                'description' => $category->name ?? 'Lain - lain',
                 'income' => '',
                 'expense' => '',
+                'balance' => '',
                 'keterangan_bon' => '',
             ];
+            $this->rowMetadata[$currentRow] = ['type' => 'CATEGORY_HEADER'];
             $currentRow++;
 
-            // Items in category
+            // Item Transaksi dalam Kategori
             foreach ($categoryItems as $item) {
+                $inc = $item->income_amount ?? 0;
+                $exp = $item->expense_amount ?? 0;
+                $categoryIncome += $inc;
+                $categoryExpense += $exp;
+                $runningBalance += ($inc - $exp);
+
                 $data[] = [
-                    'no' => $catNo.' Bon '.$bonNo++,
+                    'no' => $isFirstItem ? $catNo : '',
+                    'bon' => $bonNo++,
                     'date' => $item->transaction_date ? Carbon::parse($item->transaction_date)->format('d/m/Y') : '',
                     'description' => $item->description ?? '',
-                    'income' => $item->income_amount ? 'Rp '.number_format($item->income_amount, 0, ',', '.') : '',
-                    'expense' => $item->expense_amount ? 'Rp '.number_format($item->expense_amount, 0, ',', '.') : '',
+                    'income' => $inc ?: null,
+                    'expense' => $exp ?: null,
+                    'balance' => $runningBalance,
                     'keterangan_bon' => $item->keterangan_bon ?? '',
                 ];
 
-                $categoryIncome += $item->income_amount ?? 0;
-                $categoryExpense += $item->expense_amount ?? 0;
+                $this->rowMetadata[$currentRow] = ['type' => 'ITEM'];
                 $currentRow++;
+                $isFirstItem = false;
             }
 
-            // Category subtotal (italic untuk pemasukan dan pengeluaran)
+            // Subtotal Kategori (Kuning)
             $data[] = [
                 'no' => '',
+                'bon' => '',
                 'date' => '',
                 'description' => '',
-                'income' => 'Rp '.number_format($categoryIncome, 0, ',', '.'),
-                'expense' => 'Rp '.number_format($categoryExpense, 0, ',', '.'),
+                'income' => $categoryIncome ?: null,
+                'expense' => $categoryExpense ?: null,
+                'balance' => $runningBalance,
                 'keterangan_bon' => '',
             ];
+            $this->rowMetadata[$currentRow] = ['type' => 'SUBTOTAL'];
             $currentRow++;
 
             $catNo++;
         }
 
-        // Grand Total
+        // Grand Total Row (Abu-abu)
         $data[] = [
-            'no' => '',
+            'no' => 'Jumlah',
+            'bon' => '',
             'date' => '',
-            'description' => 'Jumlah',
-            'income' => 'Rp '.number_format($this->totals->total_income ?? 0, 0, ',', '.'),
-            'expense' => 'Rp '.number_format($this->totals->total_expense ?? 0, 0, ',', '.'),
-            'keterangan_bon' => 'Rp '.number_format($this->totals->balance ?? 0, 0, ',', '.'),
-        ];
-
-        // Empty rows before rekapitulasi
-        $data[] = ['no' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'keterangan_bon' => ''];
-        $data[] = ['no' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'keterangan_bon' => ''];
-
-        // Rekapitulasi header
-        $data[] = [
-            'no' => '',
-            'date' => '',
-            'description' => 'Rekapitulasi Laporan Keuangan '.($this->recap->project_name ?? ''),
-            'income' => '',
-            'expense' => '',
-            'keterangan_bon' => '',
-        ];
-
-        // Rekapitulasi items
-        $data[] = [
-            'no' => '1.',
-            'date' => '',
-            'description' => 'UANG MASUK',
-            'income' => 'Rp '.number_format($this->totals->total_income ?? 0, 0, ',', '.'),
-            'expense' => '',
-            'keterangan_bon' => '',
-        ];
-
-        $data[] = [
-            'no' => '2.',
-            'date' => '',
-            'description' => 'UANG KELUAR',
-            'income' => 'Rp '.number_format($this->totals->total_expense ?? 0, 0, ',', '.'),
-            'expense' => '',
-            'keterangan_bon' => '',
-        ];
-
-        $data[] = [
-            'no' => '',
-            'date' => '',
-            'description' => 'SALDO',
-            'income' => 'Rp '.number_format($this->totals->balance ?? 0, 0, ',', '.'),
-            'expense' => '',
-            'keterangan_bon' => '',
-        ];
-
-        // Empty rows before signatures
-        $data[] = ['no' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'keterangan_bon' => ''];
-        $data[] = ['no' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'keterangan_bon' => ''];
-
-        // Signature headers
-        $data[] = [
-            'no' => '',
-            'date' => 'Dibuat / Diperiksa',
             'description' => '',
-            'income' => '',
-            'expense' => '',
-            'keterangan_bon' => 'Direktur PT. Aghitsna',
+            'income' => $this->totals->total_income ?? 0,
+            'expense' => $this->totals->total_expense ?? 0,
+            'balance' => $this->totals->balance ?? $runningBalance,
+            'keterangan_bon' => '',
         ];
+        $this->rowMetadata[$currentRow] = ['type' => 'GRAND_TOTAL'];
+        $currentRow++;
 
-        // Empty rows for signature space
-        $data[] = ['no' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'keterangan_bon' => ''];
-        $data[] = ['no' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'keterangan_bon' => ''];
-        $data[] = ['no' => '', 'date' => '', 'description' => '', 'income' => '', 'expense' => '', 'keterangan_bon' => ''];
-
-        // Signature names
+        // Sub-label Keterangan Total di bawah kolom (Uang Masuk, Uang Keluar, Sisa Saldo)
         $data[] = [
             'no' => '',
-            'date' => '( AKHMAD KHAIDIR )',
+            'bon' => '',
+            'date' => '',
             'description' => '',
+            'income' => 'Uang Masuk',
+            'expense' => 'Uang Keluar',
+            'balance' => 'Sisa Saldo',
+            'keterangan_bon' => '',
+        ];
+        $this->rowMetadata[$currentRow] = ['type' => 'SUMMARY_LABEL'];
+        $currentRow++;
+
+        // Space Kosong Sebelum Tanda Tangan
+        $data[] = array_fill(0, 8, ''); $currentRow++;
+        $data[] = array_fill(0, 8, ''); $currentRow++;
+
+        // Header Tanda Tangan
+        $data[] = [
+            'no' => 'MANDOR',
+            'bon' => '',
+            'date' => '',
+            'description' => 'KABAG KEUANGAN',
             'income' => '',
             'expense' => '',
-            'keterangan_bon' => '( Zulkarnain,ST.,MT )',
+            'balance' => 'DIREKTUR PT. AGHITSNA KARYA INDAH',
+            'keterangan_bon' => '',
         ];
+        $this->rowMetadata[$currentRow] = ['type' => 'SIGNATURE_TITLE'];
+        $currentRow++;
+
+        // Space untuk Tanda Tangan
+        $data[] = array_fill(0, 8, ''); $currentRow++;
+        $data[] = array_fill(0, 8, ''); $currentRow++;
+        $data[] = array_fill(0, 8, ''); $currentRow++;
+
+        // Nama Penandatangan
+        $data[] = [
+            'no' => 'Siswoyo',
+            'bon' => '',
+            'date' => '',
+            'description' => 'Kamila',
+            'income' => '',
+            'expense' => '',
+            'balance' => 'Zulkarnain, S.T., M.T.',
+            'keterangan_bon' => '',
+        ];
+        $this->rowMetadata[$currentRow] = ['type' => 'SIGNATURE_NAME'];
 
         return collect($data);
     }
 
     public function headings(): array
     {
-        $projectLine = $this->recap->project_name ?? '';
-        $locationLine = $this->recap->location ?? '';
+        $projectLine = $this->recap->project_name ?? 'Proyek Rumah Kos 4 Lantai';
+        $locationLine = $this->recap->location ?? 'Jl. XYZ - Jakarta Selatan';
 
         return [
-            ['PT. AGHITSNA KARYA INDAH'],
-            ['LAPORAN KEUANGAN'],
-            [$projectLine.(! empty($locationLine) ? ' - '.$locationLine : '')],
+            ['', '', '', 'LAPORAN KEUANGAN', '', '', '', 'Tgl Edit Terakhir : ' . Carbon::now()->format('d F Y')],
+            ['', '', '', $projectLine, '', '', '', ''],
+            ['', '', '', $locationLine, '', '', '', ''],
             [
-                'NO',
-                'TANGGAL',
-                'KETERANGAN',
-                'UANG MASUK',
-                'UANG KELUAR',
-                'KETERANGAN BON',
+                'No',
+                'Bon',
+                'Tanggal',
+                'Keterangan',
+                'Uang Masuk',
+                'Uang Keluar',
+                'Saldo',
+                'Keterangan Bon',
             ],
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        $highestRow = $sheet->getHighestRow();
-
-        // Merge and style title (Row 1)
-        $sheet->mergeCells('A1:F1');
-        $sheet->getStyle('A1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 14],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        // Judul Utama (Row 1)
+        $sheet->mergeCells('D1:G1');
+        $sheet->getStyle('D1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 13, 'name' => 'Arial'],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
 
-        // Merge and style subtitle (Row 2)
-        $sheet->mergeCells('A2:F2');
-        $sheet->getStyle('A2')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 12],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        // Tanggal Edit Terakhir (Top Right)
+        $sheet->getStyle('H1')->applyFromArray([
+            'font' => ['size' => 9, 'name' => 'Arial'],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
 
-        // Merge and style project info (Row 3)
-        $sheet->mergeCells('A3:F3');
-        $sheet->getStyle('A3')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 11],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        // Proyek Name & Location (Row 2 & 3)
+        $sheet->mergeCells('D2:G2');
+        $sheet->mergeCells('D3:G3');
+        $sheet->getStyle('D2:D3')->applyFromArray([
+            'font' => ['italic' => true, 'size' => 10, 'name' => 'Arial'],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
 
-        $sheet->getRowDimension(1)->setRowHeight(20);
-        $sheet->getRowDimension(2)->setRowHeight(18);
-        $sheet->getRowDimension(3)->setRowHeight(16);
-
-        // Header row styling (Row 4)
-        $sheet->getStyle('A4:F4')->applyFromArray([
+        // Table Headings Styling (Row 4)
+        $sheet->getStyle('A4:H4')->applyFromArray([
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'FFFF00'],
+                'startColor' => ['rgb' => 'FFC000'], // Kuning Amber
             ],
-            'font' => ['bold' => true, 'size' => 10],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            'font' => ['bold' => true, 'size' => 10, 'name' => 'Arial'],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
             'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '7F7F7F']],
             ],
         ]);
 
-        $sheet->getRowDimension(4)->setRowHeight(30);
-
-        // Find the last row with "Saldo" to stop borders before signature section
-        $lastDataRow = $highestRow;
-        for ($row = 5; $row <= $highestRow; $row++) {
-            $cellC = $sheet->getCell('C'.$row)->getValue();
-            if ($cellC === 'SALDO') {
-                $lastDataRow = $row;
-                break;
-            }
-        }
-
-        // Data rows border (only up to rekapitulasi section, excluding signatures)
-        $sheet->getStyle('A5:F'.$lastDataRow)->applyFromArray([
-            'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
-            ],
-            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        // Center align columns
-        $sheet->getStyle('A5:A'.$highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('B5:B'.$highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('D5:E'.$highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getRowDimension(4)->setRowHeight(22);
 
         return [];
     }
@@ -290,185 +248,112 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $highestRow = $sheet->getHighestRow();
 
-                for ($row = 5; $row <= $highestRow; $row++) {
-                    $cellA = $sheet->getCell('A'.$row)->getValue();
-                    $cellB = $sheet->getCell('B'.$row)->getValue();
-                    $cellC = $sheet->getCell('C'.$row)->getValue();
-                    $cellD = $sheet->getCell('D'.$row)->getValue();
-                    $cellE = $sheet->getCell('E'.$row)->getValue();
-                    $cellF = $sheet->getCell('F'.$row)->getValue();
+                foreach ($this->rowMetadata as $row => $meta) {
+                    $type = $meta['type'];
 
-                    // Category header rows (background hijau #A9D08E)
-                    if (
-                        empty($cellA) && ! empty($cellC) && $cellC === strtoupper($cellC) &&
-                        ! in_array($cellC, ['Jumlah', 'SALDO']) &&
-                        ! str_contains($cellC, 'Rekapitulasi')
-                    ) {
-
-                        // Simpan value sebelum merge (merge menghapus value non-first cell)
-                        $categoryName = $sheet->getCell('C'.$row)->getValue();
-
-                        // Merge A to C for category header
-                        $sheet->mergeCells('A'.$row.':C'.$row);
-
-                        // Set value kembali setelah merge
-                        $sheet->setCellValue('A'.$row, $categoryName);
-
-                        // Background hijau hanya untuk kolom A sampai C (sampai KETERANGAN)
-                        $sheet->getStyle('A'.$row.':C'.$row)->applyFromArray([
+                    if ($type === 'CATEGORY_HEADER') {
+                        // Merge A sampai D untuk judul kategori
+                        $sheet->mergeCells("A{$row}:D{$row}");
+                        
+                        // Background Hijau untuk A:D
+                        $sheet->getStyle("A{$row}:D{$row}")->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
-                                'startColor' => ['rgb' => 'A9D08E'], // Hijau muda
+                                'startColor' => ['rgb' => '92D050'], // Hijau Kategori
                             ],
-                            'font' => ['bold' => true, 'size' => 10],
+                            'font' => ['bold' => true, 'italic' => true, 'size' => 10, 'name' => 'Arial'],
                             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                         ]);
 
-                        // Border untuk semua kolom (A sampai F)
-                        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+                        // Border seluruh baris A:H
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
                             'borders' => [
-                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '7F7F7F']],
                             ],
                         ]);
+                    } elseif ($type === 'ITEM') {
+                        // Border & Alignment untuk Item Transaksi
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '7F7F7F']],
+                            ],
+                            'font' => ['size' => 9.5, 'name' => 'Arial'],
+                        ]);
 
-                        // Kolom D, E, F tetap putih (tanpa background hijau)
-                        $sheet->getStyle('D'.$row.':F'.$row)->applyFromArray([
+                        // Alignment
+                        $sheet->getStyle("A{$row}:C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                        $sheet->getStyle("E{$row}:G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                        $sheet->getStyle("H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                        // Warna Teks
+                        $sheet->getStyle("B{$row}")->getFont()->getColor()->setRGB('002060'); // Biru Bon
+                        $sheet->getStyle("B{$row}")->getFont()->setBold(true);
+
+                        $sheet->getStyle("E{$row}")->getFont()->getColor()->setRGB('548235'); // Hijau Uang Masuk
+                        $sheet->getStyle("F{$row}")->getFont()->getColor()->setRGB('C65911'); // Cokelat Uang Keluar
+
+                        // Number Formatting
+                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                    } elseif ($type === 'SUBTOTAL') {
+                        // Background Kuning Subtotal
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
-                                'startColor' => ['rgb' => 'FFFFFF'], // Putih
+                                'startColor' => ['rgb' => 'FFC000'],
+                            ],
+                            'font' => ['bold' => true, 'italic' => true, 'underline' => true, 'size' => 9.5, 'name' => 'Arial'],
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '7F7F7F']],
                             ],
                         ]);
-                    }
 
-                    // Category subtotal rows (background kuning #FFCC00, italic)
-                    if (empty($cellA) && empty($cellC) && (! empty($cellD) || ! empty($cellE))) {
-                        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+                        $sheet->getStyle("E{$row}:G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                        $sheet->getStyle("E{$row}")->getFont()->getColor()->setRGB('548235');
+                        $sheet->getStyle("F{$row}")->getFont()->getColor()->setRGB('C65911');
+                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                    } elseif ($type === 'GRAND_TOTAL') {
+                        // Merge A sampai D untuk teks "Jumlah"
+                        $sheet->mergeCells("A{$row}:D{$row}");
+
+                        // Background Abu-abu Total
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
-                                'startColor' => ['rgb' => 'FFCC00'], // Kuning/Orange
+                                'startColor' => ['rgb' => 'BFBFBF'],
                             ],
-                            'font' => ['italic' => true],
+                            'font' => ['bold' => true, 'italic' => true, 'underline' => true, 'size' => 10, 'name' => 'Arial'],
                             'borders' => [
-                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
-                            ],
-                        ]);
-                        // Right align untuk subtotal
-                        $sheet->getStyle('D'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                        $sheet->getStyle('E'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    }
-
-                    // Jumlah (Grand Total) row
-                    if ($cellC === 'Jumlah') {
-                        // Simpan value sebelum merge
-                        $jumlahText = $sheet->getCell('C'.$row)->getValue();
-
-                        // Merge A to C for "Jumlah" text
-                        $sheet->mergeCells('A'.$row.':C'.$row);
-
-                        // Set value kembali setelah merge
-                        $sheet->setCellValue('A'.$row, $jumlahText);
-
-                        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                            'fill' => [
-                                'fillType' => Fill::FILL_SOLID,
-                                'startColor' => ['rgb' => 'FFCC00'], // Kuning/Orange
-                            ],
-                            'font' => ['bold' => true],
-                            'borders' => [
-                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
+                                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '7F7F7F']],
                             ],
                         ]);
 
-                        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle('D'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                        $sheet->getStyle('E'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                        $sheet->getStyle('F'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    }
-
-                    // Rekapitulasi header (di sebelah kiri)
-                    if (! empty($cellC) && str_contains($cellC, 'Rekapitulasi')) {
-                        $title = $cellC;
-                        $sheet->mergeCells('A'.$row.':F'.$row);
-                        $sheet->setCellValue('A'.$row, $title);
-                        $sheet->getStyle('A'.$row)->applyFromArray([
-                            'font' => ['bold' => true, 'size' => 10],
-                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
-                        ]);
-                        // Remove borders for rekapitulasi section
-                        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                            'borders' => [
-                                'allBorders' => ['borderStyle' => Border::BORDER_NONE],
-                            ],
-                        ]);
-                    }
-
-                    // Rekapitulasi detail rows (1., 2., SALDO) — sejajar di kiri
-                    if (in_array($cellA, ['1.', '2.', '']) && in_array($cellC, ['UANG MASUK', 'UANG KELUAR', 'SALDO'])) {
-                        $label = $cellC;
-                        $number = $cellA;
-                        $sheet->mergeCells('A'.$row.':C'.$row);
-                        $sheet->setCellValue('A'.$row, ($number !== '' ? $number.' ' : '').$label);
-                        $sheet->setCellValue('C'.$row, $label);
-                        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                            'borders' => [
-                                'allBorders' => ['borderStyle' => Border::BORDER_NONE],
-                            ],
-                        ]);
-                        $sheet->getStyle('A'.$row)->applyFromArray([
-                            'font' => ['bold' => $label === 'SALDO'],
-                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
-                        ]);
-                        $sheet->getStyle('D'.$row)->applyFromArray([
-                            'font' => ['bold' => true],
-                        ]);
-                        $sheet->getStyle('F'.$row)->applyFromArray([
-                            'font' => ['bold' => true],
-                        ]);
-                    }
-
-                    // Signature headers (Dibuat/Diperiksa, Direktur)
-                    $cellB = $sheet->getCell('B'.$row)->getValue();
-                    $cellF = $sheet->getCell('F'.$row)->getValue();
-
-                    if ($cellB === 'Dibuat / Diperiksa' || $cellF === 'Direktur PT. Aghitsna') {
-                        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                            'borders' => [
-                                'allBorders' => ['borderStyle' => Border::BORDER_NONE],
-                            ],
-                            'font' => ['bold' => true],
+                        $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                        $sheet->getStyle("E{$row}:G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                        
+                        // Format Currency "Rp. #,##0"
+                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('"Rp. "#,##0');
+                    } elseif ($type === 'SUMMARY_LABEL') {
+                        $sheet->getStyle("E{$row}:G{$row}")->applyFromArray([
+                            'font' => ['bold' => true, 'italic' => true, 'size' => 9.5, 'name' => 'Arial'],
                             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                         ]);
-                    }
+                    } elseif ($type === 'SIGNATURE_TITLE') {
+                        $sheet->mergeCells("A{$row}:B{$row}");
+                        $sheet->mergeCells("G{$row}:H{$row}");
 
-                    // Signature names (AKHMAD KHAIDIR, Zulkarnain)
-                    if ($cellB === '( AKHMAD KHAIDIR )' || $cellF === '( Zulkarnain,ST.,MT )') {
-                        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                            'borders' => [
-                                'allBorders' => ['borderStyle' => Border::BORDER_NONE],
-                            ],
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                            'font' => ['bold' => true, 'size' => 9.5, 'name' => 'Arial'],
                             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                         ]);
-                    }
+                    } elseif ($type === 'SIGNATURE_NAME') {
+                        $sheet->mergeCells("A{$row}:B{$row}");
+                        $sheet->mergeCells("G{$row}:H{$row}");
 
-                    // Empty rows before and between signature (remove borders)
-                    if (empty($cellA) && empty($cellB) && empty($cellC) && empty($cellD) && empty($cellE) && empty($cellF)) {
-                        // Check if this is after rekapitulasi section
-                        if ($row > 5) {
-                            $prevRow = $row - 1;
-                            $prevCellC = $sheet->getCell('C'.$prevRow)->getValue();
-                            $prevCellB = $sheet->getCell('B'.$prevRow)->getValue();
-
-                            // If previous row has Saldo or is signature-related, remove border
-                            if ($prevCellC === 'SALDO' || $prevCellB === 'Dibuat / Diperiksa' || (! empty($prevCellB) && strpos($prevCellB, 'KHAIDIR') !== false)) {
-                                $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                                    'borders' => [
-                                        'allBorders' => ['borderStyle' => Border::BORDER_NONE],
-                                    ],
-                                ]);
-                            }
-                        }
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                            'font' => ['bold' => true, 'underline' => true, 'size' => 9.5, 'name' => 'Arial'],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        ]);
                     }
                 }
             },
@@ -478,12 +363,14 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
     public function columnWidths(): array
     {
         return [
-            'A' => 8,     // NO
-            'B' => 12,    // TANGGAL
-            'C' => 40,    // KETERANGAN
-            'D' => 15,    // UANG MASUK
-            'E' => 15,    // UANG KELUAR
-            'F' => 25,    // KETERANGAN BON
+            'A' => 6,   // NO
+            'B' => 6,   // BON
+            'C' => 13,  // TANGGAL
+            'D' => 42,  // KETERANGAN
+            'E' => 16,  // UANG MASUK
+            'F' => 16,  // UANG KELUAR
+            'G' => 16,  // SALDO
+            'H' => 24,  // KETERANGAN BON
         ];
     }
 
