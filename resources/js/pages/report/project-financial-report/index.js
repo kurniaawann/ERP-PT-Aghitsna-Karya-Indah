@@ -53,16 +53,19 @@ window.syncCategoryFields = syncCategoryFields;
 
 /**
  * Submit bulk delete form dengan loading indicator.
+ *
+ * @param {string} [modalId] ID modal konfirmasi hapus (memuat tombol konfirmasi).
+ * @param {string} [formId]  ID form hapus massal yang akan di-submit.
  */
-function submitDeleteForm() {
-    const deleteBtn = document.getElementById('confirm-btn-deleteModal');
+function submitDeleteForm(modalId = 'deleteModal', formId = 'deleteForm') {
+    const deleteBtn = document.getElementById('confirm-btn-' + modalId);
     if (deleteBtn) {
         deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
         deleteBtn.disabled = true;
         deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
     }
 
-    const form = document.getElementById('deleteForm');
+    const form = document.getElementById(formId);
     if (form) {
         form.submit();
     }
@@ -79,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // KATEGORI INCOME vs EXPENSE — SINKRON LABEL FORM
     // ============================================================
 
-    document.querySelectorAll('#addModal form, [id^="editModal-"] form').forEach(function (form) {
+    document.querySelectorAll('#addModal form, [id^="addModal-"] form, [id^="editModal-"] form').forEach(function (form) {
         const select = form.querySelector('select[name="transaction_category_id"]');
         if (select) {
             syncCategoryFields(form);
@@ -90,48 +93,51 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // CHECKBOX PILIH SEMUA
+    // CHECKBOX PILIH SEMUA (per form hapus massal)
     // ============================================================
 
-    const selectAllCheckbox = document.getElementById('selectAll');
-    const itemCheckboxes = document.querySelectorAll('input[name="selected_items[]"]');
-    const deleteButton = document.getElementById('delete-button');
+    document.querySelectorAll('form[id="deleteForm"], form[id^="deleteForm-"]').forEach(function (form) {
+        const suffix = form.id === 'deleteForm' ? '' : form.id.slice('deleteForm'.length);
+        const selectAllCheckbox = form.querySelector('#selectAll' + suffix);
+        const itemCheckboxes = form.querySelectorAll('input[name="selected_items[]"], input[name="selected_recaps[]"]');
+        const deleteButton = document.getElementById('delete-button' + suffix);
 
-    function updateDeleteButtonState() {
-        const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
-        if (deleteButton) {
-            deleteButton.disabled = !anyChecked;
-        }
-    }
-
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function () {
-            itemCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-            updateDeleteButtonState();
-        });
-    }
-
-    itemCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function () {
-            if (!this.checked) {
-                selectAllCheckbox.checked = false;
-            } else {
-                const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
-                selectAllCheckbox.checked = allChecked;
+        function updateDeleteButtonState() {
+            const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
+            if (deleteButton) {
+                deleteButton.disabled = !anyChecked;
             }
-            updateDeleteButtonState();
-        });
-    });
+        }
 
-    updateDeleteButtonState();
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function () {
+                itemCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateDeleteButtonState();
+            });
+        }
+
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                if (!this.checked) {
+                    selectAllCheckbox.checked = false;
+                } else {
+                    const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                }
+                updateDeleteButtonState();
+            });
+        });
+
+        updateDeleteButtonState();
+    });
 
     // ============================================================
     // FORMAT INPUT CURRENCY
     // ============================================================
 
-    document.querySelectorAll('.expense-amount-input').forEach(input => {
+    document.querySelectorAll('.expense-amount-input, .total-rab-input').forEach(input => {
         if (input.value) {
             formatCurrencyInput(input);
         }
@@ -145,8 +151,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // PENANGANAN SUBMIT FORM — MODAL TAMBAH
     // ============================================================
 
-    const addForm = document.querySelector('#addModal form');
-    if (addForm) {
+    const addForms = document.querySelectorAll('#addModal form, [id^="addModal-"] form');
+    addForms.forEach(function (addForm) {
         addForm.addEventListener('submit', function (e) {
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn ? submitBtn.innerHTML : '';
@@ -156,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false;
             }
         });
-    }
+    });
 
     // ============================================================
     // PENANGANAN SUBMIT FORM — MODAL EDIT

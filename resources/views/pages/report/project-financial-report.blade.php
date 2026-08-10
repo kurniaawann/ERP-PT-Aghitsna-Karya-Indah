@@ -1,23 +1,20 @@
 {{-- =====================================================================
-     Halaman: Laporan Keuangan Proyek
-     Tujuan: Menampilkan laporan keuangan (uang masuk / uang keluar) per
-             Rekap Proyek. Setiap rekap memiliki satu laporan (auto-create
-             saat dibuka pertama kali dari tombol di tabel Rekap Proyek).
-             Terdiri dari ringkasan finansial, daftar "Bon" yang diinput
-             manual (kategori, tanggal, keterangan, nominal, keterangan bon,
-             bukti pembayaran), dan ekspor PDF/Excel.
-     Data dari ProjectFinancialReportController@show:
-     - $recap      : ProjectRecap (rekap proyek pemilik laporan)
-     - $report     : ProjectFinancialReport (laporan, auto-created)
-     - $items      : Collection item "Bon" terurut per kategori
-     - $categories : Kategori transaksi modul project_finance
-     - $totals     : Grand totals (total_income, total_expense, balance)
+     Halaman: Laporan Keuangan Proyek (Daftar)
+     Tujuan: Menampilkan daftar Laporan Keuangan Proyek yang berdiri sendiri
+             (dibuat otomatis saat Rekap Proyek dibuat). Tombol "Detail"
+             membuka modal berisi tabel transaksi "Bon" (dengan edit item
+             & hapus massal), dan export PDF/Excel tersedia langsung pada
+             kolom aksi. Layout toolbar mengikuti pola Invoice Proyek.
+     Data dari ProjectFinancialReportController@index:
+     - $recaps      : paginator Rekap Proyek (dengan relasi financialReport.items)
+     - $categories  : kategori transaksi modul Keuangan Proyek (untuk modal)
+     - $rekapOptions: semua Rekap Proyek (untuk dropdown modal tambah)
      Komponen yang di-include:
+     - layouts.app
+     - x-pagination
      - components.report.project-financial-report.table
-     - components.report.project-financial-report.add-modal
-     - components.report.project-financial-report.edit-modal (per item)
-     - x-modal (konfirmasi hapus massal)
-     JS: @vite('resources/js/pages/report/project-financial-report/index.js')
+     - components.report.project-financial-report.add-modal (global)
+     - components.report.project-financial-report.detail-modal (per rekap)
      ===================================================================== --}}
 @extends('layouts.app')
 
@@ -25,90 +22,53 @@
 
 @section('content')
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        {{-- ==================== Header + Info Rekap ==================== --}}
-        <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
-            <div>
-                <h1 class="text-2xl font-semibold text-text-primary mb-1">Laporan Keuangan</h1>
-                <p class="text-sm text-text-secondary">
-                    {{ $recap->id }} — {{ $recap->project_name }}
-                    @if ($recap->location)
-                        <span class="text-text-label">({{ $recap->location }})</span>
-                    @endif
-                </p>
-            </div>
-            <div class="text-right">
-                <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-primary-light text-primary gap-1">
-                    <i class="fa-solid fa-file-invoice-dollar"></i>
-                    {{ $report->id }}
-                </span>
-            </div>
-        </div>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Laporan Keuangan Proyek</h1>
 
-        {{-- ==================== Ringkasan Finansial ==================== --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
-                <p class="text-xs text-text-secondary mb-1">Total Uang Masuk</p>
-                <p class="text-xl font-bold text-success">Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</p>
-            </div>
-            <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
-                <p class="text-xs text-text-secondary mb-1">Total Uang Keluar</p>
-                <p class="text-xl font-bold text-error">Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</p>
-            </div>
-            <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
-                <p class="text-xs text-text-secondary mb-1">Saldo</p>
-                <p class="text-xl font-bold {{ ($totals->balance ?? 0) >= 0 ? 'text-primary' : 'text-error' }}">
-                    Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}
-                </p>
-            </div>
-        </div>
-
-        {{-- ==================== Toolbar ==================== --}}
+        {{-- Pencarian & Tombol Aksi (layout mengikuti Invoice Proyek) --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <p class="text-sm text-text-secondary">
-                Daftar transaksi "Bon" pada proyek
-                <span class="font-semibold text-text-primary">{{ $recap->project_name }}</span>.
-            </p>
+            {{-- Form Pencarian --}}
+            <form method="GET" action="{{ route('project-financial-report.index') }}" id="filterForm"
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" class="min-[1530px]:!w-40" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari nama proyek atau lokasi..." responsive="custom" />
+            </form>
 
-            <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                <x-buttons.print-dropdown
-                    :excelRoute="route('project-financial-report.export.excel', $recap)"
-                    :pdfRoute="route('project-financial-report.export.pdf', $recap)"
-                    responsive="custom" />
-
-                <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
-
-                <x-buttons.add-button modalId="addModal" text="Tambah Transaksi" responsive="custom" />
+            {{-- Aksi di Kanan --}}
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
+                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
+                    <x-buttons.add-button modalId="addModal" text="Tambah Transaksi" responsive="custom" />
+                </div>
             </div>
         </div>
 
-        {{-- ==================== Tabel Transaksi ==================== --}}
-        @include('components.report.project-financial-report.table', [
-            'recap' => $recap,
-            'items' => $items,
-            'totals' => $totals,
-        ])
+        {{-- ==================== Tabel ==================== --}}
+        <x-report.project-financial-report.table :recaps="$recaps" />
     </div>
 
-    {{-- ==================== Modals ==================== --}}
+    {{-- ==================== Pagination ==================== --}}
+    <x-pagination :paginator="$recaps" />
+
+    {{-- ==================== Modal Tambah Transaksi ==================== --}}
     @include('components.report.project-financial-report.add-modal', [
-        'recap' => $recap,
+        'rekapOptions' => $rekapOptions,
         'categories' => $categories,
     ])
 
-    @foreach ($items as $item)
-        @include('components.report.project-financial-report.edit-modal', [
+    {{-- ==================== Modals Detail & Edit per Rekap ==================== --}}
+    @foreach ($recaps as $recap)
+        @include('components.report.project-financial-report.detail-modal', [
             'recap' => $recap,
-            'item' => $item,
             'categories' => $categories,
         ])
+        @include('components.finance.project-recaps.edit-modal', ['recap' => $recap])
     @endforeach
 
+    {{-- ==================== Modal Konfirmasi Bulk Delete ==================== --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
-        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data transaksi yang dipilih?</p>
-        <p class="text-sm text-text-secondary">
-            <i class="fa-solid fa-info-circle"></i> File bukti pembayaran dari data yang dihapus juga akan ikut terhapus.
-        </p>
+        Apakah kamu yakin ingin menghapus rekap proyek dan laporan keuangannya yang dipilih?
     </x-modal>
 
     {{-- ==================== JavaScript ==================== --}}

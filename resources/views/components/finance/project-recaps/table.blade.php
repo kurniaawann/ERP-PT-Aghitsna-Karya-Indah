@@ -106,7 +106,7 @@
                                             Edit
                                         </button>
 
-                                        <a href="{{ route('project-financial-report.show', $recap) }}"
+                                        <a href="{{ route('project-financial-report.index') }}"
                                             class="flex items-center gap-1 bg-btn-search hover:bg-btn-search-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Buka Laporan Keuangan Proyek">
                                             <i class="fa-solid fa-file-invoice-dollar w-3 h-3"></i>

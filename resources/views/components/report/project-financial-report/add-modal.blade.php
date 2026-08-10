@@ -1,6 +1,27 @@
-{{-- Modal Tambah Transaksi Laporan Keuangan Proyek --}}
-<x-modal id="addModal" title="Tambah Transaksi" action="{{ route('project-financial-report.store', $recap) }}"
+{{-- Modal Tambah Transaksi Laporan Keuangan Proyek (global, dari halaman daftar) --}}
+<x-modal id="addModal" title="Tambah Transaksi" action="{{ route('project-financial-report.store') }}"
     method="POST" buttonText="Simpan" enctype="multipart/form-data">
+
+    {{-- Rekap Proyek --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Rekap Proyek <span class="text-error">*</span></label>
+        <select name="project_recap_id" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Rekap Proyek tidak boleh kosong')"
+            oninput="this.setCustomValidity('')">
+            <option value="">-- Pilih Rekap Proyek --</option>
+            @foreach ($rekapOptions as $rekap)
+                <option value="{{ $rekap->id }}">
+                    {{ $rekap->id }} — {{ $rekap->project_name }}{{ $rekap->location ? ' (' . $rekap->location . ')' : '' }}
+                </option>
+            @endforeach
+        </select>
+        @if ($rekapOptions->isEmpty())
+            <p class="text-xs text-error mt-1">
+                Belum ada Rekap Proyek. Buat rekap terlebih dahulu melalui menu
+                <a href="{{ route('recap-proyek.index') }}" target="_blank" class="underline">Rekap Proyek</a>.
+            </p>
+        @endif
+    </div>
 
     {{-- Kategori --}}
     <div class="mb-3">

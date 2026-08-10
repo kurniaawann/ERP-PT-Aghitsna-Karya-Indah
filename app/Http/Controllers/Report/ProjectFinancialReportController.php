@@ -48,49 +48,43 @@ class ProjectFinancialReportController extends Controller
      * Menampilkan halaman daftar Laporan Keuangan Proyek.
      *
      * Menampilkan seluruh Rekap Proyek beserta status laporannya. Superadmin
-     * melihat semua, user lain hanya miliknya. Tombol "Buka Laporan" masuk
-     * ke halaman detail per rekap.
+     * melihat semua, user lain hanya miliknya. Mendukung filter pencarian
+     * (nama proyek / lokasi) dan filter bulan-tahun berdasarkan tanggal
+     * pembuatan rekap. Tombol "Detail" pada setiap baris membuka modal berisi
+     * tabel transaksi "Bon" proyek tersebut.
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
         $recaps = ProjectRecap::query()
-            ->with(['financialReport.items'])
+            ->with(['financialReport.items.category'])
             ->when(auth()->user()->role !== 'superadmin', function ($query) {
                 $query->where('created_by', auth()->id());
             })
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->search;
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('project_name', 'like', "%{$search}%")
+                        ->orWhere('location', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('month'), fn ($query) => $query->whereMonth('created_at', $request->month))
+            ->when($request->filled('year'), fn ($query) => $query->whereYear('created_at', $request->year))
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
 
-        return view('pages.report.project-financial-report-index', compact('recaps'));
-    }
-
-    /**
-     * Menampilkan halaman Laporan Keuangan Proyek untuk sebuah rekap.
-     *
-     * Laporan dibuat otomatis (auto-create) jika belum ada.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function show(ProjectRecap $projectRecap)
-    {
-        $this->authorizeRecap($projectRecap);
-
-        $report = $this->service->getOrCreateForRecap($projectRecap);
-
-        $items = $this->service->getItems($report);
         $categories = $this->service->getProjectFinanceCategories();
-        $totals = $this->service->getGrandTotals($items);
 
-        return view('pages.report.project-financial-report', [
-            'recap' => $projectRecap,
-            'report' => $report,
-            'items' => $items,
-            'categories' => $categories,
-            'totals' => $totals,
-        ]);
+        $rekapOptions = ProjectRecap::query()
+            ->when(auth()->user()->role !== 'superadmin', function ($query) {
+                $query->where('created_by', auth()->id());
+            })
+            ->orderByDesc('created_at')
+            ->get(['id', 'project_name', 'location']);
+
+        return view('pages.report.project-financial-report', compact('recaps', 'categories', 'rekapOptions'));
     }
 
     /**
@@ -98,8 +92,10 @@ class ProjectFinancialReportController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function storeItem(StoreProjectFinancialReportItemRequest $request, ProjectRecap $projectRecap)
+    public function storeItem(StoreProjectFinancialReportItemRequest $request)
     {
+        $projectRecap = ProjectRecap::findOrFail($request->input('project_recap_id'));
+
         $this->authorizeRecap($projectRecap);
 
         DB::beginTransaction();
@@ -110,7 +106,7 @@ class ProjectFinancialReportController extends Controller
 
             DB::commit();
 
-            return redirect()->route('project-financial-report.show', $projectRecap)
+            return redirect()->route('project-financial-report.index')
                 ->with('success', 'Data transaksi berhasil ditambahkan!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -138,7 +134,7 @@ class ProjectFinancialReportController extends Controller
 
             DB::commit();
 
-            return redirect()->route('project-financial-report.show', $projectRecap)
+            return redirect()->route('project-financial-report.index')
                 ->with('success', 'Data transaksi berhasil diupdate!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -172,7 +168,7 @@ class ProjectFinancialReportController extends Controller
 
             DB::commit();
 
-            return redirect()->route('project-financial-report.show', $projectRecap)
+            return redirect()->route('project-financial-report.index')
                 ->with('success', "Berhasil menghapus {$deletedCount} data transaksi.");
         } catch (\Exception $e) {
             DB::rollBack();

@@ -41,6 +41,7 @@ class StoreProjectFinancialReportItemRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'project_recap_id' => ['required', 'string', 'exists:project_recaps,id'],
             'transaction_category_id' => ['required', 'integer', 'exists:transaction_categories,id'],
             'transaction_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:1000'],
@@ -56,6 +57,8 @@ class StoreProjectFinancialReportItemRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'project_recap_id.required' => 'Rekap Proyek tidak boleh kosong!',
+            'project_recap_id.string' => 'Format rekap proyek tidak valid!',            'project_recap_id.exists' => 'Rekap proyek yang dipilih tidak ditemukan!',
             'transaction_category_id.required' => 'Kategori tidak boleh kosong!',
             'transaction_category_id.integer' => 'Format kategori tidak valid!',
             'transaction_category_id.exists' => 'Kategori yang dipilih tidak ditemukan!',

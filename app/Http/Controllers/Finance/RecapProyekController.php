@@ -7,6 +7,7 @@ use App\Http\Requests\Finance\StoreRecapProyekRequest;
 use App\Http\Requests\Finance\UpdateRecapProyekRequest;
 use App\Models\Finance\ProjectRecap;
 use App\Services\Finance\RecapProyekService;
+use App\Services\Report\ProjectFinancialReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -46,14 +47,17 @@ class RecapProyekController extends Controller
     /**
      * Menyimpan rekap proyek baru dari input manual user.
      *
-     * @param  \App\Http\Requests\Finance\StoreRecapProyekRequest  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreRecapProyekRequest $request)
     {
         DB::beginTransaction();
         try {
-            $this->service->createRecap($request->validated(), $request->file('design_file'));
+            $recap = $this->service->createRecap($request->validated(), $request->file('design_file'));
+
+            // Konsep: Laporan Keuangan Proyek berdiri sendiri dan dibuat
+            // otomatis saat Rekap Proyek dibuat (1 rekap = 1 laporan).
+            app(ProjectFinancialReportService::class)->getOrCreateForRecap($recap);
 
             DB::commit();
 
@@ -73,8 +77,6 @@ class RecapProyekController extends Controller
     /**
      * Mengupdate rekap proyek yang sudah ada.
      *
-     * @param  \App\Http\Requests\Finance\UpdateRecapProyekRequest  $request
-     * @param  \App\Models\Finance\ProjectRecap                     $projectRecap
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateRecapProyekRequest $request, ProjectRecap $projectRecap)
@@ -101,7 +103,6 @@ class RecapProyekController extends Controller
     /**
      * Hapus beberapa rekap proyek sekaligus (bulk delete).
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroySelected(Request $request)
