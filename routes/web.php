@@ -224,8 +224,9 @@ Route::middleware('auth')->group(function () {
 
     // Route Recap Proyek
     Route::get('/recap-proyek', [RecapProyekController::class, 'index'])->name('recap-proyek.index');
-    Route::get('/recap-proyek/export/excel', [RecapProyekController::class, 'exportExcel'])->name('recap-proyek.export.excel');
-    Route::get('/recap-proyek/export/pdf', [RecapProyekController::class, 'exportPdf'])->name('recap-proyek.export.pdf');
+    Route::post('/recap-proyek', [RecapProyekController::class, 'store'])->name('recap-proyek.store');
+    Route::put('/recap-proyek/{projectRecap}', [RecapProyekController::class, 'update'])->name('recap-proyek.update');
+    Route::delete('/recap-proyek/destroy-selected', [RecapProyekController::class, 'destroySelected'])->name('recap-proyek.destroySelected');
 
     // Route Recap Expense
     Route::get('/recap-expense', [RecapExpenseController::class, 'index'])->name('recap-expense.index');

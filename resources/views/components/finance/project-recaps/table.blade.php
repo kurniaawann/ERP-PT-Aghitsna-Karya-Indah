@@ -1,99 +1,64 @@
-@props(['invoices', 'totals'])
+@props(['recaps'])
 
 {{-- ==================== Tabel Rekap Proyek ==================== --}}
-<div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-    <div class="inline-block min-w-full align-middle">
-        <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                    <tr>
-                        <th class="p-2 text-center">No</th>
-                        <th class="p-2 text-left">No Invoice</th>
-                        <th class="p-2 text-left">Tanggal</th>
-                        <th class="p-2 text-left">Kepada</th>
-                        <th class="p-2 text-left">Proyek</th>
-                        <th class="p-2 text-center">Total Invoice</th>
-                        <th class="p-2 text-center">Sudah Dibayar</th>
-                        <th class="p-2 text-center">Sisa</th>
-                        <th class="p-2 text-left">Pembayaran Ke</th>
-                        <th class="p-2 text-center">Status</th>
-                        <th class="p-2 text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($invoices as $index => $invoice)
-                        @php
-                            $paymentInstallments = $invoice->payment_installments ?? [];
-                            $paymentLabels = collect($paymentInstallments)
-                                ->map(fn($payment) => $payment['label'] ?? null)
-                                ->filter()
-                                ->values();
-                        @endphp
-                        <tr class="border-t hover:bg-surface-secondary">
-                            <td class="p-2 text-center">{{ $invoices->firstItem() + $index }}</td>
-                            <td class="p-2 font-medium text-primary">{{ $invoice->invoice_number }}</td>
-                            <td class="p-2 text-sm">{{ $invoice->invoice_date->format('d-m-Y') }}</td>
-                            <td class="p-2">{{ $invoice->recipient }}</td>
-                            <td class="p-2 text-sm text-text-label">
-                                {{ $invoice->project_description ? \Illuminate\Support\Str::limit($invoice->project_description, 35) : '-' }}
-                            </td>
-                            <td class="p-2 text-right font-medium">Rp
-                                {{ number_format($invoice->getNetAmount(), 0, ',', '.') }}</td>
-                            <td class="p-2 text-right font-medium text-success">Rp
-                                {{ number_format($invoice->getTotalPaidAmount(), 0, ',', '.') }}</td>
-                            <td class="p-2 text-right font-medium text-warning">Rp
-                                {{ number_format($invoice->getRemainingAmount(), 0, ',', '.') }}</td>
-                            <td class="p-2 text-left text-sm text-text-label">
-                                @if ($paymentLabels->isNotEmpty())
-                                    <div class="flex flex-wrap gap-1">
-                                        @foreach ($paymentLabels as $label)
-                                            <span
-                                                class="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-700">
-                                                {{ $label }}</span>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td class="p-2 text-center">
-                                <span
-                                    class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $invoice->payment_status_badge_class }}">
-                                    {{ $invoice->payment_status_label }}
-                                </span>
-                            </td>
-                            <td class="p-2 text-center">
-                                <button type="button"
-                                    onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
-                                    class="inline-flex items-center gap-1 bg-info hover:bg-info/90 text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                    title="Lihat Detail">
-                                    <i class="fa-solid fa-eye w-3 h-3"></i>
-                                    Detail
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
+<form id="deleteForm" method="POST" action="{{ route('recap-proyek.destroySelected') }}">
+    @csrf
+    @method('DELETE')
+    <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div class="inline-block min-w-full align-middle">
+            <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
+                <table class="min-w-full divide-y divide-border-light">
+                    <thead class="bg-surface-secondary">
                         <tr>
-                            <td colspan="11" class="text-center p-4 text-text-secondary">Data rekap proyek tidak
-                                ditemukan.</td>
+                            <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
+                            <th class="p-2 text-center">No</th>
+                            <th class="p-2 text-left">Nama Proyek</th>
+                            <th class="p-2 text-right">Total RAB</th>
+                            <th class="p-2 text-center">File Design</th>
+                            <th class="p-2 text-center">Aksi</th>
                         </tr>
-                    @endforelse
-
-                    @if ($invoices->isNotEmpty())
-                        <tr
-                            class="bg-gradient-to-r from-primary/20 to-primary/10 border-t-4 border-primary font-bold text-base">
-                            <td colspan="5" class="p-3 text-right text-text-heading">TOTAL REKAP PROYEK</td>
-                            <td class="p-3 text-right text-text-heading">Rp
-                                {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</td>
-                            <td class="p-3 text-right text-text-heading">Rp
-                                {{ number_format($totals->total_paid ?? 0, 0, ',', '.') }}</td>
-                            <td class="p-3 text-right text-text-heading">Rp
-                                {{ number_format($totals->total_remaining ?? 0, 0, ',', '.') }}</td>
-                            <td colspan="3"></td>
-                        </tr>
-                    @endif
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="bg-surface-base divide-y divide-border-light">
+                        @forelse ($recaps as $recap)
+                            <tr class="hover:bg-surface-secondary transition-colors duration-150">
+                                <td class="p-2 text-center">
+                                    <input type="checkbox" name="selected_recaps[]" value="{{ $recap->id }}"
+                                        class="w-4 h-4 accent-primary cursor-pointer">
+                                </td>
+                                <td class="p-2 text-center font-medium text-primary">{{ $recap->id }}</td>
+                                <td class="p-2 font-medium text-text-primary">{{ $recap->project_name }}</td>
+                                <td class="p-2 text-right font-medium text-text-primary">Rp
+                                    {{ number_format($recap->total_rab ?? 0, 0, ',', '.') }}</td>
+                                <td class="p-2 text-sm text-center">
+                                    @if ($recap->hasDesignFile())
+                                        <a href="{{ asset('storage/' . $recap->design_file) }}" target="_blank"
+                                            class="inline-flex items-center gap-1 text-primary hover:underline"
+                                            title="Lihat/unduh {{ $recap->design_file_name }}">
+                                            <i class="fa-solid fa-image text-xs"></i>
+                                            {{ \Illuminate\Support\Str::limit($recap->design_file_name, 30) }}
+                                        </a>
+                                    @else
+                                        <span class="text-text-tertiary">-</span>
+                                    @endif
+                                </td>
+                                <td class="p-2 text-center">
+                                    <button type="button"
+                                        onclick="openModal('editModal-{{ $recap->id }}')"
+                                        class="flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 mx-auto">
+                                        <i class="fa-solid fa-pen w-4 h-4"></i>
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center p-4 text-text-secondary">Data rekap proyek tidak
+                                    ditemukan.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
+</form>

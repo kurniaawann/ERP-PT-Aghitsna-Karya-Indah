@@ -2,130 +2,231 @@
 
 namespace App\Services\Finance;
 
-use App\Models\Finance\InvoiceProyek;
-use Carbon\Carbon;
+use App\Models\Finance\ProjectRecap;
+use App\Services\InputNormalizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Throwable;
 
 /**
- * Service untuk Rekap Proyek.
+ * Service untuk Rekap Proyek (standalone).
  *
- * Menangani seluruh business logic Rekap Proyek:
- * - Pembangunan query dasar dengan filter
- * - Perhitungan total rekap
- * - Pembangunan judul periode
+ * Modul mandiri yang menyimpan rekap proyek secara manual:
+ * - No (ID auto-generate format RP-00001)
+ * - Nama Proyek
+ * - Total RAB
+ * - File design (unggahan)
+ *
+ * Business logic didelegasikan dari RecapProyekController ke service ini.
  */
 class RecapProyekService
 {
-    public function __construct(
-        protected InvoiceCalculatorService $calculator
-    ) {}
-
     /**
-     * Membangun query dasar untuk data invoice proyek.
+     * Membangun query dasar untuk listing rekap proyek.
      *
-     * Query ini digunakan oleh index, export excel, dan export pdf.
-     * Sudah termasuk eager loading relasi paymentProofs.
+     * Data yang terlihat hanya milik user login (created_by = user).
+     * Pencarian dilakukan pada kolom project_name.
      *
-     * @param  \Illuminate\Http\Request  $request  Request dengan filter: search, month, year
+     * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function buildBaseQuery(Request $request): Builder
+    public function buildIndexQuery(Request $request): Builder
     {
-        return InvoiceProyek::query()
-            ->with('paymentProofs')
+        return ProjectRecap::query()
             ->where('created_by', auth()->id())
             ->when($request->filled('search'), function (Builder $query) use ($request) {
                 $search = $request->search;
-                $query->where(function (Builder $searchQuery) use ($search) {
-                    $searchQuery->where('invoice_number', 'like', "%{$search}%")
-                        ->orWhere('recipient', 'like', "%{$search}%")
-                        ->orWhere('regarding', 'like', "%{$search}%")
-                        ->orWhere('project_description', 'like', "%{$search}%");
-                });
+                $query->where('project_name', 'like', "%{$search}%");
             })
-            ->when($request->filled('month'), function (Builder $query) use ($request) {
-                $query->whereMonth('invoice_date', $request->month);
-            })
-            ->when($request->filled('year'), function (Builder $query) use ($request) {
-                $query->whereYear('invoice_date', $request->year);
-            });
+            ->with('creator')
+            ->orderByDesc('created_at');
     }
 
     /**
-     * Mengambil data invoice untuk tampilan paginated.
+     * Membuat rekap proyek baru dari input manual user.
      *
-     * Logika:
-     * - (clone $query) penting! Query builder dibagikan antar method; clone mencegah
-     *   method lain (mis. getAllInvoices) ikut terpengaruh pagination/order ini.
-     * - ->appends($request->all()) menjaga filter (search/month/year) tetap ada
-     *   di URL saat pindah halaman pagination.
+     * Alur:
+     * 1. Simpan file design ke public disk (jika ada).
+     * 2. Buat record di database.
+     * 3. Jika penyimpanan record gagal, file yang baru tersimpan ikut dihapus.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query  Query dasar
-     * @param  \Illuminate\Http\Request  $request  Request untuk pagination
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @param  array<string, mixed>  $data        Data yang sudah validasi dari FormRequest
+     * @param  \Illuminate\Http\UploadedFile|null  $designFile  File design yang diunggah
+     * @return \App\Models\Finance\ProjectRecap
      */
-    public function getPaginatedInvoices(Builder $query, Request $request)
+    public function createRecap(array $data, ?UploadedFile $designFile): ProjectRecap
     {
-        return (clone $query)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('created_at')
-            ->paginate(10)
-            ->appends($request->all());
-    }
+        $storedFile = null;
 
-    /**
-     * Mengambil seluruh data invoice (tanpa pagination) untuk perhitungan total.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query  Query dasar
-     * @return \Illuminate\Support\Collection
-     */
-    public function getAllInvoices(Builder $query)
-    {
-        return (clone $query)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('created_at')
-            ->get();
-    }
+        try {
+            $data['total_rab'] = InputNormalizer::normalizeCurrency($data['total_rab'] ?? null);
 
-    /**
-     * Membangun ringkasan total dari koleksi invoice.
-     *
-     * @param  \Illuminate\Support\Collection  $invoices  Koleksi invoice proyek
-     * @return object  Objek berisi: invoice_count, total_invoice, total_paid, total_remaining, paid_count, unpaid_count
-     */
-    public function buildTotals($invoices): object
-    {
-        return $this->calculator->buildProyekTotals($invoices);
-    }
+            if ($designFile) {
+                $storedFile = $this->storeDesignFile($designFile);
+                $data['design_file'] = $storedFile['file_path'];
+                $data['design_file_name'] = $storedFile['file_name'];
+            }
 
-    /**
-     * Membangun judul periode berdasarkan filter request.
-     *
-     * @param  \Illuminate\Http\Request  $request  Request dengan filter: month, year
-     * @return string  Judul periode (contoh: "JUNI 2024", "SEMUA PERIODE")
-     */
-    public function buildPeriodTitle(Request $request): string
-    {
-        $month = $request->get('month');
-        $year = $request->get('year');
+            $data['created_by'] = auth()->id();
 
-        if ($month && $year) {
-            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+            $recap = ProjectRecap::create($data);
+        } catch (Throwable $throwable) {
+            Log::error('Recap Proyek store failed', [
+                'error' => $throwable->getMessage(),
+                'trace' => $throwable->getTraceAsString(),
+            ]);
 
-            return strtoupper($monthName) . ' ' . $year;
+            if (isset($storedFile['file_path'])) {
+                $this->deleteDesignFile($storedFile['file_path']);
+            }
+
+            throw $throwable;
         }
 
-        if ($month) {
-            $monthName = Carbon::create(null, $month, 1)->locale('id')->translatedFormat('F');
+        return $recap;
+    }
 
-            return 'BULAN ' . strtoupper($monthName);
+    /**
+     * Mengupdate rekap proyek yang sudah ada.
+     *
+     * File design hanya diganti jika ada file baru yang diunggah;
+     * file lama dihapus setelah data berhasil disimpan.
+     *
+     * @param  \App\Models\Finance\ProjectRecap  $recap       Model yang akan diupdate
+     * @param  array<string, mixed>              $data        Data yang sudah validasi dari FormRequest
+     * @param  \Illuminate\Http\UploadedFile|null $designFile  File design baru (opsional)
+     * @return bool
+     */
+    public function updateRecap(ProjectRecap $recap, array $data, ?UploadedFile $designFile): bool
+    {
+        $oldFilePath = $recap->design_file;
+        $storedFile = null;
+
+        try {
+            $data['total_rab'] = InputNormalizer::normalizeCurrency($data['total_rab'] ?? null);
+
+            if ($designFile) {
+                $storedFile = $this->storeDesignFile($designFile);
+                $data['design_file'] = $storedFile['file_path'];
+                $data['design_file_name'] = $storedFile['file_name'];
+            }
+
+            $updated = $recap->update($data);
+
+            if (isset($storedFile['file_path']) && $oldFilePath && $oldFilePath !== $storedFile['file_path']) {
+                $this->deleteDesignFile($oldFilePath);
+            }
+        } catch (Throwable $throwable) {
+            Log::error('Recap Proyek update failed', [
+                'error' => $throwable->getMessage(),
+                'trace' => $throwable->getTraceAsString(),
+            ]);
+
+            if (isset($storedFile['file_path'])) {
+                $this->deleteDesignFile($storedFile['file_path']);
+            }
+
+            throw $throwable;
         }
 
-        if ($year) {
-            return 'TAHUN ' . $year;
+        return $updated;
+    }
+
+    /**
+     * Hapus beberapa rekap proyek sekaligus (bulk delete).
+     *
+     * File design milik record yang dihapus ikut dibersihkan.
+     *
+     * @param  array<int, string>  $ids  Daftar ID rekap proyek
+     * @return int  Jumlah rekap yang dihapus
+     */
+    public function bulkDelete(array $ids): int
+    {
+        $deletedCount = 0;
+
+        ProjectRecap::whereIn('id', $ids)->each(function ($recap) use (&$deletedCount) {
+            $recap->delete();
+            $this->deleteDesignFile($recap->design_file);
+            $deletedCount++;
+        });
+
+        return $deletedCount;
+    }
+
+    /**
+     * Generate unique rekap proyek ID (format: RP-00001).
+     *
+     * Prefix: RP (Recap Proyek)
+     * Sequential number: 5 digit zero-padded
+     * Contoh: RP-00001, RP-00002, dst.
+     *
+     * Menggunakan database lock untuk mencegah race condition.
+     *
+     * @return string
+     */
+    public function generateId(): string
+    {
+        $lastRecap = ProjectRecap::lockForUpdate()
+            ->where('id', 'like', 'RP-%')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($lastRecap && preg_match('/^RP-(\d+)$/', $lastRecap->id, $matches)) {
+            $nextNumber = (int) $matches[1] + 1;
+        } else {
+            $nextNumber = 1;
         }
 
-        return 'SEMUA PERIODE';
+        $newId = 'RP-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
+        while (ProjectRecap::where('id', $newId)->exists()) {
+            $nextNumber++;
+            $newId = 'RP-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        }
+
+        return $newId;
+    }
+
+    /**
+     * Menyimpan file design rekap proyek.
+     *
+     * File disimpan apa adanya dengan nama UUID di Storage::disk('public').
+     * Path yang disimpan ke DB adalah path RELATIF agar portabel antar server.
+     *
+     * @param  \Illuminate\Http\UploadedFile  $file
+     * @return array{file_name: string, file_path: string}
+     */
+    private function storeDesignFile(UploadedFile $file): array
+    {
+        $relativeDirectory = 'recap-proyek/designs';
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'bin');
+        $fileName = Str::uuid()->toString() . '.' . $extension;
+        $relativePath = $relativeDirectory . '/' . $fileName;
+
+        $file->storeAs($relativeDirectory, $fileName, ['disk' => 'public']);
+
+        return [
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $relativePath,
+        ];
+    }
+
+    /**
+     * Menghapus file design berdasarkan path relatif.
+     *
+     * @param  string|null  $relativePath
+     * @return void
+     */
+    private function deleteDesignFile(?string $relativePath): void
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        Storage::disk('public')->delete($relativePath);
     }
 }

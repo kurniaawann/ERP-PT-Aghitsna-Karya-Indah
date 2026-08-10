@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers\Finance;
 
-use App\Exports\Finance\ProyekRecapExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\StoreRecapProyekRequest;
+use App\Http\Requests\Finance\UpdateRecapProyekRequest;
+use App\Models\Finance\ProjectRecap;
 use App\Services\Finance\RecapProyekService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
- * Controller untuk Rekap Proyek.
+ * Controller untuk Rekap Proyek (standalone).
  *
- * Menangani request untuk menampilkan rekap invoice proyek,
- * termasuk export ke Excel dan PDF.
+ * Modul mandiri untuk mengelola rekap proyek dengan input manual:
+ * - No (ID auto-generate format RP-00001)
+ * - Nama Proyek
+ * - Total RAB
+ * - File design (unggahan)
  *
  * Business logic didelegasikan ke RecapProyekService.
  */
@@ -24,61 +29,105 @@ class RecapProyekController extends Controller
     ) {}
 
     /**
-     * Menampilkan daftar rekap invoice proyek dengan filter dan pagination.
+     * Menampilkan daftar rekap proyek dengan pagination.
      *
-     * @param  \Illuminate\Http\Request  $request  Filter: search, month, year
+     * @param  \Illuminate\Http\Request  $request  Filter: search
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        $query = $this->service->buildBaseQuery($request);
+        $recaps = $this->service->buildIndexQuery($request)
+            ->paginate(10)
+            ->appends($request->all());
 
-        $invoices = $this->service->getPaginatedInvoices($query, $request);
-        $totals = $this->service->buildTotals($this->service->getAllInvoices($query));
-        $periodTitle = $this->service->buildPeriodTitle($request);
-
-        return view('pages.finance.project-recaps', compact('invoices', 'totals', 'periodTitle'));
+        return view('pages.finance.project-recaps', compact('recaps'));
     }
 
     /**
-     * Export rekap invoice proyek ke Excel (XLSX).
+     * Menyimpan rekap proyek baru dari input manual user.
      *
-     * @param  \Illuminate\Http\Request  $request  Filter: search, month, year
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     * @param  \App\Http\Requests\Finance\StoreRecapProyekRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function exportExcel(Request $request)
+    public function store(StoreRecapProyekRequest $request)
     {
-        $query = $this->service->buildBaseQuery($request);
-        $invoices = $this->service->getAllInvoices($query);
-        $totals = $this->service->buildTotals($invoices);
-        $periodTitle = $this->service->buildPeriodTitle($request);
+        DB::beginTransaction();
+        try {
+            $this->service->createRecap($request->validated(), $request->file('design_file'));
 
-        $filename = 'Rekap_Proyek_' . date('Y-m-d') . '.xlsx';
+            DB::commit();
 
-        return Excel::download(new ProyekRecapExport($invoices, $totals, $periodTitle), $filename);
+            return redirect()->route('recap-proyek.index')
+                ->with('success', 'Data rekap proyek berhasil ditambahkan!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Recap Proyek store failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')->withInput();
+        }
     }
 
     /**
-     * Export rekap invoice proyek ke PDF.
+     * Mengupdate rekap proyek yang sudah ada.
      *
-     * @param  \Illuminate\Http\Request  $request  Filter: search, month, year
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     * @param  \App\Http\Requests\Finance\UpdateRecapProyekRequest  $request
+     * @param  \App\Models\Finance\ProjectRecap                     $projectRecap
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function exportPdf(Request $request)
+    public function update(UpdateRecapProyekRequest $request, ProjectRecap $projectRecap)
     {
-        $query = $this->service->buildBaseQuery($request);
-        $invoices = $this->service->getAllInvoices($query);
-        $totals = $this->service->buildTotals($invoices);
-        $periodTitle = $this->service->buildPeriodTitle($request);
+        DB::beginTransaction();
+        try {
+            $this->service->updateRecap($projectRecap, $request->validated(), $request->file('design_file'));
 
-        $pdf = Pdf::loadView('exports.finance.project-invoice-recap-pdf', [
-            'invoices' => $invoices,
-            'totals' => $totals,
-            'periodTitle' => $periodTitle,
-        ])->setPaper('a4', 'landscape');
+            DB::commit();
 
-        $filename = 'Rekap_Proyek_' . date('Y-m-d') . '.pdf';
+            return redirect()->route('recap-proyek.index')
+                ->with('success', 'Data rekap proyek berhasil diupdate!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Recap Proyek update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-        return $pdf->download($filename);
+            return back()->with('error', 'Terjadi kesalahan saat mengupdate data. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * Hapus beberapa rekap proyek sekaligus (bulk delete).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroySelected(Request $request)
+    {
+        $selectedIds = $request->input('selected_recaps', []);
+
+        if (empty($selectedIds)) {
+            return back()->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        DB::beginTransaction();
+        try {
+            $deletedCount = $this->service->bulkDelete($selectedIds);
+
+            DB::commit();
+
+            return redirect()->route('recap-proyek.index')
+                ->with('success', "Berhasil menghapus {$deletedCount} data rekap proyek.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Recap Proyek destroySelected failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
+        }
     }
 }
