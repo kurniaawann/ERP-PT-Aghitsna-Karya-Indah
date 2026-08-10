@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Finance;
 
+use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -17,6 +18,21 @@ class UpdateRecapExpenseRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Normalisasi nilai nominal sebelum validasi.
+     *
+     * Input jumlah diformat di frontend ke format Indonesia (mis. "1.000.000"),
+     * sehingga perlu dinormalisasi ke angka murni agar lolos rule `numeric`.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('expense_amount') && trim((string) $this->input('expense_amount')) !== '') {
+            $this->merge([
+                'expense_amount' => (string) InputNormalizer::normalizeCurrency($this->input('expense_amount')),
+            ]);
+        }
     }
 
     /**
