@@ -75,6 +75,10 @@ class ProjectFinancialReportController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        // Pastikan kategori UANG_MASUK (modul project_finance) tersedia untuk
+        // user yang login, sehingga muncul di dropdown modal tambah/edit.
+        $this->service->resolveIncomeCategory();
+
         $categories = $this->service->getProjectFinanceCategories();
 
         $rekapOptions = ProjectRecap::query()
@@ -107,6 +111,9 @@ class ProjectFinancialReportController extends Controller
 
             $items = $request->input('items', []);
             $proofFiles = $request->file('items', []);
+
+            // Auto-create kategori UANG MASUK & keterangan "Pembayaran ke N".
+            $items = $this->service->applyAutoPaymentData($report, $items);
 
             $this->service->createItems($report, $items, $proofFiles);
 
@@ -159,6 +166,15 @@ class ProjectFinancialReportController extends Controller
 
             if ($report || ! empty($items)) {
                 $report = $this->service->getOrCreateForRecap($projectRecap);
+
+                // Auto-create kategori UANG MASUK & keterangan "Pembayaran ke N"
+                // (nama proyek diambil dari request karena diupdate bersamaan).
+                $items = $this->service->applyAutoPaymentData(
+                    $report,
+                    $items,
+                    $request->input('project_name')
+                );
+
                 $this->service->syncItems($report, $items, $request->file('items', []));
             }
 

@@ -2,12 +2,14 @@
 
 namespace App\Services\Report;
 
+use App\Models\Finance\PaymentProof;
 use App\Models\Finance\ProjectRecap;
 use App\Models\Report\ProjectFinancialReport;
 use App\Models\Report\ProjectFinancialReportItem;
 use App\Models\Report\TransactionCategory;
 use App\Services\InputNormalizer;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -162,6 +164,213 @@ class ProjectFinancialReportService
     }
 
     /**
+     * Terapkan data otomatis untuk pembayaran proyek pada item "Bon" baru.
+     *
+     * Sesuai kebutuhan user:
+     * - Pastikan kategori UANG_MASUK (modul project_finance) milik user ada,
+     *   dibuat otomatis bila belum ada (dipakai ulang bila sudah ada).
+     * - Pembayaran pertama pada laporan yang masih kosong dan belum memilih
+     *   kategori dipaksa memakai kategori UANG_MASUK dengan keterangan
+     *   "Pembayaran ke 1 proyek {nama}".
+     * - Setiap transaksi baru dengan kategori UANG_MASUK otomatis diberi
+     *   keterangan "Pembayaran ke N proyek {nama}" (N = urutan pembayaran).
+     * - Item existing (membawa `id`) tidak diubah.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @param  string|null  $projectName  Nama proyek (default: dari relasi recap,
+     *                                    berguna saat nama proyek diubah dalam
+     *                                    request yang sama pada modal edit).
+     * @return array<int, array<string, mixed>>
+     */
+    public function applyAutoPaymentData(ProjectFinancialReport $report, array $items, ?string $projectName = null): array
+    {
+        $incomeCategory = $this->resolveIncomeCategory();
+
+        if (! $incomeCategory) {
+            return $items;
+        }
+
+        $recapName = trim((string) ($projectName ?? $report->recap?->project_name ?? $report->project_recap_id));
+        $recapName = preg_replace('/^proyek\s+/i', '', $recapName) ?: $recapName;
+
+        $existingIncomeCount = $report->items()
+            ->where('transaction_category_id', $incomeCategory->id)
+            ->count();
+
+        $isFirstPayment = $report->items()->count() === 0;
+        $firstApplied = false;
+
+        foreach ($items as $index => $item) {
+            $isNew = empty($item['id']) || trim((string) $item['id']) === '';
+
+            if (! $isNew) {
+                continue;
+            }
+
+            $isIncome = (int) ($item['transaction_category_id'] ?? 0) === (int) $incomeCategory->id;
+
+            // Pembayaran pertama tanpa kategori terpilih: paksa UANG MASUK.
+            if ($isFirstPayment && ! $firstApplied && empty($item['transaction_category_id'])) {
+                $item['transaction_category_id'] = $incomeCategory->id;
+                $isIncome = true;
+                $firstApplied = true;
+            }
+
+            if ($isIncome) {
+                $existingIncomeCount++;
+                $item['description'] = 'Pembayaran ke '.$existingIncomeCount.' proyek '.$recapName;
+                $items[$index] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Ambil (atau buat otomatis) kategori UANG_MASUK milik user.
+     *
+     * Kategori dicari berdasarkan user yang memicu (created_by), bukan global,
+     * karena daftar kategori transaksi ditampilkan per-user. Bila user belum
+     * punya kategori "uang masuk" (modul project_finance, tipe INCOME, kode
+     * diawali UANG_MASUK), dibuat otomatis satu kali saja. Karena kolom `code`
+     * unik global, bila kode UANG_MASUK sudah terpakai (oleh user lain), kode
+     * di-increment menjadi UANG_MASUK_1, UANG_MASUK_2, dst. sampai ketemu
+     * yang kosong.
+     *
+     * @param  int|string|null  $userId  Default: user yang sedang login.
+     */
+    public function resolveIncomeCategory($userId = null): ?TransactionCategory
+    {
+        $userId = $userId ?? auth()->id();
+
+        if (! $userId) {
+            return null;
+        }
+
+        $incomeCategory = TransactionCategory::where('created_by', $userId)
+            ->module(TransactionCategory::MODULE_PROJECT_FINANCE)
+            ->where('type', TransactionCategory::TYPE_INCOME)
+            ->where('code', 'LIKE', 'UANG_MASUK%')
+            ->orderBy('id')
+            ->first();
+
+        if ($incomeCategory) {
+            return $incomeCategory;
+        }
+
+        $baseCode = 'UANG_MASUK';
+        $suffix = 1;
+
+        while (true) {
+            $code = $suffix === 1 ? $baseCode : $baseCode.'_'.$suffix;
+            $suffix++;
+
+            if (TransactionCategory::where('code', $code)->exists()) {
+                continue;
+            }
+
+            try {
+                $incomeCategory = TransactionCategory::create([
+                    'name' => 'UANG MASUK',
+                    'code' => $code,
+                    'type' => TransactionCategory::TYPE_INCOME,
+                    'module' => TransactionCategory::MODULE_PROJECT_FINANCE,
+                    'sort_order' => 1,
+                    'is_active' => true,
+                    'created_by' => $userId,
+                ]);
+                break;
+            } catch (QueryException $e) {
+                if ($e->getCode() !== '23000') {
+                    throw $e;
+                }
+            }
+        }
+
+        $this->flushCategoryCache($userId);
+        app(TransactionCategoryService::class)->flushCache($userId);
+
+        return $incomeCategory;
+    }
+
+    /**
+     * Sinkronkan item Laporan Keuangan Proyek dari bukti pembayaran (recap).
+     *
+     * Setiap bukti pembayaran dengan invoice_type 'recap' otomatis menjadi
+     * satu baris "Uang Masuk" pada laporan keuangan proyek rekap terkait:
+     * - Keterangan: "Pembayaran ke {stage} proyek {nama}"
+     * - Nominal: amount bukti pembayaran → income_amount
+     * - Tanggal: payment_date bukti pembayaran
+     * - Bukti: file bukti pembayaran (dipakai ulang, tidak disalin)
+     *
+     * Dipanggil dari observer PaymentProof saat bukti dibuat/diubah. Idempotent:
+     * jika item dengan payment_proof_id sudah ada, diperbarui; bila tidak, dibuat.
+     * Bila invoice_type bukan 'recap' (bukti dipindah ke invoice lain), item
+     * terkait dihapus.
+     */
+    public function syncFromPaymentProof(PaymentProof $proof): ?ProjectFinancialReportItem
+    {
+        if ($proof->invoice_type !== 'recap') {
+            $this->deleteFromPaymentProof($proof);
+
+            return null;
+        }
+
+        $recap = ProjectRecap::where('id', $proof->invoice_number)->first();
+
+        if (! $recap) {
+            return null;
+        }
+
+        $incomeCategory = $this->resolveIncomeCategory($proof->created_by);
+
+        if (! $incomeCategory) {
+            return null;
+        }
+
+        $report = $this->getOrCreateForRecap($recap);
+
+        $item = ProjectFinancialReportItem::where('payment_proof_id', $proof->id)->first();
+
+        $recapName = trim((string) $recap->project_name);
+        $recapName = preg_replace('/^proyek\s+/i', '', $recapName) ?: $recapName;
+
+        $stage = (int) ($proof->payment_stage ?? 1);
+        $data = [
+            'transaction_category_id' => $incomeCategory->id,
+            'transaction_date' => $proof->payment_date?->toDateString() ?? now()->toDateString(),
+            'description' => 'Pembayaran ke '.$stage.' proyek '.$recapName,
+            'income_amount' => (int) $proof->amount,
+            'expense_amount' => null,
+            'proof_file' => $proof->file_path,
+            'proof_file_name' => $proof->file_name,
+        ];
+
+        if ($item) {
+            $item->update($data);
+
+            return $item;
+        }
+
+        return ProjectFinancialReportItem::create(array_merge($data, [
+            'project_financial_report_id' => $report->id,
+            'payment_proof_id' => $proof->id,
+            'created_by' => $proof->created_by ?? auth()->id(),
+        ]));
+    }
+
+    /**
+     * Hapus item Laporan Keuangan Proyek yang dihasilkan dari bukti pembayaran.
+     *
+     * Hanya menghapus record; file bukti tetap milik PaymentProof dan dikelola
+     * oleh modul Bukti Pembayaran sendiri.
+     */
+    public function deleteFromPaymentProof(PaymentProof $proof): void
+    {
+        ProjectFinancialReportItem::where('payment_proof_id', $proof->id)->delete();
+    }
+
+    /**
      * Menyinkronkan seluruh transaksi "Bon" hasil edit laporan keuangan proyek.
      *
      * Dipakai oleh modal edit dengan struktur dinamis (mirip tambah):
@@ -191,6 +400,7 @@ class ProjectFinancialReportService
 
                 if ($existingItem) {
                     $this->updateItem($existingItem, $itemData, $proofFile);
+
                     continue;
                 }
             }

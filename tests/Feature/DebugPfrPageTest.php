@@ -23,7 +23,7 @@ class DebugPfrPageTest extends TestCase
         $this->assertStringContainsString('transactionsContainer-RP-00001', $html);
         $this->assertStringContainsString('data-existing-items', $html);
         $this->assertStringContainsString('data-categories', $html);
-        $this->assertStringContainsString("addTransactionBlock('transactionsContainer-RP-00001')", $html);
+        $this->assertStringContainsString("addTransactionCategoryGroup('transactionsContainer-RP-00001')", $html);
 
         // JS ter-serve
         $jsAsset = preg_match('/src="([^"]+index-[A-Za-z0-9_-]+\.js)"/', $html, $m) ? $m[1] : null;

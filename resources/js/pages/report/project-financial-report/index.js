@@ -198,10 +198,11 @@ function bonBlockHtml(categories, data, index) {
 
             <div class="mb-3">
                 <label class="block text-text-primary mb-1">Keterangan <span class="text-error">*</span></label>
-                <textarea name="items[${index}][description]" class="w-full border rounded p-2" rows="2" required maxlength="1000"
+                <textarea name="items[${index}][description]" class="w-full border rounded p-2" rows="2" maxlength="1000"
                     placeholder="Contoh: Kasbon Transport Tukang"
                     oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                     oninput="this.setCustomValidity('')">${escapeHtml(data.description || '')}</textarea>
+                <p class="description-auto-hint hidden text-xs text-primary mt-1">Keterangan otomatis terisi &quot;Pembayaran ke N proyek ...&quot; untuk kategori UANG MASUK.</p>
             </div>
 
             <div class="mb-3">
@@ -445,6 +446,7 @@ function syncBonCategoryFields(groupEl) {
     const categoryId = selected ? selected.value : '';
     const isIncome = selected && selected.dataset.type === 'INCOME';
     const labelText = (isIncome ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran') + ' <span class="text-error">*</span>';
+    const keteranganText = 'Keterangan' + (isIncome ? ' <span class="text-secondary">(otomatis)</span>' : ' <span class="text-error">*</span>');
 
     groupEl.querySelectorAll('.transaction-category-hidden').forEach(function (hidden) {
         hidden.value = categoryId;
@@ -453,6 +455,24 @@ function syncBonCategoryFields(groupEl) {
 
     groupEl.querySelectorAll('.amount-label').forEach(function (label) {
         label.innerHTML = labelText;
+    });
+
+    groupEl.querySelectorAll('.bon-block').forEach(function (block) {
+        const description = block.querySelector('textarea[name$="[description]"]');
+        const hint = block.querySelector('.description-auto-hint');
+        const label = description ? description.closest('div').querySelector('label') : null;
+
+        if (label && label.textContent.trim().indexOf('Keterangan') === 0) {
+            label.innerHTML = keteranganText;
+        }
+
+        if (isIncome) {
+            if (description) description.removeAttribute('required');
+            if (hint) hint.classList.remove('hidden');
+        } else {
+            if (description) description.setAttribute('required', 'required');
+            if (hint) hint.classList.add('hidden');
+        }
     });
 }
 

@@ -24,6 +24,7 @@ class ProjectFinancialReportItem extends Model
 
     protected $fillable = [
         'project_financial_report_id',
+        'payment_proof_id',
         'transaction_category_id',
         'transaction_date',
         'description',

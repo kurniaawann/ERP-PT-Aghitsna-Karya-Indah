@@ -73,7 +73,7 @@ class UpdateProjectFinancialReportRequest extends FormRequest
             'items.*.id' => ['nullable', 'string'],
             'items.*.transaction_category_id' => ['required', 'integer', 'exists:transaction_categories,id'],
             'items.*.transaction_date' => ['required', 'date'],
-            'items.*.description' => ['required', 'string', 'max:1000'],
+            'items.*.description' => ['nullable', 'string', 'max:1000'],
             'items.*.expense_amount' => ['required', 'numeric', 'min:0'],
             'items.*.keterangan_bon' => ['nullable', 'string', 'max:255'],
             'items.*.proof_file' => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp,bmp'],
