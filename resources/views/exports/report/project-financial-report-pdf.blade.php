@@ -13,233 +13,234 @@
         }
 
         body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 9px;
-            padding: 15px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            padding: 20px;
+            color: #000;
         }
 
+        /* Header Layout */
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
+        }
+
+        .header-table td {
+            border: none;
+            padding: 0;
+            vertical-align: middle;
         }
 
         .logo-cell {
-            width: 90px;
-            vertical-align: middle;
+            width: 25%;
         }
 
         .logo-cell img {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
+            max-width: 150px;
+            height: auto;
         }
 
         .header-title-cell {
+            width: 50%;
             text-align: center;
-            vertical-align: middle;
-        }
-
-        .company-name {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 2px;
         }
 
         .report-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .project-info {
             font-size: 11px;
-            font-weight: bold;
+            font-style: italic;
+            color: #333;
+            margin-top: 2px;
         }
 
-        table {
+        .header-date-cell {
+            width: 25%;
+            text-align: right;
+            font-size: 9px;
+            vertical-align: bottom;
+            padding-bottom: 5px;
+        }
+
+        /* Main Data Table */
+        table.data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 0px;
         }
 
-        th,
-        td {
-            border: 1px solid black;
-            padding: 4px 6px;
-            text-align: left;
+        table.data-table th,
+        table.data-table td {
+            border: 1px solid #7f7f7f;
+            padding: 4px 5px;
+            font-size: 9.5px;
         }
 
-        th {
-            background-color: #FFFF00;
+        table.data-table th {
+            background-color: #FFC000; /* Kuning Amber Header */
             font-weight: bold;
             text-align: center;
-            font-size: 10px;
             vertical-align: middle;
+            height: 24px;
         }
 
-        thead {
-            display: table-header-group;
+        /* Category Header Row */
+        .category-header-row td {
+            border-top: 1px solid #7f7f7f;
+            border-bottom: 1px solid #7f7f7f;
         }
 
-        tbody {
-            display: table-row-group;
-        }
-
-        tr {
-            page-break-inside: avoid;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .category-row {
+        .category-title {
+            background-color: #92D050; /* Hijau Kategori */
             font-weight: bold;
+            font-style: italic;
             text-align: center;
         }
 
-        .category-row td {
-            padding: 6px;
+        /* Colors for Numbers */
+        .text-blue {
+            color: #002060;
+            font-weight: bold;
         }
 
-        .category-row .category-header {
-            background-color: #A9D08E;
-            text-align: center;
-            vertical-align: middle;
+        .text-green {
+            color: #548235;
         }
 
-        .category-row .empty-cell {
-            background-color: white;
+        .text-brown {
+            color: #C65911;
         }
 
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+
+        /* Subtotal Row */
         .subtotal-row {
-            background-color: #FFCC00;
+            background-color: #FFC000; /* Kuning Subtotal */
+            font-weight: bold;
             font-style: italic;
         }
 
+        .subtotal-row td {
+            text-decoration: underline;
+        }
+
+        /* Total Row */
         .total-row {
-            background-color: #FFCC00;
+            background-color: #BFBFBF; /* Abu-abu Total */
             font-weight: bold;
+            font-style: italic;
         }
 
-        .rekapitulasi {
-            margin-top: 20px;
-            font-weight: bold;
-            font-size: 11px;
+        .total-row td {
+            text-decoration: underline;
+            padding: 6px 5px;
         }
 
-        .rekap-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 10px;
-        }
-
-        .rekap-label {
-            font-weight: bold;
-        }
-
-        .rekap-value {
-            font-weight: bold;
-        }
-
-        .col-no {
-            width: 8%;
-            text-align: center;
-        }
-
-        .col-bon {
-            width: 8%;
-            text-align: center;
-        }
-
-        .col-tanggal {
-            width: 11%;
-            text-align: center;
-        }
-
-        .col-keterangan {
-            width: 34%;
-        }
-
-        .col-pemasukan {
-            width: 14%;
-            text-align: center;
-        }
-
-        .col-pengeluaran {
-            width: 14%;
-            text-align: center;
-        }
-
-        .col-keterangan-bon {
-            width: 19%;
-        }
-
-        .footer-signatures {
-            margin-top: 30px;
+        /* Summary Labels below table */
+        .summary-labels-table {
             width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+            margin-bottom: 40px;
+        }
+
+        .summary-labels-table td {
+            border: none;
+            padding: 2px 5px;
+            font-weight: bold;
+            font-style: italic;
+            font-size: 9.5px;
+        }
+
+        /* Column Widths */
+        .col-no { width: 3%; }
+        .col-bon { width: 4%; }
+        .col-tanggal { width: 10%; }
+        .col-keterangan { width: 35%; }
+        .col-masuk { width: 12%; }
+        .col-keluar { width: 11%; }
+        .col-saldo { width: 11%; }
+        .col-bon-ket { width: 14%; }
+
+        /* Footer Signatures */
+        .footer-signatures {
+            width: 100%;
+            margin-top: 30px;
         }
 
         .footer-signatures table {
             width: 100%;
             border: none;
-            margin: 0;
         }
 
         .footer-signatures td {
             border: none;
             text-align: center;
             vertical-align: top;
-            padding: 5px;
             width: 33.33%;
+            font-size: 9.5px;
         }
 
-        .signature-line {
-            margin-top: 60px;
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 60px;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
-    {{-- Header: logo kiri + judul di tengah + info proyek --}}
-    <table class="header-table" cellpadding="0" cellspacing="0" border="0">
+    {{-- Header --}}
+    <table class="header-table">
         <tr>
             <td class="logo-cell">
                 <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
             </td>
             <td class="header-title-cell">
-                <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
                 <div class="report-title">LAPORAN KEUANGAN</div>
-                <div class="project-info">{{ strtoupper($recap->project_name ?? '') }}</div>
-                @if (! empty($recap->location))
-                    <div class="project-info">{{ strtoupper($recap->location) }}</div>
+                <div class="project-info">{{ $recap->project_name ?? 'Proyek Rumah Kos 4 Lantai' }}</div>
+                @if (!empty($recap->location))
+                    <div class="project-info">{{ $recap->location }}</div>
+                @else
+                    <div class="project-info">Jl. XYZ - Jakarta Selatan</div>
                 @endif
             </td>
-            <td class="logo-cell"></td>
+            <td class="header-date-cell">
+                Tgl Edit Terakhir : {{ \Carbon\Carbon::now()->format('d F Y') }}
+            </td>
         </tr>
     </table>
 
-    <table>
+    {{-- Main Table --}}
+    <table class="data-table">
         <thead>
             <tr>
-                <th class="col-no">NO</th>
-                <th class="col-bon">BON</th>
-                <th class="col-tanggal">TANGGAL</th>
-                <th class="col-keterangan">KETERANGAN</th>
-                <th class="col-pemasukan">UANG MASUK</th>
-                <th class="col-pengeluaran">UANG KELUAR</th>
-                <th class="col-keterangan-bon">KETERANGAN BON</th>
+                <th class="col-no">No</th>
+                <th class="col-bon">Bon</th>
+                <th class="col-tanggal">Tanggal</th>
+                <th class="col-keterangan">Keterangan</th>
+                <th class="col-masuk">Uang Masuk</th>
+                <th class="col-keluar">Uang Keluar</th>
+                <th class="col-saldo">Saldo</th>
+                <th class="col-bon-ket">Keterangan Bon</th>
             </tr>
         </thead>
         <tbody>
             @php
                 $catNo = 1;
+                $runningBalance = 0;
                 $itemsByCategory = $items->groupBy('transaction_category_id');
                 $categories = $items->pluck('category')->filter()->unique('id');
             @endphp
@@ -250,47 +251,59 @@
                     $categoryIncome = 0;
                     $categoryExpense = 0;
                     $bonNo = 1;
+                    $isFirstItem = true;
                 @endphp
 
-                {{-- Category Header Row (hijau hanya NO, BON, TANGGAL, KETERANGAN) --}}
-                <tr class="category-row">
-                    <td class="category-header" rowspan="{{ $categoryItems->count() + 1 }}">{{ $catNo }}</td>
-                    <td colspan="3" class="category-header">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
-                    <td class="empty-cell"></td>
-                    <td class="empty-cell"></td>
-                    <td class="empty-cell"></td>
+                {{-- Baris Judul Kategori (Warna Hijau) --}}
+                <tr class="category-header-row">
+                    <td colspan="4" class="category-title">{{ $category->name ?? 'Lain - lain' }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>
 
-                {{-- Items in Category --}}
+                {{-- Item Transaksi --}}
                 @foreach ($categoryItems as $item)
                     @php
-                        $categoryIncome += $item->income_amount ?? 0;
-                        $categoryExpense += $item->expense_amount ?? 0;
+                        $inc = $item->income_amount ?? 0;
+                        $exp = $item->expense_amount ?? 0;
+                        $categoryIncome += $inc;
+                        $categoryExpense += $exp;
+                        $runningBalance += ($inc - $exp);
                     @endphp
                     <tr>
-                        <td class="text-center">{{ $bonNo++ }}</td>
+                        <td class="text-center">{{ $isFirstItem ? $catNo : '' }}</td>
+                        <td class="text-center text-blue">{{ $bonNo++ }}</td>
                         <td class="text-center">
                             {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '' }}
                         </td>
-                        <td class="text-center">{{ $item->description ?? '' }}</td>
-                        <td class="text-right">
-                            {{ $item->income_amount ? 'Rp ' . number_format($item->income_amount, 0, ',', '.') : '' }}
+                        <td>{{ $item->description ?? '' }}</td>
+                        <td class="text-right text-green">
+                            {{ $inc ? number_format($inc, 0, ',', '.') : '' }}
+                        </td>
+                        <td class="text-right text-brown">
+                            {{ $exp ? number_format($exp, 0, ',', '.') : '' }}
                         </td>
                         <td class="text-right">
-                            {{ $item->expense_amount ? 'Rp ' . number_format($item->expense_amount, 0, ',', '.') : '' }}
+                            {{ number_format($runningBalance, 0, ',', '.') }}
                         </td>
-                        <td>{{ $item->keterangan_bon ?? '' }}</td>
+                        <td class="text-center">{{ $item->keterangan_bon ?? '' }}</td>
                     </tr>
+                    @php $isFirstItem = false; @endphp
                 @endforeach
 
-                {{-- Category Subtotal --}}
+                {{-- Subtotal Kategori (Warna Kuning) --}}
                 <tr class="subtotal-row">
                     <td colspan="4"></td>
-                    <td class="text-right">
-                        {{ 'Rp ' . number_format($categoryIncome, 0, ',', '.') }}
+                    <td class="text-right text-green">
+                        {{ $categoryIncome ? number_format($categoryIncome, 0, ',', '.') : '' }}
+                    </td>
+                    <td class="text-right text-brown">
+                        {{ $categoryExpense ? number_format($categoryExpense, 0, ',', '.') : '' }}
                     </td>
                     <td class="text-right">
-                        {{ 'Rp ' . number_format($categoryExpense, 0, ',', '.') }}
+                        {{ number_format($runningBalance, 0, ',', '.') }}
                     </td>
                     <td></td>
                 </tr>
@@ -298,66 +311,52 @@
                 @php $catNo++; @endphp
             @endforeach
 
-            {{-- Grand Total --}}
+            {{-- Grand Total (Warna Abu-abu) --}}
             <tr class="total-row">
-                <td colspan="4" class="text-center"><strong>Jumlah</strong></td>
+                <td colspan="4" class="text-center">Jumlah</td>
                 <td class="text-right">
-                    <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
+                    Rp. {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}
                 </td>
                 <td class="text-right">
-                    <strong>Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</strong>
+                    Rp. {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}
                 </td>
                 <td class="text-right">
-                    <strong>Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}</strong>
+                    Rp. {{ number_format($totals->balance ?? $runningBalance, 0, ',', '.') }}
                 </td>
+                <td></td>
             </tr>
         </tbody>
     </table>
 
-    {{-- Rekapitulasi --}}
-    <div class="rekapitulasi">
-        <div style="margin-bottom: 10px;">Rekapitulasi Laporan Keuangan {{ $recap->project_name ?? '' }}</div>
-
-        <table style="border: none; width: 50%;">
-            <tr style="border: none;">
-                <td style="border: none; width: 30px;">1.</td>
-                <td style="border: none;">UANG MASUK</td>
-                <td style="border: none; text-align: right;">
-                    <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
-                </td>
-            </tr>
-            <tr style="border: none;">
-                <td style="border: none;">2.</td>
-                <td style="border: none;">UANG KELUAR</td>
-                <td style="border: none; text-align: right;">
-                    <strong>Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</strong>
-                </td>
-            </tr>
-            <tr style="border: none;">
-                <td style="border: none;"></td>
-                <td style="border: none;"><strong>SALDO</strong></td>
-                <td style="border: none; text-align: right;">
-                    <strong>Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}</strong>
-                </td>
-            </tr>
-        </table>
-    </div>
+    {{-- Sub-label Keterangan Total di bawah kolom --}}
+    <table class="summary-labels-table">
+        <tr>
+            <td class="col-no"></td>
+            <td class="col-bon"></td>
+            <td class="col-tanggal"></td>
+            <td class="col-keterangan"></td>
+            <td class="col-masuk text-center">Uang Masuk</td>
+            <td class="col-keluar text-center">Uang Keluar</td>
+            <td class="col-saldo text-center">Sisa Saldo</td>
+            <td class="col-bon-ket"></td>
+        </tr>
+    </table>
 
     {{-- Footer Signatures --}}
     <div class="footer-signatures">
         <table>
             <tr>
                 <td>
-                    <div>Dibuat / Diperiksa</div>
-                    <div class="signature-line">( AKHMAD KHAIDIR )</div>
+                    <div class="signature-title">MANDOR</div>
+                    <div class="signature-name">Siswoyo</div>
                 </td>
                 <td>
-                    <div>&nbsp;</div>
-                    <div class="signature-line"></div>
+                    <div class="signature-title">KABAG KEUANGAN</div>
+                    <div class="signature-name">Kamila</div>
                 </td>
                 <td>
-                    <div>Direktur PT. Aghitsna</div>
-                    <div class="signature-line">( Zulkarnain,ST.,MT )</div>
+                    <div class="signature-title">DIREKTUR PT. AGHITSNA KARYA INDAH</div>
+                    <div class="signature-name">Zulkarnain, S.T., M.T.</div>
                 </td>
             </tr>
         </table>
