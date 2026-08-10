@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Sdm;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Sdm\Executive;
 
 /**
  * Form request untuk pembaruan data petinggi.
@@ -34,7 +35,8 @@ class UpdateExecutiveRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:150',
-            'position' => 'required|string|max:150',
+            'position' => 'nullable|string|max:150',
+            'role' => ['nullable', 'string', 'in:' . implode(',', array_keys(Executive::ROLE_LABELS))],
             'signature_image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'remove_signature' => 'nullable|boolean',
         ];
@@ -49,7 +51,8 @@ class UpdateExecutiveRequest extends FormRequest
     {
         return [
             'name.required' => 'Nama petinggi harus diisi',
-            'position.required' => 'Jabatan harus diisi',
+            'position.max' => 'Jabatan maksimal 150 karakter.',
+            'role.in' => 'Peran tanda tangan tidak valid.',
             'signature_image.image' => 'File harus berupa gambar.',
             'signature_image.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WEBP.',
             'signature_image.max' => 'Ukuran gambar maksimal 5MB.',

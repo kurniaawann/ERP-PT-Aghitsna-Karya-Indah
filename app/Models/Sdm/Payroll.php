@@ -44,6 +44,9 @@ use Illuminate\Database\Eloquent\Builder;
  * @property \Carbon\Carbon|null $payment_date  Payment date
  * @property string $status               'draft' or 'paid'
  * @property string|null $notes           Optional notes
+ * @property array|null $signatures       Snapshot petinggi untuk blok tanda tangan
+ *                                        (disetujui/diperiksa/dibuat berisi id,
+ *                                        name, position, signature_image)
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -79,6 +82,7 @@ class Payroll extends Model
         'payment_date',
         'status',
         'notes',
+        'signatures',
         'created_by',
     ];
 
@@ -105,6 +109,7 @@ class Payroll extends Model
         'kasbon_deduction' => 'integer',
         'net_salary' => 'integer',
         'payment_date' => 'date',
+        'signatures' => 'array',
     ];
 
     // ========================================

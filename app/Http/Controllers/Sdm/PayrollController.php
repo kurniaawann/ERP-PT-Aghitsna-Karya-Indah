@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Sdm;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sdm\UpdatePayrollRequest;
 use App\Models\Sdm\Attendance;
+use App\Models\Sdm\Executive;
 use App\Models\Sdm\Payroll;
 use App\Services\Sdm\PayrollService;
 use App\Exports\Sdm\PayrollExport;
@@ -64,7 +65,13 @@ class PayrollController extends Controller
 
         $projects = $this->payrollService->getProjectOptions();
 
-        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber', 'projectName', 'projects'));
+        // Petinggi milik user untuk pemilihan penandatangan pada modal
+        // Generate Payroll (blok Disetujui/Diperiksa/Dibuat oleh).
+        $executives = Executive::where('created_by', auth()->id())
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber', 'projectName', 'projects', 'executives'));
     }
 
     /**
@@ -198,8 +205,11 @@ class PayrollController extends Controller
     /**
      * Membuat payroll mingguan untuk pekerja harian pada proyek tertentu.
      *
-     * Menerima period_start_date, period_end_date, dan project_name (bisa
-     * array nama proyek) dari frontend.
+     * Menerima period_start_date, period_end_date, project_name (bisa array
+     * nama proyek), serta penanda tangan per proyek (signatories[Nama
+     * Proyek][disetujui|diperiksa|dibuat] = ID petinggi) dari frontend.
+     * Penanda tangan disimpan sebagai snapshot pada tiap payroll untuk
+     * kebutuhan blok tanda tangan PDF.
      */
     public function generate(Request $request)
     {
@@ -212,10 +222,26 @@ class PayrollController extends Controller
                 ->with('error', 'Pilih minimal satu proyek terlebih dahulu.');
         }
 
+        // Penanda tangan dipilih PER PROYEK (setiap proyek bisa berbeda).
+        // Setiap proyek wajib memiliki penanda tangan lengkap untuk blok PDF.
+        $signatories = $request->input('signatories', []);
+
+        foreach ($projectNames as $projectName) {
+            $roles = $signatories[$projectName] ?? [];
+
+            if (collect(['disetujui', 'diperiksa', 'dibuat'])->contains(
+                fn ($role) => empty($roles[$role])
+            )) {
+                return redirect()->back()
+                    ->with('error', "Lengkapi penanda tangan untuk proyek \"{$projectName}\" (Disetujui oleh, Diperiksa oleh, Dibuat oleh) terlebih dahulu.");
+            }
+        }
+
         $result = $this->payrollService->generatePayroll(
             $startDate,
             $endDate,
-            $projectNames
+            $projectNames,
+            $signatories
         );
 
         if ($result['success']) {
@@ -337,10 +363,11 @@ class PayrollController extends Controller
             $endDate = Carbon::parse($firstPayroll->period_end_date);
             $dateRange = $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y');
 
-            // Membuat array hari untuk kolom header (Senin-Minggu = 7 hari).
-            // Minggu disertakan karena absensi lembur hari Minggu bisa diinput.
+            // Membuat array hari untuk kolom header (Senin-Sabtu = 6 hari kerja).
+            // Minggu dikecualikan karena hari Minggu adalah hari libur
+            // (tidak ada absensi maupun lembur di hari Minggu).
             $current = $startDate->copy();
-            for ($i = 0; $i < 7; $i++) {
+            for ($i = 0; $i < 6; $i++) {
                 $weekDays[] = $current->format('Y-m-d');
                 $current->addDay();
             }
@@ -367,6 +394,11 @@ class PayrollController extends Controller
 
         $teamKasbonRecap = $this->payrollService->getTeamKasbonRecap($payrolls);
 
+        // Snapshot petinggi untuk blok tanda tangan (Disetujui/Diperiksa/Dibuat).
+        // Mengutamakan pilihan yang tersimpan saat payroll di-generate;
+        // payroll lama (belum punya snapshot) memakai pemetaan per peran.
+        $signatures = $this->payrollService->getPayrollSignatures($payrolls->first());
+
         $data = [
             'payrolls' => $payrolls,
             'periodText' => $periodText,
@@ -378,6 +410,7 @@ class PayrollController extends Controller
             'totalOvertime' => $totalOvertime,
             'totalNetSalary' => $totalNetSalary,
             'teamKasbonRecap' => $teamKasbonRecap,
+            'signatures' => $signatures,
         ];
 
         $pdf = Pdf::loadView('exports.sdm.payroll-pdf', $data);

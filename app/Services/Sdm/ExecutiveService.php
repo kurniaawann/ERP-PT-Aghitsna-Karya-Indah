@@ -50,6 +50,9 @@ class ExecutiveService
      *
      * Logika:
      * - created_by selalu di-set dari user yang login.
+     * - Peran tanda tangan (role) harus unik per user: tidak boleh ada dua
+     *   petinggi dengan peran yang sama (mis. dua "disetujui"), karena blok
+     *   tanda tangan dokumen hanya memuat satu orang per kolom.
      * - Jika gambar diunggah, file disimpan terlebih dahulu. Jika penyimpanan
      *   data gagal, file yang baru tersimpan ikut dihapus (cleanup).
      *
@@ -62,6 +65,10 @@ class ExecutiveService
         $storedImage = null;
 
         try {
+            if ($roleError = $this->ensureRoleAvailable($data['role'] ?? null)) {
+                return ['success' => false, 'message' => $roleError];
+            }
+
             if ($image) {
                 $storedImage = $this->storeImage($image);
                 $data['signature_image'] = $storedImage['file_path'];
@@ -104,6 +111,10 @@ class ExecutiveService
         $removeSignature = !empty($data['remove_signature']);
 
         try {
+            if ($roleError = $this->ensureRoleAvailable($data['role'] ?? null, $executive->id)) {
+                return ['success' => false, 'message' => $roleError];
+            }
+
             if ($removeSignature) {
                 $data['signature_image'] = null;
             } elseif ($image) {
@@ -153,6 +164,36 @@ class ExecutiveService
         }
 
         return ['success' => true, 'message' => 'Data petinggi berhasil dihapus!'];
+    }
+
+    /**
+     * Memastikan peran tanda tangan belum dipakai petinggi lain milik user.
+     *
+     * Blok tanda tangan dokumen hanya memuat satu orang per kolom
+     * (Disetujui/Diperiksa/Dibuat), sehingga role harus unik per user.
+     *
+     * @param  string|null  $role      Peran yang ingin dipakai (null = tidak dicek)
+     * @param  int|null     $ignoreId  ID petinggi yang sedang diedit (dikecualikan)
+     * @return string|null             Pesan error, atau null bila tersedia
+     */
+    private function ensureRoleAvailable(?string $role, ?int $ignoreId = null): ?string
+    {
+        if (!$role) {
+            return null;
+        }
+
+        $conflict = Executive::where('created_by', auth()->id())
+            ->where('role', $role)
+            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->first();
+
+        if ($conflict) {
+            $label = Executive::ROLE_LABELS[$role] ?? $role;
+
+            return "Peran \"{$label}\" sudah dipakai oleh {$conflict->name} ({$conflict->position}). Pilih petinggi lain atau kosongkan peran tersebut.";
+        }
+
+        return null;
     }
 
     /**

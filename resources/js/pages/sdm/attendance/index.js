@@ -263,6 +263,18 @@ function initAddFormHandler() {
 // ==========================================
 
 /**
+ * Memeriksa apakah sebuah tanggal (format Y-m-d) jatuh pada hari Minggu.
+ *
+ * @param {string} dateStr Tanggal berformat Y-m-d.
+ * @return {boolean} true jika hari Minggu.
+ */
+function isSunday(dateStr) {
+    if (!dateStr) return false;
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.getDay() === 0;
+}
+
+/**
  * Validasi rentang tanggal (start_date/end_date) dengan koreksi otomatis.
  *
  * Alur:
@@ -272,6 +284,8 @@ function initAddFormHandler() {
  * - Saat end_date berubah: jika end_date < start_date, tampilkan pesan error
  *   lalu koreksi end_date = start_date; selain itu sembunyikan pesan error;
  *   jalankan ulang validateDuplicateAttendance().
+ * - Minggu: jika rentang yang dipilih seluruhnya jatuh pada hari Minggu,
+ *   tampilkan pesan dan nonaktifkan tombol submit (Minggu adalah hari libur).
  *
  * Validasi ulang di kedua arah memastikan peringatan duplikat selalu sinkron
  * dengan rentang tanggal terbaru yang dipilih user.
@@ -281,6 +295,24 @@ function initDateValidation() {
     var endDateInput = document.getElementById('end_date');
 
     if (!startDateInput || !endDateInput) return;
+
+    function validateSunday() {
+        var sundayError = document.getElementById('sunday-error');
+        var addSubmitBtn = document.querySelector('#addModal button[type="submit"]');
+        var allSunday = isSunday(startDateInput.value) && startDateInput.value === endDateInput.value;
+
+        if (!sundayError) return;
+
+        if (allSunday) {
+            sundayError.classList.remove('hidden');
+            if (addSubmitBtn) {
+                addSubmitBtn.disabled = true;
+                addSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            sundayError.classList.add('hidden');
+        }
+    }
 
     startDateInput.addEventListener('change', function() {
         var dateError = document.getElementById('date-error');
@@ -293,6 +325,7 @@ function initDateValidation() {
             dateError.classList.add('hidden');
         }
         validateDuplicateAttendance();
+        validateSunday();
     });
 
     endDateInput.addEventListener('change', function() {
@@ -308,6 +341,7 @@ function initDateValidation() {
             }
         }
         validateDuplicateAttendance();
+        validateSunday();
     });
 }
 

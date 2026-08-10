@@ -122,6 +122,19 @@ let alreadyGeneratedList = null;
 let noProjectWarningDiv = null;
 let noProjectList = null;
 let generateSubmitBtn = null;
+let signatorySectionsContainer = null;
+
+/**
+ * Seleksi penanda tangan yang tersimpan secara persisten (keyboard:
+ * "NAMA_PROYEK" + \u0000 + peran).
+ *
+ * Dipakai agar pilihan penanda tangan per proyek tidak hilang saat blok
+ * dirender ulang (mis. user menambah/menghapus proyek lain setelah mengisi
+ * proyek pertama). Dikosongkan saat modal Generate ditutup.
+ *
+ * @type {Map<string, {id: string, label: string}>}
+ */
+const signatorySelections = new Map();
 
 /**
  * Timer debounce (setTimeout) untuk checkAttendanceData agar tidak membanjiri
@@ -249,6 +262,125 @@ function resetProjectMultiSelect() {
 
     if (typeof window.initSearchableMultiSelects === 'function') {
         window.initSearchableMultiSelects(wrapper);
+    }
+}
+
+/**
+ * Mengganti karakter berbahaya agar aman disisipkan ke markup/atribut HTML.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function escapeAttr(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * Mendapatkan daftar petinggi dari konfigurasi halaman (opsi select penanda
+ * tangan per proyek).
+ *
+ * @returns {Array<{id: number, name: string, position: string|null}>}
+ */
+function getExecutiveOptions() {
+    return config.executives || [];
+}
+
+/**
+ * Merender blok form penanda tangan (Disetujui/Diperiksa/Dibuat oleh) untuk
+ * SETIAP proyek yang dipilih pada multi-select di modal Generate.
+ *
+ * Alur:
+ * - Kosongkan container lalu render satu blok per proyek terpilih (setiap
+ *   proyek bisa memiliki penanda tangan yang berbeda).
+ * - Tiap blok memuat 3 searchable single-select; nilai terkirim sebagai
+ *   signatories[NAMA_PROYEK][disetujui|diperiksa|dibuat] = ID petinggi.
+ * - Setelah blok dirender, inisialisasi komponen searchable-select via
+ *   window.initSearchableSelects(container).
+ *
+ * @returns {void}
+ */
+function renderSignatorySections() {
+    if (!signatorySectionsContainer) return;
+
+    const projects = getSelectedProjects();
+    signatorySectionsContainer.innerHTML = '';
+
+    if (projects.length === 0) {
+        signatorySectionsContainer.innerHTML =
+            '<p class="text-xs text-text-label italic">Pilih proyek terlebih dahulu untuk memilih penanda tangan.</p>';
+        return;
+    }
+
+    const roleFields = [
+        ['disetujui', 'Disetujui oleh'],
+        ['diperiksa', 'Diperiksa oleh'],
+        ['dibuat', 'Dibuat oleh'],
+    ];
+
+    projects.forEach(function (project) {
+        const block = document.createElement('div');
+        block.className = 'mb-4 p-3 bg-surface-base border border-border-strong rounded-lg';
+
+        const projectAttr = escapeAttr(project);
+
+        let blockHTML =
+            '<p class="text-sm font-semibold text-text-primary mb-3">' +
+            '<i class="fa-solid fa-folder-open text-text-label mr-1"></i>' +
+            'Penanda Tangan - <span class="text-primary">' + projectAttr + '</span></p>';
+
+        roleFields.forEach(function (role) {
+            const roleKey = role[0];
+            const roleLabel = role[1];
+            const inputId = 'signatory-' + projectAttr + '-' + roleKey;
+            const fieldName = 'signatories[' + projectAttr + '][' + roleKey + ']';
+
+            // Pulihkan pilihan yang tersimpan (tidak hilang saat re-render)
+            const saved = signatorySelections.get(project + '\u0000' + roleKey);
+
+            blockHTML += '<div class="searchable-select-wrapper mb-3" data-select-id="' + inputId + '">';
+            blockHTML += '<label class="block text-text-primary mb-1" for="' + inputId + '-input">' +
+                roleLabel + ' <span class="text-error">*</span></label>';
+            blockHTML += '<div class="relative">';
+            blockHTML += '<input type="text" id="' + inputId + '-input" ' +
+                'class="searchable-select-input w-full border rounded p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" ' +
+                'placeholder="Cari petinggi..." autocomplete="off" required ' +
+                'value="' + (saved ? escapeAttr(saved.label) : '') + '" ' +
+                'oninvalid="this.setCustomValidity(\'' + roleLabel + ' tidak boleh kosong\')" ' +
+                'oninput="this.setCustomValidity(\'\')">';
+            blockHTML += '<i class="fa-solid fa-chevron-down absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>';
+            blockHTML += '<div class="searchable-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">';
+            blockHTML += '<div class="searchable-options">';
+            blockHTML += '<div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b border-border-light searchable-option" data-value="">' +
+                '-- Pilih Cari petinggi... --</div>';
+
+            getExecutiveOptions().forEach(function (exec) {
+                const label = exec.name + (exec.position ? ' - ' + exec.position : '');
+                blockHTML += '<div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light searchable-option" ' +
+                    'data-value="' + exec.id + '" data-search="' + escapeAttr(label.toLowerCase()) + '" ' +
+                    'data-label="' + escapeAttr(label) + '">' +
+                    '<div class="font-medium text-text-heading">' + escapeAttr(label) + '</div></div>';
+            });
+
+            blockHTML += '</div>';
+            blockHTML += '<div class="searchable-no-results p-4 text-center text-sm text-text-secondary hidden">' +
+                '<i class="fa-solid fa-search mb-2 text-2xl text-text-placeholder"></i>' +
+                '<p>Tidak ada data ditemukan</p></div>';
+            blockHTML += '</div></div>';
+            blockHTML += '<input type="hidden" name="' + fieldName + '" class="searchable-select-hidden" value="' +
+                (saved ? escapeAttr(saved.id) : '') + '">';
+            blockHTML += '</div>';
+        });
+
+        block.innerHTML = blockHTML;
+        signatorySectionsContainer.appendChild(block);
+    });
+
+    if (typeof window.initSearchableSelects === 'function') {
+        window.initSearchableSelects(signatorySectionsContainer);
     }
 }
 
@@ -804,6 +936,30 @@ document.addEventListener('DOMContentLoaded', function () {
     noProjectWarningDiv = document.getElementById('no-project-warning');
     noProjectList = document.getElementById('no-project-list');
     generateSubmitBtn = document.querySelector('#generateModal button[type="submit"]');
+    signatorySectionsContainer = document.getElementById('signatory-sections');
+
+    // Catat pilihan penanda tangan ke map persisten (event delegation sekali,
+    // bukan saat render ulang) agar pilihan tidak hilang saat blok dirender
+    // ulang (user menambah/menghapus proyek lain).
+    if (signatorySectionsContainer) {
+        signatorySectionsContainer.addEventListener('click', function (e) {
+            const option = e.target.closest('.searchable-option');
+            if (!option) return;
+
+            const wrapper = option.closest('.searchable-select-wrapper');
+            const hidden = wrapper ? wrapper.querySelector('.searchable-select-hidden') : null;
+            if (!hidden) return;
+
+            const match = hidden.name.match(/\[([^\]]+)\]\[([^\]]+)\]$/);
+            if (!match) return;
+
+            const key = match[1] + '\u0000' + match[2];
+            signatorySelections.set(key, {
+                id: option.dataset.value,
+                label: option.dataset.label || ''
+            });
+        });
+    }
 
     // Load weeks when month or year changes in generate modal
     if (periodMonthSelect) {
@@ -834,12 +990,14 @@ document.addEventListener('DOMContentLoaded', function () {
         projectMultiWrapper.addEventListener('change', function (e) {
             if (e.target.matches('.searchable-multi-checkbox, .searchable-multi-select-all')) {
                 scheduleCheck();
+                renderSignatorySections();
             }
         });
 
         projectMultiWrapper.addEventListener('click', function (e) {
             if (e.target.matches('.searchable-multi-tag-remove')) {
                 scheduleCheck();
+                renderSignatorySections();
             }
         });
     }
@@ -859,6 +1017,9 @@ document.addEventListener('DOMContentLoaded', function () {
         generateSubmitBtn.classList.remove('hover:bg-success-hover');
     }
 
+    // Render placeholder blok penanda tangan (belum ada proyek terpilih)
+    renderSignatorySections();
+
     // Dropdown proyek bersama (filter index): searchable dengan pagination
     // 10 item per load dari Rekap Proyek.
     initAllProjectDropdowns();
@@ -877,6 +1038,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Reset pilihan proyek (multi-select) di modal generate
             resetProjectMultiSelect();
+
+            // Bersihkan pilihan penanda tangan lalu render ulang blok (placeholder)
+            signatorySelections.clear();
+            renderSignatorySections();
 
             // Reset button state
             if (generateSubmitBtn) {

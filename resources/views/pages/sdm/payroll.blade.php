@@ -148,7 +148,7 @@
          - bulkPayModal   : konfirmasi bayar massal (PATCH).
          ============================================================ --}}
     {{-- Modal Generate Payroll --}}
-    @include('components.sdm.payroll.generate-modal')
+    @include('components.sdm.payroll.generate-modal', ['executives' => $executives])
 
     {{-- Hapus modal Bayar per-item: kini pembayaran hanya via Bulk Pay --}}
 
@@ -192,6 +192,11 @@
             'filterMonth' => request('month'),
             'filterYear' => request('year'),
             'filterProject' => request('project_name'),
+            'executives' => $executives->map(fn($e) => [
+                'id' => $e->id,
+                'name' => $e->name,
+                'position' => $e->position,
+            ])->values()->toArray(),
         ];
     @endphp
 

@@ -2,24 +2,7 @@
     Payroll PDF Export Template
 
     Generates a landscape A4 PDF report for payroll data.
-
-    Sections:
-    1. Header - Company name, report title, project, period, print date
-    2. Attendance Table - Daily attendance status per employee per day
-    3. Salary Summary Table - Daily wage, present days, overtime, kasbon, net salary
-    4. Fund Recap - Total wages, kasbon, grand total
-    5. Footer - Auto-generated timestamp
-
-    Layout: A4 Landscape (DomPDF)
-    Orientation: Landscape (many columns)
-
-    Variables received from PayrollController@exportPdf:
-    - $payrolls: Collection with employee and attendances loaded
-    - $periodText: Formatted period string
-    - $projectName: Project name (or null)
-    - $dateRange: Date range string (e.g., "01 Feb 2026 - 07 Feb 2026")
-    - $weekDays: Array of 7 date strings for column headers
-    - $totalBaseSalary, $totalDeduction, $totalOvertime, $totalNetSalary: Summary totals
+    Layout adjusted to match official attendance sheet template.
 --}}
 
 <!DOCTYPE html>
@@ -28,217 +11,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Penggajian & Absensi</title>
+    <title>Daftar Absensi Pekerja</title>
     <style>
         @page {
-            margin: 0.5cm 1cm;
+            margin: 0.6cm 0.8cm;
         }
 
         body {
-            font-family: 'Times New Roman', Times, serif, 'DejaVu Sans';
-            font-size: 10px;
-            color: #333;
-            line-height: 1.3;
+            /* DejaVu Sans digunakan agar DomPDF dapat merender simbol ceklis (✓) dengan benar */
+            font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+            font-size: 9px;
+            color: #000;
+            line-height: 1.2;
         }
 
-        .header {
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px double #444;
+        /* HEADER SECTION */
+        .header-table {
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            vertical-align: middle;
+        }
+
+        .company-brand {
+            font-size: 11px;
+            font-weight: bold;
+            color: #c0392b;
+            line-height: 1.1;
+        }
+
+        .company-sub {
+            font-size: 7px;
+            letter-spacing: 1px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .doc-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: underline;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             text-align: center;
         }
 
-        .company-name {
-            font-size: 16px;
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .meta-table td {
+            padding: 2px 0;
+            vertical-align: bottom;
+        }
+
+        .meta-border {
+            border-bottom: 1px solid #000;
+        }
+
+        /* MAIN TABLE SECTION */
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #333;
+            margin-bottom: 8px;
+        }
+
+        .main-table th {
+            background-color: #b0b0b0;
+            color: #000;
+            font-weight: bold;
+            font-size: 8px;
+            padding: 5px 2px;
+            border: 1px solid #444;
+            text-align: center;
+            vertical-align: middle;
+            text-transform: uppercase;
+        }
+
+        .main-table td {
+            padding: 4px 3px;
+            border: 1px solid #666;
+            font-size: 8.5px;
+        }
+
+        .main-table tfoot td {
+            background-color: #b0b0b0;
+            font-weight: bold;
+            border: 1px solid #444;
+            font-size: 9px;
+        }
+
+        .symbol-cell {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: bold; }
+
+        .legend {
+            font-size: 8.5px;
+            color: #333;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        /* SIGNATURE SECTION */
+        .sig-table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+        }
+
+        .sig-box {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .sig-title {
+            font-size: 9px;
             font-weight: bold;
             text-transform: uppercase;
             margin-bottom: 5px;
         }
 
-        .doc-title {
-            font-size: 14px;
-            margin-bottom: 10px;
-            color: #555;
+        .sig-space {
+            min-height: 45px;
+            height: 45px;
         }
 
-        .meta-info {
-            width: 100%;
-            margin-bottom: 20px;
-            font-size: 10px;
-        }
-
-        .meta-info td {
-            padding: 3px 0;
-            vertical-align: top;
-        }
-
-        .label {
-            font-weight: bold;
-            width: 100px;
-            color: #555;
-        }
-
-        .main-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-        }
-
-        .main-table th {
-            background-color: #f4f4f4;
-            color: #333;
-            font-weight: bold;
-            padding: 8px 4px;
-            border: 1px solid #ccc;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .main-table td {
-            padding: 6px 4px;
-            border: 1px solid #ccc;
-        }
-
-        .main-table tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .text-left {
-            text-align: left;
-        }
-
-        .font-bold {
-            font-weight: bold;
-        }
-
-        .summary-container {
-            width: 100%;
-            display: table;
-            margin-top: 10px;
-        }
-
-        .summary-col {
-            display: table-cell;
-            width: 48%;
-            vertical-align: top;
-            padding: 10px;
-            border: 1px solid #eee;
-            background: #fff;
-        }
-
-        .spacer-col {
-            width: 4%;
-        }
-
-        .summary-header {
-            font-weight: bold;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 5px;
-            margin-bottom: 5px;
-            font-size: 11px;
-        }
-
-        .summary-row {
-            display: table;
-            width: 100%;
-            margin-bottom: 3px;
-        }
-
-        .s-label {
-            display: table-cell;
-            text-align: left;
-        }
-
-        .s-value {
-            display: table-cell;
-            text-align: right;
-            font-weight: bold;
-        }
-
-        .grand-total {
-            margin-top: 20px;
-            background-color: #f0f0f0;
-            border: 2px solid #333;
-            padding: 10px;
-            text-align: right;
-            font-size: 14px;
-        }
-
-        .sig-box {
-            display: table-cell;
-            width: 33%;
-            text-align: center;
-            vertical-align: top;
-        }
-
-        .sig-line {
-            margin-top: 60px;
-            border-top: 1px solid #333;
-            width: 80%;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .legend {
+        .sig-name {
             font-size: 9px;
-            color: #666;
-            margin-top: -10px;
-            margin-bottom: 20px;
-            font-style: italic;
+            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
-        <div class="doc-title">DAFTAR ABSENSI & PENGGAJIAN PEKERJA</div>
-    </div>
-
-    <table class="meta-info">
-        @if ($projectName)
-            <tr>
-                <td class="label">PROYEK</td>
-                <td>: {{ $projectName }}</td>
-            </tr>
-        @endif
+    {{-- HEADER KOP --}}
+    <table class="header-table">
         <tr>
-            <td class="label">PERIODE</td>
-            <td>: {{ $periodText }}</td>
+            <td style="width: 28%;">
+                <div class="company-brand">PT. AGHITSNA KARYA INDAH</div>
+                <div class="company-sub">DESIGN AND BUILD</div>
+            </td>
+            <td style="width: 44%;">
+                <div class="doc-title">DAFTAR ABSENSI PEKERJA</div>
+            </td>
+            <td style="width: 28%;">
+                <table class="meta-table">
+                    <tr>
+                        <td style="width: 65px;">PROYEK</td>
+                        <td>: <span class="meta-border">{{ $projectName ?? '.........................................' }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>TANGGAL</td>
+                        <td>: <span class="meta-border">{{ $dateRange ?? $periodText }}</span></td>
+                    </tr>
+                </table>
+            </td>
         </tr>
-        @if ($dateRange)
-            <tr>
-                <td class="label">TANGGAL</td>
-                <td>: {{ $dateRange }}</td>
-            </tr>
-        @endif
     </table>
 
+    {{-- TABEL ABSENSI UTAMA --}}
     @if (count($weekDays) > 0)
-        {{-- TABEL ABSENSI HARIAN --}}
         <table class="main-table">
             <thead>
                 <tr>
-                    <th rowspan="2" style="width: 30px;">NO</th>
-                    <th rowspan="2">NAMA PEKERJA</th>
-                    <th colspan="7">KEHADIRAN (7 Hari)</th>
-                    <th rowspan="2" style="width: 80px;">UPAH HARIAN</th>
-                    <th rowspan="2" style="width: 70px;">KASBON</th>
-                    <th rowspan="2" style="width: 70px;">LEMBUR</th>
-                    <th rowspan="2" style="width: 90px;">TOTAL UPAH</th>
+                    <th rowspan="2" style="width: 25px;">NO</th>
+                    <th rowspan="2" style="width: 120px;">NAMA PEKERJA</th>
+                    <th rowspan="2" style="width: 80px;">JABATAN</th>
+                    <th rowspan="2" style="width: 75px;">UPAH/HARI</th>
+                    <th colspan="{{ count($weekDays) }}">HARI</th>
+                    <th rowspan="2" style="width: 60px;">JUMLAH HARI KERJA</th>
+                    <th rowspan="2" style="width: 65px;">LEMBUR</th>
+                    <th rowspan="2" style="width: 65px;">KASBON</th>
+                    <th rowspan="2" style="width: 85px;">JUMLAH UPAH DIBAYAR</th>
                 </tr>
                 <tr>
                     @foreach ($weekDays as $date)
-                        <th style="font-size: 8px; width: 25px;">{{ ['MING', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'][\Carbon\Carbon::parse($date)->dayOfWeek] }}</th>
+                        <th style="width: 24px; font-size: 8px;">
+                            {{ ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MING'][\Carbon\Carbon::parse($date)->dayOfWeekIso - 1] }}
+                        </th>
                     @endforeach
                 </tr>
             </thead>
@@ -247,17 +211,19 @@
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
+                        <td class="text-center">{{ $payroll->employee->position ?? '-' }}</td>
+                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
                         @foreach ($weekDays as $date)
                             @php
                                 $attendance = $payroll->attendances->first(
                                     fn($a) => $a->attendance_date?->format('Y-m-d') === $date
                                 );
                                 $status = $attendance ? $attendance->status : '';
-                                $symbol = 'L';
+                                $symbol = '';
                                 $bg = '';
 
                                 if ($status === 'hadir') {
-                                    $symbol = '✓';
+                                    $symbol = '&#10003;'; // HTML entity untuk centang agar terbaca di DomPDF
                                 } elseif ($status === 'lembur') {
                                     $symbol = 'Lb';
                                     $bg = '#e3f2fd';
@@ -272,39 +238,43 @@
                                     $bg = '#f3e5f5';
                                 }
                             @endphp
-                            <td class="text-center" style="background-color: {{ $bg }}">{{ $symbol }}
-                            </td>
+                            <td class="text-center symbol-cell" style="background-color: {{ $bg }}">{!! $symbol !!}</td>
                         @endforeach
-                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
+                        <td class="text-center font-bold">{{ $payroll->present_days }}</td>
                         <td class="text-right">{{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
                         <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="{{ 6 + count($weekDays) }}" class="text-center">TOTAL</td>
+                    <td class="text-right">{{ number_format($payrolls->sum('kasbon_deduction'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($payrolls->sum('net_salary'), 0, ',', '.') }}</td>
+                </tr>
+            </tfoot>
         </table>
-        <div class="legend">
-            Keterangan: ✓=Hadir, Lb=Lembur, L=Libur, I=Izin, S=Sakit, C=Cuti
-        </div>
     @else
-        {{-- TABEL RINGKASAN --}}
+        {{-- REKAP ABSENSI BULANAN/PERIODE TANPA HARIAN --}}
         <table class="main-table">
             <thead>
                 <tr>
-                    <th rowspan="2" style="width: 30px;">NO</th>
+                    <th rowspan="2" style="width: 25px;">NO</th>
                     <th rowspan="2">NAMA PEKERJA</th>
+                    <th rowspan="2" style="width: 90px;">JABATAN</th>
+                    <th rowspan="2" style="width: 80px;">UPAH/HARI</th>
                     <th colspan="5">REKAP KEHADIRAN</th>
-                    <th rowspan="2">UPAH HARIAN</th>
-                    <th rowspan="2">BONUS LEMBUR</th>
-                    <th rowspan="2">POT. KASBON</th>
-                    <th rowspan="2">DITERIMA</th>
+                    <th rowspan="2" style="width: 70px;">LEMBUR</th>
+                    <th rowspan="2" style="width: 70px;">KASBON</th>
+                    <th rowspan="2" style="width: 95px;">JUMLAH UPAH DIBAYAR</th>
                 </tr>
                 <tr>
-                    <th style="font-size: 8px;">Hdr</th>
-                    <th style="font-size: 8px;">Lbr</th>
-                    <th style="font-size: 8px;">Izn</th>
-                    <th style="font-size: 8px;">Skt</th>
-                    <th style="font-size: 8px;">Cut</th>
+                    <th style="font-size: 8px; width: 25px;">Hdr</th>
+                    <th style="font-size: 8px; width: 25px;">Lbr</th>
+                    <th style="font-size: 8px; width: 25px;">Izn</th>
+                    <th style="font-size: 8px; width: 25px;">Skt</th>
+                    <th style="font-size: 8px; width: 25px;">Cut</th>
                 </tr>
             </thead>
             <tbody>
@@ -312,67 +282,60 @@
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
+                        <td class="text-center">{{ $payroll->employee->position ?? '-' }}</td>
+                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
                         <td class="text-center">{{ $payroll->present_days }}</td>
                         <td class="text-center">{{ $payroll->overtime_days }}</td>
                         <td class="text-center">{{ $payroll->permission_days }}</td>
                         <td class="text-center">{{ $payroll->sick_days }}</td>
                         <td class="text-center">{{ $payroll->leave_days }}</td>
-                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
                         <td class="text-right">{{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
-                        <td class="text-right text-red" style="color: #c0392b;">
-                            {{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
+                        <td class="text-right" style="color: #c0392b;">{{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
                         <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="10" class="text-center">TOTAL</td>
+                    <td class="text-right">{{ number_format($payrolls->sum('kasbon_deduction'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($payrolls->sum('net_salary'), 0, ',', '.') }}</td>
+                </tr>
+            </tfoot>
         </table>
     @endif
 
-    {{-- SUMMARY SECTION --}}
-    @php
-        $totalKerja = $payrolls->sum(fn($payroll) => $payroll->base_salary * $payroll->present_days);
-        $totalWages = $payrolls->sum('net_salary');
-        $totalLembur = $payrolls->sum('overtime_total');
-        $totalKasbon = $payrolls->sum('kasbon_deduction');
-    @endphp
+    {{-- KETERANGAN LEGEND --}}
+    <div class="legend">
+        Keterangan: &#10003;=Hadir, Lb=Lembur, I=Izin, S=Sakit, C=Cuti — Minggu adalah hari libur
+    </div>
 
-    <div class="summary-container">
-        <!-- Potongan Kasbon -->
-        <div class="summary-col">
-            <div class="summary-header">REKAPITULASI DANA</div>
-            <div class="summary-row">
-                <div class="s-label">Total Kerja</div>
-                <div class="s-value">{{ number_format($totalKerja, 0, ',', '.') }}</div>
-            </div>
-            <div class="summary-row">
-                <div class="s-label">Total Lembur</div>
-                <div class="s-value">+ {{ number_format($totalLembur, 0, ',', '.') }}</div>
-            </div>
-            <div class="summary-row" style="color: #c0392b;">
-                <div class="s-label">Total Kasbon</div>
-                <div class="s-value">- {{ number_format($totalKasbon, 0, ',', '.') }}</div>
-            </div>
-            @if (($teamKasbonRecap ?? collect())->isNotEmpty())
-                @foreach ($teamKasbonRecap as $divisionName => $amount)
-                    <div class="summary-row" style="color: #c0392b;">
-                        <div class="s-label">Kasbon Divisi {{ $divisionName }}</div>
-                        <div class="s-value">{{ number_format($amount, 0, ',', '.') }}</div>
+    {{-- BLOK TANDA TANGAN --}}
+    <table class="sig-table">
+        <tr>
+            @foreach (['disetujui' => 'DISETUJUI OLEH,', 'diperiksa' => 'DIPERIKSA OLEH,', 'dibuat' => 'DIBUAT OLEH,'] as $roleKey => $roleLabel)
+                @php $signatory = $signatures[$roleKey] ?? null; @endphp
+                <td class="sig-box">
+                    <div class="sig-title">{{ $roleLabel }}</div>
+                    <div class="sig-space">
+                        @if ($signatory && !empty($signatory['signature_image']))
+                            <img src="{{ storage_path('app/public/' . $signatory['signature_image']) }}"
+                                alt="Tanda tangan {{ $signatory['name'] ?? '' }}"
+                                style="max-height: 40px; max-width: 120px; object-fit: contain;">
+                        @endif
                     </div>
-                @endforeach
-            @endif
-            <div class="summary-row" style="border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 5px;">
-                <div class="s-label font-bold">Total Upah Pekerja</div>
-                <div class="s-value font-bold">{{ number_format($totalWages, 0, ',', '.') }}</div>
-            </div>
-        </div>
-    </div>
+                    <div class="sig-name">
+                        ( {{ $signatory['name'] ?? '............................................' }} )
+                    </div>
+                    @if ($signatory && !empty($signatory['position']))
+                        <div style="font-size: 8px; color: #555; margin-top: 2px;">{{ $signatory['position'] }}</div>
+                    @endif
+                </td>
+            @endforeach
+        </tr>
+    </table>
 
-    <div class="grand-total">
-        TOTAL DIBAYARKAN: <span style="font-size: 18px; font-weight: bold;">Rp
-            {{ number_format($totalWages, 0, ',', '.') }}</span>
-    </div>
-
-    <div style="text-align: center; margin-top: 30px; font-size: 8px; color: #aaa;">
+    <div style="text-align: center; margin-top: 25px; font-size: 7.5px; color: #888;">
         Dicetak otomatis oleh Sistem ERP PT. Aghitsna Karya Indah pada {{ date('d/m/Y H:i') }}
     </div>
 </body>

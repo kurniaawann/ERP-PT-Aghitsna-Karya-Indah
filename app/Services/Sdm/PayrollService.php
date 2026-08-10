@@ -6,6 +6,7 @@ use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\KasbonPayment;
+use App\Models\Sdm\Executive;
 
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -20,8 +21,8 @@ use Illuminate\Support\Collection;
  *
  * Identifikasi periode menggunakan period_start_date sebagai kunci utama.
  * Minggu berjalan dari Senin-Sabtu dan TIDAK dipotong di batas bulan.
- * Lembur hari Minggu (akhir periode) ikut dihitung dalam payroll,
- * namun Minggu tidak wajib diisi dalam validasi kelengkapan absensi.
+ * Hari Minggu adalah hari libur: tidak ada absensi maupun lembur di hari
+ * Minggu, sehingga Minggu dikecualikan dari semua perhitungan payroll.
  */
 class PayrollService
 {
@@ -90,6 +91,108 @@ class PayrollService
     }
 
     /**
+     * Mendapatkan daftar petinggi untuk blok tanda tangan dokumen payroll.
+     *
+     * Mengembalikan satu petinggi per peran (disetujui/diperiksa/dibuat)
+     * milik user saat ini. Dipakai cetakan PDF payroll untuk kolom
+     * "Disetujui oleh", "Diperiksa oleh", dan "Dibuat oleh" — data diambil
+     * dari modul Data Petinggi (executives).
+     *
+     * @return array<string, Executive|null>
+     */
+    public function getSignatureExecutives(): array
+    {
+        $executives = Executive::where('created_by', auth()->id())
+            ->whereNotNull('role')
+            ->get()
+            ->keyBy('role');
+
+        return [
+            'disetujui' => $executives->get('disetujui'),
+            'diperiksa' => $executives->get('diperiksa'),
+            'dibuat' => $executives->get('dibuat'),
+        ];
+    }
+
+    /**
+     * Membangun snapshot petinggi dari ID terpilih untuk blok tanda tangan.
+     *
+     * Mengambil petinggi milik user saat ini berdasarkan ID per peran lalu
+     * mengubahnya menjadi array snapshot berisi id, name, position, dan
+     * signature_image. Dipanggil saat generatePayroll agar pilihan
+     * penandatangan tersimpan pada setiap record payroll.
+     *
+     * Peran yang tidak terpilih (ID kosong) bernilai null — kolom tanda
+     * tangan pada PDF akan menampilkan garis putus-putus sebagai fallback.
+     *
+     * @param  array<string, mixed>  $signatureIds  Mapping peran => ID petinggi
+     * @return array<string, array<string, mixed>|null>
+     */
+    public function resolveSignatureSnapshot(array $signatureIds): array
+    {
+        $roles = ['disetujui', 'diperiksa', 'dibuat'];
+
+        $ids = array_values(array_filter(array_map(
+            fn ($value) => (int) $value,
+            array_intersect_key($signatureIds, array_flip($roles))
+        )));
+
+        $executives = Executive::where('created_by', auth()->id())
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $snapshot = [];
+        foreach ($roles as $role) {
+            $id = isset($signatureIds[$role]) ? (int) $signatureIds[$role] : null;
+            $executive = $id ? $executives->get($id) : null;
+
+            $snapshot[$role] = $executive ? [
+                'id' => $executive->id,
+                'name' => $executive->name,
+                'position' => $executive->position,
+                'signature_image' => $executive->signature_image,
+            ] : null;
+        }
+
+        return $snapshot;
+    }
+
+    /**
+     * Mendapatkan snapshot petinggi untuk cetakan PDF sebuah payroll.
+     *
+     * Mengutamakan snapshot yang tersimpan saat payroll di-generate agar
+     * dokumen konsisten dengan pilihan penandatangan saat itu. Bila payroll
+     * belum memiliki snapshot (data lama), fallback ke pemetaan per peran
+     * dari modul Data Petinggi (getSignatureExecutives).
+     *
+     * @param  Payroll|null  $payroll
+     * @return array<string, array<string, mixed>|null>
+     */
+    public function getPayrollSignatures(?Payroll $payroll): array
+    {
+        if ($payroll && is_array($payroll->signatures)) {
+            return $payroll->signatures;
+        }
+
+        $fallback = $this->getSignatureExecutives();
+
+        $snapshot = [];
+        foreach (['disetujui', 'diperiksa', 'dibuat'] as $role) {
+            $executive = $fallback[$role] ?? null;
+
+            $snapshot[$role] = $executive ? [
+                'id' => $executive->id,
+                'name' => $executive->name,
+                'position' => $executive->position,
+                'signature_image' => $executive->signature_image,
+            ] : null;
+        }
+
+        return $snapshot;
+    }
+
+    /**
      * Memvalidasi kelengkapan absensi untuk karyawan (per proyek, jika dipilih)
      * dalam periode minggu tertentu.
      *
@@ -110,19 +213,19 @@ class PayrollService
      * Logika alur per karyawan:
      * 1. Lewati jika sudah ada payroll untuk periode ini (already_generated).
      * 2. Lewati jika join_date lebih besar dari akhir periode (belum bekerja).
-     * 3. Susun daftar hari kerja yang diwajibkan: dari max(join_date, start)
-     *    sampai end, mengecualikan Minggu.
-     * 4. Bandingkan dengan tanggal absensi milik karyawan (dari batch query);
-     *    selisihnya = hari hilang. Lengkap → complete, ada kurang → incomplete.
-     * 5. can_generate = ada karyawan baru DAN tidak ada yang incomplete.
-     * 6. Rentang absensi diambil sampai endDate+1 (termasuk Minggu) karena
-     *    lembur Minggu ikut dihitung, meski Minggu bukan hari kerja wajib.
-     *
-     * @param  Carbon        $periodStartDate
-     * @param  Carbon        $periodEndDate
-     * @param  array|null    $projectNames  Filter hanya karyawan pada proyek-proyek tertentu (opsional)
-     * @return array
-     */
+ * 3. Susun daftar hari kerja yang diwajibkan: dari max(join_date, start)
+ *    sampai end, mengecualikan Minggu (hari libur).
+ * 4. Bandingkan dengan tanggal absensi milik karyawan (dari batch query);
+ *    selisihnya = hari hilang. Lengkap → complete, ada kurang → incomplete.
+ * 5. can_generate = ada karyawan baru DAN tidak ada yang incomplete.
+ * 6. Rentang absensi dibatasi startDate sampai endDate (Senin-Sabtu) —
+ *    Minggu tidak dihitung karena tidak ada absensi di hari libur.
+ *
+ * @param  Carbon        $periodStartDate
+ * @param  Carbon        $periodEndDate
+ * @param  array|null    $projectNames  Filter hanya karyawan pada proyek-proyek tertentu (opsional)
+ * @return array
+ */
     public function validateAttendanceCompleteness(Carbon $periodStartDate, Carbon $periodEndDate, ?array $projectNames = null): array
     {
         $employees = Employee::where('created_by', auth()->id())
@@ -141,11 +244,11 @@ class PayrollService
             ->pluck('employee_id')
             ->toArray();
 
-        // Rentang absensi meliputi Minggu (endDate + 1) karena lembur hari Minggu
-        // diperbolehkan diinput dan harus ikut dihitung dalam payroll.
-        // Minggu tidak termasuk hari kerja wajib (tidak divalidasi kelengkapan).
+        // Rentang absensi = startDate sampai endDate (Senin-Sabtu).
+        // Minggu adalah hari libur, jadi tidak ada absensi maupun lembur
+        // yang perlu diambil untuk hari Minggu.
         $allAttendances = Attendance::whereIn('employee_id', $employees->pluck('employee_code'))
-            ->whereBetween('attendance_date', [$startDate, $endDate->copy()->addDay()])
+            ->whereBetween('attendance_date', [$startDate, $endDate])
             ->get()
             ->groupBy('employee_id');
         // === AKHIR QUERY BATCH ===
@@ -276,13 +379,16 @@ class PayrollService
      *
      * @param  Carbon        $periodStartDate
      * @param  Carbon        $periodEndDate
-     * @param  array|null    $projectNames  Filter hanya karyawan pada proyek-proyek tertentu (opsional)
+     * @param  array|null    $projectNames   Filter hanya karyawan pada proyek-proyek tertentu (opsional)
+     * @param  array|null    $signatories    Penanda tangan per proyek:
+     *                                       [Nama Proyek => [disetujui|diperiksa|dibuat => ID petinggi]]
      * @return array  ['success' => bool, 'message' => string]
      */
     public function generatePayroll(
         Carbon $periodStartDate,
         Carbon $periodEndDate,
-        ?array $projectNames = null
+        ?array $projectNames = null,
+        ?array $signatories = null
     ): array {
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
@@ -291,6 +397,10 @@ class PayrollService
 
         $periodMonth = $startDate->month;
         $periodYear = $startDate->year;
+
+        // Snapshot penanda tangan disimpan per payroll sesuai proyek karyawan
+        // (setiap proyek bisa memiliki penanda tangan berbeda).
+        $signatories = $signatories ?? [];
 
         // Mendeteksi week_number dari getWeeksInMonth
         $weeks = static::getWeeksInMonth($periodYear, $periodMonth);
@@ -314,10 +424,11 @@ class PayrollService
             ->pluck('employee_id')
             ->toArray();
 
-        // Rentang absensi meliputi Minggu (endDate + 1) karena lembur hari Minggu
-        // diperbolehkan diinput dan harus ikut dihitung dalam payroll.
+        // Rentang absensi = startDate sampai endDate (Senin-Sabtu).
+        // Minggu adalah hari libur, jadi tidak ada absensi maupun lembur
+        // yang perlu diambil untuk hari Minggu.
         $allAttendances = Attendance::whereIn('employee_id', $employees->pluck('employee_code'))
-            ->whereBetween('attendance_date', [$startDate, $endDate->copy()->addDay()])
+            ->whereBetween('attendance_date', [$startDate, $endDate])
             ->get()
             ->groupBy('employee_id');
 
@@ -463,6 +574,12 @@ class PayrollService
             $totalKasbonDeduction = $personalKasbon;
             $netWage = $grossWage - $totalKasbonDeduction;
 
+            // Snapshot penanda tangan proyek karyawan ini (setiap proyek bisa
+            // memiliki penanda tangan yang berbeda pada batch yang sama).
+            $signaturesSnapshot = $this->resolveSignatureSnapshot(
+                $signatories[$employee->project_name] ?? []
+            );
+
             $payroll = Payroll::create([
                 'employee_id' => $employee->employee_code,
                 'period_month' => $periodMonth,
@@ -484,6 +601,7 @@ class PayrollService
                 'kasbon_deduction' => $totalKasbonDeduction,
                 'net_salary' => $netWage,
                 'status' => 'draft',
+                'signatures' => $signaturesSnapshot,
                 'created_by' => auth()->id(),
             ]);
 

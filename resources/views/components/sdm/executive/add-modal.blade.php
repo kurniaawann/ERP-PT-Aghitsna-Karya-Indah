@@ -3,7 +3,9 @@
      Form untuk menambah data petinggi baru ke dalam sistem.
      Fields:
        - name (required)    : Nama petinggi, maks 150 karakter
-       - position (required): Jabatan, maks 150 karakter
+       - position (opsional): Jabatan, maks 150 karakter
+       - role (opsional)    : Peran pada blok tanda tangan dokumen
+                              (Disetujui oleh / Diperiksa oleh / Dibuat oleh)
        - signature_image (opsional): Gambar tanda tangan
      ============================================================ --}}
 <x-modal id="addModal" title="Tambah Petinggi" action="{{ route('executive.store') }}" method="POST"
@@ -17,12 +19,24 @@
             oninput="this.setCustomValidity('')">
     </div>
 
-    {{-- Jabatan (wajib diisi) --}}
+    {{-- Jabatan (opsional) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jabatan <span class="text-error">*</span></label>
-        <input type="text" name="position" class="w-full border rounded p-2" placeholder="cth: Direktur Utama" required
-            maxlength="150" oninvalid="this.setCustomValidity('Jabatan tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <label class="block text-text-primary mb-1">Jabatan</label>
+        <input type="text" name="position" class="w-full border rounded p-2" placeholder="cth: Direktur Utama"
+            maxlength="150">
+    </div>
+
+    {{-- Peran Tanda Tangan (opsional) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Peran Tanda Tangan</label>
+        <select name="role" class="w-full border rounded p-2">
+            <option value="">Pilih Peran (opsional)</option>
+            @foreach (\App\Models\Sdm\Executive::ROLE_LABELS as $roleValue => $roleLabel)
+                <option value="{{ $roleValue }}">{{ $roleLabel }}</option>
+            @endforeach
+        </select>
+        <p class="text-xs text-text-secondary mt-1">Peran menentukan kolom tanda tangan pada cetakan
+            payroll: Disetujui, Diperiksa, atau Dibuat. Setiap peran hanya bisa dipakai satu petinggi.</p>
     </div>
 
     {{-- Tanda Tangan (opsional) --}}

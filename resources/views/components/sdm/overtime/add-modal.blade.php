@@ -28,7 +28,9 @@
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
         <input type="date" name="attendance_date" id="add-attendance-date"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
+            max="{{ date('Y-m-d') }}"
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        <p class="text-xs text-text-secondary mt-1">Minggu adalah hari libur — lembur tidak dapat diinput pada hari Minggu</p>
     </div>
 
     {{-- Duplicate Warning: client-side validation --}}

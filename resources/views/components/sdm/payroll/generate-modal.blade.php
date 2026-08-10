@@ -36,6 +36,8 @@
                     <li><strong class="text-error">Setiap karyawan harus memiliki absensi lengkap sesuai hari
                             kerjanya</strong></li>
                     <li>Kasbon hanya dipotong jika karyawan sudah membayar</li>
+                    <li><strong>Pilih penanda tangan</strong> per proyek untuk dokumen payroll
+                        (Disetujui/Diperiksa/Dibuat oleh)</li>
                 </ul>
             </div>
         </div>
@@ -94,6 +96,21 @@
     {{-- Hidden inputs for period date range (populated by JS when week is selected) --}}
     <input type="hidden" name="period_start_date" id="period_start_date" value="">
     <input type="hidden" name="period_end_date" id="period_end_date" value="">
+
+    {{-- Penanda Tangan — dipilih PER PROYEK saat generate dan disimpan
+         sebagai snapshot pada tiap payroll (dipakai blok tanda tangan PDF).
+         Blok form per proyek dirender dinamis oleh JS (renderSignatorySections)
+         dari daftar proyek yang dipilih di multi-select di atas. Nama field:
+         signatories[NAMA_PROYEK][disetujui|diperiksa|dibuat] = ID petinggi. --}}
+    <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-pen-nib text-primary"></i>
+            <p class="text-sm font-semibold text-text-primary">Penanda Tangan</p>
+        </div>
+        <p class="text-xs text-text-secondary mb-3">Setiap proyek bisa memiliki penanda tangan yang berbeda.
+            Isi form penanda tangan untuk setiap proyek yang dipilih. Data diambil dari modul Data Petinggi.</p>
+        <div id="signatory-sections"></div>
+    </div>
 
     {{-- Loading State --}}
     <div id="checking-loader" class="hidden mb-3 p-4 bg-surface-secondary border border-border rounded-lg text-center">

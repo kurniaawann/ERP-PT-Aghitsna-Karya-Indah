@@ -44,6 +44,17 @@ document.addEventListener('DOMContentLoaded', function () {
  */
 const existingAttendance = window.overtimeExistingAttendance || {};
 
+/**
+ * Memeriksa apakah sebuah tanggal (format Y-m-d) jatuh pada hari Minggu.
+ *
+ * @param {string} dateStr Tanggal berformat Y-m-d.
+ * @return {boolean} true jika hari Minggu.
+ */
+function isSunday(dateStr) {
+    if (!dateStr) return false;
+    return new Date(dateStr + 'T00:00:00').getDay() === 0;
+}
+
 // --- Add Modal Duplicate Validation ---
 
 /**
@@ -76,6 +87,16 @@ function validateAddOvertime() {
     if (!employeeId || !date) {
         hideAddDuplicateWarning(addSubmitBtn);
         return true;
+    }
+
+    if (isSunday(date)) {
+        showAddDuplicateWarning(
+            addDuplicateWarning,
+            addDuplicateWarningText,
+            addSubmitBtn,
+            'Hari Minggu adalah hari libur. Lembur tidak dapat diinput pada hari Minggu. Silakan pilih hari Senin sampai Sabtu.'
+        );
+        return false;
     }
 
     if (existingAttendance[employeeId] && existingAttendance[employeeId][date]) {
@@ -217,6 +238,17 @@ function initEditModalValidation() {
             if (date === originalDate) {
                 hideEditDuplicateWarning(duplicateWarning, submitBtn);
                 return true;
+            }
+
+            // Minggu adalah hari libur — lembur tidak boleh diinput.
+            if (isSunday(date)) {
+                showEditDuplicateWarning(
+                    duplicateWarning,
+                    duplicateWarningText,
+                    submitBtn,
+                    'Hari Minggu adalah hari libur. Lembur tidak dapat diinput pada hari Minggu. Silakan pilih hari Senin sampai Sabtu.'
+                );
+                return false;
             }
 
             // Check if employee + date combination already exists
