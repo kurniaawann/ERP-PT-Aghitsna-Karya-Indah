@@ -2,6 +2,7 @@
 
 namespace App\Models\Finance;
 
+use App\Models\Report\ProjectFinancialReport;
 use App\Models\User;
 use App\Services\Finance\RecapProyekService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

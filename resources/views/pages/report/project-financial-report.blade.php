@@ -13,11 +13,11 @@
      - $categories : Kategori transaksi modul project_finance
      - $totals     : Grand totals (total_income, total_expense, balance)
      Komponen yang di-include:
-     - components.finance.project-financial-report.table
-     - components.finance.project-financial-report.add-modal
-     - components.finance.project-financial-report.edit-modal (per item)
+     - components.report.project-financial-report.table
+     - components.report.project-financial-report.add-modal
+     - components.report.project-financial-report.edit-modal (per item)
      - x-modal (konfirmasi hapus massal)
-     JS: @vite('resources/js/pages/finance/project-financial-report/index.js')
+     JS: @vite('resources/js/pages/report/project-financial-report/index.js')
      ===================================================================== --}}
 @extends('layouts.app')
 
@@ -82,7 +82,7 @@
         </div>
 
         {{-- ==================== Tabel Transaksi ==================== --}}
-        @include('components.finance.project-financial-report.table', [
+        @include('components.report.project-financial-report.table', [
             'recap' => $recap,
             'items' => $items,
             'totals' => $totals,
@@ -90,13 +90,13 @@
     </div>
 
     {{-- ==================== Modals ==================== --}}
-    @include('components.finance.project-financial-report.add-modal', [
+    @include('components.report.project-financial-report.add-modal', [
         'recap' => $recap,
         'categories' => $categories,
     ])
 
     @foreach ($items as $item)
-        @include('components.finance.project-financial-report.edit-modal', [
+        @include('components.report.project-financial-report.edit-modal', [
             'recap' => $recap,
             'item' => $item,
             'categories' => $categories,
@@ -112,5 +112,5 @@
     </x-modal>
 
     {{-- ==================== JavaScript ==================== --}}
-    @vite(['resources/js/pages/finance/project-financial-report/index.js'])
+    @vite(['resources/js/pages/report/project-financial-report/index.js'])
 @endsection

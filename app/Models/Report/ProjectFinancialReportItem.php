@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Models\Finance;
+namespace App\Models\Report;
 
-use App\Models\Report\TransactionCategory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

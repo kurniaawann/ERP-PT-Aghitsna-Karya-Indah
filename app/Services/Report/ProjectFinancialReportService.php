@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Services\Finance;
+namespace App\Services\Report;
 
-use App\Models\Finance\ProjectFinancialReport;
-use App\Models\Finance\ProjectFinancialReportItem;
 use App\Models\Finance\ProjectRecap;
+use App\Models\Report\ProjectFinancialReport;
+use App\Models\Report\ProjectFinancialReportItem;
 use App\Models\Report\TransactionCategory;
 use App\Services\InputNormalizer;
 use Illuminate\Database\Eloquent\Collection;
@@ -74,7 +74,7 @@ class ProjectFinancialReportService
      * Urutan tampil mengikuti kategori (sort_order), kemudian tanggal naik,
      * kemudian id sebagai tie-breaker agar deterministik.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Finance\ProjectFinancialReportItem>
+     * @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Report\ProjectFinancialReportItem>
      */
     public function getItems(ProjectFinancialReport $report): Collection
     {
@@ -89,7 +89,7 @@ class ProjectFinancialReportService
     /**
      * Hitung grand totals (total income, total expense, balance).
      *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Finance\ProjectFinancialReportItem>  $items
+     * @param  \Illuminate\Support\Collection<int, \App\Models\Report\ProjectFinancialReportItem>  $items
      * @return object Object berisi total_income, total_expense, balance
      */
     public function getGrandTotals($items): object

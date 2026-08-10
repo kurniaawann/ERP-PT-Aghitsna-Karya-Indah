@@ -1,44 +1,44 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Inventory\ItemController;
-use App\Http\Controllers\Inventory\ItemStockInController;
-use App\Http\Controllers\Inventory\ItemStockOutController;
-use App\Http\Controllers\Inventory\ItemReturnController;
-use App\Http\Controllers\Inventory\StockReportController;
-use App\Http\Controllers\PageController;
-use App\Http\Controllers\Finance\AlumuniumInvoiceController;
-use App\Http\Controllers\Finance\ItemInvoiceController;
-use App\Http\Controllers\Finance\RecapAlumuniumController;
-use App\Http\Controllers\Finance\RecapProyekController;
-use App\Http\Controllers\Finance\ProyekInvoiceController;
-use App\Http\Controllers\Finance\PaymentProofController;
-use App\Http\Controllers\Finance\PurchaseInvoiceController;
-use App\Http\Controllers\Finance\PaymentAccountController;
-use App\Http\Controllers\Finance\RecapSalesController;
-use App\Http\Controllers\Finance\RecapExpenseController;
-use App\Http\Controllers\Report\TransactionCategoryController;
-use App\Http\Controllers\Finance\ProjectFinancialReportController;
-use App\Http\Controllers\Report\SalesReportController;
-use App\Http\Controllers\Report\ExpenseReportController;
-use App\Http\Controllers\Report\FinalReportController;
-use App\Http\Controllers\Sdm\EmployeeController;
-use App\Http\Controllers\Sdm\AttendanceController;
-use App\Http\Controllers\Sdm\OvertimeController;
-use App\Http\Controllers\Sdm\PayrollController;
-use App\Http\Controllers\Sdm\KasbonController;
-use App\Http\Controllers\Sdm\DivisionController;
-use App\Http\Controllers\Sdm\ExecutiveController;
-use App\Http\Controllers\Finance\ReimburseController;
-use App\Http\Controllers\Administrasi\DocumentReceiptController;
+use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use App\Http\Controllers\Administrasi\CashOutProofController;
+use App\Http\Controllers\Administrasi\DeliveryNoteController;
+use App\Http\Controllers\Administrasi\DocumentReceiptController;
 use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\NotaController;
-use App\Http\Controllers\Administrasi\DeliveryNoteController;
-use App\Http\Controllers\Administrasi\AluminiumQuotationController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use App\Http\Controllers\Administrasi\RABController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Finance\AlumuniumInvoiceController;
+use App\Http\Controllers\Finance\ItemInvoiceController;
+use App\Http\Controllers\Finance\PaymentAccountController;
+use App\Http\Controllers\Finance\PaymentProofController;
+use App\Http\Controllers\Finance\ProyekInvoiceController;
+use App\Http\Controllers\Finance\PurchaseInvoiceController;
+use App\Http\Controllers\Finance\RecapAlumuniumController;
+use App\Http\Controllers\Finance\RecapExpenseController;
+use App\Http\Controllers\Finance\RecapProyekController;
+use App\Http\Controllers\Finance\RecapSalesController;
+use App\Http\Controllers\Finance\ReimburseController;
+use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\Inventory\ItemReturnController;
+use App\Http\Controllers\Inventory\ItemStockInController;
+use App\Http\Controllers\Inventory\ItemStockOutController;
+use App\Http\Controllers\Inventory\StockReportController;
+use App\Http\Controllers\PageController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Report\ExpenseReportController;
+use App\Http\Controllers\Report\FinalReportController;
+use App\Http\Controllers\Report\ProjectFinancialReportController;
+use App\Http\Controllers\Report\SalesReportController;
+use App\Http\Controllers\Report\TransactionCategoryController;
+use App\Http\Controllers\Sdm\AttendanceController;
+use App\Http\Controllers\Sdm\DivisionController;
+use App\Http\Controllers\Sdm\EmployeeController;
+use App\Http\Controllers\Sdm\ExecutiveController;
+use App\Http\Controllers\Sdm\KasbonController;
+use App\Http\Controllers\Sdm\OvertimeController;
+use App\Http\Controllers\Sdm\PayrollController;
 use App\Http\Controllers\UserManagement\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,7 +52,6 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
 
 // Route authentication (untuk user yang belum login)
 Route::middleware('guest')->group(function () {
@@ -77,8 +76,10 @@ Route::get('/', function () {
     if (auth()->check()) {
         /** @var \App\Models\User $user */
         $user = auth()->user();
+
         return redirect($user->getHomeRoute());
     }
+
     return redirect('/login');
 });
 
@@ -136,6 +137,15 @@ Route::middleware('auth')->group(function () {
 
     // Route Laporan Akhir (Gabungan: Stok, Penjualan, Pengeluaran) — semua role yang punya akses ke salah satu laporan
     Route::get('/report/final', [FinalReportController::class, 'index'])->name('report.final');
+
+    // Route Laporan Keuangan Proyek (per Rekap Proyek)
+    Route::get('/report/project-financial-report', [ProjectFinancialReportController::class, 'index'])->name('project-financial-report.index');
+    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan', [ProjectFinancialReportController::class, 'show'])->name('project-financial-report.show');
+    Route::post('/recap-proyek/{projectRecap}/laporan-keuangan/items', [ProjectFinancialReportController::class, 'storeItem'])->name('project-financial-report.store');
+    Route::put('/recap-proyek/{projectRecap}/laporan-keuangan/items/{item}', [ProjectFinancialReportController::class, 'updateItem'])->name('project-financial-report.update');
+    Route::delete('/recap-proyek/{projectRecap}/laporan-keuangan/destroy-selected', [ProjectFinancialReportController::class, 'destroySelected'])->name('project-financial-report.destroySelected');
+    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/export/pdf', [ProjectFinancialReportController::class, 'exportPdf'])->name('project-financial-report.export.pdf');
+    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/export/excel', [ProjectFinancialReportController::class, 'exportExcel'])->name('project-financial-report.export.excel');
 
     // Route Item Invoice
     Route::get('/item-invoice', [ItemInvoiceController::class, 'index'])->name('item-invoice.index');
@@ -238,14 +248,6 @@ Route::middleware('auth')->group(function () {
     // Recap Expense Export routes
     Route::get('/recap-expense/export/excel', [RecapExpenseController::class, 'exportExcel'])->name('recap-expense.export.excel');
     Route::get('/recap-expense/export/pdf', [RecapExpenseController::class, 'exportPdf'])->name('recap-expense.export.pdf');
-
-    // Route Laporan Keuangan Proyek (per Rekap Proyek)
-    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan', [ProjectFinancialReportController::class, 'show'])->name('project-financial-report.show');
-    Route::post('/recap-proyek/{projectRecap}/laporan-keuangan/items', [ProjectFinancialReportController::class, 'storeItem'])->name('project-financial-report.store');
-    Route::put('/recap-proyek/{projectRecap}/laporan-keuangan/items/{item}', [ProjectFinancialReportController::class, 'updateItem'])->name('project-financial-report.update');
-    Route::delete('/recap-proyek/{projectRecap}/laporan-keuangan/destroy-selected', [ProjectFinancialReportController::class, 'destroySelected'])->name('project-financial-report.destroySelected');
-    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/export/pdf', [ProjectFinancialReportController::class, 'exportPdf'])->name('project-financial-report.export.pdf');
-    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/export/excel', [ProjectFinancialReportController::class, 'exportExcel'])->name('project-financial-report.export.excel');
 
     // ============================================
     // Finance (Keuangan) Routes - Reimburse

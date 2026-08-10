@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Finance;
+namespace App\Http\Controllers\Report;
 
-use App\Exports\Finance\ProjectFinancialReportExport;
+use App\Exports\Report\ProjectFinancialReportExport;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Finance\StoreProjectFinancialReportItemRequest;
-use App\Http\Requests\Finance\UpdateProjectFinancialReportItemRequest;
-use App\Models\Finance\ProjectFinancialReportItem;
+use App\Http\Requests\Report\StoreProjectFinancialReportItemRequest;
+use App\Http\Requests\Report\UpdateProjectFinancialReportItemRequest;
 use App\Models\Finance\ProjectRecap;
-use App\Services\Finance\ProjectFinancialReportService;
+use App\Models\Report\ProjectFinancialReportItem;
+use App\Services\Report\ProjectFinancialReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +45,29 @@ class ProjectFinancialReportController extends Controller
     }
 
     /**
+     * Menampilkan halaman daftar Laporan Keuangan Proyek.
+     *
+     * Menampilkan seluruh Rekap Proyek beserta status laporannya. Superadmin
+     * melihat semua, user lain hanya miliknya. Tombol "Buka Laporan" masuk
+     * ke halaman detail per rekap.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function index()
+    {
+        $recaps = ProjectRecap::query()
+            ->with(['financialReport.items'])
+            ->when(auth()->user()->role !== 'superadmin', function ($query) {
+                $query->where('created_by', auth()->id());
+            })
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('pages.report.project-financial-report-index', compact('recaps'));
+    }
+
+    /**
      * Menampilkan halaman Laporan Keuangan Proyek untuk sebuah rekap.
      *
      * Laporan dibuat otomatis (auto-create) jika belum ada.
@@ -61,7 +84,7 @@ class ProjectFinancialReportController extends Controller
         $categories = $this->service->getProjectFinanceCategories();
         $totals = $this->service->getGrandTotals($items);
 
-        return view('pages.finance.project-financial-report', [
+        return view('pages.report.project-financial-report', [
             'recap' => $projectRecap,
             'report' => $report,
             'items' => $items,
@@ -175,7 +198,7 @@ class ProjectFinancialReportController extends Controller
         $items = $this->service->getItems($report);
         $totals = $this->service->getGrandTotals($items);
 
-        $pdf = Pdf::loadView('exports.finance.project-financial-report-pdf', [
+        $pdf = Pdf::loadView('exports.report.project-financial-report-pdf', [
             'recap' => $projectRecap,
             'report' => $report,
             'items' => $items,

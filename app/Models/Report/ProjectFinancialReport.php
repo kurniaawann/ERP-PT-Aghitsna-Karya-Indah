@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Models\Finance;
+namespace App\Models\Report;
 
+use App\Models\Finance\ProjectRecap;
 use App\Models\User;
-use App\Services\Finance\ProjectFinancialReportService;
+use App\Services\Report\ProjectFinancialReportService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Finance;
+namespace App\Http\Requests\Report;
 
 use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;

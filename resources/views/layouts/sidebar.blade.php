@@ -415,7 +415,7 @@
                 </button>
 
                 <ul id="laporanDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/final*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('transaction-category*') || request()->is('report/final*') || request()->is('report/project-financial-report*') || request()->is('recap-proyek*/laporan-keuangan*') ? '' : 'hidden' }}">
 
                     {{-- Kategori Transaksi: hanya Super Admin & Admin (bukan General Manager) --}}
                     @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
@@ -442,6 +442,19 @@
                                 {{ request()->is('report/final*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Laporan Akhir</span>
+                        </a>
+                    </li>
+
+                    {{-- Laporan Keuangan Proyek: halaman daftar laporan terpisah --}}
+                    <li>
+                        <a href="{{ route('project-financial-report.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->routeIs('project-financial-report.*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-file-invoice-dollar w-4 
+                                {{ request()->routeIs('project-financial-report.*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Laporan Keuangan Proyek</span>
                         </a>
                     </li>
                 </ul>

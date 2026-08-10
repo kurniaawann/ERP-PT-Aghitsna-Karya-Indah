@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exports\Finance;
+namespace App\Exports\Report;
 
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -388,7 +388,7 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                     }
 
                     // Rekapitulasi header (di sebelah kiri)
-                    if (str_contains($cellC, 'Rekapitulasi')) {
+                    if (! empty($cellC) && str_contains($cellC, 'Rekapitulasi')) {
                         $title = $cellC;
                         $sheet->mergeCells('A'.$row.':F'.$row);
                         $sheet->setCellValue('A'.$row, $title);
@@ -461,7 +461,7 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                             $prevCellB = $sheet->getCell('B'.$prevRow)->getValue();
 
                             // If previous row has Saldo or is signature-related, remove border
-                            if ($prevCellC === 'SALDO' || $prevCellB === 'Dibuat / Diperiksa' || strpos($prevCellB, 'KHAIDIR') !== false) {
+                            if ($prevCellC === 'SALDO' || $prevCellB === 'Dibuat / Diperiksa' || (! empty($prevCellB) && strpos($prevCellB, 'KHAIDIR') !== false)) {
                                 $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
                                     'borders' => [
                                         'allBorders' => ['borderStyle' => Border::BORDER_NONE],
