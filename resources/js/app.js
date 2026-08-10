@@ -1,9 +1,9 @@
 import './bootstrap';
+import './shared/debounce';
 import './shared/form-submit';
 import './shared/searchable-select';
 import './shared/searchable-multi-select';
 import './shared/currency';
-import './shared/debounce';
 import './shared/print';
 import './shared/delete-form';
 

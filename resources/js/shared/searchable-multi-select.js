@@ -85,9 +85,10 @@ function initSearchableMultiSelects(container) {
         });
 
         /**
-         * Cari / saring opsi
+         * Cari / saring opsi (dengan debounce agar tidak memfilter ulang pada
+         * setiap ketukan keyboard)
          */
-        searchInput.addEventListener('input', function () {
+        searchInput.addEventListener('input', window.debounce(function () {
             const searchTerm = this.value.toLowerCase();
             let hasResults = false;
 
@@ -108,7 +109,7 @@ function initSearchableMultiSelects(container) {
             }
 
             updateSelectAllState();
-        });
+        }, 200));
 
         /**
          * Menangani klik checkbox individual

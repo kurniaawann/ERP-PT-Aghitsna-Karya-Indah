@@ -15,7 +15,7 @@
  * bukan global.
  */
 
-import { initAllProjectDropdowns, resetProjectDropdown } from '../../../components/project-dropdown.js';
+import { initAllProjectDropdowns } from '../../../components/project-dropdown.js';
 
 /**
  * Konfigurasi halaman payroll dari backend.
@@ -108,7 +108,7 @@ function populateWeekDropdown(selectEl, weeks, selectedValue) {
 let periodMonthSelect = null;
 let periodYearInput = null;
 let weekNumberSelect = null;
-let projectSelect = null;
+let projectMultiWrapper = null;
 let periodStartDateInput = null;
 let periodEndDateInput = null;
 let checkingLoader = null;
@@ -130,6 +130,17 @@ let generateSubmitBtn = null;
  * @type {number|null}
  */
 let checkTimeout = null;
+
+/**
+ * Timer (setTimeout) untuk menunda kemunculan loader pengecekan absensi.
+ *
+ * Loader baru ditampilkan bila pengecekan berjalan lebih dari 250 ms, supaya
+ * respons cepat (mis. menghapus satu tag proyek) tidak membuat tampilan
+ * "berkedip" karena loader muncul lalu hilang seketika.
+ *
+ * @type {number|null}
+ */
+let loaderTimer = null;
 
 /**
  * Cache daftar minggu dari loadGenerateWeeks; dipakai updatePeriodDateInputs
@@ -196,18 +207,95 @@ function updatePeriodDateInputs() {
 }
 
 /**
- * Memeriksa kelengkapan absensi periode terpilih sebelum generate payroll.
+ * Mengambil daftar proyek yang terpilih pada multi-select proyek di modal
+ * Generate (hidden input project_name[]).
+ *
+ * @returns {string[]}  Array nama proyek terpilih (kosong bila belum ada).
+ */
+function getSelectedProjects() {
+    if (!projectMultiWrapper) return [];
+
+    return Array.from(projectMultiWrapper.querySelectorAll('input[name="project_name[]"]'))
+        .map(function (input) { return input.value; });
+}
+
+/**
+ * Mereset multi-select proyek di modal Generate (kosongkan pilihan).
+ *
+ * Karena komponen searchable-multi-select menyimpan state internal (Map),
+ * reset dilakukan dengan menghapus flag inisialisasi lalu menginisialisasi
+ * ulang wrapper agar closure state yang lama dibuang.
+ *
+ * @returns {void}
+ */
+function resetProjectMultiSelect() {
+    const wrapper = document.querySelector('#generateModal .searchable-multi-select-wrapper');
+    if (!wrapper) return;
+
+    delete wrapper.dataset.multiSelectInitialized;
+
+    wrapper.querySelectorAll('.searchable-multi-checkbox').forEach(function (checkbox) {
+        checkbox.checked = false;
+    });
+
+    const selectAll = wrapper.querySelector('.searchable-multi-select-all');
+    if (selectAll) selectAll.checked = false;
+
+    const tags = wrapper.querySelector('.searchable-multi-tags');
+    if (tags) tags.innerHTML = '';
+
+    const hiddenInputs = wrapper.querySelector('.searchable-multi-hidden-inputs');
+    if (hiddenInputs) hiddenInputs.innerHTML = '';
+
+    if (typeof window.initSearchableMultiSelects === 'function') {
+        window.initSearchableMultiSelects(wrapper);
+    }
+}
+
+/**
+ * Menyembunyikan semua panel status pengecekan absensi di modal Generate.
+ *
+ * Dipakai saat tidak ada proyek/periode valid, atau tepat sebelum merender
+ * hasil baru — bukan di awal pengecekan — supaya panel lama tetap terlihat
+ * selama menunggu respons (mencegah "kedip" layar).
+ */
+function hideAllStatusPanels() {
+    allCompleteDiv.classList.add('hidden');
+    incompleteWarningDiv.classList.add('hidden');
+    completeInfoDiv.classList.add('hidden');
+    alreadyGeneratedWarningDiv.classList.add('hidden');
+    noProjectWarningDiv.classList.add('hidden');
+}
+
+/**
+ * Membatalkan timer loader dan memastikan loader tersembunyi.
+ *
+ * Dipanggil pada semua jalur keluar checkAttendanceData agar loader yang
+ * tertunda (belum 250 ms) tidak muncul setelah pengecekan selesai.
+ */
+function clearLoader() {
+    clearTimeout(loaderTimer);
+    loaderTimer = null;
+    if (checkingLoader) {
+        checkingLoader.classList.add('hidden');
+    }
+}
+
+/**
+ * Pengecekan kelengkapan data absensi untuk periode + daftar proyek yang
+ * dipilih di modal Generate.
  *
  * Alur:
- * 1. Sembunyikan semua panel status (lengkap/tidak lengkap/sudah digenerate).
- * 2. Proyek/bulan/tahun/minggu belum lengkap → nonaktifkan tombol generate,
- *    kosongkan hidden tanggal, keluar.
- * 3. Sinkronkan tanggal periode via updatePeriodDateInputs; jika kosong →
- *    nonaktifkan tombol, keluar.
- * 4. Tampilkan loader, lalu POST period_start_date, period_end_date, dan
- *    project_name ke config.checkAttendanceUrl (dengan token CSRF) → hasil
+ * 1. Baca proyek terpilih, bulan, tahun, dan minggu dari modal.
+ * 2. Proyek/periode belum valid → sembunyikan semua panel status dan
+ *    nonaktifkan tombol generate.
+ * 3. Proyek/periode valid → set hidden input tanggal mulai/akhir.
+ * 4. Tampilkan loader hanya bila pengecekan berjalan > 250 ms (via timer),
+ *    lalu POST period_start_date, period_end_date, dan project_name (array
+ *    nama proyek) ke config.checkAttendanceUrl (dengan token CSRF) → hasil
  *    dari PayrollService::validateAttendanceCompleteness.
- * 5. Render daftar karyawan lengkap (completeList) + info periode.
+ * 5. Panel status lama disembunyikan HANYA setelah respons diterima, lalu
+ *    render daftar karyawan lengkap (completeList) + info periode.
  * 6. Ada karyawan incomplete → tampilkan warning + daftar tanggal kosong
  *    (generate diblokir).
  * 7. Sudah digenerate tanpa karyawan baru → warning blokir; dengan karyawan
@@ -219,19 +307,16 @@ function updatePeriodDateInputs() {
  * 10. Error → sembunyikan loader dan nonaktifkan tombol.
  */
 async function checkAttendanceData() {
-    const project = projectSelect ? projectSelect.value : '';
+    const projects = getSelectedProjects();
     const month = periodMonthSelect.value;
     const year = periodYearInput.value;
     const weekNumber = weekNumberSelect.value;
 
-    // Reset tampilan
-    allCompleteDiv.classList.add('hidden');
-    incompleteWarningDiv.classList.add('hidden');
-    completeInfoDiv.classList.add('hidden');
-    alreadyGeneratedWarningDiv.classList.add('hidden');
-    noProjectWarningDiv.classList.add('hidden');
+    // Bersihkan loader yang mungkin tertunda dari pengecekan sebelumnya.
+    clearLoader();
 
-    if (!project || !month || !year || !weekNumber) {
+    if (projects.length === 0 || !month || !year || !weekNumber) {
+        hideAllStatusPanels();
         if (generateSubmitBtn) {
             generateSubmitBtn.disabled = true;
             generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -255,8 +340,12 @@ async function checkAttendanceData() {
         return;
     }
 
-    // Show loader
-    checkingLoader.classList.remove('hidden');
+    // Tampilkan loader hanya bila pengecekan berjalan agak lama, supaya
+    // perbaruan cepat tidak membuat layar "berkedip" (loader muncul-hilang).
+    loaderTimer = setTimeout(function () {
+        loaderTimer = null;
+        checkingLoader.classList.remove('hidden');
+    }, 250);
 
     try {
         const response = await fetch(config.checkAttendanceUrl, {
@@ -268,14 +357,20 @@ async function checkAttendanceData() {
             body: JSON.stringify({
                 period_start_date: startDate,
                 period_end_date: endDate,
-                project_name: project
+                project_name: projects
             })
         });
 
         const data = await response.json();
 
-        // Hide loader
-        checkingLoader.classList.add('hidden');
+        // Hentikan timer & sembunyikan loader.
+        clearLoader();
+
+        // Panel status lama disembunyikan SEKARANG (data baru sudah diterima),
+        // bukan di awal fungsi — sehingga panel tidak hilang-muncul saat
+        // menunggu respons (penyebab tampilan "berkedip").
+        hideAllStatusPanels();
+
 
         const monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
             'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -287,7 +382,7 @@ async function checkAttendanceData() {
 
         // Tampilkan informasi periode
         const periodInfo =
-            `Proyek: <strong>${project}</strong> — Periode: <strong>${data.period_start} - ${data.period_end}</strong> (${data.working_days} hari kerja)`;
+            `Proyek: <strong>${projects.join(', ')}</strong> — Periode: <strong>${data.period_start} - ${data.period_end}</strong> (${data.working_days} hari kerja)`;
 
         // Tampilkan karyawan dengan data lengkap (jika ada)
         if (data.complete_employees && data.complete_employees.length > 0) {
@@ -436,7 +531,7 @@ async function checkAttendanceData() {
 
     } catch (error) {
         console.error('Error:', error);
-        checkingLoader.classList.add('hidden');
+        clearLoader();
         // Disable button on error
         if (generateSubmitBtn) {
             generateSubmitBtn.disabled = true;
@@ -695,7 +790,7 @@ document.addEventListener('DOMContentLoaded', function () {
     periodMonthSelect = document.getElementById('period_month');
     periodYearInput = document.getElementById('period_year');
     weekNumberSelect = document.getElementById('week_number');
-    projectSelect = document.getElementById('project_name');
+    projectMultiWrapper = document.querySelector('#generateModal .searchable-multi-select-wrapper');
     periodStartDateInput = document.getElementById('period_start_date');
     periodEndDateInput = document.getElementById('period_end_date');
     checkingLoader = document.getElementById('checking-loader');
@@ -727,10 +822,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    if (projectSelect) {
-        projectSelect.addEventListener('change', function() {
+    // Pilihan proyek berubah (multi-select) → debounce pengecekan absensi.
+    // Memakai event delegation karena checkbox & tag dirender ulang oleh
+    // komponen searchable-multi-select.
+    if (projectMultiWrapper) {
+        const scheduleCheck = function () {
             clearTimeout(checkTimeout);
             checkTimeout = setTimeout(checkAttendanceData, 300);
+        };
+
+        projectMultiWrapper.addEventListener('change', function (e) {
+            if (e.target.matches('.searchable-multi-checkbox, .searchable-multi-select-all')) {
+                scheduleCheck();
+            }
+        });
+
+        projectMultiWrapper.addEventListener('click', function (e) {
+            if (e.target.matches('.searchable-multi-tag-remove')) {
+                scheduleCheck();
+            }
         });
     }
 
@@ -749,18 +859,15 @@ document.addEventListener('DOMContentLoaded', function () {
         generateSubmitBtn.classList.remove('hover:bg-success-hover');
     }
 
-    // Dropdown proyek bersama (filter index + modal generate): searchable
-    // dengan pagination 10 item per load dari Rekap Proyek.
+    // Dropdown proyek bersama (filter index): searchable dengan pagination
+    // 10 item per load dari Rekap Proyek.
     initAllProjectDropdowns();
 
     // Reset saat modal ditutup
     window.addEventListener('modalClosed', function(e) {
         if (e.detail === 'generateModal') {
-            allCompleteDiv.classList.add('hidden');
-            incompleteWarningDiv.classList.add('hidden');
-            alreadyGeneratedWarningDiv.classList.add('hidden');
-            noProjectWarningDiv.classList.add('hidden');
-            checkingLoader.classList.add('hidden');
+            clearLoader();
+            hideAllStatusPanels();
             periodMonthSelect.value = '';
             periodYearInput.value = String(config.currentYear || new Date().getFullYear());
             weekNumberSelect.innerHTML = '<option value="">Pilih bulan & tahun terlebih dahulu</option>';
@@ -768,8 +875,8 @@ document.addEventListener('DOMContentLoaded', function () {
             periodStartDateInput.value = '';
             periodEndDateInput.value = '';
 
-            // Reset pilihan proyek dropdown searchable (value + label)
-            resetProjectDropdown(document.getElementById('generate-project-dropdown'));
+            // Reset pilihan proyek (multi-select) di modal generate
+            resetProjectMultiSelect();
 
             // Reset button state
             if (generateSubmitBtn) {

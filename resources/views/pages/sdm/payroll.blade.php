@@ -7,10 +7,13 @@
      Data dari PayrollController@index:
      - $payrolls            : LengthAwarePaginator daftar payroll (relasi employee)
      - $search, $month, $year, $weekNumber, $projectName : nilai filter aktif (nullable)
+     - $projects            : daftar proyek unik dari data karyawan (opsi multi-select modal generate)
 
-     Dropdown filter proyek & proyek pada modal generate memakai komponen
-     searchable (components.filters.project-filter) yang mengambil data dari
-     Rekap Proyek via route employee.projects-dropdown (10 item per load).
+     Dropdown filter proyek memakai komponen searchable
+     (components.filters.project-filter) yang mengambil data dari Rekap Proyek
+     via route employee.projects-dropdown (10 item per load). Pada modal
+     generate, pemilihan proyek memakai multi-select searchable (sama seperti
+     pemilihan karyawan pada modul Absensi) dengan opsi dari $projects.
      Ekspor Excel/PDF hanya aktif saat proyek dipilih (tombol Print Laporan
      disabled bila project_name kosong).
 

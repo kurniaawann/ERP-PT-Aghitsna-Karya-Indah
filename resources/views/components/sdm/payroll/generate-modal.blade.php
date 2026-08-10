@@ -1,19 +1,20 @@
 {{--
     Generate Payroll Modal
 
-    Modal form for generating weekly payroll for employees of a selected project.
+    Modal form for generating weekly payroll for employees of selected project(s).
 
     Process:
-    1. User selects project, month, year, and week
+    1. User selects one or more projects (multi-select searchable, same as the
+       employee multi-select in the Attendance module), then month, year, and week
     2. Auto-checks attendance completeness via AJAX (PayrollController@checkAttendanceCompleteness)
-       — hanya karyawan pada proyek terpilih yang diperiksa.
+       — hanya karyawan pada proyek-proyek terpilih yang diperiksa.
     3. Shows validation results:
        - Complete employees (all days filled)
        - Incomplete employees (missing attendance days)
        - Already generated employees (skip)
        - Employees without project (blocked)
     4. Generate button only enabled if all conditions pass (can_generate = true)
-    5. On submit, posts project_name + period to PayrollController@generate
+    5. On submit, posts project_name[] (array) + period to PayrollController@generate
 
     Frontend JS: resources/js/pages/sdm/payroll/index.js (checkAttendanceData function)
 --}}
@@ -28,7 +29,7 @@
             <div class="text-sm text-text-primary">
                 <p class="font-semibold mb-1">Informasi Payroll Mingguan:</p>
                 <ul class="list-disc list-inside space-y-1">
-                    <li>Payroll dibuat <strong>per proyek</strong> — hanya karyawan pada proyek terpilih yang diproses</li>
+                    <li>Payroll dibuat <strong>per proyek (bisa lebih dari satu)</strong> — hanya karyawan pada proyek terpilih yang diproses</li>
                     <li>Sistem menghitung upah harian × hari masuk untuk pekerja harian</li>
                     <li>Data diambil dari absensi minggu yang dipilih (Senin-Sabtu)</li>
                     <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
@@ -40,14 +41,16 @@
         </div>
     </div>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Proyek <span class="text-error">*</span></label>
-        {{-- Dropdown searchable (10 item per load) mengambil data proyek dari
-             Rekap Proyek; pilihan disimpan di hidden input #project_name. --}}
-        <x-filters.project-filter :route="route('employee.projects-dropdown')"
-            placeholder="Pilih Proyek" all-option="" input-id="project_name"
-            dropdown-id="generate-project-dropdown" :auto-submit="false" required />
-    </div>
+    {{-- Multi-select proyek (searchable), cara kerjanya sama seperti
+         pemilihan karyawan pada modul Absensi. Pilihan disimpan sebagai
+         hidden input project_name[] dan dibaca oleh JS (checkAttendanceData). --}}
+    <x-forms.searchable-multi-select
+        name="project_name"
+        id="generate-project_name"
+        label="Proyek"
+        :required="true"
+        placeholder="Cari proyek..."
+        :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()" />
 
     <div class="grid grid-cols-3 gap-3 mb-3">
         <div>

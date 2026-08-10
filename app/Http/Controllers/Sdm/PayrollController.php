@@ -62,7 +62,26 @@ class PayrollController extends Controller
             $projectName ?: null,
         );
 
-        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber', 'projectName'));
+        $projects = $this->payrollService->getProjectOptions();
+
+        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber', 'projectName', 'projects'));
+    }
+
+    /**
+     * Menormalkan input proyek (tunggal/array) menjadi array nama proyek
+     * yang tidak kosong.
+     *
+     * @param  mixed  $input
+     * @return array<int, string>
+     */
+    private function normalizeProjectNames(mixed $input): array
+    {
+        $names = is_array($input) ? $input : (array) $input;
+
+        return array_values(array_filter(array_map(
+            fn ($name) => trim((string) $name),
+            $names
+        )));
     }
 
     /**
@@ -148,15 +167,30 @@ class PayrollController extends Controller
     /**
      * Memvalidasi kelengkapan absensi untuk periode dan proyek tertentu.
      *
-     * Menerima period_start_date, period_end_date, dan project_name dari frontend.
+     * Menerima period_start_date, period_end_date, dan project_name (bisa
+     * array nama proyek) dari frontend.
      */
     public function checkAttendanceCompleteness(Request $request)
     {
         $startDate = Carbon::parse($request->period_start_date);
         $endDate = Carbon::parse($request->period_end_date);
-        $projectName = $request->input('project_name') ?: null;
+        $projectNames = $this->normalizeProjectNames($request->input('project_name'));
 
-        $result = $this->payrollService->validateAttendanceCompleteness($startDate, $endDate, $projectName);
+        if (empty($projectNames)) {
+            return response()->json([
+                'can_generate' => false,
+                'incomplete_employees' => [],
+                'complete_employees' => [],
+                'employees_without_project' => [],
+                'already_generated' => [],
+                'has_new_employees' => false,
+                'period_start' => $startDate->format('d/m/Y'),
+                'period_end' => $endDate->format('d/m/Y'),
+                'working_days' => 0,
+            ]);
+        }
+
+        $result = $this->payrollService->validateAttendanceCompleteness($startDate, $endDate, $projectNames);
 
         return response()->json($result);
     }
@@ -164,18 +198,24 @@ class PayrollController extends Controller
     /**
      * Membuat payroll mingguan untuk pekerja harian pada proyek tertentu.
      *
-     * Menerima period_start_date, period_end_date, dan project_name dari frontend.
+     * Menerima period_start_date, period_end_date, dan project_name (bisa
+     * array nama proyek) dari frontend.
      */
     public function generate(Request $request)
     {
         $startDate = Carbon::parse($request->period_start_date);
         $endDate = Carbon::parse($request->period_end_date);
-        $projectName = $request->input('project_name') ?: null;
+        $projectNames = $this->normalizeProjectNames($request->input('project_name'));
+
+        if (empty($projectNames)) {
+            return redirect()->back()
+                ->with('error', 'Pilih minimal satu proyek terlebih dahulu.');
+        }
 
         $result = $this->payrollService->generatePayroll(
             $startDate,
             $endDate,
-            $projectName
+            $projectNames
         );
 
         if ($result['success']) {

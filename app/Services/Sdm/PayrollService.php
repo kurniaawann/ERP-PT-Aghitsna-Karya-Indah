@@ -70,6 +70,26 @@ class PayrollService
     }
 
     /**
+     * Mendapatkan daftar proyek unik dari data karyawan milik user saat ini.
+     *
+     * Dipakai sebagai opsi multi-select proyek pada modal Generate Payroll.
+     * Hanya proyek yang benar-benar dimiliki karyawan yang dimunculkan agar
+     * opsi yang dipilih selalu bisa diproses (guard "tanpa proyek" tidak
+     * menghalangi generate).
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    public function getProjectOptions(): Collection
+    {
+        return Employee::where('created_by', auth()->id())
+            ->whereNotNull('project_name')
+            ->where('project_name', '!=', '')
+            ->distinct()
+            ->orderBy('project_name')
+            ->pluck('project_name');
+    }
+
+    /**
      * Memvalidasi kelengkapan absensi untuk karyawan (per proyek, jika dipilih)
      * dalam periode minggu tertentu.
      *
@@ -100,13 +120,13 @@ class PayrollService
      *
      * @param  Carbon        $periodStartDate
      * @param  Carbon        $periodEndDate
-     * @param  string|null   $projectName  Filter hanya karyawan pada proyek tertentu (opsional)
+     * @param  array|null    $projectNames  Filter hanya karyawan pada proyek-proyek tertentu (opsional)
      * @return array
      */
-    public function validateAttendanceCompleteness(Carbon $periodStartDate, Carbon $periodEndDate, ?string $projectName = null): array
+    public function validateAttendanceCompleteness(Carbon $periodStartDate, Carbon $periodEndDate, ?array $projectNames = null): array
     {
         $employees = Employee::where('created_by', auth()->id())
-            ->when($projectName, fn ($query) => $query->where('project_name', $projectName))
+            ->when($projectNames, fn ($query) => $query->whereIn('project_name', $projectNames))
             ->get();
 
         $startDate = $periodStartDate->copy();
@@ -219,7 +239,7 @@ class PayrollService
             'period_end' => $endDate->format('d/m/Y'),
             'period_start_day' => $startDate->format('l, d M Y'),
             'period_end_day' => $endDate->format('l, d M Y'),
-            'project_name' => $projectName,
+            'project_names' => $projectNames,
             'incomplete_employees' => $incompleteEmployees,
             'complete_employees' => $completeEmployees,
             'already_generated' => $alreadyGenerated,
@@ -256,13 +276,13 @@ class PayrollService
      *
      * @param  Carbon        $periodStartDate
      * @param  Carbon        $periodEndDate
-     * @param  string|null   $projectName  Filter hanya karyawan pada proyek tertentu (opsional)
+     * @param  array|null    $projectNames  Filter hanya karyawan pada proyek-proyek tertentu (opsional)
      * @return array  ['success' => bool, 'message' => string]
      */
     public function generatePayroll(
         Carbon $periodStartDate,
         Carbon $periodEndDate,
-        ?string $projectName = null
+        ?array $projectNames = null
     ): array {
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
@@ -284,7 +304,7 @@ class PayrollService
 
         // === VALIDASI ABSENSI ===
         $employees = Employee::where('created_by', auth()->id())
-            ->when($projectName, fn ($query) => $query->where('project_name', $projectName))
+            ->when($projectNames, fn ($query) => $query->whereIn('project_name', $projectNames))
             ->get();
         $incompleteEmployees = [];
         $employeesWithoutProject = [];
