@@ -480,13 +480,15 @@
                         <td colspan="6" class="label">TERBILANG</td>
                         <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
                     </tr>
+                @endif
+                @if (auth()->user()->isSuperAdmin())
                     @php
                         $incomingPayment = $rab->incoming_payment ?? 0;
                         $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
                     @endphp
                     @if ($incomingPayment > 0)
                         <tr class="summary-row" style="background-color: #edbcbc;">
-                            <td colspan="6" class="label">UANG MASUK</td>
+                            <td colspan="6" class="label">UANG MASUK (DP)</td>
                             <td class="value">Rp. {{ number_format($incomingPayment, 0, ',', '.') }}</td>
                         </tr>
                         <tr class="summary-row total-amount-row" style="background-color: #FFE0B2;">

@@ -7,6 +7,8 @@ use App\Models\Administrasi\RABCategory;
 use App\Models\Administrasi\RABSubCategory;
 use App\Models\Administrasi\RABItem;
 use App\Models\Administrasi\RABMiscellaneousCost;
+use App\Models\Finance\ProjectRecap;
+use App\Services\Finance\RecapProyekService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -153,15 +155,18 @@ class RABService
         $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
 
         $rab = DB::transaction(function () use ($validatedData, $rabNumber, $seqNumber, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
+            $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin();
+
             $rab = RAB::create([
                 'rab_number' => $rabNumber,
                 'sequence_number' => $seqNumber,
+                'project_name' => $validatedData['project_name'],
                 'date' => $validatedData['date'],
                 'recipient' => $validatedData['recipient'],
                 'recipient_address' => $validatedData['recipient_address'] ?? 'Ditempat',
                 'intro_text' => $validatedData['intro_text'],
                 'total_amount' => $totalAnggaranBiaya,
-                'incoming_payment' => $validatedData['incoming_payment'] ?? 0,
+                'incoming_payment' => $isSuperAdmin ? ($validatedData['incoming_payment'] ?? 0) : 0,
                 'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
                 'selected_payment_accounts' => $validatedData['selected_payment_accounts'] ?? [],
                 'signed_by' => $validatedData['signed_by'] ?? null,
@@ -171,6 +176,15 @@ class RABService
 
             $this->createCategories($rab, $rabData);
             $this->createMiscellaneousCosts($rab, $miscCostsData);
+
+            // Rekap Proyek otomatis dibuat menautkan RAB ini; Total RAB
+            // diambil dari total anggaran biaya yang sudah dihitung.
+            ProjectRecap::create([
+                'rab_number' => $rabNumber,
+                'project_name' => $validatedData['project_name'],
+                'total_rab' => $totalAnggaranBiaya,
+                'created_by' => auth()->id(),
+            ]);
 
             return $rab;
         });
@@ -197,16 +211,18 @@ class RABService
 
         DB::transaction(function () use ($rab, $validatedData, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
             $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+            $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin();
 
             $rab->update([
+                'project_name' => $validatedData['project_name'],
                 'date' => $validatedData['date'],
                 'recipient' => $validatedData['recipient'],
                 'recipient_address' => $validatedData['recipient_address'] ?? 'Ditempat',
                 'intro_text' => $validatedData['intro_text'],
                 'total_amount' => $totalAnggaranBiaya,
-                'incoming_payment' => $isAdmin
-                    ? $rab->incoming_payment
-                    : ($validatedData['incoming_payment'] ?? 0),
+                'incoming_payment' => $isSuperAdmin
+                    ? ($validatedData['incoming_payment'] ?? 0)
+                    : $rab->incoming_payment,
                 'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
                 'selected_payment_accounts' => $isAdmin
                     ? $rab->selected_payment_accounts
@@ -214,6 +230,15 @@ class RABService
                 'signed_by' => $validatedData['signed_by'] ?? null,
                 'division' => $validatedData['division'] ?? null,
             ]);
+
+            // Sinkronkan Rekap Proyek terkait: nama proyek & total RAB
+            // mengikuti perubahan pada RAB.
+            ProjectRecap::where('rab_number', $rab->rab_number)
+                ->where('created_by', auth()->id())
+                ->update([
+                    'project_name' => $validatedData['project_name'],
+                    'total_rab' => $totalAnggaranBiaya,
+                ]);
 
             $rab->categories()->delete();
             $rab->miscellaneousCosts()->delete();
@@ -237,6 +262,16 @@ class RABService
         return DB::transaction(function () use ($rabNumbers) {
             $count = 0;
             foreach ($rabNumbers as $rabNumber) {
+                // Rekap Proyek terkait ikut dihapus beserta file design-nya.
+                $recapIds = ProjectRecap::where('rab_number', $rabNumber)
+                    ->where('created_by', auth()->id())
+                    ->pluck('id')
+                    ->all();
+
+                if (!empty($recapIds)) {
+                    app(RecapProyekService::class)->bulkDelete($recapIds);
+                }
+
                 RAB::where('rab_number', $rabNumber)
                     ->where('created_by', auth()->id())
                     ->delete();

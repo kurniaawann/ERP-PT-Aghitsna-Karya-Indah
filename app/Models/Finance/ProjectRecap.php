@@ -33,6 +33,7 @@ class ProjectRecap extends Model
 
     protected $fillable = [
         'id',
+        'rab_number',
         'project_name',
         'total_rab',
         'design_file',
@@ -69,6 +70,16 @@ class ProjectRecap extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * RAB sumber yang menautkan rekap proyek ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function rab(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Administrasi\RAB::class, 'rab_number', 'rab_number');
     }
 
     /**

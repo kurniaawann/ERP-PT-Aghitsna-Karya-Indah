@@ -17,11 +17,13 @@
                             <th class="p-3 text-center"><input type="checkbox" id="selectAll"
                                     class="w-4 h-4 accent-primary cursor-pointer"></th>
                             <th class="p-3 text-left">No. RAB</th>
+                            <th class="p-3 text-left">Proyek</th>
                             <th class="p-3 text-left">Penerima</th>
                             <th class="p-3 text-left">Tanggal</th>
                             <th class="p-3 text-right">Total Biaya</th>
-                            @if (!auth()->user()->isAdmin())
-                                <th class="p-3 text-right">Uang Masuk</th>
+                            @if (auth()->user()->isSuperAdmin())
+                                <th class="p-3 text-right">Uang Masuk (DP)</th>
+                                <th class="p-3 text-right">Sisa</th>
                             @endif
                             <th class="p-3 text-center">Aksi</th>
                         </tr>
@@ -34,6 +36,7 @@
                                         class="w-4 h-4 accent-primary cursor-pointer item-checkbox">
                                 </td>
                                 <td class="p-3 font-medium text-primary">{{ $rab->rab_number }}</td>
+                                <td class="p-3 font-medium text-text-primary">{{ $rab->project_name ?? '-' }}</td>
                                 <td class="p-3">{{ $rab->recipient }}</td>
                                 <td class="p-3 text-sm text-text-secondary">
                                     {{ \Carbon\Carbon::parse($rab->date)->isoFormat('DD MMM YYYY') }}
@@ -41,9 +44,12 @@
                                 <td class="p-3 text-right font-semibold text-success">
                                     Rp {{ number_format($rab->total_amount, 0, ',', '.') }}
                                 </td>
-                                @if (!auth()->user()->isAdmin())
+                                @if (auth()->user()->isSuperAdmin())
                                     <td class="p-3 text-right font-semibold text-primary">
                                         Rp {{ number_format($rab->incoming_payment ?? 0, 0, ',', '.') }}
+                                    </td>
+                                    <td class="p-3 text-right font-semibold text-error">
+                                        Rp {{ number_format(($rab->total_amount ?? 0) - ($rab->incoming_payment ?? 0), 0, ',', '.') }}
                                     </td>
                                 @endif
                                 <td class="p-3 text-center">
@@ -85,7 +91,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ auth()->user()->isAdmin() ? 6 : 7 }}" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
+                                <td colspan="{{ auth()->user()->isSuperAdmin() ? 9 : 7 }}" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
                             </tr>
                         @endforelse
                     </tbody>

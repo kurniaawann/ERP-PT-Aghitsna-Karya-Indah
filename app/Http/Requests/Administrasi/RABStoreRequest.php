@@ -24,6 +24,7 @@ class RABStoreRequest extends FormRequest
 
         return [
             'recipient' => 'required|string|max:255',
+            'project_name' => 'required|string|max:255',
             'date' => 'required|date',
             'intro_text' => 'required|string',
             'recipient_address' => 'nullable|string|max:500',
@@ -44,6 +45,8 @@ class RABStoreRequest extends FormRequest
         return [
             'recipient.required' => 'Nama penerima tidak boleh kosong.',
             'recipient.max' => 'Nama penerima maksimal 255 karakter.',
+            'project_name.required' => 'Nama proyek tidak boleh kosong.',
+            'project_name.max' => 'Nama proyek maksimal 255 karakter.',
             'date.required' => 'Tanggal tidak boleh kosong.',
             'date.date' => 'Format tanggal tidak valid.',
             'intro_text.required' => 'Teks pengantar tidak boleh kosong.',

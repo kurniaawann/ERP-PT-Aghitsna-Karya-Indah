@@ -366,13 +366,15 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                         ],
                     ]);
+                }
 
+                if (auth()->user() && auth()->user()->role === 'superadmin') {
                     $incomingPayment = $rab->incoming_payment ?? 0;
                     $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;
 
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", 'UANG MASUK');
+                    $sheet->setCellValue("A{$currentRow}", 'UANG MASUK (DP)');
                     $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($incomingPayment, 0, ',', '.'));
                     $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
@@ -412,6 +414,9 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                         ],
                     ]);
+                }
+
+                if (!auth()->user() || auth()->user()->role !== 'admin') {
 
                     $currentRow += 2;
                     $sheet->mergeCells("A{$currentRow}:G{$currentRow}");

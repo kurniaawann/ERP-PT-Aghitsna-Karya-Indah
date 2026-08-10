@@ -11,6 +11,15 @@
 
     @method('PUT')
 
+    {{-- Nama Proyek --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Nama Proyek <span class="text-error">*</span></label>
+        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+            name="project_name" placeholder="Nama proyek" value="{{ $rab->project_name ?? '' }}" required maxlength="255"
+            oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">
+        <small class="text-text-secondary text-xs">Total pada Rekap Proyek terkait ikut diperbarui.</small>
+    </div>
+
     {{-- Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
@@ -35,14 +44,14 @@
         <small class="text-text-secondary text-xs">Maksimal 500 karakter</small>
     </div>
 
-    @if (!auth()->user()->isAdmin())
-        {{-- Uang Masuk --}}
+    @if (auth()->user()->isSuperAdmin())
+        {{-- Uang Masuk (DP) --}}
         <div class="mb-3">
-            <label class="block text-text-primary mb-1">Uang Masuk</label>
+            <label class="block text-text-primary mb-1">Uang Masuk (DP)</label>
             <input type="number" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
                 name="incoming_payment" placeholder="0" min="0" step="0" value="{{ $rab->incoming_payment ?? 0 }}"
                 oninvalid="this.setCustomValidity('Uang masuk harus berupa angka')" oninput="this.setCustomValidity('')">
-            <small class="text-text-secondary text-xs">Masukkan jumlah uang masuk (Rp)</small>
+            <small class="text-text-secondary text-xs">Uang yang sudah diterima (DP). Sisa = Total RAB − DP.</small>
         </div>
     @endif
 

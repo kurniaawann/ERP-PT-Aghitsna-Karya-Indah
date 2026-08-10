@@ -5,6 +5,7 @@ namespace App\Models\Administrasi;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\User;
 
 class RAB extends Model
@@ -19,6 +20,7 @@ class RAB extends Model
     protected $fillable = [
         'rab_number',
         'sequence_number',
+        'project_name',
         'date',
         'recipient',
         'recipient_address',
@@ -62,6 +64,16 @@ class RAB extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Rekap Proyek yang ditautkan ke RAB ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function recap(): HasOne
+    {
+        return $this->hasOne(\App\Models\Finance\ProjectRecap::class, 'rab_number', 'rab_number');
     }
 
     // ─── Static Methods ────────────────────────────────────────────────────────

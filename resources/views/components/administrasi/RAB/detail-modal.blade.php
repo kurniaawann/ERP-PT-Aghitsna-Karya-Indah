@@ -12,18 +12,27 @@
     {{-- Info Header --}}
     <div class="grid grid-cols-2 gap-2 mb-2 text-sm">
         <div>
+            <p class="text-xs text-text-secondary">Proyek</p>
+            <p class="font-semibold text-sm truncate">{{ $rab->project_name ?? '-' }}</p>
+        </div>
+        <div>
             <p class="text-xs text-text-secondary">Tanggal</p>
             <p class="font-semibold text-sm">{{ $rab->date->format('d F Y') }}</p>
         </div>
-        <div>
-            <p class="text-xs text-text-secondary">Penerima</p>
-            <p class="font-semibold text-sm truncate">{{ $rab->recipient }}</p>
-        </div>
+    </div>
+    <div class="mb-2 text-sm">
+        <p class="text-xs text-text-secondary">Penerima</p>
+        <p class="font-semibold text-sm truncate">{{ $rab->recipient }}</p>
     </div>
 
-    @if (!auth()->user()->isAdmin() && $rab->incoming_payment > 0)
+    @if (auth()->user()->isSuperAdmin() && $rab->incoming_payment > 0)
         <div class="mb-2 p-2 bg-primary-light rounded border border-primary text-xs">
-            <p class="text-primary"><strong>Uang Masuk:</strong> Rp {{ number_format($rab->incoming_payment, 0, ',', '.') }}</p>
+            <p class="text-primary"><strong>Uang Masuk (DP):</strong> Rp
+                {{ number_format($rab->incoming_payment, 0, ',', '.') }}</p>
+        </div>
+        <div class="mb-2 p-2 bg-error-light rounded border border-error text-xs">
+            <p class="text-error"><strong>Sisa Pembayaran:</strong> Rp
+                {{ number_format(($rab->total_amount ?? 0) - $rab->incoming_payment, 0, ',', '.') }}</p>
         </div>
     @endif
 
