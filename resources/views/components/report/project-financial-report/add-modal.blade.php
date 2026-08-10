@@ -1,6 +1,14 @@
 {{-- Modal Tambah Transaksi Laporan Keuangan Proyek (global, dari halaman daftar) --}}
+@php
+    $categoriesJson = $categories->map(fn ($cat) => [
+        'id' => $cat->id,
+        'name' => $cat->name,
+        'type' => $cat->type,
+    ])->values()->toJson();
+@endphp
+
 <x-modal id="addModal" title="Tambah Transaksi" action="{{ route('project-financial-report.store') }}"
-    method="POST" buttonText="Simpan" enctype="multipart/form-data">
+    method="POST" buttonText="Simpan" enctype="multipart/form-data" size="4xl">
 
     {{-- Rekap Proyek --}}
     <div class="mb-3">
@@ -23,64 +31,47 @@
         @endif
     </div>
 
-    {{-- Kategori --}}
+    <hr class="my-4">
+
+    {{-- Detail Transaksi (Struktur Dinamis) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kategori <span class="text-error">*</span></label>
-        <select name="transaction_category_id" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-            <option value="">-- Pilih Kategori --</option>
-            @foreach ($categories as $cat)
-                <option value="{{ $cat->id }}" data-type="{{ $cat->type }}">{{ $cat->name }}</option>
-            @endforeach
-        </select>
-        @if ($categories->isEmpty())
-            <p class="text-xs text-error mt-1">
-                Belum ada kategori untuk modul Keuangan Proyek. Buat kategori melalui menu
-                <a href="{{ route('transaction-category.index') }}" target="_blank" class="underline">Kategori Transaksi</a>
-                (Modul: Keuangan Proyek).
-            </p>
-        @endif
+        <h6 class="text-text-primary font-semibold mb-3">Detail Transaksi (Pilih Kategori)</h6>
+        <div class="text-xs text-text-secondary mb-4 p-2 bg-surface-secondary rounded">
+            <p class="mb-1"><strong>Struktur:</strong> Pilih Kategori lalu isi Keterangan & Jumlah. Boleh menambah
+                lebih dari satu transaksi.</p>
+            <p>Kategori <span class="text-success font-semibold">Pemasukan</span> otomatis menjadi
+                <strong>Jumlah Pemasukan</strong>, kategori <span class="text-error font-semibold">Pengeluaran</span>
+                otomatis menjadi <strong>Jumlah Pengeluaran</strong>.</p>
+        </div>
     </div>
 
-    {{-- Tanggal --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="transaction_date" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
+    {{-- Container Transaksi --}}
+    <div id="transactionsContainer" class="space-y-4 mb-3"
+        data-categories="{{ $categoriesJson }}"></div>
 
-    {{-- Keterangan --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan <span class="text-error">*</span></label>
-        <textarea name="description" class="w-full border rounded p-2" rows="3"
-            placeholder="Contoh: Pembayaran material, Termin 1, dll" required maxlength="1000"
-            oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
-    </div>
+    <button type="button" onclick="addTransactionBlock()" class="btn btn-outline-primary w-full">
+        <i class="fa-solid fa-plus"></i> Tambah Transaksi
+    </button>
 
-    {{-- Jumlah --}}
-    <div class="mb-3">
-        <label class="amount-label block text-text-primary mb-1">Jumlah Pengeluaran <span
-                class="text-error">*</span></label>
-        <input type="text" inputmode="numeric" name="expense_amount"
-            class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000" required min="0"
-            oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
+    <hr class="my-4">
 
-    {{-- Keterangan Bon --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan Bon <span class="text-error">*</span></label>
-        <input type="text" name="keterangan_bon" class="w-full border rounded p-2"
-            placeholder="Contoh: Bon Pembelian Material" required maxlength="255"
-            oninvalid="this.setCustomValidity('Keterangan Bon tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- Bukti Pembayaran --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Bukti Pembayaran</label>
-        <input type="file" name="proof_file"
-            accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf"
-            class="w-full border rounded p-2">
-        <p class="text-xs text-text-secondary mt-1">Opsional. Format: JPG, PNG, GIF, WEBP, BMP, PDF. Maksimal 5 MB.</p>
+    {{-- Total Keseluruhan --}}
+    <div class="flex justify-end mb-3">
+        <div class="bg-success-light border-2 border-success rounded p-4 w-full">
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
+                    <span><strong>Total Pemasukan:</strong></span>
+                    <span id="totalIncomePrice" class="font-semibold">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
+                    <span><strong>Total Pengeluaran:</strong></span>
+                    <span id="totalExpensePrice" class="font-semibold">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-lg text-success">
+                    <span><strong>Saldo:</strong></span>
+                    <p class="font-bold text-2xl text-success"><span id="grandTotalPrice">Rp 0</span></p>
+                </div>
+            </div>
+        </div>
     </div>
 </x-modal>

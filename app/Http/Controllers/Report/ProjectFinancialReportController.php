@@ -88,7 +88,10 @@ class ProjectFinancialReportController extends Controller
     }
 
     /**
-     * Menyimpan item "Bon" baru pada laporan keuangan proyek.
+     * Menyimpan satu atau banyak item "Bon" baru pada laporan keuangan proyek.
+     *
+     * Form tambah memakai struktur dinamis sehingga bisa mengirim beberapa
+     * transaksi sekaligus (array `items`).
      *
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -102,7 +105,10 @@ class ProjectFinancialReportController extends Controller
         try {
             $report = $this->service->getOrCreateForRecap($projectRecap);
 
-            $this->service->createItem($report, $request->validated(), $request->file('proof_file'));
+            $items = $request->input('items', []);
+            $proofFiles = $request->file('items', []);
+
+            $this->service->createItems($report, $items, $proofFiles);
 
             DB::commit();
 

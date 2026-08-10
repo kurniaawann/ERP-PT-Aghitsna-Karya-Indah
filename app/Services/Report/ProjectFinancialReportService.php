@@ -139,6 +139,29 @@ class ProjectFinancialReportService
     }
 
     /**
+     * Membuat banyak item "Bon" sekaligus pada laporan keuangan proyek.
+     *
+     * Dipakai oleh form tambah dengan struktur dinamis (beberapa transaksi
+     * dalam satu submit). Setiap entri diproses oleh createItem() sehingga
+     * logika INCOME vs EXPENSE dan upload bukti tetap terpusat.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @param  array<int, array<string, \Illuminate\Http\UploadedFile|null>>  $proofFiles
+     * @return array<int, \App\Models\Report\ProjectFinancialReportItem>
+     */
+    public function createItems(ProjectFinancialReport $report, array $items, array $proofFiles): array
+    {
+        $created = [];
+
+        foreach ($items as $index => $itemData) {
+            $proofFile = $proofFiles[$index]['proof_file'] ?? null;
+            $created[] = $this->createItem($report, $itemData, $proofFile);
+        }
+
+        return $created;
+    }
+
+    /**
      * Mengupdate item "Bon" yang sudah ada.
      *
      * Bukti pembayaran hanya diganti jika ada file baru yang diunggah;
