@@ -9,6 +9,7 @@ use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
+use App\Models\Finance\ProjectRecap;
 use App\Services\Finance\InvoiceCalculatorService;
 use App\Services\Finance\PaymentProofService;
 use Illuminate\Http\Request;
@@ -29,7 +30,6 @@ class PaymentProofController extends Controller
     /**
      * Menampilkan halaman index bukti pembayaran dengan filter & search.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
@@ -44,9 +44,11 @@ class PaymentProofController extends Controller
         $invoiceTypeOptions = $isAdmin
             ? [
                 ['value' => 'proyek', 'label' => 'Invoice'],
+                ['value' => 'recap', 'label' => 'Rekap Proyek'],
             ]
             : [
                 ['value' => 'proyek', 'label' => 'Invoice Proyek'],
+                ['value' => 'recap', 'label' => 'Rekap Proyek'],
                 ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
                 ['value' => 'barang', 'label' => 'Invoice Barang'],
             ];
@@ -78,6 +80,7 @@ class PaymentProofController extends Controller
 
         $totalProofs = (clone $query)->count();
         $projectProofs = (clone $query)->where('invoice_type', 'proyek')->count();
+        $recapProofs = (clone $query)->where('invoice_type', 'recap')->count();
         $alumuniumProofs = (clone $query)->where('invoice_type', 'alumunium')->count();
         $barangProofs = (clone $query)->where('invoice_type', 'barang')->count();
 
@@ -85,9 +88,10 @@ class PaymentProofController extends Controller
 
         $invoiceLookup = [
             'finance' => [
-                'proyek'           => [],
-                'alumunium'        => [],
-                'barang'           => [],
+                'proyek' => [],
+                'recap' => [],
+                'alumunium' => [],
+                'barang' => [],
             ],
         ];
 
@@ -97,6 +101,11 @@ class PaymentProofController extends Controller
                     InvoiceProyek::query()->with('paymentProofs')->where('created_by', auth()->id())->orderByDesc('invoice_date')->get()
                 )->map(
                     fn ($invoice) => $this->service->buildInvoiceOption($invoice, 'finance', 'proyek', $proofStageMap, $invoiceLookup)
+                )->values()->all(),
+                'recap' => collect(
+                    ProjectRecap::query()->with('paymentProofs')->where('created_by', auth()->id())->orderByDesc('created_at')->get()
+                )->map(
+                    fn ($recap) => $this->service->buildInvoiceOption($recap, 'finance', 'recap', $proofStageMap, $invoiceLookup)
                 )->values()->all(),
             ],
         ];
@@ -119,6 +128,7 @@ class PaymentProofController extends Controller
             'paymentProofs',
             'totalProofs',
             'projectProofs',
+            'recapProofs',
             'alumuniumProofs',
             'barangProofs',
             'moduleOptions',
@@ -131,7 +141,6 @@ class PaymentProofController extends Controller
     /**
      * Menyimpan bukti pembayaran baru.
      *
-     * @param  \App\Http\Requests\Finance\StorePaymentProofRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StorePaymentProofRequest $request)
@@ -144,8 +153,6 @@ class PaymentProofController extends Controller
     /**
      * Memperbarui gambar dan/atau tanggal pembayaran bukti pembayaran.
      *
-     * @param  \App\Http\Requests\Finance\UpdatePaymentProofRequest $request
-     * @param  \App\Models\Finance\PaymentProof                     $payment_proof
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdatePaymentProofRequest $request, PaymentProof $payment_proof)
@@ -162,7 +169,6 @@ class PaymentProofController extends Controller
     /**
      * Menghapus bukti pembayaran tunggal.
      *
-     * @param  \App\Models\Finance\PaymentProof $payment_proof
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(PaymentProof $payment_proof)
@@ -175,7 +181,6 @@ class PaymentProofController extends Controller
     /**
      * Menghapus bukti pembayaran secara massal.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroySelected(Request $request)

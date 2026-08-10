@@ -10,12 +10,12 @@
                            hanya menampilkan bukti miliknya (created_by).
      - $totalProofs      : Total jumlah bukti hasil filter.
      - $projectProofs    : Jumlah bukti bertipe invoice 'proyek'.
+     - $recapProofs      : Jumlah bukti bertipe 'recap' (rekap proyek).
      - $alumuniumProofs  : Jumlah bukti bertipe 'alumunium' (non-admin).
      - $barangProofs     : Jumlah bukti bertipe 'barang' (non-admin).
      - $moduleOptions    : Opsi filter modul ('finance' = Keuangan).
-     - $invoiceTypeOptions: Opsi filter jenis invoice; berbeda antara
-                            admin (Invoice) dan non-admin
-                            (Invoice Proyek, Alumunium, Barang).
+     - $invoiceTypeOptions: Opsi filter jenis invoice; antara lain
+                            Rekap Proyek, Invoice Proyek, Alumunium, Barang.
      - $availableInvoices: Data invoice yang tersedia untuk dipilih pada
                            form tambah/edit; di-expose ke
                            window.paymentProofInvoiceData via @json.
@@ -63,10 +63,10 @@
         </div>
 
         {{-- Section: Summary Cards --}}
-        {{-- Empat kartu ringkasan (Total Bukti, Invoice/Proyek, Alumunium,
-             Invoice Barang). Kartu kedua memakai nama berbeda sesuai role:
-             admin = 'Invoice', non-admin = 'Invoice Proyek'. --}}
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {{-- Lima kartu ringkasan (Total Bukti, Invoice/Proyek, Rekap Proyek,
+             Alumunium, Invoice Barang). Kartu kedua memakai nama berbeda
+             sesuai role: admin = 'Invoice', non-admin = 'Invoice Proyek'. --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <div
                 class="group rounded-2xl border border-border-strong bg-surface-base p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div class="flex items-start justify-between gap-3">
@@ -108,6 +108,21 @@
                     <div
                         class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-warning ring-1 ring-warning/10 transition-colors group-hover:bg-warning group-hover:text-white">
                         <i class="fa-solid fa-boxes-stacked text-base"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="group rounded-2xl border border-success/20 bg-gradient-to-br from-success-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-success">Rekap Proyek</p>
+                        <p class="mt-2 text-3xl font-bold tracking-tight text-success">
+                            {{ number_format($recapProofs) }}</p>
+                    </div>
+                    <div
+                        class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-success ring-1 ring-success/10 transition-colors group-hover:bg-success group-hover:text-white">
+                        <i class="fa-solid fa-clipboard-list text-base"></i>
                     </div>
                 </div>
             </div>

@@ -7,6 +7,7 @@ use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
+use App\Models\Finance\ProjectRecap;
 use App\Models\Report\SalesRecap;
 use App\Services\Administrasi\KwintansiService;
 use App\Services\InputNormalizer;
@@ -40,22 +41,24 @@ class PaymentProofService
     /**
      * Resolusi model invoice berdasarkan tipe dan nomor.
      *
-     * Empat tipe invoice yang didukung:
+     * Lima tipe yang didukung:
      * - 'proyek'          → tabel proyek_invoices, kolom invoice_number
      * - 'alumunium'       → tabel alumunium_invoices, kolom invoice_number
      * - 'barang'          → tabel barang_invoices, kolom invoice_number
+     * - 'recap'           → tabel project_recaps, kolom id (format RP-00001)
      *
-     * @param  string $invoiceType   Tipe invoice: proyek|alumunium|barang
-     * @param  string $invoiceNumber Nomor atau ID invoice
+     * @param  string  $invoiceType  Tipe invoice: proyek|alumunium|barang|recap
+     * @param  string  $invoiceNumber  Nomor atau ID invoice
      * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function resolveInvoice(string $invoiceType, string $invoiceNumber)
     {
         return match ($invoiceType) {
-            'proyek'           => InvoiceProyek::where('invoice_number', $invoiceNumber)->first(),
-            'alumunium'        => InvoiceAlumunium::where('invoice_number', $invoiceNumber)->first(),
-            'barang'           => InvoiceBarang::where('invoice_number', $invoiceNumber)->first(),
-            default            => null,
+            'proyek' => InvoiceProyek::where('invoice_number', $invoiceNumber)->first(),
+            'alumunium' => InvoiceAlumunium::where('invoice_number', $invoiceNumber)->first(),
+            'barang' => InvoiceBarang::where('invoice_number', $invoiceNumber)->first(),
+            'recap' => ProjectRecap::where('id', $invoiceNumber)->first(),
+            default => null,
         };
     }
 
@@ -68,11 +71,6 @@ class PaymentProofService
      * COUNT(proof) yang sudah ada, lalu + 1. Contoh: jika sudah ada proof
      * dengan stage 1 dan 3 → max(3, 2) + 1 = stage 4 (angka tidak pernah
      * bentrok walau stage pernah di-skip).
-     *
-     * @param  string      $moduleType
-     * @param  string      $invoiceType
-     * @param  string      $invoiceNumber
-     * @return int|null
      */
     public function resolveNextPaymentStage(string $moduleType, string $invoiceType, string $invoiceNumber): ?int
     {
@@ -105,22 +103,28 @@ class PaymentProofService
      * bagian tagihan kepada pelanggan; sebelumnya PPN tidak dihitung sehingga nominal
      * yang sah di depan (frontend) ditolak di belakang (backend).
      *
-     * @param  \Illuminate\Database\Eloquent\Model $invoice
-     * @param  int                                 $amount
-     * @param  int|null                            $excludePaymentProofId  ID yang dikecualikan (untuk update)
-     * @return string|null  Pesan error jika validasi gagal, null jika lolos
+     * Khusus ProjectRecap (rekap proyek), sisa dihitung via getRemainingAmount()
+     * milik model: Total RAB - DP (Uang Masuk dari RAB) - terbayar.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @param  int|null  $excludePaymentProofId  ID yang dikecualikan (untuk update)
+     * @return string|null Pesan error jika validasi gagal, null jika lolos
      */
     public function validatePaymentAmount($invoice, int $amount, ?int $excludePaymentProofId = null): ?string
     {
-        $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
-        $ppnAmount = (int) (method_exists($invoice, 'getPpnAmount') ? $invoice->getPpnAmount() : 0);
-        $grandTotal = (int) ($invoice->total_amount ?? 0) + $ppnAmount;
-        $dpAmount = (int) $this->calculator->getDpAmount($invoice);
-        $discountAmount = (int) $this->calculator->getDiscountAmount($invoice);
-        $remainingAmount = max(0, $grandTotal - $discountAmount - $dpAmount - $paidAmount);
+        if ($invoice instanceof ProjectRecap) {
+            $remainingAmount = $invoice->getRemainingAmount();
+        } else {
+            $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
+            $ppnAmount = (int) (method_exists($invoice, 'getPpnAmount') ? $invoice->getPpnAmount() : 0);
+            $grandTotal = (int) ($invoice->total_amount ?? 0) + $ppnAmount;
+            $dpAmount = (int) $this->calculator->getDpAmount($invoice);
+            $discountAmount = (int) $this->calculator->getDiscountAmount($invoice);
+            $remainingAmount = max(0, $grandTotal - $discountAmount - $dpAmount - $paidAmount);
+        }
 
         if ($amount > $remainingAmount) {
-            return 'Nominal pembayaran tidak boleh melebihi sisa tagihan: Rp ' . number_format($remainingAmount, 0, ',', '.');
+            return 'Nominal pembayaran tidak boleh melebihi sisa tagihan: Rp '.number_format($remainingAmount, 0, ',', '.');
         }
 
         return null;
@@ -130,22 +134,21 @@ class PaymentProofService
      * Resolve amount berdasarkan tipe invoice.
      *
      * Logika:
-     * - Invoice 'proyek': amount berasal dari input user (dari form). Divalidasi
-     *   tidak melebihi sisa tagihan. Jika amount <= 0 → null (tidak valid).
-     * - Invoice lain (alumunium/barang/rekap): amount otomatis = seluruh sisa
+     * - Invoice 'proyek' dan 'recap': amount berasal dari input user (dari form).
+     *   Divalidasi tidak melebihi sisa tagihan. Jika amount <= 0 → null (tidak valid).
+     * - Invoice lain (alumunium/barang): amount otomatis = seluruh sisa
      *   tagihan (pembayaran dianggap lunas). Dikembalikan sebagai int.
      *
      * Return union:
      * - int (amount valid) / string (pesan error validasi) / null (amount <= 0).
      *
-     * @param  array<string, mixed>                 $validated
+     * @param  array<string, mixed>  $validated
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @param  int|null                             $excludePaymentProofId
-     * @return int|string|null  int jika valid, string error jika gagal, null jika amount <= 0
+     * @return int|string|null int jika valid, string error jika gagal, null jika amount <= 0
      */
     public function resolveAmount(array $validated, $invoice, ?int $excludePaymentProofId = null): int|string|null
     {
-        if ($validated['invoice_type'] === 'proyek') {
+        if (in_array($validated['invoice_type'], ['proyek', 'recap'], true)) {
             $amount = InputNormalizer::normalizeCurrency($validated['amount'] ?? null);
 
             if ($amount <= 0) {
@@ -176,15 +179,14 @@ class PaymentProofService
      * 5. Jika gagal: file yang baru tersimpan dihapus (cleanup), agar tidak
      *    ada file yatim (file tanpa record di DB).
      *
-     * @param  array<string, mixed>         $validated  Data yang sudah validasi
-     * @param  \Illuminate\Http\UploadedFile $proofImage
+     * @param  array<string, mixed>  $validated  Data yang sudah validasi
      * @return array{success: bool, message: string}
      */
     public function store(array $validated, UploadedFile $proofImage): array
     {
         $invoice = $this->resolveInvoice($validated['invoice_type'], $validated['invoice_number']);
 
-        if (!$invoice) {
+        if (! $invoice) {
             return ['success' => false, 'message' => 'Invoice tidak ditemukan.'];
         }
 
@@ -219,18 +221,18 @@ class PaymentProofService
 
             DB::transaction(function () use ($validated, $storedFile, $paymentStage, $amount, $salesRecapId, $invoice) {
                 $paymentProof = PaymentProof::create([
-                    'module_type'    => $validated['module_type'],
-                    'invoice_type'   => $validated['invoice_type'],
+                    'module_type' => $validated['module_type'],
+                    'invoice_type' => $validated['invoice_type'],
                     'invoice_number' => $validated['invoice_number'],
                     'sales_recap_id' => $salesRecapId,
-                    'payment_stage'  => $paymentStage,
-                    'amount'         => $amount,
-                    'file_name'      => $storedFile['file_name'],
-                    'file_path'      => $storedFile['file_path'],
-                    'mime_type'      => $storedFile['mime_type'],
-                    'file_size'      => $storedFile['file_size'],
-                    'created_by'     => auth()->id(),
-                    'payment_date'   => $validated['payment_date'] ?? now()->toDateString(),
+                    'payment_stage' => $paymentStage,
+                    'amount' => $amount,
+                    'file_name' => $storedFile['file_name'],
+                    'file_path' => $storedFile['file_path'],
+                    'mime_type' => $storedFile['mime_type'],
+                    'file_size' => $storedFile['file_size'],
+                    'created_by' => auth()->id(),
+                    'payment_date' => $validated['payment_date'] ?? now()->toDateString(),
                 ]);
 
                 if (in_array($validated['invoice_type'], ['proyek', 'alumunium', 'barang'], true)) {
@@ -262,16 +264,14 @@ class PaymentProofService
     /**
      * Memperbarui bukti pembayaran.
      *
-     * @param  \App\Models\Finance\PaymentProof  $paymentProof
-     * @param  array<string, mixed>               $validated
-     * @param  \Illuminate\Http\UploadedFile|null $proofImage
+     * @param  array<string, mixed>  $validated
      * @return array{success: bool, message: string}
      */
     public function update(PaymentProof $paymentProof, array $validated, ?UploadedFile $proofImage = null): array
     {
         $invoice = $this->resolveInvoice($validated['invoice_type'], $validated['invoice_number']);
 
-        if (!$invoice) {
+        if (! $invoice) {
             return ['success' => false, 'message' => 'Invoice tidak ditemukan.'];
         }
 
@@ -305,12 +305,12 @@ class PaymentProofService
                 : null;
 
             $data = [
-                'module_type'    => $validated['module_type'],
-                'invoice_type'   => $validated['invoice_type'],
+                'module_type' => $validated['module_type'],
+                'invoice_type' => $validated['invoice_type'],
                 'invoice_number' => $validated['invoice_number'],
                 'sales_recap_id' => $salesRecapId,
-                'payment_stage'  => $nextStage,
-                'amount'         => $amount,
+                'payment_stage' => $nextStage,
+                'amount' => $amount,
             ];
 
             if ($proofImage) {
@@ -359,9 +359,7 @@ class PaymentProofService
      * mengganti gambar; begitu juga sebaliknya. Param $proofImage dan
      * $paymentDate bersifat opsional.
      *
-     * @param  \App\Models\Finance\PaymentProof  $paymentProof
-     * @param  \Illuminate\Http\UploadedFile|null $proofImage
-     * @param  string|null                        $paymentDate  Format Y-m-d
+     * @param  string|null  $paymentDate  Format Y-m-d
      * @return array{success: bool, message: string}
      */
     public function updateImage(PaymentProof $paymentProof, ?UploadedFile $proofImage = null, ?string $paymentDate = null): array
@@ -422,7 +420,6 @@ class PaymentProofService
      * Kwitansi yang dibuat otomatis dari bukti ini (payment_proof_id) ikut
      * dihapus bersama, karena kwitansi tersebut tidak bisa dihapus terpisah.
      *
-     * @param  \App\Models\Finance\PaymentProof $paymentProof
      * @return array{success: bool, message: string}
      */
     public function destroy(PaymentProof $paymentProof): array
@@ -448,7 +445,7 @@ class PaymentProofService
     /**
      * Menghapus bukti pembayaran secara massal.
      *
-     * @param  array<int, int> $selectedIds
+     * @param  array<int, int>  $selectedIds
      * @return array{success: bool, message: string}
      */
     public function destroySelected(array $selectedIds): array
@@ -461,9 +458,9 @@ class PaymentProofService
 
         $affectedInvoices = [];
         foreach ($paymentProofs as $proof) {
-            $key = $proof->invoice_type . '|' . $proof->invoice_number . '|' . ($proof->sales_recap_id ?? '');
+            $key = $proof->invoice_type.'|'.$proof->invoice_number.'|'.($proof->sales_recap_id ?? '');
             $affectedInvoices[$key] = [
-                'invoice_type'   => $proof->invoice_type,
+                'invoice_type' => $proof->invoice_type,
                 'invoice_number' => $proof->invoice_number,
                 'sales_recap_id' => $proof->sales_recap_id,
             ];
@@ -487,7 +484,7 @@ class PaymentProofService
             $this->deleteFile($proof->file_path);
         }
 
-        $message = count($selectedIds) . ' data terpilih berhasil dihapus.';
+        $message = count($selectedIds).' data terpilih berhasil dihapus.';
 
         return ['success' => true, 'message' => $message];
     }
@@ -498,8 +495,7 @@ class PaymentProofService
      * Method publik untuk backward compatibility dengan Observer dan Model
      * yang memanggil PaymentProofService::delete() langsung.
      *
-     * @param  string|null $relativePath  Path relatif file (dari public/)
-     * @return void
+     * @param  string|null  $relativePath  Path relatif file (dari public/)
      */
     public function delete(?string $relativePath): void
     {
@@ -511,46 +507,48 @@ class PaymentProofService
     /**
      * Membangun data opsi invoice untuk dropdown/modal.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $invoice
-     * @param  string                               $moduleType
-     * @param  string                               $invoiceType
-     * @param  \Illuminate\Support\Collection       $proofStageMap
-     * @param  array                                &$invoiceLookup
-     * @return array
+     * @param  \Illuminate\Database\Eloquent\Model  $invoice
+     * @param  \Illuminate\Support\Collection  $proofStageMap
      */
     public function buildInvoiceOption($invoice, string $moduleType, string $invoiceType, $proofStageMap, array &$invoiceLookup): array
     {
-        $invoiceKey = $invoice->invoice_number;
-        $mapKey = $moduleType . '|' . $invoiceType . '|' . $invoiceKey;
+        $invoiceKey = $invoice->invoice_number ?? $invoice->id;
+        $mapKey = $moduleType.'|'.$invoiceType.'|'.$invoiceKey;
         $proofMeta = $proofStageMap->get($mapKey);
         $nextStage = $invoiceType === 'proyek'
             ? max((int) ($proofMeta->max_stage ?? 0), (int) ($proofMeta->proof_count ?? 0)) + 1
             : null;
         $calcData = $this->calculator->buildInvoiceOptionData($invoice, $moduleType, $invoiceType);
 
-        $label = $invoice->invoice_number . ' - ' . $invoice->recipient;
+        $label = $invoiceKey;
+        $recipient = $invoice->recipient ?? null;
+        $projectDescription = $invoice->project_description ?? $invoice->project_name ?? null;
 
-        if (!empty($invoice->project_description)) {
-            $label .= ' - ' . $invoice->project_description;
+        if (! empty($recipient)) {
+            $label .= ' - '.$recipient;
+        }
+
+        if (! empty($projectDescription)) {
+            $label .= ' - '.$projectDescription;
         }
 
         $option = [
-            'value'            => $invoiceKey,
-            'label'            => $label,
-            'next_stage'       => $nextStage,
-            'paid_amount'      => $calcData['paid_amount'],
-            'net_amount'       => $calcData['net_amount'],
+            'value' => $invoiceKey,
+            'label' => $label,
+            'next_stage' => $nextStage,
+            'paid_amount' => $calcData['paid_amount'],
+            'net_amount' => $calcData['net_amount'],
             'remaining_amount' => $calcData['remaining_amount'],
-            'is_fully_paid'    => $calcData['is_fully_paid'],
+            'is_fully_paid' => $calcData['is_fully_paid'],
         ];
 
         $invoiceLookup[$moduleType][$invoiceType][$invoiceKey] = [
-            'label'            => $label,
-            'next_stage'       => $nextStage,
-            'paid_amount'      => $calcData['paid_amount'],
-            'net_amount'       => $calcData['net_amount'],
+            'label' => $label,
+            'next_stage' => $nextStage,
+            'paid_amount' => $calcData['paid_amount'],
+            'net_amount' => $calcData['net_amount'],
             'remaining_amount' => $calcData['remaining_amount'],
-            'is_fully_paid'    => $calcData['is_fully_paid'],
+            'is_fully_paid' => $calcData['is_fully_paid'],
         ];
 
         return $option;
@@ -574,7 +572,7 @@ class PaymentProofService
             ->select('module_type', 'invoice_type', 'invoice_number', DB::raw('MAX(COALESCE(payment_stage, 0)) as max_stage'), DB::raw('COUNT(*) as proof_count'))
             ->groupBy('module_type', 'invoice_type', 'invoice_number')
             ->get()
-            ->keyBy(fn ($row) => $row->module_type . '|' . $row->invoice_type . '|' . $row->invoice_number);
+            ->keyBy(fn ($row) => $row->module_type.'|'.$row->invoice_type.'|'.$row->invoice_number);
     }
 
     // ─── Payment Status Sync ─────────────────────────────────────────────
@@ -586,18 +584,12 @@ class PaymentProofService
      * - Invoice proyek: sinkronkan status SalesRecap terkait (via syncSalesRecapStatus).
      *   Jika salesRecapId berubah (update), status sales recap LAMA juga ikut
      *   disinkronkan ulang agar tidak ada yang tersisa "Lunas" padahal proof sudah pindah.
-     *
-     * @param  string      $invoiceType
-     * @param  string      $invoiceNumber
-     * @param  string|null $salesRecapId
-     * @param  string|null $oldSalesRecapId
-     * @return void
      */
     public function syncPaymentStatuses(string $invoiceType, string $invoiceNumber, ?string $salesRecapId = null, ?string $oldSalesRecapId = null): void
     {
         $invoice = $this->resolveInvoice($invoiceType, $invoiceNumber);
 
-        if (!$invoice) {
+        if (! $invoice) {
             return;
         }
 
@@ -618,15 +610,12 @@ class PaymentProofService
      * Rekap penjualan yang digenerate otomatis saat invoice barang dibuat
      * (relasi sales_recap_id) di-update statusnya mengikuti status pembayaran
      * invoice barang: 'Lunas' jika invoice sudah lunas, 'Belum Lunas' sebaliknya.
-     *
-     * @param  \App\Models\Finance\InvoiceBarang $invoice
-     * @return void
      */
     private function syncBarangSalesRecapStatus(InvoiceBarang $invoice): void
     {
         $salesRecap = $invoice->salesRecap;
 
-        if (!$salesRecap) {
+        if (! $salesRecap) {
             return;
         }
 
@@ -644,10 +633,6 @@ class PaymentProofService
      *    - Exact match (case-insensitive via LOWER()).
      *    - Jika tidak ketemu, partial match LIKE '%nama%' (fallback).
      * 3. Update status sales recap: 'Lunas' jika invoice lunas, 'Belum Lunas' sebaliknya.
-     *
-     * @param  \App\Models\Finance\InvoiceProyek $invoice
-     * @param  string|null                       $salesRecapId
-     * @return void
      */
     private function syncSalesRecapStatus(InvoiceProyek $invoice, ?string $salesRecapId = null): void
     {
@@ -657,7 +642,7 @@ class PaymentProofService
             $salesRecap = SalesRecap::where('id_sales_recap', $salesRecapId)->first();
         }
 
-        if (!$salesRecap) {
+        if (! $salesRecap) {
             $projectName = trim((string) $invoice->project_description);
 
             if ($projectName === '') {
@@ -668,11 +653,11 @@ class PaymentProofService
 
             $salesRecap = SalesRecap::query()
                 ->whereRaw('LOWER(name_proyek) = ?', [$normalizedProjectName])
-                ->orWhereRaw('LOWER(name_proyek) LIKE ?', ['%' . $normalizedProjectName . '%'])
+                ->orWhereRaw('LOWER(name_proyek) LIKE ?', ['%'.$normalizedProjectName.'%'])
                 ->first();
         }
 
-        if (!$salesRecap) {
+        if (! $salesRecap) {
             return;
         }
 
@@ -694,10 +679,6 @@ class PaymentProofService
      * - Semua file disimpan via Storage::disk('public') — jadi path yang disimpan ke DB
      *   adalah path RELATIF (bukan absolut) agar portabel antar server.
      *
-     * @param  \Illuminate\Http\UploadedFile $file
-     * @param  string                         $moduleType
-     * @param  string                         $invoiceType
-     * @param  string                         $invoiceNumber
      * @return array{file_name: string, file_path: string, mime_type: string, file_size: int|null}
      *
      * @throws \RuntimeException
@@ -706,9 +687,9 @@ class PaymentProofService
     {
         $relativeDirectory = $this->buildRelativeDirectory($moduleType, $invoiceType, $invoiceNumber);
 
-        if (!function_exists('imagecreatetruecolor')) {
-            $fileName = Str::uuid()->toString() . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
-            $relativePath = $relativeDirectory . '/' . $fileName;
+        if (! function_exists('imagecreatetruecolor')) {
+            $fileName = Str::uuid()->toString().'.'.($file->getClientOriginalExtension() ?: 'jpg');
+            $relativePath = $relativeDirectory.'/'.$fileName;
 
             $file->storeAs($relativeDirectory, $fileName, ['disk' => 'public']);
 
@@ -740,12 +721,12 @@ class PaymentProofService
         imagefill($canvas, 0, 0, $white);
         imagecopyresampled($canvas, $sourceImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
 
-        $fileName = Str::uuid()->toString() . '.jpg';
-        $relativePath = $relativeDirectory . '/' . $fileName;
+        $fileName = Str::uuid()->toString().'.jpg';
+        $relativePath = $relativeDirectory.'/'.$fileName;
 
         $tempPath = tempnam(sys_get_temp_dir(), 'proof_');
 
-        if (!imagejpeg($canvas, $tempPath, 80)) {
+        if (! imagejpeg($canvas, $tempPath, 80)) {
             imagedestroy($sourceImage);
             imagedestroy($canvas);
             @unlink($tempPath);
@@ -768,13 +749,10 @@ class PaymentProofService
 
     /**
      * Menghapus file gambar bukti pembayaran.
-     *
-     * @param  string|null $relativePath
-     * @return void
      */
     private function deleteFile(?string $relativePath): void
     {
-        if (!$relativePath) {
+        if (! $relativePath) {
             return;
         }
 
@@ -784,9 +762,6 @@ class PaymentProofService
     /**
      * Membuat image resource dari file path.
      *
-     * @param  string      $path
-     * @param  string|null $mimeType
-     * @return GdImage
      *
      * @throws \RuntimeException
      */
@@ -794,10 +769,10 @@ class PaymentProofService
     {
         return match ($mimeType) {
             'image/jpeg', 'image/jpg' => imagecreatefromjpeg($path),
-            'image/png'               => imagecreatefrompng($path),
-            'image/gif'               => imagecreatefromgif($path),
-            'image/webp'              => function_exists('imagecreatefromwebp') ? imagecreatefromwebp($path) : throw new RuntimeException('Format WEBP tidak didukung di server ini.'),
-            default                   => throw new RuntimeException('Format gambar tidak didukung. Gunakan JPG, PNG, GIF, atau WEBP.'),
+            'image/png' => imagecreatefrompng($path),
+            'image/gif' => imagecreatefromgif($path),
+            'image/webp' => function_exists('imagecreatefromwebp') ? imagecreatefromwebp($path) : throw new RuntimeException('Format WEBP tidak didukung di server ini.'),
+            default => throw new RuntimeException('Format gambar tidak didukung. Gunakan JPG, PNG, GIF, atau WEBP.'),
         };
     }
 
@@ -807,25 +782,17 @@ class PaymentProofService
      * Struktur: images/proof_payment/{module}/{invoice_type}/{invoice_number}/
      * Setiap segment dibersihkan dari karakter tidak valid (sanitizeSegment) agar
      * aman dijadikan folder.
-     *
-     * @param  string $moduleType
-     * @param  string $invoiceType
-     * @param  string $invoiceNumber
-     * @return string
      */
     private function buildRelativeDirectory(string $moduleType, string $invoiceType, string $invoiceNumber): string
     {
         return 'images/proof_payment/'
-            . $this->sanitizeSegment($moduleType) . '/'
-            . $this->sanitizeSegment($invoiceType) . '/'
-            . $this->sanitizeSegment($invoiceNumber);
+            .$this->sanitizeSegment($moduleType).'/'
+            .$this->sanitizeSegment($invoiceType).'/'
+            .$this->sanitizeSegment($invoiceNumber);
     }
 
     /**
      * Membersihkan segment path dari karakter tidak valid.
-     *
-     * @param  string $value
-     * @return string
      */
     private function sanitizeSegment(string $value): string
     {

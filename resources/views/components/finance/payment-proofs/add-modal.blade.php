@@ -48,7 +48,7 @@
         <p id="payment-proof-amount-help-create" class="text-xs text-text-secondary mt-1">Pilih invoice terlebih dahulu
             agar sisa tagihan tampil di sini.</p>
         <p id="payment-proof-amount-warning-create" class="text-error text-sm mt-1 hidden"></p>
-        <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek.</p>
+        <p class="text-xs text-text-secondary mt-1">Nominal ini hanya bisa diisi manual untuk invoice proyek dan rekap proyek.</p>
     </div>
 
     {{-- Section: Payment Date --}}

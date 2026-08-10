@@ -17,6 +17,19 @@
 
 const PAYMENT_PROOF_INVOICE_CHUNK_SIZE = 10;
 
+/**
+ * Menentukan apakah tipe invoice memakai nominal manual (bisa diisi user).
+ *
+ * 'proyek' dan 'recap' memakai input manual yang divalidasi terhadap sisa
+ * tagihan; tipe lain mengikuti sisa tagihan (readonly / otomatis lunas).
+ *
+ * @param  {string} invoiceType
+ * @return {boolean}
+ */
+function isManualPaymentAmountType(invoiceType) {
+    return invoiceType === 'proyek' || invoiceType === 'recap';
+}
+
 // ─── Helper Config ──────────────────────────────────────────────────────
 
 /**
@@ -252,7 +265,7 @@ function updatePaymentProofAmountSection(prefix) {
     const selectedOption = config.invoiceNumber.options[config.invoiceNumber.selectedIndex];
     const remainingAmount = Number(selectedOption?.dataset?.remainingAmount || 0);
 
-    if (config.invoiceType.value !== 'proyek') {
+    if (!isManualPaymentAmountType(config.invoiceType.value)) {
         config.amountWrap.classList.add('hidden');
         config.amountInput.disabled = true;
         config.amountInput.required = false;
@@ -299,7 +312,7 @@ function validatePaymentProofAmount(prefix) {
     const selectedOption = config.invoiceNumber?.options[config.invoiceNumber.selectedIndex];
     const remainingAmount = Number(selectedOption?.dataset?.remainingAmount || 0);
 
-    if (config.invoiceType?.value !== 'proyek' || !selectedOption?.value) {
+    if (!isManualPaymentAmountType(config.invoiceType?.value) || !selectedOption?.value) {
         config.amountWarning.classList.add('hidden');
         return true;
     }

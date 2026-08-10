@@ -44,7 +44,7 @@
         <small class="text-text-secondary text-xs">Maksimal 500 karakter</small>
     </div>
 
-    @if (auth()->user()->isSuperAdmin())
+    @if (auth()->user()->role === 'superadmin')
         {{-- Uang Masuk (DP) --}}
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Uang Masuk (DP)</label>

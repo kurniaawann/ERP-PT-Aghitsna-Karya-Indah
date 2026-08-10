@@ -7,6 +7,7 @@ use App\Services\Finance\RecapProyekService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model untuk Rekap Proyek (standalone).
@@ -27,8 +28,11 @@ class ProjectRecap extends Model
     use HasFactory;
 
     protected $table = 'project_recaps';
+
     protected $primaryKey = 'id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -64,8 +68,6 @@ class ProjectRecap extends Model
 
     /**
      * Relasi ke user yang membuat rekap proyek ini.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function creator(): BelongsTo
     {
@@ -74,8 +76,6 @@ class ProjectRecap extends Model
 
     /**
      * RAB sumber yang menautkan rekap proyek ini.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function rab(): BelongsTo
     {
@@ -83,12 +83,104 @@ class ProjectRecap extends Model
     }
 
     /**
-     * Apakah rekap proyek memiliki file design.
+     * Bukti pembayaran yang menautkan ke rekap proyek ini.
      *
-     * @return bool
+     * Bukti disimpan di tabel payment_proofs dengan invoice_type 'recap'
+     * dan invoice_number berisi ID rekap (format RP-00001), sehingga
+     * mekanisme upload bukti konsisten dengan invoice proyek.
+     */
+    public function paymentProofs(): HasMany
+    {
+        return $this->hasMany(PaymentProof::class, 'invoice_number', 'id')
+            ->where('invoice_type', 'recap')
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Apakah rekap proyek memiliki file design.
      */
     public function hasDesignFile(): bool
     {
-        return !empty($this->design_file);
+        return ! empty($this->design_file);
+    }
+
+    // ─── Perhitungan Finansial ─────────────────────────────────────────────
+
+    /**
+     * Total nilai rekap (Total RAB).
+     */
+    public function getTotalAmount(): int
+    {
+        return (int) ($this->total_rab ?? 0);
+    }
+
+    /**
+     * Uang masuk (DP) yang diambil dari RAB sumber yang ditautkan.
+     */
+    public function getDpAmount(): int
+    {
+        return (int) ($this->rab?->incoming_payment ?? 0);
+    }
+
+    /**
+     * Rekap proyek tidak memiliki diskon.
+     */
+    public function getDiscountAmount(): int
+    {
+        return 0;
+    }
+
+    /**
+     * Rekap proyek tidak dikenakan PPN.
+     */
+    public function getPpnAmount(): int
+    {
+        return 0;
+    }
+
+    /**
+     * Total pembayaran yang sudah masuk dari bukti pembayaran.
+     *
+     * @return int Total nominal yang sudah dibayar
+     */
+    public function getTotalPaidAmount(): int
+    {
+        $paymentProofs = $this->relationLoaded('paymentProofs')
+            ? $this->paymentProofs
+            : $this->paymentProofs()->get();
+
+        return (int) max(0, $paymentProofs->sum(fn ($proof) => (int) ($proof->amount ?? 0)));
+    }
+
+    /**
+     * Sisa pembayaran: Total RAB - DP - total terbayar.
+     */
+    public function getRemainingAmount(): int
+    {
+        return (int) max(0, $this->getTotalAmount() - $this->getDpAmount() - $this->getTotalPaidAmount());
+    }
+
+    /**
+     * Apakah rekap proyek sudah lunas.
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->getRemainingAmount() <= 0;
+    }
+
+    /**
+     * Progress pembayaran dalam persentase: (DP + terbayar) / Total RAB.
+     *
+     * @return int Persentase 0-100
+     */
+    public function getProgressPercent(): int
+    {
+        $total = $this->getTotalAmount();
+
+        if ($total <= 0) {
+            return 0;
+        }
+
+        return min(100, (int) round((($this->getDpAmount() + $this->getTotalPaidAmount()) / $total) * 100));
     }
 }

@@ -481,7 +481,7 @@
                         <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
                     </tr>
                 @endif
-                @if (auth()->user()->isSuperAdmin())
+                @if (auth()->user()->role === 'superadmin')
                     @php
                         $incomingPayment = $rab->incoming_payment ?? 0;
                         $sisaPembayaran = $totalAnggaranBiaya - $incomingPayment;

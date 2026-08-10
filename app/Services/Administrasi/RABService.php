@@ -155,7 +155,7 @@ class RABService
         $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
 
         $rab = DB::transaction(function () use ($validatedData, $rabNumber, $seqNumber, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
-            $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin();
+            $isSuperAdmin = auth()->check() && auth()->user()->role === 'superadmin';
 
             $rab = RAB::create([
                 'rab_number' => $rabNumber,
@@ -211,7 +211,7 @@ class RABService
 
         DB::transaction(function () use ($rab, $validatedData, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
             $isAdmin = auth()->check() && auth()->user()->role === 'admin';
-            $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin();
+            $isSuperAdmin = auth()->check() && auth()->user()->role === 'superadmin';
 
             $rab->update([
                 'project_name' => $validatedData['project_name'],

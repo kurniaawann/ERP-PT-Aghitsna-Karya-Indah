@@ -1,8 +1,11 @@
 {{-- =====================================================================
      Halaman: Rekap Proyek (Standalone)
      Tujuan: Menampilkan daftar rekap proyek yang diinput manual dengan
-             kolom No (auto-generate), Nama Proyek, Total RAB, dan file
-             design. Mendukung tombol tambah, edit, dan hapus massal.
+             kolom No (auto-generate), Nama Proyek, Total RAB, Uang Masuk
+             (DP, superadmin), Terbayar, Sisa Pembayaran, progress bar,
+             dan file design. Mendukung tambah, lihat detail, edit, dan
+             hapus massal. Bukti pembayaran diupload lewat menu Bukti
+             Pembayaran (kategori Rekap Proyek).
      Data dari RecapProyekController@index:
      - $recaps : Paginator ProjectRecap dari
                  RecapProyekService::buildIndexQuery($request),
@@ -12,6 +15,7 @@
      - x-buttons.delete-button / add-button           : tombol aksi
      - components.finance.project-recaps.table        : tabel rekap
      - components.finance.project-recaps.add-modal    : modal tambah
+     - components.finance.project-recaps.detail-modal : modal detail
      - components.finance.project-recaps.edit-modal   : modal edit
      - x-modal                                        : konfirmasi hapus
      - x-pagination                                   : navigasi halaman
@@ -52,6 +56,7 @@
     @include('components.finance.project-recaps.add-modal')
 
     @foreach ($recaps as $recap)
+        @include('components.finance.project-recaps.detail-modal', ['recap' => $recap])
         @include('components.finance.project-recaps.edit-modal', ['recap' => $recap])
     @endforeach
 

@@ -6,6 +6,7 @@ use App\Models\Finance\InvoiceAlumunium;
 use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
+use App\Models\Finance\ProjectRecap;
 
 /**
  * Service untuk perhitungan finansial invoice.
@@ -28,16 +29,17 @@ class InvoiceCalculatorService
      * @param  float  $totalAmount  Total amount sebelum diskon
      * @param  string|null  $discountType  Tipe diskon: 'percentage' atau 'amount'
      * @param  float|null  $discountValue  Nilai diskon
-     * @return float  Jumlah diskon
+     * @return float Jumlah diskon
      */
     public function calculateDiscountAmount(float $totalAmount, ?string $discountType, ?float $discountValue): float
     {
-        if (!$discountValue || $discountValue <= 0) {
+        if (! $discountValue || $discountValue <= 0) {
             return 0;
         }
         if ($discountType === 'percentage') {
             return round(($totalAmount * $discountValue) / 100);
         }
+
         return round($discountValue);
     }
 
@@ -57,17 +59,18 @@ class InvoiceCalculatorService
      * @param  string|null  $dpType  Tipe DP: 'percentage' atau 'amount'
      * @param  float|null  $dpValue  Nilai DP
      * @param  float|null  $baseAmount  Base amount untuk perhitungan (opsional)
-     * @return float  Jumlah DP
+     * @return float Jumlah DP
      */
     public function calculateDpAmount(float $totalAmount, float|int|null $totalAfterDiscount, ?string $dpType, ?float $dpValue, ?float $baseAmount = null): float
     {
-        if (!$dpValue || $dpValue <= 0) {
+        if (! $dpValue || $dpValue <= 0) {
             return 0;
         }
         $base = $baseAmount ?? (($totalAfterDiscount !== null && (float) $totalAfterDiscount !== $totalAmount) ? (float) $totalAfterDiscount : $totalAmount);
         if ($dpType === 'percentage') {
             return round(($base * $dpValue) / 100);
         }
+
         return round($dpValue);
     }
 
@@ -76,7 +79,7 @@ class InvoiceCalculatorService
      *
      * @param  float|null  $totalAfterDiscount  Total setelah diskon (tidak digunakan, dipertahankan untuk kompatibilitas)
      * @param  float|null  $totalAmount  Total amount
-     * @return int  Net amount
+     * @return int Net amount
      */
     public function calculateNetAmount(?float $totalAfterDiscount, ?float $totalAmount): int
     {
@@ -93,7 +96,7 @@ class InvoiceCalculatorService
      * @param  int  $discountAmount  Jumlah diskon
      * @param  int  $dpAmount  Jumlah DP
      * @param  int  $totalPaidAmount  Total yang sudah dibayar
-     * @return int  Sisa tagihan (tidak pernah negatif)
+     * @return int Sisa tagihan (tidak pernah negatif)
      */
     public function calculateRemainingAmount(int $grandTotal, int $discountAmount, int $dpAmount, int $totalPaidAmount): int
     {
@@ -104,7 +107,6 @@ class InvoiceCalculatorService
      * Mengecek apakah sisa tagihan sudah lunas.
      *
      * @param  int  $remaining  Sisa tagihan
-     * @return bool
      */
     public function isFullyPaid(int $remaining): bool
     {
@@ -119,7 +121,7 @@ class InvoiceCalculatorService
      *
      * @param  int  $grandTotal  Grand total
      * @param  int  $totalPaidAmount  Total yang sudah dibayar
-     * @return int  Persentase 0-100
+     * @return int Persentase 0-100
      */
     public function calculateProgressPercent(int $grandTotal, int $totalPaidAmount): int
     {
@@ -130,7 +132,6 @@ class InvoiceCalculatorService
      * Mendapatkan jumlah diskon dari model invoice.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return float
      */
     public function getDiscountAmount($invoice): float
     {
@@ -145,7 +146,6 @@ class InvoiceCalculatorService
      * Mendapatkan jumlah DP dari model invoice.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return float
      */
     public function getDpAmount($invoice): float
     {
@@ -161,7 +161,6 @@ class InvoiceCalculatorService
      * Mendapatkan net amount dari model invoice.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return int
      */
     public function getNetAmount($invoice): int
     {
@@ -178,7 +177,7 @@ class InvoiceCalculatorService
      * - Total = jumlah semua kolom 'amount'. max(0, ...) mencegah nilai negatif.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return int  Total nominal pembayaran
+     * @return int Total nominal pembayaran
      */
     public function getTotalPaidAmount($invoice): int
     {
@@ -186,7 +185,7 @@ class InvoiceCalculatorService
             ? $invoice->paymentProofs
             : $invoice->paymentProofs()->get();
 
-        return (int) max(0, $paymentProofs->sum(fn($paymentProof) => (int) ($paymentProof->amount ?? 0)));
+        return (int) max(0, $paymentProofs->sum(fn ($paymentProof) => (int) ($paymentProof->amount ?? 0)));
     }
 
     /**
@@ -199,10 +198,14 @@ class InvoiceCalculatorService
      *   (konsisten dengan grand total di detail modal & PDF/Excel).
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return int  Sisa tagihan
+     * @return int Sisa tagihan
      */
     public function getRemainingAmount($invoice): int
     {
+        if ($invoice instanceof ProjectRecap) {
+            return $invoice->getRemainingAmount();
+        }
+
         if ($invoice instanceof InvoiceBarang) {
             return (int) max(0, ($invoice->total_selling ?? 0) - $this->getTotalPaidAmount($invoice));
         }
@@ -221,7 +224,6 @@ class InvoiceCalculatorService
      * Mengecek apakah invoice sudah lunas.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return bool
      */
     public function isFullyPaidForInvoice($invoice): bool
     {
@@ -232,7 +234,7 @@ class InvoiceCalculatorService
      * Mendapatkan progress pembayaran dari model invoice.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return int  Persentase 0-100
+     * @return int Persentase 0-100
      */
     public function getProgressPercent($invoice): int
     {
@@ -284,17 +286,17 @@ class InvoiceCalculatorService
      * Membangun ringkasan total untuk invoice proyek.
      *
      * @param  \Illuminate\Support\Collection  $invoices  Koleksi invoice proyek
-     * @return object  Objek berisi: invoice_count, total_invoice, total_paid, total_remaining, paid_count, unpaid_count
+     * @return object Objek berisi: invoice_count, total_invoice, total_paid, total_remaining, paid_count, unpaid_count
      */
     public function buildProyekTotals($invoices): object
     {
         return (object) [
             'invoice_count' => $invoices->count(),
-            'total_invoice' => $invoices->sum(fn($i) => (int) ($i->total_amount ?? 0)),
-            'total_paid' => $invoices->sum(fn($i) => $this->getTotalPaidAmount($i)),
-            'total_remaining' => $invoices->sum(fn($i) => $this->getRemainingAmount($i)),
-            'paid_count' => $invoices->filter(fn($i) => $this->isFullyPaidForInvoice($i))->count(),
-            'unpaid_count' => $invoices->filter(fn($i) => !$this->isFullyPaidForInvoice($i))->count(),
+            'total_invoice' => $invoices->sum(fn ($i) => (int) ($i->total_amount ?? 0)),
+            'total_paid' => $invoices->sum(fn ($i) => $this->getTotalPaidAmount($i)),
+            'total_remaining' => $invoices->sum(fn ($i) => $this->getRemainingAmount($i)),
+            'paid_count' => $invoices->filter(fn ($i) => $this->isFullyPaidForInvoice($i))->count(),
+            'unpaid_count' => $invoices->filter(fn ($i) => ! $this->isFullyPaidForInvoice($i))->count(),
         ];
     }
 
@@ -302,16 +304,16 @@ class InvoiceCalculatorService
      * Membangun ringkasan total untuk invoice alumunium.
      *
      * @param  \Illuminate\Support\Collection  $invoices  Koleksi invoice alumunium
-     * @return object  Objek berisi: total_invoice, invoice_count, paid_count, paid_amount, remaining_amount
+     * @return object Objek berisi: total_invoice, invoice_count, paid_count, paid_amount, remaining_amount
      */
     public function buildAlumuniumTotals($invoices): object
     {
         return (object) [
-            'total_invoice' => $invoices->sum(fn($i) => (int) ($i->total_amount ?? 0)),
+            'total_invoice' => $invoices->sum(fn ($i) => (int) ($i->total_amount ?? 0)),
             'invoice_count' => $invoices->count(),
-            'paid_count' => $invoices->filter(fn($i) => $this->isFullyPaidForInvoice($i))->count(),
-            'paid_amount' => $invoices->sum(fn($i) => $this->getTotalPaidAmount($i)),
-            'remaining_amount' => $invoices->sum(fn($i) => $this->getRemainingAmount($i)),
+            'paid_count' => $invoices->filter(fn ($i) => $this->isFullyPaidForInvoice($i))->count(),
+            'paid_amount' => $invoices->sum(fn ($i) => $this->getTotalPaidAmount($i)),
+            'remaining_amount' => $invoices->sum(fn ($i) => $this->getRemainingAmount($i)),
         ];
     }
 
@@ -319,13 +321,13 @@ class InvoiceCalculatorService
      * Mendapatkan net amount dari invoice (atau total_selling untuk InvoiceBarang).
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
-     * @return int
      */
     public function getInvoiceNetAmount($invoice): int
     {
         if ($invoice instanceof InvoiceBarang) {
             return (int) max(0, $invoice->total_selling ?? 0);
         }
+
         return (int) max(0, $invoice->total_amount ?? 0);
     }
 
@@ -340,12 +342,23 @@ class InvoiceCalculatorService
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @param  int|null  $excludePaymentProofId  ID PaymentProof yang dikecualikan
-     * @return int  Total nominal pembayaran
+     * @return int Total nominal pembayaran
      */
     public function getPaidAmountForInvoice($invoice, ?int $excludePaymentProofId = null): int
     {
         if ($excludePaymentProofId === null) {
             return $this->getTotalPaidAmount($invoice);
+        }
+
+        if ($invoice instanceof ProjectRecap) {
+            $query = PaymentProof::query()
+                ->where('invoice_type', 'recap')
+                ->where('invoice_number', $invoice->id);
+            if ($excludePaymentProofId) {
+                $query->where('id', '!=', $excludePaymentProofId);
+            }
+
+            return (int) $query->sum('amount');
         }
 
         if ($invoice instanceof InvoiceBarang) {
@@ -355,6 +368,7 @@ class InvoiceCalculatorService
             if ($excludePaymentProofId) {
                 $query->where('id', '!=', $excludePaymentProofId);
             }
+
             return (int) $query->sum('amount');
         }
 
@@ -364,6 +378,7 @@ class InvoiceCalculatorService
         if ($excludePaymentProofId) {
             $query->where('id', '!=', $excludePaymentProofId);
         }
+
         return (int) $query->sum('amount');
     }
 
@@ -372,7 +387,7 @@ class InvoiceCalculatorService
      *
      * @param  int|null  $grandTotal  Grand total
      * @param  int|null  $paidAmount  Total yang sudah dibayar
-     * @return int  Sisa pembayaran
+     * @return int Sisa pembayaran
      */
     public function getRemainingAmountForPayment(?int $grandTotal, ?int $paidAmount): int
     {
@@ -385,10 +400,23 @@ class InvoiceCalculatorService
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @param  string  $moduleType  Tipe modul
      * @param  string  $invoiceType  Tipe invoice
-     * @return array  Data: paid_amount, net_amount, remaining_amount, is_fully_paid
+     * @return array Data: paid_amount, net_amount, remaining_amount, is_fully_paid
      */
     public function buildInvoiceOptionData($invoice, string $moduleType, string $invoiceType): array
     {
+        if ($invoice instanceof ProjectRecap) {
+            $paidAmount = $this->getPaidAmountForInvoice($invoice);
+            $grandTotal = $invoice->getTotalAmount();
+            $remainingAmount = $invoice->getRemainingAmount();
+
+            return [
+                'paid_amount' => $paidAmount,
+                'net_amount' => $grandTotal,
+                'remaining_amount' => $remainingAmount,
+                'is_fully_paid' => $remainingAmount <= 0,
+            ];
+        }
+
         $paidAmount = $this->getPaidAmountForInvoice($invoice);
 
         if ($invoice instanceof InvoiceBarang) {

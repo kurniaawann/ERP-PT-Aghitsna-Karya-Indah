@@ -25,7 +25,7 @@
         <p class="font-semibold text-sm truncate">{{ $rab->recipient }}</p>
     </div>
 
-    @if (auth()->user()->isSuperAdmin() && $rab->incoming_payment > 0)
+    @if (auth()->user()->role === 'superadmin' && $rab->incoming_payment > 0)
         <div class="mb-2 p-2 bg-primary-light rounded border border-primary text-xs">
             <p class="text-primary"><strong>Uang Masuk (DP):</strong> Rp
                 {{ number_format($rab->incoming_payment, 0, ',', '.') }}</p>

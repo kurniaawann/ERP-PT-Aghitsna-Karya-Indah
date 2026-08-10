@@ -21,7 +21,7 @@
                             <th class="p-3 text-left">Penerima</th>
                             <th class="p-3 text-left">Tanggal</th>
                             <th class="p-3 text-right">Total Biaya</th>
-                            @if (auth()->user()->isSuperAdmin())
+                            @if (auth()->user()->role === 'superadmin')
                                 <th class="p-3 text-right">Uang Masuk (DP)</th>
                                 <th class="p-3 text-right">Sisa</th>
                             @endif
@@ -44,7 +44,7 @@
                                 <td class="p-3 text-right font-semibold text-success">
                                     Rp {{ number_format($rab->total_amount, 0, ',', '.') }}
                                 </td>
-                                @if (auth()->user()->isSuperAdmin())
+                                @if (auth()->user()->role === 'superadmin')
                                     <td class="p-3 text-right font-semibold text-primary">
                                         Rp {{ number_format($rab->incoming_payment ?? 0, 0, ',', '.') }}
                                     </td>
@@ -91,7 +91,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ auth()->user()->isSuperAdmin() ? 9 : 7 }}" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
+                                <td colspan="{{ auth()->user()->role === 'superadmin' ? 9 : 7 }}" class="p-4 text-center text-text-secondary">Tidak ada RAB.</td>
                             </tr>
                         @endforelse
                     </tbody>

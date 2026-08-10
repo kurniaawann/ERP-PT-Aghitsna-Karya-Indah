@@ -53,9 +53,23 @@
                                 <td class="p-3 text-sm font-medium text-primary">{{ $invoiceLabel }}</td>
                                 <td class="p-3 text-sm">
                                     <div class="flex flex-col gap-1">
+                                        @php
+                                            $proofTypeLabel = match ($paymentProof->invoice_type) {
+                                                'proyek' => auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek',
+                                                'recap' => 'Rekap Proyek',
+                                                'alumunium' => 'Invoice Alumunium',
+                                                default => 'Invoice Barang',
+                                            };
+                                            $proofTypeClass = match ($paymentProof->invoice_type) {
+                                                'proyek' => 'bg-primary-light text-primary',
+                                                'recap' => 'bg-success-light text-success',
+                                                'alumunium' => 'bg-warning-light text-warning',
+                                                default => 'bg-info-light text-info',
+                                            };
+                                        @endphp
                                         <span
-                                            class="inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-xs font-semibold {{ $paymentProof->invoice_type === 'proyek' ? 'bg-primary-light text-primary' : ($paymentProof->invoice_type === 'alumunium' ? 'bg-warning-light text-warning' : 'bg-info-light text-info') }}">
-                                            {{ $paymentProof->invoice_type === 'proyek' ? (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek') : ($paymentProof->invoice_type === 'alumunium' ? 'Invoice Alumunium' : 'Invoice Barang') }}
+                                            class="inline-flex w-fit items-center rounded-md px-2.5 py-0.5 text-xs font-semibold {{ $proofTypeClass }}">
+                                            {{ $proofTypeLabel }}
                                         </span>
                                         <span class="text-xs text-text-label">
                                             {{ $paymentProof->module_type === 'finance' ? 'Keuangan' : ucfirst($paymentProof->module_type) }}
