@@ -2,23 +2,17 @@
      Halaman: Data Payroll (payroll)
      Tujuan: Halaman utama pengelolaan payroll karyawan. Menampilkan daftar
              payroll (paginasi) dengan pencarian & filter (bulan, tahun,
-             minggu), aksi bulk (Bayar/Hapus/Generate), panel pengeluaran
-             operasional proyek, dan ekspor (Excel/PDF).
+             minggu), aksi bulk (Bayar/Hapus/Generate), dan ekspor (Excel/PDF).
 
      Data dari PayrollController@index:
      - $payrolls            : LengthAwarePaginator daftar payroll (relasi employee)
-     - $operationalExpenses : Collection pengeluaran operasional proyek per
-                              periode; setiap item punya atribut period_locked
-                              (true jika periode sudah tidak punya payroll draft)
      - $search, $month, $year, $weekNumber : nilai filter yang aktif (nullable)
 
      Komponen yang di-include:
-     - components.sdm.payroll.operational-expense-panel : ringkasan biaya operasional
      - components.sdm.payroll.table                     : tabel daftar payroll
      - components.sdm.payroll.generate-modal            : modal generate payroll
      - components.sdm.payroll.edit-modal                : modal edit payroll draft (loop)
      - components.sdm.payroll.detail-modal              : modal detail payroll (loop)
-     - components.sdm.payroll.operational-expense-edit-modal : modal edit biaya operasional
      - x-pagination                                     : kontrol pagination
      - x-modal (deleteModal / bulkPayModal)             : konfirmasi hapus & bayar massal
 
@@ -29,8 +23,6 @@
        submitBulkPayForm() dengan daftar ID terpilih (PATCH).
      - Generate Payroll memvalidasi kelengkapan absensi terlebih dahulu
        (route payroll.check-attendance) sebelum menciptakan payroll draft.
-     - Panel pengeluaran operasional hanya bisa diedit jika periode masih
-       punya payroll draft (period_locked = false).
      - Konfigurasi diteruskan ke JS via @json($payrollConfig) →
        window.payrollConfig (URL AJAX + nilai filter aktif).
 
@@ -114,14 +106,6 @@
         </div>
 
         {{-- ============================================================
-             SECTION: Panel Pengeluaran Operasional Proyek
-             Ringkasan biaya operasional (air minum, material tambahan, dll)
-             yang disimpan SEKALI per periode payroll, bukan per karyawan.
-             ============================================================ --}}
-        {{-- Pengeluaran Operasional Proyek (sekali per periode) --}}
-        @include('components.sdm.payroll.operational-expense-panel', ['operationalExpenses' => $operationalExpenses])
-
-        {{-- ============================================================
              SECTION: Table
              Menampilkan daftar payroll dengan checkbox seleksi massal
              (hanya payroll draft yang dapat dihapus/dibayar).
@@ -143,8 +127,6 @@
          - generate-modal : wizard generate payroll (validasi absensi dulu).
          - edit-modal     : modal edit payroll draft (loop, hanya status draft).
          - detail-modal   : modal detail read-only (loop).
-         - operational-expense-edit-modal : edit biaya operasional per periode
-           (loop, hanya bila !period_locked).
          - deleteModal    : konfirmasi hapus massal (hanya draft).
          - bulkPayModal   : konfirmasi bayar massal (PATCH).
          ============================================================ --}}
@@ -159,13 +141,6 @@
             @include('components.sdm.payroll.edit-modal', ['payroll' => $payroll])
         @endif
         @include('components.sdm.payroll.detail-modal', ['payroll' => $payroll])
-    @endforeach
-
-    {{-- Modal Edit Pengeluaran Operasional (per periode) --}}
-    @foreach ($operationalExpenses as $expense)
-        @if (!$expense->period_locked)
-            @include('components.sdm.payroll.operational-expense-edit-modal', ['expense' => $expense])
-        @endif
     @endforeach
 
     {{-- Modal Konfirmasi Bulk Delete --}}

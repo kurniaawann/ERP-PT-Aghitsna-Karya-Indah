@@ -8,8 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Form request untuk pembaruan data payroll draft.
  *
  * Hanya data payroll draft yang dapat diperbarui. Validasi memastikan
- * bahwa project_name selalu diberikan. Pengeluaran tambahan kini
- * dikelola terpisah per periode (lihat ProjectOperationalExpense).
+ * bahwa project_name selalu diberikan.
  */
 class UpdatePayrollRequest extends FormRequest
 {

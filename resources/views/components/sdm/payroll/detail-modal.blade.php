@@ -7,8 +7,7 @@
     1. Employee Info - Name, code, position, period, project
     2. Attendance Summary - Total work days, present, permission, sick, leave, overtime
     3. Salary Calculation - Daily wage, present days, total wage, overtime, kasbon, net salary
-    4. Additional Expenses (if any) - Parsed from JSON additional_expenses_notes
-    5. Payment Info (if paid) - Payment date and status
+    4. Payment Info (if paid) - Payment date and status
 
     Business logic: Payroll model accessors (formatted_period, total_payment)
     Format: Rupiah (Rp X.XXX)
@@ -141,65 +140,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- Additional Expenses --}}
-                @if ($payroll->additional_expenses)
-                    <div class="bg-secondary-light p-4 rounded-lg">
-                        <h3 class="font-semibold text-text-primary mb-3">Pengeluaran Tambahan PT</h3>
-
-                        @php
-                            $expenseItems = [];
-                            if ($payroll->additional_expenses_notes) {
-                                $decoded = json_decode($payroll->additional_expenses_notes, true);
-                                if (is_array($decoded)) {
-                                    $expenseItems = $decoded;
-                                }
-                            }
-                        @endphp
-
-                        @if (count($expenseItems) > 0)
-                            {{-- List of expense items --}}
-                            <div class="space-y-2 mb-3">
-                                @foreach ($expenseItems as $item)
-                                    <div
-                                        class="flex justify-between text-sm py-1.5 px-2 bg-surface-base rounded border border-border-strong">
-                                        <span class="text-text-label">{{ $item['name'] ?? 'Item' }}</span>
-                                        <span class="font-semibold text-primary">Rp
-                                            {{ number_format($item['amount'] ?? 0, 0, ',', '.') }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <hr class="my-3 border-border-strong">
-                            <div class="flex justify-between font-semibold">
-                                <span class="text-text-label">Total Pengeluaran:</span>
-                                <span class="text-primary">Rp
-                                    {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
-                            </div>
-                        @else
-                            {{-- Fallback: jika format lama (text biasa) --}}
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-text-label">Jumlah:</span>
-                                    <span class="font-semibold">Rp
-                                        {{ number_format($payroll->additional_expenses, 0, ',', '.') }}</span>
-                                </div>
-                                @if ($payroll->additional_expenses_notes && trim($payroll->additional_expenses_notes) !== '[]')
-                                    <div>
-                                        <p class="text-text-label">Keterangan:</p>
-                                        <p class="text-sm">{{ $payroll->additional_expenses_notes }}</p>
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-
-                        <hr class="my-3 border-border-strong">
-                        <div class="flex justify-between text-lg font-bold text-primary">
-                            <span>Total Yang Dibayarkan:</span>
-                            <span>Rp
-                                {{ number_format($payroll->net_salary + $payroll->additional_expenses, 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-                @endif
 
                 {{-- Payment Info --}}
                 @if ($payroll->status === 'paid')

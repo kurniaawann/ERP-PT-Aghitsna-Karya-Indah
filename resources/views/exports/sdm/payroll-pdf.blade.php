@@ -7,9 +7,8 @@
     1. Header - Company name, report title, project, period, print date
     2. Attendance Table - Daily attendance status per employee per day
     3. Salary Summary Table - Daily wage, present days, overtime, kasbon, net salary
-    4. Additional Expenses Section - If any expenses are recorded
-    5. Fund Recap - Total wages, expenses, kasbon, grand total
-    6. Footer - Auto-generated timestamp
+    4. Fund Recap - Total wages, kasbon, grand total
+    5. Footer - Auto-generated timestamp
 
     Layout: A4 Landscape (DomPDF)
     Orientation: Landscape (many columns)
@@ -21,7 +20,6 @@
     - $dateRange: Date range string (e.g., "01 Feb 2026 - 07 Feb 2026")
     - $weekDays: Array of 7 date strings for column headers
     - $totalBaseSalary, $totalDeduction, $totalOvertime, $totalNetSalary: Summary totals
-    - $operationalExpenses: Collection of project operational expenses (period-level)
 --}}
 
 <!DOCTYPE html>
@@ -336,61 +334,9 @@
         $totalWages = $payrolls->sum('net_salary');
         $totalLembur = $payrolls->sum('overtime_total');
         $totalKasbon = $payrolls->sum('kasbon_deduction');
-
-        // Biaya operasional proyek: satu record per periode + data legacy di payroll
-        $allExpenses = [];
-        foreach (($operationalExpenses ?? collect()) as $expense) {
-            $items = is_array($expense->expense_items) ? $expense->expense_items : [];
-            foreach ($items as $exp) {
-                $name = $exp['name'] ?? 'Lain-lain';
-                $amount = (int) ($exp['amount'] ?? 0);
-                if (!isset($allExpenses[$name])) {
-                    $allExpenses[$name] = 0;
-                }
-                $allExpenses[$name] += $amount;
-            }
-        }
-        foreach ($payrolls as $payroll) {
-            if ($payroll->additional_expenses_notes) {
-                $expenses = json_decode($payroll->additional_expenses_notes, true);
-                if ($expenses && is_array($expenses)) {
-                    foreach ($expenses as $exp) {
-                        $name = $exp['name'] ?? 'Lain-lain';
-                        $amount = $exp['amount'] ?? 0;
-                        if (!isset($allExpenses[$name])) {
-                            $allExpenses[$name] = 0;
-                        }
-                        $allExpenses[$name] += $amount;
-                    }
-                }
-            }
-        }
-        $totalExpenses = array_sum($allExpenses);
-        $grandTotal = $totalWages + $totalExpenses;
     @endphp
 
     <div class="summary-container">
-        <!-- Pengeluaran Tambahan -->
-        <div class="summary-col">
-            <div class="summary-header">PENGELUARAN TAMBAHAN (OPERASIONAL)</div>
-            @if (count($allExpenses) > 0)
-                @foreach ($allExpenses as $name => $amount)
-                    <div class="summary-row">
-                        <div class="s-label">{{ $name }}</div>
-                        <div class="s-value">{{ number_format($amount, 0, ',', '.') }}</div>
-                    </div>
-                @endforeach
-                <div class="summary-row" style="border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 5px;">
-                    <div class="s-label font-bold">Total Tambahan</div>
-                    <div class="s-value">{{ number_format($totalExpenses, 0, ',', '.') }}</div>
-                </div>
-            @else
-                <div class="text-center" style="padding: 10px; color: #999;">- Tidak ada pengeluaran tambahan -</div>
-            @endif
-        </div>
-
-        <div class="spacer-col"></div>
-
         <!-- Potongan Kasbon -->
         <div class="summary-col">
             <div class="summary-header">REKAPITULASI DANA</div>
@@ -418,16 +364,12 @@
                 <div class="s-label font-bold">Total Upah Pekerja</div>
                 <div class="s-value font-bold">{{ number_format($totalWages, 0, ',', '.') }}</div>
             </div>
-            <div class="summary-row">
-                <div class="s-label">Total Pengeluaran Tambahan</div>
-                <div class="s-value">{{ number_format($totalExpenses, 0, ',', '.') }}</div>
-            </div>
         </div>
     </div>
 
     <div class="grand-total">
         TOTAL DIBAYARKAN: <span style="font-size: 18px; font-weight: bold;">Rp
-            {{ number_format($grandTotal, 0, ',', '.') }}</span>
+            {{ number_format($totalWages, 0, ',', '.') }}</span>
     </div>
 
     <div style="text-align: center; margin-top: 30px; font-size: 8px; color: #aaa;">

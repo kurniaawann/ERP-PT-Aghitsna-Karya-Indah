@@ -6,7 +6,6 @@ use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\KasbonPayment;
-use App\Models\Sdm\ProjectOperationalExpense;
 
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -231,10 +230,8 @@ class PayrollService
      * 1. Validasi kelengkapan absensi (tolak jika tidak lengkap)
      * 2. Hitung kasbon team per divisi
      * 3. Untuk setiap karyawan: gaji harian × hari hadir + lembur - kasbon
- * 4. Buat data payroll dengan status 'draft'
- * 5. Tandai kasbon personal dan team sebagai sudah dipotong
- * 6. Simpan pengeluaran operasional proyek SEKALI per periode
-     *    (tabel project_operational_expenses), bukan per karyawan
+     * 4. Buat data payroll dengan status 'draft'
+     * 5. Tandai kasbon personal dan team sebagai sudah dipotong
      *
      * Logika potongan kasbon:
      * - Hanya KasbonPayment manual yang BELUM di-assign ke payroll
@@ -250,17 +247,11 @@ class PayrollService
      *
      * @param  Carbon        $periodStartDate
      * @param  Carbon        $periodEndDate
-     * @param  int           $additionalExpenses
-     * @param  string|null   $additionalExpensesNotes
-     * @param  string|null   $projectName
      * @return array  ['success' => bool, 'message' => string]
      */
     public function generatePayroll(
         Carbon $periodStartDate,
-        Carbon $periodEndDate,
-        int $additionalExpenses = 0,
-        ?string $additionalExpensesNotes = null,
-        ?string $projectName = null
+        Carbon $periodEndDate
     ): array {
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
@@ -493,31 +484,6 @@ class PayrollService
             }
         }
 
-        // === SIMPAN PENGELUARAN OPERASIONAL PROYEK (SEKALI PER PERIODE) ===
-        // Biaya operasional (air minum, material tambahan, dll) disimpan sebagai
-        // satu record per periode, TIDAK disalin ke setiap record payroll karyawan.
-        // Jika sudah ada record untuk periode ini, perbarui (updateOrCreate).
-        if ($additionalExpenses > 0 && $additionalExpensesNotes) {
-            $expenseItems = json_decode($additionalExpensesNotes, true);
-            if (!is_array($expenseItems)) {
-                $expenseItems = [];
-            }
-
-            ProjectOperationalExpense::updateOrCreate(
-                [
-                    'period_start_date' => $startDate->format('Y-m-d'),
-                    'period_end_date' => $endDate->format('Y-m-d'),
-                    'created_by' => auth()->id(),
-                ],
-                [
-                    'project_name' => $projectName,
-                    'expense_items' => $expenseItems,
-                    'total_amount' => $additionalExpenses,
-                    'notes' => null,
-                ]
-            );
-        }
-
         return ['success' => true, 'message' => 'Payroll berhasil digenerate!'];
     }
 
@@ -568,10 +534,6 @@ class PayrollService
      * Logika:
      * - Dihapus per record (loop $payroll->delete()) karena Payroll punya
      *   relasi/observer yang perlu dipicu per model.
-     * - Setelah itu pengeluaran operasional proyek dibersihkan: jika sebuah
-     *   periode sudah TIDAK punya payroll tersisa sama sekali, record
-     *   project_operational_expenses periode tersebut ikut dihapus agar tidak
-     *   jadi data sampah.
      *
      * @param  array  $ids  Array ID payroll
      * @return array  ['success' => bool, 'message' => string]
@@ -584,31 +546,8 @@ class PayrollService
 
         $payrolls = Payroll::whereIn('id', $ids)->where('status', 'draft')->where('created_by', auth()->id())->get();
 
-        $affectedPeriods = $payrolls->map(function ($payroll) {
-            return [
-                'period_start_date' => $payroll->period_start_date,
-                'period_end_date' => $payroll->period_end_date,
-            ];
-        })->unique();
-
         foreach ($payrolls as $payroll) {
             $payroll->delete();
-        }
-
-        // Hapus pengeluaran operasional yang periode-nya sudah tidak punya
-        // payroll sama sekali (semua draft dihapus) supaya tidak jadi data sampah.
-        foreach ($affectedPeriods as $period) {
-            $remaining = Payroll::where('period_start_date', $period['period_start_date'])
-                ->where('period_end_date', $period['period_end_date'])
-                ->where('created_by', auth()->id())
-                ->exists();
-
-            if (!$remaining) {
-                ProjectOperationalExpense::where('period_start_date', $period['period_start_date'])
-                    ->where('period_end_date', $period['period_end_date'])
-                    ->where('created_by', auth()->id())
-                    ->delete();
-            }
         }
 
         return ['success' => true, 'message' => 'Data payroll berhasil dihapus!'];
@@ -686,56 +625,6 @@ class PayrollService
     }
 
     /**
-     * Mendapatkan pengeluaran operasional proyek sesuai filter bulan/tahun/minggu.
-     *
-     * Digunakan untuk panel ringkasan "Biaya Operasional" di halaman payroll.
-     *
-     * Logika:
-     * - Filter minggu diterapkan hanya jika ketiganya (weekNumber+month+year)
-     *   terisi; rentang minggu diambil dari getWeekDateRange lalu dicocokkan
-     *   pada period_start_date.
-     * - Jika weekNumber tidak valid untuk bulan tersebut, exception ditangkap
-     *   dan dikembalikan koleksi kosong (panel tidak menampilkan error).
-     *
-     * @param  int|null  $month
-     * @param  int|null  $year
-     * @param  int|null  $weekNumber
-     * @return Collection
-     */
-    public function getOperationalExpenses(?int $month, ?int $year, ?int $weekNumber = null): Collection
-    {
-        $query = ProjectOperationalExpense::where('created_by', auth()->id())
-            ->when($month, fn($q) => $q->whereMonth('period_start_date', $month))
-            ->when($year, fn($q) => $q->whereYear('period_start_date', $year));
-
-        if ($weekNumber && $month && $year) {
-            try {
-                $range = $this->getWeekDateRange($year, $month, $weekNumber);
-                $query->where('period_start_date', $range['start']->format('Y-m-d'));
-            } catch (\InvalidArgumentException $e) {
-                return collect();
-            }
-        }
-
-        return $query->orderByDesc('period_start_date')->get();
-    }
-
-    /**
-     * Mendapatkan pengeluaran operasional proyek untuk periode tertentu.
-     *
-     * @param  Carbon  $periodStartDate
-     * @param  Carbon  $periodEndDate
-     * @return ProjectOperationalExpense|null
-     */
-    public function getOperationalExpenseForPeriod(Carbon $periodStartDate, Carbon $periodEndDate): ?ProjectOperationalExpense
-    {
-        return ProjectOperationalExpense::where('created_by', auth()->id())
-            ->where('period_start_date', $periodStartDate->format('Y-m-d'))
-            ->where('period_end_date', $periodEndDate->format('Y-m-d'))
-            ->first();
-    }
-
-    /**
      * Mendapatkan semua minggu dalam sebulan menggunakan sistem minggu Senin-Sabtu.
      *
      * Setiap minggu berjalan dari Senin hingga Sabtu (6 hari kerja).
@@ -797,40 +686,6 @@ class PayrollService
     }
 
     /**
-     * Menghitung rentang tanggal untuk minggu tertentu dalam sebulan.
-     *
-     * @param  int  $year
-     * @param  int  $month
-     * @param  int  $weekNumber  1-N (tergantung bulan)
-     * @return array ['start' => Carbon, 'end' => Carbon, 'working_days' => int]
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function getWeekDateRange(int $year, int $month, int $weekNumber): array
-    {
-        $weeks = static::getWeeksInMonth($year, $month);
-
-        $weekIndex = $weekNumber - 1;
-
-        if ($weekIndex < 0 || $weekIndex >= count($weeks)) {
-            throw new \InvalidArgumentException(
-                "Minggu {$weekNumber} tidak valid untuk bulan {$month}/{$year}. " .
-                "Terdapat " . count($weeks) . " minggu."
-            );
-        }
-
-        $week = $weeks[$weekIndex];
-
-        $workingDays = $this->countWorkingDays($week['start'], $week['end']);
-
-        return [
-            'start' => $week['start'],
-            'end' => $week['end'],
-            'working_days' => $workingDays,
-        ];
-    }
-
-    /**
      * Menghitung hari kerja (Senin-Sabtu) antara dua tanggal secara inklusif.
      *
      * @param  Carbon  $startDate
@@ -850,42 +705,5 @@ class PayrollService
         }
 
         return $count;
-    }
-
-    /**
-     * Memvalidasi JSON pengeluaran tambahan dari frontend.
-     *
-     * Memastikan JSON valid dan menghitung ulang total di sisi server
-     * demi keamanan (mencegah total yang dimanipulasi dari frontend).
-     *
-     * Logika:
-     * - Jika tidak ada JSON, dianggap tidak ada pengeluaran tambahan.
-     * - Total dihitung ulang dari SUM(amount) seluruh item.
-     * - Hasil yang dipakai adalah total hasil perhitungan server, bukan nilai
-     *   dari frontend — frontend hanya dipakai sebagai pembanding.
-     *
-     * @param  int|null  $frontendTotal
-     * @param  string|null  $notesJson
-     * @return array  ['total' => int, 'notes' => string]
-     */
-    public function validateAdditionalExpenses(?int $frontendTotal, ?string $notesJson): array
-    {
-        if (!$notesJson) {
-            return ['total' => 0, 'notes' => null];
-        }
-
-        $expenseItems = json_decode($notesJson, true);
-
-        if (!is_array($expenseItems)) {
-            return ['total' => 0, 'notes' => null];
-        }
-
-        $calculatedTotal = array_sum(array_column($expenseItems, 'amount'));
-
-        if ($calculatedTotal != $frontendTotal) {
-            return ['total' => $calculatedTotal, 'notes' => $notesJson];
-        }
-
-        return ['total' => $frontendTotal, 'notes' => $notesJson];
     }
 }

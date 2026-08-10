@@ -6,8 +6,6 @@
 
     Editable fields:
     - project_name (required)
-    - additional_expenses (required, must be >= 0)
-    - additional_expenses_notes (required if additional_expenses > 0)
     - notes (optional)
 
     Read-only fields:
@@ -18,7 +16,6 @@
 
     Validation:
     - Uses UpdatePayrollRequest for server-side validation
-    - Client-side validation via required expense item fields in resources/js/pages/sdm/payroll/index.js
 
     Included from: pages/sdm/payroll.blade.php (inside @foreach loop)
 --}}
@@ -33,7 +30,7 @@
             <div class="text-sm text-warning">
                 <p class="font-semibold mb-1">Payroll draft hanya bisa diubah sebelum dibayar.</p>
                 <p>Data absensi, upah pokok, dan perhitungan inti tetap terkunci. Yang dapat diubah hanya data
-                    administratif dan pengeluaran tambahan.</p>
+                    administratif.</p>
             </div>
         </div>
     </div>

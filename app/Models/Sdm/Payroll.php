@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * Stores weekly payroll data for daily workers including
  * attendance summary, salary calculation, kasbon deductions,
- * additional expenses, and net salary.
+ * and net salary.
  *
  * Status flow: draft → paid
  *
@@ -40,8 +40,6 @@ use Illuminate\Database\Eloquent\Builder;
  * @property int    $deduction_amount     Additional deductions (fixed)
  * @property int    $overtime_total       Total overtime pay
  * @property int    $kasbon_deduction     Total kasbon deduction (personal + team)
- * @property int    $additional_expenses  Additional expenses (PT operational costs)
- * @property string|null $additional_expenses_notes  JSON of expense items
  * @property int    $net_salary           Final salary after all deductions
  * @property \Carbon\Carbon|null $payment_date  Payment date
  * @property string $status               'draft' or 'paid'
@@ -77,8 +75,6 @@ class Payroll extends Model
         'deduction_amount',
         'overtime_total',
         'kasbon_deduction',
-        'additional_expenses',
-        'additional_expenses_notes',
         'net_salary',
         'payment_date',
         'status',
@@ -107,7 +103,6 @@ class Payroll extends Model
         'deduction_amount' => 'integer',
         'overtime_total' => 'integer',
         'kasbon_deduction' => 'integer',
-        'additional_expenses' => 'integer',
         'net_salary' => 'integer',
         'payment_date' => 'date',
     ];
@@ -228,7 +223,6 @@ class Payroll extends Model
      * Calculate net salary from stored components.
      *
      * Formula: base_salary - deduction_amount + overtime_total - kasbon_deduction
-     * Note: additional_expenses is NOT subtracted (it's PT operational cost, not employee deduction).
      *
      * @return int
      */
@@ -241,18 +235,5 @@ class Payroll extends Model
         }
 
         return $netSalary;
-    }
-
-    /**
-     * Get total payment amount (net salary + additional expenses).
-     *
-     * This represents the total amount disbursed for this employee,
-     * including PT operational costs.
-     *
-     * @return int
-     */
-    public function getTotalPaymentAttribute(): int
-    {
-        return $this->net_salary + ($this->additional_expenses ?? 0);
     }
 }

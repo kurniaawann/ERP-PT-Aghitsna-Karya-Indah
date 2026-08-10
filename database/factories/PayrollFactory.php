@@ -33,8 +33,6 @@ class PayrollFactory extends Factory
             'deduction_amount' => 0,
             'overtime_total' => 0,
             'kasbon_deduction' => 0,
-            'additional_expenses' => 0,
-            'additional_expenses_notes' => null,
             'net_salary' => $baseSalary,
             'payment_date' => null,
             'status' => 'draft',

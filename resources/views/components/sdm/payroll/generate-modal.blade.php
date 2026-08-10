@@ -4,16 +4,16 @@
     Modal form for generating weekly payroll for all active employees.
 
     Process:
-    1. User selects month, year, week, and optional project name
+    1. User selects month, year, and week
     2. Auto-checks attendance completeness via AJAX (PayrollController@checkAttendanceCompleteness)
     3. Shows validation results:
        - Complete employees (all days filled)
        - Incomplete employees (missing attendance days)
        - Already generated employees (skip)
        - Kasbon issues (exceeds salary)
+       - Employees without project (blocked)
     4. Generate button only enabled if all conditions pass (can_generate = true)
-    5. Additional expenses can be added dynamically (token listrik, air, etc.)
-    6. On submit, posts to PayrollController@generate
+    5. On submit, posts to PayrollController@generate
 
     Frontend JS: resources/js/pages/sdm/payroll/index.js (checkAttendanceData function)
 --}}
@@ -34,8 +34,6 @@
                     <li><strong class="text-error">Setiap karyawan harus memiliki absensi lengkap sesuai hari
                             kerjanya</strong></li>
                     <li>Kasbon hanya dipotong jika karyawan sudah membayar</li>
-                    <li>Bisa menambahkan pengeluaran operasional proyek (air minum, material tambahan, dll) —
-                        disimpan <strong>sekali per periode</strong>, bukan per karyawan</li>
                 </ul>
             </div>
         </div>
@@ -83,36 +81,6 @@
     {{-- Hidden inputs for period date range (populated by JS when week is selected) --}}
     <input type="hidden" name="period_start_date" id="period_start_date" value="">
     <input type="hidden" name="period_end_date" id="period_end_date" value="">
-
-    <div class="mb-3">
-            <div class="flex justify-between items-center mb-2">
-                <label class="block text-text-primary font-semibold">Pengeluaran Tambahan / Operasional Proyek (Opsional)</label>
-                <button type="button" onclick="addExpenseItem('generate')"
-                    class="text-sm bg-success hover:bg-success-hover text-white px-3 py-1 rounded-lg flex items-center gap-1">
-                    <i class="fa-solid fa-plus"></i> Tambah Item
-                </button>
-            </div>
-            <p class="text-xs text-text-secondary mb-2">Contoh: air minum proyek, pembelian material tambahan. Disimpan sekali
-                untuk periode ini (tidak disalin ke setiap karyawan).</p>
-
-        <div id="expense-items-container-generate" class="space-y-2" data-expense-context="generate">
-            <p class="text-sm text-text-secondary text-center py-4" id="no-expense-text-generate">
-                Belum ada pengeluaran tambahan. Klik "Tambah Item" untuk menambahkan.
-            </p>
-        </div>
-
-        <!-- Hidden inputs for form submission -->
-        <input type="hidden" name="additional_expenses" id="total_additional_expenses_generate" value="0">
-        <input type="hidden" name="additional_expenses_notes" id="additional_expenses_notes_generate" value="">
-
-        <!-- Total Display -->
-        <div class="mt-3 p-3 bg-surface-secondary rounded-lg border border-border-strong">
-            <div class="flex justify-between items-center">
-                <span class="font-semibold text-text-primary">Total Pengeluaran Tambahan:</span>
-                <span class="text-lg font-bold text-primary" id="total-expense-display-generate">Rp 0</span>
-            </div>
-        </div>
-    </div>
 
     {{-- Loading State --}}
     <div id="checking-loader" class="hidden mb-3 p-4 bg-surface-secondary border border-border rounded-lg text-center">

@@ -7,7 +7,7 @@
  * - Dropdown filter minggu
  * - Checkbox Pilih Semua & aksi massal (hapus, bayar)
  * - Handler submit form Generate/Edit
- * - Item pengeluaran tambahan dinamis (Pengeluaran Tambahan)
+ * - Panel status kesiapan generate (absensi lengkap, belum ada payroll, proyek)
  *
  * Data server dikirim lewat window.payrollConfig (di-set di
  * pages/sdm/payroll.blade.php). Fungsi yang dipanggil dari atribut HTML
@@ -638,8 +638,7 @@ window.submitBulkPayForm = function () {
 // ==========================================
 
 /**
- * Menginisialisasi handler submit form modal Generate, Edit, dan Edit
- * Pengeluaran Operasional.
+ * Menginisialisasi handler submit form modal Generate dan Edit.
  *
  * Semua memakai handleFormSubmit() (helper bersama) untuk status memuat
  * dengan label "Memproses..." dan pencegahan double submit; bila ditolak,
@@ -668,206 +667,10 @@ function initFormSubmitHandlers() {
             }
         });
     });
-
-    // Handle Edit Pengeluaran Operasional Modal Submits
-    document.querySelectorAll('[id^="expenseModal-"] form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (!handleFormSubmit(submitBtn, undefined, 'Memproses...')) {
-                e.preventDefault();
-                return false;
-            }
-        });
-    });
 }
 
 // ==========================================
 // PANEL PENGELUARAN OPERASIONAL (Scroll List)
-// ==========================================
-
-/**
- * Batasi tinggi panel "Pengeluaran Operasional Proyek" agar hanya ~3 kartu
- * yang terlihat; data berikutnya bisa di-scroll di dalam panel (tidak membuat
- * halaman terlalu panjang ke bawah).
- *
- * Tinggi diukur dari kartu ke-4 (offsetTop) sehingga tepat 3 kartu terlihat
- * utuh tanpa ada kartu yang terpotong.
- */
-function initExpensePanelScroll() {
-    const container = document.querySelector('.expense-scroll');
-    if (!container) return;
-
-    const cards = container.querySelectorAll(':scope > .expense-card');
-    const MAX_VISIBLE = 3;
-
-    if (cards.length <= MAX_VISIBLE) {
-        container.style.maxHeight = '';
-        return;
-    }
-
-    const fourthCard = cards[MAX_VISIBLE];
-    container.style.maxHeight = fourthCard.offsetTop + 'px';
-}
-
-// ==========================================
-// DYNAMIC EXPENSE ITEMS
-// ==========================================
-
-/**
- * Penghitung ID item pengeluaran dan wadah item untuk modal Generate/Edit.
- *
- * expenseItemCounter menghasilkan id unik per baris item; expenseItems
- * menjaga agregasi item lintas container.
- *
- * @type {number}
- */
-let expenseItemCounter = 0;
-const expenseItems = [];
-
-/**
- * Menambahkan baris item pengeluaran baru ke container tertentu.
- *
- * Alur:
- * 1. Increment expenseItemCounter → id unik per baris.
- * 2. Ambil container #expense-items-container-{context}; jika tidak ada → batal.
- * 3. Sembunyikan teks "tidak ada pengeluaran" (no-expense-text).
- * 4. Sisipkan HTML baris (nama, jumlah, tombol hapus) via insertAdjacentHTML;
- *    input memicu updateExpenseData saat diisi.
- * 5. Panggil updateExpenseData(context) agar total langsung tersinkron.
- *
- * Ditugaskan ke window karena dipanggil dari atribut onclick inline.
- *
- * @param {string} context - Akhiran id container ('generate' atau id payroll).
- */
-window.addExpenseItem = function (context) {
-    expenseItemCounter++;
-    const itemId = expenseItemCounter;
-
-    const container = document.getElementById(`expense-items-container-${context}`);
-    if (!container) return;
-
-    const noExpenseText = document.getElementById(`no-expense-text-${context}`);
-    if (noExpenseText) {
-        noExpenseText.style.display = 'none';
-    }
-
-    const itemHTML = `
-        <div class="expense-item border border-border-strong rounded-lg p-3 bg-surface-base" data-item-id="${itemId}">
-            <div class="flex gap-2 items-start">
-                <div class="flex-1 grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs text-text-secondary mb-1">Nama Pengeluaran</label>
-                        <input type="text" 
-                            class="expense-name w-full border border-border-strong rounded-lg px-2 py-1.5 text-sm bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            placeholder="Contoh: Token Listrik"
-                            oninput="updateExpenseData('${context}')"
-                            required>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-text-secondary mb-1">Jumlah (Rp)</label>
-                        <input type="number" 
-                            class="expense-amount w-full border border-border-strong rounded-lg px-2 py-1.5 text-sm bg-surface-base text-text-input focus:ring-2 focus:ring-primary focus:border-transparent"
-                            placeholder="0"
-                            min="0"
-                            oninput="updateExpenseData('${context}')"
-                            required>
-                    </div>
-                </div>
-                <button type="button" 
-                    onclick="removeExpenseItem(${itemId}, '${context}')"
-                    class="mt-6 text-error hover:text-error hover:bg-error-light px-2 py-1.5 rounded transition-colors"
-                    title="Hapus item">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-        </div>
-    `;
-
-    container.insertAdjacentHTML('beforeend', itemHTML);
-    updateExpenseData(context);
-};
-
-/**
- * Menghapus satu baris item pengeluaran dari container tertentu.
- *
- * Alur:
- * - Cari baris berdasarkan data-item-id di container; jika tidak ada → batal.
- * - Hapus baris, lalu panggil updateExpenseData(context) agar total
- *   diperbarui.
- * - Jika tidak ada item tersisa, tampilkan kembali teks "tidak ada
- *   pengeluaran".
- *
- * Ditugaskan ke window karena dipanggil dari atribut onclick inline.
- *
- * @param {string|number} itemId   Nilai data-item-id baris yang dihapus.
- * @param {string}        context  Akhiran id container.
- */
-window.removeExpenseItem = function (itemId, context) {
-    const container = document.getElementById(`expense-items-container-${context}`);
-    if (!container) return;
-
-    const item = container.querySelector(`[data-item-id="${itemId}"]`);
-    if (item) {
-        item.remove();
-        updateExpenseData(context);
-
-        // Show "no expense" text if no items left
-        const items = container.querySelectorAll('.expense-item');
-        const noExpenseText = document.getElementById(`no-expense-text-${context}`);
-
-        if (items.length === 0 && noExpenseText) {
-            noExpenseText.style.display = 'block';
-        }
-    }
-};
-
-/**
- * Menghitung ulang total dan memperbarui hidden input pengeluaran tambahan.
- *
- * Alur:
- * 1. Loop semua .expense-item di container.
- * 2. Kumpulkan item dengan nama terisi DAN amount > 0; akumulasi total.
- * 3. Isi hidden total_additional_expenses_{context} = total.
- * 4. Isi hidden additional_expenses_notes_{context} = JSON.stringify(items)
- *    (atau '' jika kosong) — dikirim ke PayrollService::generatePayroll lalu
- *    divalidasi ulang oleh PayrollService::validateAdditionalExpenses.
- * 5. Perbarui teks total pada total-expense-display-{context}.
- *
- * Ditugaskan ke window karena dipanggil dari atribut oninput inline.
- *
- * @param {string} context - Akhiran id container.
- */
-window.updateExpenseData = function (context) {
-    const container = document.getElementById(`expense-items-container-${context}`);
-    if (!container) return;
-
-    const items = [];
-    let total = 0;
-
-    container.querySelectorAll('.expense-item').forEach(item => {
-        const name = item.querySelector('.expense-name').value.trim();
-        const amount = parseInt(item.querySelector('.expense-amount').value) || 0;
-
-        if (name && amount > 0) {
-            items.push({
-                name,
-                amount
-            });
-            total += amount;
-        }
-    });
-
-    // Update hidden inputs
-    document.getElementById(`total_additional_expenses_${context}`).value = total;
-    document.getElementById(`additional_expenses_notes_${context}`).value = items.length > 0 ? JSON.stringify(items) : '';
-
-    // Update display
-    document.getElementById(`total-expense-display-${context}`).textContent =
-        'Rp ' + total.toLocaleString('id-ID');
-};
-
-// ==========================================
-// INITIALIZATION
 // ==========================================
 
 /**
@@ -881,8 +684,7 @@ window.updateExpenseData = function (context) {
  * - Reset tampilan saat modal Generate ditutup (event modalClosed).
  * - Dropdown filter minggu (halaman index) + muat filter awal bila ada.
  * - Checkbox Pilih Semua & individu → perbarui status tombol aksi.
- * - Daftarkan handler submit form; batasi tinggi panel pengeluaran operasional.
- * - Sembunyikan no-expense-text pada container yang sudah punya item.
+ * - Daftarkan handler submit form.
  */
 document.addEventListener('DOMContentLoaded', function () {
     periodMonthSelect = document.getElementById('period_month');
@@ -1008,18 +810,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Form submit handlers
     initFormSubmitHandlers();
-
-    // Batasi tinggi panel pengeluaran operasional (hanya ~3 kartu terlihat)
-    initExpensePanelScroll();
-
-    // Hide no-expense text if there are items in a container
-    document.querySelectorAll('[data-expense-context]').forEach(container => {
-        const context = container.dataset.expenseContext;
-        const items = container.querySelectorAll('.expense-item');
-        const noExpenseText = document.getElementById(`no-expense-text-${context}`);
-
-        if (items.length > 0 && noExpenseText) {
-            noExpenseText.style.display = 'none';
-        }
-    });
 });

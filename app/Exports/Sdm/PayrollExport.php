@@ -20,7 +20,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
  * Generates a formatted Excel (.xlsx) report with:
  * - Header section with company name, project, period, and print date
  * - Data table with attendance summary and salary breakdown
- * - Summary section with additional expenses and fund recap
+ * - Summary section with fund recap
  * - Grand total row
  *
  * Uses Maatwebsite Excel with PhpSpreadsheet for formatting.
@@ -49,13 +49,6 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
     protected $projectName;
 
     /**
-     * Pengeluaran operasional proyek (satu record per periode).
-     *
-     * @var \Illuminate\Support\Collection|null
-     */
-    protected $operationalExpenses;
-
-    /**
      * Rekap kasbon divisi (team) untuk section REKAPITULASI DANA.
      *
      * @var \Illuminate\Support\Collection|null
@@ -76,14 +69,12 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
      * @param  int|null                        $month      Filter by month (optional)
      * @param  int|null                        $year       Filter by year (optional)
      * @param  string|null                     $projectName  Project name for header (optional)
-     * @param  \Illuminate\Support\Collection|null $operationalExpenses  Biaya operasional proyek per periode (optional)
      * @param  \Illuminate\Support\Collection|null $teamKasbon  Rekap kasbon divisi (optional)
      */
-    public function __construct($payrolls, $month = null, $year = null, $projectName = null, $operationalExpenses = null, $teamKasbon = null)
+    public function __construct($payrolls, $month = null, $year = null, $projectName = null, $teamKasbon = null)
     {
         $this->payrolls = $payrolls;
         $this->projectName = $projectName;
-        $this->operationalExpenses = $operationalExpenses ?? collect();
         $this->teamKasbon = $teamKasbon ?? collect();
 
         $monthNames = [
@@ -105,8 +96,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
     /**
      * Generate the data collection for export.
      *
-     * Iterates through all payrolls, calculates totals, and
-     * prepares expense details for the summary section.
+     * Iterates through all payrolls and calculates totals.
      *
      * @return \Illuminate\Support\Collection
      */
@@ -143,46 +133,13 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             $totalNetSalary += $payroll->net_salary;
         }
 
-        // Aggregate expense items dari biaya operasional proyek per periode
-        // (satu record per periode) plus data legacy additional_expenses_notes.
-        $allExpenses = [];
-        foreach ($this->operationalExpenses as $expense) {
-            $items = is_array($expense->expense_items) ? $expense->expense_items : [];
-            foreach ($items as $exp) {
-                $name = $exp['name'] ?? 'Lain-lain';
-                $amount = (int) ($exp['amount'] ?? 0);
-                if (!isset($allExpenses[$name])) {
-                    $allExpenses[$name] = 0;
-                }
-                $allExpenses[$name] += $amount;
-            }
-        }
-        foreach ($this->payrolls as $payroll) {
-            if ($payroll->additional_expenses_notes) {
-                $expenses = json_decode($payroll->additional_expenses_notes, true);
-                if ($expenses && is_array($expenses)) {
-                    foreach ($expenses as $exp) {
-                        $name = $exp['name'] ?? 'Lain-lain';
-                        $amount = $exp['amount'] ?? 0;
-                        if (!isset($allExpenses[$name])) {
-                            $allExpenses[$name] = 0;
-                        }
-                        $allExpenses[$name] += $amount;
-                    }
-                }
-            }
-        }
-        $totalExpenses = array_sum($allExpenses);
-
         $this->totals = [
             'base_salary' => $totalBaseSalary,
             'total_kerja' => $totalKerja,
             'overtime_total' => $totalOvertime,
             'kasbon_deduction' => $totalKasbon,
             'net_salary' => $totalNetSalary,
-            'total_expenses' => $totalExpenses,
-            'expenses_details' => $allExpenses,
-            'grand_total' => $totalNetSalary + $totalExpenses,
+            'grand_total' => $totalNetSalary,
         ];
 
         return collect($data);
@@ -257,8 +214,8 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
     /**
      * Register Excel events for post-sheet processing.
      *
-     * Handles data row formatting, summary section with expenses
-     * and fund recap, grand total, and footer.
+     * Handles data row formatting, summary section with fund recap,
+     * grand total, and footer.
      *
      * @return array<string, callable>
      */
@@ -288,30 +245,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 // === SUMMARY SECTION ===
                 $startSummaryRow = $lastRow + 2;
 
-                // Left: Additional Expenses
-                $sheet->setCellValue("B{$startSummaryRow}", "PENGELUARAN TAMBAHAN (OPERASIONAL)");
-                $sheet->getStyle("B{$startSummaryRow}")->getFont()->setBold(true);
-
-                $currentRow = $startSummaryRow + 1;
-                if (count($this->totals['expenses_details']) > 0) {
-                    foreach ($this->totals['expenses_details'] as $name => $amount) {
-                        $sheet->setCellValue("B{$currentRow}", $name);
-                        $sheet->setCellValue("C{$currentRow}", $amount);
-                        $sheet->getStyle("C{$currentRow}")->getNumberFormat()->setFormatCode('#,##0');
-                        $currentRow++;
-                    }
-                    $sheet->setCellValue("B{$currentRow}", "Total Tambahan");
-                    $sheet->setCellValue("C{$currentRow}", $this->totals['total_expenses']);
-                    $sheet->getStyle("B{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("C{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("C{$currentRow}")->getNumberFormat()->setFormatCode('#,##0');
-                    $sheet->getStyle("B{$currentRow}:C{$currentRow}")->getBorders()->getTop()->setBorderStyle(Border::BORDER_DASHED);
-                } else {
-                    $sheet->setCellValue("B{$currentRow}", "- Tidak ada pengeluaran tambahan -");
-                    $sheet->getStyle("B{$currentRow}")->getFont()->setItalic(true);
-                }
-
-                // Right: Fund Recap
+                // Fund Recap
                 $sheet->setCellValue("H{$startSummaryRow}", "REKAPITULASI DANA");
                 $sheet->getStyle("H{$startSummaryRow}")->getFont()->setBold(true);
 
@@ -358,13 +292,8 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
 
-                $sheet->setCellValue("H{$rekapRow}", "Total Pengeluaran Tambahan");
-                $sheet->setCellValue("K{$rekapRow}", $this->totals['total_expenses']);
-                $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
-                $rekapRow++;
-
                 // Grand Total
-                $grandTotalRow = max($currentRow, $rekapRow) + 1;
+                $grandTotalRow = $rekapRow + 1;
                 $sheet->mergeCells("A{$grandTotalRow}:K{$grandTotalRow}");
                 $sheet->setCellValue("A{$grandTotalRow}", "TOTAL DIBAYARKAN: Rp " . number_format($this->totals['grand_total'], 0, ',', '.'));
 
