@@ -40,6 +40,11 @@ class PayrollController extends Controller
 
     /**
      * Menampilkan daftar payroll dengan paginasi, pencarian, dan penyaringan.
+     *
+     * Filter mencakup bulan, tahun, minggu, dan proyek. Dropdown proyek pada
+     * filter maupun modal generate memakai komponen searchable yang mengambil
+     * data dari Rekap Proyek (route employee.projects-dropdown), bukan daftar
+     * proyek statis.
      */
     public function index(Request $request)
     {
@@ -47,15 +52,29 @@ class PayrollController extends Controller
         $month = $request->input('month');
         $year = $request->input('year');
         $weekNumber = $request->input('week_number');
+        $projectName = $request->input('project_name');
 
         $payrolls = $this->payrollService->getPaginatedPayrolls(
             $search,
             $month ? (int) $month : null,
             $year ? (int) $year : null,
             $weekNumber ? (int) $weekNumber : null,
+            $projectName ?: null,
         );
 
-        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber'));
+        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber', 'projectName'));
+    }
+
+    /**
+     * Membersihkan teks agar aman dipakai sebagai nama file.
+     *
+     * @param  string  $name
+     * @return string
+     */
+    private function sanitizeForFilename(string $name): string
+    {
+        $name = preg_replace('/\s+/', '_', trim($name));
+        return preg_replace('/[^A-Za-z0-9_\-]+/', '', $name) ?: 'Semua_Proyek';
     }
 
     /**
@@ -100,9 +119,9 @@ class PayrollController extends Controller
         return response()->json(['weeks' => $result]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('pages.sdm.payroll');
+        return $this->index($request);
     }
 
     /**
@@ -127,33 +146,36 @@ class PayrollController extends Controller
     }
 
     /**
-     * Memvalidasi kelengkapan absensi untuk periode tertentu.
+     * Memvalidasi kelengkapan absensi untuk periode dan proyek tertentu.
      *
-     * Menerima period_start_date dan period_end_date dari frontend.
+     * Menerima period_start_date, period_end_date, dan project_name dari frontend.
      */
     public function checkAttendanceCompleteness(Request $request)
     {
         $startDate = Carbon::parse($request->period_start_date);
         $endDate = Carbon::parse($request->period_end_date);
+        $projectName = $request->input('project_name') ?: null;
 
-        $result = $this->payrollService->validateAttendanceCompleteness($startDate, $endDate);
+        $result = $this->payrollService->validateAttendanceCompleteness($startDate, $endDate, $projectName);
 
         return response()->json($result);
     }
 
     /**
-     * Membuat payroll mingguan untuk pekerja harian.
+     * Membuat payroll mingguan untuk pekerja harian pada proyek tertentu.
      *
-     * Menerima period_start_date dan period_end_date dari frontend.
+     * Menerima period_start_date, period_end_date, dan project_name dari frontend.
      */
     public function generate(Request $request)
     {
         $startDate = Carbon::parse($request->period_start_date);
         $endDate = Carbon::parse($request->period_end_date);
+        $projectName = $request->input('project_name') ?: null;
 
         $result = $this->payrollService->generatePayroll(
             $startDate,
-            $endDate
+            $endDate,
+            $projectName
         );
 
         if ($result['success']) {
@@ -198,17 +220,22 @@ class PayrollController extends Controller
 
     /**
      * Mengekspor data payroll ke Excel (.xlsx).
+     *
+     * Menghormati filter aktif (bulan, tahun, minggu, dan proyek) sehingga
+     * output hanya memuat payroll sesuai filter yang dipilih.
      */
     public function exportExcel(Request $request)
     {
         $month = $request->input('month');
         $year = $request->input('year');
         $weekNumber = $request->input('week_number');
+        $projectName = $request->input('project_name') ?: null;
 
         $payrolls = $this->payrollService->getPayrollsForExport(
             $month ? (int) $month : null,
             $year ? (int) $year : null,
             $weekNumber ? (int) $weekNumber : null,
+            $projectName,
         );
 
         if ($payrolls === null) {
@@ -216,15 +243,19 @@ class PayrollController extends Controller
                 ->with('error', 'Tidak ada data payroll untuk diexport!');
         }
 
-        $fileName = 'Laporan_Payroll_' . ($month ? $month . '_' : '') . ($year ? $year : 'Semua') . '_' . date('Ymd_His') . '.xlsx';
+        $projectPart = $projectName ? '_' . $this->sanitizeForFilename($projectName) : '';
+        $fileName = 'Laporan_Payroll' . $projectPart . '_' . ($month ? $month . '_' : '') . ($year ? $year : 'Semua') . '_' . date('Ymd_His') . '.xlsx';
 
         $teamKasbonRecap = $this->payrollService->getTeamKasbonRecap($payrolls);
 
-        return Excel::download(new PayrollExport($payrolls, $month, $year, null, $teamKasbonRecap), $fileName);
+        return Excel::download(new PayrollExport($payrolls, $month ? (int) $month : null, $year ? (int) $year : null, $projectName, $teamKasbonRecap), $fileName);
     }
 
     /**
      * Mengekspor data payroll ke PDF (landscape A4).
+     *
+     * Menghormati filter aktif (bulan, tahun, minggu, dan proyek). Nama proyek
+     * pada header diambil dari filter proyek yang dipilih.
      *
      * Menggunakan period_start_date dari data payroll pertama untuk menentukan
      * rentang tanggal detail absensi.
@@ -234,8 +265,9 @@ class PayrollController extends Controller
         $month = $request->input('month') ? (int) $request->input('month') : null;
         $year = $request->input('year') ? (int) $request->input('year') : null;
         $weekNumber = $request->input('week_number') ? (int) $request->input('week_number') : null;
+        $projectName = $request->input('project_name') ?: null;
 
-        $payrolls = $this->payrollService->getPayrollsForExport($month, $year, $weekNumber);
+        $payrolls = $this->payrollService->getPayrollsForExport($month, $year, $weekNumber, $projectName);
 
         if ($payrolls === null) {
             return redirect()->route('payroll.index')
@@ -251,7 +283,9 @@ class PayrollController extends Controller
             $periodText = 'Semua Periode';
         }
 
-        $projectName = $payrolls->first()->project_name ?? null;
+        // Nama proyek diambil langsung dari filter proyek yang dipilih user
+        // (Print Laporan hanya aktif saat proyek dipilih).
+        $projectName = $projectName ?: null;
 
         // Memuat data absensi menggunakan period_start_date dari data payroll
         $dateRange = '';
@@ -310,6 +344,9 @@ class PayrollController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         $filenameParts = ['Payroll'];
+        if ($projectName) {
+            $filenameParts[] = $this->sanitizeForFilename($projectName);
+        }
         if ($month) {
             $filenameParts[] = $this->monthNames[$month];
         }

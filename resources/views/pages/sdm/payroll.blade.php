@@ -6,7 +6,13 @@
 
      Data dari PayrollController@index:
      - $payrolls            : LengthAwarePaginator daftar payroll (relasi employee)
-     - $search, $month, $year, $weekNumber : nilai filter yang aktif (nullable)
+     - $search, $month, $year, $weekNumber, $projectName : nilai filter aktif (nullable)
+
+     Dropdown filter proyek & proyek pada modal generate memakai komponen
+     searchable (components.filters.project-filter) yang mengambil data dari
+     Rekap Proyek via route employee.projects-dropdown (10 item per load).
+     Ekspor Excel/PDF hanya aktif saat proyek dipilih (tombol Print Laporan
+     disabled bila project_name kosong).
 
      Komponen yang di-include:
      - components.sdm.payroll.table                     : tabel daftar payroll
@@ -70,6 +76,13 @@
                     </select>
                 </div>
 
+                {{-- Filter Proyek --}}
+                {{-- Dropdown searchable (10 item per load) mengambil data proyek
+                     dari Rekap Proyek; memilih proyek otomatis submit form. --}}
+                <x-filters.project-filter :route="route('employee.projects-dropdown')"
+                    :value="request('project_name')" fill dropdown-id="filter_project_name"
+                    :auto-submit="true" />
+
                 {{-- Search Input --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari karyawan..." />
             </form>
@@ -82,7 +95,8 @@
                         'month' => request('month'),
                         'year' => request('year'),
                         'week_number' => request('week_number'),
-                    ]" responsive="custom" fill />
+                        'project_name' => request('project_name'),
+                    ]" responsive="custom" fill :disabled="!request('project_name')" />
 
                     {{-- Tombol Bulk Pay: disabled selama tidak ada baris yang
                          dipilih; diaktifkan oleh JS setelah seleksi. Membuka
@@ -174,6 +188,7 @@
             'filterWeek' => request('week_number'),
             'filterMonth' => request('month'),
             'filterYear' => request('year'),
+            'filterProject' => request('project_name'),
         ];
     @endphp
 

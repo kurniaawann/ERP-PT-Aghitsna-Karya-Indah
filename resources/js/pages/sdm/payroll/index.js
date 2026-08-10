@@ -7,13 +7,15 @@
  * - Dropdown filter minggu
  * - Checkbox Pilih Semua & aksi massal (hapus, bayar)
  * - Handler submit form Generate/Edit
- * - Panel status kesiapan generate (absensi lengkap, belum ada payroll, proyek)
+ *  - Panel status kesiapan generate (absensi lengkap, belum ada payroll, proyek)
  *
  * Data server dikirim lewat window.payrollConfig (di-set di
  * pages/sdm/payroll.blade.php). Fungsi yang dipanggil dari atribut HTML
  * inline diekspos ke window karena Vite memuat JS sebagai ES module,
  * bukan global.
  */
+
+import { initAllProjectDropdowns, resetProjectDropdown } from '../../../components/project-dropdown.js';
 
 /**
  * Konfigurasi halaman payroll dari backend.
@@ -106,6 +108,7 @@ function populateWeekDropdown(selectEl, weeks, selectedValue) {
 let periodMonthSelect = null;
 let periodYearInput = null;
 let weekNumberSelect = null;
+let projectSelect = null;
 let periodStartDateInput = null;
 let periodEndDateInput = null;
 let checkingLoader = null;
@@ -197,13 +200,13 @@ function updatePeriodDateInputs() {
  *
  * Alur:
  * 1. Sembunyikan semua panel status (lengkap/tidak lengkap/sudah digenerate).
- * 2. Bulan/tahun/minggu belum lengkap → nonaktifkan tombol generate,
+ * 2. Proyek/bulan/tahun/minggu belum lengkap → nonaktifkan tombol generate,
  *    kosongkan hidden tanggal, keluar.
  * 3. Sinkronkan tanggal periode via updatePeriodDateInputs; jika kosong →
  *    nonaktifkan tombol, keluar.
- * 4. Tampilkan loader, lalu POST period_start_date & period_end_date ke
- *    config.checkAttendanceUrl (dengan token CSRF) → hasil dari
- *    PayrollService::validateAttendanceCompleteness.
+ * 4. Tampilkan loader, lalu POST period_start_date, period_end_date, dan
+ *    project_name ke config.checkAttendanceUrl (dengan token CSRF) → hasil
+ *    dari PayrollService::validateAttendanceCompleteness.
  * 5. Render daftar karyawan lengkap (completeList) + info periode.
  * 6. Ada karyawan incomplete → tampilkan warning + daftar tanggal kosong
  *    (generate diblokir).
@@ -216,6 +219,7 @@ function updatePeriodDateInputs() {
  * 10. Error → sembunyikan loader dan nonaktifkan tombol.
  */
 async function checkAttendanceData() {
+    const project = projectSelect ? projectSelect.value : '';
     const month = periodMonthSelect.value;
     const year = periodYearInput.value;
     const weekNumber = weekNumberSelect.value;
@@ -227,7 +231,7 @@ async function checkAttendanceData() {
     alreadyGeneratedWarningDiv.classList.add('hidden');
     noProjectWarningDiv.classList.add('hidden');
 
-    if (!month || !year || !weekNumber) {
+    if (!project || !month || !year || !weekNumber) {
         if (generateSubmitBtn) {
             generateSubmitBtn.disabled = true;
             generateSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -263,7 +267,8 @@ async function checkAttendanceData() {
             },
             body: JSON.stringify({
                 period_start_date: startDate,
-                period_end_date: endDate
+                period_end_date: endDate,
+                project_name: project
             })
         });
 
@@ -282,7 +287,7 @@ async function checkAttendanceData() {
 
         // Tampilkan informasi periode
         const periodInfo =
-            `Periode: <strong>${data.period_start} - ${data.period_end}</strong> (${data.working_days} hari kerja)`;
+            `Proyek: <strong>${project}</strong> — Periode: <strong>${data.period_start} - ${data.period_end}</strong> (${data.working_days} hari kerja)`;
 
         // Tampilkan karyawan dengan data lengkap (jika ada)
         if (data.complete_employees && data.complete_employees.length > 0) {
@@ -690,6 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
     periodMonthSelect = document.getElementById('period_month');
     periodYearInput = document.getElementById('period_year');
     weekNumberSelect = document.getElementById('week_number');
+    projectSelect = document.getElementById('project_name');
     periodStartDateInput = document.getElementById('period_start_date');
     periodEndDateInput = document.getElementById('period_end_date');
     checkingLoader = document.getElementById('checking-loader');
@@ -721,6 +727,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    if (projectSelect) {
+        projectSelect.addEventListener('change', function() {
+            clearTimeout(checkTimeout);
+            checkTimeout = setTimeout(checkAttendanceData, 300);
+        });
+    }
+
     if (weekNumberSelect) {
         weekNumberSelect.addEventListener('change', function() {
             updatePeriodDateInputs();
@@ -736,6 +749,10 @@ document.addEventListener('DOMContentLoaded', function () {
         generateSubmitBtn.classList.remove('hover:bg-success-hover');
     }
 
+    // Dropdown proyek bersama (filter index + modal generate): searchable
+    // dengan pagination 10 item per load dari Rekap Proyek.
+    initAllProjectDropdowns();
+
     // Reset saat modal ditutup
     window.addEventListener('modalClosed', function(e) {
         if (e.detail === 'generateModal') {
@@ -750,6 +767,9 @@ document.addEventListener('DOMContentLoaded', function () {
             cachedWeeksData = [];
             periodStartDateInput.value = '';
             periodEndDateInput.value = '';
+
+            // Reset pilihan proyek dropdown searchable (value + label)
+            resetProjectDropdown(document.getElementById('generate-project-dropdown'));
 
             // Reset button state
             if (generateSubmitBtn) {

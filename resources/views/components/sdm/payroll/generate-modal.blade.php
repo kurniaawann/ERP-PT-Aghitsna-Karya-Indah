@@ -1,19 +1,19 @@
 {{--
     Generate Payroll Modal
 
-    Modal form for generating weekly payroll for all active employees.
+    Modal form for generating weekly payroll for employees of a selected project.
 
     Process:
-    1. User selects month, year, and week
+    1. User selects project, month, year, and week
     2. Auto-checks attendance completeness via AJAX (PayrollController@checkAttendanceCompleteness)
+       — hanya karyawan pada proyek terpilih yang diperiksa.
     3. Shows validation results:
        - Complete employees (all days filled)
        - Incomplete employees (missing attendance days)
        - Already generated employees (skip)
-       - Kasbon issues (exceeds salary)
        - Employees without project (blocked)
     4. Generate button only enabled if all conditions pass (can_generate = true)
-    5. On submit, posts to PayrollController@generate
+    5. On submit, posts project_name + period to PayrollController@generate
 
     Frontend JS: resources/js/pages/sdm/payroll/index.js (checkAttendanceData function)
 --}}
@@ -28,6 +28,7 @@
             <div class="text-sm text-text-primary">
                 <p class="font-semibold mb-1">Informasi Payroll Mingguan:</p>
                 <ul class="list-disc list-inside space-y-1">
+                    <li>Payroll dibuat <strong>per proyek</strong> — hanya karyawan pada proyek terpilih yang diproses</li>
                     <li>Sistem menghitung upah harian × hari masuk untuk pekerja harian</li>
                     <li>Data diambil dari absensi minggu yang dipilih (Senin-Sabtu)</li>
                     <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
@@ -37,6 +38,15 @@
                 </ul>
             </div>
         </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Proyek <span class="text-error">*</span></label>
+        {{-- Dropdown searchable (10 item per load) mengambil data proyek dari
+             Rekap Proyek; pilihan disimpan di hidden input #project_name. --}}
+        <x-filters.project-filter :route="route('employee.projects-dropdown')"
+            placeholder="Pilih Proyek" all-option="" input-id="project_name"
+            dropdown-id="generate-project-dropdown" :auto-submit="false" required />
     </div>
 
     <div class="grid grid-cols-3 gap-3 mb-3">

@@ -39,6 +39,8 @@ class PayrollService
      * @param  string|null  $search
      * @param  int|null     $month
      * @param  int|null     $year
+     * @param  int|null     $weekNumber
+     * @param  string|null  $projectName
      * @param  int          $perPage
      * @return LengthAwarePaginator
      */
@@ -47,6 +49,7 @@ class PayrollService
         ?int $month,
         ?int $year,
         ?int $weekNumber = null,
+        ?string $projectName = null,
         int $perPage = 15
     ): LengthAwarePaginator {
         return Payroll::with('employee')
@@ -60,13 +63,15 @@ class PayrollService
             ->when($month, fn($query) => $query->whereMonth('period_start_date', $month))
             ->when($year, fn($query) => $query->whereYear('period_start_date', $year))
             ->when($weekNumber, fn($query) => $query->where('week_number', $weekNumber))
+            ->when($projectName, fn($query) => $query->where('project_name', $projectName))
             ->latest('period_start_date')
             ->latest('created_at')
             ->paginate($perPage);
     }
 
     /**
-     * Memvalidasi kelengkapan absensi untuk semua karyawan dalam periode minggu tertentu.
+     * Memvalidasi kelengkapan absensi untuk karyawan (per proyek, jika dipilih)
+     * dalam periode minggu tertentu.
      *
      * Pemeriksaan:
      * 1. Karyawan mana yang sudah memiliki payroll untuk periode ini
@@ -93,13 +98,16 @@ class PayrollService
      * 6. Rentang absensi diambil sampai endDate+1 (termasuk Minggu) karena
      *    lembur Minggu ikut dihitung, meski Minggu bukan hari kerja wajib.
      *
-     * @param  Carbon  $periodStartDate
-     * @param  Carbon  $periodEndDate
+     * @param  Carbon        $periodStartDate
+     * @param  Carbon        $periodEndDate
+     * @param  string|null   $projectName  Filter hanya karyawan pada proyek tertentu (opsional)
      * @return array
      */
-    public function validateAttendanceCompleteness(Carbon $periodStartDate, Carbon $periodEndDate): array
+    public function validateAttendanceCompleteness(Carbon $periodStartDate, Carbon $periodEndDate, ?string $projectName = null): array
     {
-        $employees = Employee::where('created_by', auth()->id())->get();
+        $employees = Employee::where('created_by', auth()->id())
+            ->when($projectName, fn ($query) => $query->where('project_name', $projectName))
+            ->get();
 
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
@@ -211,6 +219,7 @@ class PayrollService
             'period_end' => $endDate->format('d/m/Y'),
             'period_start_day' => $startDate->format('l, d M Y'),
             'period_end_day' => $endDate->format('l, d M Y'),
+            'project_name' => $projectName,
             'incomplete_employees' => $incompleteEmployees,
             'complete_employees' => $completeEmployees,
             'already_generated' => $alreadyGenerated,
@@ -224,7 +233,7 @@ class PayrollService
     }
 
     /**
-     * Membuat payroll mingguan untuk pekerja harian.
+     * Membuat payroll mingguan untuk pekerja harian (per proyek, jika dipilih).
      *
      * Proses perhitungan:
      * 1. Validasi kelengkapan absensi (tolak jika tidak lengkap)
@@ -247,11 +256,13 @@ class PayrollService
      *
      * @param  Carbon        $periodStartDate
      * @param  Carbon        $periodEndDate
+     * @param  string|null   $projectName  Filter hanya karyawan pada proyek tertentu (opsional)
      * @return array  ['success' => bool, 'message' => string]
      */
     public function generatePayroll(
         Carbon $periodStartDate,
-        Carbon $periodEndDate
+        Carbon $periodEndDate,
+        ?string $projectName = null
     ): array {
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
@@ -272,7 +283,9 @@ class PayrollService
         }
 
         // === VALIDASI ABSENSI ===
-        $employees = Employee::where('created_by', auth()->id())->get();
+        $employees = Employee::where('created_by', auth()->id())
+            ->when($projectName, fn ($query) => $query->where('project_name', $projectName))
+            ->get();
         $incompleteEmployees = [];
         $employeesWithoutProject = [];
 
@@ -556,20 +569,23 @@ class PayrollService
     /**
      * Mendapatkan koleksi payroll untuk ekspor Excel/PDF.
      *
-     * Mendukung filter berdasarkan bulan dan tahun.
+     * Mendukung filter berdasarkan bulan, tahun, minggu, dan proyek.
      * Termasuk relasi karyawan untuk menghindari N+1 saat ekspor.
      *
-     * @param  int|null  $month
-     * @param  int|null  $year
+     * @param  int|null      $month
+     * @param  int|null      $year
+     * @param  int|null      $weekNumber
+     * @param  string|null   $projectName
      * @return Collection|null  Null jika tidak ada data ditemukan
      */
-    public function getPayrollsForExport(?int $month, ?int $year, ?int $weekNumber = null): ?Collection
+    public function getPayrollsForExport(?int $month, ?int $year, ?int $weekNumber = null, ?string $projectName = null): ?Collection
     {
         $payrolls = Payroll::with('employee')
             ->where('created_by', auth()->id())
             ->when($month, fn($query) => $query->whereMonth('period_start_date', $month))
             ->when($year, fn($query) => $query->whereYear('period_start_date', $year))
             ->when($weekNumber, fn($query) => $query->where('week_number', $weekNumber))
+            ->when($projectName, fn($query) => $query->where('project_name', $projectName))
             ->latest('period_start_date')
             ->latest('created_at')
             ->get();

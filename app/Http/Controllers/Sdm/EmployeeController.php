@@ -38,7 +38,8 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Menampilkan daftar karyawan dengan paginasi dan pencarian opsional.
+     * Menampilkan daftar karyawan dengan paginasi, pencarian, dan filter
+     * proyek opsional.
      *
      * @param  Request  $request
      * @return View
@@ -46,7 +47,8 @@ class EmployeeController extends Controller
     public function index(Request $request): View
     {
         $search = $request->input('search');
-        $employees = $this->employeeService->getPaginatedEmployees($search);
+        $projectName = $request->input('project_name');
+        $employees = $this->employeeService->getPaginatedEmployees($search, $projectName);
         $divisions = $this->employeeService->getAllDivisions();
 
         return view('pages.sdm.employee', compact('employees', 'search', 'divisions'));

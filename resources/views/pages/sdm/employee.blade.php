@@ -41,6 +41,12 @@
             {{-- Search Form --}}
             <form method="GET" action="{{ route('employee.index') }}"
                 class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
+                {{-- Filter Proyek --}}
+                {{-- Dropdown searchable (10 item per load) mengambil data proyek
+                     dari Rekap Proyek; memilih proyek otomatis submit form. --}}
+                <x-filters.project-filter :route="route('employee.projects-dropdown')"
+                    :value="request('project_name')" dropdown-id="filter_project_name"
+                    :auto-submit="true" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari karyawan..." />
             </form>
 

@@ -1,4 +1,4 @@
-@props(['excelRoute' => null, 'pdfRoute' => null, 'queryParams' => [], 'size' => 'default', 'responsive' => 'xl', 'fill' => false])
+@props(['excelRoute' => null, 'pdfRoute' => null, 'queryParams' => [], 'size' => 'default', 'responsive' => 'xl', 'fill' => false, 'disabled' => false])
 
 @if($responsive === 'custom')
     @php
@@ -28,7 +28,8 @@
 
 <div class="{{ $wrapperClass }}">
     <button type="button" id="printDropdownButton"
-        class="{{ $buttonClass }}">
+        class="{{ $buttonClass }} {{ $disabled ? 'opacity-50 cursor-not-allowed' : '' }}"
+        {{ $disabled ? 'disabled title="Pilih proyek terlebih dahulu untuk mencetak laporan"' : '' }}>
         <i class="fa-solid fa-print w-4 h-4"></i>
         <span>Print Laporan</span>
         <i class="fa-solid fa-chevron-down text-xs ml-auto"></i>

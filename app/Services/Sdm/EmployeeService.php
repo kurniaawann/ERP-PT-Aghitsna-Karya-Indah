@@ -18,30 +18,37 @@ use Illuminate\Support\Facades\Log;
 class EmployeeService
 {
     /**
-     * Mendapatkan daftar karyawan dengan paginasi dan pencarian opsional.
+     * Mendapatkan daftar karyawan dengan paginasi, pencarian, dan filter
+     * proyek opsional.
      *
      * Logika:
      * - Pencarian (nama/kode) dibungkus closure + grup WHERE agar OR antar
      *   kolom tidak mengganggu kondisi lain.
+     * - Filter proyek (project_name) memakai where opsional; nilai kosong
+     *   diabaikan.
      * - Diurutkan created_at terbaru; kode karyawan dipakai sebagai primary key
      *   bisnis (employee_code), bukan id numerik.
      *
      * @param  string|null  $search
+     * @param  string|null  $projectName
      * @param  int          $perPage
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
-  public function getPaginatedEmployees(?string $search, int $perPage = 15): LengthAwarePaginator
-{
-    return Employee::where('created_by', auth()->id())
-        ->when($search, function ($query, $search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('employee_code', 'like', "%{$search}%");
-            });
-        })
-        ->latest('created_at')
-        ->paginate($perPage);
-}
+    public function getPaginatedEmployees(?string $search, ?string $projectName = null, int $perPage = 15): LengthAwarePaginator
+    {
+        return Employee::where('created_by', auth()->id())
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                });
+            })
+            ->when($projectName, function ($query, $projectName) {
+                $query->where('project_name', $projectName);
+            })
+            ->latest('created_at')
+            ->paginate($perPage);
+    }
 
     /**
      * Mendapatkan semua divisi yang diurutkan berdasarkan nama.
