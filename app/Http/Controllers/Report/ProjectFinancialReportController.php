@@ -149,9 +149,15 @@ class ProjectFinancialReportController extends Controller
             );
 
             // 2. Sinkronkan transaksi "Bon".
+            //
+            // Selalu dijalankan meski `items` kosong (saat semua blok kategori
+            // dihapus user), agar item existing yang tidak dikirim ikut terhapus
+            // oleh syncItems. Laporan hanya dibuat bila belum ada & masih ada
+            // transaksi yang dikirim.
             $items = $request->input('items', []);
+            $report = $projectRecap->financialReport;
 
-            if (! empty($items)) {
+            if ($report || ! empty($items)) {
                 $report = $this->service->getOrCreateForRecap($projectRecap);
                 $this->service->syncItems($report, $items, $request->file('items', []));
             }

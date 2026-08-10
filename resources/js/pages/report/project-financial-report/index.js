@@ -129,25 +129,43 @@ function categoryOptionsHtml(categories, selectedId) {
 }
 
 /**
- * Bangun HTML satu blok transaksi.
+ * Ambil tipe kategori (INCOME/EXPENSE) berdasarkan id.
+ *
+ * @param {Array<{id:number,name:string,type:string}>} categories
+ * @param {number|string} [id] ID kategori
+ * @returns {string}
+ */
+function categoryTypeOf(categories, id) {
+    if (id == null || id === '') return '';
+    const found = categories.find(function (cat) { return String(cat.id) === String(id); });
+    return found ? found.type : '';
+}
+
+/**
+ * Bangun HTML satu blok "Bon" (satu keterangan) dalam grup kategori.
  *
  * Nama input memakai array `items[{index}][...]` dengan indeks numerik yang
  * sama dalam satu blok, agar PHP/Laravel mengelompokkan seluruh field satu
- * transaksi ke satu entri array (bukan `items[][...]` yang terpecah per field).
- * Item existing menyertakan hidden `items[{index}][id]`.
+ * transaksi ke satu entri array. Kategori diwarisi dari grup lewat hidden
+ * `items[{index}][transaction_category_id]`. Item existing menyertakan hidden
+ * `items[{index}][id]`.
  *
  * @param {Array<{id:number,name:string,type:string}>} categories
  * @param {Object} [data] Data transaksi existing (untuk modal edit).
  * @param {number} [index] Indeks baris transaksi pada array `items`.
  * @returns {string}
  */
-function transactionBlockHtml(categories, data, index) {
+function bonBlockHtml(categories, data, index) {
     data = data || {};
     index = index == null ? 0 : index;
 
     const idHidden = data.id
         ? '<input type="hidden" name="items[' + index + '][id]" value="' + escapeHtml(data.id) + '">'
         : '';
+
+    const catHidden = '<input type="hidden" class="transaction-category-hidden" ' +
+        'name="items[' + index + '][transaction_category_id]" value="' + escapeHtml(data.transaction_category_id || '') + '" ' +
+        'data-type="' + escapeHtml(data.category_type || '') + '">';
 
     const proofNotice = (data.proof_url && data.proof_file_name)
         ? '<p class="text-xs text-blue-600 mt-1">Bukti saat ini: <a href="' + escapeHtml(data.proof_url) +
@@ -156,67 +174,104 @@ function transactionBlockHtml(categories, data, index) {
         : '';
 
     return `
-        <div class="flex items-center justify-between mb-3">
-            <span class="transaction-number text-sm font-semibold text-primary">Transaksi No. 1</span>
-            <button type="button" onclick="removeTransactionBlock(this)"
-                class="flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                title="Hapus transaksi">
-                <i class="fa-solid fa-trash w-3 h-3"></i>
-                Hapus
+        <div class="bon-block border border-border-strong rounded p-3 bg-surface-base">
+            <div class="flex items-center justify-between mb-3">
+                <span class="bon-number text-sm font-semibold text-primary">Bon No. 1</span>
+                <button type="button" onclick="removeBonBlock(this)"
+                    class="flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                    title="Hapus keterangan">
+                    <i class="fa-solid fa-trash w-3 h-3"></i>
+                    Hapus
+                </button>
+            </div>
+
+            ${idHidden}
+            ${catHidden}
+
+            <div class="mb-3">
+                <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
+                <input type="date" name="items[${index}][transaction_date]" class="w-full border rounded p-2"
+                    value="${escapeHtml(data.transaction_date || '')}" required
+                    oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-text-primary mb-1">Keterangan <span class="text-error">*</span></label>
+                <textarea name="items[${index}][description]" class="w-full border rounded p-2" rows="2" required maxlength="1000"
+                    placeholder="Contoh: Kasbon Transport Tukang"
+                    oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">${escapeHtml(data.description || '')}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="amount-label block text-text-primary mb-1">Jumlah Pengeluaran <span class="text-error">*</span></label>
+                <input type="text" inputmode="numeric" name="items[${index}][expense_amount]"
+                    class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000"
+                    value="${escapeHtml(formatNumber(data.amount))}" required min="0"
+                    oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-text-primary mb-1">Keterangan Bon</label>
+                <input type="text" name="items[${index}][keterangan_bon]" class="w-full border rounded p-2"
+                    value="${escapeHtml(data.keterangan_bon || '')}"
+                    placeholder="Contoh: Bon Pembelian Material" maxlength="255">
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-text-primary mb-1">Bukti Pembayaran</label>
+                <input type="file" name="items[${index}][proof_file]"
+                    accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
+                    class="w-full border rounded p-2">
+                <p class="text-xs text-text-secondary mt-1">Opsional. Format gambar: JPG, PNG, GIF, WEBP, BMP. Maksimal 5 MB.
+                    Kosongkan jika tidak ingin mengubah file.</p>
+                ${proofNotice}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Bangun HTML satu grup kategori (select kategori + kontainer bons).
+ *
+ * Kategori dipilih sekali per grup; seluruh blok bon di dalamnya mewarisi
+ * kategori tersebut lewat hidden `items[index][transaction_category_id]`,
+ * sehingga satu kategori bisa memiliki banyak keterangan.
+ *
+ * @param {Array<{id:number,name:string,type:string}>} categories
+ * @param {Object} [data] Data grup existing (memuat transaction_category_id dan items).
+ * @returns {string}
+ */
+function transactionCategoryGroupHtml(categories, data) {
+    data = data || {};
+
+    return `
+        <div class="transaction-category-group border border-border-strong rounded p-3 bg-surface-base">
+            <div class="flex items-center justify-between mb-3">
+                <span class="transaction-category-number text-sm font-semibold text-primary">Kategori No. 1</span>
+                <button type="button" onclick="removeTransactionCategoryGroup(this)"
+                    class="flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                    title="Hapus kategori beserta semua keterangannya">
+                    <i class="fa-solid fa-trash w-3 h-3"></i>
+                    Hapus Kategori
+                </button>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-text-primary mb-1">Kategori <span class="text-error">*</span></label>
+                <select class="w-full border rounded p-2 transaction-category-select" required
+                    oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
+                    ${categoryOptionsHtml(categories, data.transaction_category_id)}
+                </select>
+            </div>
+
+            <div class="bon-blocks space-y-4 mb-3"></div>
+
+            <button type="button" onclick="addBonBlock(this)" class="btn btn-outline-primary w-full">
+                <i class="fa-solid fa-plus"></i> Tambah Keterangan
             </button>
-        </div>
-
-        ${idHidden}
-
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Kategori <span class="text-error">*</span></label>
-            <select name="items[${index}][transaction_category_id]"
-                class="w-full border rounded p-2 transaction-category-select" required
-                oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
-                oninput="this.setCustomValidity('')">
-                ${categoryOptionsHtml(categories, data.transaction_category_id)}
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-            <input type="date" name="items[${index}][transaction_date]" class="w-full border rounded p-2"
-                value="${escapeHtml(data.transaction_date || '')}" required
-                oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
-                oninput="this.setCustomValidity('')">
-        </div>
-
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Keterangan <span class="text-error">*</span></label>
-            <textarea name="items[${index}][description]" class="w-full border rounded p-2" rows="3" required maxlength="1000"
-                placeholder="Contoh: Kasbon Transport Tukang"
-                oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
-                oninput="this.setCustomValidity('')">${escapeHtml(data.description || '')}</textarea>
-        </div>
-
-        <div class="mb-3">
-            <label class="amount-label block text-text-primary mb-1">Jumlah Pengeluaran <span class="text-error">*</span></label>
-            <input type="text" inputmode="numeric" name="items[${index}][expense_amount]"
-                class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000"
-                value="${escapeHtml(formatNumber(data.amount))}" required min="0"
-                oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
-        </div>
-
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Keterangan Bon</label>
-            <input type="text" name="items[${index}][keterangan_bon]" class="w-full border rounded p-2"
-                value="${escapeHtml(data.keterangan_bon || '')}"
-                placeholder="Contoh: Bon Pembelian Material" maxlength="255">
-        </div>
-
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Bukti Pembayaran</label>
-            <input type="file" name="items[${index}][proof_file]"
-                accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
-                class="w-full border rounded p-2">
-            <p class="text-xs text-text-secondary mt-1">Opsional. Format gambar: JPG, PNG, GIF, WEBP, BMP. Maksimal 5 MB.
-                Kosongkan jika tidak ingin mengubah file.</p>
-            ${proofNotice}
         </div>
     `;
 }
@@ -234,7 +289,7 @@ function transactionBlockHtml(categories, data, index) {
 function getNextTransactionIndex(container) {
     let next = 0;
 
-    container.querySelectorAll('.transaction-block [name^="items["]').forEach(function (input) {
+    container.querySelectorAll('.bon-block [name^="items["]').forEach(function (input) {
         const match = input.name.match(/^items\[(\d+)\]/);
         if (match) {
             const used = parseInt(match[1], 10);
@@ -246,67 +301,159 @@ function getNextTransactionIndex(container) {
 }
 
 /**
- * Menambahkan satu blok transaksi baru (bernomor otomatis) ke kontainer.
+ * Tambahkan satu blok "Bon" (keterangan) ke dalam grup kategori tertentu.
  *
- * @param {string|HTMLElement} containerId - ID atau elemen kontainer transaksi.
- * @param {Object} [data] Data transaksi existing (untuk modal edit).
+ * @param {HTMLElement} groupEl - Elemen grup kategori.
+ * @param {Array<{id:number,name:string,type:string}>} categories
+ * @param {Object} [data] Data transaksi (untuk blok existing).
  */
-function addTransactionBlock(containerId, data) {
-    const container = getTransactionContainer(containerId);
+function appendBonBlock(groupEl, categories, data) {
+    const bonsContainer = groupEl ? groupEl.querySelector('.bon-blocks') : null;
+    if (!bonsContainer) return;
+
+    const container = groupEl.closest('[data-categories]');
     if (!container) return;
 
-    const block = document.createElement('div');
-    block.className = 'transaction-block border border-border-strong rounded p-3 bg-surface-base';
-    block.innerHTML = transactionBlockHtml(getTransactionCategories(container), data, getNextTransactionIndex(container));
+    const groupSelect = groupEl.querySelector('.transaction-category-select');
+    const selectedId = (data && data.transaction_category_id) || (groupSelect ? groupSelect.value : '');
 
-    container.appendChild(block);
-    renumberTransactionBlocks(container);
-    syncBlockCategoryFields(block);
-    updateTransactionsSummary(container);
+    data = data || {};
+    data.transaction_category_id = selectedId;
+    data.category_type = categoryTypeOf(categories, selectedId);
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = bonBlockHtml(categories, data, getNextTransactionIndex(container));
+    bonsContainer.appendChild(wrapper.firstElementChild);
 }
-window.addTransactionBlock = addTransactionBlock;
 
 /**
- * Menghapus satu blok transaksi lalu renumber & hitung ulang rekapitulasi.
- * @param {HTMLElement} button - Tombol hapus pada blok transaksi.
+ * "Tambah Keterangan" — tambah satu blok bon baru dalam grup kategori
+ * (dipanggil dari tombol dalam grup).
+ *
+ * @param {HTMLElement} button - Tombol Tambah Keterangan.
  */
-function removeTransactionBlock(button) {
-    const block = button.closest('.transaction-block');
-    const container = block ? block.closest('[data-categories]') : null;
+function addBonBlock(button) {
+    const groupEl = button.closest('.transaction-category-group');
+    if (!groupEl) return;
+    const container = groupEl.closest('[data-categories]');
+    if (!container) return;
+
+    appendBonBlock(groupEl, getTransactionCategories(container), null);
+
+    renumberTransactionBonBlocks(container);
+    syncBonCategoryFields(groupEl);
+    updateTransactionsSummary(container);
+}
+window.addBonBlock = addBonBlock;
+
+/**
+ * Hapus satu blok "Bon" (keterangan) dari grup lalu renumber & hitung ulang.
+ *
+ * @param {HTMLElement} button - Tombol hapus pada blok bon.
+ */
+function removeBonBlock(button) {
+    const block = button.closest('.bon-block');
+    const groupEl = block ? block.closest('.transaction-category-group') : null;
+    const container = groupEl ? groupEl.closest('[data-categories]') : null;
     if (block) block.remove();
     if (container) {
-        renumberTransactionBlocks(container);
+        renumberTransactionBonBlocks(container);
         updateTransactionsSummary(container);
     }
 }
-window.removeTransactionBlock = removeTransactionBlock;
+window.removeBonBlock = removeBonBlock;
 
 /**
- * Memperbarui nomor tampilan tiap blok transaksi ("Transaksi No. X").
+ * Menambahkan satu grup kategori baru (bernomor otomatis) ke kontainer.
+ * Setiap grup berisi select kategori + satu blok bon kosong pertama.
+ *
+ * @param {string|HTMLElement} containerId - ID atau elemen kontainer transaksi.
+ * @param {Object} [data] Data grup existing (memuat transaction_category_id & items).
+ */
+function addTransactionCategoryGroup(containerId, data) {
+    const container = getTransactionContainer(containerId);
+    if (!container) return;
+    data = data || {};
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = transactionCategoryGroupHtml(getTransactionCategories(container), data);
+    const groupEl = wrapper.firstElementChild;
+    container.appendChild(groupEl);
+
+    const items = (data.items && data.items.length) ? data.items : [null];
+    items.forEach(function (item) {
+        appendBonBlock(groupEl, getTransactionCategories(container), item || {});
+    });
+
+    renumberTransactionBonBlocks(container);
+    syncBonCategoryFields(groupEl);
+    updateTransactionsSummary(container);
+}
+window.addTransactionCategoryGroup = addTransactionCategoryGroup;
+
+/**
+ * Hapus satu grup kategori beserta semua blok bon-nya.
+ *
+ * @param {HTMLElement} button - Tombol hapus pada grup kategori.
+ */
+function removeTransactionCategoryGroup(button) {
+    const groupEl = button.closest('.transaction-category-group');
+    const container = groupEl ? groupEl.closest('[data-categories]') : null;
+    if (groupEl) groupEl.remove();
+    if (container) {
+        renumberTransactionBonBlocks(container);
+        updateTransactionsSummary(container);
+    }
+}
+window.removeTransactionCategoryGroup = removeTransactionCategoryGroup;
+
+/**
+ * Memperbarui nomor tampilan tiap grup kategori ("Kategori No. X") dan
+ * blok bon di dalamnya ("Bon No. Y").
+ *
  * @param {HTMLElement} container - Kontainer daftar transaksi.
  */
-function renumberTransactionBlocks(container) {
+function renumberTransactionBonBlocks(container) {
     if (!container) return;
-    container.querySelectorAll('.transaction-block').forEach(function (block, index) {
-        const numberEl = block.querySelector('.transaction-number');
-        if (numberEl) numberEl.textContent = 'Transaksi No. ' + (index + 1);
+
+    container.querySelectorAll('.transaction-category-group').forEach(function (groupEl, catIndex) {
+        const catNumberEl = groupEl.querySelector('.transaction-category-number');
+        if (catNumberEl) catNumberEl.textContent = 'Kategori No. ' + (catIndex + 1);
+
+        groupEl.querySelectorAll('.bon-block').forEach(function (block, bonIndex) {
+            const bonNumberEl = block.querySelector('.bon-number');
+            if (bonNumberEl) bonNumberEl.textContent = 'Bon No. ' + (bonIndex + 1);
+        });
     });
 }
 
 /**
- * Sinkronkan label jumlah dalam satu blok berdasarkan tipe kategori terpilih.
- * - INCOME: "Jumlah Pemasukan"
- * - EXPENSE: "Jumlah Pengeluaran"
+ * Sinkronkan hidden kategori & label jumlah seluruh blok bon dalam satu grup
+ * berdasarkan kategori yang dipilih pada select grup.
+ * - INCOME: hidden data-type=INCOME, label "Jumlah Pemasukan"
+ * - EXPENSE: hidden data-type=EXPENSE, label "Jumlah Pengeluaran"
  *
- * @param {HTMLElement} block - Blok transaksi terkait.
+ * @param {HTMLElement} groupEl - Grup kategori terkait.
  */
-function syncBlockCategoryFields(block) {
-    const select = block.querySelector('.transaction-category-select');
-    const label = block.querySelector('.amount-label');
-    if (!select || !label) return;
+function syncBonCategoryFields(groupEl) {
+    if (!groupEl) return;
+
+    const select = groupEl.querySelector('.transaction-category-select');
+    if (!select) return;
+
     const selected = select.options[select.selectedIndex];
+    const categoryId = selected ? selected.value : '';
     const isIncome = selected && selected.dataset.type === 'INCOME';
-    label.innerHTML = (isIncome ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran') + ' <span class="text-error">*</span>';
+    const labelText = (isIncome ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran') + ' <span class="text-error">*</span>';
+
+    groupEl.querySelectorAll('.transaction-category-hidden').forEach(function (hidden) {
+        hidden.value = categoryId;
+        hidden.dataset.type = selected ? selected.dataset.type : '';
+    });
+
+    groupEl.querySelectorAll('.amount-label').forEach(function (label) {
+        label.innerHTML = labelText;
+    });
 }
 
 /**
@@ -324,12 +471,12 @@ function updateTransactionsSummary(containerId) {
     let totalIncome = 0;
     let totalExpense = 0;
 
-    container.querySelectorAll('.transaction-block').forEach(function (block) {
-        const select = block.querySelector('.transaction-category-select');
+    container.querySelectorAll('.bon-block').forEach(function (block) {
+        const catHidden = block.querySelector('.transaction-category-hidden');
         const amountInput = block.querySelector('.expense-amount-input');
         const amount = parseInt((amountInput ? amountInput.value : '').replace(/[^\d]/g, ''), 10) || 0;
-        const selected = select ? select.options[select.selectedIndex] : null;
-        if (selected && selected.dataset.type === 'INCOME') {
+        const type = catHidden ? catHidden.dataset.type : '';
+        if (type === 'INCOME') {
             totalIncome += amount;
         } else {
             totalExpense += amount;
@@ -386,11 +533,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // ============================================================
 
     if (document.getElementById('transactionsContainer')) {
-        addTransactionBlock('transactionsContainer');
+        addTransactionCategoryGroup('transactionsContainer');
     }
 
     // ============================================================
-    // STRUKTUR TRANSAKSI DINAMIS — MODAL EDIT (terisi transaksi existing)
+    // STRUKTUR TRANSAKSI DINAMIS — MODAL EDIT (terisi transaksi existing,
+    // dikelompokkan per kategori: 1 kategori = banyak keterangan/bon)
     // ============================================================
 
     document.querySelectorAll('[data-existing-items]').forEach(function (container) {
@@ -401,21 +549,31 @@ document.addEventListener('DOMContentLoaded', function () {
             existingItems = [];
         }
 
+        const grouped = {};
         existingItems.forEach(function (item) {
-            addTransactionBlock(container, item);
+            const key = item.transaction_category_id || 'none';
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(item);
+        });
+
+        Object.keys(grouped).forEach(function (key) {
+            addTransactionCategoryGroup(container, {
+                transaction_category_id: grouped[key][0].transaction_category_id,
+                items: grouped[key],
+            });
         });
     });
 
     // ============================================================
     // DELEGATION — ganti kategori & input jumlah (berlaku untuk
-    // blok yang dibuat dinamis pada semua modal)
+    // grup yang dibuat dinamis pada semua modal)
     // ============================================================
 
     document.addEventListener('change', function (e) {
         if (e.target.matches('.transaction-category-select')) {
-            const block = e.target.closest('.transaction-block');
-            syncBlockCategoryFields(block);
-            if (block) updateTransactionsSummary(block.closest('[data-categories]'));
+            const groupEl = e.target.closest('.transaction-category-group');
+            syncBonCategoryFields(groupEl);
+            if (groupEl) updateTransactionsSummary(groupEl.closest('[data-categories]'));
         }
     });
 

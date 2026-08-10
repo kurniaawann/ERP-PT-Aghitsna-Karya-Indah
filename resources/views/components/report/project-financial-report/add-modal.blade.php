@@ -33,12 +33,12 @@
 
     <hr class="my-4">
 
-    {{-- Detail Transaksi (Struktur Dinamis) --}}
+    {{-- Detail Transaksi (Struktur Dinamis: 1 Kategori = Banyak Keterangan) --}}
     <div class="mb-3">
         <h6 class="text-text-primary font-semibold mb-3">Detail Transaksi (Pilih Kategori)</h6>
         <div class="text-xs text-text-secondary mb-4 p-2 bg-surface-secondary rounded">
-            <p class="mb-1"><strong>Struktur:</strong> Pilih Kategori lalu isi Keterangan & Jumlah. Boleh menambah
-                lebih dari satu transaksi.</p>
+            <p class="mb-1"><strong>Struktur:</strong> Pilih Kategori lalu klik <strong>Tambah Keterangan</strong> untuk
+                mengisi satu atau banyak keterangan dalam kategori yang sama.</p>
             <p>Kategori <span class="text-success font-semibold">Pemasukan</span> otomatis menjadi
                 <strong>Jumlah Pemasukan</strong>, kategori <span class="text-error font-semibold">Pengeluaran</span>
                 otomatis menjadi <strong>Jumlah Pengeluaran</strong>.</p>
@@ -49,8 +49,8 @@
     <div id="transactionsContainer" class="space-y-4 mb-3"
         data-categories="{{ $categoriesJson }}"></div>
 
-    <button type="button" onclick="addTransactionBlock('transactionsContainer')" class="btn btn-outline-primary w-full">
-        <i class="fa-solid fa-plus"></i> Tambah Transaksi
+    <button type="button" onclick="addTransactionCategoryGroup('transactionsContainer')" class="btn btn-outline-primary w-full">
+        <i class="fa-solid fa-plus"></i> Tambah Kategori
     </button>
 
     <hr class="my-4">

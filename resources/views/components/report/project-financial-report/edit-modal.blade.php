@@ -69,18 +69,19 @@
     <div class="mb-3">
         <h6 class="text-text-primary font-semibold mb-3">Detail Transaksi (Pilih Kategori)</h6>
         <div class="text-xs text-text-secondary mb-4 p-2 bg-surface-secondary rounded">
-            <p class="mb-1"><strong>Struktur:</strong> Pilih Kategori lalu isi Keterangan & Jumlah. Boleh menambah
-                lebih dari satu transaksi.</p>
+            <p class="mb-1"><strong>Struktur:</strong> Pilih Kategori lalu klik <strong>Tambah Keterangan</strong> untuk
+                mengisi satu atau banyak keterangan dalam kategori yang sama.</p>
             <p>Kategori <span class="text-success font-semibold">Pemasukan</span> otomatis menjadi
                 <strong>Jumlah Pemasukan</strong>, kategori <span class="text-error font-semibold">Pengeluaran</span>
                 otomatis menjadi <strong>Jumlah Pengeluaran</strong>.</p>
-            <p class="mt-1">Hapus blok untuk menghapus transaksi, atau tambah blok untuk transaksi baru.</p>
+            <p class="mt-1">Hapus blok keterangan untuk menghapus bon, atau hapus kategori untuk menghapus seluruh
+                keterangannya.</p>
         </div>
     </div>
 
     @if ($existingItems->isEmpty())
         <p id="emptyTransactionsHint-{{ $recap->id }}" class="text-sm text-text-secondary mb-3">
-            Belum ada transaksi. Klik "Tambah Transaksi" di bawah untuk menambahkan.
+            Belum ada transaksi. Klik "Tambah Kategori" di bawah untuk menambahkan.
         </p>
     @endif
 
@@ -89,9 +90,9 @@
         data-categories="{{ $categoriesJson }}"
         data-existing-items="{{ $existingItemsJson }}"></div>
 
-    <button type="button" onclick="addTransactionBlock('transactionsContainer-{{ $recap->id }}')"
+    <button type="button" onclick="addTransactionCategoryGroup('transactionsContainer-{{ $recap->id }}')"
         class="btn btn-outline-primary w-full">
-        <i class="fa-solid fa-plus"></i> Tambah Transaksi
+        <i class="fa-solid fa-plus"></i> Tambah Kategori
     </button>
 
     <hr class="my-4">
