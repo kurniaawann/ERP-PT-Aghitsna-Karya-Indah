@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Models\Finance;
+
+use App\Models\Report\TransactionCategory;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * Model untuk item/baris "Bon" pada Laporan Keuangan Proyek.
+ *
+ * Setiap baris mencatat satu transaksi (uang masuk/uang keluar) terkait
+ * kategori transaksi modul project_finance, lengkap dengan keterangan bon
+ * dan bukti pembayaran (opsional).
+ *
+ * Table: project_financial_report_items
+ */
+class ProjectFinancialReportItem extends Model
+{
+    use HasFactory;
+
+    protected $table = 'project_financial_report_items';
+
+    protected $fillable = [
+        'project_financial_report_id',
+        'transaction_category_id',
+        'transaction_date',
+        'description',
+        'income_amount',
+        'expense_amount',
+        'keterangan_bon',
+        'proof_file',
+        'proof_file_name',
+        'created_by',
+    ];
+
+    protected $casts = [
+        'transaction_date' => 'date',
+        'income_amount' => 'integer',
+        'expense_amount' => 'integer',
+    ];
+
+    /**
+     * Laporan keuangan proyek tempat item ini berada.
+     */
+    public function report(): BelongsTo
+    {
+        return $this->belongsTo(ProjectFinancialReport::class, 'project_financial_report_id', 'id');
+    }
+
+    /**
+     * Kategori transaksi terkait.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(TransactionCategory::class, 'transaction_category_id');
+    }
+
+    /**
+     * User yang membuat item ini.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Apakah item ini memiliki file bukti pembayaran.
+     */
+    public function hasProof(): bool
+    {
+        return ! empty($this->proof_file);
+    }
+}

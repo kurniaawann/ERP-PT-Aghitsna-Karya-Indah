@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Pengeluaran Divisi Produksi</title>
+    <title>Laporan Keuangan Proyek</title>
     <style>
         * {
             margin: 0;
@@ -18,25 +18,43 @@
             padding: 15px;
         }
 
-        .header-title {
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        .logo-cell {
+            width: 90px;
+            vertical-align: middle;
+        }
+
+        .logo-cell img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .header-title-cell {
             text-align: center;
-            font-weight: bold;
+            vertical-align: middle;
+        }
+
+        .company-name {
             font-size: 14px;
-            margin-bottom: 3px;
+            font-weight: bold;
+            margin-bottom: 2px;
         }
 
-        .header-subtitle {
-            text-align: center;
+        .report-title {
+            font-size: 13px;
             font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
-        .header-period {
-            text-align: center;
-            font-weight: bold;
+        .project-info {
             font-size: 11px;
-            margin-bottom: 15px;
+            font-weight: bold;
         }
 
         table {
@@ -130,35 +148,31 @@
         }
 
         .col-no {
-            width: 4%;
+            width: 8%;
             text-align: center;
         }
 
-        .col-faktur {
-            width: 18%;
-        }
-
         .col-tanggal {
-            width: 10%;
+            width: 11%;
             text-align: center;
         }
 
         .col-keterangan {
-            width: 28%;
+            width: 34%;
         }
 
         .col-pemasukan {
-            width: 13%;
+            width: 14%;
             text-align: right;
         }
 
         .col-pengeluaran {
-            width: 13%;
+            width: 14%;
             text-align: right;
         }
 
-        .col-sumber {
-            width: 14%;
+        .col-keterangan-bon {
+            width: 19%;
         }
 
         .footer-signatures {
@@ -187,97 +201,98 @@
 </head>
 
 <body>
-    <div class="header-title">PT. AGHITSNA KARYA INDAH</div>
-    <div class="header-subtitle">LAPORAN PENGELUARAN DIVISI PRODUKSI</div>
-    <div class="header-period">PERIODE {{ strtoupper($periodTitle) }}</div>
+    {{-- Header: logo kiri + judul di tengah + info proyek --}}
+    <table class="header-table" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td class="logo-cell">
+                <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
+            </td>
+            <td class="header-title-cell">
+                <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
+                <div class="report-title">LAPORAN KEUANGAN</div>
+                <div class="project-info">{{ strtoupper($recap->project_name ?? '') }}</div>
+                @if (! empty($recap->location))
+                    <div class="project-info">{{ strtoupper($recap->location) }}</div>
+                @endif
+            </td>
+            <td class="logo-cell"></td>
+        </tr>
+    </table>
 
     <table>
         <thead>
             <tr>
                 <th class="col-no">NO</th>
-                <th class="col-faktur">FAKTUR</th>
                 <th class="col-tanggal">TANGGAL</th>
                 <th class="col-keterangan">KETERANGAN</th>
-                <th class="col-pemasukan">PEMASUKAN</th>
-                <th class="col-pengeluaran">PENGELUARAN</th>
-                <th class="col-sumber">SUMBER UANG</th>
+                <th class="col-pemasukan">UANG MASUK</th>
+                <th class="col-pengeluaran">UANG KELUAR</th>
+                <th class="col-keterangan-bon">KETERANGAN BON</th>
             </tr>
         </thead>
         <tbody>
             @php
-                $no = 1;
-                $allCategories = \App\Models\Report\TransactionCategory::where('created_by', auth()->id())
-                    ->module(\App\Models\Report\TransactionCategory::MODULE_EXPENSE_RECAP)
-                    ->active()->orderBy('sort_order')->get();
-                $expenseRecapsById = $expenseRecaps->groupBy('transaction_category_id');
+                $catNo = 1;
+                $itemsByCategory = $items->groupBy('transaction_category_id');
+                $categories = $items->pluck('category')->filter()->unique('id');
             @endphp
 
-            @foreach ($allCategories as $category)
+            @foreach ($categories as $category)
                 @php
-                    $expenses = $expenseRecapsById->get($category->id, collect());
+                    $categoryItems = $itemsByCategory->get($category->id, collect());
                     $categoryIncome = 0;
                     $categoryExpense = 0;
+                    $bonNo = 1;
                 @endphp
 
                 {{-- Category Header Row --}}
                 <tr class="category-row">
-                    <td colspan="4" class="category-header">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
+                    <td colspan="3" class="category-header">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
                     <td class="empty-cell"></td>
                     <td class="empty-cell"></td>
                     <td class="empty-cell"></td>
                 </tr>
 
                 {{-- Items in Category --}}
-                @php $itemNo = 1; @endphp
-                @foreach ($expenses as $expense)
+                @foreach ($categoryItems as $item)
                     @php
-                        $categoryIncome += $expense->income_amount ?? 0;
-                        $categoryExpense += $expense->expense_amount ?? 0;
+                        $categoryIncome += $item->income_amount ?? 0;
+                        $categoryExpense += $item->expense_amount ?? 0;
                     @endphp
                     <tr>
-                        <td class="text-center">{{ $itemNo++ }}</td>
-                        <td>{{ $expense->invoice_number ?? '' }}</td>
+                        <td class="text-center">{{ $catNo }} Bon {{ $bonNo++ }}</td>
                         <td class="text-center">
-                            {{ $expense->transaction_date ? \Carbon\Carbon::parse($expense->transaction_date)->format('d/m/Y') : '' }}
+                            {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '' }}
                         </td>
-                        <td>{{ $expense->description ?? '' }}</td>
+                        <td>{{ $item->description ?? '' }}</td>
                         <td class="text-right">
-                            {{ $expense->income_amount ? 'Rp ' . number_format($expense->income_amount, 0, ',', '.') : '' }}
+                            {{ $item->income_amount ? 'Rp ' . number_format($item->income_amount, 0, ',', '.') : '' }}
                         </td>
                         <td class="text-right">
-                            {{ $expense->expense_amount ? 'Rp ' . number_format($expense->expense_amount, 0, ',', '.') : '' }}
+                            {{ $item->expense_amount ? 'Rp ' . number_format($item->expense_amount, 0, ',', '.') : '' }}
                         </td>
-                        <td>{{ $expense->money_source ?? '' }}</td>
+                        <td>{{ $item->keterangan_bon ?? '' }}</td>
                     </tr>
                 @endforeach
 
-                {{-- Baris kosong putih jika tidak ada data --}}
-                @if ($expenses->isEmpty())
-                    <tr>
-                        <td>&nbsp;</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                @endif
-
                 {{-- Category Subtotal --}}
                 <tr class="subtotal-row">
-                    <td colspan="4"></td>
+                    <td colspan="3"></td>
                     <td class="text-right">
-                        {{ 'Rp ' . number_format($categoryIncome, 0, ',', '.') }}</td>
+                        {{ 'Rp ' . number_format($categoryIncome, 0, ',', '.') }}
+                    </td>
                     <td class="text-right">
-                        {{ 'Rp ' . number_format($categoryExpense, 0, ',', '.') }}</td>
+                        {{ 'Rp ' . number_format($categoryExpense, 0, ',', '.') }}
+                    </td>
                     <td></td>
                 </tr>
+
+                @php $catNo++; @endphp
             @endforeach
 
             {{-- Grand Total --}}
             <tr class="total-row">
-                <td colspan="4" class="text-center"><strong>Jumlah</strong></td>
+                <td colspan="3" class="text-center"><strong>Jumlah</strong></td>
                 <td class="text-right">
                     <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
                 </td>
@@ -293,7 +308,7 @@
 
     {{-- Rekapitulasi --}}
     <div class="rekapitulasi">
-        <div style="margin-bottom: 10px;">Rekapitulasi Pengeluaran Divisi Produksi {{ $periodTitle }}</div>
+        <div style="margin-bottom: 10px;">Rekapitulasi Laporan Keuangan {{ $recap->project_name ?? '' }}</div>
 
         <table style="border: none; width: 50%;">
             <tr style="border: none;">

@@ -221,7 +221,9 @@
         <tbody>
             @php
                 $no = 1;
-                $allCategories = \App\Models\Report\TransactionCategory::where('created_by', auth()->id())->active()->orderBy('sort_order')->get();
+                $allCategories = \App\Models\Report\TransactionCategory::where('created_by', auth()->id())
+                    ->module(\App\Models\Report\TransactionCategory::MODULE_EXPENSE_RECAP)
+                    ->active()->orderBy('sort_order')->get();
                 $expenseRecapsById = $expenseRecaps->groupBy('transaction_category_id');
             @endphp
 

@@ -38,7 +38,9 @@ class ExpenseReportExport implements FromCollection, WithHeadings, WithStyles, W
         $no = 1;
         $currentRow = self::DATA_START_ROW;
 
-        $allCategories = TransactionCategory::where('created_by', auth()->id())->active()->orderBy('sort_order')->get();
+        $allCategories = TransactionCategory::where('created_by', auth()->id())
+            ->module(TransactionCategory::MODULE_EXPENSE_RECAP)
+            ->active()->orderBy('sort_order')->get();
         $expenseRecapsById = $this->expenseRecaps->groupBy('transaction_category_id');
 
         foreach ($allCategories as $category) {

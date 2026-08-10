@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Model untuk Rekap Proyek (standalone).
@@ -39,6 +40,7 @@ class ProjectRecap extends Model
         'id',
         'rab_number',
         'project_name',
+        'location',
         'total_rab',
         'design_file',
         'design_file_name',
@@ -94,6 +96,17 @@ class ProjectRecap extends Model
         return $this->hasMany(PaymentProof::class, 'invoice_number', 'id')
             ->where('invoice_type', 'recap')
             ->orderByDesc('created_at');
+    }
+
+    /**
+     * Laporan Keuangan Proyek yang menautkan ke rekap proyek ini (relasi 1:1).
+     *
+     * Laporan dibuat otomatis saat dibuka pertama kali dari tombol
+     * "Laporan Keuangan" di tabel Rekap Proyek.
+     */
+    public function financialReport(): HasOne
+    {
+        return $this->hasOne(ProjectFinancialReport::class, 'project_recap_id', 'id');
     }
 
     /**

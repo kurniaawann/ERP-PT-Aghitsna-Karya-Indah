@@ -294,7 +294,7 @@ class RecapExpenseService
     }
 
     /**
-     * Ambil semua kategori transaksi yang aktif dan berjenis EXPENSE.
+     * Ambil semua kategori transaksi yang aktif milik modul Rekap Pengeluaran.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -303,21 +303,17 @@ class RecapExpenseService
         $userId = auth()->id();
         $cacheKey = 'finance:expense-categories:' . $userId;
 
+        $query = fn () => TransactionCategory::where('created_by', $userId)
+            ->module(TransactionCategory::MODULE_EXPENSE_RECAP)
+            ->active()
+            ->orderBy('sort_order')
+            ->get();
+
         try {
-            return Cache::remember(
-                $cacheKey,
-                now()->addDay(),
-                fn () => TransactionCategory::where('created_by', $userId)
-                    ->active()
-                    ->orderBy('sort_order')
-                    ->get()
-            );
+            return Cache::remember($cacheKey, now()->addDay(), $query);
         } catch (\Exception $e) {
             Log::warning('Cache READ error [' . $cacheKey . ']: ' . $e->getMessage());
-            return TransactionCategory::where('created_by', $userId)
-                ->active()
-                ->orderBy('sort_order')
-                ->get();
+            return $query();
         }
     }
 

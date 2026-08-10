@@ -21,18 +21,21 @@ class TransactionCategoryService
      * - when($type) menambah filter type hanya jika tidak kosong; when($search)
      *   membungkus pencarian dalam closure agar LIKE name/code digabung dengan
      *   OR dalam satu grup (tidak membatalkan filter type).
+     * - when($module) menambah filter module (expense_recap / project_finance).
      * - Urutan tampil: sort_order naik (urutan yang bisa diubah user) lalu name
      *   sebagai tie-breaker agar deterministik saat sort_order sama.
      *
      * @param string|null $search  Kata kunci pencarian (nama atau kode)
      * @param string|null $type    Tipe kategori (INCOME/EXPENSE)
+     * @param string|null $module  Modul kategori (expense_recap / project_finance)
      * @return LengthAwarePaginator
      */
-    public function getPaginatedCategories(?string $search = null, ?string $type = null): LengthAwarePaginator
+    public function getPaginatedCategories(?string $search = null, ?string $type = null, ?string $module = null): LengthAwarePaginator
 {
     return TransactionCategory::query()
         ->where('created_by', auth()->id())
         ->when($type, fn ($query, $type) => $query->where('type', $type))
+        ->when($module, fn ($query, $module) => $query->where('module', $module))
         ->when($search, fn ($query, $search) => $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
                 ->orWhere('code', 'like', "%{$search}%");
@@ -124,6 +127,7 @@ class TransactionCategoryService
             Cache::forget('report:category-codes');
             Cache::forget('report:category-used-ids:' . $userId);
             Cache::forget('finance:expense-categories:' . $userId);
+            Cache::forget('finance:project-finance-categories:' . $userId);
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [report:categories]: ' . $e->getMessage());
         }
@@ -138,7 +142,7 @@ class TransactionCategoryService
      * - Default is_active = true dan created_by = user saat ini.
      * - Pemanggil wajib memanggil flushCache() setelah operasi ini.
      *
-     * @param array{name: string, code: string, type: string} $data
+     * @param array{name: string, code: string, type: string, module?: string} $data
      * @return TransactionCategory
      */
     public function createCategory(array $data): TransactionCategory
@@ -149,6 +153,7 @@ class TransactionCategoryService
             'name' => $data['name'],
             'code' => $data['code'],
             'type' => $data['type'],
+            'module' => $data['module'] ?? TransactionCategory::MODULE_EXPENSE_RECAP,
             'sort_order' => $maxSortOrder + 1,
             'is_active' => true,
             'created_by' => auth()->id(),
@@ -167,7 +172,7 @@ class TransactionCategoryService
      * - Pemanggil wajib memanggil flushCache() setelah operasi ini.
      *
      * @param int   $id   ID kategori yang akan diupdate
-     * @param array{name: string, code: string, type: string, sort_order: int} $data
+     * @param array{name: string, code: string, type: string, module?: string, sort_order: int} $data
      * @return TransactionCategory
      */
     public function updateCategory(int $id, array $data): TransactionCategory
@@ -184,6 +189,7 @@ class TransactionCategoryService
             'name' => $data['name'],
             'code' => $data['code'],
             'type' => $data['type'],
+            'module' => $data['module'] ?? $category->module,
             'sort_order' => $newSortOrder,
         ]);
 

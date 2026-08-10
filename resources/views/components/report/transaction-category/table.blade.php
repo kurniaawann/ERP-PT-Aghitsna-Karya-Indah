@@ -16,6 +16,7 @@
                             <th class="p-2 text-left">Nama Kategori</th>
                             <th class="p-2 text-left">Kode</th>
                             <th class="p-2 text-center">Tipe</th>
+                            <th class="p-2 text-center">Modul</th>
                             <th class="p-2 text-center">Urutan</th>
                             <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Aksi</th>
@@ -67,11 +68,27 @@
                                     @endif
                                 </td>
 
+                                {{-- Modul (Rekap Pengeluaran / Keuangan Proyek) --}}
+                                <td class="p-2 text-center">
+                                    @if ($category->module === 'project_finance')
+                                        <span
+                                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-lg bg-primary-light text-primary gap-1">
+                                            <i class="fa-solid fa-wallet"></i>
+                                            Keuangan Proyek
+                                        </span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-lg bg-surface-hover text-text-primary gap-1">
+                                            <i class="fa-solid fa-receipt"></i>
+                                            Rekap Pengeluaran
+                                        </span>
+                                    @endif
+                                </td>
+
                                 {{-- Urutan --}}
                                 <td class="p-2 text-center text-text-label">
                                     {{ $category->sort_order }}
                                 </td>
-
                                 {{-- Status Aktif/Nonaktif --}}
                                 <td class="p-2 text-center">
                                     <button type="button" onclick="toggleStatus({{ $category->id }})"
@@ -94,7 +111,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center p-4 text-text-secondary">Data tidak ditemukan.
+                                <td colspan="9" class="text-center p-4 text-text-secondary">Data tidak ditemukan.
                                 </td>
                             </tr>
                         @endforelse

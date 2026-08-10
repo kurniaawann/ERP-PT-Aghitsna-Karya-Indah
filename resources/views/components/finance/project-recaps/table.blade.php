@@ -89,7 +89,7 @@
                                     @endif
                                 </td>
                                 <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto">
+                                    <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto">
                                         <button type="button"
                                             onclick="openModal('detailModal-{{ $recap->id }}')"
                                             class="flex items-center gap-1 bg-info hover:bg-info/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
@@ -105,6 +105,13 @@
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
                                             Edit
                                         </button>
+
+                                        <a href="{{ route('project-financial-report.show', $recap) }}"
+                                            class="flex items-center gap-1 bg-btn-search hover:bg-btn-search-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Buka Laporan Keuangan Proyek">
+                                            <i class="fa-solid fa-file-invoice-dollar w-3 h-3"></i>
+                                            Laporan
+                                        </a>
                                     </div>
                                 </td>
                             </tr>

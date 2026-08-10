@@ -368,15 +368,17 @@ class ExpenseReportService
         $userId = auth()->id();
         $cacheKey = 'report:expense-categories:' . $userId;
 
+        $query = fn () => TransactionCategory::where('created_by', $userId)
+            ->module(TransactionCategory::MODULE_EXPENSE_RECAP)
+            ->active()
+            ->orderBy('sort_order')
+            ->get();
+
         try {
-            return Cache::remember(
-                $cacheKey,
-                now()->addDay(),
-                fn () => TransactionCategory::where('created_by', $userId)->active()->orderBy('sort_order')->get()
-            );
+            return Cache::remember($cacheKey, now()->addDay(), $query);
         } catch (\Exception $e) {
             Log::warning('Cache READ error [' . $cacheKey . ']: ' . $e->getMessage());
-            return TransactionCategory::where('created_by', $userId)->active()->orderBy('sort_order')->get();
+            return $query();
         }
     }
 

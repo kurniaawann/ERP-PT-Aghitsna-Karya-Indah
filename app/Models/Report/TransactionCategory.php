@@ -24,10 +24,17 @@ class TransactionCategory extends Model
     /** @var string Tipe kategori pengeluaran */
     const TYPE_EXPENSE = 'EXPENSE';
 
+    /** @var string Modul Rekap Pengeluaran / Laporan Pengeluaran */
+    const MODULE_EXPENSE_RECAP = 'expense_recap';
+
+    /** @var string Modul Laporan Keuangan Proyek */
+    const MODULE_PROJECT_FINANCE = 'project_finance';
+
     protected $fillable = [
         'name',
         'code',
         'type',
+        'module',
         'sort_order',
         'is_active',
         'created_by',
@@ -67,6 +74,18 @@ class TransactionCategory extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope: filter kategori berdasarkan modul (expense_recap / project_finance).
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string                                 $module
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeModule($query, string $module)
+    {
+        return $query->where('module', $module);
     }
 
     /**

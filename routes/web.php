@@ -19,6 +19,7 @@ use App\Http\Controllers\Finance\PaymentAccountController;
 use App\Http\Controllers\Finance\RecapSalesController;
 use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Report\TransactionCategoryController;
+use App\Http\Controllers\Finance\ProjectFinancialReportController;
 use App\Http\Controllers\Report\SalesReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
 use App\Http\Controllers\Report\FinalReportController;
@@ -237,6 +238,14 @@ Route::middleware('auth')->group(function () {
     // Recap Expense Export routes
     Route::get('/recap-expense/export/excel', [RecapExpenseController::class, 'exportExcel'])->name('recap-expense.export.excel');
     Route::get('/recap-expense/export/pdf', [RecapExpenseController::class, 'exportPdf'])->name('recap-expense.export.pdf');
+
+    // Route Laporan Keuangan Proyek (per Rekap Proyek)
+    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan', [ProjectFinancialReportController::class, 'show'])->name('project-financial-report.show');
+    Route::post('/recap-proyek/{projectRecap}/laporan-keuangan/items', [ProjectFinancialReportController::class, 'storeItem'])->name('project-financial-report.store');
+    Route::put('/recap-proyek/{projectRecap}/laporan-keuangan/items/{item}', [ProjectFinancialReportController::class, 'updateItem'])->name('project-financial-report.update');
+    Route::delete('/recap-proyek/{projectRecap}/laporan-keuangan/destroy-selected', [ProjectFinancialReportController::class, 'destroySelected'])->name('project-financial-report.destroySelected');
+    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/export/pdf', [ProjectFinancialReportController::class, 'exportPdf'])->name('project-financial-report.export.pdf');
+    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/export/excel', [ProjectFinancialReportController::class, 'exportExcel'])->name('project-financial-report.export.excel');
 
     // ============================================
     // Finance (Keuangan) Routes - Reimburse

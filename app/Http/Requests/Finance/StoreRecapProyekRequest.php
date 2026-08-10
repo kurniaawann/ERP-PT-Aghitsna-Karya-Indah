@@ -42,6 +42,7 @@ class StoreRecapProyekRequest extends FormRequest
     {
         return [
             'project_name' => ['required', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
             'total_rab' => ['required', 'numeric', 'min:0'],
             'design_file' => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp,bmp'],
         ];
@@ -55,6 +56,7 @@ class StoreRecapProyekRequest extends FormRequest
         return [
             'project_name.required' => 'Nama proyek tidak boleh kosong!',
             'project_name.max' => 'Nama proyek maksimal 255 karakter!',
+            'location.max' => 'Lokasi maksimal 255 karakter!',
             'total_rab.required' => 'Total RAB tidak boleh kosong!',
             'total_rab.numeric' => 'Total RAB harus berupa angka!',
             'total_rab.min' => 'Total RAB tidak boleh negatif!',

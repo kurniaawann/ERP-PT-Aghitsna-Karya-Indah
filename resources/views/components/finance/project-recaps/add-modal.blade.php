@@ -10,6 +10,13 @@
             oninput="this.setCustomValidity('')">
     </div>
 
+    {{-- Lokasi --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Lokasi</label>
+        <input type="text" name="location" class="w-full border rounded p-2" placeholder="Contoh: Depok, Jawa Barat"
+            maxlength="255">
+    </div>
+
     {{-- Total RAB --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Total RAB <span class="text-error">*</span></label>

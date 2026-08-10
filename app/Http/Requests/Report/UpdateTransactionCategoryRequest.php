@@ -38,6 +38,7 @@ class UpdateTransactionCategoryRequest extends FormRequest
                 Rule::unique('transaction_categories', 'code')->ignore($categoryId),
             ],
             'type' => ['required', 'string', 'in:INCOME,EXPENSE'],
+            'module' => ['required', 'string', 'in:expense_recap,project_finance'],
             'sort_order' => ['required', 'integer', 'min:1'],
         ];
     }
@@ -58,6 +59,8 @@ class UpdateTransactionCategoryRequest extends FormRequest
             'code.unique' => 'Kode kategori sudah digunakan!',
             'type.required' => 'Tipe kategori wajib dipilih.',
             'type.in' => 'Tipe kategori tidak valid.',
+            'module.required' => 'Modul kategori wajib dipilih.',
+            'module.in' => 'Modul kategori tidak valid.',
             'sort_order.required' => 'Urutan wajib diisi.',
             'sort_order.integer' => 'Urutan harus berupa angka bulat.',
             'sort_order.min' => 'Urutan minimal 1.',

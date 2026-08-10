@@ -47,6 +47,13 @@
                 ])" placeholder="Semua Tipe"
                     :autoSubmit="true" responsive="custom" />
 
+                {{-- Filter Modul --}}
+                <x-filters.select-filter name="module" :value="request('module')" :options="collect([
+                    (object) ['id' => 'expense_recap', 'name' => 'Rekap Pengeluaran'],
+                    (object) ['id' => 'project_finance', 'name' => 'Keuangan Proyek'],
+                ])" placeholder="Semua Modul"
+                    :autoSubmit="true" responsive="custom" />
+
                 {{-- Input Pencarian --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari kategori..." responsive="custom" />
             </form>

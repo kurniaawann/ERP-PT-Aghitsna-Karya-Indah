@@ -52,6 +52,17 @@
         </select>
     </div>
 
+    {{-- Field: Modul (Rekap Pengeluaran / Keuangan Proyek) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Modul <span class="text-error">*</span></label>
+        <select name="module" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Modul kategori wajib dipilih')" oninput="this.setCustomValidity('')">
+            <option value="">-- Pilih Modul --</option>
+            <option value="expense_recap" {{ $category->module === 'expense_recap' ? 'selected' : '' }}>Rekap Pengeluaran</option>
+            <option value="project_finance" {{ $category->module === 'project_finance' ? 'selected' : '' }}>Keuangan Proyek</option>
+        </select>
+    </div>
+
     {{-- Field: Urutan (Sort Order) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Urutan (Sort Order) <span class="text-error">*</span></label>

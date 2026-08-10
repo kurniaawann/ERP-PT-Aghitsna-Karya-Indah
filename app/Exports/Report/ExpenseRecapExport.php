@@ -79,8 +79,10 @@ class ExpenseRecapExport implements FromCollection, WithHeadings, WithStyles, Wi
         $globalNo = 1; // Nomor urut global
         $currentRow = 5; // Start from row 5 (after header)
 
-        // Ambil SEMUA kategori aktif, urut berdasarkan sort_order
-        $allCategories = TransactionCategory::where('created_by', auth()->id())->active()->orderBy('sort_order')->get();
+        // Ambil SEMUA kategori aktif milik modul Rekap Pengeluaran, urut berdasarkan sort_order
+        $allCategories = TransactionCategory::where('created_by', auth()->id())
+            ->module(TransactionCategory::MODULE_EXPENSE_RECAP)
+            ->active()->orderBy('sort_order')->get();
         $expenseRecapsById = $this->expenseRecaps->groupBy('transaction_category_id');
 
         foreach ($allCategories as $category) {

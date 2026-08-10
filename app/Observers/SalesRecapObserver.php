@@ -2,10 +2,10 @@
 
 namespace App\Observers;
 
-use App\Models\Report\SalesRecap;
-use App\Models\Report\ExpenseRecap;
-use App\Models\Report\TransactionCategory;
 use App\Models\Inventory\ItemStockOut;
+use App\Models\Report\ExpenseRecap;
+use App\Models\Report\SalesRecap;
+use App\Models\Report\TransactionCategory;
 use App\Models\User;
 use App\Services\Finance\PaymentProofService;
 use App\Services\Finance\RecapExpenseService;
@@ -28,9 +28,6 @@ class SalesRecapObserver
      * Handle the SalesRecap "created" event.
      *
      * Membuat stock out records untuk setiap item yang dari stock.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @return void
      */
     public function created(SalesRecap $salesRecap): void
     {
@@ -44,9 +41,6 @@ class SalesRecapObserver
      *
      * Recreate stock outs untuk menjaga konsistensi, dan auto-create
      * ExpenseRecap saat status berubah menjadi Lunas.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @return void
      */
     public function updated(SalesRecap $salesRecap): void
     {
@@ -69,9 +63,6 @@ class SalesRecapObserver
      * "deleted") karena observer di-resolve ulang per event, sehingga data
      * antar-hook tidak bisa dibawa lewat property instance. Sales recap tidak
      * punya created_by sehingga bisa dihapus oleh user lain.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @return void
      */
     public function deleting(SalesRecap $salesRecap): void
     {
@@ -91,9 +82,6 @@ class SalesRecapObserver
      * Handle the SalesRecap "deleted" event.
      *
      * Menghapus stock out records dan file payment proof terkait.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @return void
      */
     public function deleted(SalesRecap $salesRecap): void
     {
@@ -112,9 +100,6 @@ class SalesRecapObserver
 
     /**
      * Membuat stock out records dari items rekap penjualan.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @return void
      */
     private function createStockOuts(SalesRecap $salesRecap): void
     {
@@ -125,7 +110,7 @@ class SalesRecapObserver
 
         if ($items && is_array($items)) {
             foreach ($items as $item) {
-                if ($this->isFromStock($item['from_stock'] ?? null) && !empty($item['id_item'])) {
+                if ($this->isFromStock($item['from_stock'] ?? null) && ! empty($item['id_item'])) {
                     ItemStockOut::create([
                         'id_stock_out' => $this->generateStockOutId(),
                         'id_item' => $item['id_item'],
@@ -141,9 +126,6 @@ class SalesRecapObserver
 
     /**
      * Auto-create ExpenseRecap saat status Lunas.
-     *
-     * @param  \App\Models\Report\SalesRecap $salesRecap
-     * @return void
      */
     public function createExpenseRecap(SalesRecap $salesRecap): void
     {
@@ -157,10 +139,11 @@ class SalesRecapObserver
 
         $incomeCategory = $this->resolveIncomeCategory();
 
-        if (!$incomeCategory) {
+        if (! $incomeCategory) {
             Log::warning('Auto expense recap skipped: tidak ada kategori INCOME aktif', [
                 'sales_recap_id' => $salesRecapId,
             ]);
+
             return;
         }
 
@@ -170,7 +153,7 @@ class SalesRecapObserver
             'transaction_category_id' => $incomeCategory->id,
             'invoice_number' => $invoiceNumber,
             'transaction_date' => $salesRecap->date ?? now(),
-            'description' => $salesRecap->name_proyek ?? 'Penjualan - ' . $salesRecapId,
+            'description' => $salesRecap->name_proyek ?? 'Penjualan - '.$salesRecapId,
             'income_amount' => $salesRecap->total_selling,
             'expense_amount' => null,
             'money_source' => null,
@@ -193,14 +176,13 @@ class SalesRecapObserver
      * tersedia; jika kode UANG_MASUK sudah terpakai (oleh user lain), kode
      * di-increment menjadi UANG_MASUK1, UANG_MASUK2, dst. sampai ketemu yang
      * kosong (atau saat create gagal karena kode bentrok).
-     *
-     * @return \App\Models\Report\TransactionCategory|null
      */
     private function resolveIncomeCategory(): ?TransactionCategory
     {
         $userId = auth()->id() ?? User::orderBy('created_at')->value('id');
 
         $incomeCategory = TransactionCategory::where('created_by', $userId)
+            ->module(TransactionCategory::MODULE_EXPENSE_RECAP)
             ->where('type', TransactionCategory::TYPE_INCOME)
             ->whereRaw("code REGEXP '^UANG_MASUK[0-9]*$'")
             ->orderBy('id')
@@ -214,7 +196,7 @@ class SalesRecapObserver
         $suffix = 1;
 
         while (true) {
-            $code = $suffix === 1 ? $baseCode : $baseCode . $suffix;
+            $code = $suffix === 1 ? $baseCode : $baseCode.$suffix;
             $suffix++;
 
             if (TransactionCategory::where('code', $code)->exists()) {
@@ -245,8 +227,6 @@ class SalesRecapObserver
 
     /**
      * Generate unique stock out ID (format: SOUT-YYYYMMDD-XXXX).
-     *
-     * @return string
      */
     private function generateStockOutId(): string
     {
@@ -255,7 +235,7 @@ class SalesRecapObserver
         $sequence = str_pad($count, 4, '0', STR_PAD_LEFT);
 
         do {
-            $id = 'SOUT-' . $date . '-' . $sequence;
+            $id = 'SOUT-'.$date.'-'.$sequence;
             $sequence = str_pad((int) $sequence + 1, 4, '0', STR_PAD_LEFT);
         } while (ItemStockOut::where('id_stock_out', $id)->exists());
 
@@ -265,8 +245,7 @@ class SalesRecapObserver
     /**
      * Cek apakah item berasal dari stock.
      *
-     * @param  mixed $value
-     * @return bool
+     * @param  mixed  $value
      */
     private function isFromStock($value): bool
     {
@@ -275,29 +254,25 @@ class SalesRecapObserver
 
     /**
      * Invalidate semua cache inventory terkait stock-out dan stock report.
-     *
-     * @return void
      */
     private function flushInventoryCache(): void
     {
         try {
             Cache::forget('inventory:stock-outs:all');
         } catch (\Exception $e) {
-            Log::warning('Cache DELETE error [inventory:stock-outs:all]: ' . $e->getMessage());
+            Log::warning('Cache DELETE error [inventory:stock-outs:all]: '.$e->getMessage());
         }
     }
 
     /**
      * Invalidate cache opsi SalesRecap di halaman Bukti Pembayaran.
-     *
-     * @return void
      */
     private function flushSalesRecapOptionsCache(): void
     {
         try {
             Cache::forget('finance:sales-recap-options');
         } catch (\Exception $e) {
-            Log::warning('Cache DELETE error [finance:sales-recap-options]: ' . $e->getMessage());
+            Log::warning('Cache DELETE error [finance:sales-recap-options]: '.$e->getMessage());
         }
     }
 }

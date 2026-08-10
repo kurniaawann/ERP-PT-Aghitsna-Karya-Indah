@@ -30,8 +30,9 @@ class TransactionCategoryController extends Controller
     {
         $search = $request->get('search');
         $type = $request->get('type');
+        $module = $request->get('module');
 
-        $categories = $this->service->getPaginatedCategories($search, $type);
+        $categories = $this->service->getPaginatedCategories($search, $type, $module);
         $existingCodes = $this->service->getExistingCodes();
         $usedCategoryIds = $this->service->getUsedCategoryIds();
 

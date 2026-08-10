@@ -32,6 +32,7 @@ class StoreTransactionCategoryRequest extends FormRequest
             'name' => ['required', 'string', 'max:100'],
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Z_]+$/', 'unique:transaction_categories,code'],
             'type' => ['required', 'string', 'in:INCOME,EXPENSE'],
+            'module' => ['required', 'string', 'in:expense_recap,project_finance'],
         ];
     }
 
@@ -51,6 +52,8 @@ class StoreTransactionCategoryRequest extends FormRequest
             'code.unique' => 'Kode kategori sudah digunakan!',
             'type.required' => 'Tipe kategori wajib dipilih.',
             'type.in' => 'Tipe kategori tidak valid.',
+            'module.required' => 'Modul kategori wajib dipilih.',
+            'module.in' => 'Modul kategori tidak valid.',
         ];
     }
 }

@@ -41,4 +41,15 @@
             <option value="EXPENSE">Pengeluaran</option>
         </select>
     </div>
+
+    {{-- Field: Modul (Rekap Pengeluaran / Keuangan Proyek) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Modul <span class="text-error">*</span></label>
+        <select name="module" class="w-full border rounded p-2" required
+            oninvalid="this.setCustomValidity('Modul kategori wajib dipilih')" oninput="this.setCustomValidity('')">
+            <option value="">-- Pilih Modul --</option>
+            <option value="expense_recap">Rekap Pengeluaran</option>
+            <option value="project_finance">Keuangan Proyek</option>
+        </select>
+    </div>
 </x-modal>
