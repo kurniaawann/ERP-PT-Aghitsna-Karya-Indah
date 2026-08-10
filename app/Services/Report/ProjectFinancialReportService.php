@@ -131,7 +131,10 @@ class ProjectFinancialReportService
         $data['created_by'] = auth()->id();
 
         try {
-            return ProjectFinancialReportItem::create($data);
+            $item = ProjectFinancialReportItem::create($data);
+            $this->flushUsedCategoryCache(auth()->id());
+
+            return $item;
         } catch (\Throwable $throwable) {
             if (isset($data['proof_file'])) {
                 $this->deleteProofFile($data['proof_file']);
@@ -161,69 +164,6 @@ class ProjectFinancialReportService
         }
 
         return $created;
-    }
-
-    /**
-     * Terapkan data otomatis untuk pembayaran proyek pada item "Bon" baru.
-     *
-     * Sesuai kebutuhan user:
-     * - Pastikan kategori UANG_MASUK (modul project_finance) milik user ada,
-     *   dibuat otomatis bila belum ada (dipakai ulang bila sudah ada).
-     * - Pembayaran pertama pada laporan yang masih kosong dan belum memilih
-     *   kategori dipaksa memakai kategori UANG_MASUK dengan keterangan
-     *   "Pembayaran ke 1 proyek {nama}".
-     * - Setiap transaksi baru dengan kategori UANG_MASUK otomatis diberi
-     *   keterangan "Pembayaran ke N proyek {nama}" (N = urutan pembayaran).
-     * - Item existing (membawa `id`) tidak diubah.
-     *
-     * @param  array<int, array<string, mixed>>  $items
-     * @param  string|null  $projectName  Nama proyek (default: dari relasi recap,
-     *                                    berguna saat nama proyek diubah dalam
-     *                                    request yang sama pada modal edit).
-     * @return array<int, array<string, mixed>>
-     */
-    public function applyAutoPaymentData(ProjectFinancialReport $report, array $items, ?string $projectName = null): array
-    {
-        $incomeCategory = $this->resolveIncomeCategory();
-
-        if (! $incomeCategory) {
-            return $items;
-        }
-
-        $recapName = trim((string) ($projectName ?? $report->recap?->project_name ?? $report->project_recap_id));
-        $recapName = preg_replace('/^proyek\s+/i', '', $recapName) ?: $recapName;
-
-        $existingIncomeCount = $report->items()
-            ->where('transaction_category_id', $incomeCategory->id)
-            ->count();
-
-        $isFirstPayment = $report->items()->count() === 0;
-        $firstApplied = false;
-
-        foreach ($items as $index => $item) {
-            $isNew = empty($item['id']) || trim((string) $item['id']) === '';
-
-            if (! $isNew) {
-                continue;
-            }
-
-            $isIncome = (int) ($item['transaction_category_id'] ?? 0) === (int) $incomeCategory->id;
-
-            // Pembayaran pertama tanpa kategori terpilih: paksa UANG MASUK.
-            if ($isFirstPayment && ! $firstApplied && empty($item['transaction_category_id'])) {
-                $item['transaction_category_id'] = $incomeCategory->id;
-                $isIncome = true;
-                $firstApplied = true;
-            }
-
-            if ($isIncome) {
-                $existingIncomeCount++;
-                $item['description'] = 'Pembayaran ke '.$existingIncomeCount.' proyek '.$recapName;
-                $items[$index] = $item;
-            }
-        }
-
-        return $items;
     }
 
     /**
@@ -348,15 +288,20 @@ class ProjectFinancialReportService
 
         if ($item) {
             $item->update($data);
+            $this->flushUsedCategoryCache($proof->created_by ?? auth()->id());
 
             return $item;
         }
 
-        return ProjectFinancialReportItem::create(array_merge($data, [
+        $created = ProjectFinancialReportItem::create(array_merge($data, [
             'project_financial_report_id' => $report->id,
             'payment_proof_id' => $proof->id,
             'created_by' => $proof->created_by ?? auth()->id(),
         ]));
+
+        $this->flushUsedCategoryCache($proof->created_by ?? auth()->id());
+
+        return $created;
     }
 
     /**
@@ -368,6 +313,7 @@ class ProjectFinancialReportService
     public function deleteFromPaymentProof(PaymentProof $proof): void
     {
         ProjectFinancialReportItem::where('payment_proof_id', $proof->id)->delete();
+        $this->flushUsedCategoryCache($proof->created_by ?? auth()->id());
     }
 
     /**
@@ -376,7 +322,11 @@ class ProjectFinancialReportService
      * Dipakai oleh modal edit dengan struktur dinamis (mirip tambah):
      * - item yang mengirim `id` diupdate (bukti diganti jika ada file baru)
      * - item tanpa `id` dianggap transaksi baru (dibuat)
-     * - item existing yang tidak lagi dikirim (blok dihapus user) dihapus
+     * - item existing yang tidak lagi dikirim (blok dihapus user) dihapus,
+     *   KECUALI item yang dibuat otomatis dari bukti pembayaran
+     *   (payment_proof_id terisi). Item tersebut tidak boleh dihapus dari
+     *   modul ini — hanya bisa hilang bila bukti pembayarannya dihapus di
+     *   modul Bukti Pembayaran (lihat deleteFromPaymentProof).
      *
      * @param  array<int, array<string, mixed>>  $items
      * @param  array<int, array<string, \Illuminate\Http\UploadedFile|null>>  $proofFiles
@@ -408,8 +358,10 @@ class ProjectFinancialReportService
             $this->createItem($report, $itemData, $proofFile);
         }
 
-        // Item existing yang bloknya dihapus pada form edit ikut dihapus.
+        // Item existing yang bloknya dihapus pada form edit ikut dihapus,
+        // kecuali item yang masih terhubung bukti pembayaran (otomatis).
         $removedIds = $existingItems
+            ->filter(fn ($item) => empty($item->payment_proof_id))
             ->pluck('id')
             ->map(fn ($id) => (string) $id)
             ->diff($submittedIds)
@@ -500,6 +452,10 @@ class ProjectFinancialReportService
             $deletedCount++;
         });
 
+        if ($deletedCount > 0) {
+            $this->flushUsedCategoryCache(auth()->id());
+        }
+
         return $deletedCount;
     }
 
@@ -571,6 +527,20 @@ class ProjectFinancialReportService
         } catch (\Exception $e) {
             Log::warning('Cache DELETE error [finance:project-finance-categories]: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Invalidate cache "kategori sedang digunakan" milik modul Report.
+     *
+     * Cache report:category-used-ids menentukan kategori yang tidak boleh
+     * dihapus di halaman Kategori Transaksi. Karena kini kategori ikut
+     * dipakai item Laporan Keuangan Proyek, setiap item dibuat/dihapus
+     * (termasuk sinkronisasi dari bukti pembayaran) cache ini harus
+     * di-invalidate agar halaman kategori tidak menyajikan data basi.
+     */
+    private function flushUsedCategoryCache(?string $userId = null): void
+    {
+        app(TransactionCategoryService::class)->flushCache($userId);
     }
 
     /**

@@ -159,6 +159,19 @@ function bonBlockHtml(categories, data, index) {
     data = data || {};
     index = index == null ? 0 : index;
 
+    // Item yang dibuat otomatis dari bukti pembayaran (payment_proof_id terisi)
+    // tidak boleh dihapus dari modul ini; hanya hilang bila bukti pembayarannya
+    // dihapus di modul Bukti Pembayaran.
+    const isProtected = !!data.payment_proof_id;
+
+    const actionButton = isProtected
+        ? '<span class="inline-flex items-center gap-1 bg-surface-hover text-text-secondary px-2 py-1 rounded-lg text-xs font-medium" title="Transaksi otomatis dari bukti pembayaran"><i class="fa-solid fa-lock w-3 h-3"></i> Dari Bukti Pembayaran</span>'
+        : '<button type="button" onclick="removeBonBlock(this)" class="flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs" title="Hapus keterangan"><i class="fa-solid fa-trash w-3 h-3"></i> Hapus</button>';
+
+    const protectedNotice = isProtected
+        ? '<p class="text-xs text-text-secondary mt-1"><i class="fa-solid fa-info-circle text-primary"></i> Transaksi otomatis dari Bukti Pembayaran. Hapus bukti pembayarannya di modul Bukti Pembayaran untuk menghapus transaksi ini.</p>'
+        : '';
+
     const idHidden = data.id
         ? '<input type="hidden" name="items[' + index + '][id]" value="' + escapeHtml(data.id) + '">'
         : '';
@@ -173,16 +186,18 @@ function bonBlockHtml(categories, data, index) {
             '</a></p>'
         : '';
 
+    // Petunjuk keterangan otomatis hanya relevan untuk transaksi yang benar-benar
+    // dibuat otomatis dari bukti pembayaran (payment_proof_id terisi). Transaksi
+    // UANG MASUK yang diinput manual memakai keterangan isian user.
+    const autoHint = isProtected
+        ? '<p class="description-auto-hint text-xs text-primary mt-1">Keterangan otomatis terisi &quot;Pembayaran ke N proyek ...&quot; untuk kategori UANG MASUK.</p>'
+        : '';
+
     return `
-        <div class="bon-block border border-border-strong rounded p-3 bg-surface-base">
+        <div class="bon-block ${isProtected ? 'bon-block-protected ' : ''}border border-border-strong rounded p-3 bg-surface-base">
             <div class="flex items-center justify-between mb-3">
                 <span class="bon-number text-sm font-semibold text-primary">Bon No. 1</span>
-                <button type="button" onclick="removeBonBlock(this)"
-                    class="flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                    title="Hapus keterangan">
-                    <i class="fa-solid fa-trash w-3 h-3"></i>
-                    Hapus
-                </button>
+                ${actionButton}
             </div>
 
             ${idHidden}
@@ -202,7 +217,7 @@ function bonBlockHtml(categories, data, index) {
                     placeholder="Contoh: Kasbon Transport Tukang"
                     oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                     oninput="this.setCustomValidity('')">${escapeHtml(data.description || '')}</textarea>
-                <p class="description-auto-hint hidden text-xs text-primary mt-1">Keterangan otomatis terisi &quot;Pembayaran ke N proyek ...&quot; untuk kategori UANG MASUK.</p>
+                ${autoHint}
             </div>
 
             <div class="mb-3">
@@ -229,6 +244,8 @@ function bonBlockHtml(categories, data, index) {
                     Kosongkan jika tidak ingin mengubah file.</p>
                 ${proofNotice}
             </div>
+
+            ${protectedNotice}
         </div>
     `;
 }
@@ -252,7 +269,7 @@ function transactionCategoryGroupHtml(categories, data) {
             <div class="flex items-center justify-between mb-3">
                 <span class="transaction-category-number text-sm font-semibold text-primary">Kategori No. 1</span>
                 <button type="button" onclick="removeTransactionCategoryGroup(this)"
-                    class="flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                    class="delete-category-group-btn flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                     title="Hapus kategori beserta semua keterangannya">
                     <i class="fa-solid fa-trash w-3 h-3"></i>
                     Hapus Kategori
@@ -359,6 +376,7 @@ function removeBonBlock(button) {
     if (block) block.remove();
     if (container) {
         renumberTransactionBonBlocks(container);
+        updateCategoryGroupDeleteButton(groupEl);
         updateTransactionsSummary(container);
     }
 }
@@ -388,6 +406,7 @@ function addTransactionCategoryGroup(containerId, data) {
 
     renumberTransactionBonBlocks(container);
     syncBonCategoryFields(groupEl);
+    updateCategoryGroupDeleteButton(groupEl);
     updateTransactionsSummary(container);
 }
 window.addTransactionCategoryGroup = addTransactionCategoryGroup;
@@ -395,11 +414,27 @@ window.addTransactionCategoryGroup = addTransactionCategoryGroup;
 /**
  * Hapus satu grup kategori beserta semua blok bon-nya.
  *
+ * Grup yang berisi blok "Bon" otomatis dari bukti pembayaran
+ * (bon-block-protected) tidak dapat dihapus — transaksi tersebut hanya bisa
+ * hilang bila bukti pembayarannya dihapus di modul Bukti Pembayaran.
+ *
  * @param {HTMLElement} button - Tombol hapus pada grup kategori.
  */
 function removeTransactionCategoryGroup(button) {
     const groupEl = button.closest('.transaction-category-group');
     const container = groupEl ? groupEl.closest('[data-categories]') : null;
+
+    if (groupEl && groupEl.querySelector('.bon-block-protected')) {
+        const message = 'Kategori ini berisi transaksi otomatis dari Bukti Pembayaran yang tidak dapat dihapus. ' +
+            'Hapus bukti pembayarannya terlebih dahulu di modul Bukti Pembayaran.';
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, 'warning');
+        } else {
+            alert(message);
+        }
+        return;
+    }
+
     if (groupEl) groupEl.remove();
     if (container) {
         renumberTransactionBonBlocks(container);
@@ -407,6 +442,29 @@ function removeTransactionCategoryGroup(button) {
     }
 }
 window.removeTransactionCategoryGroup = removeTransactionCategoryGroup;
+
+/**
+ * Menyinkronkan tampilan tombol "Hapus Kategori" berdasarkan isi grup.
+ *
+ * Jika grup mengandung blok "Bon" otomatis dari bukti pembayaran, tombol
+ * di-nonaktifkan secara visual karena grup tidak boleh dihapus.
+ *
+ * @param {HTMLElement} groupEl - Grup kategori terkait.
+ */
+function updateCategoryGroupDeleteButton(groupEl) {
+    if (!groupEl) return;
+    const hasProtected = !!groupEl.querySelector('.bon-block-protected');
+    const btn = groupEl.querySelector('.delete-category-group-btn');
+    if (!btn) return;
+
+    if (hasProtected) {
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.title = 'Kategori berisi transaksi dari Bukti Pembayaran. Hapus bukti pembayarannya terlebih dahulu.';
+    } else {
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.title = 'Hapus kategori beserta semua keterangannya';
+    }
+}
 
 /**
  * Memperbarui nomor tampilan tiap grup kategori ("Kategori No. X") dan
@@ -446,7 +504,6 @@ function syncBonCategoryFields(groupEl) {
     const categoryId = selected ? selected.value : '';
     const isIncome = selected && selected.dataset.type === 'INCOME';
     const labelText = (isIncome ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran') + ' <span class="text-error">*</span>';
-    const keteranganText = 'Keterangan' + (isIncome ? ' <span class="text-secondary">(otomatis)</span>' : ' <span class="text-error">*</span>');
 
     groupEl.querySelectorAll('.transaction-category-hidden').forEach(function (hidden) {
         hidden.value = categoryId;
@@ -458,15 +515,21 @@ function syncBonCategoryFields(groupEl) {
     });
 
     groupEl.querySelectorAll('.bon-block').forEach(function (block) {
+        // Keterangan otomatis & label "(otomatis)" hanya untuk transaksi yang
+        // dibuat otomatis dari bukti pembayaran. Transaksi manual (apapun
+        // kategorinya, termasuk UANG MASUK) keterangannya diisi user → wajib.
+        const isProtected = block.classList.contains('bon-block-protected');
         const description = block.querySelector('textarea[name$="[description]"]');
         const hint = block.querySelector('.description-auto-hint');
         const label = description ? description.closest('div').querySelector('label') : null;
 
         if (label && label.textContent.trim().indexOf('Keterangan') === 0) {
-            label.innerHTML = keteranganText;
+            label.innerHTML = isProtected
+                ? 'Keterangan <span class="text-secondary">(otomatis)</span>'
+                : 'Keterangan <span class="text-error">*</span>';
         }
 
-        if (isIncome) {
+        if (isProtected) {
             if (description) description.removeAttribute('required');
             if (hint) hint.classList.remove('hidden');
         } else {

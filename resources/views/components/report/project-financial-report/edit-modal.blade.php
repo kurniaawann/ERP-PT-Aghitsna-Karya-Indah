@@ -13,6 +13,7 @@
 
     $existingItemsJson = $existingItems->map(fn ($item) => [
         'id' => $item->id,
+        'payment_proof_id' => $item->payment_proof_id,
         'transaction_category_id' => $item->transaction_category_id,
         'transaction_date' => $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('Y-m-d') : '',
         'description' => $item->description,
@@ -76,6 +77,8 @@
                 otomatis menjadi <strong>Jumlah Pengeluaran</strong>.</p>
             <p class="mt-1">Hapus blok keterangan untuk menghapus bon, atau hapus kategori untuk menghapus seluruh
                 keterangannya.</p>
+            <p class="mt-1 text-warning"><i class="fa-solid fa-lock"></i> Transaksi otomatis dari Bukti Pembayaran tidak
+                dapat dihapus di sini — hapus bukti pembayarannya di modul Bukti Pembayaran.</p>
         </div>
     </div>
 

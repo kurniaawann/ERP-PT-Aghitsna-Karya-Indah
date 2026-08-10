@@ -3,6 +3,7 @@
 namespace App\Models\Report;
 
 use App\Models\Report\ExpenseRecap;
+use App\Models\Report\ProjectFinancialReportItem;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,6 +54,17 @@ class TransactionCategory extends Model
     public function expenseRecaps(): HasMany
     {
         return $this->hasMany(ExpenseRecap::class, 'transaction_category_id');
+    }
+
+    /**
+     * Relasi ke model ProjectFinancialReportItem.
+     * Satu kategori dapat dipakai banyak baris "Bon" Laporan Keuangan Proyek.
+     *
+     * @return HasMany
+     */
+    public function projectFinancialReportItems(): HasMany
+    {
+        return $this->hasMany(ProjectFinancialReportItem::class, 'transaction_category_id');
     }
 
     /**

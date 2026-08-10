@@ -71,7 +71,8 @@ class TransactionCategoryService
     }
 
     /**
-     * Mengambil ID kategori yang sedang digunakan di expense reports.
+     * Mengambil ID kategori yang sedang digunakan di expense reports atau
+     * Laporan Keuangan Proyek.
      *
      * Logika:
      * - whereHas('expenseRecaps') menghasilkan subquery EXISTS — hanya kategori
@@ -79,8 +80,13 @@ class TransactionCategoryService
      *   Scoping per-user konsisten dengan buildFilteredQuery milik
      *   RecapExpenseService: setiap user hanya melihat rekap pengeluaran
      *   (created_by = user), termasuk rekap otomatis yang kini mencatat pemilik.
+     * - whereHas('projectFinancialReportItems') menangkap kategori yang dipakai
+     *   item "Bon" Laporan Keuangan Proyek — termasuk kategori UANG_MASUK yang
+     *   dibuat otomatis saat bukti pembayaran dibuat. Kategori ini tidak boleh
+     *   dihapus selama masih ada transaksi yang menggunakannya; hanya bisa
+     *   hilang bila bukti pembayaran dihapus di modul Bukti Pembayaran.
      * - Cache 1 JAM (lebih pendek dari kategori) karena data ini berubah setiap
-     *   ada transaksi pengeluaran baru, bukan hanya saat CRUD kategori.
+     *   ada transaksi baru, bukan hanya saat CRUD kategori.
      *
      * @return array<int> Array berisi ID kategori yang sedang digunakan
      */
@@ -92,16 +98,35 @@ class TransactionCategoryService
             return (array) Cache::remember(
                 $cacheKey,
                 now()->addHour(),
-                fn () => TransactionCategory::whereHas('expenseRecaps', function ($query) {
-                    $query->where('created_by', auth()->id());
-                })->pluck('id')->toArray()
+                fn () => $this->resolveUsedCategoryIds()
             );
         } catch (\Exception $e) {
             Log::warning('Cache READ error [' . $cacheKey . ']: ' . $e->getMessage());
-            return TransactionCategory::whereHas('expenseRecaps', function ($query) {
-                $query->where('created_by', auth()->id());
-            })->pluck('id')->toArray();
+            return $this->resolveUsedCategoryIds();
         }
+    }
+
+    /**
+     * Menentukan ID kategori yang sedang dipakai transaksi (expense recap
+     * maupun item Laporan Keuangan Proyek) milik user yang sedang login.
+     *
+     * @return array<int> Array berisi ID kategori yang sedang digunakan
+     */
+    private function resolveUsedCategoryIds(): array
+    {
+        $expenseCategoryIds = TransactionCategory::whereHas('expenseRecaps', function ($query) {
+            $query->where('created_by', auth()->id());
+        })->pluck('id');
+
+        $pfrCategoryIds = TransactionCategory::whereHas('projectFinancialReportItems', function ($query) {
+            $query->where('created_by', auth()->id());
+        })->pluck('id');
+
+        return $expenseCategoryIds
+            ->merge($pfrCategoryIds)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
@@ -214,7 +239,11 @@ class TransactionCategoryService
     /**
      * Menghapus beberapa kategori sekaligus (bulk delete) dengan pengecekan constraint.
      *
-     * Kategori yang sedang digunakan di expense reports tidak akan dihapus.
+     * Kategori yang sedang digunakan di expense reports atau item Laporan
+     * Keuangan Proyek tidak akan dihapus. Ini melindungi kategori UANG_MASUK
+     * yang dibuat otomatis saat bukti pembayaran dibuat — kategori tersebut
+     * baru bisa dihapus setelah bukti pembayaran (beserta item otomatisnya)
+     * dihapus di modul Bukti Pembayaran.
      *
      * Logika:
      * - Pengecekan constraint dilakukan SATU query (whereIn + has) di awal;
@@ -229,8 +258,12 @@ class TransactionCategoryService
     public function deleteSelected(array $selectedIds): array
     {
         $usedCategories = TransactionCategory::whereIn('id', $selectedIds)
-            ->whereHas('expenseRecaps', function ($query) {
-                $query->where('created_by', auth()->id());
+            ->where(function ($query) {
+                $query->whereHas('expenseRecaps', function ($q) {
+                    $q->where('created_by', auth()->id());
+                })->orWhereHas('projectFinancialReportItems', function ($q) {
+                    $q->where('created_by', auth()->id());
+                });
             })
             ->pluck('name')
             ->toArray();

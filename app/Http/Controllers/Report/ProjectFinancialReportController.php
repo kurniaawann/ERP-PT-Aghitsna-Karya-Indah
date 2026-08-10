@@ -112,9 +112,6 @@ class ProjectFinancialReportController extends Controller
             $items = $request->input('items', []);
             $proofFiles = $request->file('items', []);
 
-            // Auto-create kategori UANG MASUK & keterangan "Pembayaran ke N".
-            $items = $this->service->applyAutoPaymentData($report, $items);
-
             $this->service->createItems($report, $items, $proofFiles);
 
             DB::commit();
@@ -166,14 +163,6 @@ class ProjectFinancialReportController extends Controller
 
             if ($report || ! empty($items)) {
                 $report = $this->service->getOrCreateForRecap($projectRecap);
-
-                // Auto-create kategori UANG MASUK & keterangan "Pembayaran ke N"
-                // (nama proyek diambil dari request karena diupdate bersamaan).
-                $items = $this->service->applyAutoPaymentData(
-                    $report,
-                    $items,
-                    $request->input('project_name')
-                );
 
                 $this->service->syncItems($report, $items, $request->file('items', []));
             }
