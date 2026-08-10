@@ -312,6 +312,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/employee', [EmployeeController::class, 'store'])->name('employee.store');
         Route::put('/employee/{employee}', [EmployeeController::class, 'update'])->name('employee.update');
         Route::delete('/employee/destroy-selected', [EmployeeController::class, 'destroy'])->name('employee.destroy');
+        Route::get('/employee/projects-dropdown', [EmployeeController::class, 'projectsDropdown'])->name('employee.projects-dropdown');
 
         // Route Attendance (Absensi)
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');

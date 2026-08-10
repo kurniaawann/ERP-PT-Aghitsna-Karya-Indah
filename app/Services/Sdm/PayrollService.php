@@ -100,7 +100,7 @@ class PayrollService
      */
     public function validateAttendanceCompleteness(Carbon $periodStartDate, Carbon $periodEndDate): array
     {
-        $employees = Employee::all();
+        $employees = Employee::where('created_by', auth()->id())->get();
 
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
@@ -127,6 +127,7 @@ class PayrollService
         $completeEmployees = [];
         $alreadyGenerated = [];
         $newEmployees = [];
+        $employeesWithoutProject = [];
 
         foreach ($employees as $employee) {
             if (in_array($employee->employee_code, $existingPayrollEmployeeIds)) {
@@ -140,6 +141,15 @@ class PayrollService
             $employeeJoinDate = $employee->join_date ? Carbon::parse($employee->join_date) : $startDate->copy();
 
             if ($employeeJoinDate->greaterThan($endDate)) {
+                continue;
+            }
+
+            if (empty($employee->project_name)) {
+                $employeesWithoutProject[] = [
+                    'name' => $employee->name,
+                    'employee_code' => $employee->employee_code,
+                    'join_date' => $employeeJoinDate->format('Y-m-d'),
+                ];
                 continue;
             }
 
@@ -193,7 +203,8 @@ class PayrollService
         $hasNewEmployees = count($newEmployees) > 0;
 
         $canGenerate = count($newEmployees) > 0
-            && count($incompleteEmployees) === 0;
+            && count($incompleteEmployees) === 0
+            && count($employeesWithoutProject) === 0;
 
         return [
             'working_days' => $workingDays,
@@ -204,6 +215,7 @@ class PayrollService
             'incomplete_employees' => $incompleteEmployees,
             'complete_employees' => $completeEmployees,
             'already_generated' => $alreadyGenerated,
+            'employees_without_project' => $employeesWithoutProject,
             'has_new_employees' => $hasNewEmployees,
             'new_employees' => $newEmployees,
             'total_employees' => count($employees),
@@ -269,8 +281,9 @@ class PayrollService
         }
 
         // === VALIDASI ABSENSI ===
-        $employees = Employee::all();
+        $employees = Employee::where('created_by', auth()->id())->get();
         $incompleteEmployees = [];
+        $employeesWithoutProject = [];
 
         $existingPayrollEmployeeIds = Payroll::where('period_start_date', $startDate->format('Y-m-d'))
             ->where('created_by', auth()->id())
@@ -292,6 +305,14 @@ class PayrollService
             $employeeJoinDate = $employee->join_date ? Carbon::parse($employee->join_date) : $startDate->copy();
 
             if ($employeeJoinDate->greaterThan($endDate)) {
+                continue;
+            }
+
+            if (empty($employee->project_name)) {
+                $employeesWithoutProject[] = [
+                    'name' => $employee->name,
+                    'employee_code' => $employee->employee_code,
+                ];
                 continue;
             }
 
@@ -343,6 +364,16 @@ class PayrollService
             }
 
             $errorMessage .= '<br><strong>Catatan:</strong> Setiap karyawan harus memiliki absensi lengkap untuk semua hari kerjanya.<br>Silakan lengkapi data absensi di menu <strong>SDM → Absensi</strong> terlebih dahulu.';
+
+            return ['success' => false, 'message' => $errorMessage];
+        }
+
+        if (count($employeesWithoutProject) > 0) {
+            $names = implode(', ', array_map(fn($emp) => '<strong>' . $emp['name'] . '</strong> (' . $emp['employee_code'] . ')', $employeesWithoutProject));
+
+            $errorMessage = '<strong>Tidak dapat generate payroll!</strong><br>Karyawan berikut belum memiliki proyek:<br><br>';
+            $errorMessage .= '❌ ' . $names;
+            $errorMessage .= '<br><br><strong>Catatan:</strong> Setiap karyawan harus memiliki proyek sebelum payroll dapat dibuat.<br>Silakan lengkapi data proyek di menu <strong>Human Resource → Data Karyawan</strong> terlebih dahulu.';
 
             return ['success' => false, 'message' => $errorMessage];
         }
@@ -416,7 +447,7 @@ class PayrollService
                 'week_number' => $weekNumber,
                 'period_start_date' => $startDate->format('Y-m-d'),
                 'period_end_date' => $endDate->format('Y-m-d'),
-                'project_name' => $projectName,
+                'project_name' => $employee->project_name,
                 'base_salary' => $dailyWage,
                 'total_work_days' => $workingDays,
                 'present_days' => $presentDays,

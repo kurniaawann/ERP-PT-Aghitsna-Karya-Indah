@@ -14,6 +14,7 @@
                             <th class="p-2 text-left">Nama</th>
                             <th class="p-2 text-center">Upah Per Hari</th>
                             <th class="p-2 text-left">Divisi</th>
+                            <th class="p-2 text-left">Proyek</th>
                             <th class="p-2 text-left">No. Telp</th>
                             <th class="p-2 text-left">Alamat</th>
                             <th class="p-2 text-center">Aksi</th>
@@ -36,6 +37,7 @@
                                         {{ $employee->division ?? '-' }}
                                     </span>
                                 </td>
+                                <td class="p-2">{{ $employee->project_name ?? '-' }}</td>
                                 <td class="p-2">{{ $employee->phone ?? '-' }}</td>
                                 <td class="p-2">{{ $employee->address ?? '-' }}</td>
                                 <td class="p-2 text-center">
@@ -50,7 +52,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center p-4 text-text-secondary">
+                                <td colspan="9" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

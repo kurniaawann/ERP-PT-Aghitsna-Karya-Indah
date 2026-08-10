@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Sdm;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sdm\StoreEmployeeRequest;
 use App\Http\Requests\Sdm\UpdateEmployeeRequest;
+use App\Models\Finance\ProjectRecap;
 use App\Models\Sdm\Employee;
 use App\Services\Sdm\EmployeeService;
 use Illuminate\Http\RedirectResponse;
@@ -49,6 +50,49 @@ class EmployeeController extends Controller
         $divisions = $this->employeeService->getAllDivisions();
 
         return view('pages.sdm.employee', compact('employees', 'search', 'divisions'));
+    }
+
+    /**
+     * Endpoint JSON untuk dropdown infinite scroll pemilihan proyek.
+     *
+     * Mengambil nama proyek dari Rekap Proyek (ProjectRecap) milik user login
+     * secara parsial (paginated) dengan pencarian berdasarkan nama proyek.
+     *
+     * @param  Request  $request  Request AJAX dengan parameter search, page, limit
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function projectsDropdown(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+        $page = (int) $request->input('page', 1);
+        $limit = (int) $request->input('limit', 10);
+
+        $page = max(1, $page);
+        $limit = max(1, min($limit, 25));
+
+        $query = ProjectRecap::where('created_by', auth()->id());
+
+        if ($search !== '') {
+            $query->where('project_name', 'like', '%' . $search . '%');
+        }
+
+        $total = (clone $query)->count();
+
+        $projects = $query
+            ->orderBy('project_name')
+            ->skip(($page - 1) * $limit)
+            ->take($limit)
+            ->get(['project_name']);
+
+        $hasMore = (($page - 1) * $limit + $projects->count()) < $total;
+
+        return response()->json([
+            'data' => $projects->map(fn ($p) => ['project_name' => $p->project_name])->values(),
+            'page' => $page,
+            'limit' => $limit,
+            'hasMore' => $hasMore,
+            'total' => $total,
+        ]);
     }
 
     /**

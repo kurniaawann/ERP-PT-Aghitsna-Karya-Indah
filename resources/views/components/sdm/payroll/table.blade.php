@@ -29,6 +29,7 @@
                     <tr>
                         <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                         <th class="p-2 text-left">Nama Karyawan</th>
+                        <th class="p-2 text-left">Proyek</th>
                         <th class="p-2 text-center">Periode</th>
                         <th class="p-2 text-center">Upah/Hari</th>
                         <th class="p-2 text-center">Hari Masuk</th>
@@ -52,6 +53,19 @@
                             </td>
 
                             <td class="p-2">{{ $payroll->employee->name }}</td>
+
+                            {{-- Proyek --}}
+                            <td class="p-2 text-sm">
+                                @php
+                                    $payrollProject = $payroll->project_name ?: ($payroll->employee->project_name ?? null);
+                                @endphp
+                                @if ($payrollProject)
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">{{ $payrollProject }}</span>
+                                @else
+                                    <span class="text-text-label">-</span>
+                                @endif
+                            </td>
 
                             {{-- Periode --}}
                             <td class="p-2 text-center text-sm">
@@ -140,7 +154,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center p-4 text-text-secondary">
+                            <td colspan="11" class="text-center p-4 text-text-secondary">
                                 Data tidak ditemukan.
                             </td>
                         </tr>

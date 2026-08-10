@@ -85,15 +85,6 @@
     <input type="hidden" name="period_end_date" id="period_end_date" value="">
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Proyek <span
-                class="text-text-tertiary text-sm">(Opsional)</span></label>
-        <input type="text" name="project_name" id="project_name"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Contoh: Lampsr Tanap 3, Proyek ABC, dll" maxlength="255">
-        <p class="text-xs text-text-secondary mt-1">Kosongkan jika tidak ada proyek tertentu</p>
-    </div>
-
-        <div class="mb-3">
             <div class="flex justify-between items-center mb-2">
                 <label class="block text-text-primary font-semibold">Pengeluaran Tambahan / Operasional Proyek (Opsional)</label>
                 <button type="button" onclick="addExpenseItem('generate')"
@@ -152,6 +143,22 @@
                 <div class="mt-3 p-2 bg-surface-base rounded border border-error">
                     <p class="text-xs text-error"><strong>Catatan:</strong> Karyawan di atas belum memiliki absensi
                         lengkap untuk semua hari kerjanya. Pastikan data sudah diinput sebelum generate payroll.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Warning - Karyawan Belum Punya Proyek --}}
+    <div id="no-project-warning" class="hidden mb-3 p-4 bg-warning-light border-l-4 border-warning rounded">
+        <div class="flex items-start gap-2">
+            <i class="fa-solid fa-exclamation-triangle text-warning text-lg mt-0.5"></i>
+            <div class="flex-1">
+                <p class="font-semibold text-warning text-sm mb-2">⚠️ Karyawan Belum Memiliki Proyek!</p>
+                <div id="no-project-list" class="text-sm text-warning max-h-40 overflow-y-auto space-y-1"></div>
+                <div class="mt-3 p-2 bg-surface-base rounded border border-warning">
+                    <p class="text-xs text-warning"><strong>Catatan:</strong> Pastikan setiap karyawan sudah
+                        memiliki proyek sebelum generate payroll. Lengkapi data proyek di menu <strong>Human Resource → Data
+                            Karyawan</strong>.</p>
                 </div>
             </div>
         </div>

@@ -116,6 +116,8 @@ let alreadyGeneratedWarningDiv = null;
 let incompleteList = null;
 let completeList = null;
 let alreadyGeneratedList = null;
+let noProjectWarningDiv = null;
+let noProjectList = null;
 let generateSubmitBtn = null;
 
 /**
@@ -223,6 +225,7 @@ async function checkAttendanceData() {
     incompleteWarningDiv.classList.add('hidden');
     completeInfoDiv.classList.add('hidden');
     alreadyGeneratedWarningDiv.classList.add('hidden');
+    noProjectWarningDiv.classList.add('hidden');
 
     if (!month || !year || !weekNumber) {
         if (generateSubmitBtn) {
@@ -344,6 +347,21 @@ async function checkAttendanceData() {
             }).join('');
 
             incompleteList.innerHTML = incompleteHTML;
+        }
+
+        // Check 1b: Jika ada karyawan yang belum memiliki proyek - CANNOT GENERATE
+        if (data.employees_without_project && data.employees_without_project.length > 0) {
+            disableReason = 'Ada karyawan yang belum memiliki proyek';
+            noProjectWarningDiv.classList.remove('hidden');
+            noProjectList.innerHTML = data.employees_without_project.map(emp =>
+                `<div class="flex items-center justify-between bg-surface-base p-2 rounded border border-warning">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation text-warning"></i>
+                        <span class="font-medium text-text-heading">${emp.name}</span>
+                        <span class="text-xs text-text-label">(${emp.employee_code})</span>
+                    </div>
+                </div>`
+            ).join('');
         }
 
         // Check 2: If already generated AND no new employees - CANNOT GENERATE
@@ -880,6 +898,8 @@ document.addEventListener('DOMContentLoaded', function () {
     incompleteList = document.getElementById('incomplete-list');
     completeList = document.getElementById('complete-list');
     alreadyGeneratedList = document.getElementById('already-generated-list');
+    noProjectWarningDiv = document.getElementById('no-project-warning');
+    noProjectList = document.getElementById('no-project-list');
     generateSubmitBtn = document.querySelector('#generateModal button[type="submit"]');
 
     // Load weeks when month or year changes in generate modal
@@ -920,6 +940,7 @@ document.addEventListener('DOMContentLoaded', function () {
             allCompleteDiv.classList.add('hidden');
             incompleteWarningDiv.classList.add('hidden');
             alreadyGeneratedWarningDiv.classList.add('hidden');
+            noProjectWarningDiv.classList.add('hidden');
             checkingLoader.classList.add('hidden');
             periodMonthSelect.value = '';
             periodYearInput.value = String(config.currentYear || new Date().getFullYear());

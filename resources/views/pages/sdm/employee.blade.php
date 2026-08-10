@@ -93,6 +93,20 @@
          Modul JS halaman karyawan (diproses oleh Vite) — menangani
          interaksi modal tambah/edit dan submit hapus massal.
          ============================================================ --}}
+    {{-- ============================================================
+         SECTION: Scripts
+         window.employeeConfig menyuplai route dropdown proyek ke modul
+         JS karyawan (dipakai dropdown proyek dengan pencarian &
+         pagination infinite scroll). Modul JS halaman karyawan
+         di-load via Vite.
+         ============================================================ --}}
+    {{-- Pass server data to JavaScript --}}
+    <script>
+        window.employeeConfig = {
+            projectsDropdownUrl: '{{ route("employee.projects-dropdown") }}',
+        };
+    </script>
+
     {{-- JavaScript --}}
     @vite('resources/js/pages/sdm/employee/index.js')
 @endsection

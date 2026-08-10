@@ -72,6 +72,7 @@ class Employee extends Model
         'email',
         'address',
         'division',
+        'project_name',
         'base_salary',
         'daily_wage',
         'join_date',
