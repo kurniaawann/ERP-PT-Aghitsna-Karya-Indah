@@ -62,7 +62,10 @@
             'recap' => $recap,
             'categories' => $categories,
         ])
-        @include('components.finance.project-recaps.edit-modal', ['recap' => $recap])
+        @include('components.report.project-financial-report.edit-modal', [
+            'recap' => $recap,
+            'categories' => $categories,
+        ])
     @endforeach
 
     {{-- ==================== Modal Konfirmasi Bulk Delete ==================== --}}

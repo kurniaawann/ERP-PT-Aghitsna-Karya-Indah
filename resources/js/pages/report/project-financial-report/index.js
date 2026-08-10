@@ -5,9 +5,11 @@
  * - Struktur transaksi dinamis (mirip Detail Pekerjaan RAB): pilih kategori →
  *   baris transaksi bernomor otomatis (No. 1, No. 2, ...), isi keterangan &
  *   jumlah. Label jumlah menyesuaikan tipe kategori (Pemasukan/Pengeluaran).
- * - Rekapitulasi otomatis (Total Pemasukan, Total Pengeluaran, Saldo)
+ *   Struktur berlaku untuk modal Tambah (global) dan modal Edit gabungan
+ *   (data Rekap Proyek + transaksi, per rekap; terisi otomatis dari
+ *   transaksi existing).
+ * - Rekapitulasi otomatis per modal (Total Pemasukan, Total Pengeluaran, Saldo)
  * - Format input currency (Rupiah)
- * - Sinkron label "Jumlah Pemasukan / Jumlah Pengeluaran" (modal edit)
  * - Hapus massal (submit form hapus)
  * - Checkbox pilih semua
  * - Penanganan submit form (cegah double submit)
@@ -30,11 +32,48 @@ function formatCurrencyInput(input) {
 window.formatCurrencyInput = formatCurrencyInput;
 
 // ============================================================
-// KATEGORI INCOME vs EXPENSE — LABEL JUMLAH (MODAL EDIT)
+// UTILITAS
 // ============================================================
 
 /**
- * Sinkronkan form edit berdasarkan tipe kategori terpilih.
+ * Escape HTML agar nilai dari data attribute aman disisipkan ke markup.
+ * @param {*} value
+ * @returns {string}
+ */
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Format angka murni ke format ribuan Indonesia.
+ * @param {*} value
+ * @returns {string}
+ */
+function formatNumber(value) {
+    const numeric = parseInt(String(value == null ? '' : value).replace(/[^\d]/g, ''), 10) || 0;
+    return numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+}
+
+/**
+ * Ambil elemen kontainer transaksi dari id atau elemen.
+ * @param {string|HTMLElement} containerId - ID atau elemen kontainer.
+ * @returns {HTMLElement|null}
+ */
+function getTransactionContainer(containerId) {
+    return typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+}
+
+// ============================================================
+// KATEGORI INCOME vs EXPENSE — LABEL JUMLAH (MODAL EDIT LEGACY)
+// ============================================================
+
+/**
+ * Sinkronkan form edit legacy berdasarkan tipe kategori terpilih.
  * - INCOME: label "Jumlah Pemasukan"
  * - EXPENSE: label "Jumlah Pengeluaran"
  *
@@ -61,10 +100,10 @@ window.syncCategoryFields = syncCategoryFields;
 
 /**
  * Ambil daftar kategori dari data attribute kontainer transaksi.
+ * @param {HTMLElement} container - Kontainer transaksi.
  * @returns {Array<{id:number,name:string,type:string}>}
  */
-function getTransactionCategories() {
-    const container = document.getElementById('transactionsContainer');
+function getTransactionCategories(container) {
     if (!container || !container.dataset.categories) return [];
     try {
         return JSON.parse(container.dataset.categories);
@@ -75,36 +114,44 @@ function getTransactionCategories() {
 
 /**
  * Bangun HTML option kategori untuk select dalam blok transaksi.
+ * @param {Array<{id:number,name:string,type:string}>} categories
  * @param {number|string} [selectedId] ID kategori yang terpilih
  * @returns {string}
  */
-function categoryOptionsHtml(selectedId) {
-    const categories = getTransactionCategories();
+function categoryOptionsHtml(categories, selectedId) {
     let html = '<option value="">-- Pilih Kategori --</option>';
     categories.forEach(function (cat) {
         const selected = String(cat.id) === String(selectedId) ? ' selected' : '';
-        html += '<option value="' + cat.id + '" data-type="' + cat.type + '"' + selected + '>' + cat.name + '</option>';
+        html += '<option value="' + cat.id + '" data-type="' + cat.type + '"' + selected + '>' +
+            escapeHtml(cat.name) + '</option>';
     });
     return html;
 }
 
 /**
- * Menambahkan satu blok transaksi baru (bernomor otomatis) ke kontainer.
+ * Bangun HTML satu blok transaksi.
  *
- * Alur:
- * 1. Bangun elemen `.transaction-block` berisi kategori (dropdown),
- *    tanggal, keterangan, jumlah, keterangan bon, dan bukti pembayaran.
- * 2. Input memakai nama array `items[][...]` agar PHP/Laravel menerima
- *    banyak transaksi dalam satu submit.
- * 3. Renumber blok dan hitung ulang rekapitulasi.
+ * Nama input memakai array `items[][...]` agar PHP/Laravel menerima banyak
+ * transaksi dalam satu submit. Item existing menyertakan hidden `items[][id]`.
+ *
+ * @param {Array<{id:number,name:string,type:string}>} categories
+ * @param {Object} [data] Data transaksi existing (untuk modal edit).
+ * @returns {string}
  */
-function addTransactionBlock() {
-    const container = document.getElementById('transactionsContainer');
-    if (!container) return;
+function transactionBlockHtml(categories, data) {
+    data = data || {};
 
-    const block = document.createElement('div');
-    block.className = 'transaction-block border border-border-strong rounded p-3 bg-surface-base';
-    block.innerHTML = `
+    const idHidden = data.id
+        ? '<input type="hidden" name="items[][id]" value="' + escapeHtml(data.id) + '">'
+        : '';
+
+    const proofNotice = (data.proof_url && data.proof_file_name)
+        ? '<p class="text-xs text-blue-600 mt-1">Bukti saat ini: <a href="' + escapeHtml(data.proof_url) +
+            '" target="_blank" rel="noopener noreferrer" class="underline">' + escapeHtml(data.proof_file_name) +
+            '</a></p>'
+        : '';
+
+    return `
         <div class="flex items-center justify-between mb-3">
             <span class="transaction-number text-sm font-semibold text-primary">Transaksi No. 1</span>
             <button type="button" onclick="removeTransactionBlock(this)"
@@ -115,19 +162,22 @@ function addTransactionBlock() {
             </button>
         </div>
 
+        ${idHidden}
+
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Kategori <span class="text-error">*</span></label>
             <select name="items[][transaction_category_id]"
                 class="w-full border rounded p-2 transaction-category-select" required
                 oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
                 oninput="this.setCustomValidity('')">
-                ${categoryOptionsHtml()}
+                ${categoryOptionsHtml(categories, data.transaction_category_id)}
             </select>
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-            <input type="date" name="items[][transaction_date]" class="w-full border rounded p-2" required
+            <input type="date" name="items[][transaction_date]" class="w-full border rounded p-2"
+                value="${escapeHtml(data.transaction_date || '')}" required
                 oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
                 oninput="this.setCustomValidity('')">
         </div>
@@ -137,34 +187,54 @@ function addTransactionBlock() {
             <textarea name="items[][description]" class="w-full border rounded p-2" rows="3" required maxlength="1000"
                 placeholder="Contoh: Kasbon Transport Tukang"
                 oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
-                oninput="this.setCustomValidity('')"></textarea>
+                oninput="this.setCustomValidity('')">${escapeHtml(data.description || '')}</textarea>
         </div>
 
         <div class="mb-3">
             <label class="amount-label block text-text-primary mb-1">Jumlah Pengeluaran <span class="text-error">*</span></label>
             <input type="text" inputmode="numeric" name="items[][expense_amount]"
-                class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000" required min="0"
+                class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000"
+                value="${escapeHtml(formatNumber(data.amount))}" required min="0"
                 oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Keterangan Bon</label>
             <input type="text" name="items[][keterangan_bon]" class="w-full border rounded p-2"
+                value="${escapeHtml(data.keterangan_bon || '')}"
                 placeholder="Contoh: Bon Pembelian Material" maxlength="255">
         </div>
 
         <div class="mb-3">
             <label class="block text-text-primary mb-1">Bukti Pembayaran</label>
             <input type="file" name="items[][proof_file]"
-                accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf"
+                accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
                 class="w-full border rounded p-2">
-            <p class="text-xs text-text-secondary mt-1">Opsional. Format: JPG, PNG, GIF, WEBP, BMP, PDF. Maksimal 5 MB.</p>
+            <p class="text-xs text-text-secondary mt-1">Opsional. Format gambar: JPG, PNG, GIF, WEBP, BMP. Maksimal 5 MB.
+                Kosongkan jika tidak ingin mengubah file.</p>
+            ${proofNotice}
         </div>
     `;
+}
+
+/**
+ * Menambahkan satu blok transaksi baru (bernomor otomatis) ke kontainer.
+ *
+ * @param {string|HTMLElement} containerId - ID atau elemen kontainer transaksi.
+ * @param {Object} [data] Data transaksi existing (untuk modal edit).
+ */
+function addTransactionBlock(containerId, data) {
+    const container = getTransactionContainer(containerId);
+    if (!container) return;
+
+    const block = document.createElement('div');
+    block.className = 'transaction-block border border-border-strong rounded p-3 bg-surface-base';
+    block.innerHTML = transactionBlockHtml(getTransactionCategories(container), data);
 
     container.appendChild(block);
     renumberTransactionBlocks(container);
-    updateTransactionsSummary();
+    syncBlockCategoryFields(block);
+    updateTransactionsSummary(container);
 }
 window.addTransactionBlock = addTransactionBlock;
 
@@ -174,10 +244,12 @@ window.addTransactionBlock = addTransactionBlock;
  */
 function removeTransactionBlock(button) {
     const block = button.closest('.transaction-block');
-    const container = block.closest('#transactionsContainer');
-    block.remove();
-    renumberTransactionBlocks(container);
-    updateTransactionsSummary();
+    const container = block ? block.closest('[data-categories]') : null;
+    if (block) block.remove();
+    if (container) {
+        renumberTransactionBlocks(container);
+        updateTransactionsSummary(container);
+    }
 }
 window.removeTransactionBlock = removeTransactionBlock;
 
@@ -210,19 +282,21 @@ function syncBlockCategoryFields(block) {
 }
 
 /**
- * Menghitung ulang rekapitulasi (Total Pemasukan, Total Pengeluaran, Saldo).
+ * Menghitung ulang rekapitulasi modal (Total Pemasukan, Total Pengeluaran, Saldo).
  *
- * Alur:
- * 1. Iterasi seluruh `.transaction-block`.
- * 2. Baca jumlah dari `.expense-amount-input` (strip format Rupiah).
- * 3. Tentukan pemasukan/pengeluaran dari tipe kategori terpilih.
- * 4. Update elemen `totalIncomePrice`, `totalExpensePrice`, `grandTotalPrice`.
+ * Elemen rekap memakai ID turunan dari kontainer:
+ * `{containerId}-totalIncome`, `{containerId}-totalExpense`, `{containerId}-balance`.
+ *
+ * @param {string|HTMLElement} containerId - ID atau elemen kontainer transaksi.
  */
-function updateTransactionsSummary() {
+function updateTransactionsSummary(containerId) {
+    const container = getTransactionContainer(containerId);
+    if (!container || !container.id) return;
+
     let totalIncome = 0;
     let totalExpense = 0;
 
-    document.querySelectorAll('#transactionsContainer .transaction-block').forEach(function (block) {
+    container.querySelectorAll('.transaction-block').forEach(function (block) {
         const select = block.querySelector('.transaction-category-select');
         const amountInput = block.querySelector('.expense-amount-input');
         const amount = parseInt((amountInput ? amountInput.value : '').replace(/[^\d]/g, ''), 10) || 0;
@@ -242,9 +316,10 @@ function updateTransactionsSummary() {
         }).format(value);
     };
 
-    const incomeEl = document.getElementById('totalIncomePrice');
-    const expenseEl = document.getElementById('totalExpensePrice');
-    const balanceEl = document.getElementById('grandTotalPrice');
+    const baseId = container.id;
+    const incomeEl = document.getElementById(baseId + '-totalIncome');
+    const expenseEl = document.getElementById(baseId + '-totalExpense');
+    const balanceEl = document.getElementById(baseId + '-balance');
 
     if (incomeEl) incomeEl.textContent = formatRupiah(totalIncome);
     if (expenseEl) expenseEl.textContent = formatRupiah(totalExpense);
@@ -279,31 +354,52 @@ window.submitDeleteForm = submitDeleteForm;
 document.addEventListener('DOMContentLoaded', function () {
 
     // ============================================================
-    // STRUKTUR TRANSAKSI DINAMIS — BLOK PERTAMA
+    // STRUKTUR TRANSAKSI DINAMIS — MODAL TAMBAH (blok kosong pertama)
     // ============================================================
 
     if (document.getElementById('transactionsContainer')) {
-        addTransactionBlock();
-
-        // Delegation: ganti kategori -> sinkron label & rekapitulasi
-        document.addEventListener('change', function (e) {
-            if (e.target.matches('.transaction-category-select')) {
-                syncBlockCategoryFields(e.target.closest('.transaction-block'));
-                updateTransactionsSummary();
-            }
-        });
-
-        // Delegation: input jumlah -> format currency & rekapitulasi
-        document.addEventListener('input', function (e) {
-            if (e.target.matches('.expense-amount-input')) {
-                formatCurrencyInput(e.target);
-                updateTransactionsSummary();
-            }
-        });
+        addTransactionBlock('transactionsContainer');
     }
 
     // ============================================================
-    // KATEGORI INCOME vs EXPENSE — SINKRON LABEL FORM EDIT
+    // STRUKTUR TRANSAKSI DINAMIS — MODAL EDIT (terisi transaksi existing)
+    // ============================================================
+
+    document.querySelectorAll('[data-existing-items]').forEach(function (container) {
+        let existingItems = [];
+        try {
+            existingItems = JSON.parse(container.dataset.existingItems || '[]');
+        } catch (e) {
+            existingItems = [];
+        }
+
+        existingItems.forEach(function (item) {
+            addTransactionBlock(container, item);
+        });
+    });
+
+    // ============================================================
+    // DELEGATION — ganti kategori & input jumlah (berlaku untuk
+    // blok yang dibuat dinamis pada semua modal)
+    // ============================================================
+
+    document.addEventListener('change', function (e) {
+        if (e.target.matches('.transaction-category-select')) {
+            const block = e.target.closest('.transaction-block');
+            syncBlockCategoryFields(block);
+            if (block) updateTransactionsSummary(block.closest('[data-categories]'));
+        }
+    });
+
+    document.addEventListener('input', function (e) {
+        if (e.target.matches('.expense-amount-input')) {
+            formatCurrencyInput(e.target);
+            updateTransactionsSummary(e.target.closest('[data-categories]'));
+        }
+    });
+
+    // ============================================================
+    // KATEGORI INCOME vs EXPENSE — SINKRON LABEL FORM EDIT LEGACY
     // ============================================================
 
     document.querySelectorAll('[id^="editModal-"] form').forEach(function (form) {
@@ -358,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // FORMAT INPUT CURRENCY
+    // FORMAT INPUT CURRENCY (nilai awal & input listener statis)
     // ============================================================
 
     document.querySelectorAll('.expense-amount-input, .total-rab-input').forEach(input => {
@@ -392,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // PENANGANAN SUBMIT FORM — MODAL EDIT
     // ============================================================
 
-    const editForms = document.querySelectorAll('[id^="editModal-"] form');
+    const editForms = document.querySelectorAll('[id^="editModal-"] form, [id^="editPfrModal-"] form');
     editForms.forEach(function (form) {
         form.addEventListener('submit', function (e) {
             const submitBtn = this.querySelector('button[type="submit"]');

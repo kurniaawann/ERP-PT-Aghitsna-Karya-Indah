@@ -49,7 +49,7 @@
     <div id="transactionsContainer" class="space-y-4 mb-3"
         data-categories="{{ $categoriesJson }}"></div>
 
-    <button type="button" onclick="addTransactionBlock()" class="btn btn-outline-primary w-full">
+    <button type="button" onclick="addTransactionBlock('transactionsContainer')" class="btn btn-outline-primary w-full">
         <i class="fa-solid fa-plus"></i> Tambah Transaksi
     </button>
 
@@ -61,15 +61,15 @@
             <div class="space-y-2">
                 <div class="flex justify-between text-sm text-success border-b border-success pb-2">
                     <span><strong>Total Pemasukan:</strong></span>
-                    <span id="totalIncomePrice" class="font-semibold">Rp 0</span>
+                    <span id="transactionsContainer-totalIncome" class="font-semibold">Rp 0</span>
                 </div>
                 <div class="flex justify-between text-sm text-success border-b border-success pb-2">
                     <span><strong>Total Pengeluaran:</strong></span>
-                    <span id="totalExpensePrice" class="font-semibold">Rp 0</span>
+                    <span id="transactionsContainer-totalExpense" class="font-semibold">Rp 0</span>
                 </div>
                 <div class="flex justify-between text-lg text-success">
                     <span><strong>Saldo:</strong></span>
-                    <p class="font-bold text-2xl text-success"><span id="grandTotalPrice">Rp 0</span></p>
+                    <p class="font-bold text-2xl text-success"><span id="transactionsContainer-balance">Rp 0</span></p>
                 </div>
             </div>
         </div>

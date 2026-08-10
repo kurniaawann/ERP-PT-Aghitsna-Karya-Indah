@@ -6,19 +6,23 @@ use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form Request untuk validasi pembuatan item "Bon" Laporan Keuangan Proyek.
+ * Form Request untuk validasi update Rekap Proyek beserta transaksi "Bon"
+ * Laporan Keuangan Proyek-nya (satu form, satu design).
  *
- * Menerima satu atau banyak transaksi dalam satu submit (struktur dinamis):
- * - `project_recap_id`        : rekap proyek tujuan (tinggal satu)
- * - `items[]`                 : array transaksi "Bon"
- *   - `items.*.transaction_category_id` : kategori transaksi
- *   - `items.*.transaction_date`        : tanggal transaksi
- *   - `items.*.description`             : keterangan
- *   - `items.*.expense_amount`          : jumlah (pemasukan/pengeluaran)
- *   - `items.*.keterangan_bon`          : keterangan bon (opsional)
- *   - `items.*.proof_file`              : bukti pembayaran (opsional)
+ * Form edit gabungan menerima:
+ * - Data Rekap Proyek:
+ *   - `project_name`, `location`, `total_rab`
+ * - Transaksi "Bon" (struktur dinamis, opsional):
+ *   - `items[]`
+ *     - `items.*.id`                : ID item existing (kosong = transaksi baru)
+ *     - `items.*.transaction_category_id` : kategori transaksi
+ *     - `items.*.transaction_date`        : tanggal transaksi
+ *     - `items.*.description`             : keterangan
+ *     - `items.*.expense_amount`          : jumlah (pemasukan/pengeluaran)
+ *     - `items.*.keterangan_bon`          : keterangan bon (opsional)
+ *     - `items.*.proof_file`              : bukti pembayaran (opsional)
  */
-class StoreProjectFinancialReportItemRequest extends FormRequest
+class UpdateProjectFinancialReportRequest extends FormRequest
 {
     /**
      * Menentukan apakah user memiliki akses ke request ini.
@@ -31,11 +35,18 @@ class StoreProjectFinancialReportItemRequest extends FormRequest
     /**
      * Normalisasi nilai nominal sebelum validasi.
      *
-     * Input jumlah diformat di frontend ke format Indonesia (mis. "1.000.000"),
-     * sehingga perlu dinormalisasi ke angka murni agar lolos rule `numeric`.
+     * Total RAB dan expense_amount diformat frontend ke format Indonesia
+     * (mis. "1.000.000"), sehingga dinormalisasi ke angka murni agar lolos
+     * rule `numeric`.
      */
     protected function prepareForValidation(): void
     {
+        if ($this->has('total_rab')) {
+            $this->merge([
+                'total_rab' => preg_replace('/[^0-9]/', '', (string) $this->input('total_rab')),
+            ]);
+        }
+
         if ($this->has('items')) {
             $items = $this->input('items');
 
@@ -50,13 +61,16 @@ class StoreProjectFinancialReportItemRequest extends FormRequest
     }
 
     /**
-     * Aturan validasi untuk store.
+     * Aturan validasi untuk update.
      */
     public function rules(): array
     {
         return [
-            'project_recap_id' => ['required', 'string', 'exists:project_recaps,id'],
-            'items' => ['required', 'array', 'min:1'],
+            'project_name' => ['required', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'total_rab' => ['required', 'numeric', 'min:0'],
+            'items' => ['nullable', 'array'],
+            'items.*.id' => ['nullable', 'string'],
             'items.*.transaction_category_id' => ['required', 'integer', 'exists:transaction_categories,id'],
             'items.*.transaction_date' => ['required', 'date'],
             'items.*.description' => ['required', 'string', 'max:1000'],
@@ -72,12 +86,13 @@ class StoreProjectFinancialReportItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'project_recap_id.required' => 'Rekap Proyek tidak boleh kosong!',
-            'project_recap_id.string' => 'Format rekap proyek tidak valid!',
-            'project_recap_id.exists' => 'Rekap proyek yang dipilih tidak ditemukan!',
-            'items.required' => 'Minimal satu transaksi harus diisi!',
+            'project_name.required' => 'Nama proyek tidak boleh kosong!',
+            'project_name.max' => 'Nama proyek maksimal 255 karakter!',
+            'location.max' => 'Lokasi maksimal 255 karakter!',
+            'total_rab.required' => 'Total RAB tidak boleh kosong!',
+            'total_rab.numeric' => 'Total RAB harus berupa angka!',
+            'total_rab.min' => 'Total RAB tidak boleh negatif!',
             'items.array' => 'Format transaksi tidak valid!',
-            'items.min' => 'Minimal satu transaksi harus diisi!',
             'items.*.transaction_category_id.required' => 'Kategori transaksi tidak boleh kosong!',
             'items.*.transaction_category_id.integer' => 'Format kategori transaksi tidak valid!',
             'items.*.transaction_category_id.exists' => 'Kategori transaksi yang dipilih tidak ditemukan!',

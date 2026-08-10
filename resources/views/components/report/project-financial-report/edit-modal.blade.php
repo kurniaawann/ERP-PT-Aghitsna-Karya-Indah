@@ -1,74 +1,119 @@
-{{-- Modal Edit Transaksi Laporan Keuangan Proyek --}}
-<x-modal id="editModal-{{ $item->id }}" title="Edit Transaksi"
-    action="{{ route('project-financial-report.update', [$recap, $item]) }}" method="PUT" buttonText="Update"
-    enctype="multipart/form-data">
+{{-- Modal Edit Rekap Proyek + Transaksi Laporan Keuangan Proyek (satu design) --}}
+@props(['recap', 'categories'])
 
-    {{-- Kategori --}}
+@php
+    $report = $recap->financialReport;
+    $existingItems = optional($report)->items ?? collect();
+
+    $categoriesJson = $categories->map(fn ($cat) => [
+        'id' => $cat->id,
+        'name' => $cat->name,
+        'type' => $cat->type,
+    ])->values()->toJson();
+
+    $existingItemsJson = $existingItems->map(fn ($item) => [
+        'id' => $item->id,
+        'transaction_category_id' => $item->transaction_category_id,
+        'transaction_date' => $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('Y-m-d') : '',
+        'description' => $item->description,
+        'amount' => (int) ($item->income_amount ?: $item->expense_amount),
+        'keterangan_bon' => $item->keterangan_bon,
+        'proof_file' => $item->proof_file,
+        'proof_file_name' => $item->proof_file_name,
+        'proof_url' => $item->proof_file ? asset('storage/' . $item->proof_file) : null,
+    ])->values()->toJson();
+@endphp
+
+<x-modal id="editPfrModal-{{ $recap->id }}" title="Edit — {{ $recap->project_name }}"
+    action="{{ route('project-financial-report.update', $recap) }}" method="PUT" buttonText="Update"
+    enctype="multipart/form-data" size="4xl">
+
+    {{-- ==================== Data Rekap Proyek ==================== --}}
+    <h6 class="text-text-primary font-semibold mb-3">Data Rekap Proyek</h6>
+
+    {{-- Nama Proyek --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kategori <span class="text-error">*</span></label>
-        <select name="transaction_category_id" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Kategori tidak boleh kosong')"
+        <label class="block text-text-primary mb-1">Nama Proyek <span class="text-error">*</span></label>
+        <input type="text" name="project_name" class="w-full border rounded p-2" value="{{ $recap->project_name }}"
+            required maxlength="255" oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
-            <option value="">-- Pilih Kategori --</option>
-            @foreach ($categories as $cat)
-                <option value="{{ $cat->id }}" data-type="{{ $cat->type }}"
-                    {{ $item->transaction_category_id == $cat->id ? 'selected' : '' }}>
-                    {{ $cat->name }}
-                </option>
-            @endforeach
-        </select>
     </div>
 
-    {{-- Tanggal --}}
+    {{-- Lokasi --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="transaction_date" class="w-full border rounded p-2"
-            value="{{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('Y-m-d') : '' }}"
-            required oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+        <label class="block text-text-primary mb-1">Lokasi</label>
+        <input type="text" name="location" class="w-full border rounded p-2" value="{{ $recap->location }}"
+            maxlength="255">
     </div>
 
-    {{-- Keterangan --}}
+    {{-- Total RAB --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan <span class="text-error">*</span></label>
-        <textarea name="description" class="w-full border rounded p-2" rows="3" required maxlength="1000"
-            oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $item->description }}</textarea>
+        <label class="block text-text-primary mb-1">Total RAB <span class="text-error">*</span></label>
+        <input type="text" inputmode="numeric" name="total_rab" class="w-full border rounded p-2 total-rab-input"
+            value="{{ number_format($recap->total_rab ?? 0, 0, ',', '.') }}" required min="0"
+            oninvalid="this.setCustomValidity('Total RAB tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
-    {{-- Jumlah --}}
-    <div class="mb-3">
-        <label class="amount-label block text-text-primary mb-1">Jumlah Pengeluaran <span
-                class="text-error">*</span></label>
-        <input type="text" inputmode="numeric" name="expense_amount"
-            class="w-full border rounded p-2 expense-amount-input"
-            value="{{ $item->income_amount ?: $item->expense_amount }}" required min="0"
-            oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- Keterangan Bon --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan Bon <span class="text-error">*</span></label>
-        <input type="text" name="keterangan_bon" class="w-full border rounded p-2"
-            value="{{ $item->keterangan_bon }}" required maxlength="255"
-            oninvalid="this.setCustomValidity('Keterangan Bon tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- Bukti Pembayaran Saat Ini --}}
-    @if ($item->hasProof())
+    {{-- File Design Saat Ini --}}
+    @if ($recap->hasDesignFile())
         <div class="mb-3 p-3 border rounded bg-blue-50">
-            <label class="block text-text-primary mb-1">Bukti Saat Ini</label>
-            <a href="{{ asset('storage/' . $item->proof_file) }}" target="_blank" rel="noopener noreferrer"
-                class="text-blue-600 hover:underline text-sm">{{ $item->proof_file_name }}</a>
+            <label class="block text-text-primary mb-1">File Saat Ini</label>
+            <a href="{{ asset('storage/' . $recap->design_file) }}" target="_blank"
+                class="text-blue-600 hover:underline text-sm">{{ $recap->design_file_name }}</a>
         </div>
     @endif
 
-    {{-- Ganti Bukti Pembayaran (opsional) --}}
+    <hr class="my-4">
+
+    {{-- ==================== Detail Transaksi (Struktur Dinamis) ==================== --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Ganti Bukti Pembayaran</label>
-        <input type="file" name="proof_file"
-            accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf"
-            class="w-full border rounded p-2">
-        <p class="text-xs text-text-secondary mt-1">Format: JPG, PNG, GIF, WEBP, BMP, PDF. Maksimal 5 MB.
-            Kosongkan jika tidak ingin mengganti file.</p>
+        <h6 class="text-text-primary font-semibold mb-3">Detail Transaksi (Pilih Kategori)</h6>
+        <div class="text-xs text-text-secondary mb-4 p-2 bg-surface-secondary rounded">
+            <p class="mb-1"><strong>Struktur:</strong> Pilih Kategori lalu isi Keterangan & Jumlah. Boleh menambah
+                lebih dari satu transaksi.</p>
+            <p>Kategori <span class="text-success font-semibold">Pemasukan</span> otomatis menjadi
+                <strong>Jumlah Pemasukan</strong>, kategori <span class="text-error font-semibold">Pengeluaran</span>
+                otomatis menjadi <strong>Jumlah Pengeluaran</strong>.</p>
+            <p class="mt-1">Hapus blok untuk menghapus transaksi, atau tambah blok untuk transaksi baru.</p>
+        </div>
+    </div>
+
+    @if ($existingItems->isEmpty())
+        <p id="emptyTransactionsHint-{{ $recap->id }}" class="text-sm text-text-secondary mb-3">
+            Belum ada transaksi. Klik "Tambah Transaksi" di bawah untuk menambahkan.
+        </p>
+    @endif
+
+    {{-- Container Transaksi (terisi otomatis dari transaksi existing) --}}
+    <div id="transactionsContainer-{{ $recap->id }}" class="space-y-4 mb-3"
+        data-categories="{{ $categoriesJson }}"
+        data-existing-items="{{ $existingItemsJson }}"></div>
+
+    <button type="button" onclick="addTransactionBlock('transactionsContainer-{{ $recap->id }}')"
+        class="btn btn-outline-primary w-full">
+        <i class="fa-solid fa-plus"></i> Tambah Transaksi
+    </button>
+
+    <hr class="my-4">
+
+    {{-- Total Keseluruhan --}}
+    <div class="flex justify-end mb-3">
+        <div class="bg-success-light border-2 border-success rounded p-4 w-full">
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
+                    <span><strong>Total Pemasukan:</strong></span>
+                    <span id="transactionsContainer-{{ $recap->id }}-totalIncome" class="font-semibold">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
+                    <span><strong>Total Pengeluaran:</strong></span>
+                    <span id="transactionsContainer-{{ $recap->id }}-totalExpense" class="font-semibold">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-lg text-success">
+                    <span><strong>Saldo:</strong></span>
+                    <p class="font-bold text-2xl text-success"><span
+                            id="transactionsContainer-{{ $recap->id }}-balance">Rp 0</span></p>
+                </div>
+            </div>
+        </div>
     </div>
 </x-modal>

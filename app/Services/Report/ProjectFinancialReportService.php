@@ -162,6 +162,58 @@ class ProjectFinancialReportService
     }
 
     /**
+     * Menyinkronkan seluruh transaksi "Bon" hasil edit laporan keuangan proyek.
+     *
+     * Dipakai oleh modal edit dengan struktur dinamis (mirip tambah):
+     * - item yang mengirim `id` diupdate (bukti diganti jika ada file baru)
+     * - item tanpa `id` dianggap transaksi baru (dibuat)
+     * - item existing yang tidak lagi dikirim (blok dihapus user) dihapus
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @param  array<int, array<string, \Illuminate\Http\UploadedFile|null>>  $proofFiles
+     * @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Report\ProjectFinancialReportItem>
+     */
+    public function syncItems(ProjectFinancialReport $report, array $items, array $proofFiles)
+    {
+        $existingItems = $report->items()->get();
+        $submittedIds = [];
+
+        foreach ($items as $index => $itemData) {
+            $proofFile = $proofFiles[$index]['proof_file'] ?? null;
+            $itemId = isset($itemData['id']) && trim((string) $itemData['id']) !== ''
+                ? (string) $itemData['id']
+                : null;
+
+            if ($itemId) {
+                $submittedIds[] = $itemId;
+
+                $existingItem = $existingItems->firstWhere('id', (int) $itemId);
+
+                if ($existingItem) {
+                    $this->updateItem($existingItem, $itemData, $proofFile);
+                    continue;
+                }
+            }
+
+            $this->createItem($report, $itemData, $proofFile);
+        }
+
+        // Item existing yang bloknya dihapus pada form edit ikut dihapus.
+        $removedIds = $existingItems
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->diff($submittedIds)
+            ->values()
+            ->all();
+
+        if ($removedIds) {
+            $this->bulkDeleteItems($removedIds);
+        }
+
+        return $this->getItems($report);
+    }
+
+    /**
      * Mengupdate item "Bon" yang sudah ada.
      *
      * Bukti pembayaran hanya diganti jika ada file baru yang diunggah;

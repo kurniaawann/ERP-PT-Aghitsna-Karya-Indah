@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Report;
 use App\Exports\Report\ProjectFinancialReportExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Report\StoreProjectFinancialReportItemRequest;
-use App\Http\Requests\Report\UpdateProjectFinancialReportItemRequest;
+use App\Http\Requests\Report\UpdateProjectFinancialReportRequest;
 use App\Models\Finance\ProjectRecap;
-use App\Models\Report\ProjectFinancialReportItem;
+use App\Services\Finance\RecapProyekService;
 use App\Services\Report\ProjectFinancialReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -126,25 +126,43 @@ class ProjectFinancialReportController extends Controller
     }
 
     /**
-     * Mengupdate item "Bon" pada laporan keuangan proyek.
+     * Menyimpan hasil edit gabungan Rekap Proyek beserta transaksi "Bon"
+     * Laporan Keuangan Proyek-nya (satu form, satu design).
+     *
+     * 1. Data Rekap Proyek (nama, lokasi, total RAB) diupdate.
+     * 2. Transaksi disinkronkan: item existing diupdate, transaksi baru
+     *    dibuat, dan blok yang dihapus user ikut dihapus datanya.
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function updateItem(UpdateProjectFinancialReportItemRequest $request, ProjectRecap $projectRecap, ProjectFinancialReportItem $item)
+    public function update(UpdateProjectFinancialReportRequest $request, ProjectRecap $projectRecap)
     {
         $this->authorizeRecap($projectRecap);
 
         DB::beginTransaction();
         try {
-            $this->service->updateItem($item, $request->validated(), $request->file('proof_file'));
+            // 1. Update data Rekap Proyek (tanpa ganti file design).
+            app(RecapProyekService::class)->updateRecap(
+                $projectRecap,
+                $request->safe()->only(['project_name', 'location', 'total_rab']),
+                null
+            );
+
+            // 2. Sinkronkan transaksi "Bon".
+            $items = $request->input('items', []);
+
+            if (! empty($items)) {
+                $report = $this->service->getOrCreateForRecap($projectRecap);
+                $this->service->syncItems($report, $items, $request->file('items', []));
+            }
 
             DB::commit();
 
             return redirect()->route('project-financial-report.index')
-                ->with('success', 'Data transaksi berhasil diupdate!');
+                ->with('success', 'Data rekap proyek dan transaksi berhasil diupdate!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Project Financial Report updateItem failed', [
+            Log::error('Project Financial Report update failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
