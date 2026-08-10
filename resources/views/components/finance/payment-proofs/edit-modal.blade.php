@@ -31,7 +31,7 @@
     {{-- Section: Payment Stage (read-only) --}}
     <div class="mb-3 p-3 bg-surface-secondary rounded border">
         <label class="block text-text-primary mb-1">Tahap Pembayaran</label>
-        @if ($paymentProof->invoice_type === 'proyek')
+        @if (in_array($paymentProof->invoice_type, ['proyek', 'recap']))
             <p class="font-semibold text-primary">Pembayaran ke {{ $paymentProof->payment_stage ?? '-' }}</p>
         @else
             <p class="font-semibold text-text-label">Tidak ada tahap</p>

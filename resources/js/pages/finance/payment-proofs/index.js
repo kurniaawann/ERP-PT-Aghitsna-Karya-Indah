@@ -30,6 +30,19 @@ function isManualPaymentAmountType(invoiceType) {
     return invoiceType === 'proyek' || invoiceType === 'recap';
 }
 
+/**
+ * Menentukan apakah tipe invoice memakai tahap pembayaran (Pembayaran ke-N).
+ *
+ * 'proyek' dan 'recap' memakai penomoran tahap berurutan; tipe lain (barang,
+ * alumunium) tidak memiliki konsep tahap.
+ *
+ * @param  {string} invoiceType
+ * @return {boolean}
+ */
+function isStagedPaymentType(invoiceType) {
+    return invoiceType === 'proyek' || invoiceType === 'recap';
+}
+
 // ─── Helper Config ──────────────────────────────────────────────────────
 
 /**
@@ -161,7 +174,7 @@ function loadPaymentProofInvoices(prefix, selectedInvoiceNumber = null) {
     }
 
     if (config.stageWrap) {
-        config.stageWrap.classList.toggle('hidden', config.invoiceType.value !== 'proyek');
+        config.stageWrap.classList.toggle('hidden', !isStagedPaymentType(config.invoiceType.value));
     }
 
     updatePaymentProofStage(prefix);
@@ -206,7 +219,7 @@ function updatePaymentProofInvoices(prefix, selectedInvoiceNumber = null) {
  *
  * Alur tahap pembayaran (select -> amount -> done):
  * 1. Ambil opsi invoice terpilih dan dataset.nextStage-nya.
- * 2. Bila tipe bukan 'proyek': tampilkan "Tidak ada tahap pembayaran".
+ * 2. Bila tipe bukan 'proyek'/'recap': tampilkan "Tidak ada tahap pembayaran".
  * 3. Bila ada nextStage: tampilkan "Pembayaran ke {n}" dan isi hidden input stage.
  * 4. Selain itu tampilkan "-".
  * 5. Teruskan ke updatePaymentProofAmountSection agar section nominal ikut sinkron.
@@ -222,10 +235,10 @@ function updatePaymentProofStage(prefix) {
     const nextStage = selectedOption?.dataset?.nextStage;
 
     if (config.stageWrap) {
-        config.stageWrap.classList.toggle('hidden', config.invoiceType.value !== 'proyek');
+        config.stageWrap.classList.toggle('hidden', !isStagedPaymentType(config.invoiceType.value));
     }
 
-    if (config.invoiceType.value !== 'proyek') {
+    if (!isStagedPaymentType(config.invoiceType.value)) {
         config.stageText.textContent = 'Tidak ada tahap pembayaran';
         config.stageInput.value = '';
     } else if (nextStage) {

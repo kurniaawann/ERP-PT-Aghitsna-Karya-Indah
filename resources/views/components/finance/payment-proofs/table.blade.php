@@ -77,7 +77,7 @@
                                     </div>
                                 </td>
                                 <td class="p-3 text-sm">
-                                    @if ($paymentProof->invoice_type === 'proyek')
+                                    @if (in_array($paymentProof->invoice_type, ['proyek', 'recap']))
                                         <span
                                             class="inline-flex w-fit items-center rounded-md bg-success-light px-2.5 py-0.5 text-xs font-semibold text-success">
                                             Pembayaran ke {{ $paymentProof->payment_stage ?? '-' }}

@@ -128,7 +128,7 @@
         @if ($paymentProofs->isNotEmpty())
             @php
                 $sortedProofs = $paymentProofs
-                    ->sortBy(fn ($p) => ($p->payment_date?->format('Y-m-d') ?? '9999') . sprintf('%06d', (int) $p->id))
+                    ->sortBy(fn ($p) => sprintf('%06d', (int) ($p->payment_stage ?? 999999)))
                     ->values();
             @endphp
 
@@ -172,7 +172,7 @@
                             <div class="flex-1 min-w-0 pt-0.5">
                                 <div class="flex items-center justify-between">
                                     <p class="text-sm font-semibold {{ $isInstallmentPaid ? 'text-gray-900' : 'text-gray-500' }}">
-                                        Pembayaran ke-{{ $stageNumber }}
+                                        Pembayaran ke-{{ $proof->payment_stage ?? $stageNumber }}
                                     </p>
                                     <span class="text-sm font-semibold {{ $isInstallmentPaid ? 'text-green-600' : 'text-gray-400' }}">
                                         Rp {{ number_format($proofAmount, 0, ',', '.') }}

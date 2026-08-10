@@ -74,7 +74,7 @@ class PaymentProofService
      */
     public function resolveNextPaymentStage(string $moduleType, string $invoiceType, string $invoiceNumber): ?int
     {
-        if ($invoiceType !== 'proyek') {
+        if (! in_array($invoiceType, ['proyek', 'recap'], true)) {
             return null;
         }
 
@@ -204,7 +204,7 @@ class PaymentProofService
         $paymentStage = null;
 
         try {
-            if ($validated['invoice_type'] === 'proyek') {
+            if (in_array($validated['invoice_type'], ['proyek', 'recap'], true)) {
                 $paymentStage = $this->resolveNextPaymentStage(
                     $validated['module_type'],
                     $validated['invoice_type'],
@@ -298,7 +298,7 @@ class PaymentProofService
                 || $paymentProof->invoice_type !== $validated['invoice_type']
                 || $paymentProof->invoice_number !== $validated['invoice_number'];
 
-            $nextStage = $paymentProof->invoice_type === 'proyek'
+            $nextStage = in_array($paymentProof->invoice_type, ['proyek', 'recap'], true)
                 ? ($invoiceChanged
                     ? $this->resolveNextPaymentStage($validated['module_type'], $validated['invoice_type'], $validated['invoice_number'])
                     : $paymentProof->payment_stage)
@@ -515,7 +515,7 @@ class PaymentProofService
         $invoiceKey = $invoice->invoice_number ?? $invoice->id;
         $mapKey = $moduleType.'|'.$invoiceType.'|'.$invoiceKey;
         $proofMeta = $proofStageMap->get($mapKey);
-        $nextStage = $invoiceType === 'proyek'
+        $nextStage = in_array($invoiceType, ['proyek', 'recap'], true)
             ? max((int) ($proofMeta->max_stage ?? 0), (int) ($proofMeta->proof_count ?? 0)) + 1
             : null;
         $calcData = $this->calculator->buildInvoiceOptionData($invoice, $moduleType, $invoiceType);
