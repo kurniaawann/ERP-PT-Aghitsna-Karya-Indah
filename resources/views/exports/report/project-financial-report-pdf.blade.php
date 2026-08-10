@@ -110,6 +110,7 @@
         .category-row .category-header {
             background-color: #A9D08E;
             text-align: center;
+            vertical-align: middle;
         }
 
         .category-row .empty-cell {
@@ -152,6 +153,11 @@
             text-align: center;
         }
 
+        .col-bon {
+            width: 8%;
+            text-align: center;
+        }
+
         .col-tanggal {
             width: 11%;
             text-align: center;
@@ -163,12 +169,12 @@
 
         .col-pemasukan {
             width: 14%;
-            text-align: right;
+            text-align: center;
         }
 
         .col-pengeluaran {
             width: 14%;
-            text-align: right;
+            text-align: center;
         }
 
         .col-keterangan-bon {
@@ -223,6 +229,7 @@
         <thead>
             <tr>
                 <th class="col-no">NO</th>
+                <th class="col-bon">BON</th>
                 <th class="col-tanggal">TANGGAL</th>
                 <th class="col-keterangan">KETERANGAN</th>
                 <th class="col-pemasukan">UANG MASUK</th>
@@ -245,8 +252,9 @@
                     $bonNo = 1;
                 @endphp
 
-                {{-- Category Header Row --}}
+                {{-- Category Header Row (hijau hanya NO, BON, TANGGAL, KETERANGAN) --}}
                 <tr class="category-row">
+                    <td class="category-header" rowspan="{{ $categoryItems->count() + 1 }}">{{ $catNo }}</td>
                     <td colspan="3" class="category-header">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
                     <td class="empty-cell"></td>
                     <td class="empty-cell"></td>
@@ -260,11 +268,11 @@
                         $categoryExpense += $item->expense_amount ?? 0;
                     @endphp
                     <tr>
-                        <td class="text-center">{{ $catNo }} Bon {{ $bonNo++ }}</td>
+                        <td class="text-center">{{ $bonNo++ }}</td>
                         <td class="text-center">
                             {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '' }}
                         </td>
-                        <td>{{ $item->description ?? '' }}</td>
+                        <td class="text-center">{{ $item->description ?? '' }}</td>
                         <td class="text-right">
                             {{ $item->income_amount ? 'Rp ' . number_format($item->income_amount, 0, ',', '.') : '' }}
                         </td>
@@ -277,7 +285,7 @@
 
                 {{-- Category Subtotal --}}
                 <tr class="subtotal-row">
-                    <td colspan="3"></td>
+                    <td colspan="4"></td>
                     <td class="text-right">
                         {{ 'Rp ' . number_format($categoryIncome, 0, ',', '.') }}
                     </td>
@@ -292,7 +300,7 @@
 
             {{-- Grand Total --}}
             <tr class="total-row">
-                <td colspan="3" class="text-center"><strong>Jumlah</strong></td>
+                <td colspan="4" class="text-center"><strong>Jumlah</strong></td>
                 <td class="text-right">
                     <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
                 </td>
