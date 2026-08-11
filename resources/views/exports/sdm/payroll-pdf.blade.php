@@ -36,18 +36,9 @@
             vertical-align: middle;
         }
 
-        .company-brand {
-            font-size: 11px;
-            font-weight: bold;
-            color: #c0392b;
-            line-height: 1.1;
-        }
-
-        .company-sub {
-            font-size: 7px;
-            letter-spacing: 1px;
-            color: #555;
-            font-weight: bold;
+        .company-logo {
+            height: 45px;
+            width: auto;
         }
 
         .doc-title {
@@ -162,8 +153,7 @@
     <table class="header-table">
         <tr>
             <td style="width: 28%;">
-                <div class="company-brand">PT. AGHITSNA KARYA INDAH</div>
-                <div class="company-sub">DESIGN AND BUILD</div>
+                <img src="{{ public_path('images/logo.jpeg') }}" alt="PT. AGHITSNA KARYA INDAH" class="company-logo">
             </td>
             <td style="width: 44%;">
                 <div class="doc-title">DAFTAR ABSENSI PEKERJA</div>
@@ -327,9 +317,6 @@
                     <div class="sig-name">
                         ( {{ $signatory['name'] ?? '............................................' }} )
                     </div>
-                    @if ($signatory && !empty($signatory['position']))
-                        <div style="font-size: 8px; color: #555; margin-top: 2px;">{{ $signatory['position'] }}</div>
-                    @endif
                 </td>
             @endforeach
         </tr>
