@@ -910,9 +910,10 @@ class PayrollService
      * Logika:
      * - Hanya payroll terpilih yang masih berstatus 'draft' yang diproses —
      *   payroll 'paid' tidak mungkin dibayar dua kali.
-     * - Untuk setiap payroll yang baru dibayar, satu baris "Upah Pekerja"
-     *   (expense = net_salary) dibuat pada laporan keuangan rekap proyek yang
-     *   namanya cocok dengan project_name payroll (pencocokan case-insensitive).
+     * - Entri laporan dibuat AGREGAT per proyek + periode (bukan per karyawan):
+     *   seluruh payroll yang dibayar pada proyek + periode sama dijumlahkan
+     *   menjadi satu baris "Upah Kerja periode ..." (expense = total net_salary).
+     *   Pencocokan proyek ke Rekap Proyek dilakukan case-insensitive.
      *   Proyek yang tidak memiliki Rekap Proyek dilewati (upah tetap dibayar,
      *   hanya entri laporan yang tidak dibuat).
      * - Pembayaran dan pembuatan entri laporan dibungkus satu transaksi DB agar
@@ -942,6 +943,7 @@ class PayrollService
             return DB::transaction(function () use ($payrolls, $paymentDate) {
                 $count = 0;
                 $skippedRecaps = [];
+                $paidByProject = [];
 
                 foreach ($payrolls as $payroll) {
                     $payroll->update([
@@ -950,21 +952,40 @@ class PayrollService
                     ]);
                     $count++;
 
-                    if (empty($payroll->project_name)) {
-                        continue;
+                    if (! empty($payroll->project_name)) {
+                        $paidByProject[$payroll->project_name][] = $payroll;
                     }
+                }
 
+                // Entri Laporan Keuangan dibuat AGREGAT: satu baris "Upah Kerja"
+                // per proyek + periode (bukan per karyawan). Bila proyek belum
+                // memiliki Rekap Proyek, entri dilewati dan dicatat peringatan.
+                foreach ($paidByProject as $projectName => $projectPayrolls) {
                     $recap = ProjectRecap::whereRaw(
                         'LOWER(project_name) = ?',
-                        [mb_strtolower(trim($payroll->project_name))]
+                        [mb_strtolower(trim($projectName))]
                     )->first();
 
                     if (! $recap) {
-                        $skippedRecaps[] = $payroll->project_name;
+                        $skippedRecaps[] = $projectName;
                         continue;
                     }
 
-                    $this->financialReportService->createPayrollExpenseItem($recap, $payroll);
+                    $periodGroups = collect($projectPayrolls)->groupBy(function (Payroll $payroll) {
+                        $periodStart = $payroll->period_start_date
+                            ? Carbon::parse($payroll->period_start_date)->format('Y-m-d')
+                            : '';
+
+                        $periodEnd = $payroll->period_end_date
+                            ? Carbon::parse($payroll->period_end_date)->format('Y-m-d')
+                            : '';
+
+                        return $periodStart.'|'.$periodEnd;
+                    });
+
+                    foreach ($periodGroups as $periodPayrolls) {
+                        $this->financialReportService->upsertPayrollExpenseItem($recap, $periodPayrolls);
+                    }
                 }
 
                 $message = "Berhasil membayar {$count} payroll!";
@@ -986,10 +1007,13 @@ class PayrollService
     }
 
     /**
-     * Menghapus data payroll draft secara massal.
+     * Menghapus data payroll secara massal (semua status).
      *
-     * Hanya payroll dengan status 'draft' yang bisa dihapus.
-     * Payroll yang sudah dibayar dilindungi dari penghapusan.
+     * Payroll draft maupun paid sama-sama bisa dihapus. Untuk payroll yang
+     * sudah dibayar, baris agregat "Upah Kerja" pada Laporan Keuangan proyek
+     * disesuaikan: total dikurangi sebesar payroll yang dihapus, atau baris
+     * ikut dihapus bila tidak ada lagi payroll paid pada proyek + periode itu
+     * (reconcilePayrollExpenseItem).
      *
      * Logika:
      * - Dihapus per record (loop $payroll->delete()) karena Payroll punya
@@ -998,16 +1022,39 @@ class PayrollService
      * @param  array  $ids  Array ID payroll
      * @return array  ['success' => bool, 'message' => string]
      */
-    public function deleteDraftPayrolls(array $ids): array
+    public function deletePayrolls(array $ids): array
     {
         if (empty($ids)) {
             return ['success' => false, 'message' => 'Tidak ada data yang dipilih!'];
         }
 
-        $payrolls = Payroll::whereIn('id', $ids)->where('status', 'draft')->where('created_by', auth()->id())->get();
+        $payrolls = Payroll::whereIn('id', $ids)->where('created_by', auth()->id())->get();
+
+        $affectedGroups = $payrolls
+            ->filter(fn (Payroll $payroll) => $payroll->isPaid() && ! empty($payroll->project_name))
+            ->map(fn (Payroll $payroll) => [
+                'project_name' => $payroll->project_name,
+                'period_start' => $payroll->period_start_date
+                    ? Carbon::parse($payroll->period_start_date)->format('Y-m-d')
+                    : '',
+                'period_end' => $payroll->period_end_date
+                    ? Carbon::parse($payroll->period_end_date)->format('Y-m-d')
+                    : null,
+            ])
+            ->unique(fn ($group) => $group['project_name'].'|'.$group['period_start'].'|'.$group['period_end'])
+            ->values();
 
         foreach ($payrolls as $payroll) {
             $payroll->delete();
+        }
+
+        foreach ($affectedGroups as $group) {
+            $this->financialReportService->reconcilePayrollExpenseItem(
+                $group['project_name'],
+                $group['period_start'],
+                $group['period_end'],
+                auth()->id(),
+            );
         }
 
         return ['success' => true, 'message' => 'Data payroll berhasil dihapus!'];

@@ -16,6 +16,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Str;
 
 /**
@@ -371,25 +372,37 @@ class ProjectFinancialReportService
     }
 
     /**
-     * Membuat satu baris "Upah Pekerja" pada laporan keuangan proyek dari
-     * sebuah payroll yang sudah dibayar.
+     * Membuat atau memperbarui satu baris "Upah Kerja" pada laporan keuangan
+     * proyek dari kumpulan payroll yang dibayar pada proyek + periode sama.
      *
-     * Setiap payroll (per karyawan) menjadi satu baris pengeluaran pada
-     * laporan keuangan rekap proyek terkait:
+     * Tidak dibuat per karyawan: seluruh payroll paid pada proyek + periode
+     * yang sama diagregasi menjadi satu baris pengeluaran:
      * - Kategori: "Upah Pekerja" (per-user, module project_finance)
-     * - Nominal: net_salary payroll (expense_amount)
-     * - Tanggal: payment_date payroll (fallback: hari ini)
-     * - Keterangan: nama karyawan + rentang periode payroll
+     * - Nominal: total net_salary seluruh payroll (expense_amount)
+     * - Tanggal: payment_date terbaru di antara payroll (fallback: hari ini)
+     * - Keterangan: "Upah Kerja periode dd/mm/yyyy - dd/mm/yyyy"
+     *
+     * Bila baris untuk proyek + periode tersebut sudah ada (misal sisa
+     * payroll batch sebelumnya dibayar belakangan), nominalnya diperbarui
+     * (aggregate) dan bukan membuat baris baru.
      *
      * Laporan keuangan dibuat otomatis bila rekap proyek belum memilikinya
      * (getOrCreateForRecap). Pemanggil wajib memastikan rekap proyek dengan
      * nama proyek payroll sudah ada; bila tidak, method ini tidak dipanggil.
      *
-     * @param  Payroll  $payroll  Payroll berstatus paid yang akan dicatat
+     * @param  ProjectRecap  $recap
+     * @param  \Illuminate\Support\Collection<int, Payroll>  $payrolls  Payroll paid satu proyek + periode
      */
-    public function createPayrollExpenseItem(ProjectRecap $recap, Payroll $payroll): ?ProjectFinancialReportItem
+    public function upsertPayrollExpenseItem(ProjectRecap $recap, SupportCollection $payrolls): ?ProjectFinancialReportItem
     {
-        $category = $this->resolveUpahPekerjaCategory($payroll->created_by);
+        if ($payrolls->isEmpty()) {
+            return null;
+        }
+
+        $payrolls = $payrolls->values();
+        $first = $payrolls->first();
+
+        $category = $this->resolveUpahPekerjaCategory($first->created_by);
 
         if (! $category) {
             return null;
@@ -397,22 +410,126 @@ class ProjectFinancialReportService
 
         $report = $this->getOrCreateForRecap($recap);
 
-        $periodStart = Carbon::parse($payroll->period_start_date)->format('d/m/Y');
-        $periodEnd = $payroll->period_end_date
-            ? Carbon::parse($payroll->period_end_date)->format('d/m/Y')
+        $periodStart = Carbon::parse($first->period_start_date)->format('d/m/Y');
+        $periodEnd = $first->period_end_date
+            ? Carbon::parse($first->period_end_date)->format('d/m/Y')
             : null;
+
+        $description = 'Upah Kerja periode '.$periodStart.($periodEnd ? ' - '.$periodEnd : '');
+
+        // Total dihitung dari SELURUH payroll paid pada proyek + periode yang
+        // sama (bukan hanya batch ini) agar beberapa batch pembayaran untuk
+        // periode sama tetap teragregasi ke satu baris.
+        $periodStartDate = Carbon::parse($first->period_start_date)->format('Y-m-d');
+        $periodEndDate = $first->period_end_date
+            ? Carbon::parse($first->period_end_date)->format('Y-m-d')
+            : null;
+
+        $paidQuery = Payroll::where('created_by', $first->created_by)
+            ->where('project_name', $first->project_name)
+            ->where('status', 'paid')
+            ->where('period_start_date', $periodStartDate);
+
+        if ($periodEndDate) {
+            $paidQuery->where('period_end_date', $periodEndDate);
+        } else {
+            $paidQuery->whereNull('period_end_date');
+        }
+
+        $total = (int) $paidQuery->sum('net_salary');
+        $transactionDate = $paidQuery->max('payment_date') ?: now()->toDateString();
+
+        $item = $report->items()
+            ->where('transaction_category_id', $category->id)
+            ->where('description', $description)
+            ->first();
 
         $data = [
             'transaction_category_id' => $category->id,
-            'transaction_date' => $payroll->payment_date
-                ? Carbon::parse($payroll->payment_date)->toDateString()
-                : now()->toDateString(),
-            'description' => 'Upah '.($payroll->employee->name ?? $payroll->employee_id)
-                .' periode '.$periodStart.($periodEnd ? ' - '.$periodEnd : ''),
-            'expense_amount' => (int) $payroll->net_salary,
+            'transaction_date' => $transactionDate,
+            'description' => $description,
+            'expense_amount' => $total,
         ];
 
+        if ($item) {
+            $item->update($data);
+            $this->flushUsedCategoryCache($first->created_by ?? auth()->id());
+
+            return $item;
+        }
+
         return $this->createItem($report, $data, null);
+    }
+
+    /**
+     * Menyesuaikan baris "Upah Kerja" pada laporan keuangan setelah sebagian
+     * payroll paid pada proyek + periode dihapus.
+     *
+     * Baris agregat diperbarui ke total net_salary payroll paid yang tersisa;
+     * bila tidak ada lagi payroll paid untuk proyek + periode tersebut, baris
+     * laporan ikut dihapus agar tidak menjadi pengeluaran yatim.
+     *
+     * @param  string  $projectName
+     * @param  string  $periodStart  Tanggal mulai periode (Y-m-d)
+     * @param  string|null  $periodEnd  Tanggal akhir periode (Y-m-d)
+     * @param  int|string|null  $userId
+     */
+    public function reconcilePayrollExpenseItem(string $projectName, string $periodStart, ?string $periodEnd, $userId = null): void
+    {
+        $userId = $userId ?? auth()->id();
+
+        if (! $userId) {
+            return;
+        }
+
+        $recap = ProjectRecap::whereRaw('LOWER(project_name) = ?', [mb_strtolower(trim($projectName))])->first();
+
+        if (! $recap) {
+            return;
+        }
+
+        $report = ProjectFinancialReport::where('project_recap_id', $recap->id)->first();
+
+        if (! $report) {
+            return;
+        }
+
+        $category = $this->resolveUpahPekerjaCategory($userId);
+
+        if (! $category) {
+            return;
+        }
+
+        $description = 'Upah Kerja periode '.Carbon::parse($periodStart)->format('d/m/Y')
+            .($periodEnd ? ' - '.Carbon::parse($periodEnd)->format('d/m/Y') : '');
+
+        $remainingQuery = Payroll::where('created_by', $userId)
+            ->where('project_name', $projectName)
+            ->where('status', 'paid')
+            ->where('period_start_date', $periodStart);
+
+        if ($periodEnd) {
+            $remainingQuery->where('period_end_date', $periodEnd);
+        } else {
+            $remainingQuery->whereNull('period_end_date');
+        }
+
+        $remainingTotal = (int) $remainingQuery->sum('net_salary');
+
+        $item = $report->items()
+            ->where('transaction_category_id', $category->id)
+            ->where('description', $description)
+            ->first();
+
+        if ($remainingTotal <= 0) {
+            if ($item) {
+                $item->delete();
+            }
+        } elseif ($item) {
+            $item->update(['expense_amount' => $remainingTotal]);
+        }
+
+        $this->flushUsedCategoryCache($userId);
     }
 
     /**

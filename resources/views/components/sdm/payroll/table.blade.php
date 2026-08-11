@@ -9,7 +9,7 @@
     status, aksi) tampil pada baris-baris di bawah header grup.
 
     Kolom:
-    - Checkbox (bulk select, hanya payroll draft yang bisa dipilih)
+    - Checkbox (bulk select, semua status — draft maupun paid)
     - Nama Karyawan
     - Periode (rentang tanggal + minggu)
     - Upah/Hari
@@ -57,7 +57,7 @@
                                 <div class="flex items-center gap-3 px-4 py-2">
                                     <input type="checkbox" class="group-select-all w-4 h-4 accent-primary cursor-pointer"
                                         data-group-index="{{ $groupIndex }}"
-                                        title="Pilih semua payroll draft dalam grup ini">
+                                        title="Pilih semua payroll dalam grup ini">
 
                                     <i class="fa-solid fa-folder-open text-primary"></i>
                                     <span class="font-semibold text-text-primary">{{ $group['project_name'] }}</span>
@@ -119,13 +119,10 @@
                         @foreach ($group['payrolls'] as $payroll)
                             <tr class="payroll-group-rows-{{ $groupIndex }} border-t hover:bg-surface-secondary">
                                 <td class="p-2 text-center">
-                                    @if ($payroll->status === 'draft')
-                                        <input type="checkbox" name="ids[]" value="{{ $payroll->id }}"
-                                            data-group-index="{{ $groupIndex }}"
-                                            class="payroll-checkbox w-4 h-4 accent-primary cursor-pointer">
-                                    @else
-                                        <input type="checkbox" disabled class="w-4 h-4 cursor-not-allowed opacity-50">
-                                    @endif
+                                    <input type="checkbox" name="ids[]" value="{{ $payroll->id }}"
+                                        data-group-index="{{ $groupIndex }}"
+                                        data-status="{{ $payroll->status }}"
+                                        class="payroll-checkbox w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
                                 <td class="p-2 pl-4">{{ $payroll->employee->name }}</td>

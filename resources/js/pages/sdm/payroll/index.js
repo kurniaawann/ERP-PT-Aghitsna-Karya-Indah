@@ -728,31 +728,38 @@ async function loadFilterWeeks() {
 /**
  * Memperbarui status tombol Hapus & Bayar Massal berdasarkan checkbox terpilih.
  *
- * Tombol diaktifkan bila minimal satu checkbox (tidak disabled) tercentang;
- * selain itu keduanya dinonaktifkan dengan kelas opacity-50 dan
- * cursor-not-allowed.
+ * - Tombol Hapus diaktifkan bila minimal satu checkbox (status apa pun)
+ *   tercentang — payroll draft maupun paid bisa dihapus.
+ * - Tombol Bayar hanya diaktifkan bila minimal satu payroll DRAFT yang
+ *   tercentang (payroll paid tidak bisa dibayar ulang).
+ *
+ * Saat tidak ada yang tercentang, keduanya dinonaktifkan dengan kelas
+ * opacity-50 dan cursor-not-allowed.
  */
 function updateButtonStates() {
     const deleteButton = document.getElementById('delete-button');
     const bulkPayButton = document.getElementById('bulk-pay-button');
     const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:not(:disabled):checked');
+    const checkedDraft = document.querySelectorAll('input[name="ids[]"][data-status="draft"]:not(:disabled):checked');
 
     if (checkedCheckboxes.length > 0) {
         // Enable Delete Button
         deleteButton.disabled = false;
         deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
         deleteButton.classList.add('hover:bg-btn-delete-hover');
-
-        // Enable Bulk Pay Button
-        bulkPayButton.disabled = false;
-        bulkPayButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        bulkPayButton.classList.add('hover:bg-primary-hover');
     } else {
         // Disable Delete Button
         deleteButton.disabled = true;
         deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
         deleteButton.classList.remove('hover:bg-btn-delete-hover');
+    }
 
+    if (checkedDraft.length > 0) {
+        // Enable Bulk Pay Button
+        bulkPayButton.disabled = false;
+        bulkPayButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        bulkPayButton.classList.add('hover:bg-primary-hover');
+    } else {
         // Disable Bulk Pay Button
         bulkPayButton.disabled = true;
         bulkPayButton.classList.add('opacity-50', 'cursor-not-allowed');
@@ -763,9 +770,9 @@ function updateButtonStates() {
 /**
  * Sinkronkan status checkbox "pilih semua" pada setiap header grup proyek.
  *
- * Sebuah checkbox grup tercentang bila seluruh checkbox payroll draft di
- * dalamnya tercentang (dan ada minimal satu). Dipanggil setelah perubahan
- * checkbox individu / pilih-semua / pilih-grup.
+ * Sebuah checkbox grup tercentang bila seluruh checkbox payroll di dalamnya
+ * tercentang (dan ada minimal satu). Dipanggil setelah perubahan checkbox
+ * individu / pilih-semua / pilih-grup.
  */
 function syncGroupSelectStates() {
     document.querySelectorAll('.group-select-all').forEach(groupCheck => {
@@ -1135,8 +1142,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Group Select All (per proyek + periode): centang semua payroll draft
-    // dalam satu grup (baris karyawan di bawah header grup).
+    // Group Select All (per proyek + periode): centang semua payroll
+    // (draft maupun paid) dalam satu grup.
     document.querySelectorAll('.group-select-all').forEach(groupCheck => {
         groupCheck.addEventListener('change', function() {
             const index = this.dataset.groupIndex;

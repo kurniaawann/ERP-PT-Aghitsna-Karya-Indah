@@ -47,7 +47,7 @@ return new class extends Migration
         //
         // idx_pay_status
         // Digunakan oleh: PayrollService → WHERE status = 'draft' di
-        //   bulkPayPayrolls() dan deleteDraftPayrolls()
+        //   bulkPayPayrolls()
         // Alasan: Status adalah filter kedua yang paling sering dipakai.
         Schema::table('payrolls', function (Blueprint $table) {
             $table->index('created_by', 'idx_pay_created_by');

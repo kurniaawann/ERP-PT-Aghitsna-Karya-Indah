@@ -268,13 +268,13 @@ class PayrollController extends Controller
     }
 
     /**
-     * Menghapus data payroll draft yang dipilih secara massal.
+     * Menghapus data payroll yang dipilih secara massal (draft maupun paid).
      */
     public function destroy(Request $request)
     {
         $ids = $request->input('ids');
 
-        $result = $this->payrollService->deleteDraftPayrolls($ids);
+        $result = $this->payrollService->deletePayrolls($ids);
 
         if ($result['success']) {
             return redirect()->route('payroll.index')->with('success', $result['message']);

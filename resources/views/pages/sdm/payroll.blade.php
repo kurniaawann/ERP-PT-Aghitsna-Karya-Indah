@@ -127,7 +127,7 @@
         {{-- ============================================================
              SECTION: Table
              Menampilkan daftar payroll dengan checkbox seleksi massal
-             (hanya payroll draft yang dapat dihapus/dibayar).
+             (draft maupun paid dapat dipilih & dihapus).
              ============================================================ --}}
         {{-- Table Component --}}
         @include('components.sdm.payroll.table', ['payrollGroups' => $payrollGroups])
@@ -146,8 +146,8 @@
          - generate-modal : wizard generate payroll (validasi absensi dulu).
          - edit-modal     : modal edit payroll draft (loop, hanya status draft).
          - detail-modal   : modal detail read-only (loop).
-         - deleteModal    : konfirmasi hapus massal (hanya draft).
-         - bulkPayModal   : konfirmasi bayar massal (PATCH).
+         - deleteModal    : konfirmasi hapus massal (draft maupun paid).
+         - bulkPayModal   : konfirmasi bayar massal (PATCH, hanya draft).
          ============================================================ --}}
     {{-- Modal Generate Payroll --}}
     @include('components.sdm.payroll.generate-modal', ['executives' => $executives])
@@ -167,7 +167,7 @@
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
 
-        (Hanya payroll dengan status Draft yang dapat dihapus)
+        (Payroll paid akan otomatis menghapus juga entri "Upah Pekerja" terkait di Laporan Keuangan)
     </x-modal>
 
     {{-- Modal Konfirmasi Bulk Pay --}}
