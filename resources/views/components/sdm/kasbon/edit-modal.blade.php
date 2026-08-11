@@ -47,15 +47,25 @@
 
     {{-- Pilihan Proyek (Tim, satu proyek sesuai data yang sudah ada) --}}
     <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_project_field" style="display: none;">
-        <x-forms.searchable-select
-            name="project_names[]"
-            id="edit_{{ $kasbon->kasbon_code }}_project"
-            label="Proyek"
-            :required="true"
-            placeholder="Cari proyek..."
-            :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()"
-            :selected="$kasbon->project_names[0] ?? ''" />
-        <p class="text-xs text-text-secondary mt-1">Kasbon divisi otomatis lunas saat payroll proyek tersebut dibayar (tidak bisa dicicil).</p>
+        <div class="kasbon-project-section">
+            <div class="flex items-center justify-between cursor-pointer select-none kasbon-project-toggle mb-1"
+                onclick="toggleKasbonProjectSection(this)">
+                <span class="text-text-primary text-sm font-medium">Proyek <span class="text-error">*</span></span>
+                <i class="fa-solid fa-chevron-down kasbon-project-chevron text-xs text-text-secondary"></i>
+            </div>
+            <div class="kasbon-project-body hidden">
+                <x-forms.searchable-select
+                    name="project_names[]"
+                    id="edit_{{ $kasbon->kasbon_code }}_project"
+                    label=""
+                    invalidMessage="Proyek"
+                    :required="true"
+                    placeholder="Cari proyek..."
+                    :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()"
+                    :selected="$kasbon->project_names[0] ?? ''" />
+            </div>
+            <p class="text-xs text-text-secondary mt-1">Kasbon divisi otomatis lunas saat payroll proyek tersebut dibayar (tidak bisa dicicil).</p>
+        </div>
     </div>
 
     {{-- Tanggal Kasbon (untuk personal & tim) --}}

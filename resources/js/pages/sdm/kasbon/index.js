@@ -73,6 +73,32 @@ window.formatCurrencyInput = function (input) {
 // ==========================================
 
 /**
+ * Membuka/menutup (collapse/expand) bagian pemilihan Proyek pada form
+ * Tambah/Edit kasbon tim.
+ *
+ * Header ".kasbon-project-toggle" berisi label "Proyek *" dan chevron:
+ * - tertutup → chevron menghadap ke bawah (fa-chevron-down), seluruh isi
+ *   (cari proyek, jumlah kasbon, periode kasbon, catatan) disembunyikan
+ * - terbuka  → chevron menghadap ke atas (fa-chevron-up), isi ditampilkan
+ *
+ * Ditugaskan ke window karena dipanggil dari atribut onclick inline pada
+ * template Blade (Vite memuat JS sebagai ES module, bukan global).
+ *
+ * @param {HTMLElement} header - Elemen header section/baris proyek yang diklik.
+ */
+window.toggleKasbonProjectSection = function (header) {
+    const section = header ? header.closest('.kasbon-project-section, .kasbon-project-row') : null;
+    const body = section ? section.querySelector('.kasbon-project-body') : null;
+    const chevron = header ? header.querySelector('.kasbon-project-chevron') : null;
+
+    if (body) body.classList.toggle('hidden');
+    if (chevron) {
+        chevron.classList.toggle('fa-chevron-down');
+        chevron.classList.toggle('fa-chevron-up');
+    }
+};
+
+/**
  * Menambah/menghapus atribut required pada sebuah elemen.
  *
  * @param {string} elementId - ID elemen.

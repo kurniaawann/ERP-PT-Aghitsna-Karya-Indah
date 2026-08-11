@@ -20,6 +20,7 @@
     'options' => [],
     'selected' => '',
     'extraData' => [],
+    'invalidMessage' => '',
 ])
 
 @php
@@ -43,7 +44,7 @@
             placeholder="{{ $placeholder }}" autocomplete="off"
             @if ($required) required @endif
             value="{{ $selected ? (collect($options)->firstWhere('value', $selected)['label'] ?? '') : '' }}"
-            oninvalid="this.setCustomValidity('{{ $label }} tidak boleh kosong')"
+            oninvalid="this.setCustomValidity('{{ $invalidMessage ?: $label }} tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
 
         <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>

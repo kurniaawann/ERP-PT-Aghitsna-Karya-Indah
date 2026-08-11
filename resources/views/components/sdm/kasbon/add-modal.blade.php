@@ -104,36 +104,45 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <x-forms.searchable-select
-                name="projects[0][project]"
-                id="add_project_select_0"
-                label="Proyek"
-                :required="true"
-                placeholder="Cari proyek..."
-                :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()" />
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
-                    <input type="text" inputmode="numeric" name="projects[0][amount]"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-amount-input"
-                        placeholder="Masukkan jumlah" min="1000" step="1000" oninput="formatCurrencyInput(this)">
-                </div>
-                <div>
-                    <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
-                    <input type="date" name="projects[0][kasbon_date]"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-project-date"
-                        value="{{ date('Y-m-d') }}" onchange="resolveProjectPeriod(this)">
-                </div>
+            <div class="flex items-center justify-between cursor-pointer select-none kasbon-project-toggle mb-1"
+                onclick="toggleKasbonProjectSection(this)">
+                <span class="text-text-primary text-sm font-medium">Proyek <span class="text-error">*</span></span>
+                <i class="fa-solid fa-chevron-up kasbon-project-chevron text-xs text-text-secondary"></i>
             </div>
 
-            <input type="hidden" name="projects[0][period_start_date]" class="kasbon-project-period-start" value="">
-            <input type="hidden" name="projects[0][period_end_date]" class="kasbon-project-period-end" value="">
+            <div class="kasbon-project-body">
+                <x-forms.searchable-select
+                    name="projects[0][project]"
+                    id="add_project_select_0"
+                    label=""
+                    invalidMessage="Proyek"
+                    :required="true"
+                    placeholder="Cari proyek..."
+                    :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()" />
 
-            <div class="mt-3">
-                <label class="block text-text-primary mb-1">Catatan</label>
-                <textarea name="projects[0][notes]" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                    rows="2" maxlength="500" placeholder="Catatan tambahan"></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
+                        <input type="text" inputmode="numeric" name="projects[0][amount]"
+                            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-amount-input"
+                            placeholder="Masukkan jumlah" min="1000" step="1000" oninput="formatCurrencyInput(this)">
+                    </div>
+                    <div>
+                        <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
+                        <input type="date" name="projects[0][kasbon_date]"
+                            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-project-date"
+                            value="{{ date('Y-m-d') }}" onchange="resolveProjectPeriod(this)">
+                    </div>
+                </div>
+
+                <input type="hidden" name="projects[0][period_start_date]" class="kasbon-project-period-start" value="">
+                <input type="hidden" name="projects[0][period_end_date]" class="kasbon-project-period-end" value="">
+
+                <div class="mt-3">
+                    <label class="block text-text-primary mb-1">Catatan</label>
+                    <textarea name="projects[0][notes]" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                        rows="2" maxlength="500" placeholder="Catatan tambahan"></textarea>
+                </div>
             </div>
         </div>
     </template>
