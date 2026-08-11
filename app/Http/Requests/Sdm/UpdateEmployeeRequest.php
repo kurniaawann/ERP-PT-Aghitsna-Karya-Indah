@@ -34,6 +34,7 @@ class UpdateEmployeeRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'position' => 'nullable|string|max:100',
             'daily_wage' => 'required|integer|min:0',
             'division' => 'required|string|max:100',
             'project_name' => 'nullable|string|max:255',

@@ -16,6 +16,12 @@
     </div>
 
     <div class="mb-3">
+        <label class="block text-text-primary mb-1">Jabatan <span class="text-text-tertiary text-sm">(Opsional)</span></label>
+        <input type="text" name="position" class="w-full border rounded p-2" placeholder="Masukkan jabatan (opsional)"
+            value="{{ $employee->position }}" maxlength="100">
+    </div>
+
+    <div class="mb-3">
         <label class="block text-text-primary mb-1">Upah Per Hari <span class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="daily_wage" class="w-full border rounded p-2 daily-wage-input"
             placeholder="Masukkan upah per hari" value="{{ $employee->daily_wage }}" required min="0">
