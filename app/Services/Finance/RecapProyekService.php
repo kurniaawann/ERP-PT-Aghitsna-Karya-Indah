@@ -210,8 +210,10 @@ class RecapProyekService
      * Rekap proyek tidak boleh dihapus bila masih direferensikan agar tidak
      * meninggalkan data yatim (sinkronisasi data). Referensi yang dicek (semua
      * dibatasi ke user yang sama dengan pemilik rekap):
-     * - Laporan Keuangan Proyek yang masih punya baris transaksi
-     *   (project_financial_reports + project_financial_report_items)
+     * - Laporan Keuangan Proyek yang masih punya baris transaksi manual
+     *   (project_financial_reports + project_financial_report_items selain
+     *   item turunan bukti pembayaran — item bukti pembayaran ikut terhapus
+     *   saat rekap dihapus, jadi tidak memblokir)
      * - Payroll (payrolls.project_name)
      * - Kasbon (kasbons.project_names — JSON berisi nama proyek)
      * - Karyawan (employees.project_name)
@@ -235,12 +237,19 @@ class RecapProyekService
         // laporan masih memiliki baris transaksi (data nyata). Laporan kosong
         // (tanpa item) adalah scaffolding yang boleh ikut terhapus saat rekap
         // dihapus — jadi tidak memblokir penghapusan.
+        //
+        // Pengecualian: item yang berasal dari bukti pembayaran (payment_proof_id
+        // terisi) TIDAK memblokir. Saat rekap proyek dihapus, semua bukti
+        // pembayarannya ikut terhapus di modul Bukti Pembayaran beserta item
+        // laporan turunannya (ProjectRecapObserver + PaymentProofObserver),
+        // sehingga tidak ada data yatim yang ditinggalkan.
         $reportRecapIds = DB::table('project_financial_reports as r')
             ->whereIn('r.project_recap_id', $recaps->pluck('id'))
             ->whereExists(function ($query) {
                 $query->selectRaw('1')
                     ->from('project_financial_report_items as i')
-                    ->whereColumn('i.project_financial_report_id', 'r.id');
+                    ->whereColumn('i.project_financial_report_id', 'r.id')
+                    ->whereNull('i.payment_proof_id');
             })
             ->pluck('r.project_recap_id')
             ->all();
