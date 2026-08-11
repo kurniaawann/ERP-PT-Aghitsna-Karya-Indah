@@ -12,6 +12,8 @@
  * - Penanganan pengiriman formulir dengan status memuat
  */
 
+import { initAllProjectDropdowns } from '../../../components/project-dropdown.js';
+
 // ==========================================
 // KONFIGURASI
 // ==========================================
@@ -658,4 +660,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof window.initSearchableMultiSelects === 'function') {
         window.initSearchableMultiSelects();
     }
+
+    initAllProjectDropdowns();
 });

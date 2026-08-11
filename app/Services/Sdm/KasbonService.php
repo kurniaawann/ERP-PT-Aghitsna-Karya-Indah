@@ -59,6 +59,7 @@ class KasbonService
         ?string $status,
         ?string $type,
         ?string $paymentStatus = null,
+        ?string $projectName = null,
         int $perPage = 10
     ): LengthAwarePaginator {
         return Kasbon::with('employee')
@@ -69,6 +70,9 @@ class KasbonService
                 $query->where(function ($q) use ($escapedSearch) {
                     $q->where('kasbon_code', 'like', "%{$escapedSearch}%")
                         ->orWhere('notes', 'like', "%{$escapedSearch}%")
+                        // project_names adalah kolom JSON: LIKE langsung case-sensitive,
+                        // jadi dibandingkan dalam bentuk huruf kecil di kedua sisi.
+                        ->orWhereRaw('LOWER(project_names) LIKE ?', ['%'.mb_strtolower($escapedSearch).'%'])
                         ->orWhereHas('employee', function ($empQuery) use ($escapedSearch) {
                             $empQuery->where('name', 'like', "%{$escapedSearch}%");
                         });
@@ -79,10 +83,11 @@ class KasbonService
             ->when($status, fn ($query, $status) => $query->where('status', $status))
             ->when($type, fn ($query, $type) => $query->where('kasbon_type', $type))
             ->when($paymentStatus, fn ($query, $paymentStatus) => $query->where('payment_status', $paymentStatus))
+            ->when($projectName, fn ($query, $projectName) => $query->whereJsonContains('project_names', $projectName))
             ->latest('kasbon_date')
             ->latest('created_at')
             ->paginate($perPage)
-            ->appends(request()->only(['search', 'month', 'year', 'status', 'type', 'payment_status']));
+            ->appends(request()->only(['search', 'month', 'year', 'status', 'type', 'payment_status', 'project_name']));
     }
 
     /**

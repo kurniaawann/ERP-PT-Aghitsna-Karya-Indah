@@ -45,47 +45,67 @@
         {{-- ============================================================
              SECTION: Filter / Toolbar
              Form filter lengkap (bulan, tahun, status, payment_status,
-             jenis, pencarian) yang auto-submit saat berubah, plus tombol
-             reset dan tombol aksi tambah/hapus.
+             jenis, proyek, pencarian) yang auto-submit saat berubah, plus
+             tombol reset dan tombol aksi tambah/hapus.
              ============================================================ --}}
         {{-- Pencarian, Filter & Tombol Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Filter & Pencarian --}}
             <form method="GET" action="{{ route('kasbon.index') }}" id="filterForm"
-                class="w-full min-[1600px]:w-auto min-[1600px]:flex-1 flex flex-col min-[1600px]:flex-row gap-3">
+                class="w-full min-[1600px]:w-auto min-[1600px]:flex-1 flex flex-col min-[1600px]:flex-row flex-wrap gap-3">
 
+                {{-- Filter Bulan --}}
                 <x-filters.month-filter :value="request('month')" responsive="custom" fill onchange="document.getElementById('filterForm').submit()" />
+
+                {{-- Filter Tahun --}}
                 <x-filters.year-filter :value="request('year')" responsive="custom" fill onchange="document.getElementById('filterForm').submit()" />
 
                 {{-- Filter Status --}}
-                <select name="status" onchange="document.getElementById('filterForm').submit()"
-                    class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                    <option value="">Semua Status</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Belum Dipotong</option>
-                    <option value="deducted" {{ request('status') == 'deducted' ? 'selected' : '' }}>Sudah Dipotong</option>
-                </select>
+                <div class="flex-1">
+                    <label for="status-select" class="sr-only">Status</label>
+                    <select name="status" id="status-select" onchange="document.getElementById('filterForm').submit()"
+                        class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                        <option value="">Semua Status</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Belum Dipotong</option>
+                        <option value="deducted" {{ request('status') == 'deducted' ? 'selected' : '' }}>Sudah Dipotong</option>
+                    </select>
+                </div>
 
                 {{-- Filter Status Pembayaran --}}
-                <select name="payment_status" onchange="document.getElementById('filterForm').submit()"
-                    class="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                    <option value="">Semua Pembayaran</option>
-                    <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>Belum Dibayar</option>
-                    <option value="partial" {{ request('payment_status') == 'partial' ? 'selected' : '' }}>Cicilan Berjalan</option>
-                    <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>Lunas</option>
-                </select>
+                <div class="flex-1">
+                    <label for="payment_status-select" class="sr-only">Status Pembayaran</label>
+                    <select name="payment_status" id="payment_status-select" onchange="document.getElementById('filterForm').submit()"
+                        class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                        <option value="">Semua Pembayaran</option>
+                        <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>Belum Dibayar</option>
+                        <option value="partial" {{ request('payment_status') == 'partial' ? 'selected' : '' }}>Cicilan Berjalan</option>
+                        <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>Lunas</option>
+                    </select>
+                </div>
 
                 {{-- Filter Jenis --}}
-                <select name="type" onchange="document.getElementById('filterForm').submit()"
-                    class="border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                    <option value="">Semua Jenis</option>
-                    <option value="personal" {{ request('type') == 'personal' ? 'selected' : '' }}>Per Orang</option>
-                    <option value="team" {{ request('type') == 'team' ? 'selected' : '' }}>Per Tim</option>
-                </select>
+                <div class="flex-1">
+                    <label for="type-select" class="sr-only">Jenis</label>
+                    <select name="type" id="type-select" onchange="document.getElementById('filterForm').submit()"
+                        class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                        <option value="">Semua Jenis</option>
+                        <option value="personal" {{ request('type') == 'personal' ? 'selected' : '' }}>Per Orang</option>
+                        <option value="team" {{ request('type') == 'team' ? 'selected' : '' }}>Per Tim</option>
+                    </select>
+                </div>
 
+                {{-- Filter Proyek --}}
+                {{-- Dropdown searchable (10 item per load) mengambil data proyek
+                     dari Rekap Proyek; memilih proyek otomatis submit form. --}}
+                <x-filters.project-filter :route="route('employee.projects-dropdown')"
+                    :value="request('project_name')" fill responsive="custom" dropdown-id="filter_project_name"
+                    :auto-submit="true" />
+
+                {{-- Pencarian --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari kasbon..." responsive="custom" />
 
                 {{-- Tombol Reset Filter --}}
-                @if (request()->hasAny(['search', 'month', 'year', 'status', 'type', 'payment_status']))
+                @if (request()->hasAny(['search', 'month', 'year', 'status', 'type', 'payment_status', 'project_name']))
                     <a href="{{ route('kasbon.index') }}"
                         class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
                         <i class="fa-solid fa-rotate-left mr-2"></i>

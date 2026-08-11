@@ -180,6 +180,31 @@ class PayrollService
             $draftCount = $group->where('status', 'draft')->count();
             $paidCount = $group->where('status', 'paid')->count();
 
+            // Kasbon grup = total kasbon TIM/divisi yang terkait dengan proyek
+            // + periode ini (kasbon perorangan tidak dihitung di sini; potongan
+            // perorangan tetap tampil pada baris "Potongan Kasbon" per karyawan).
+            $teamKasbonTotal = 0;
+            if (! empty($first->project_name) && $first->period_start_date) {
+                $periodStart = Carbon::parse($first->period_start_date);
+                $periodEnd = $first->period_end_date
+                    ? Carbon::parse($first->period_end_date)
+                    : $periodStart->copy();
+                $periodStartStr = $periodStart->format('Y-m-d');
+                $periodEndStr = $periodEnd->format('Y-m-d');
+
+                $teamKasbonTotal = (int) Kasbon::where('kasbon_type', 'team')
+                    ->where('created_by', $first->created_by)
+                    ->whereJsonContains('project_names', trim($first->project_name))
+                    ->where(function ($query) use ($periodStartStr, $periodEndStr) {
+                        $query->whereBetween('kasbon_date', [$periodStartStr, $periodEndStr])
+                            ->orWhere(function ($query) use ($periodStartStr, $periodEndStr) {
+                                $query->whereDate('period_start_date', '<=', $periodEndStr)
+                                    ->whereDate('period_end_date', '>=', $periodStartStr);
+                            });
+                    })
+                    ->sum('amount');
+            }
+
             return [
                 'project_name' => $first->project_name ?: 'Tanpa Proyek',
                 'period_start_date' => $first->period_start_date,
@@ -194,7 +219,7 @@ class PayrollService
                 'total_net' => (int) $group->sum('net_salary'),
                 'total_base' => (int) $group->sum('base_salary'),
                 'total_overtime' => (int) $group->sum('overtime_total'),
-                'total_kasbon' => (int) $group->sum('kasbon_deduction'),
+                'total_kasbon' => $teamKasbonTotal,
             ];
         })->values();
     }
@@ -1037,12 +1062,23 @@ class PayrollService
             ? Carbon::parse($firstPayroll->period_end_date)
             : $periodStart->copy();
 
+        $periodStartStr = $periodStart->format('Y-m-d');
+        $periodEndStr = $periodEnd ? $periodEnd->format('Y-m-d') : $periodStartStr;
+
         $matchingKasbons = Kasbon::where('kasbon_type', 'team')
             ->where('created_by', $firstPayroll->created_by)
             ->whereJsonContains('project_names', trim($firstPayroll->project_name))
             ->where('payment_status', '!=', 'paid')
-            ->whereDate('period_start_date', '<=', $periodEnd->format('Y-m-d'))
-            ->whereDate('period_end_date', '>=', $periodStart->format('Y-m-d'))
+            ->where(function ($query) use ($periodStartStr, $periodEndStr) {
+                // Kasbon tim dicocokkan berdasarkan kasbon_date (tanggal yang
+                // dipilih user) yang jatuh di dalam periode payroll ATAU periode
+                // tersimpan kasbon yang beririsan dengan periode payroll.
+                $query->whereBetween('kasbon_date', [$periodStartStr, $periodEndStr])
+                    ->orWhere(function ($query) use ($periodStartStr, $periodEndStr) {
+                        $query->whereDate('period_start_date', '<=', $periodEndStr)
+                            ->whereDate('period_end_date', '>=', $periodStartStr);
+                    });
+            })
             ->get();
 
         foreach ($matchingKasbons as $kasbon) {

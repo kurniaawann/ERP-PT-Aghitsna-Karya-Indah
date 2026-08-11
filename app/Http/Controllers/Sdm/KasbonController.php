@@ -53,7 +53,8 @@ class KasbonController extends Controller
             $request->input('year') ? (int) $request->input('year') : null,
             $request->input('status'),
             $request->input('type'),
-            $request->input('payment_status')
+            $request->input('payment_status'),
+            $request->input('project_name')
         );
 
         $employees = $this->kasbonService->getAllEmployees();

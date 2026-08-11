@@ -86,6 +86,13 @@
                                             {{ 'Rp ' . number_format($group['total_net'], 0, ',', '.') }}
                                         </span>
 
+                                        @if (($group['total_kasbon'] ?? 0) > 0)
+                                            <span class="text-xs text-text-label">Kasbon:</span>
+                                            <span class="font-semibold text-error text-sm">
+                                                {{ 'Rp ' . number_format($group['total_kasbon'], 0, ',', '.') }}
+                                            </span>
+                                        @endif
+
                                         {{-- Status ringkas grup --}}
                                         @if ($group['paid_count'] === 0)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
