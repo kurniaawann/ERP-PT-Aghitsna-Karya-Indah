@@ -987,11 +987,22 @@ class PayrollService
                 // Entri Laporan Keuangan dibuat AGREGAT: satu baris "Upah Kerja"
                 // per proyek + periode (bukan per karyawan). Bila proyek belum
                 // memiliki Rekap Proyek, entri dilewati dan dicatat peringatan.
+                //
+                // Rekap Proyek dicari di antara rekap MILIK pembuat payroll
+                // (created_by) — bukan nama proyek global — agar jika ada dua
+                // user memakai nama proyek yang sama, entri tidak tersangkut ke
+                // rekap/laporan user lain.
                 foreach ($paidByProject as $projectName => $projectPayrolls) {
-                    $recap = ProjectRecap::whereRaw(
-                        'LOWER(project_name) = ?',
-                        [mb_strtolower(trim($projectName))]
-                    )->first();
+                    $firstPayroll = is_array($projectPayrolls)
+                        ? reset($projectPayrolls)
+                        : $projectPayrolls->first();
+
+                    $recap = ProjectRecap::where('created_by', $firstPayroll->created_by)
+                        ->whereRaw(
+                            'LOWER(project_name) = ?',
+                            [mb_strtolower(trim($projectName))]
+                        )
+                        ->first();
 
                     if (! $recap) {
                         $skippedRecaps[] = $projectName;

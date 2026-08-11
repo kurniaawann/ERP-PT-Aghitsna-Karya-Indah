@@ -485,7 +485,9 @@ class ProjectFinancialReportService
             return;
         }
 
-        $recap = ProjectRecap::whereRaw('LOWER(project_name) = ?', [mb_strtolower(trim($projectName))])->first();
+        $recap = ProjectRecap::where('created_by', $userId)
+            ->whereRaw('LOWER(project_name) = ?', [mb_strtolower(trim($projectName))])
+            ->first();
 
         if (! $recap) {
             return;
@@ -696,7 +698,9 @@ class ProjectFinancialReportService
             return;
         }
 
-        $recap = ProjectRecap::whereRaw('LOWER(project_name) = ?', [mb_strtolower(trim($projectName))])->first();
+        $recap = ProjectRecap::where('created_by', $userId)
+            ->whereRaw('LOWER(project_name) = ?', [mb_strtolower(trim($projectName))])
+            ->first();
 
         if (! $recap) {
             return;
