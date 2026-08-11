@@ -14,7 +14,7 @@
                 <p class="font-semibold mb-1">Informasi Kasbon:</p>
                 <ul class="list-disc list-inside space-y-1">
                     <li><strong>Personal:</strong> Kasbon untuk 1 orang karyawan (otomatis dipotong saat generate payroll)</li>
-                    <li><strong>Tim:</strong> Kasbon untuk divisi tertentu (direkap di cetakan payroll, tidak dipotong per karyawan)</li>
+                    <li><strong>Tim:</strong> Kasbon untuk divisi tertentu, diisi per proyek. Setiap proyek disimpan sebagai kasbon terpisah (otomatis lunas saat payroll proyek tersebut dibayar)</li>
                 </ul>
             </div>
         </div>
@@ -46,6 +46,34 @@
         </select>
     </div>
 
+    {{-- Detail Kasbon (Personal) --}}
+    <div id="add_kasbon_detail_field" style="display: none;">
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
+            <input type="text" inputmode="numeric" name="amount" id="add_amount"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-amount-input"
+                placeholder="Masukkan jumlah kasbon" min="1000" step="1000">
+        </div>
+
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
+            <input type="date" name="kasbon_date" id="add_kasbon_date"
+                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                value="{{ date('Y-m-d') }}" onchange="checkMaxKasbon('add')">
+        </div>
+
+        {{-- Bidang Tersembunyi (dihapus otomatis dari tanggal periode) --}}
+        <input type="hidden" name="week_number" id="add_week_number" value="">
+        <input type="hidden" name="period_start_date" id="add_period_start_date" value="">
+        <input type="hidden" name="period_end_date" id="add_period_end_date" value="">
+
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Catatan</label>
+            <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                placeholder="Catatan tambahan" rows="3" maxlength="500"></textarea>
+        </div>
+    </div>
+
     {{-- Pilihan Divisi (Tim) --}}
     <div class="mb-3" id="add_division_field" style="display: none;">
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
@@ -58,32 +86,55 @@
         </select>
     </div>
 
-    {{-- Input Jumlah --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
-        <input type="text" inputmode="numeric" name="amount" id="add_amount"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-amount-input"
-            placeholder="Masukkan jumlah kasbon" required min="1000" step="1000">
+    {{-- Proyek & Detail per Proyek (Tim, dinamis) --}}
+    <div class="mb-3" id="add_project_field" style="display: none;">
+        <div id="add_project_rows"></div>
+        <button type="button" id="add_project_row_btn"
+            class="w-full py-2 border border-dashed border-border-strong rounded-lg text-sm text-primary hover:bg-primary-light transition">
+            <i class="fa-solid fa-plus mr-1"></i> Tambah Proyek
+        </button>
+        <p class="text-xs text-text-secondary mt-2">Setiap proyek disimpan sebagai kasbon terpisah dan otomatis lunas saat payroll proyek tersebut dibayar.</p>
     </div>
 
-    {{-- Periode Kasbon --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
-        <input type="date" name="kasbon_date" id="add_kasbon_date"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            value="{{ date('Y-m-d') }}" required oninvalid="this.setCustomValidity('Periode kasbon tidak boleh kosong')"
-            oninput="this.setCustomValidity('')" onchange="checkMaxKasbon('add')">
-    </div>
+    {{-- Template Baris Proyek (Tim) --}}
+    <template id="add_project_row_template">
+        <div class="kasbon-project-row mb-4 p-3 border border-border-light rounded-lg bg-surface-base relative">
+            <button type="button" class="remove-project-row absolute top-2 right-2 text-error hover:opacity-70 text-sm"
+                title="Hapus proyek">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
 
-    {{-- Bidang Tersembunyi (dihapus otomatis dari tanggal periode) --}}
-    <input type="hidden" name="week_number" id="add_week_number" value="">
-    <input type="hidden" name="period_start_date" id="add_period_start_date" value="">
-    <input type="hidden" name="period_end_date" id="add_period_end_date" value="">
+            <x-forms.searchable-select
+                name="projects[0][project]"
+                id="add_project_select_0"
+                label="Proyek"
+                :required="true"
+                placeholder="Cari proyek..."
+                :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()" />
 
-    {{-- Catatan --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Catatan</label>
-        <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Catatan tambahan" rows="3" maxlength="500"></textarea>
-    </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
+                    <input type="text" inputmode="numeric" name="projects[0][amount]"
+                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-amount-input"
+                        placeholder="Masukkan jumlah" min="1000" step="1000" oninput="formatCurrencyInput(this)">
+                </div>
+                <div>
+                    <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
+                    <input type="date" name="projects[0][kasbon_date]"
+                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input kasbon-project-date"
+                        value="{{ date('Y-m-d') }}" onchange="resolveProjectPeriod(this)">
+                </div>
+            </div>
+
+            <input type="hidden" name="projects[0][period_start_date]" class="kasbon-project-period-start" value="">
+            <input type="hidden" name="projects[0][period_end_date]" class="kasbon-project-period-end" value="">
+
+            <div class="mt-3">
+                <label class="block text-text-primary mb-1">Catatan</label>
+                <textarea name="projects[0][notes]" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+                    rows="2" maxlength="500" placeholder="Catatan tambahan"></textarea>
+            </div>
+        </div>
+    </template>
 </x-modal>

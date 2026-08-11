@@ -266,8 +266,10 @@
                 {{-- Item Transaksi --}}
                 @foreach ($categoryItems as $item)
                     @php
-                        $inc = $item->income_amount ?? 0;
-                        $exp = $item->expense_amount ?? 0;
+                        // Baris informasi (kasbon personal) hanya keterangan,
+                        // tidak memengaruhi subtotal kategori maupun saldo berjalan.
+                        $inc = $item->is_informational ? 0 : ($item->income_amount ?? 0);
+                        $exp = $item->is_informational ? 0 : ($item->expense_amount ?? 0);
                         $categoryIncome += $inc;
                         $categoryExpense += $exp;
                         $runningBalance += ($inc - $exp);
@@ -278,7 +280,12 @@
                         <td class="text-center">
                             {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '' }}
                         </td>
-                        <td>{{ $item->description ?? '' }}</td>
+                        <td>
+                            {{ $item->description ?? '' }}
+                            @if ($item->is_informational)
+                                <span style="font-style: italic; color: #555;">(informasi)</span>
+                            @endif
+                        </td>
                         <td class="text-right text-green">
                             {{ $inc ? number_format($inc, 0, ',', '.') : '' }}
                         </td>
@@ -286,7 +293,7 @@
                             {{ $exp ? number_format($exp, 0, ',', '.') : '' }}
                         </td>
                         <td class="text-right">
-                            {{ number_format($runningBalance, 0, ',', '.') }}
+                            {{ $item->is_informational ? '' : number_format($runningBalance, 0, ',', '.') }}
                         </td>
                         <td class="text-center">{{ $item->keterangan_bon ?? '' }}</td>
                     </tr>

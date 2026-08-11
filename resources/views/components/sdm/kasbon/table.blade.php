@@ -18,8 +18,9 @@
                                     class="rounded border-border text-primary focus:ring-primary">
                             </th>
                             <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Kode</th>
-                            <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Karyawan</th>
+                            <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Karyawan/Divisi</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Jenis</th>
+                            <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Proyek</th>
                             <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Jumlah</th>
                             <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Sisa Hutang</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Progress</th>
@@ -36,7 +37,7 @@
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="selected_kasbons[]" value="{{ $kasbon->kasbon_code }}"
                                         class="row-checkbox w-4 h-4 accent-primary cursor-pointer"
-                                        {{ $kasbon->status === 'deducted' ? 'disabled' : '' }}>
+                                        {{ $kasbon->status === 'deducted' || $kasbon->live_payroll_payments_count > 0 ? 'disabled' : '' }}>
                                 </td>
 
                                 {{-- Kode Kasbon --}}
@@ -66,6 +67,18 @@
                                     </span>
                                 </td>
 
+                                {{-- Proyek (kasbon divisi ber-proyek) --}}
+                                <td class="p-2 text-sm text-text-primary">
+                                    @if ($kasbon->kasbon_type === 'team' && ! empty($kasbon->project_names))
+                                        <div class="flex flex-col">
+                                            <span class="font-medium">{{ implode(', ', $kasbon->project_names) }}</span>
+                                            <span class="text-xs text-text-label">Otomatis lunas saat payroll dibayar</span>
+                                        </div>
+                                    @else
+                                        <span class="text-text-label italic">-</span>
+                                    @endif
+                                </td>
+
                                 {{-- Jumlah --}}
                                 <td class="p-2 text-right text-sm font-medium text-text-primary">
                                     {{ $kasbon->formatted_amount }}
@@ -73,7 +86,9 @@
 
                                 {{-- Sisa Hutang --}}
                                 <td class="p-2 text-right text-sm text-text-primary">
-                                    @if ($kasbon->payment_status === 'paid')
+                                    @if ($kasbon->kasbon_type === 'team')
+                                        <span class="text-text-label">-</span>
+                                    @elseif ($kasbon->payment_status === 'paid')
                                         <span class="text-success font-medium">Rp 0</span>
                                     @else
                                         <span class="font-medium {{ $kasbon->remaining_amount > 0 ? 'text-error' : 'text-success' }}">
@@ -84,16 +99,20 @@
 
                                 {{-- Progress --}}
                                 <td class="p-2 text-center">
-                                    <div class="w-full max-w-[80px] mx-auto">
-                                        <div class="flex justify-between text-xs mb-1">
-                                            <span class="text-text-label">{{ $kasbon->progress_percentage }}%</span>
+                                    @if ($kasbon->kasbon_type === 'team')
+                                        <span class="text-text-label">-</span>
+                                    @else
+                                        <div class="w-full max-w-[80px] mx-auto">
+                                            <div class="flex justify-between text-xs mb-1">
+                                                <span class="text-text-label">{{ $kasbon->progress_percentage }}%</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div class="h-2 rounded-full transition-all duration-300
+                                                    {{ $kasbon->payment_status === 'paid' ? 'bg-success' : ($kasbon->payment_status === 'partial' ? 'bg-primary' : 'bg-warning') }}"
+                                                    style="width: {{ $kasbon->progress_percentage }}%"></div>
+                                            </div>
                                         </div>
-                                        <div class="w-full bg-gray-200 rounded-full h-2">
-                                            <div class="h-2 rounded-full transition-all duration-300
-                                                {{ $kasbon->payment_status === 'paid' ? 'bg-success' : ($kasbon->payment_status === 'partial' ? 'bg-primary' : 'bg-warning') }}"
-                                                style="width: {{ $kasbon->progress_percentage }}%"></div>
-                                        </div>
-                                    </div>
+                                    @endif
                                 </td>
 
                                 {{-- Lencana Status Pembayaran --}}
@@ -111,7 +130,7 @@
                                 {{-- Tombol Aksi --}}
                                 <td class="p-2 text-center text-sm">
                                     <div class="flex justify-center gap-2">
-                                        @if ($kasbon->payment_status !== 'paid')
+                                        @if ($kasbon->payment_status !== 'paid' && ! ($kasbon->kasbon_type === 'team' && ! empty($kasbon->project_names)))
                                             <button type="button"
                                                 onclick="openPayModal('{{ $kasbon->kasbon_code }}', '{{ $kasbon->formatted_amount }}', '{{ $kasbon->formatted_remaining_amount }}', {{ $kasbon->remaining_amount }})"
                                                 class="flex items-center gap-1 bg-success hover:bg-success-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
@@ -120,7 +139,7 @@
                                                 Bayar
                                             </button>
                                         @endif
-                                        @if ($kasbon->status === 'pending')
+                                        @if ($kasbon->status === 'pending' && $kasbon->payment_status === 'unpaid')
                                             <button type="button"
                                                 onclick="openModal('editModal{{ $kasbon->kasbon_code }}')"
                                                 class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
@@ -134,7 +153,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-8 text-center text-text-label">
+                                <td colspan="10" class="px-6 py-8 text-center text-text-label">
                                     <i class="fa-solid fa-inbox text-4xl mb-2 text-border"></i>
                                     <p>Tidak ada data kasbon</p>
                                 </td>

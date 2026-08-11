@@ -77,6 +77,36 @@ function initSearchableMultiSelects(container) {
         const selectedValues = new Map();
         var isSelectAllInProgress = false;
 
+        // Preseleksi: nilai awal dari atribut data-selected (mis. saat edit).
+        // Nilai yang tidak ada pada daftar opsi tetap dirender sebagai tag.
+        try {
+            const preselected = JSON.parse(wrapper.dataset.selected || '[]');
+            if (Array.isArray(preselected)) {
+                preselected.forEach(function (value) {
+                    if (value === '' || value === null || value === undefined) return;
+                    let matched = null;
+                    individualOptions.forEach(function (option) {
+                        const checkbox = option.querySelector('.searchable-multi-checkbox');
+                        if (checkbox && checkbox.value === value && !matched) {
+                            checkbox.checked = true;
+                            matched = option;
+                        }
+                    });
+                    const label = matched?.dataset?.label || value;
+                    selectedValues.set(value, label);
+                });
+            }
+        } catch (e) {
+            // abaikan data-selected yang tidak valid
+        }
+
+        // Render tag & hidden input untuk preseleksi (dan perbarui select-all).
+        if (selectedValues.size > 0) {
+            renderTags();
+            renderHiddenInputs();
+            updateSelectAllState();
+        }
+
         /**
          * Tampilkan dropdown saat fokus
          */

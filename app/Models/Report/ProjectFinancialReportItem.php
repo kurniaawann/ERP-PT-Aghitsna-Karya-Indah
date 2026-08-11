@@ -33,6 +33,7 @@ class ProjectFinancialReportItem extends Model
         'keterangan_bon',
         'proof_file',
         'proof_file_name',
+        'is_informational',
         'created_by',
     ];
 
@@ -40,6 +41,7 @@ class ProjectFinancialReportItem extends Model
         'transaction_date' => 'date',
         'income_amount' => 'integer',
         'expense_amount' => 'integer',
+        'is_informational' => 'boolean',
     ];
 
     /**

@@ -146,7 +146,7 @@
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data kasbon yang dipilih? <br>
-        <span class="text-error text-sm">Catatan: Kasbon yang sudah dipotong tidak bisa dihapus.</span>
+        <span class="text-error text-sm">Catatan: Kasbon yang masih terhubung payroll tidak bisa dihapus.</span>
     </x-modal>
 
     {{-- ============================================================

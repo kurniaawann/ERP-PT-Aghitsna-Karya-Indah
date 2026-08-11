@@ -24,8 +24,8 @@
                     @forelse ($recaps as $recap)
                         @php
                             $report = $recap->financialReport;
-                            $totalIncome = (int) ($report ? $report->items->sum('income_amount') : 0);
-                            $totalExpense = (int) ($report ? $report->items->sum('expense_amount') : 0);
+                            $totalIncome = (int) ($report ? $report->items->where('is_informational', false)->sum('income_amount') : 0);
+                            $totalExpense = (int) ($report ? $report->items->where('is_informational', false)->sum('expense_amount') : 0);
                             $balance = $totalIncome - $totalExpense;
 
                             $recapPaid = $recap->getTotalPaidAmount();

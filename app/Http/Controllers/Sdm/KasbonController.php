@@ -58,8 +58,9 @@ class KasbonController extends Controller
 
         $employees = $this->kasbonService->getAllEmployees();
         $divisions = $this->kasbonService->getAllDivisions();
+        $projects = $this->kasbonService->getProjectOptions();
 
-        return view('pages.sdm.kasbon', compact('kasbons', 'employees', 'divisions'));
+        return view('pages.sdm.kasbon', compact('kasbons', 'employees', 'divisions', 'projects'));
     }
 
     /**
@@ -98,6 +99,10 @@ class KasbonController extends Controller
             return redirect()->back()->with('error', 'Kasbon yang sudah dipotong tidak bisa diubah');
         }
 
+        if ($kasbon->payment_status !== 'unpaid') {
+            return redirect()->back()->with('error', 'Kasbon yang sudah dibayar tidak bisa diubah');
+        }
+
         $validated = $request->validated();
 
         $this->kasbonService->updateKasbon($kasbon, $validated);
@@ -118,11 +123,11 @@ class KasbonController extends Controller
         $result = $this->kasbonService->deleteSelectedKasbons($request->input('selected_kasbons'));
 
         if ($result['deleted'] > 0 && $result['skipped'] > 0) {
-            return redirect()->back()->with('success', "Berhasil menghapus {$result['deleted']} kasbon. {$result['skipped']} kasbon tidak dapat dihapus karena sudah dipotong.");
+            return redirect()->back()->with('success', "Berhasil menghapus {$result['deleted']} kasbon. {$result['skipped']} kasbon tidak dapat dihapus karena masih terhubung payroll.");
         } elseif ($result['deleted'] > 0) {
             return redirect()->back()->with('success', "Data terpilih berhasil dihapus. ({$result['deleted']} kasbon)");
         } else {
-            return redirect()->back()->with('error', 'Semua kasbon yang dipilih sudah dipotong dan tidak dapat dihapus.');
+            return redirect()->back()->with('error', 'Semua kasbon yang dipilih masih terhubung payroll dan tidak dapat dihapus.');
         }
     }
 
@@ -210,6 +215,12 @@ class KasbonController extends Controller
 
         if ($kasbon->payment_status === 'paid') {
             return redirect()->back()->with('error', 'Kasbon sudah lunas');
+        }
+
+        // Kasbon divisi ber-proyek tidak bisa dicicil manual: lunas otomatis
+        // penuh saat payroll proyek + periode dibayar.
+        if ($kasbon->kasbon_type === 'team' && ! empty($kasbon->project_names)) {
+            return redirect()->back()->with('error', 'Kasbon divisi dengan proyek tidak bisa dibayar manual. Kasbon otomatis lunas saat payroll proyek tersebut dibayar.');
         }
 
         $request->validate([

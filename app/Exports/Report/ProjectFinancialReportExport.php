@@ -71,8 +71,10 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
 
             // Item Transaksi dalam Kategori
             foreach ($categoryItems as $item) {
-                $inc = $item->income_amount ?? 0;
-                $exp = $item->expense_amount ?? 0;
+                // Baris informasi (kasbon personal) hanya keterangan,
+                // tidak memengaruhi subtotal kategori maupun saldo berjalan.
+                $inc = $item->is_informational ? 0 : ($item->income_amount ?? 0);
+                $exp = $item->is_informational ? 0 : ($item->expense_amount ?? 0);
                 $categoryIncome += $inc;
                 $categoryExpense += $exp;
                 $runningBalance += ($inc - $exp);
@@ -81,10 +83,10 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                     'no' => $isFirstItem ? $catNo : '',
                     'bon' => $bonNo++,
                     'date' => $item->transaction_date ? Carbon::parse($item->transaction_date)->format('d/m/Y') : '',
-                    'description' => $item->description ?? '',
+                    'description' => ($item->description ?? '').($item->is_informational ? ' (informasi)' : ''),
                     'income' => $inc ?: null,
                     'expense' => $exp ?: null,
-                    'balance' => $runningBalance,
+                    'balance' => $item->is_informational ? null : $runningBalance,
                     'keterangan_bon' => $item->keterangan_bon ?? '',
                 ];
 

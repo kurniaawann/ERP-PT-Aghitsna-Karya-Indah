@@ -16,13 +16,15 @@
     'required' => false,
     'placeholder' => 'Cari...',
     'options' => [],
+    'selected' => [],
 ])
 
 @php
     $selectId = $id ?? $name . '-searchable-multi-select';
 @endphp
 
-<div class="searchable-multi-select-wrapper mb-3" data-select-id="{{ $selectId }}">
+<div class="searchable-multi-select-wrapper mb-3" data-select-id="{{ $selectId }}"
+    data-selected="{{ e(json_encode(array_values((array) $selected))) }}">
     @if ($label)
         <label class="block text-text-primary mb-1" for="{{ $selectId }}-input">
             {{ $label }}

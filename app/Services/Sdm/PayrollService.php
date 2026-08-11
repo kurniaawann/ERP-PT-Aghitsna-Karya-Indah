@@ -6,6 +6,7 @@ use App\Models\Finance\ProjectRecap;
 use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
+use App\Models\Sdm\Kasbon;
 use App\Models\Sdm\KasbonPayment;
 use App\Models\Sdm\Executive;
 use App\Services\Report\ProjectFinancialReportService;
@@ -985,6 +986,9 @@ class PayrollService
 
                     foreach ($periodGroups as $periodPayrolls) {
                         $this->financialReportService->upsertPayrollExpenseItem($recap, $periodPayrolls);
+
+                        $this->settleTeamKasbons($recap, $periodPayrolls, $paymentDate);
+                        $this->recordPersonalKasbonInfoItems($recap, $periodPayrolls, $paymentDate);
                     }
                 }
 
@@ -1003,6 +1007,106 @@ class PayrollService
             Log::error('Bulk pay payroll gagal: '.$e->getMessage());
 
             return ['success' => false, 'message' => 'Terjadi kesalahan saat membayar payroll. Data tidak disimpan.', 'count' => 0];
+        }
+    }
+
+    /**
+     * Melunasi otomatis kasbon divisi (ber-proyek) yang periodenya beririsan
+     * dengan payroll yang baru dibayar pada proyek tersebut.
+     *
+     * Kasbon divisi dengan proyek tidak bisa dicicil manual. Saat payroll
+     * proyek + periode terkait dibayar, seluruh sisa hutang kasbon langsung
+     * dilunasi penuh (payment_method = 'payroll_deduction', terikat payroll
+     * pertama pada grup) dan dicatat sebagai baris pengeluaran "Kasbon Divisi"
+     * pada Laporan Keuangan Proyek.
+     *
+     * @param  ProjectRecap  $recap
+     * @param  \Illuminate\Support\Collection<int, Payroll>  $periodPayrolls  Payroll paid satu proyek + periode
+     * @param  string  $paymentDate
+     */
+    private function settleTeamKasbons(ProjectRecap $recap, Collection $periodPayrolls, string $paymentDate): void
+    {
+        $firstPayroll = $periodPayrolls->first();
+
+        if (! $firstPayroll) {
+            return;
+        }
+
+        $periodStart = Carbon::parse($firstPayroll->period_start_date);
+        $periodEnd = $firstPayroll->period_end_date
+            ? Carbon::parse($firstPayroll->period_end_date)
+            : $periodStart->copy();
+
+        $matchingKasbons = Kasbon::where('kasbon_type', 'team')
+            ->where('created_by', $firstPayroll->created_by)
+            ->whereJsonContains('project_names', trim($firstPayroll->project_name))
+            ->where('payment_status', '!=', 'paid')
+            ->whereDate('period_start_date', '<=', $periodEnd->format('Y-m-d'))
+            ->whereDate('period_end_date', '>=', $periodStart->format('Y-m-d'))
+            ->get();
+
+        foreach ($matchingKasbons as $kasbon) {
+            $remaining = (int) $kasbon->remaining_amount;
+
+            if ($remaining <= 0) {
+                continue;
+            }
+
+            KasbonPayment::create([
+                'kasbon_code' => $kasbon->kasbon_code,
+                'payroll_id' => $firstPayroll->id,
+                'amount' => $remaining,
+                'payment_method' => 'payroll_deduction',
+                'payment_date' => $paymentDate,
+                'created_by' => $firstPayroll->created_by,
+            ]);
+
+            $kasbon->paid_amount = ($kasbon->paid_amount ?? 0) + $remaining;
+            $kasbon->remaining_amount = $kasbon->amount - $kasbon->paid_amount;
+            $kasbon->payment_status = $kasbon->remaining_amount <= 0 ? 'paid' : 'partial';
+            $kasbon->save();
+
+            $this->financialReportService->upsertTeamKasbonExpenseItem(
+                $recap,
+                $kasbon->division ?: 'Tanpa Divisi',
+                $kasbon->period_start_date,
+                $kasbon->period_end_date,
+                $remaining,
+                $paymentDate,
+                $firstPayroll->created_by
+            );
+        }
+    }
+
+    /**
+     * Mencatat baris informasi "Kasbon Pak {nama}" pada Laporan Keuangan Proyek
+     * untuk payroll yang baru dibayar.
+     *
+     * Kasbon personal sudah dipotong dari upah saat perhitungan payroll, jadi
+     * baris ini hanya informasi (tidak mengubah total laporan).
+     *
+     * @param  ProjectRecap  $recap
+     * @param  \Illuminate\Support\Collection<int, Payroll>  $periodPayrolls
+     * @param  string  $paymentDate
+     */
+    private function recordPersonalKasbonInfoItems(ProjectRecap $recap, Collection $periodPayrolls, string $paymentDate): void
+    {
+        foreach ($periodPayrolls as $payroll) {
+            $deduction = (int) $payroll->kasbon_deduction;
+
+            if ($deduction <= 0) {
+                continue;
+            }
+
+            $this->financialReportService->upsertPersonalKasbonInfoItem(
+                $recap,
+                $payroll->employee?->name ?? 'Pekerja',
+                $payroll->period_start_date,
+                $payroll->period_end_date,
+                $deduction,
+                $paymentDate,
+                $payroll->created_by
+            );
         }
     }
 
@@ -1045,6 +1149,9 @@ class PayrollService
             ->values();
 
         foreach ($payrolls as $payroll) {
+            // Balik pelunasan otomatis kasbon divisi yang terikat payroll ini.
+            $this->revertKasbonSettlement($payroll);
+
             $payroll->delete();
         }
 
@@ -1055,9 +1162,53 @@ class PayrollService
                 $group['period_end'],
                 auth()->id(),
             );
+
+            $this->financialReportService->reconcileKasbonExpenseItems(
+                $group['project_name'],
+                $group['period_start'],
+                $group['period_end'],
+                auth()->id(),
+            );
         }
 
         return ['success' => true, 'message' => 'Data payroll berhasil dihapus!'];
+    }
+
+    /**
+     * Membatalkan pelunasan kasbon (payroll_deduction) yang terikat pada payroll
+     * yang akan dihapus.
+     *
+     * Kasbon dikembalikan ke status sebelumnya: paid_amount dikurangi, status
+     * dihitung ulang, dan KasbonPayment dihapus. Tidak menyentuh baris Laporan
+     * Keuangan — itu ditangani reconcileKasbonExpenseItems() per kelompok.
+     *
+     * @param  Payroll  $payroll
+     */
+    private function revertKasbonSettlement(Payroll $payroll): void
+    {
+        $payments = KasbonPayment::where('payroll_id', $payroll->id)
+            ->where('payment_method', 'payroll_deduction')
+            ->with('kasbon')
+            ->get();
+
+        foreach ($payments as $payment) {
+            $kasbon = $payment->kasbon;
+
+            if ($kasbon) {
+                $kasbon->paid_amount = max(0, ($kasbon->paid_amount ?? 0) - $payment->amount);
+                $kasbon->remaining_amount = $kasbon->amount - $kasbon->paid_amount;
+                $kasbon->payment_status = $kasbon->remaining_amount <= 0 ? 'paid' : ($kasbon->paid_amount > 0 ? 'partial' : 'unpaid');
+
+                if ($kasbon->deducted_in_payroll_id === $payroll->id) {
+                    $kasbon->deducted_in_payroll_id = null;
+                    $kasbon->status = 'pending';
+                }
+
+                $kasbon->save();
+            }
+
+            $payment->delete();
+        }
     }
 
     /**
@@ -1111,11 +1262,11 @@ class PayrollService
      * Kasbon divisi tidak dibagi rata ke karyawan, melainkan hanya
      * dimunculkan sebagai informasi pada section REKAPITULASI DANA saat
      * mencetak payroll (PDF/Excel). Data diambil dari KasbonPayment yang
-     * sudah di-assign (payroll_id) ke payroll terpilih, dikelompokkan
-     * per divisi.
+     * sudah di-assign (payroll_id) ke payroll terpilih, dikelompokkan per
+     * proyek (bila kasbon ber-proyek) atau per divisi (kasbon tanpa proyek).
      *
      * @param  Collection  $payrolls  Koleksi payroll yang diexport
-     * @return Collection  Collection mapping nama divisi -> total kasbon
+     * @return Collection  Collection mapping label -> total kasbon
      */
     public function getTeamKasbonRecap(Collection $payrolls): Collection
     {
@@ -1127,9 +1278,19 @@ class PayrollService
 
         return KasbonPayment::whereIn('payroll_id', $payrollIds)
             ->whereHas('kasbon', fn ($q) => $q->where('kasbon_type', 'team'))
-            ->with('kasbon')
+            ->with(['kasbon', 'payroll'])
             ->get()
-            ->groupBy('kasbon.division')
+            ->groupBy(function (KasbonPayment $payment) {
+                $kasbon = $payment->kasbon;
+
+                if (! empty($kasbon->project_names)) {
+                    $project = $payment->payroll?->project_name;
+
+                    return 'Kasbon Proyek '.($project ?: ($kasbon->project_names[0] ?? 'Tanpa Proyek'));
+                }
+
+                return 'Kasbon Divisi '.($kasbon->division ?: 'Tanpa Divisi');
+            })
             ->map(fn ($payments) => (int) $payments->sum('amount'))
             ->filter(fn ($total) => $total > 0);
     }

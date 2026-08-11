@@ -71,16 +71,62 @@ window.formatCurrencyInput = function (input) {
 // ==========================================
 
 /**
- * Menampilkan/menyembunyikan field karyawan dan divisi sesuai jenis kasbon.
+ * Menambah/menghapus atribut required pada sebuah elemen.
+ *
+ * @param {string} elementId - ID elemen.
+ * @param {boolean} required - true untuk menambah required, false untuk menghapus.
+ */
+function setRequired(elementId, required) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    if (required) {
+        el.setAttribute('required', 'required');
+    } else {
+        el.removeAttribute('required');
+    }
+}
+
+/**
+ * Menambah/menghapus atribut required pada input wajib baris proyek kasbon tim.
+ *
+ * Hanya input yang bisa difokuskan (bukan type=hidden) yang disentuh. Atribut
+ * required hanya boleh aktif saat baris proyek terlihat (tipe tim), karena
+ * browser tetap memvalidasi field required di dalam kontainer display:none
+ * dan memblokir submit tanpa menampilkan pesan apa pun.
+ *
+ * @param {boolean} required - true untuk menambah required, false untuk menghapus.
+ */
+function setProjectRowsRequired(required) {
+    const container = document.getElementById('add_project_rows');
+    if (!container) return;
+
+    container.querySelectorAll(
+        '.kasbon-project-row .searchable-select-input, .kasbon-project-row .kasbon-amount-input, .kasbon-project-row .kasbon-project-date'
+    ).forEach((el) => {
+        if (required) {
+            el.setAttribute('required', 'required');
+        } else {
+            el.removeAttribute('required');
+        }
+    });
+}
+
+/**
+ * Menampilkan/menyembunyikan field karyawan, detail kasbon, divisi, dan
+ * baris proyek sesuai jenis kasbon.
  *
  * Alur:
- * - 'team': sembunyikan field karyawan, tampilkan field divisi; hapus
- *   required + kosongkan hidden karyawan; set required pada hidden divisi;
- *   inisialisasi ulang searchable select divisi; sembunyikan alert batas.
- * - 'personal': kebalikannya (tampilkan karyawan, sembunyikan divisi,
- *   set required pada karyawan, hidden divisi dibersihkan, init select
- *   karyawan).
- * - kosong: sembunyikan keduanya beserta alert batas.
+ * - 'team': tampilkan field divisi + baris proyek (dinamis, satu record per
+ *   proyek); sembunyikan karyawan, detail kasbon (jumlah/periode/catatan
+ *   personal), dan alert batas.
+ * - 'personal': tampilkan karyawan + detail kasbon; sembunyikan divisi dan
+ *   baris proyek (direset agar data proyek tidak ikut terkirim).
+ * - kosong: sembunyikan semuanya beserta alert batas.
+ *
+ * Atribut required selalu diselaraskan dengan tipe yang aktif agar tidak ada
+ * field required yang tersembunyi di kontainer display:none — hal ini
+ * memblokir submit di browser ("An invalid form control is not focusable").
  *
  * Ditugaskan ke window karena dipanggil dari atribut onchange inline.
  *
@@ -89,47 +135,203 @@ window.formatCurrencyInput = function (input) {
 window.toggleEmployeeSelect = function (prefix) {
     const kasbonTypeSelect = document.getElementById(prefix + '_kasbon_type');
     const employeeField = document.getElementById(prefix + '_employee_field');
-    const employeeHidden = employeeField ? employeeField.querySelector('.searchable-select-hidden') : null;
+    const detailField = document.getElementById(prefix + '_kasbon_detail_field');
     const divisionField = document.getElementById(prefix + '_division_field');
-    const divisionHidden = divisionField ? divisionField.querySelector('.searchable-select-hidden') : null;
+    const projectField = document.getElementById(prefix + '_project_field');
     const limitAlert = document.getElementById(prefix + '_kasbon_limit_alert');
 
     if (!kasbonTypeSelect || !employeeField || !divisionField) return;
 
-    if (kasbonTypeSelect.value === 'team') {
+    const isAdd = prefix === 'add';
+    const isTeam = kasbonTypeSelect.value === 'team';
+    const isPersonal = kasbonTypeSelect.value === 'personal';
+
+    setRequired(prefix + '_employee_id', isPersonal);
+    setRequired(prefix + '_amount', isPersonal);
+    setRequired(prefix + '_kasbon_date', isPersonal);
+    setRequired(prefix + '_division', isTeam);
+
+    if (isTeam) {
         employeeField.style.display = 'none';
+        if (detailField) detailField.style.display = 'none';
         divisionField.style.display = 'block';
+        if (projectField) projectField.style.display = 'block';
         if (limitAlert) limitAlert.classList.add('hidden');
 
-        if (employeeHidden) {
-            employeeHidden.removeAttribute('required');
-            employeeHidden.value = '';
+        if (isAdd) {
+            projectRows.ensureRow();
+            setProjectRowsRequired(true);
+        } else {
+            const projectInput = projectField.querySelector('.searchable-select-input');
+            if (projectInput) projectInput.setAttribute('required', 'required');
         }
-        if (divisionHidden) {
-            divisionHidden.setAttribute('required', 'required');
-        }
+
         if (typeof initSearchableSelects === 'function') {
             initSearchableSelects(divisionField);
         }
-    } else if (kasbonTypeSelect.value === 'personal') {
+    } else if (isPersonal) {
         employeeField.style.display = 'block';
+        if (detailField) detailField.style.display = 'block';
         divisionField.style.display = 'none';
+        if (projectField) {
+            projectField.style.display = 'none';
+            if (isAdd && projectRows.container) {
+                projectRows.empty();
+            } else {
+                clearSearchableMultiSelect(projectField);
+                const projectInput = projectField.querySelector('.searchable-select-input');
+                if (projectInput) projectInput.removeAttribute('required');
+            }
+        }
+        if (limitAlert) limitAlert.classList.add('hidden');
 
-        if (employeeHidden) {
-            employeeHidden.setAttribute('required', 'required');
-        }
-        if (divisionHidden) {
-            divisionHidden.removeAttribute('required');
-            divisionHidden.value = '';
-        }
+        // empty() sudah menghapus semua baris; setProjectRowsRequired(false)
+        // di sini hanya sebagai pengaman bila ada baris yang tersisa.
+        if (isAdd) setProjectRowsRequired(false);
+
         if (typeof initSearchableSelects === 'function') {
             initSearchableSelects(employeeField);
         }
     } else {
         employeeField.style.display = 'none';
+        if (detailField) detailField.style.display = 'none';
         divisionField.style.display = 'none';
+        if (projectField) projectField.style.display = 'none';
         if (limitAlert) limitAlert.classList.add('hidden');
+
+        if (isAdd) setProjectRowsRequired(false);
     }
+};
+
+/**
+ * Mengosongkan pilihan searchable multi-select dalam sebuah field.
+ *
+ * Men-uncheck semua checkbox komponen (event change dipicu agar state
+ * internal komponen ikut diperbarui) lalu menyalakan ulang event change
+ * pada checkbox yang masih tercentang.
+ *
+ * @param {HTMLElement} field - Elemen field yang memuat komponen multi-select.
+ */
+function clearSearchableMultiSelect(field) {
+    const wrapper = field.querySelector('.searchable-multi-select-wrapper');
+    if (!wrapper) return;
+
+    wrapper.querySelectorAll('.searchable-multi-checkbox').forEach(cb => {
+        if (cb.checked) {
+            cb.checked = false;
+            cb.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
+}
+
+// ==========================================
+// BARIS PROYEK DINAMIS (Kasbon Tim)
+// ==========================================
+
+/**
+ * Pengelola baris proyek pada form Tambah Kasbon tim.
+ *
+ * Setiap baris = satu proyek (dropdown + jumlah + periode + catatan) yang
+ * akan disimpan sebagai record kasbon terpisah. Baris dikloning dari
+ * <template id="add_project_row_template"> lalu indeks name di-reindex
+ * (projects[0]..projects[n]).
+ *
+ * Metode:
+ * - init(): pasang tombol "Tambah Proyek" + delegasi hapus, lalu buat baris
+ *   pertama.
+ * - addRow(): tambah satu baris baru di bawah, inisialisasi komponen
+ *   searchable-select + format amount, lalu resolve periode baris tersebut.
+ * - empty(): kosongkan SEMUA baris tanpa membuat baris baru (dipakai saat
+ *   beralih ke kasbon personal agar input projects[] hilang dari DOM).
+ * - ensureRow(): pastikan minimal satu baris ada (dipakai saat beralih
+ *   kembali ke kasbon tim setelah empty()).
+ * - reindex(): perbaiki indeks name/id serta tampilkan/sembunyikan tombol
+ *   hapus (minimal satu baris selalu tersisa).
+ */
+const projectRows = {
+    container: null,
+    template: null,
+
+    init() {
+        this.container = document.getElementById('add_project_rows');
+        this.template = document.getElementById('add_project_row_template');
+
+        if (!this.container || !this.template) return;
+
+        const addBtn = document.getElementById('add_project_row_btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.addRow());
+        }
+
+        this.container.addEventListener('click', (e) => {
+            const btn = e.target.closest('.remove-project-row');
+            if (!btn) return;
+
+            const rows = this.container.querySelectorAll('.kasbon-project-row');
+            if (rows.length <= 1) return;
+
+            btn.closest('.kasbon-project-row').remove();
+            this.reindex();
+        });
+
+        this.addRow();
+    },
+
+    addRow() {
+        if (!this.template) return;
+
+        this.container.appendChild(this.template.content.cloneNode(true));
+        this.reindex();
+
+        if (typeof initSearchableSelects === 'function') {
+            initSearchableSelects(this.container);
+        }
+        initAmountFormatting();
+
+        const rows = this.container.querySelectorAll('.kasbon-project-row');
+        const dateInput = rows.length > 0 ? rows[rows.length - 1].querySelector('.kasbon-project-date') : null;
+        if (dateInput) {
+            window.resolveProjectPeriod(dateInput);
+        }
+    },
+
+    empty() {
+        if (this.container) this.container.innerHTML = '';
+    },
+
+    /**
+     * Memastikan minimal satu baris proyek ada di dalam container.
+     *
+     * Dipakai saat beralih ke kasbon tim setelah baris dibersihkan oleh
+     * empty() (mis. sebelumnya memilih kasbon personal).
+     */
+    ensureRow() {
+        if (!this.container || this.container.querySelector('.kasbon-project-row')) return;
+        this.addRow();
+    },
+
+    reindex() {
+        const rows = this.container.querySelectorAll('.kasbon-project-row');
+
+        rows.forEach((row, i) => {
+            row.querySelectorAll('[name^="projects["]').forEach((el) => {
+                const name = el.getAttribute('name');
+                if (name) {
+                    el.setAttribute('name', name.replace(/projects\[\d+\]/, 'projects[' + i + ']'));
+                }
+            });
+
+            row.querySelectorAll('[id^="add_project_select_"]').forEach((el) => {
+                const suffix = el.id.endsWith('-input') ? '-input' : '';
+                el.id = 'add_project_select_' + i + suffix;
+            });
+
+            const removeBtn = row.querySelector('.remove-project-row');
+            if (removeBtn) {
+                removeBtn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+            }
+        });
+    },
 };
 
 // ==========================================
@@ -137,30 +339,25 @@ window.toggleEmployeeSelect = function (prefix) {
 // ==========================================
 
 /**
- * Menyelesaikan period_start_date/period_end_date + week_number dari
- * tanggal kasbon yang dipilih.
+ * Mengambil minggu payroll yang memuat tanggal tertentu.
  *
  * Alur:
- * 1. Baca kasbon_date dari input form.
- * 2. Jika kosong → kembalikan null.
- * 3. Bulan & tahun diambil dari kasbon_date (format YYYY-MM-DD).
- * 4. AJAX GET ke GET_WEEKS_URL (rute payroll.get-weeks) dengan query
+ * 1. Bulan & tahun diambil dari tanggal (format YYYY-MM-DD).
+ * 2. AJAX GET ke GET_WEEKS_URL (rute payroll.get-weeks) dengan query
  *    month & year.
- * 5. Iterasi minggu yang dikembalikan; minggu pertama yang rentang
- *    start_date..end_date mengandung kasbon_date menjadi hasil.
- * 6. Jika tidak ada yang cocok, gunakan minggu terakhir sebagai fallback.
- * 7. Kembalikan { start_date, end_date, week_number }; null saat error/kosong.
+ * 3. Iterasi minggu yang dikembalikan; minggu pertama yang rentang
+ *    start_date..end_date mengandung tanggal menjadi hasil.
+ * 4. Jika tidak ada yang cocok, gunakan minggu terakhir sebagai fallback.
+ * 5. Kembalikan objek minggu { start_date, end_date, week_number };
+ *    null saat input kosong / error.
  *
- * @param  {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
+ * @param  {string} date - Tanggal (YYYY-MM-DD).
  * @returns {Promise<{start_date: string, end_date: string, week_number: number}|null>}
  */
-async function resolvePeriodStartDate(prefix) {
-    const kasbonDateInput = document.getElementById(prefix + '_kasbon_date');
-    const kasbonDate = kasbonDateInput ? kasbonDateInput.value : '';
+async function fetchWeeksForDate(date) {
+    if (!date) return null;
 
-    if (!kasbonDate) return null;
-
-    const parts = kasbonDate.split('-');
+    const parts = date.split('-');
     const year = parts[0];
     const month = parts[1];
     if (!month || !year) return null;
@@ -171,30 +368,53 @@ async function resolvePeriodStartDate(prefix) {
         const weeks = data.weeks || [];
 
         for (const week of weeks) {
-            if (kasbonDate >= week.start_date && kasbonDate <= week.end_date) {
-                return {
-                    start_date: week.start_date,
-                    end_date: week.end_date,
-                    week_number: week.week_number,
-                };
+            if (date >= week.start_date && date <= week.end_date) {
+                return week;
             }
         }
 
-        if (weeks.length > 0) {
-            const lastWeek = weeks[weeks.length - 1];
-            return {
-                start_date: lastWeek.start_date,
-                end_date: lastWeek.end_date,
-                week_number: lastWeek.week_number,
-            };
-        }
-
-        return null;
+        return weeks.length > 0 ? weeks[weeks.length - 1] : null;
     } catch (error) {
         console.error('Error resolving period start date:', error);
         return null;
     }
 }
+
+/**
+ * Menyelesaikan period_start_date/period_end_date + week_number dari
+ * tanggal kasbon yang dipilih (kasbon personal / edit).
+ *
+ * @param  {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
+ * @returns {Promise<{start_date: string, end_date: string, week_number: number}|null>}
+ */
+async function resolvePeriodStartDate(prefix) {
+    const kasbonDateInput = document.getElementById(prefix + '_kasbon_date');
+    return fetchWeeksForDate(kasbonDateInput ? kasbonDateInput.value : '');
+}
+
+/**
+ * Menyelesaikan periode pada satu baris proyek kasbon tim dari tanggal
+ * kasbon baris tersebut, lalu mengisi hidden period_start_date/period_end_date.
+ *
+ * Ditugaskan ke window karena dipanggil dari atribut onchange inline
+ * pada template baris proyek.
+ *
+ * @param {HTMLInputElement} input - Input tanggal (projects[i][kasbon_date]).
+ */
+window.resolveProjectPeriod = async function (input) {
+    if (!input) return;
+
+    const row = input.closest('.kasbon-project-row');
+    if (!row) return;
+
+    const week = await fetchWeeksForDate(input.value);
+    if (!week) return;
+
+    const periodStart = row.querySelector('.kasbon-project-period-start');
+    const periodEnd = row.querySelector('.kasbon-project-period-end');
+    if (periodStart) periodStart.value = week.start_date;
+    if (periodEnd) periodEnd.value = week.end_date;
+};
 
 // ==========================================
 // PENGECEKAN KASBON MAKSIMAL (AJAX)
@@ -426,10 +646,16 @@ document.addEventListener('DOMContentLoaded', function () {
     initFormSubmitHandlers();
     initAmountFormatting();
 
+    projectRows.init();
+
     toggleEmployeeSelect('add');
     checkMaxKasbon('add');
 
     if (typeof initSearchableSelects === 'function') {
         initSearchableSelects();
+    }
+
+    if (typeof window.initSearchableMultiSelects === 'function') {
+        window.initSearchableMultiSelects();
     }
 });

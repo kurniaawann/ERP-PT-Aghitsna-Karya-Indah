@@ -300,6 +300,51 @@
         Keterangan: &#10003;=Hadir, Lb=Lembur, I=Izin, S=Sakit, C=Cuti — Minggu adalah hari libur
     </div>
 
+    {{-- REKAPITULASI DANA --}}
+    @php
+        $totalKerja = (int) $payrolls->sum(fn ($p) => $p->base_salary * $p->present_days);
+        $totalLembur = (int) $payrolls->sum('overtime_total');
+        $totalKasbonPersonal = (int) $payrolls->sum('kasbon_deduction');
+        $teamKasbonRecap = $teamKasbonRecap ?? collect();
+        $grandTotalDibayar = $totalNetSalary ?? (int) $payrolls->sum('net_salary');
+    @endphp
+    <table class="main-table" style="margin-top: 12px; width: 45%;">
+        <thead>
+            <tr>
+                <th colspan="2" style="background-color: #FFC000; font-size: 9.5px;">REKAPITULASI DANA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Total Kerja</td>
+                <td class="text-right">{{ number_format($totalKerja, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Total Lembur</td>
+                <td class="text-right">{{ number_format($totalLembur, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Total Kasbon</td>
+                <td class="text-right" style="color: #c0392b;">-{{ number_format($totalKasbonPersonal, 0, ',', '.') }}</td>
+            </tr>
+            @foreach ($teamKasbonRecap as $kasbonLabel => $amount)
+                <tr>
+                    <td>{{ $kasbonLabel }}</td>
+                    <td class="text-right" style="color: #c0392b;">{{ number_format($amount, 0, ',', '.') }}</td>
+                </tr>
+            @endforeach
+            <tr>
+                <td>Total Upah Pekerja</td>
+                <td class="text-right font-bold">{{ number_format($grandTotalDibayar, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="background-color: #E0E0E0; font-weight: bold; text-align: right; font-size: 10px;">
+                    TOTAL DIBAYARKAN: Rp {{ number_format($grandTotalDibayar, 0, ',', '.') }}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
     {{-- BLOK TANDA TANGAN --}}
     <table class="sig-table">
         <tr>

@@ -4,9 +4,11 @@
 @php
     $report = $recap->financialReport;
     $items = optional($report)->items ?? collect();
+    $financialItems = $items->where('is_informational', false);
+    $informationalItems = $items->where('is_informational', true);
 
-    $totalIncome = (int) $items->sum('income_amount');
-    $totalExpense = (int) $items->sum('expense_amount');
+    $totalIncome = (int) $financialItems->sum('income_amount');
+    $totalExpense = (int) $financialItems->sum('expense_amount');
     $totals = (object) [
         'total_income' => $totalIncome,
         'total_expense' => $totalExpense,
@@ -95,10 +97,22 @@
                                         <td class="p-2 text-center text-text-secondary">
                                             {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '-' }}
                                         </td>
-                                        <td class="p-2 text-text-primary">{{ $item->category->name ?? '-' }}</td>
+                                        <td class="p-2 text-text-primary">
+                                            {{ $item->category->name ?? '-' }}
+                                            @if ($item->is_informational)
+                                                <span class="ml-1 inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-700"
+                                                    title="Baris informasi — tidak memengaruhi total laporan">
+                                                    <i class="fa-solid fa-circle-info w-2.5 h-2.5 mr-0.5"></i> Info
+                                                </span>
+                                            @endif
+                                        </td>
                                         <td class="p-2 text-text-primary">{{ $item->description }}</td>
                                         <td class="p-2 text-right font-medium {{ $isIncome ? 'text-success' : 'text-error' }}">
-                                            {{ $isIncome ? '+' : '-' }} Rp {{ number_format($amount, 0, ',', '.') }}
+                                            @if ($item->is_informational)
+                                                <span class="text-text-tertiary">-</span>
+                                            @else
+                                                {{ $isIncome ? '+' : '-' }} Rp {{ number_format($amount, 0, ',', '.') }}
+                                            @endif
                                         </td>
                                         <td class="p-2 text-text-secondary">{{ $item->keterangan_bon ?: '-' }}</td>
                                         <td class="p-2 text-center">

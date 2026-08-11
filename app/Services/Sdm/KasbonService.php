@@ -62,6 +62,7 @@ class KasbonService
         int $perPage = 10
     ): LengthAwarePaginator {
         return Kasbon::with('employee')
+            ->withCount(['payments as live_payroll_payments_count' => fn ($q) => $q->whereNotNull('payroll_id')])
             ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
                 $escapedSearch = $this->escapeLikePattern($search);
@@ -149,24 +150,42 @@ class KasbonService
     }
 
     /**
+     * Mendapatkan daftar proyek untuk multi-select pada modal kasbon divisi.
+     *
+     * Sama seperti opsi proyek pada Generate Payroll (dari proyek yang
+     * dimiliki karyawan), agar proyek yang dipilih kasbon selalu bisa
+     * dicocokkan dengan payroll saat dibayar.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    public function getProjectOptions()
+    {
+        return $this->payrollService->getProjectOptions();
+    }
+
+    /**
      * Menyimpan data kasbon baru.
      *
      * Bisnis Logika:
-     * - Menghasilkan kode kasbon unik (KSB001, KSB002, ...)
-     * - Mendeteksi week_number, period_month, dan period_year secara
-     *   otomatis dari period_start_date
-     * - Untuk kasbon personal: memvalidasi batas maksimal berdasarkan absensi
-     * - Untuk kasbon team: mengatur employee_id menjadi null
-     * - Untuk kasbon personal: mengatur division menjadi null
-     * - Status default adalah 'pending'
+     * - Kasbon tim: setiap baris `projects[]` disimpan sebagai record kasbon
+     *   terpisah (masing-masing proyek punya jumlah, periode, dan catatan
+     *   sendiri), sehingga lunas otomatis saat payroll proyek tersebut dibayar.
+     * - Kasbon personal: menghasilkan kode kasbon unik (KSB001, KSB002, ...),
+     *   mendeteksi week_number/period_month/period_year dari period_start_date,
+     *   dan menyetel project_names menjadi null.
+     * - Status default adalah 'pending'.
      *
-     * @param  array{kasbon_type: string, employee_id: string|null, division: string|null, amount: int, kasbon_date: string, period_start_date: string, period_end_date: string, notes: string|null}  $data  Data input yang sudah divalidasi
-     * @return Kasbon  Data kasbon yang dibuat
+     * @param  array  $data  Data input yang sudah divalidasi
+     * @return Kasbon  Kasbon terakhir yang dibuat
      *
-     * @throws \Illuminate\Validation\ValidationException  Jika validasi berdasarkan absensi gagal
+     * @throws \InvalidArgumentException  Jika kasbon tim tanpa baris proyek
      */
     public function storeKasbon(array $data): Kasbon
     {
+        if (($data['kasbon_type'] ?? '') === 'team') {
+            return $this->storeTeamKasbon($data);
+        }
+
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
         $data['kasbon_code'] = Kasbon::generateKasbonCode();
         $data['status'] = 'pending';
@@ -178,15 +197,11 @@ class KasbonService
         $data['period_year'] = $periodStart->year;
         $data['week_number'] = $periodStart->weekOfMonth;
         $data['created_by'] = auth()->id();
-        if ($data['kasbon_type'] === 'team') {
-            $data['employee_id'] = null;
-        } else {
-            $data['division'] = null;
-        }
+        $data = $this->normalizeProjectNames($data);
 
         $kasbon = Kasbon::create($data);
 
-        if ($kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
+        if ($kasbon->employee_id) {
             $this->payrollService->recalculateForEmployeePeriod(
                 $kasbon->employee_id,
                 $kasbon->period_start_date
@@ -194,6 +209,68 @@ class KasbonService
         }
 
         return $kasbon;
+    }
+
+    /**
+     * Menyimpan kasbon tim: satu record per baris proyek.
+     *
+     * Setiap baris `projects[]` menghasilkan record kasbon terpisah dengan
+     * kode, jumlah, periode, dan catatan masing-masing. Divisi dipakai bersama
+     * dari input level atas.
+     *
+     * @param  array  $data  Data input yang sudah divalidasi (mengandung `projects`)
+     * @return Kasbon  Kasbon terakhir yang dibuat
+     *
+     * @throws \InvalidArgumentException  Jika `projects` kosong
+     */
+    private function storeTeamKasbon(array $data): Kasbon
+    {
+        $division = $data['division'] ?? null;
+        $kasbon = null;
+
+        foreach ($data['projects'] ?? [] as $project) {
+            $kasbon = $this->createTeamKasbonRecord($division, $project);
+        }
+
+        if ($kasbon === null) {
+            throw new \InvalidArgumentException('Minimal satu proyek harus diisi untuk kasbon divisi.');
+        }
+
+        return $kasbon;
+    }
+
+    /**
+     * Membuat satu record kasbon tim untuk sebuah baris proyek.
+     *
+     * @param  string|null  $division  Nama divisi (dipakai bersama semua proyek)
+     * @param  array{project: string, amount: int, kasbon_date: string, period_start_date: string, period_end_date: string, notes: string|null}  $project  Baris proyek yang sudah divalidasi
+     * @return Kasbon
+     */
+    private function createTeamKasbonRecord(?string $division, array $project): Kasbon
+    {
+        $periodStart = Carbon::parse($project['period_start_date']);
+        $amount = InputNormalizer::normalizeCurrency($project['amount'] ?? 0);
+
+        return Kasbon::create([
+            'kasbon_code' => Kasbon::generateKasbonCode(),
+            'kasbon_type' => 'team',
+            'division' => $division,
+            'project_names' => [trim((string) ($project['project'] ?? ''))],
+            'employee_id' => null,
+            'amount' => $amount,
+            'paid_amount' => 0,
+            'remaining_amount' => $amount,
+            'payment_status' => 'unpaid',
+            'status' => 'pending',
+            'kasbon_date' => $project['kasbon_date'] ?? now()->format('Y-m-d'),
+            'period_start_date' => $project['period_start_date'],
+            'period_end_date' => $project['period_end_date'],
+            'period_month' => $periodStart->month,
+            'period_year' => $periodStart->year,
+            'week_number' => $periodStart->weekOfMonth,
+            'notes' => $project['notes'] ?? null,
+            'created_by' => auth()->id(),
+        ]);
     }
 
     /**
@@ -288,11 +365,32 @@ class KasbonService
         $oldPeriodStart = Carbon::parse($kasbon->period_start_date)->format('Y-m-d');
 
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
+        $data = $this->normalizeProjectNames($data);
 
         if ($data['kasbon_type'] === 'team') {
             $data['employee_id'] = null;
+
+            // Jumlah bersifat opsional untuk kasbon tim; pertahankan nilai lama
+            // bila tidak diubah (bidang jumlah kini juga tampil pada form edit).
+            if (empty($data['amount'])) {
+                $data['amount'] = $kasbon->amount;
+            }
+
+            // Bidang periode hanya berlaku untuk kasbon personal dan tidak
+            // dikirim oleh form edit untuk kasbon tim; pertahankan nilai lama.
+            $data['kasbon_date'] = $kasbon->kasbon_date;
+            $data['period_start_date'] = $kasbon->period_start_date;
+            $data['period_end_date'] = $kasbon->period_end_date;
+            $data['week_number'] = $kasbon->week_number;
+            $data['period_month'] = $kasbon->period_month;
+            $data['period_year'] = $kasbon->period_year;
         } else {
             $data['division'] = null;
+        }
+
+        // Sinkronkan sisa hutang bila jumlah diubah pada kasbon yang belum dibayar.
+        if ((int) ($data['amount'] ?? 0) !== (int) $kasbon->amount && $kasbon->payment_status === 'unpaid') {
+            $data['remaining_amount'] = $data['amount'];
         }
 
         if (!empty($data['period_start_date'])) {
@@ -326,15 +424,24 @@ class KasbonService
      * Menghapus data kasbon secara massal berdasarkan kode kasbon.
      *
      * Bisnis Logika:
-     * - Hanya kasbon dengan status pending yang bisa dihapus
-     * - Kasbon yang sudah deducted (dipotong) akan dilewati
+     * - Hanya kasbon dengan status pending yang bisa dihapus.
+     * - Kasbon yang terhubung ke payroll yang MASIH ADA tidak bisa dihapus
+     *   (potongan sudah dipakai payroll / sudah menulis Laporan Keuangan).
+     * - Karena relasi kasbon_payments.payroll_id ber-on-delete SET NULL,
+     *   pembayaran yang hanya menunjuk payroll yang SUDAH DIHAPUS otomatis
+     *   menjadi payroll_id = null, sehingga kasbon kembali bisa dihapus
+     *   setelah payroll terkaitnya dihapus.
+     * - Pembayaran manual (payroll_id null) tidak lagi menghalangi hapus.
      *
      * @param  array<int, string>  $kasbonCodes  Array kode kasbon yang akan dihapus
      * @return array{deleted: int, skipped: int}  Jumlah data yang dihapus dan dilewati
      */
     public function deleteSelectedKasbons(array $kasbonCodes): array
     {
-        $pendingKasbons = Kasbon::whereIn('kasbon_code', $kasbonCodes)->pending()->get();
+        $pendingKasbons = Kasbon::whereIn('kasbon_code', $kasbonCodes)
+            ->pending()
+            ->whereDoesntHave('payments', fn ($query) => $query->whereNotNull('payroll_id'))
+            ->get();
 
         $deleted = $pendingKasbons->count();
         $skipped = count($kasbonCodes) - $deleted;
@@ -562,6 +669,32 @@ class KasbonService
                 $employee->name
             ),
         ];
+    }
+
+    /**
+     * Menormalisasi project_names sesuai tipe kasbon.
+     *
+     * - Kasbon team: buang nilai kosong, hapus duplikat, lalu simpan sebagai
+     *   array terurut indeks (atau null bila kosong).
+     * - Kasbon personal: selalu null (proyek tidak berlaku).
+     *
+     * @param  array  $data  Data input kasbon
+     * @return array  Data dengan kunci project_names yang dinormalisasi
+     */
+    private function normalizeProjectNames(array $data): array
+    {
+        if (($data['kasbon_type'] ?? '') === 'team') {
+            $projects = array_values(array_unique(array_filter(
+                array_map('trim', (array) ($data['project_names'] ?? [])),
+                fn ($value) => $value !== ''
+            )));
+
+            $data['project_names'] = $projects ?: null;
+        } else {
+            $data['project_names'] = null;
+        }
+
+        return $data;
     }
 
     /**

@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $employee_id
  * @property string $kasbon_type  personal|team
  * @property string|null $division
+ * @property array<int, string>|null $project_names  Nama proyek (satu atau banyak)
  * @property int $amount
  * @property \Carbon\Carbon $kasbon_date
  * @property int|null $week_number
@@ -87,6 +88,7 @@ class Kasbon extends Model
         'employee_id',
         'kasbon_type',
         'division',
+        'project_names',
         'amount',
         'kasbon_date',
         'week_number',
@@ -118,6 +120,7 @@ class Kasbon extends Model
         'period_start_date' => 'date',
         'period_end_date' => 'date',
         'kasbon_date' => 'date',
+        'project_names' => 'array',
     ];
 
     // ─── Code Generation ────────────────────────────────────────────────

@@ -272,8 +272,8 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 $sheet->getStyle("K{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
 
-                foreach ($this->teamKasbon as $divisionName => $amount) {
-                    $sheet->setCellValue("H{$rekapRow}", "Kasbon Divisi " . $divisionName);
+                foreach ($this->teamKasbon as $kasbonLabel => $amount) {
+                    $sheet->setCellValue("H{$rekapRow}", $kasbonLabel);
                     $sheet->setCellValue("K{$rekapRow}", $amount);
                     $sheet->getStyle("H{$rekapRow}")->getFont()->setColor(
                         new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED)
