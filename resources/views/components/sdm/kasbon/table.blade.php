@@ -22,7 +22,8 @@
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Jenis</th>
                             <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Proyek</th>
                             <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Jumlah</th>
-                            <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Sisa Hutang</th>
+                            <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Terbayar</th>
+                            <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Sisa Pembayaran</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Progress</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Status Pembayaran</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Aksi</th>
@@ -84,8 +85,17 @@
                                     {{ $kasbon->formatted_amount }}
                                 </td>
 
-                                {{-- Sisa Hutang --}}
-                                <td class="p-2 text-right text-sm text-text-primary">
+                                {{-- Terbayar (akumulasi cicilan kasbon) --}}
+                                <td class="p-2 text-center text-sm text-text-primary">
+                                    @if ($kasbon->kasbon_type === 'team')
+                                        <span class="text-text-label">-</span>
+                                    @else
+                                        {{ $kasbon->formatted_paid_amount }}
+                                    @endif
+                                </td>
+
+                                {{-- Sisa Pembayaran --}}
+                                <td class="p-2 text-center text-sm text-text-primary">
                                     @if ($kasbon->kasbon_type === 'team')
                                         <span class="text-text-label">-</span>
                                     @elseif ($kasbon->payment_status === 'paid')
@@ -153,7 +163,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="px-6 py-8 text-center text-text-label">
+                                <td colspan="11" class="px-6 py-8 text-center text-text-label">
                                     <i class="fa-solid fa-inbox text-4xl mb-2 text-border"></i>
                                     <p>Tidak ada data kasbon</p>
                                 </td>

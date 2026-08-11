@@ -39,7 +39,7 @@
                                 <p class="font-semibold text-text-primary" id="pay-kasbon-amount">-</p>
                             </div>
                             <div>
-                                <span class="text-text-label">Sisa Hutang</span>
+                                <span class="text-text-label">Sisa Pembayaran</span>
                                 <p class="font-semibold text-error" id="pay-kasbon-remaining">-</p>
                             </div>
                             <div>
