@@ -61,13 +61,17 @@ class AttendanceController extends Controller
             return back()->with('error', $errorMessage);
         }
 
-        $totalInserted = $this->attendanceService->bulkCreate(
-            $employeeIds,
-            $startDate,
-            $endDate,
-            $request->validated('status'),
-            $request->validated('notes')
-        );
+        try {
+            $totalInserted = $this->attendanceService->bulkCreate(
+                $employeeIds,
+                $startDate,
+                $endDate,
+                $request->validated('status'),
+                $request->validated('notes')
+            );
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         $message = $this->attendanceService->buildBulkCreateMessage(
             $totalInserted,
@@ -91,7 +95,11 @@ class AttendanceController extends Controller
      */
     public function update(UpdateAttendanceRequest $request, Attendance $attendance)
     {
-        $this->attendanceService->updateAttendance($attendance, $request->validated());
+        try {
+            $this->attendanceService->updateAttendance($attendance, $request->validated());
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('attendance.index')->with('success', 'Data absensi berhasil diperbarui!');
     }
@@ -110,7 +118,11 @@ class AttendanceController extends Controller
             return redirect()->route('attendance.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        $this->attendanceService->deleteAttendances($ids);
+        try {
+            $this->attendanceService->deleteAttendances($ids);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('attendance.index')->with('success', 'Data absensi berhasil dihapus!');
     }

@@ -64,7 +64,11 @@ class OvertimeController extends Controller
             return back()->with('error', 'Karyawan belum memiliki absensi dengan status Hadir pada tanggal tersebut. Lembur hanya bisa ditambahkan jika karyawan sudah absen Hadir.');
         }
 
-        $this->overtimeService->storeOvertime($request->validated());
+        try {
+            $this->overtimeService->storeOvertime($request->validated());
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil ditambahkan!');
     }
@@ -89,7 +93,11 @@ class OvertimeController extends Controller
             return back()->with('error', 'Karyawan belum memiliki absensi dengan status Hadir pada tanggal tersebut. Lembur hanya bisa dipindahkan ke tanggal di mana karyawan sudah absen Hadir.');
         }
 
-        $this->overtimeService->updateOvertime($overtime, $request->validated());
+        try {
+            $this->overtimeService->updateOvertime($overtime, $request->validated());
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil diperbarui!');
     }
@@ -108,7 +116,11 @@ class OvertimeController extends Controller
             return redirect()->route('overtime.index')->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        $this->overtimeService->deleteOvertimes($ids);
+        try {
+            $this->overtimeService->deleteOvertimes($ids);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil dihapus!');
     }

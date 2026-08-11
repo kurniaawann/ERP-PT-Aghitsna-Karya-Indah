@@ -77,7 +77,11 @@ class KasbonController extends Controller
     {
         $validated = $request->validated();
 
-        $this->kasbonService->storeKasbon($validated);
+        try {
+            $this->kasbonService->storeKasbon($validated);
+        } catch (\DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Kasbon berhasil ditambahkan');
     }
@@ -106,7 +110,11 @@ class KasbonController extends Controller
 
         $validated = $request->validated();
 
-        $this->kasbonService->updateKasbon($kasbon, $validated);
+        try {
+            $this->kasbonService->updateKasbon($kasbon, $validated);
+        } catch (\DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Kasbon berhasil diupdate');
     }
@@ -121,7 +129,11 @@ class KasbonController extends Controller
      */
     public function destroySelected(DestroySelectedKasbonRequest $request)
     {
-        $result = $this->kasbonService->deleteSelectedKasbons($request->input('selected_kasbons'));
+        try {
+            $result = $this->kasbonService->deleteSelectedKasbons($request->input('selected_kasbons'));
+        } catch (\DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         if ($result['deleted'] > 0 && $result['skipped'] > 0) {
             return redirect()->back()->with('success', "Berhasil menghapus {$result['deleted']} kasbon. {$result['skipped']} kasbon tidak dapat dihapus karena masih terhubung payroll.");

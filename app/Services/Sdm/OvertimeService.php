@@ -162,6 +162,10 @@ class OvertimeService
      */
     public function storeOvertime(array $data): Attendance
     {
+        // Kunci data: lembur pada periode yang payroll-nya sudah dibayar tidak
+        // boleh ditambah (kecuali karyawan baru yang belum masuk payroll paid).
+        $this->assertOvertimeNotLocked($data['employee_id'], $data['attendance_date']);
+
         $overtimeTotal = (float) $data['overtime_hours'] * (int) $data['overtime_rate'];
 
         $existingAttendance = Attendance::where('employee_id', $data['employee_id'])
@@ -215,6 +219,16 @@ class OvertimeService
         $oldEmployeeId = $overtime->employee_id;
         $oldDate = Carbon::parse($overtime->attendance_date)->format('Y-m-d');
 
+        // Kunci data: lembur pada periode yang payroll-nya sudah dibayar tidak
+        // boleh diubah (kecuali karyawan baru yang belum masuk payroll paid).
+        $newEmployeeId = $data['employee_id'] ?? $oldEmployeeId;
+        $newDate = isset($data['attendance_date'])
+            ? Carbon::parse($data['attendance_date'])->format('Y-m-d')
+            : $oldDate;
+
+        $this->assertOvertimeNotLocked($oldEmployeeId, $oldDate);
+        $this->assertOvertimeNotLocked($newEmployeeId, $newDate);
+
         $data['overtime_total'] = (float) $data['overtime_hours'] * (int) $data['overtime_rate'];
 
         $result = $overtime->update($data);
@@ -248,6 +262,14 @@ class OvertimeService
         }
 
         $overtimes = Attendance::whereIn('id', $ids)->get(['employee_id', 'attendance_date']);
+
+        // Kunci data: lembur pada periode yang payroll-nya sudah dibayar tidak
+        // boleh dihapus (kecuali karyawan baru yang belum masuk payroll paid).
+        foreach ($overtimes as $overtime) {
+            if ($overtime->employee_id && $overtime->attendance_date) {
+                $this->assertOvertimeNotLocked($overtime->employee_id, $overtime->attendance_date);
+            }
+        }
 
         $deleted = Attendance::whereIn('id', $ids)->delete();
 
@@ -288,5 +310,37 @@ class OvertimeService
         $parsed = $date instanceof Carbon ? $date : Carbon::parse($date);
 
         $this->payrollService->recalculateForAttendanceRange($employeeId, $parsed, $parsed);
+    }
+
+    /**
+     * Melempar DomainException jika lembur karyawan pada satu tanggal menimpa
+     * payroll PAID (data terkunci).
+     *
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  string  $date          Tanggal lembur (Y-m-d)
+     * @return void
+     *
+     * @throws \DomainException
+     */
+    private function assertOvertimeNotLocked(string $employeeCode, string $date): void
+    {
+        $dateCarbon = Carbon::parse($date);
+
+        $locking = $this->payrollService->findLockingPayroll($employeeCode, $dateCarbon, $dateCarbon);
+
+        if ($locking) {
+            $employee = Employee::find($employeeCode);
+            $name = $employee?->name ?: $employeeCode;
+
+            throw new \DomainException(sprintf(
+                'Data lembur %s (%s) pada tanggal %s terkunci karena payroll periode %s sudah dibayar (status: paid). '
+                .'Hapus payroll paid terkait untuk membuka kunci dan mengubah data periode ini. '
+                .'Karyawan baru yang belum masuk payroll paid periode ini tetap dapat diisi.',
+                $name,
+                $employeeCode,
+                $dateCarbon->format('d-m-Y'),
+                $locking->formatted_period
+            ));
+        }
     }
 }

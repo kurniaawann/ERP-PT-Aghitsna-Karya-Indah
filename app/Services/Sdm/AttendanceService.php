@@ -203,6 +203,11 @@ class AttendanceService
      */
     public function bulkCreate(array $employeeIds, Carbon $startDate, Carbon $endDate, string $status, ?string $notes): int
     {
+        // Kunci data: absensi pada periode yang payroll-nya sudah dibayar
+        // tidak boleh ditambah (kecuali karyawan baru yang belum masuk payroll
+        // paid periode itu — tidak memiliki payroll paid → tidak terkunci).
+        $this->assertRangeNotLocked($employeeIds, $startDate, $endDate);
+
         $totalInserted = 0;
 
         foreach ($employeeIds as $employeeId) {
@@ -245,6 +250,16 @@ class AttendanceService
         $oldEmployeeId = $attendance->employee_id;
         $oldDate = Carbon::parse($attendance->attendance_date)->format('Y-m-d');
 
+        // Kunci data: absensi pada periode yang payroll-nya sudah dibayar tidak
+        // boleh diubah (kecuali karyawan baru yang belum masuk payroll paid).
+        $newEmployeeId = $data['employee_id'] ?? $oldEmployeeId;
+        $newDate = isset($data['attendance_date'])
+            ? Carbon::parse($data['attendance_date'])->format('Y-m-d')
+            : $oldDate;
+
+        $this->assertAttendanceNotLocked($oldEmployeeId, $oldDate);
+        $this->assertAttendanceNotLocked($newEmployeeId, $newDate);
+
         $result = $attendance->update($data);
 
         $fresh = $attendance->fresh();
@@ -277,6 +292,14 @@ class AttendanceService
 
         $attendances = Attendance::whereIn('id', $ids)->get(['employee_id', 'attendance_date']);
 
+        // Kunci data: absensi pada periode yang payroll-nya sudah dibayar tidak
+        // boleh dihapus (kecuali karyawan baru yang belum masuk payroll paid).
+        foreach ($attendances as $attendance) {
+            if ($attendance->employee_id && $attendance->attendance_date) {
+                $this->assertAttendanceNotLocked($attendance->employee_id, $attendance->attendance_date);
+            }
+        }
+
         $deleted = Attendance::whereIn('id', $ids)->delete();
 
         $affectedDatesByEmployee = [];
@@ -298,6 +321,82 @@ class AttendanceService
         }
 
         return $deleted;
+    }
+
+    /**
+     * Melempar DomainException jika ada karyawan yang rentang absensinya
+     * menimpa payroll PAID (data terkunci).
+     *
+     * @param  array<int, string>  $employeeIds  Kode karyawan
+     * @param  Carbon              $startDate    Awal rentang (inklusif)
+     * @param  Carbon              $endDate      Akhir rentang (inklusif)
+     * @return void
+     *
+     * @throws \DomainException
+     */
+    private function assertRangeNotLocked(array $employeeIds, Carbon $startDate, Carbon $endDate): void
+    {
+        $lockedEmployees = [];
+
+        foreach ($employeeIds as $employeeId) {
+            $locking = $this->payrollService->findLockingPayroll($employeeId, $startDate, $endDate);
+
+            if ($locking) {
+                $employee = Employee::find($employeeId);
+                $lockedEmployees[] = sprintf(
+                    '%s (%s) — periode %s',
+                    $employee?->name ?: $employeeId,
+                    $employeeId,
+                    $locking->formatted_period
+                );
+            }
+        }
+
+        if (count($lockedEmployees) > 0) {
+            $display = implode('; ', array_slice($lockedEmployees, 0, 5));
+
+            if (count($lockedEmployees) > 5) {
+                $display .= sprintf(' dan %d lainnya', count($lockedEmployees) - 5);
+            }
+
+            throw new \DomainException(
+                'Data absensi terkunci karena payroll periode tersebut sudah dibayar untuk: '.$display.'. '
+                .'Hapus payroll paid terkait terlebih dahulu untuk membuka kunci dan mengubah data periode ini. '
+                .'Karyawan baru yang belum masuk payroll paid periode ini tetap dapat diisi.'
+            );
+        }
+    }
+
+    /**
+     * Melempar DomainException jika absensi karyawan pada satu tanggal menimpa
+     * payroll PAID (data terkunci).
+     *
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  string  $date          Tanggal absensi (Y-m-d)
+     * @return void
+     *
+     * @throws \DomainException
+     */
+    private function assertAttendanceNotLocked(string $employeeCode, string $date): void
+    {
+        $dateCarbon = Carbon::parse($date);
+
+        $locking = $this->payrollService->findLockingPayroll($employeeCode, $dateCarbon, $dateCarbon);
+
+        if ($locking) {
+            $employee = Employee::find($employeeCode);
+            $name = $employee?->name ?: $employeeCode;
+
+            throw new \DomainException(sprintf(
+                'Data absensi %s (%s) pada tanggal %s terkunci karena payroll periode %s sudah dibayar (status: paid). '
+                .'Hapus payroll paid terkait untuk membuka kunci dan mengubah data periode ini. '
+                .'Karyawan baru yang belum masuk payroll paid periode ini tetap dapat diisi.',
+                $name,
+                $employeeCode,
+                $dateCarbon->format('d-m-Y'),
+                $locking->formatted_period
+            ));
+        }
     }
 
     /**

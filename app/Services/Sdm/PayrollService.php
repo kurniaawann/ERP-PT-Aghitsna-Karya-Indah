@@ -1227,6 +1227,61 @@ class PayrollService
     }
 
     /**
+     * Mencari payroll PAID milik user yang periodenya menimpa rentang tanggal
+     * seorang karyawan.
+     *
+     * Keberadaan payroll paid berarti data operasional karyawan tersebut
+     * (absensi, lembur, kasbon personal) pada rentang tanggal terkunci dan
+     * tidak boleh diubah/dihapus/ditambah — kecuali karyawan baru yang belum
+     * masuk payroll paid periode itu (tidak ada payroll paid → hasil null).
+     *
+     * @param  string                $employeeCode  Kode karyawan
+     * @param  Carbon|string         $startDate     Awal rentang (inklusif)
+     * @param  Carbon|string|null    $endDate       Akhir rentang (inklusif, default = startDate)
+     * @return Payroll|null
+     */
+    public function findLockingPayroll(string $employeeCode, Carbon|string $startDate, Carbon|string|null $endDate = null): ?Payroll
+    {
+        $start = $startDate instanceof Carbon ? $startDate->copy() : Carbon::parse($startDate);
+        $end = $endDate instanceof Carbon
+            ? $endDate->copy()
+            : ($endDate !== null ? Carbon::parse($endDate) : $start->copy());
+
+        return Payroll::where('employee_id', $employeeCode)
+            ->where('status', 'paid')
+            ->where('created_by', auth()->id())
+            ->whereDate('period_start_date', '<=', $end->format('Y-m-d'))
+            ->whereDate('period_end_date', '>=', $start->format('Y-m-d'))
+            ->first();
+    }
+
+    /**
+     * Mencari payroll PAID milik user untuk sebuah proyek yang periodenya
+     * menimpa rentang tanggal tertentu.
+     *
+     * Dipakai untuk mengunci kasbon divisi (team) per proyek + periode: bila
+     * payroll proyek pada periode itu sudah dibayar, kasbon divisi pada
+     * proyek + periode tersebut tidak boleh diubah/dihapus/ditambah.
+     *
+     * @param  string         $projectName  Nama proyek
+     * @param  Carbon|string  $startDate    Awal rentang (inklusif)
+     * @param  Carbon|string  $endDate      Akhir rentang (inklusif)
+     * @return Payroll|null
+     */
+    public function findLockingPayrollForProject(string $projectName, Carbon|string $startDate, Carbon|string $endDate): ?Payroll
+    {
+        $start = $startDate instanceof Carbon ? $startDate->copy() : Carbon::parse($startDate);
+        $end = $endDate instanceof Carbon ? $endDate->copy() : Carbon::parse($endDate);
+
+        return Payroll::whereRaw('LOWER(project_name) = ?', [mb_strtolower(trim($projectName))])
+            ->where('status', 'paid')
+            ->where('created_by', auth()->id())
+            ->whereDate('period_start_date', '<=', $end->format('Y-m-d'))
+            ->whereDate('period_end_date', '>=', $start->format('Y-m-d'))
+            ->first();
+    }
+
+    /**
      * Mendapatkan koleksi payroll untuk ekspor Excel/PDF.
      *
      * Mendukung filter berdasarkan bulan, tahun, minggu, dan proyek.

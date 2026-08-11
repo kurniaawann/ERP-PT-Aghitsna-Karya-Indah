@@ -192,6 +192,17 @@ class KasbonService
             return $this->storeTeamKasbon($data);
         }
 
+        // Kunci data: kasbon personal pada periode yang payroll-nya sudah
+        // dibayar tidak boleh ditambah (kecuali karyawan baru yang belum
+        // masuk payroll paid periode itu).
+        if (! empty($data['employee_id'])) {
+            $this->assertKasbonNotLocked(
+                $data['employee_id'],
+                Carbon::parse($data['period_start_date']),
+                Carbon::parse($data['period_end_date'] ?? $data['period_start_date'])
+            );
+        }
+
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
         $data['kasbon_code'] = Kasbon::generateKasbonCode();
         $data['status'] = 'pending';
@@ -233,6 +244,13 @@ class KasbonService
     {
         $division = $data['division'] ?? null;
         $kasbon = null;
+
+        // Kunci data: cek semua baris proyek dulu sebelum membuat record,
+        // agar tidak ada kasbon terlanjur tersimpan bila salah satu proyek
+        // pada periode yang payroll-nya sudah dibayar.
+        foreach ($data['projects'] ?? [] as $project) {
+            $this->assertTeamKasbonNotLocked($project);
+        }
 
         foreach ($data['projects'] ?? [] as $project) {
             $kasbon = $this->createTeamKasbonRecord($division, $project);
@@ -306,12 +324,14 @@ class KasbonService
 
         $periodStartDateCarbon = Carbon::parse($periodStartDate);
 
-        if ($employee->isPayrollPaidByStartDate($periodStartDateCarbon)) {
+        $locking = $this->payrollService->findLockingPayroll($employeeCode, $periodStartDateCarbon, $periodStartDateCarbon);
+
+        if ($locking) {
             return [
                 'valid' => false,
                 'message' => sprintf(
-                    'Tidak dapat melakukan kasbon! Payroll periode %s sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
-                    $periodStartDateCarbon->format('d M Y')
+                    'Tidak dapat melakukan kasbon! Payroll periode %s sudah dibayar (status: paid). Kasbon hanya bisa dilakukan pada periode yang belum dibayar.',
+                    $locking->formatted_period
                 ),
             ];
         }
@@ -367,6 +387,18 @@ class KasbonService
         $oldType = $kasbon->kasbon_type;
         $oldEmployeeId = $kasbon->employee_id;
         $oldPeriodStart = Carbon::parse($kasbon->period_start_date)->format('Y-m-d');
+        $oldPeriodEnd = $kasbon->period_end_date
+            ? Carbon::parse($kasbon->period_end_date)->format('Y-m-d')
+            : $oldPeriodStart;
+        $oldProjectNames = is_array($kasbon->project_names) ? $kasbon->project_names : [];
+
+        // Kunci data: kasbon pada periode yang payroll-nya sudah dibayar tidak
+        // boleh diubah (kecuali karyawan baru yang belum masuk payroll paid).
+        if ($oldType === 'personal' && $oldEmployeeId) {
+            $this->assertKasbonNotLocked($oldEmployeeId, $oldPeriodStart, $oldPeriodEnd);
+        } elseif ($oldType === 'team' && ! empty($oldProjectNames)) {
+            $this->assertTeamKasbonProjectsNotLocked($oldProjectNames, $oldPeriodStart, $oldPeriodEnd);
+        }
 
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
         $data = $this->normalizeProjectNames($data);
@@ -404,6 +436,28 @@ class KasbonService
             $data['period_month'] = $periodStart->month;
             $data['period_year'] = $periodStart->year;
             $data['week_number'] = $periodStart->weekOfMonth;
+        }
+
+        // Kunci data pada kondisi BARU setelah edit: menolak bila kasbon
+        // dipindahkan ke karyawan/proyek/periode yang sudah terkunci.
+        if ($data['kasbon_type'] === 'personal' && ! empty($data['employee_id'])) {
+            $newStart = ! empty($data['period_start_date'])
+                ? Carbon::parse($data['period_start_date'])
+                : Carbon::parse($oldPeriodStart);
+            $newEnd = ! empty($data['period_end_date'])
+                ? Carbon::parse($data['period_end_date'])
+                : $newStart->copy();
+
+            $this->assertKasbonNotLocked($data['employee_id'], $newStart, $newEnd);
+        } elseif ($data['kasbon_type'] === 'team') {
+            $newProjectNames = array_values(array_unique(array_filter(
+                array_map('trim', (array) ($data['project_names'] ?? [])),
+                fn ($value) => $value !== ''
+            )));
+
+            if (! empty($newProjectNames)) {
+                $this->assertTeamKasbonProjectsNotLocked($newProjectNames, $oldPeriodStart, $oldPeriodEnd);
+            }
         }
 
         $result = $kasbon->update($data);
@@ -450,6 +504,26 @@ class KasbonService
             ->pending()
             ->whereDoesntHave('payments', fn ($query) => $query->whereNotNull('payroll_id'))
             ->get();
+
+        // Kunci data: cek semua kasbon dulu sebelum ada yang dihapus — kasbon
+        // pada periode yang payroll-nya sudah dibayar tidak boleh dihapus
+        // (kecuali karyawan baru yang belum masuk payroll paid periode itu).
+        foreach ($pendingKasbons as $kasbon) {
+            $periodStart = Carbon::parse($kasbon->period_start_date);
+            $periodEnd = $kasbon->period_end_date
+                ? Carbon::parse($kasbon->period_end_date)
+                : $periodStart->copy();
+
+            if ($kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
+                $this->assertKasbonNotLocked($kasbon->employee_id, $periodStart, $periodEnd);
+            } elseif ($kasbon->kasbon_type === 'team') {
+                $projectNames = is_array($kasbon->project_names) ? $kasbon->project_names : [];
+
+                if (! empty($projectNames)) {
+                    $this->assertTeamKasbonProjectsNotLocked($projectNames, $periodStart, $periodEnd);
+                }
+            }
+        }
 
         $deleted = $pendingKasbons->count();
         $skipped = count($kasbonCodes) - $deleted;
@@ -567,6 +641,93 @@ class KasbonService
     }
 
     /**
+     * Melempar DomainException jika kasbon personal seorang karyawan pada
+     * rentang periode menimpa payroll PAID (data terkunci).
+     *
+     * @param  string         $employeeCode  Kode karyawan
+     * @param  Carbon|string  $startDate     Awal periode kasbon (inklusif)
+     * @param  Carbon|string  $endDate       Akhir periode kasbon (inklusif)
+     * @return void
+     *
+     * @throws \DomainException
+     */
+    private function assertKasbonNotLocked(string $employeeCode, Carbon|string $startDate, Carbon|string $endDate): void
+    {
+        $start = $startDate instanceof Carbon ? $startDate : Carbon::parse($startDate);
+        $end = $endDate instanceof Carbon ? $endDate : Carbon::parse($endDate);
+
+        $locking = $this->payrollService->findLockingPayroll($employeeCode, $start, $end);
+
+        if ($locking) {
+            $employee = Employee::find($employeeCode);
+            $name = $employee?->name ?: $employeeCode;
+
+            throw new \DomainException(sprintf(
+                'Kasbon %s (%s) pada periode %s terkunci karena payroll periode tersebut sudah dibayar (status: paid). '
+                .'Hapus payroll paid terkait untuk membuka kunci dan mengubah data periode ini. '
+                .'Karyawan baru yang belum masuk payroll paid periode ini tetap dapat diisi.',
+                $name,
+                $employeeCode,
+                $locking->formatted_period
+            ));
+        }
+    }
+
+    /**
+     * Melempar DomainException jika kasbon divisi untuk satu baris proyek
+     * menimpa payroll PAID pada proyek + periode tersebut.
+     *
+     * @param  array<string, mixed>  $project  Baris proyek (project, period_start_date, period_end_date)
+     * @return void
+     *
+     * @throws \DomainException
+     */
+    private function assertTeamKasbonNotLocked(array $project): void
+    {
+        $projectName = trim((string) ($project['project'] ?? ''));
+
+        if ($projectName === '') {
+            return;
+        }
+
+        $this->assertTeamKasbonProjectsNotLocked(
+            [$projectName],
+            $project['period_start_date'],
+            $project['period_end_date'] ?? $project['period_start_date']
+        );
+    }
+
+    /**
+     * Melempar DomainException jika kasbon divisi untuk sekumpulan proyek pada
+     * rentang periode menimpa payroll PAID (data terkunci).
+     *
+     * @param  array<int, string>  $projectNames  Nama proyek
+     * @param  Carbon|string       $startDate     Awal periode kasbon (inklusif)
+     * @param  Carbon|string       $endDate       Akhir periode kasbon (inklusif)
+     * @return void
+     *
+     * @throws \DomainException
+     */
+    private function assertTeamKasbonProjectsNotLocked(array $projectNames, Carbon|string $startDate, Carbon|string $endDate): void
+    {
+        $start = $startDate instanceof Carbon ? $startDate : Carbon::parse($startDate);
+        $end = $endDate instanceof Carbon ? $endDate : Carbon::parse($endDate);
+
+        foreach ($projectNames as $projectName) {
+            $locking = $this->payrollService->findLockingPayrollForProject($projectName, $start, $end);
+
+            if ($locking) {
+                throw new \DomainException(sprintf(
+                    'Kasbon divisi untuk proyek %s pada periode %s terkunci karena payroll proyek tersebut sudah dibayar (status: paid). '
+                    .'Hapus payroll paid terkait untuk membuka kunci dan mengubah data periode ini.',
+                    $projectName,
+                    $locking->formatted_period
+                ));
+            }
+        }
+    }
+
+    /**
      * Mendapatkan total sisa kasbon yang belum dibayar untuk karyawan tertentu.
      *
      * Logika:
@@ -640,7 +801,9 @@ class KasbonService
 
         $periodStartDateCarbon = Carbon::parse($periodStartDate);
 
-        if ($employee->isPayrollPaidByStartDate($periodStartDateCarbon)) {
+        $locking = $this->payrollService->findLockingPayroll($employeeCode, $periodStartDateCarbon, $periodStartDateCarbon);
+
+        if ($locking) {
             return [
                 'success' => false,
                 'employee_name' => $employee->name,
@@ -651,8 +814,8 @@ class KasbonService
                 'no_attendance' => false,
                 'max_kasbon_formatted' => 'Rp 0',
                 'message' => sprintf(
-                    'Payroll periode %s sudah dibayar (status: paid). Kasbon hanya bisa dilakukan untuk minggu yang belum dibayar.',
-                    $periodStartDateCarbon->format('d M Y')
+                    'Payroll periode %s sudah dibayar (status: paid). Kasbon tidak dapat dilakukan pada periode yang sudah dibayar.',
+                    $locking->formatted_period
                 ),
             ];
         }
