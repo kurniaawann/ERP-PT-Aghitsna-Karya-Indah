@@ -103,6 +103,9 @@ class RecapProyekController extends Controller
     /**
      * Hapus beberapa rekap proyek sekaligus (bulk delete).
      *
+     * Rekap yang masih digunakan (Laporan Keuangan, payroll, kasbon, atau
+     * karyawan) tidak bisa dihapus agar tidak meninggalkan data yatim.
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroySelected(Request $request)
@@ -111,6 +114,16 @@ class RecapProyekController extends Controller
 
         if (empty($selectedIds)) {
             return back()->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        // Guard: rekap yang masih dipakai data lain tidak boleh dihapus
+        $usedIds = $this->service->findUsedRecapIds($selectedIds);
+
+        if (! empty($usedIds)) {
+            $usedNames = $this->service->getRecapLabels($usedIds);
+            $msg = "Rekap proyek berikut tidak dapat dihapus karena masih digunakan pada data lain (Laporan Keuangan, payroll, kasbon, atau karyawan): {$usedNames}. Silakan hapus atau ubah data yang menggunakan proyek ini terlebih dahulu.";
+
+            return back()->with('error', $msg);
         }
 
         DB::beginTransaction();

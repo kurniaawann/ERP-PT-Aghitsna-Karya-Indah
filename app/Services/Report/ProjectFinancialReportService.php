@@ -604,6 +604,9 @@ class ProjectFinancialReportService
      * Keuangan Proyek ketika kasbon divisi ber-proyek dilunasi otomatis saat
      * payroll proyek tersebut dibayar.
      *
+     * Baris dicatat pada kategori "Upah Pekerja" (sama dengan baris agregat
+     * Upah Kerja payroll paid) — bukan kategori kasbon terpisah.
+     *
      * Baris diagregasi per (divisi, periode kasbon) — beberapa kasbon divisi
      * dengan divisi + periode sama dijumlahkan ke satu baris. Keterangan memuat
      * rentang periode agar dua periode yang berbeda tidak saling menumpuk.
@@ -634,7 +637,9 @@ class ProjectFinancialReportService
             return null;
         }
 
-        $category = $this->resolveKasbonCategory($userId);
+        // Kasbon divisi dicatat pada kategori "Upah Pekerja" (sama dengan baris
+        // agregat Upah Kerja dari payroll paid), bukan kategori kasbon terpisah.
+        $category = $this->resolveUpahPekerjaCategory($userId);
 
         if (! $category) {
             return null;
@@ -667,83 +672,13 @@ class ProjectFinancialReportService
     }
 
     /**
-     * Membuat/memperbarui baris INFORMASI "Kasbon Pak {nama}" pada Laporan
-     * Keuangan Proyek.
-     *
-     * Kasbon personal sudah dipotong dari upah saat perhitungan payroll, jadi
-     * baris ini TIDAK menambah pengeluaran (expense_amount = 0, is_informational
-     * = true). Nominal potongan ditampilkan pada kolom "Keterangan Bon" agar
-     * tetap informatif tanpa mengubah saldo laporan.
-     *
-     * @param  ProjectRecap  $recap
-     * @param  string  $employeeName  Nama karyawan
-     * @param  \Carbon\Carbon|string  $periodStart  Periode payroll (mulai)
-     * @param  \Carbon\Carbon|string|null  $periodEnd  Periode payroll (akhir)
-     * @param  int  $amount  Nominal potongan kasbon (untuk keterangan)
-     */
-    public function upsertPersonalKasbonInfoItem(
-        ProjectRecap $recap,
-        string $employeeName,
-        $periodStart,
-        $periodEnd,
-        int $amount,
-        $date = null,
-        $userId = null
-    ): ?ProjectFinancialReportItem {
-        if ($amount <= 0) {
-            return null;
-        }
-
-        $userId = $userId ?? auth()->id();
-
-        if (! $userId) {
-            return null;
-        }
-
-        $category = $this->resolveKasbonCategory($userId);
-
-        if (! $category) {
-            return null;
-        }
-
-        $report = $this->getOrCreateForRecap($recap);
-
-        $description = $this->personalKasbonDescription($employeeName, $periodStart, $periodEnd);
-
-        $item = $report->items()
-            ->where('transaction_category_id', $category->id)
-            ->where('description', $description)
-            ->first();
-
-        $data = [
-            'transaction_category_id' => $category->id,
-            'transaction_date' => $date ? Carbon::parse($date)->format('Y-m-d') : now()->toDateString(),
-            'description' => $description,
-            'income_amount' => null,
-            'expense_amount' => 0,
-            'is_informational' => true,
-            'keterangan_bon' => 'Sudah dipotong dari upah: Rp '.number_format($amount, 0, ',', '.'),
-        ];
-
-        if ($item) {
-            $item->update($data);
-            $this->flushUsedCategoryCache($userId);
-
-            return $item;
-        }
-
-        return $this->createItem($report, $data, null);
-    }
-
-    /**
      * Menyesuaikan baris kasbon pada Laporan Keuangan setelah sebagian payroll
      * paid pada proyek + periode dihapus.
      *
-     * Dua jenis baris yang dihitung ulang:
-     * - Kasbon Divisi (pengeluaran): dari KasbonPayment payroll_deduction yang
-     *   masih terhubung payroll paid tersisa.
-     * - Kasbon Pak {nama} (informasi): dari potongan kasbon (kasbon_deduction)
-     *   payroll paid tersisa per karyawan.
+     * - Kasbon Divisi (pengeluaran) dihitung ulang dari KasbonPayment
+     *   payroll_deduction yang masih terhubung payroll paid tersisa.
+     * - Baris "Kasbon Pak {nama}" (informasi) dihapus total — kasbon personal
+     *   tidak lagi dicatat pada Laporan Keuangan Proyek.
      *
      * Baris yang tidak lagi didukung data akan dihapus agar laporan tidak
      * meninggalkan baris yatim.
@@ -773,7 +708,9 @@ class ProjectFinancialReportService
             return;
         }
 
-        $category = $this->resolveKasbonCategory($userId);
+        // Kasbon divisi & personal dicatat pada kategori "Upah Pekerja" (sama
+        // dengan baris agregat Upah Kerja payroll paid), bukan kategori kasbon.
+        $category = $this->resolveUpahPekerjaCategory($userId);
 
         if (! $category) {
             return;
@@ -832,42 +769,18 @@ class ProjectFinancialReportService
             $item->delete();
         });
 
-        // ── Baris Kasbon Pak {nama} (informasi) ────────────────────────────
-        $personalGroups = $remainingPayrolls
-            ->filter(fn (Payroll $payroll) => (int) $payroll->kasbon_deduction > 0)
-            ->groupBy(fn (Payroll $payroll) => $this->personalKasbonDescription(
-                $payroll->employee->name ?? 'Pekerja',
-                $payroll->period_start_date,
-                $payroll->period_end_date
-            ));
-
-        $validPersonalDescriptions = $personalGroups->keys();
-
-        foreach ($personalGroups as $description => $payrolls) {
-            $firstPayroll = $payrolls->first();
-            $this->upsertPersonalKasbonInfoItem(
-                $recap,
-                $firstPayroll->employee->name ?? 'Pekerja',
-                $firstPayroll->period_start_date,
-                $firstPayroll->period_end_date,
-                (int) $payrolls->sum('kasbon_deduction'),
-                now()->toDateString(),
-                $userId
-            );
-        }
-
-        $personalQuery = $report->items()
+        // ── Baris "Kasbon Pak {nama}" (informasi) dihapus total ─────────────
+        // Kasbon personal tidak lagi dicatat sebagai baris informasi pada
+        // Laporan Keuangan Proyek. Sisa baris lama dibersihkan agar idempoten.
+        $report->items()
             ->where('transaction_category_id', $category->id)
-            ->where('is_informational', true);
-
-        if ($validPersonalDescriptions->isNotEmpty()) {
-            $personalQuery->whereNotIn('description', $validPersonalDescriptions);
-        }
-
-        $personalQuery->get()->each(function ($item) {
-            $this->deleteProofFile($item->proof_file);
-            $item->delete();
-        });
+            ->where('is_informational', true)
+            ->where('description', 'LIKE', 'Kasbon Pak%')
+            ->get()
+            ->each(function ($item) {
+                $this->deleteProofFile($item->proof_file);
+                $item->delete();
+            });
 
         $this->flushUsedCategoryCache($userId);
     }
@@ -878,15 +791,6 @@ class ProjectFinancialReportService
     private function teamKasbonDescription(string $division, $periodStart, $periodEnd): string
     {
         return 'Kasbon Divisi '.$division.' periode '.Carbon::parse($periodStart)->format('d/m/Y')
-            .($periodEnd ? ' - '.Carbon::parse($periodEnd)->format('d/m/Y') : '');
-    }
-
-    /**
-     * Membangun keterangan baris kasbon personal (informasi).
-     */
-    private function personalKasbonDescription(string $employeeName, $periodStart, $periodEnd): string
-    {
-        return 'Kasbon Pak '.$employeeName.' periode '.Carbon::parse($periodStart)->format('d/m/Y')
             .($periodEnd ? ' - '.Carbon::parse($periodEnd)->format('d/m/Y') : '');
     }
 

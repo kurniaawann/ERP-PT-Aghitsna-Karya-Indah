@@ -202,16 +202,17 @@ class PayrollService
     /**
      * Mendapatkan daftar proyek unik dari data karyawan milik user saat ini.
      *
-     * Dipakai sebagai opsi multi-select proyek pada modal Generate Payroll.
-     * Hanya proyek yang benar-benar dimiliki karyawan yang dimunculkan agar
-     * opsi yang dipilih selalu bisa diproses (guard "tanpa proyek" tidak
-     * menghalangi generate).
+     * Dipakai sebagai opsi multi-select proyek pada modal Generate Payroll dan
+     * dropdown proyek kasbon tim. Hanya proyek milik user yang login (Rekap
+     * Proyek dengan created_by = user) yang dimunculkan, sehingga proyek yang
+     * dipilih selalu punya Rekap Proyek — kasbon tim bisa lunas otomatis dan
+     * entri Laporan Keuangan bisa dibuat saat payroll dibayar.
      *
      * @return \Illuminate\Support\Collection<int, string>
      */
     public function getProjectOptions(): Collection
     {
-        return Employee::where('created_by', auth()->id())
+        return ProjectRecap::where('created_by', auth()->id())
             ->whereNotNull('project_name')
             ->where('project_name', '!=', '')
             ->distinct()
@@ -988,7 +989,6 @@ class PayrollService
                         $this->financialReportService->upsertPayrollExpenseItem($recap, $periodPayrolls);
 
                         $this->settleTeamKasbons($recap, $periodPayrolls, $paymentDate);
-                        $this->recordPersonalKasbonInfoItems($recap, $periodPayrolls, $paymentDate);
                     }
                 }
 
@@ -1074,38 +1074,6 @@ class PayrollService
                 $remaining,
                 $paymentDate,
                 $firstPayroll->created_by
-            );
-        }
-    }
-
-    /**
-     * Mencatat baris informasi "Kasbon Pak {nama}" pada Laporan Keuangan Proyek
-     * untuk payroll yang baru dibayar.
-     *
-     * Kasbon personal sudah dipotong dari upah saat perhitungan payroll, jadi
-     * baris ini hanya informasi (tidak mengubah total laporan).
-     *
-     * @param  ProjectRecap  $recap
-     * @param  \Illuminate\Support\Collection<int, Payroll>  $periodPayrolls
-     * @param  string  $paymentDate
-     */
-    private function recordPersonalKasbonInfoItems(ProjectRecap $recap, Collection $periodPayrolls, string $paymentDate): void
-    {
-        foreach ($periodPayrolls as $payroll) {
-            $deduction = (int) $payroll->kasbon_deduction;
-
-            if ($deduction <= 0) {
-                continue;
-            }
-
-            $this->financialReportService->upsertPersonalKasbonInfoItem(
-                $recap,
-                $payroll->employee?->name ?? 'Pekerja',
-                $payroll->period_start_date,
-                $payroll->period_end_date,
-                $deduction,
-                $paymentDate,
-                $payroll->created_by
             );
         }
     }

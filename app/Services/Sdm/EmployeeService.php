@@ -7,6 +7,7 @@ use App\Models\Sdm\Employee;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -28,11 +29,6 @@ class EmployeeService
      *   diabaikan.
      * - Diurutkan created_at terbaru; kode karyawan dipakai sebagai primary key
      *   bisnis (employee_code), bukan id numerik.
-     *
-     * @param  string|null  $search
-     * @param  string|null  $projectName
-     * @param  int          $perPage
-     * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     public function getPaginatedEmployees(?string $search, ?string $projectName = null, int $perPage = 15): LengthAwarePaginator
     {
@@ -56,34 +52,32 @@ class EmployeeService
      * Logika: hasil di-cache 24 jam di key 'sdm:divisions:dropdown:{userId}'
      * (key yang sama dipakai DivisionService saat flush) — cache di-flush saat
      * CRUD divisi. Fallback query langsung jika cache bermasalah.
-     *
-     * @return \Illuminate\Support\Collection
      */
-   public function getAllDivisions(): Collection
-{
-    $userId = auth()->id();
+    public function getAllDivisions(): Collection
+    {
+        $userId = auth()->id();
 
-    try {
-        return Cache::remember(
-            'sdm:divisions:dropdown:' . $userId,
-            now()->addHours(24),
-            function () use ($userId) {
-                return Division::where('created_by', $userId)
-                    ->orderBy('name')
-                    ->get();
-            }
-        );
-    } catch (\Exception $e) {
-        Log::warning(
-            'Cache read failed for sdm:divisions:dropdown:' . $userId . ': ' .
-            $e->getMessage()
-        );
+        try {
+            return Cache::remember(
+                'sdm:divisions:dropdown:'.$userId,
+                now()->addHours(24),
+                function () use ($userId) {
+                    return Division::where('created_by', $userId)
+                        ->orderBy('name')
+                        ->get();
+                }
+            );
+        } catch (\Exception $e) {
+            Log::warning(
+                'Cache read failed for sdm:divisions:dropdown:'.$userId.': '.
+                $e->getMessage()
+            );
 
-        return Division::where('created_by', $userId)
-            ->orderBy('name')
-            ->get();
+            return Division::where('created_by', $userId)
+                ->orderBy('name')
+                ->get();
+        }
     }
-}
 
     /**
      * Membuat karyawan baru dengan kode karyawan yang dihasilkan secara otomatis.
@@ -95,21 +89,19 @@ class EmployeeService
      *   agar dropdown karyawan tidak basi.
      *
      * @param  array  $data  Data karyawan yang sudah divalidasi
-     * @return \App\Models\Sdm\Employee
      */
     public function createEmployee(array $data): Employee
     {
         $data['employee_code'] = Employee::generateEmployeeCode();
         $data['created_by'] = auth()->id();
+
         return Employee::create($data);
     }
 
     /**
      * Memperbarui karyawan yang sudah ada.
      *
-     * @param  \App\Models\Sdm\Employee  $employee
      * @param  array  $data  Data karyawan yang sudah divalidasi
-     * @return bool
      */
     public function updateEmployee(Employee $employee, array $data): bool
     {
@@ -119,8 +111,16 @@ class EmployeeService
     /**
      * Menghapus karyawan berdasarkan kode karyawannya.
      *
-     * @param  array  $employeeCodes
-     * @return int  Jumlah data yang dihapus
+     * Hanya karyawan milik user login yang dihapus. Karyawan yang masih
+     * memiliki data payroll atau kasbon TIDAK bisa dihapus, karena FK
+     * payrolls.employee_id dan kasbons.employee_id bercascade delete — payroll
+     * (termasuk yang sudah dibayar) dan kasbon akan hilang diam-diam tanpa
+     * me-reconcile baris Laporan Keuangan Proyek. Guard ini konsisten dengan
+     * pola hapus RAB/rekap proyek.
+     *
+     * @return int Jumlah data yang dihapus
+     *
+     * @throws \DomainException Bila karyawan masih dipakai payroll atau kasbon
      */
     public function deleteEmployees(array $employeeCodes): int
     {
@@ -128,15 +128,49 @@ class EmployeeService
             return 0;
         }
 
-        return Employee::whereIn('employee_code', $employeeCodes)->delete();
+        $employees = Employee::where('created_by', auth()->id())
+            ->whereIn('employee_code', $employeeCodes)
+            ->get();
+
+        if ($employees->isEmpty()) {
+            return 0;
+        }
+
+        $blocked = [];
+
+        foreach ($employees as $employee) {
+            $hasPayroll = DB::table('payrolls')
+                ->where('created_by', $employee->created_by)
+                ->where('employee_id', $employee->employee_code)
+                ->exists();
+
+            $hasKasbon = DB::table('kasbons')
+                ->where('created_by', $employee->created_by)
+                ->where('employee_id', $employee->employee_code)
+                ->exists();
+
+            if ($hasPayroll || $hasKasbon) {
+                $blocked[] = $employee->name ?: $employee->employee_code;
+            }
+        }
+
+        if (! empty($blocked)) {
+            throw new \DomainException(
+                'Karyawan berikut tidak dapat dihapus karena masih memiliki data payroll atau kasbon: '.implode(', ', $blocked).'. Hapus atau selesaikan data tersebut terlebih dahulu.'
+            );
+        }
+
+        return Employee::where('created_by', auth()->id())
+            ->whereIn('employee_code', $employeeCodes)
+            ->delete();
     }
 
     public function flushCache(): void
     {
         try {
-            Cache::forget('sdm:employees:dropdown:' . auth()->id());
+            Cache::forget('sdm:employees:dropdown:'.auth()->id());
         } catch (\Exception $e) {
-            Log::warning('Cache DELETE error [sdm:employees:dropdown]: ' . $e->getMessage());
+            Log::warning('Cache DELETE error [sdm:employees:dropdown]: '.$e->getMessage());
         }
     }
 }

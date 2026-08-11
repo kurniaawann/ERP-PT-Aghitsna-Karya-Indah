@@ -4,9 +4,9 @@ namespace App\Services\Administrasi;
 
 use App\Models\Administrasi\RAB;
 use App\Models\Administrasi\RABCategory;
-use App\Models\Administrasi\RABSubCategory;
 use App\Models\Administrasi\RABItem;
 use App\Models\Administrasi\RABMiscellaneousCost;
+use App\Models\Administrasi\RABSubCategory;
 use App\Models\Finance\ProjectRecap;
 use App\Services\Finance\RecapProyekService;
 use Illuminate\Support\Facades\DB;
@@ -31,8 +31,6 @@ class RABService
     /**
      * Mendapatkan daftar RAB dengan eager load dan pagination.
      *
-     * @param string|null $search
-     * @param int $perPage
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function getPaginatedRABs(?string $search = null, int $perPage = 15)
@@ -49,9 +47,6 @@ class RABService
 
     /**
      * Mendapatkan detail RAB lengkap dengan relasi.
-     *
-     * @param string $rabNumber
-     * @return RAB
      */
     public function getRABWithDetails(string $rabNumber): RAB
     {
@@ -63,9 +58,6 @@ class RABService
 
     /**
      * Mendapatkan data RAB untuk keperluan edit form.
-     *
-     * @param string $rabNumber
-     * @return array
      */
     public function getRABEditData(string $rabNumber): array
     {
@@ -105,7 +97,7 @@ class RABService
                                     || $item->unit_price !== null
                                     || $item->sub_harga !== null;
 
-                                $useLegacyPricing = !$hasItemPricing && $index === 0;
+                                $useLegacyPricing = ! $hasItemPricing && $index === 0;
 
                                 return [
                                     'id' => $item->id,
@@ -138,23 +130,22 @@ class RABService
     /**
      * Menyimpan RAB baru beserta kategori, sub-kategori, item, dan biaya lain-lain.
      *
-     * @param array $validatedData Data sudah tervalidasi
-     * @param array $rabData Data kategori/sub-kategori/item dari JSON
-     * @param array $miscCostsData Data biaya lain-lain dari JSON
-     * @return RAB
+     * @param  array  $validatedData  Data sudah tervalidasi
+     * @param  array  $rabData  Data kategori/sub-kategori/item dari JSON
+     * @param  array  $miscCostsData  Data biaya lain-lain dari JSON
      */
     public function storeRAB(array $validatedData, array $rabData, array $miscCostsData): RAB
     {
         $seqNumber = RAB::getNextSequenceNumber();
         $year = date('Y', strtotime($validatedData['date']));
         $month = (int) date('n', strtotime($validatedData['date']));
-        $rabNumber = str_pad($seqNumber, 3, '0', STR_PAD_LEFT) . '/RAB/' . $this->arabicToRoman($month) . "/{$year}";
+        $rabNumber = str_pad($seqNumber, 3, '0', STR_PAD_LEFT).'/RAB/'.$this->arabicToRoman($month)."/{$year}";
 
         $totalAmount = $this->calculateTotalAmount($rabData);
         $miscCostsTotal = $this->calculateMiscCostsTotal($miscCostsData);
         $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
 
-        $rab = DB::transaction(function () use ($validatedData, $rabNumber, $seqNumber, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
+        $rab = DB::transaction(function () use ($validatedData, $rabNumber, $seqNumber, $rabData, $miscCostsData, $totalAnggaranBiaya) {
             $isSuperAdmin = auth()->check() && auth()->user()->role === 'superadmin';
 
             $rab = RAB::create([
@@ -167,7 +158,7 @@ class RABService
                 'intro_text' => $validatedData['intro_text'],
                 'total_amount' => $totalAnggaranBiaya,
                 'incoming_payment' => $isSuperAdmin ? ($validatedData['incoming_payment'] ?? 0) : 0,
-                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
+                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)).' rupiah',
                 'selected_payment_accounts' => $validatedData['selected_payment_accounts'] ?? [],
                 'signed_by' => $validatedData['signed_by'] ?? null,
                 'division' => $validatedData['division'] ?? null,
@@ -195,11 +186,10 @@ class RABService
     /**
      * Memperbarui RAB yang sudah ada.
      *
-     * @param string $rabNumber Nomor RAB yang akan diupdate
-     * @param array $validatedData Data sudah tervalidasi
-     * @param array $rabData Data kategori/sub-kategori/item dari JSON
-     * @param array $miscCostsData Data biaya lain-lain dari JSON
-     * @return RAB
+     * @param  string  $rabNumber  Nomor RAB yang akan diupdate
+     * @param  array  $validatedData  Data sudah tervalidasi
+     * @param  array  $rabData  Data kategori/sub-kategori/item dari JSON
+     * @param  array  $miscCostsData  Data biaya lain-lain dari JSON
      */
     public function updateRAB(string $rabNumber, array $validatedData, array $rabData, array $miscCostsData): RAB
     {
@@ -209,7 +199,7 @@ class RABService
         $miscCostsTotal = $this->calculateMiscCostsTotal($miscCostsData);
         $totalAnggaranBiaya = $totalAmount + $miscCostsTotal;
 
-        DB::transaction(function () use ($rab, $validatedData, $totalAmount, $rabData, $miscCostsData, $totalAnggaranBiaya) {
+        DB::transaction(function () use ($rab, $validatedData, $rabData, $miscCostsData, $totalAnggaranBiaya) {
             $isAdmin = auth()->check() && auth()->user()->role === 'admin';
             $isSuperAdmin = auth()->check() && auth()->user()->role === 'superadmin';
 
@@ -223,7 +213,7 @@ class RABService
                 'incoming_payment' => $isSuperAdmin
                     ? ($validatedData['incoming_payment'] ?? 0)
                     : $rab->incoming_payment,
-                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah',
+                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)).' rupiah',
                 'selected_payment_accounts' => $isAdmin
                     ? $rab->selected_payment_accounts
                     : ($validatedData['selected_payment_accounts'] ?? []),
@@ -232,13 +222,27 @@ class RABService
             ]);
 
             // Sinkronkan Rekap Proyek terkait: nama proyek & total RAB
-            // mengikuti perubahan pada RAB.
-            ProjectRecap::where('rab_number', $rab->rab_number)
+            // mengikuti perubahan pada RAB. Bila nama proyek berubah, referensi
+            // (payroll, karyawan, kasbon) ikut diubah agar tidak putus.
+            $recap = ProjectRecap::where('rab_number', $rab->rab_number)
                 ->where('created_by', auth()->id())
-                ->update([
+                ->first();
+
+            if ($recap) {
+                $oldProjectName = $recap->project_name;
+                $recap->update([
                     'project_name' => $validatedData['project_name'],
                     'total_rab' => $totalAnggaranBiaya,
                 ]);
+
+                if ($oldProjectName !== $validatedData['project_name']) {
+                    app(RecapProyekService::class)->renameProject(
+                        $oldProjectName,
+                        $validatedData['project_name'],
+                        $recap->created_by
+                    );
+                }
+            }
 
             $rab->categories()->delete();
             $rab->miscellaneousCosts()->delete();
@@ -254,38 +258,68 @@ class RABService
      * Menghapus RAB berdasarkan nomor RAB.
      * Menghapus header dan cascade ke kategori, sub-kategori, item, dan biaya lain-lain.
      *
-     * @param array $rabNumbers Array nomor RAB yang akan dihapus
+     * Rekap Proyek yang tertaut RAB ikut dihapus, TAPI hanya jika rekap tersebut
+     * tidak lagi dipakai data lain. Bila rekap masih digunakan (Laporan Keuangan
+     * berisi transaksi, payroll, kasbon, atau karyawan), penghapusan RAB diblokir
+     * agar data transaksi riil tidak hilang diam-diam — konsisten dengan guard
+     * hapus rekap di RecapProyekController.
+     *
+     * @param  array  $rabNumbers  Array nomor RAB yang akan dihapus
      * @return int Jumlah RAB yang dihapus
+     *
+     * @throws \DomainException Bila rekap proyek terkait masih digunakan data lain
      */
     public function destroyRABs(array $rabNumbers): int
     {
         return DB::transaction(function () use ($rabNumbers) {
+            $recapService = app(RecapProyekService::class);
+
+            // Kumpulkan semua rekap yang tertaut RAB yang akan dihapus untuk
+            // diperiksa sebelum cascade hapus dilakukan.
+            $linkedRecapIds = ProjectRecap::where('created_by', auth()->id())
+                ->whereIn('rab_number', $rabNumbers)
+                ->pluck('id')
+                ->all();
+
+            $usedRecapIds = $recapService->findUsedRecapIds($linkedRecapIds);
+
+            if (! empty($usedRecapIds)) {
+                $usedNames = $recapService->getRecapLabels($usedRecapIds);
+                throw new \DomainException(
+                    "RAB tidak dapat dihapus karena masih terhubung dengan rekap proyek yang digunakan data lain (Laporan Keuangan, payroll, kasbon, atau karyawan): {$usedNames}. Silakan hapus atau ubah data yang menggunakan proyek tersebut terlebih dahulu."
+                );
+            }
+
             $count = 0;
             foreach ($rabNumbers as $rabNumber) {
+                $rab = RAB::where('rab_number', $rabNumber)
+                    ->where('created_by', auth()->id())
+                    ->first();
+
+                if (! $rab) {
+                    continue;
+                }
+
                 // Rekap Proyek terkait ikut dihapus beserta file design-nya.
                 $recapIds = ProjectRecap::where('rab_number', $rabNumber)
                     ->where('created_by', auth()->id())
                     ->pluck('id')
                     ->all();
 
-                if (!empty($recapIds)) {
-                    app(RecapProyekService::class)->bulkDelete($recapIds);
+                if (! empty($recapIds)) {
+                    $recapService->bulkDelete($recapIds);
                 }
 
-                RAB::where('rab_number', $rabNumber)
-                    ->where('created_by', auth()->id())
-                    ->delete();
+                $rab->delete();
                 $count++;
             }
+
             return $count;
         });
     }
 
     /**
      * Menghitung total biaya dari data kategori/sub-kategori/item.
-     *
-     * @param array $rabData
-     * @return int
      */
     public function calculateTotalAmount(array $rabData): int
     {
@@ -303,9 +337,6 @@ class RABService
 
     /**
      * Menghitung total sub-kategori dari item-item di dalamnya.
-     *
-     * @param array $subcategory
-     * @return int
      */
     public function calculateSubcategoryTotal(array $subcategory): int
     {
@@ -327,9 +358,6 @@ class RABService
 
     /**
      * Menghitung total biaya lain-lain.
-     *
-     * @param array $miscCostsData
-     * @return int
      */
     public function calculateMiscCostsTotal(array $miscCostsData): int
     {
@@ -344,10 +372,6 @@ class RABService
 
     /**
      * Membuat kategori beserta sub-kategori dan item untuk sebuah RAB.
-     *
-     * @param RAB $rab
-     * @param array $rabData
-     * @return void
      */
     private function createCategories(RAB $rab, array $rabData): void
     {
@@ -392,10 +416,6 @@ class RABService
 
     /**
      * Membuat biaya lain-lain untuk sebuah RAB.
-     *
-     * @param RAB $rab
-     * @param array $miscCostsData
-     * @return void
      */
     private function createMiscellaneousCosts(RAB $rab, array $miscCostsData): void
     {
@@ -412,9 +432,6 @@ class RABService
 
     /**
      * Mengonversi angka arab (1-12) ke romawi.
-     *
-     * @param int $num
-     * @return string
      */
     public function arabicToRoman(int $num): string
     {

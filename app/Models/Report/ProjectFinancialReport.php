@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Model untuk Laporan Keuangan Proyek.
@@ -51,6 +52,20 @@ class ProjectFinancialReport extends Model
         static::creating(function ($model) {
             if (empty($model->id)) {
                 $model->id = app(ProjectFinancialReportService::class)->generateId();
+            }
+        });
+
+        // Membersihkan file bukti (proof_file) milik item sebelum laporan
+        // dihapus. Event deleting menembak sebelum record laporan terhapus,
+        // jadi item masih bisa dibaca. Hanya jalur lewat service yang selama ini
+        // membersihkan file (RecapProyekService::bulkDelete); hapus langsung
+        // via model tidak menghapus file karena cascade DB (foreign key) tidak
+        // menembakkan event Eloquent untuk item.
+        static::deleting(function ($model) {
+            foreach ($model->items as $item) {
+                if ($item->proof_file) {
+                    Storage::disk('public')->delete($item->proof_file);
+                }
             }
         });
     }

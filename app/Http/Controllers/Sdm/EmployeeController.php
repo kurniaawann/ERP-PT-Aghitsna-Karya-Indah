@@ -10,6 +10,7 @@ use App\Models\Sdm\Employee;
 use App\Services\Sdm\EmployeeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 /**
@@ -22,15 +23,11 @@ class EmployeeController extends Controller
 {
     /**
      * Instance layanan karyawan.
-     *
-     * @var EmployeeService
      */
     protected EmployeeService $employeeService;
 
     /**
      * Membuat instance controller baru.
-     *
-     * @param  EmployeeService  $employeeService
      */
     public function __construct(EmployeeService $employeeService)
     {
@@ -40,9 +37,6 @@ class EmployeeController extends Controller
     /**
      * Menampilkan daftar karyawan dengan paginasi, pencarian, dan filter
      * proyek opsional.
-     *
-     * @param  Request  $request
-     * @return View
      */
     public function index(Request $request): View
     {
@@ -75,7 +69,7 @@ class EmployeeController extends Controller
         $query = ProjectRecap::where('created_by', auth()->id());
 
         if ($search !== '') {
-            $query->where('project_name', 'like', '%' . $search . '%');
+            $query->where('project_name', 'like', '%'.$search.'%');
         }
 
         $total = (clone $query)->count();
@@ -102,9 +96,6 @@ class EmployeeController extends Controller
      *
      * employee_code dibuat secara otomatis oleh service.
      * daily_wage sudah dinormalisasi oleh form request.
-     *
-     * @param  StoreEmployeeRequest  $request
-     * @return RedirectResponse
      */
     public function store(StoreEmployeeRequest $request): RedirectResponse
     {
@@ -117,10 +108,6 @@ class EmployeeController extends Controller
 
     /**
      * Memperbarui data karyawan yang ditentukan.
-     *
-     * @param  UpdateEmployeeRequest  $request
-     * @param  \App\Models\Sdm\Employee  $employee
-     * @return RedirectResponse
      */
     public function update(UpdateEmployeeRequest $request, Employee $employee): RedirectResponse
     {
@@ -134,8 +121,8 @@ class EmployeeController extends Controller
     /**
      * Menghapus karyawan yang ditentukan secara massal.
      *
-     * @param  Request  $request
-     * @return RedirectResponse
+     * Penghapusan diblokir bila karyawan masih memiliki data payroll atau
+     * kasbon, agar data transaksi riil tidak hilang diam-diam lewat cascade FK.
      */
     public function destroy(Request $request): RedirectResponse
     {
@@ -146,10 +133,23 @@ class EmployeeController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
-        $this->employeeService->deleteEmployees($ids);
+        try {
+            $count = $this->employeeService->deleteEmployees($ids);
+        } catch (\DomainException $e) {
+            return redirect()->route('employee.index')->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Employee destroy failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('employee.index')
+                ->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
+        }
+
         $this->employeeService->flushCache();
 
         return redirect()->route('employee.index')
-            ->with('success', 'Data karyawan berhasil dihapus!');
+            ->with('success', "{$count} data karyawan berhasil dihapus!");
     }
 }

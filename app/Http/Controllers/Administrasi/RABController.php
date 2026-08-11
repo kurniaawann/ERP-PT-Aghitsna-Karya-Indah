@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Administrasi;
 
+use App\Exports\Administrasi\RABExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Administrasi\RABStoreRequest;
+use App\Http\Requests\Administrasi\RABUpdateRequest;
 use App\Models\Administrasi\RAB;
 use App\Services\Administrasi\RABService;
 use App\Services\Finance\PaymentAccountService;
-use App\Http\Requests\Administrasi\RABStoreRequest;
-use App\Http\Requests\Administrasi\RABUpdateRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use App\Exports\Administrasi\RABExport;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
@@ -23,6 +24,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class RABController extends Controller
 {
     protected RABService $rabService;
+
     protected PaymentAccountService $paymentAccountService;
 
     public function __construct(RABService $rabService, PaymentAccountService $paymentAccountService)
@@ -34,7 +36,6 @@ class RABController extends Controller
     /**
      * Menampilkan daftar RAB dengan pagination dan search.
      *
-     * @param Request $request
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
@@ -61,7 +62,6 @@ class RABController extends Controller
     /**
      * Menampilkan detail RAB secara lengkap.
      *
-     * @param string $rabNumber
      * @return \Illuminate\View\View
      */
     public function show(string $rabNumber)
@@ -75,7 +75,6 @@ class RABController extends Controller
     /**
      * AJAX: mendapatkan data RAB untuk form edit.
      *
-     * @param string $rabNumber
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit(string $rabNumber)
@@ -88,13 +87,12 @@ class RABController extends Controller
     /**
      * Menyimpan RAB baru.
      *
-     * @param RABStoreRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(RABStoreRequest $request)
     {
         $rabData = json_decode($request->input('rab_data'), true);
-        if (!$rabData || !is_array($rabData) || count($rabData) === 0) {
+        if (! $rabData || ! is_array($rabData) || count($rabData) === 0) {
             return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')
                 ->withInput();
         }
@@ -111,6 +109,7 @@ class RABController extends Controller
         );
 
         $checkNumber = $rab->rab_number ?? '';
+
         return redirect()->route('rab.index')
             ->with('success', "RAB {$checkNumber} berhasil ditambahkan!");
     }
@@ -118,14 +117,12 @@ class RABController extends Controller
     /**
      * Memperbarui RAB yang sudah ada.
      *
-     * @param RABUpdateRequest $request
-     * @param string $rabNumber
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(RABUpdateRequest $request, string $rabNumber)
     {
         $rabData = json_decode($request->input('rab_data'), true);
-        if (!$rabData || !is_array($rabData) || count($rabData) === 0) {
+        if (! $rabData || ! is_array($rabData) || count($rabData) === 0) {
             return back()->with('error', 'Minimal 1 kategori pekerjaan harus ditambahkan.')
                 ->withInput();
         }
@@ -149,7 +146,10 @@ class RABController extends Controller
     /**
      * Menghapus RAB yang dipilih.
      *
-     * @param Request $request
+     * Penghapusan diblokir bila Rekap Proyek terkait masih digunakan data lain
+     * (Laporan Keuangan berisi transaksi, payroll, kasbon, atau karyawan) agar
+     * data transaksi riil tidak hilang diam-diam lewat cascade.
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request)
@@ -160,7 +160,18 @@ class RABController extends Controller
             return back()->with('error', 'Pilih minimal 1 RAB untuk dihapus.');
         }
 
-        $count = $this->rabService->destroyRABs($rabNumbers);
+        try {
+            $count = $this->rabService->destroyRABs($rabNumbers);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('RAB destroy failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
+        }
 
         return back()->with('success', "{$count} RAB berhasil dihapus.");
     }
@@ -168,7 +179,6 @@ class RABController extends Controller
     /**
      * Export PDF RAB.
      *
-     * @param string $rabNumber
      * @return \Illuminate\Http\Response
      */
     public function exportPDF(string $rabNumber)
@@ -181,13 +191,13 @@ class RABController extends Controller
         ])->setPaper('a4', 'portrait');
 
         $date = date('Y-m-d');
+
         return $pdf->download("RAB_{$safeFileName}_{$date}.pdf");
     }
 
     /**
      * Export Excel RAB.
      *
-     * @param string $rabNumber
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function exportExcel(string $rabNumber)

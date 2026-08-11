@@ -2,10 +2,10 @@
 
 namespace App\Services\Sdm;
 
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Employee;
 use App\Models\Sdm\Kasbon;
 use App\Models\Sdm\KasbonPayment;
-use App\Models\Sdm\Employee;
-use App\Models\Sdm\Division;
 use App\Services\InputNormalizer;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -30,6 +30,7 @@ class KasbonService
     public function __construct(
         private readonly PayrollService $payrollService
     ) {}
+
     /**
      * Mendapatkan daftar kasbon dengan paginasi dan relasi karyawan.
      *
@@ -44,13 +45,12 @@ class KasbonService
      * - appends(request()->only(...)) mempertahankan filter pada URL pagination
      *   agar berpindah halaman tidak kehilangan filter.
      *
-     * @param  string|null  $search   Kata kunci pencarian (kode kasbon, catatan, atau nama karyawan)
-     * @param  int|null     $month    Filter berdasarkan bulan periode
-     * @param  int|null     $year     Filter berdasarkan tahun periode
-     * @param  string|null  $status   Filter berdasarkan status (pending/deducted)
-     * @param  string|null  $type     Filter berdasarkan tipe (personal/team)
-     * @param  int          $perPage  Jumlah data per halaman
-     * @return LengthAwarePaginator
+     * @param  string|null  $search  Kata kunci pencarian (kode kasbon, catatan, atau nama karyawan)
+     * @param  int|null  $month  Filter berdasarkan bulan periode
+     * @param  int|null  $year  Filter berdasarkan tahun periode
+     * @param  string|null  $status  Filter berdasarkan status (pending/deducted)
+     * @param  string|null  $type  Filter berdasarkan tipe (personal/team)
+     * @param  int  $perPage  Jumlah data per halaman
      */
     public function getPaginatedKasbons(
         ?string $search,
@@ -74,11 +74,11 @@ class KasbonService
                         });
                 });
             })
-            ->when($month, fn($query, $month) => $query->whereMonth('period_start_date', $month))
-            ->when($year, fn($query, $year) => $query->whereYear('period_start_date', $year))
-            ->when($status, fn($query, $status) => $query->where('status', $status))
-            ->when($type, fn($query, $type) => $query->where('kasbon_type', $type))
-            ->when($paymentStatus, fn($query, $paymentStatus) => $query->where('payment_status', $paymentStatus))
+            ->when($month, fn ($query, $month) => $query->whereMonth('period_start_date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('period_start_date', $year))
+            ->when($status, fn ($query, $status) => $query->where('status', $status))
+            ->when($type, fn ($query, $type) => $query->where('kasbon_type', $type))
+            ->when($paymentStatus, fn ($query, $paymentStatus) => $query->where('payment_status', $paymentStatus))
             ->latest('kasbon_date')
             ->latest('created_at')
             ->paginate($perPage)
@@ -99,7 +99,7 @@ class KasbonService
 
         try {
             return Cache::remember(
-                'sdm:employees:dropdown:' . $userId,
+                'sdm:employees:dropdown:'.$userId,
                 now()->addHours(24),
                 function () use ($userId) {
                     return Employee::where('created_by', $userId)
@@ -109,7 +109,7 @@ class KasbonService
             );
         } catch (\Exception $e) {
             Log::warning(
-                'Cache read failed for sdm:employees:dropdown:' . $userId . ': ' .
+                'Cache read failed for sdm:employees:dropdown:'.$userId.': '.
                 $e->getMessage()
             );
 
@@ -130,7 +130,7 @@ class KasbonService
 
         try {
             return Cache::remember(
-                'sdm:divisions:dropdown:' . $userId,
+                'sdm:divisions:dropdown:'.$userId,
                 now()->addHours(24),
                 function () use ($userId) {
                     return Division::where('created_by', $userId)
@@ -140,9 +140,10 @@ class KasbonService
             );
         } catch (\Exception $e) {
             Log::warning(
-                'Cache read failed for sdm:divisions:dropdown:' . $userId . ': ' .
+                'Cache read failed for sdm:divisions:dropdown:'.$userId.': '.
                 $e->getMessage()
             );
+
             return Division::where('created_by', $userId)
                 ->orderBy('name')
                 ->get(['id', 'name']);
@@ -176,9 +177,9 @@ class KasbonService
      * - Status default adalah 'pending'.
      *
      * @param  array  $data  Data input yang sudah divalidasi
-     * @return Kasbon  Kasbon terakhir yang dibuat
+     * @return Kasbon Kasbon terakhir yang dibuat
      *
-     * @throws \InvalidArgumentException  Jika kasbon tim tanpa baris proyek
+     * @throws \InvalidArgumentException Jika kasbon tim tanpa baris proyek
      */
     public function storeKasbon(array $data): Kasbon
     {
@@ -219,9 +220,9 @@ class KasbonService
      * dari input level atas.
      *
      * @param  array  $data  Data input yang sudah divalidasi (mengandung `projects`)
-     * @return Kasbon  Kasbon terakhir yang dibuat
+     * @return Kasbon Kasbon terakhir yang dibuat
      *
-     * @throws \InvalidArgumentException  Jika `projects` kosong
+     * @throws \InvalidArgumentException Jika `projects` kosong
      */
     private function storeTeamKasbon(array $data): Kasbon
     {
@@ -244,7 +245,6 @@ class KasbonService
      *
      * @param  string|null  $division  Nama divisi (dipakai bersama semua proyek)
      * @param  array{project: string, amount: int, kasbon_date: string, period_start_date: string, period_end_date: string, notes: string|null}  $project  Baris proyek yang sudah divalidasi
-     * @return Kasbon
      */
     private function createTeamKasbonRecord(?string $division, array $project): Kasbon
     {
@@ -281,11 +281,11 @@ class KasbonService
      * 2. Apakah karyawan memiliki data absensi
      * 3. Apakah jumlah yang diminta melebihi batas maksimal yang diperbolehkan
      *
-     * @param  string         $employeeCode    Kode karyawan
-     * @param  string         $periodStartDate Tanggal mulai periode (Y-m-d)
-     * @param  string         $kasbonDate      Tanggal kasbon (Y-m-d)
-     * @param  int            $amount          Jumlah kasbon yang diminta
-     * @return array{valid: bool, message: string}  Hasil validasi
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  string  $periodStartDate  Tanggal mulai periode (Y-m-d)
+     * @param  string  $kasbonDate  Tanggal kasbon (Y-m-d)
+     * @param  int  $amount  Jumlah kasbon yang diminta
+     * @return array{valid: bool, message: string} Hasil validasi
      */
     public function validatePersonalKasbonLimit(
         string $employeeCode,
@@ -295,7 +295,7 @@ class KasbonService
     ): array {
         $employee = Employee::find($employeeCode);
 
-        if (!$employee) {
+        if (! $employee) {
             return ['valid' => false, 'message' => 'Karyawan tidak ditemukan'];
         }
 
@@ -324,11 +324,11 @@ class KasbonService
      * (misal pengecekan payroll dibayar seperti validatePersonalKasbonLimit)
      * jika aturan bisnisnya diperketat.
      *
-     * @param  string         $employeeCode    Kode karyawan
-     * @param  string         $periodStartDate Tanggal mulai periode (Y-m-d)
-     * @param  string         $kasbonDate      Tanggal kasbon (Y-m-d)
-     * @param  int            $amount          Jumlah kasbon yang diminta
-     * @return array{valid: bool, message: string}  Hasil validasi
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  string  $periodStartDate  Tanggal mulai periode (Y-m-d)
+     * @param  string  $kasbonDate  Tanggal kasbon (Y-m-d)
+     * @param  int  $amount  Jumlah kasbon yang diminta
+     * @return array{valid: bool, message: string} Hasil validasi
      */
     public function validatePersonalKasbonUpdate(
         string $employeeCode,
@@ -338,7 +338,7 @@ class KasbonService
     ): array {
         $employee = Employee::find($employeeCode);
 
-        if (!$employee) {
+        if (! $employee) {
             return ['valid' => false, 'message' => 'Karyawan tidak ditemukan'];
         }
 
@@ -355,8 +355,7 @@ class KasbonService
      * - Untuk kasbon personal: mengatur division menjadi null
      *
      * @param  Kasbon  $kasbon  Instance model kasbon yang akan diperbarui
-     * @param  array   $data    Data pembaruan yang sudah divalidasi
-     * @return bool
+     * @param  array  $data  Data pembaruan yang sudah divalidasi
      */
     public function updateKasbon(Kasbon $kasbon, array $data): bool
     {
@@ -393,7 +392,7 @@ class KasbonService
             $data['remaining_amount'] = $data['amount'];
         }
 
-        if (!empty($data['period_start_date'])) {
+        if (! empty($data['period_start_date'])) {
             $periodStart = Carbon::parse($data['period_start_date']);
             $data['period_month'] = $periodStart->month;
             $data['period_year'] = $periodStart->year;
@@ -424,6 +423,7 @@ class KasbonService
      * Menghapus data kasbon secara massal berdasarkan kode kasbon.
      *
      * Bisnis Logika:
+     * - Hanya kasbon milik user login yang diproses.
      * - Hanya kasbon dengan status pending yang bisa dihapus.
      * - Kasbon yang terhubung ke payroll yang MASIH ADA tidak bisa dihapus
      *   (potongan sudah dipakai payroll / sudah menulis Laporan Keuangan).
@@ -434,11 +434,12 @@ class KasbonService
      * - Pembayaran manual (payroll_id null) tidak lagi menghalangi hapus.
      *
      * @param  array<int, string>  $kasbonCodes  Array kode kasbon yang akan dihapus
-     * @return array{deleted: int, skipped: int}  Jumlah data yang dihapus dan dilewati
+     * @return array{deleted: int, skipped: int} Jumlah data yang dihapus dan dilewati
      */
     public function deleteSelectedKasbons(array $kasbonCodes): array
     {
-        $pendingKasbons = Kasbon::whereIn('kasbon_code', $kasbonCodes)
+        $pendingKasbons = Kasbon::where('created_by', auth()->id())
+            ->whereIn('kasbon_code', $kasbonCodes)
             ->pending()
             ->whereDoesntHave('payments', fn ($query) => $query->whereNotNull('payroll_id'))
             ->get();
@@ -465,9 +466,9 @@ class KasbonService
     /**
      * Mendapatkan total kasbon untuk karyawan dan periode tertentu.
      *
-     * @param  string         $employeeCode    Kode karyawan
-     * @param  string         $periodStartDate Tanggal mulai periode
-     * @return int  Total jumlah kasbon pending
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  string  $periodStartDate  Tanggal mulai periode
+     * @return int Total jumlah kasbon pending
      */
     public function getTotalForEmployee(string $employeeCode, string $periodStartDate): int
     {
@@ -478,7 +479,7 @@ class KasbonService
      * Mendapatkan total kasbon team untuk periode tertentu.
      *
      * @param  string  $periodStartDate  Tanggal mulai periode
-     * @return int     Total jumlah kasbon team pending
+     * @return int Total jumlah kasbon team pending
      */
     public function getTotalTeamKasbon(string $periodStartDate): int
     {
@@ -498,13 +499,12 @@ class KasbonService
      * - Dipanggil baik dari pembayaran manual maupun potongan payroll
      *   (method = 'payroll_deduction' + payroll_id).
      *
-     * @param  Kasbon     $kasbon    Kasbon yang akan dibayar
-     * @param  int        $amount    Jumlah pembayaran
-     * @param  string     $method    'manual' atau 'payroll_deduction'
-     * @param  int|null   $payrollId ID payroll (jika dari payroll)
-     * @return KasbonPayment
+     * @param  Kasbon  $kasbon  Kasbon yang akan dibayar
+     * @param  int  $amount  Jumlah pembayaran
+     * @param  string  $method  'manual' atau 'payroll_deduction'
+     * @param  int|null  $payrollId  ID payroll (jika dari payroll)
      *
-     * @throws \InvalidArgumentException  Jika kasbon sudah lunas
+     * @throws \InvalidArgumentException Jika kasbon sudah lunas
      */
     public function recordPayment(Kasbon $kasbon, int $amount, string $method = 'manual', ?int $payrollId = null): KasbonPayment
     {
@@ -546,14 +546,13 @@ class KasbonService
      * Dipakai setelah kasbon dibuat/diubah/dihapus. Kasbon team (per divisi)
      * tidak menyentuh potongan upah per orang, sehingga dilewati.
      *
-     * @param  string       $kasbonType   'personal' atau 'team'
-     * @param  string|null  $employeeId   Kode karyawan (null untuk kasbon team)
+     * @param  string  $kasbonType  'personal' atau 'team'
+     * @param  string|null  $employeeId  Kode karyawan (null untuk kasbon team)
      * @param  string|null  $periodStart  Tanggal mulai periode (Y-m-d)
-     * @return void
      */
     private function recalculateKasbonPayroll(string $kasbonType, ?string $employeeId, ?string $periodStart): void
     {
-        if ($kasbonType !== 'personal' || !$employeeId || !$periodStart) {
+        if ($kasbonType !== 'personal' || ! $employeeId || ! $periodStart) {
             return;
         }
 
@@ -568,7 +567,7 @@ class KasbonService
      *   dipakai untuk membatasi kasbon baru agar total hutang tidak meledak.
      *
      * @param  string  $employeeCode  Kode karyawan
-     * @return int     Total sisa kasbon
+     * @return int Total sisa kasbon
      */
     public function getTotalRemainingForEmployee(string $employeeCode): int
     {
@@ -580,8 +579,7 @@ class KasbonService
     /**
      * Mendapatkan daftar kasbon yang masih memiliki sisa hutang untuk periode tertentu.
      *
-     * @param  string         $periodStartDate  Tanggal mulai periode
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param  string  $periodStartDate  Tanggal mulai periode
      */
     public function getPendingKasbonsForPeriod(string $periodStartDate): Collection
     {
@@ -595,7 +593,6 @@ class KasbonService
      * Mendapatkan riwayat pembayaran untuk kasbon tertentu.
      *
      * @param  string  $kasbonCode  Kode kasbon
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getPayments(string $kasbonCode): Collection
     {
@@ -611,16 +608,16 @@ class KasbonService
      * Mengembalikan informasi lengkap termasuk nama karyawan, hari kerja,
      * gaji harian, kasbon maksimal, dan apakah payroll sudah dibayar.
      *
-     * @param  string  $employeeCode    Kode karyawan
-     * @param  string  $periodStartDate Tanggal mulai periode (Y-m-d)
-     * @param  string  $kasbonDate      Tanggal kasbon (Y-m-d)
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  string  $periodStartDate  Tanggal mulai periode (Y-m-d)
+     * @param  string  $kasbonDate  Tanggal kasbon (Y-m-d)
      * @return array{success: bool, employee_name: string, days_worked: int, daily_wage: int, max_kasbon: int, payroll_paid: bool, no_attendance: bool, max_kasbon_formatted: string, message: string}
      */
     public function checkMaxKasbon(string $employeeCode, string $periodStartDate, string $kasbonDate): array
     {
         $employee = Employee::find($employeeCode);
 
-        if (!$employee) {
+        if (! $employee) {
             return [
                 'success' => false,
                 'employee_name' => '',
@@ -679,7 +676,7 @@ class KasbonService
      * - Kasbon personal: selalu null (proyek tidak berlaku).
      *
      * @param  array  $data  Data input kasbon
-     * @return array  Data dengan kunci project_names yang dinormalisasi
+     * @return array Data dengan kunci project_names yang dinormalisasi
      */
     private function normalizeProjectNames(array $data): array
     {
@@ -704,7 +701,7 @@ class KasbonService
      * Metode ini mengescape-nya agar input pengguna diperlakukan sebagai teks harfiah.
      *
      * @param  string  $value  Input pencarian mentah
-     * @return string  String yang sudah di-escape dan aman untuk query LIKE
+     * @return string String yang sudah di-escape dan aman untuk query LIKE
      */
     private function escapeLikePattern(string $value): string
     {
