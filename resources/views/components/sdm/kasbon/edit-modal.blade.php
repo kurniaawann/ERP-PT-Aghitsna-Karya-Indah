@@ -48,7 +48,7 @@
     {{-- Pilihan Proyek (Tim, satu proyek sesuai data yang sudah ada) --}}
     <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_project_field" style="display: none;">
         <div class="kasbon-project-section">
-            <div class="flex items-center justify-between cursor-pointer select-none kasbon-project-toggle mb-1"
+            <div class="flex items-center justify-between cursor-pointer select-none kasbon-project-toggle mb-1 mr-3"
                 onclick="toggleKasbonProjectSection(this)">
                 <span class="text-text-primary text-sm font-medium">Proyek <span class="text-error">*</span></span>
                 <i class="fa-solid fa-chevron-down kasbon-project-chevron text-xs text-text-secondary"></i>

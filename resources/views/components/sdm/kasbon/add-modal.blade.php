@@ -104,7 +104,7 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <div class="flex items-center justify-between cursor-pointer select-none kasbon-project-toggle mb-1"
+            <div class="flex items-center justify-between cursor-pointer select-none kasbon-project-toggle mb-1 mr-3"
                 onclick="toggleKasbonProjectSection(this)">
                 <span class="text-text-primary text-sm font-medium">Proyek <span class="text-error">*</span></span>
                 <i class="fa-solid fa-chevron-up kasbon-project-chevron text-xs text-text-secondary"></i>
