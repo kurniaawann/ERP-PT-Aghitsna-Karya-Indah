@@ -20,9 +20,16 @@ use Illuminate\Support\Facades\Log;
  * validasi batas maksimal berdasarkan absensi, dan pembuatan kode.
  *
  * Semua aturan bisnis terkait kasbon dipusatkan di sini.
+ *
+ * Setiap perubahan data kasbon (tambah/ubah/hapus/cicilan) memicu penghitungan
+ * ulang otomatis payroll draft pada periode terkait, sehingga potongan kasbon
+ * pada snapshot payroll selalu sinkron dengan data kasbon terkini.
  */
 class KasbonService
 {
+    public function __construct(
+        private readonly PayrollService $payrollService
+    ) {}
     /**
      * Mendapatkan daftar kasbon dengan paginasi dan relasi karyawan.
      *
@@ -177,7 +184,16 @@ class KasbonService
             $data['division'] = null;
         }
 
-        return Kasbon::create($data);
+        $kasbon = Kasbon::create($data);
+
+        if ($kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
+            $this->payrollService->recalculateForEmployeePeriod(
+                $kasbon->employee_id,
+                $kasbon->period_start_date
+            );
+        }
+
+        return $kasbon;
     }
 
     /**
@@ -267,6 +283,10 @@ class KasbonService
      */
     public function updateKasbon(Kasbon $kasbon, array $data): bool
     {
+        $oldType = $kasbon->kasbon_type;
+        $oldEmployeeId = $kasbon->employee_id;
+        $oldPeriodStart = Carbon::parse($kasbon->period_start_date)->format('Y-m-d');
+
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
 
         if ($data['kasbon_type'] === 'team') {
@@ -282,7 +302,24 @@ class KasbonService
             $data['week_number'] = $periodStart->weekOfMonth;
         }
 
-        return $kasbon->update($data);
+        $result = $kasbon->update($data);
+
+        $fresh = $kasbon->fresh();
+        $newType = $fresh->kasbon_type;
+        $newEmployeeId = $fresh->employee_id;
+        $newPeriodStart = Carbon::parse($fresh->period_start_date)->format('Y-m-d');
+
+        // Hitung ulang payroll periode lama (potongan kasbon lama harus dilepas bila
+        // kasbon pindah karyawan/periode/tipe).
+        $this->recalculateKasbonPayroll($oldType, $oldEmployeeId, $oldPeriodStart);
+
+        // Hitung ulang payroll periode baru bila kasbon kini personal dan ada yang berubah.
+        if ($newType === 'personal'
+            && ($newEmployeeId !== $oldEmployeeId || $newPeriodStart !== $oldPeriodStart || $oldType !== 'personal')) {
+            $this->recalculateKasbonPayroll($newType, $newEmployeeId, $newPeriodStart);
+        }
+
+        return $result;
     }
 
     /**
@@ -304,6 +341,15 @@ class KasbonService
 
         if ($deleted > 0) {
             Kasbon::whereIn('kasbon_code', $pendingKasbons->pluck('kasbon_code'))->delete();
+
+            foreach ($pendingKasbons as $kasbon) {
+                if ($kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
+                    $this->payrollService->recalculateForEmployeePeriod(
+                        $kasbon->employee_id,
+                        $kasbon->period_start_date
+                    );
+                }
+            }
         }
 
         return ['deleted' => $deleted, 'skipped' => $skipped];
@@ -375,7 +421,36 @@ class KasbonService
         $kasbon->payment_status = $kasbon->remaining_amount <= 0 ? 'paid' : 'partial';
         $kasbon->save();
 
+        // Payment manual baru belum ter-assign; hitung ulang payroll draft pada
+        // periode kasbon agar cicilan ini otomatis masuk potongan payroll.
+        if ($method === 'manual' && $kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
+            $this->payrollService->recalculateForEmployeePeriod(
+                $kasbon->employee_id,
+                $kasbon->period_start_date
+            );
+        }
+
         return $payment;
+    }
+
+    /**
+     * Menghitung ulang payroll draft pada periode kasbon personal.
+     *
+     * Dipakai setelah kasbon dibuat/diubah/dihapus. Kasbon team (per divisi)
+     * tidak menyentuh potongan upah per orang, sehingga dilewati.
+     *
+     * @param  string       $kasbonType   'personal' atau 'team'
+     * @param  string|null  $employeeId   Kode karyawan (null untuk kasbon team)
+     * @param  string|null  $periodStart  Tanggal mulai periode (Y-m-d)
+     * @return void
+     */
+    private function recalculateKasbonPayroll(string $kasbonType, ?string $employeeId, ?string $periodStart): void
+    {
+        if ($kasbonType !== 'personal' || !$employeeId || !$periodStart) {
+            return;
+        }
+
+        $this->payrollService->recalculateForEmployeePeriod($employeeId, $periodStart);
     }
 
     /**

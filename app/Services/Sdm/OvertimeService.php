@@ -17,9 +17,16 @@ use Illuminate\Support\Facades\Log;
  * deteksi duplikat, dan semua aturan bisnis terkait lembur karyawan.
  *
  * Data lembur disimpan di tabel absensi dengan status = 'lembur'.
+ *
+ * Setiap perubahan data lembur (tambah/ubah/hapus) memicu penghitungan
+ * ulang otomatis payroll draft yang periodenya memuat tanggal lembur,
+ * sehingga snapshot payroll (overtime_total, gaji bersih) selalu sinkron.
  */
 class OvertimeService
 {
+    public function __construct(
+        private readonly PayrollService $payrollService
+    ) {}
     /**
      * Mendapatkan daftar data lembur dengan paginasi, pencarian, dan eager loading.
      *
@@ -120,9 +127,31 @@ class OvertimeService
     }
 
     /**
+     * Memeriksa apakah karyawan sudah memiliki absensi dengan status 'hadir'
+     * pada tanggal tertentu.
+     *
+     * Lembur hanya boleh ditambahkan jika karyawan sudah absen Hadir pada
+     * tanggal tersebut. Data lembur juga tersimpan di tabel absensi dengan
+     * status 'lembur', sehingga pemeriksaan harus mengarah pada status 'hadir'.
+     *
+     * @param  string  $employeeId       Kode karyawan
+     * @param  string  $attendanceDate   Tanggal absensi (Y-m-d)
+     * @return bool
+     */
+    public function hasHadirAttendance(string $employeeId, string $attendanceDate): bool
+    {
+        return Attendance::where('employee_id', $employeeId)
+            ->where('attendance_date', $attendanceDate)
+            ->where('status', 'hadir')
+            ->exists();
+    }
+
+    /**
      * Menyimpan data lembur baru atau memperbarui data absensi yang sudah ada.
      *
      * Bisnis Logika:
+     * - Lembur hanya boleh ditambahkan jika karyawan sudah memiliki absensi
+     *   dengan status 'hadir' pada tanggal tersebut (dicek oleh controller).
      * - Jika data absensi sudah ada untuk karyawan + tanggal yang sama,
      *   perbarui dengan data lembur (ubah status menjadi 'lembur').
      * - Jika tidak ada data, buat absensi baru dengan status 'lembur'.
@@ -148,19 +177,23 @@ class OvertimeService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            return $existingAttendance;
+            $overtime = $existingAttendance;
+        } else {
+            $overtime = Attendance::create([
+                'employee_id' => $data['employee_id'],
+                'attendance_date' => $data['attendance_date'],
+                'status' => 'lembur',
+                'overtime_hours' => (float) $data['overtime_hours'],
+                'overtime_rate' => (int) $data['overtime_rate'],
+                'overtime_total' => (int) $overtimeTotal,
+                'notes' => $data['notes'] ?? null,
+                'created_by' => auth()->id(),
+            ]);
         }
 
-        return Attendance::create([
-            'employee_id' => $data['employee_id'],
-            'attendance_date' => $data['attendance_date'],
-            'status' => 'lembur',
-            'overtime_hours' => (float) $data['overtime_hours'],
-            'overtime_rate' => (int) $data['overtime_rate'],
-            'overtime_total' => (int) $overtimeTotal,
-            'notes' => $data['notes'] ?? null,
-            'created_by' => auth()->id(),
-        ]);
+        $this->recalculateOvertimePayroll($overtime->employee_id, $data['attendance_date']);
+
+        return $overtime;
     }
 
     /**
@@ -170,19 +203,40 @@ class OvertimeService
      * dari input yang baru — nilai total yang dikirim frontend diabaikan untuk
      * mencegah manipulasi nominal.
      *
+     * Setelah perubahan, payroll draft yang periodenya memuat tanggal lembur
+     * (lama dan/atau baru) dihitung ulang agar snapshot payroll tetap sinkron.
+     *
      * @param  Attendance  $overtime  Instance model absensi yang akan diperbarui
      * @param  array       $data      Data pembaruan yang sudah divalidasi
      * @return bool
      */
     public function updateOvertime(Attendance $overtime, array $data): bool
     {
+        $oldEmployeeId = $overtime->employee_id;
+        $oldDate = Carbon::parse($overtime->attendance_date)->format('Y-m-d');
+
         $data['overtime_total'] = (float) $data['overtime_hours'] * (int) $data['overtime_rate'];
 
-        return $overtime->update($data);
+        $result = $overtime->update($data);
+
+        $fresh = $overtime->fresh();
+        $newEmployeeId = $fresh->employee_id;
+        $newDate = Carbon::parse($fresh->attendance_date)->format('Y-m-d');
+
+        $this->recalculateOvertimePayroll($oldEmployeeId, $oldDate);
+
+        if ($newEmployeeId !== $oldEmployeeId || $newDate !== $oldDate) {
+            $this->recalculateOvertimePayroll($newEmployeeId, $newDate);
+        }
+
+        return $result;
     }
 
     /**
      * Menghapus data lembur berdasarkan ID-nya.
+     *
+     * Sebelum dihapus, record yang terdampak dicatat lalu setelah penghapusan
+     * payroll draft yang periodenya memuat tanggal tersebut dihitung ulang.
      *
      * @param  array<int, int>  $ids  Array ID absensi yang akan dihapus
      * @return int                    Jumlah data yang dihapus
@@ -193,6 +247,46 @@ class OvertimeService
             return 0;
         }
 
-        return Attendance::whereIn('id', $ids)->delete();
+        $overtimes = Attendance::whereIn('id', $ids)->get(['employee_id', 'attendance_date']);
+
+        $deleted = Attendance::whereIn('id', $ids)->delete();
+
+        $affectedDatesByEmployee = [];
+        foreach ($overtimes as $overtime) {
+            $employeeId = $overtime->employee_id;
+            $date = Carbon::parse($overtime->attendance_date)->format('Y-m-d');
+
+            if ($employeeId && $date) {
+                $affectedDatesByEmployee[$employeeId][] = $date;
+            }
+        }
+
+        foreach ($affectedDatesByEmployee as $employeeId => $dates) {
+            $this->payrollService->recalculateForAttendanceRange(
+                $employeeId,
+                Carbon::parse(min($dates)),
+                Carbon::parse(max($dates))
+            );
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Menghitung ulang payroll draft yang periodenya memuat tanggal lembur.
+     *
+     * @param  string|null      $employeeId  Kode karyawan
+     * @param  Carbon|string|null  $date     Tanggal lembur (Y-m-d atau Carbon)
+     * @return void
+     */
+    private function recalculateOvertimePayroll(?string $employeeId, Carbon|string|null $date): void
+    {
+        if (!$employeeId || !$date) {
+            return;
+        }
+
+        $parsed = $date instanceof Carbon ? $date : Carbon::parse($date);
+
+        $this->payrollService->recalculateForAttendanceRange($employeeId, $parsed, $parsed);
     }
 }

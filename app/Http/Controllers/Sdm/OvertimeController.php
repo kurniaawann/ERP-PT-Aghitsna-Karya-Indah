@@ -8,6 +8,7 @@ use App\Http\Requests\Sdm\UpdateOvertimeRequest;
 use App\Models\Sdm\Attendance;
 use App\Services\Sdm\OvertimeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 /**
  * Controller untuk mengelola data lembur karyawan.
@@ -48,6 +49,8 @@ class OvertimeController extends Controller
      * Menyimpan data lembur baru.
      *
      * Memvalidasi input melalui StoreOvertimeRequest, kemudian mendelegasikan ke OvertimeService.
+     * Sebelum menyimpan, dipastikan karyawan sudah memiliki absensi dengan
+     * status 'hadir' pada tanggal tersebut (lembur hanya untuk yang hadir).
      * Service menangani logika buat-atau-perbarui: jika data absensi sudah ada
      * untuk karyawan + tanggal yang sama, maka akan diperbarui dengan data lembur.
      * Jika tidak, maka akan dibuat data baru dengan status 'lembur'.
@@ -57,6 +60,10 @@ class OvertimeController extends Controller
      */
     public function store(StoreOvertimeRequest $request)
     {
+        if (!$this->overtimeService->hasHadirAttendance($request->employee_id, $request->attendance_date)) {
+            return back()->with('error', 'Karyawan belum memiliki absensi dengan status Hadir pada tanggal tersebut. Lembur hanya bisa ditambahkan jika karyawan sudah absen Hadir.');
+        }
+
         $this->overtimeService->storeOvertime($request->validated());
 
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil ditambahkan!');
@@ -75,6 +82,13 @@ class OvertimeController extends Controller
      */
     public function update(UpdateOvertimeRequest $request, Attendance $overtime)
     {
+        $dateChanged = $overtime->employee_id !== $request->employee_id
+            || Carbon::parse($overtime->attendance_date)->format('Y-m-d') !== $request->attendance_date;
+
+        if ($dateChanged && !$this->overtimeService->hasHadirAttendance($request->employee_id, $request->attendance_date)) {
+            return back()->with('error', 'Karyawan belum memiliki absensi dengan status Hadir pada tanggal tersebut. Lembur hanya bisa dipindahkan ke tanggal di mana karyawan sudah absen Hadir.');
+        }
+
         $this->overtimeService->updateOvertime($overtime, $request->validated());
 
         return redirect()->route('overtime.index')->with('success', 'Data lembur berhasil diperbarui!');

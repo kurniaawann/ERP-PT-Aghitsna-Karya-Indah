@@ -15,9 +15,17 @@ use Illuminate\Support\Facades\Log;
  *
  * Menangani daftar absensi, pembuatan massal, pembaruan, penghapusan,
  * deteksi duplikat, dan semua aturan bisnis terkait absensi karyawan.
+ *
+ * Setiap perubahan data absensi (tambah/ubah/hapus) memicu penghitungan
+ * ulang otomatis payroll draft yang periodenya menimpa tanggal yang berubah,
+ * sehingga snapshot payroll (hari masuk, lembur, potongan, gaji bersih)
+ * selalu sinkron dengan data absensi terkini.
  */
 class AttendanceService
 {
+    public function __construct(
+        private readonly PayrollService $payrollService
+    ) {}
     /**
      * Mendapatkan daftar absensi dengan paginasi, pencarian, dan eager loading.
      *
@@ -215,11 +223,18 @@ class AttendanceService
             }
         }
 
+        foreach ($employeeIds as $employeeId) {
+            $this->payrollService->recalculateForAttendanceRange($employeeId, $startDate, $endDate);
+        }
+
         return $totalInserted;
     }
 
     /**
      * Memperbarui satu data absensi.
+     *
+     * Setelah perubahan, payroll draft yang periodenya menimpa tanggal absensi
+     * (lama dan/atau baru) dihitung ulang agar snapshot payroll tetap sinkron.
      *
      * @param  Attendance  $attendance  Instance model absensi
      * @param  array       $data        Data pembaruan yang sudah divalidasi
@@ -227,11 +242,29 @@ class AttendanceService
      */
     public function updateAttendance(Attendance $attendance, array $data): bool
     {
-        return $attendance->update($data);
+        $oldEmployeeId = $attendance->employee_id;
+        $oldDate = Carbon::parse($attendance->attendance_date)->format('Y-m-d');
+
+        $result = $attendance->update($data);
+
+        $fresh = $attendance->fresh();
+        $newEmployeeId = $fresh->employee_id;
+        $newDate = Carbon::parse($fresh->attendance_date)->format('Y-m-d');
+
+        $this->recalculateAttendancePayroll($oldEmployeeId, $oldDate);
+
+        if ($newEmployeeId !== $oldEmployeeId || $newDate !== $oldDate) {
+            $this->recalculateAttendancePayroll($newEmployeeId, $newDate);
+        }
+
+        return $result;
     }
 
     /**
      * Menghapus data absensi berdasarkan ID-nya.
+     *
+     * Sebelum dihapus, record yang terdampak dicatat lalu setelah penghapusan
+     * payroll draft yang periodenya menimpa tanggal tersebut dihitung ulang.
      *
      * @param  array<int, int>  $ids  Array ID absensi
      * @return int                    Jumlah data yang dihapus
@@ -242,7 +275,47 @@ class AttendanceService
             return 0;
         }
 
-        return Attendance::whereIn('id', $ids)->delete();
+        $attendances = Attendance::whereIn('id', $ids)->get(['employee_id', 'attendance_date']);
+
+        $deleted = Attendance::whereIn('id', $ids)->delete();
+
+        $affectedDatesByEmployee = [];
+        foreach ($attendances as $attendance) {
+            $employeeId = $attendance->employee_id;
+            $date = Carbon::parse($attendance->attendance_date)->format('Y-m-d');
+
+            if ($employeeId && $date) {
+                $affectedDatesByEmployee[$employeeId][] = $date;
+            }
+        }
+
+        foreach ($affectedDatesByEmployee as $employeeId => $dates) {
+            $this->payrollService->recalculateForAttendanceRange(
+                $employeeId,
+                Carbon::parse(min($dates)),
+                Carbon::parse(max($dates))
+            );
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Menghitung ulang payroll draft yang periodenya memuat tanggal absensi.
+     *
+     * @param  string|null  $employeeId      Kode karyawan
+     * @param  string|null  $attendanceDate  Tanggal absensi (Y-m-d)
+     * @return void
+     */
+    private function recalculateAttendancePayroll(?string $employeeId, ?string $attendanceDate): void
+    {
+        if (!$employeeId || !$attendanceDate) {
+            return;
+        }
+
+        $date = Carbon::parse($attendanceDate);
+
+        $this->payrollService->recalculateForAttendanceRange($employeeId, $date, $date);
     }
 
     /**

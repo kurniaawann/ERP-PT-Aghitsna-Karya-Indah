@@ -37,6 +37,8 @@ document.addEventListener('DOMContentLoaded', function () {
  * Struktur: { 'EMP001': { '2025-01-01': { id: 1, status: 'hadir' }, ... }, ... }
  * Disiapkan oleh OvertimeService::getExistingAttendance dan dipakai untuk
  * mencegah:
+ * - Lembur tanpa absensi Hadir (lembur hanya boleh jika karyawan sudah
+ *   memiliki absensi dengan status 'hadir' pada tanggal tersebut)
  * - Duplikat lembur (karyawan + tanggal sama dengan status 'lembur')
  * - Lembur untuk karyawan berstatus izin/sakit/cuti
  *
@@ -64,11 +66,13 @@ function isSunday(dateStr) {
  * 1. Baca employee_id (hidden searchable-select) dan tanggal dari modal Tambah.
  * 2. Jika kosong → sembunyikan peringatan dan izinkan (belum bisa divalidasi).
  * 3. Cari existingAttendance[employeeId][date]:
+ *    - Tidak ada record → blokir submit (lembur hanya untuk karyawan yang
+ *      sudah absen dengan status 'hadir' pada tanggal tersebut).
+ *    - status 'hadir' → izinkan dan sembunyikan peringatan.
  *    - status 'lembur' → blokir submit (data lembur sudah ada untuk
  *      karyawan + tanggal tersebut).
  *    - status 'izin'/'sakit'/'cuti' → blokir submit (lembur hanya untuk
  *      karyawan yang hadir).
- * 4. Tidak ada record / status 'hadir' → izinkan dan sembunyikan peringatan.
  *
  * @returns {boolean} true jika valid, false jika diblokir.
  */
@@ -99,31 +103,35 @@ function validateAddOvertime() {
         return false;
     }
 
-    if (existingAttendance[employeeId] && existingAttendance[employeeId][date]) {
-        const existing = existingAttendance[employeeId][date];
-        const employeeInput = document.querySelector('#addModal .searchable-select-input');
-        const employeeName = employeeInput ? employeeInput.value : '';
-        const formattedDate = formatDateIndonesian(date);
+    const existing = existingAttendance[employeeId] && existingAttendance[employeeId][date]
+        ? existingAttendance[employeeId][date]
+        : null;
+    const employeeInput = document.querySelector('#addModal .searchable-select-input');
+    const employeeName = employeeInput ? employeeInput.value : '';
+    const formattedDate = formatDateIndonesian(date);
 
-        if (existing.status === 'lembur') {
-            showAddDuplicateWarning(
-                addDuplicateWarning,
-                addDuplicateWarningText,
-                addSubmitBtn,
-                `Karyawan ${employeeName} sudah memiliki data lembur pada tanggal ${formattedDate}. Silakan pilih tanggal lain atau edit data yang sudah ada.`
-            );
-            return false;
-        }
+    if (!existing) {
+        showAddDuplicateWarning(
+            addDuplicateWarning,
+            addDuplicateWarningText,
+            addSubmitBtn,
+            `Karyawan ${employeeName} belum memiliki absensi pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan jika karyawan sudah absen dengan status Hadir.`
+        );
+        return false;
+    }
 
-        if (['izin', 'sakit', 'cuti'].includes(existing.status)) {
-            showAddDuplicateWarning(
-                addDuplicateWarning,
-                addDuplicateWarningText,
-                addSubmitBtn,
-                `Karyawan ${employeeName} memiliki status ${existing.status.toUpperCase()} pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan untuk karyawan yang hadir.`
-            );
-            return false;
-        }
+    if (existing.status !== 'hadir') {
+        const reason = existing.status === 'lembur'
+            ? 'sudah memiliki data lembur'
+            : `memiliki status ${existing.status.toUpperCase()}`;
+
+        showAddDuplicateWarning(
+            addDuplicateWarning,
+            addDuplicateWarningText,
+            addSubmitBtn,
+            `Karyawan ${employeeName} ${reason} pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan untuk karyawan yang hadir.`
+        );
+        return false;
     }
 
     hideAddDuplicateWarning(addSubmitBtn);
@@ -206,7 +214,10 @@ function initAddModalValidation() {
  * 1. Tanggal kosong → izinkan.
  * 2. Tanggal sama dengan tanggal asli (tidak berubah) → izinkan.
  * 3. Cek existingAttendance[employeeId][date]:
+ *    - Tidak ada record → blokir (lembur hanya untuk karyawan yang sudah
+ *      absen dengan status 'hadir' pada tanggal baru tersebut).
  *    - record id yang sama (data yang sedang diedit) → izinkan.
+ *    - status 'hadir' → izinkan.
  *    - status 'lembur' → blokir (duplikat).
  *    - status izin/sakit/cuti → blokir (lembur hanya untuk hadir).
  * 4. Selain itu → izinkan dan sembunyikan peringatan.
@@ -251,35 +262,41 @@ function initEditModalValidation() {
                 return false;
             }
 
-            // Check if employee + date combination already exists
-            if (existingAttendance[employeeId] && existingAttendance[employeeId][date]) {
-                var existing = existingAttendance[employeeId][date];
+            var existing = existingAttendance[employeeId] && existingAttendance[employeeId][date]
+                ? existingAttendance[employeeId][date]
+                : null;
+            var employeeName = dateInput.closest('form').querySelector('input[type="text"]').value;
+            var formattedDate = formatDateIndonesian(date);
 
-                // Skip if the record ID matches (it's the same record being edited)
-                if (existing.id != overtimeId) {
-                    var employeeName = dateInput.closest('form').querySelector('input[type="text"]').value;
-                    var formattedDate = formatDateIndonesian(date);
+            // Tidak ada absensi pada tanggal baru — lembur hanya untuk karyawan hadir.
+            if (!existing) {
+                showEditDuplicateWarning(
+                    duplicateWarning,
+                    duplicateWarningText,
+                    submitBtn,
+                    `Karyawan ${employeeName} belum memiliki absensi pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan jika karyawan sudah absen dengan status Hadir.`
+                );
+                return false;
+            }
 
-                    if (existing.status === 'lembur') {
-                        showEditDuplicateWarning(
-                            duplicateWarning,
-                            duplicateWarningText,
-                            submitBtn,
-                            `Karyawan ${employeeName} sudah memiliki data lembur pada tanggal ${formattedDate}. Silakan pilih tanggal lain atau hapus data yang sudah ada.`
-                        );
-                        return false;
-                    }
+            // Skip if the record ID matches (it's the same record being edited)
+            if (existing.id == overtimeId) {
+                hideEditDuplicateWarning(duplicateWarning, submitBtn);
+                return true;
+            }
 
-                    if (['izin', 'sakit', 'cuti'].includes(existing.status)) {
-                        showEditDuplicateWarning(
-                            duplicateWarning,
-                            duplicateWarningText,
-                            submitBtn,
-                            `Karyawan ${employeeName} memiliki status ${existing.status.toUpperCase()} pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan untuk karyawan yang hadir.`
-                        );
-                        return false;
-                    }
-                }
+            if (existing.status !== 'hadir') {
+                var reason = existing.status === 'lembur'
+                    ? 'sudah memiliki data lembur'
+                    : 'memiliki status ' + existing.status.toUpperCase();
+
+                showEditDuplicateWarning(
+                    duplicateWarning,
+                    duplicateWarningText,
+                    submitBtn,
+                    `Karyawan ${employeeName} ${reason} pada tanggal ${formattedDate}. Lembur hanya bisa ditambahkan untuk karyawan yang hadir.`
+                );
+                return false;
             }
 
             hideEditDuplicateWarning(duplicateWarning, submitBtn);

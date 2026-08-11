@@ -606,6 +606,173 @@ class PayrollService
     }
 
     /**
+     * Menghitung ulang snapshot payroll draft untuk seorang karyawan pada
+     * periode tertentu (dikenali lewat period_start_date).
+     *
+     * Hanya payroll berstatus 'draft' yang dihitung ulang — payroll 'paid'
+     * dibekukan agar nominal yang sudah dibayar tidak berubah secara retrospektif.
+     *
+     * Menghitung ulang:
+     * - present_days / permission_days / sick_days / leave_days / overtime_days
+     *   dari tabel absensi dalam rentang periode payroll.
+     * - overtime_total dari total lembur dalam rentang periode.
+     * - kasbon_deduction dari KasbonPayment personal yang ter-assign ke payroll
+     *   ini, setelah merekonsiliasi assignment (payment baru di-assign, payment
+     *   yang tidak lagi cocok di-unassign).
+     * - net_salary = (base_salary × present_days) + overtime_total - kasbon_deduction
+     *   (base_salary adalah snapshot upah harian saat generate, tidak diubah).
+     *
+     * @param  string         $employeeCode    Kode karyawan
+     * @param  Carbon|string  $periodStartDate Tanggal mulai periode (Y-m-d)
+     * @return bool  true jika payroll draft ditemukan dan berhasil dihitung ulang
+     */
+    public function recalculateForEmployeePeriod(string $employeeCode, Carbon|string $periodStartDate): bool
+    {
+        $periodStart = $periodStartDate instanceof Carbon
+            ? $periodStartDate->format('Y-m-d')
+            : Carbon::parse($periodStartDate)->format('Y-m-d');
+
+        $payroll = Payroll::where('employee_id', $employeeCode)
+            ->where('period_start_date', $periodStart)
+            ->where('status', 'draft')
+            ->where('created_by', auth()->id())
+            ->first();
+
+        if (!$payroll) {
+            return false;
+        }
+
+        return $this->recalculatePayrollSnapshot($payroll);
+    }
+
+    /**
+     * Menghitung ulang snapshot payroll draft untuk seorang karyawan yang
+     * periodenya menimpa rentang tanggal yang berubah (misalnya absensi).
+     *
+     * Dipakai oleh hook auto-recalculasi pada perubahan absensi/lembur.
+     * Rentang tanggal bisa memotong lebih dari satu periode mingguan,
+     * sehingga semua payroll draft yang tumpang tindih ikut dihitung ulang.
+     *
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  Carbon  $startDate     Tanggal mulai rentang perubahan (inklusif)
+     * @param  Carbon  $endDate       Tanggal akhir rentang perubahan (inklusif)
+     * @return int  Jumlah payroll yang berhasil dihitung ulang
+     */
+    public function recalculateForAttendanceRange(string $employeeCode, Carbon $startDate, Carbon $endDate): int
+    {
+        $payrolls = Payroll::where('employee_id', $employeeCode)
+            ->where('status', 'draft')
+            ->where('created_by', auth()->id())
+            ->whereDate('period_start_date', '<=', $endDate->format('Y-m-d'))
+            ->whereDate('period_end_date', '>=', $startDate->format('Y-m-d'))
+            ->get();
+
+        $recalculated = 0;
+
+        foreach ($payrolls as $payroll) {
+            if ($this->recalculatePayrollSnapshot($payroll)) {
+                $recalculated++;
+            }
+        }
+
+        return $recalculated;
+    }
+
+    /**
+     * Menghitung ulang satu snapshot payroll draft dari sumber datanya saat ini.
+     *
+     * Logika sama dengan generatePayroll: jumlah hari hadir/lembur/izin/sakit/cuti
+     * dihitung dari absensi dalam rentang periode, overtime_total dari kolom
+     * overtime_total pada absensi berstatus lembur, kasbon_deduction dari
+     * KasbonPayment personal yang ter-assign, lalu net_salary diturunkan.
+     *
+     * @param  Payroll  $payroll  Payroll draft yang akan dihitung ulang
+     * @return bool
+     */
+    private function recalculatePayrollSnapshot(Payroll $payroll): bool
+    {
+        $startDate = Carbon::parse($payroll->period_start_date);
+        $endDate = Carbon::parse($payroll->period_end_date);
+
+        $attendances = Attendance::where('employee_id', $payroll->employee_id)
+            ->whereBetween('attendance_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        $presentDays = $attendances->whereIn('status', ['hadir', 'lembur'])->count();
+        $permissionDays = $attendances->where('status', 'izin')->count();
+        $sickDays = $attendances->where('status', 'sakit')->count();
+        $leaveDays = $attendances->where('status', 'cuti')->count();
+        $overtimeDays = $attendances->where('status', 'lembur')->count();
+        $overtimeTotal = (int) $attendances->where('status', 'lembur')->sum('overtime_total');
+
+        $this->reconcileKasbonPayments($payroll);
+
+        $kasbonDeduction = (int) KasbonPayment::where('payroll_id', $payroll->id)
+            ->whereHas('kasbon', fn($q) => $q->where('kasbon_type', 'personal'))
+            ->sum('amount');
+
+        $totalWage = (int) $payroll->base_salary * $presentDays;
+        $netWage = $totalWage + $overtimeTotal - $kasbonDeduction;
+
+        return $payroll->update([
+            'present_days' => $presentDays,
+            'permission_days' => $permissionDays,
+            'sick_days' => $sickDays,
+            'leave_days' => $leaveDays,
+            'overtime_days' => $overtimeDays,
+            'overtime_total' => $overtimeTotal,
+            'kasbon_deduction' => $kasbonDeduction,
+            'net_salary' => $netWage,
+        ]);
+    }
+
+    /**
+     * Merekonstruksi assignment KasbonPayment personal ke payroll draft.
+     *
+     * Dua arah:
+     * 1. Unassign payment personal yang ter-assign ke payroll ini tetapi tidak
+     *    lagi cocok dengan karyawan/periode payroll (misal periode kasbon diubah).
+     * 2. Assign payment personal yang belum ter-assign (payroll_id IS NULL)
+     *    untuk karyawan + periode yang sama dengan payroll ini — kasbon baru yang
+     *    dicicil setelah payroll digenerate otomatis ikut dipotong.
+     *
+     * Kasbon team (per divisi) tidak disentuh di sini: assignment-nya untuk rekap
+     * dan bukan potongan upah per orang.
+     *
+     * @param  Payroll  $payroll  Payroll draft yang sedang dihitung ulang
+     * @return void
+     */
+    private function reconcileKasbonPayments(Payroll $payroll): void
+    {
+        $employeeCode = $payroll->employee_id;
+        $periodStart = Carbon::parse($payroll->period_start_date)->format('Y-m-d');
+
+        KasbonPayment::where('payroll_id', $payroll->id)
+            ->whereHas('kasbon', function ($q) use ($employeeCode, $periodStart) {
+                $q->where('kasbon_type', 'personal')
+                    ->where(function ($qq) use ($employeeCode, $periodStart) {
+                        $qq->where('employee_id', '!=', $employeeCode)
+                            ->orWhere('period_start_date', '!=', $periodStart);
+                    });
+            })
+            ->update(['payroll_id' => null]);
+
+        $unassigned = KasbonPayment::whereNull('payroll_id')
+            ->where('payment_method', 'manual')
+            ->whereHas('kasbon', function ($q) use ($employeeCode, $periodStart) {
+                $q->where('employee_id', $employeeCode)
+                    ->where('period_start_date', $periodStart)
+                    ->where('kasbon_type', 'personal');
+            })
+            ->get();
+
+        foreach ($unassigned as $payment) {
+            $payment->payroll_id = $payroll->id;
+            $payment->save();
+        }
+    }
+
+    /**
      * Membayar beberapa data payroll secara massal.
      *
      * Memperbarui status dari 'draft' menjadi 'paid' dan mengatur tanggal pembayaran.
