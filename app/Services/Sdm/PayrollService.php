@@ -91,30 +91,6 @@ class PayrollService
     }
 
     /**
-     * Mendapatkan daftar petinggi untuk blok tanda tangan dokumen payroll.
-     *
-     * Mengembalikan satu petinggi per peran (disetujui/diperiksa/dibuat)
-     * milik user saat ini. Dipakai cetakan PDF payroll untuk kolom
-     * "Disetujui oleh", "Diperiksa oleh", dan "Dibuat oleh" — data diambil
-     * dari modul Data Petinggi (executives).
-     *
-     * @return array<string, Executive|null>
-     */
-    public function getSignatureExecutives(): array
-    {
-        $executives = Executive::where('created_by', auth()->id())
-            ->whereNotNull('role')
-            ->get()
-            ->keyBy('role');
-
-        return [
-            'disetujui' => $executives->get('disetujui'),
-            'diperiksa' => $executives->get('diperiksa'),
-            'dibuat' => $executives->get('dibuat'),
-        ];
-    }
-
-    /**
      * Membangun snapshot petinggi dari ID terpilih untuk blok tanda tangan.
      *
      * Mengambil petinggi milik user saat ini berdasarkan ID per peran lalu
@@ -163,8 +139,9 @@ class PayrollService
      *
      * Mengutamakan snapshot yang tersimpan saat payroll di-generate agar
      * dokumen konsisten dengan pilihan penandatangan saat itu. Bila payroll
-     * belum memiliki snapshot (data lama), fallback ke pemetaan per peran
-     * dari modul Data Petinggi (getSignatureExecutives).
+     * belum memiliki snapshot (data lama), ketiga kolom tanda tangan
+     * (Disetujui/Diperiksa/Dibuat) bernilai null sehingga PDF menampilkan
+     * garis putus-putus sebagai fallback.
      *
      * @param  Payroll|null  $payroll
      * @return array<string, array<string, mixed>|null>
@@ -175,21 +152,11 @@ class PayrollService
             return $payroll->signatures;
         }
 
-        $fallback = $this->getSignatureExecutives();
-
-        $snapshot = [];
-        foreach (['disetujui', 'diperiksa', 'dibuat'] as $role) {
-            $executive = $fallback[$role] ?? null;
-
-            $snapshot[$role] = $executive ? [
-                'id' => $executive->id,
-                'name' => $executive->name,
-                'position' => $executive->position,
-                'signature_image' => $executive->signature_image,
-            ] : null;
-        }
-
-        return $snapshot;
+        return [
+            'disetujui' => null,
+            'diperiksa' => null,
+            'dibuat' => null,
+        ];
     }
 
     /**

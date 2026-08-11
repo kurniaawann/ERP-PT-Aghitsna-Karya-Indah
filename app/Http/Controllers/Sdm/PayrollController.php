@@ -396,7 +396,7 @@ class PayrollController extends Controller
 
         // Snapshot petinggi untuk blok tanda tangan (Disetujui/Diperiksa/Dibuat).
         // Mengutamakan pilihan yang tersimpan saat payroll di-generate;
-        // payroll lama (belum punya snapshot) memakai pemetaan per peran.
+        // payroll lama (belum punya snapshot) memakai fallback garis putus-putus.
         $signatures = $this->payrollService->getPayrollSignatures($payrolls->first());
 
         $data = [

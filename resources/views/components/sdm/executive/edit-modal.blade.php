@@ -5,7 +5,6 @@
      Fields:
        - name (required)    : Nama petinggi, maks 150 karakter
        - position (opsional): Jabatan, maks 150 karakter
-       - role (opsional)    : Peran pada blok tanda tangan dokumen
        - signature_image (opsional): Gambar tanda tangan baru
      ============================================================ --}}
 <x-modal id="editModal-{{ $executive->id }}" title="Edit Petinggi" action="{{ route('executive.update', $executive->id) }}"
@@ -23,19 +22,6 @@
         <label class="block text-text-primary mb-1">Jabatan</label>
         <input type="text" name="position" class="w-full border rounded p-2" value="{{ $executive->position }}"
             maxlength="150">
-    </div>
-
-    {{-- Peran Tanda Tangan (opsional) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Peran Tanda Tangan</label>
-        <select name="role" class="w-full border rounded p-2">
-            <option value="">Pilih Peran (opsional)</option>
-            @foreach (\App\Models\Sdm\Executive::ROLE_LABELS as $roleValue => $roleLabel)
-                <option value="{{ $roleValue }}" @selected($executive->role === $roleValue)>{{ $roleLabel }}</option>
-            @endforeach
-        </select>
-        <p class="text-xs text-text-secondary mt-1">Peran menentukan kolom tanda tangan pada cetakan
-            payroll: Disetujui, Diperiksa, atau Dibuat. Setiap peran hanya bisa dipakai satu petinggi.</p>
     </div>
 
     {{-- Tanda Tangan (opsional) --}}

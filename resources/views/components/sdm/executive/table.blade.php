@@ -16,7 +16,6 @@
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
                             <th class="p-2 text-left">Nama</th>
                             <th class="p-2 text-left">Jabatan</th>
-                            <th class="p-2 text-center">Peran Tanda Tangan</th>
                             <th class="p-2 text-center">Tanda Tangan</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
@@ -35,17 +34,6 @@
 
                                 {{-- Jabatan --}}
                                 <td class="p-2">{{ $executive->position ?? '-' }}</td>
-
-                                {{-- Peran Tanda Tangan --}}
-                                <td class="p-2 text-center">
-                                    @if ($executive->role)
-                                        <span class="inline-block px-2 py-0.5 rounded bg-primary-light text-primary text-xs font-medium">
-                                            {{ $executive->role_label }}
-                                        </span>
-                                    @else
-                                        <span class="text-text-tertiary">-</span>
-                                    @endif
-                                </td>
 
                                 {{-- Tanda Tangan (pratinjau gambar) --}}
                                 <td class="p-2 text-center">
@@ -76,7 +64,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center p-4 text-text-secondary">
+                                <td colspan="5" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>
