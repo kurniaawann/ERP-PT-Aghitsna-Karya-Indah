@@ -2,15 +2,19 @@
 
 namespace App\Services\Sdm;
 
+use App\Models\Finance\ProjectRecap;
 use App\Models\Sdm\Payroll;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\KasbonPayment;
 use App\Models\Sdm\Executive;
+use App\Services\Report\ProjectFinancialReportService;
 
 use Carbon\Carbon;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk mengelola bisnis logika payroll.
@@ -26,6 +30,15 @@ use Illuminate\Support\Collection;
  */
 class PayrollService
 {
+    /**
+     * Service untuk membuat entri "Upah Pekerja" pada Laporan Keuangan Proyek
+     * ketika payroll dibayar (draft → paid).
+     */
+    public function __construct(
+        private readonly ProjectFinancialReportService $financialReportService,
+    ) {
+    }
+
     /**
      * Mendapatkan daftar payroll dengan paginasi dan relasi karyawan.
      *
@@ -53,6 +66,55 @@ class PayrollService
         ?string $projectName = null,
         int $perPage = 15
     ): LengthAwarePaginator {
+        return $this->buildPayrollIndexQuery($search, $month, $year, $weekNumber, $projectName)
+            ->paginate($perPage);
+    }
+
+    /**
+     * Mendapatkan SEMUA payroll yang cocok dengan filter index (tanpa paginasi).
+     *
+     * Dipakai sebagai bahan pengelompokan per proyek + periode sebelum
+     * paginasi diterapkan pada level GRUP (bukan per baris payroll), sehingga
+     * satu grup tidak terpotong antar halaman.
+     *
+     * @param  string|null  $search
+     * @param  int|null     $month
+     * @param  int|null     $year
+     * @param  int|null     $weekNumber
+     * @param  string|null  $projectName
+     * @return Collection
+     */
+    public function getPayrollsForIndex(
+        ?string $search,
+        ?int $month,
+        ?int $year,
+        ?int $weekNumber = null,
+        ?string $projectName = null
+    ): Collection {
+        return $this->buildPayrollIndexQuery($search, $month, $year, $weekNumber, $projectName)
+            ->get();
+    }
+
+    /**
+     * Query dasar daftar payroll index (relasi karyawan + filter + urutan).
+     *
+     * Dipakai bersama oleh getPaginatedPayrolls (paginasi per baris) dan
+     * getPayrollsForIndex (semua baris untuk pengelompokan per proyek).
+     *
+     * @param  string|null  $search
+     * @param  int|null     $month
+     * @param  int|null     $year
+     * @param  int|null     $weekNumber
+     * @param  string|null  $projectName
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function buildPayrollIndexQuery(
+        ?string $search,
+        ?int $month,
+        ?int $year,
+        ?int $weekNumber,
+        ?string $projectName
+    ): \Illuminate\Database\Eloquent\Builder {
         return Payroll::with('employee')
             ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
@@ -66,8 +128,74 @@ class PayrollService
             ->when($weekNumber, fn($query) => $query->where('week_number', $weekNumber))
             ->when($projectName, fn($query) => $query->where('project_name', $projectName))
             ->latest('period_start_date')
-            ->latest('created_at')
-            ->paginate($perPage);
+            ->latest('created_at');
+    }
+
+    /**
+     * Menerapkan paginasi pada level GRUP (proyek + periode).
+     *
+     * Satu halaman memuat grup-grup UTUH — baris karyawan di dalamnya tidak
+     * pernah terpotong antar halaman. Opsi paginasi (URL saat ini + query
+     * filter aktif) dijaga agar link pagination mempertahankan filter.
+     *
+     * @param  Collection  $groups   Koleksi grup hasil groupPayrollsForView
+     * @param  int         $perPage  Jumlah grup per halaman
+     * @return LengthAwarePaginator
+     */
+    public function paginatePayrollGroups(Collection $groups, int $perPage = 10): LengthAwarePaginator
+    {
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $items = $groups->forPage($page, $perPage)->values();
+
+        return new LengthAwarePaginator($items, $groups->count(), $perPage, $page, [
+            'path' => LengthAwarePaginator::resolveCurrentPath(),
+            'query' => request()->query(),
+        ]);
+    }
+
+    /**
+     * Mengelompokkan koleksi payroll per proyek + periode untuk tampilan index.
+     *
+     * Kelompok dibentuk dari kombinasi project_name dan period_start_date
+     * (satu lembar payroll = satu proyek + satu minggu). Setiap kelompok
+     * menyertakan ringkasan agregat (jumlah karyawan, subtotal upah bersih,
+     * jumlah draft/paid) agar header grup bisa menampilkan total tanpa query
+     * tambahan.
+     *
+     * @param  Collection  $payrolls  Koleksi payroll yang akan dikelompokkan
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function groupPayrollsForView(Collection $payrolls): Collection
+    {
+        return $payrolls->groupBy(function (Payroll $payroll) {
+            $project = $payroll->project_name ?: 'Tanpa Proyek';
+            $period = $payroll->period_start_date
+                ? Carbon::parse($payroll->period_start_date)->format('Y-m-d')
+                : 'legacy';
+
+            return $project.'|'.$period;
+        })->map(function (Collection $group) {
+            $first = $group->first();
+            $draftCount = $group->where('status', 'draft')->count();
+            $paidCount = $group->where('status', 'paid')->count();
+
+            return [
+                'project_name' => $first->project_name ?: 'Tanpa Proyek',
+                'period_start_date' => $first->period_start_date,
+                'period_end_date' => $first->period_end_date,
+                'week_number' => $first->week_number,
+                'period_month' => $first->period_month,
+                'period_year' => $first->period_year,
+                'payrolls' => $group->values(),
+                'count' => $group->count(),
+                'draft_count' => $draftCount,
+                'paid_count' => $paidCount,
+                'total_net' => (int) $group->sum('net_salary'),
+                'total_base' => (int) $group->sum('base_salary'),
+                'total_overtime' => (int) $group->sum('overtime_total'),
+                'total_kasbon' => (int) $group->sum('kasbon_deduction'),
+            ];
+        })->values();
     }
 
     /**
@@ -775,11 +903,20 @@ class PayrollService
     /**
      * Membayar beberapa data payroll secara massal.
      *
-     * Memperbarui status dari 'draft' menjadi 'paid' dan mengatur tanggal pembayaran.
+     * Memperbarui status dari 'draft' menjadi 'paid' dan mengatur tanggal
+     * pembayaran, lalu otomatis mencatat upah pekerja ke Laporan Keuangan
+     * Proyek terkait.
      *
      * Logika:
-     * - UPDATE massal dijalankan hanya untuk id terpilih yang masih berstatus
-     *   'draft' → payroll 'paid' tidak mungkin dibayar dua kali.
+     * - Hanya payroll terpilih yang masih berstatus 'draft' yang diproses —
+     *   payroll 'paid' tidak mungkin dibayar dua kali.
+     * - Untuk setiap payroll yang baru dibayar, satu baris "Upah Pekerja"
+     *   (expense = net_salary) dibuat pada laporan keuangan rekap proyek yang
+     *   namanya cocok dengan project_name payroll (pencocokan case-insensitive).
+     *   Proyek yang tidak memiliki Rekap Proyek dilewati (upah tetap dibayar,
+     *   hanya entri laporan yang tidak dibuat).
+     * - Pembayaran dan pembuatan entri laporan dibungkus satu transaksi DB agar
+     *   gagal di tengah tidak menyisakan payroll terbayar tanpa laporan.
      *
      * @param  array   $ids     Array ID payroll
      * @param  string  $paymentDate  Tanggal pembayaran (Y-m-d)
@@ -791,23 +928,61 @@ class PayrollService
             return ['success' => false, 'message' => 'Tidak ada data yang dipilih!', 'count' => 0];
         }
 
-        $updated = Payroll::whereIn('id', $ids)
+        $payrolls = Payroll::with('employee')
+            ->whereIn('id', $ids)
             ->where('status', 'draft')
             ->where('created_by', auth()->id())
-            ->update([
-                'payment_date' => $paymentDate,
-                'status' => 'paid',
-            ]);
+            ->get();
 
-        if ($updated > 0) {
-            return [
-                'success' => true,
-                'message' => "Berhasil membayar {$updated} payroll!",
-                'count' => $updated,
-            ];
+        if ($payrolls->isEmpty()) {
+            return ['success' => false, 'message' => 'Tidak ada payroll yang dapat dibayar!', 'count' => 0];
         }
 
-        return ['success' => false, 'message' => 'Tidak ada payroll yang dapat dibayar!', 'count' => 0];
+        try {
+            return DB::transaction(function () use ($payrolls, $paymentDate) {
+                $count = 0;
+                $skippedRecaps = [];
+
+                foreach ($payrolls as $payroll) {
+                    $payroll->update([
+                        'payment_date' => $paymentDate,
+                        'status' => 'paid',
+                    ]);
+                    $count++;
+
+                    if (empty($payroll->project_name)) {
+                        continue;
+                    }
+
+                    $recap = ProjectRecap::whereRaw(
+                        'LOWER(project_name) = ?',
+                        [mb_strtolower(trim($payroll->project_name))]
+                    )->first();
+
+                    if (! $recap) {
+                        $skippedRecaps[] = $payroll->project_name;
+                        continue;
+                    }
+
+                    $this->financialReportService->createPayrollExpenseItem($recap, $payroll);
+                }
+
+                $message = "Berhasil membayar {$count} payroll!";
+
+                $skippedRecaps = array_values(array_unique($skippedRecaps));
+
+                if (! empty($skippedRecaps)) {
+                    $message .= ' Entri Laporan Keuangan tidak dibuat untuk proyek yang belum memiliki Rekap Proyek: '
+                        .implode(', ', $skippedRecaps).'.';
+                }
+
+                return ['success' => true, 'message' => $message, 'count' => $count];
+            });
+        } catch (\Throwable $e) {
+            Log::error('Bulk pay payroll gagal: '.$e->getMessage());
+
+            return ['success' => false, 'message' => 'Terjadi kesalahan saat membayar payroll. Data tidak disimpan.', 'count' => 0];
+        }
     }
 
     /**

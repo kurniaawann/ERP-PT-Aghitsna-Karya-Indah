@@ -55,12 +55,21 @@ class PayrollController extends Controller
         $weekNumber = $request->input('week_number');
         $projectName = $request->input('project_name');
 
-        $payrolls = $this->payrollService->getPaginatedPayrolls(
+        $allPayrolls = $this->payrollService->getPayrollsForIndex(
             $search,
             $month ? (int) $month : null,
             $year ? (int) $year : null,
             $weekNumber ? (int) $weekNumber : null,
             $projectName ?: null,
+        );
+
+        $payrollGroups = $this->payrollService->paginatePayrollGroups(
+            $this->payrollService->groupPayrollsForView($allPayrolls)
+        );
+
+        // Payroll pada halaman saat ini (untuk loop modal edit/detail).
+        $currentPayrolls = $payrollGroups->getCollection()->flatMap(
+            fn ($group) => $group['payrolls']
         );
 
         $projects = $this->payrollService->getProjectOptions();
@@ -71,7 +80,7 @@ class PayrollController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('pages.sdm.payroll', compact('payrolls', 'search', 'month', 'year', 'weekNumber', 'projectName', 'projects', 'executives'));
+        return view('pages.sdm.payroll', compact('payrollGroups', 'currentPayrolls', 'search', 'month', 'year', 'weekNumber', 'projectName', 'projects', 'executives'));
     }
 
     /**
@@ -208,8 +217,8 @@ class PayrollController extends Controller
      * Menerima period_start_date, period_end_date, project_name (bisa array
      * nama proyek), serta penanda tangan per proyek (signatories[Nama
      * Proyek][disetujui|diperiksa|dibuat] = ID petinggi) dari frontend.
-     * Penanda tangan disimpan sebagai snapshot pada tiap payroll untuk
-     * kebutuhan blok tanda tangan PDF.
+     * Penanda tangan bersifat opsional dan disimpan sebagai snapshot pada
+     * tiap payroll untuk kebutuhan blok tanda tangan PDF.
      */
     public function generate(Request $request)
     {
@@ -223,19 +232,9 @@ class PayrollController extends Controller
         }
 
         // Penanda tangan dipilih PER PROYEK (setiap proyek bisa berbeda).
-        // Setiap proyek wajib memiliki penanda tangan lengkap untuk blok PDF.
+        // Bersifat OPSIONAL — bila kosong, blok tanda tangan PDF menampilkan
+        // garis putus-putus sebagai fallback.
         $signatories = $request->input('signatories', []);
-
-        foreach ($projectNames as $projectName) {
-            $roles = $signatories[$projectName] ?? [];
-
-            if (collect(['disetujui', 'diperiksa', 'dibuat'])->contains(
-                fn ($role) => empty($roles[$role])
-            )) {
-                return redirect()->back()
-                    ->with('error', "Lengkapi penanda tangan untuk proyek \"{$projectName}\" (Disetujui oleh, Diperiksa oleh, Dibuat oleh) terlebih dahulu.");
-            }
-        }
 
         $result = $this->payrollService->generatePayroll(
             $startDate,

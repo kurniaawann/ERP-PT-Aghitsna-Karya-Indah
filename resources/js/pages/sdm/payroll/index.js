@@ -343,14 +343,12 @@ function renderSignatorySections() {
 
             blockHTML += '<div class="searchable-select-wrapper mb-3" data-select-id="' + inputId + '">';
             blockHTML += '<label class="block text-text-primary mb-1" for="' + inputId + '-input">' +
-                roleLabel + ' <span class="text-error">*</span></label>';
+                roleLabel + ' <span class="text-xs text-text-label">(opsional)</span></label>';
             blockHTML += '<div class="relative">';
             blockHTML += '<input type="text" id="' + inputId + '-input" ' +
                 'class="searchable-select-input w-full border rounded p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" ' +
-                'placeholder="Cari petinggi..." autocomplete="off" required ' +
-                'value="' + (saved ? escapeAttr(saved.label) : '') + '" ' +
-                'oninvalid="this.setCustomValidity(\'' + roleLabel + ' tidak boleh kosong\')" ' +
-                'oninput="this.setCustomValidity(\'\')">';
+                'placeholder="Cari petinggi..." autocomplete="off" ' +
+                'value="' + (saved ? escapeAttr(saved.label) : '') + '">';
             blockHTML += '<i class="fa-solid fa-chevron-down absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>';
             blockHTML += '<div class="searchable-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">';
             blockHTML += '<div class="searchable-options">';
@@ -763,6 +761,44 @@ function updateButtonStates() {
 }
 
 /**
+ * Sinkronkan status checkbox "pilih semua" pada setiap header grup proyek.
+ *
+ * Sebuah checkbox grup tercentang bila seluruh checkbox payroll draft di
+ * dalamnya tercentang (dan ada minimal satu). Dipanggil setelah perubahan
+ * checkbox individu / pilih-semua / pilih-grup.
+ */
+function syncGroupSelectStates() {
+    document.querySelectorAll('.group-select-all').forEach(groupCheck => {
+        const index = groupCheck.dataset.groupIndex;
+        const selector = `input[name="ids[]"][data-group-index="${index}"]:not(:disabled)`;
+        const checkboxes = document.querySelectorAll(selector);
+        const checked = document.querySelectorAll(`${selector}:checked`);
+        groupCheck.checked = checkboxes.length > 0 && checkboxes.length === checked.length;
+    });
+}
+
+/**
+ * Melakukan toggle tampilan baris karyawan dalam satu grup proyek.
+ *
+ * Dipanggil dari tombol collapse/expand pada header grup (onclick inline).
+ * Baris karyawan diberi class payroll-group-rows-{index}; chevron dibalik
+ * saat grup ditutup/dibuka.
+ *
+ * @param {number|string} index  Indeks grup pada halaman.
+ */
+window.togglePayrollGroup = function (index) {
+    const rows = document.querySelectorAll(`.payroll-group-rows-${index}`);
+    const chevron = document.querySelector(`.group-chevron-${index}`);
+
+    rows.forEach(row => row.classList.toggle('hidden'));
+
+    if (chevron) {
+        chevron.classList.toggle('fa-chevron-down');
+        chevron.classList.toggle('fa-chevron-up');
+    }
+};
+
+/**
  * Mengirim form hapus massal dengan status memuat.
  *
  * Alur:
@@ -1079,6 +1115,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 checkbox.checked = this.checked;
             });
             updateButtonStates();
+            syncGroupSelectStates();
         });
     }
 
@@ -1094,11 +1131,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 selectAll.checked = checkboxes.length === checkedCheckboxes.length;
             }
             updateButtonStates();
+            syncGroupSelectStates();
+        });
+    });
+
+    // Group Select All (per proyek + periode): centang semua payroll draft
+    // dalam satu grup (baris karyawan di bawah header grup).
+    document.querySelectorAll('.group-select-all').forEach(groupCheck => {
+        groupCheck.addEventListener('change', function() {
+            const index = this.dataset.groupIndex;
+            const checkboxes = document.querySelectorAll(
+                `input[name="ids[]"][data-group-index="${index}"]:not(:disabled)`);
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+
+            const selectAll = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('input[name="ids[]"]:not(:disabled)');
+            const checkedAll = document.querySelectorAll('input[name="ids[]"]:not(:disabled):checked');
+            if (selectAll) {
+                selectAll.checked = allCheckboxes.length === checkedAll.length;
+            }
+
+            updateButtonStates();
         });
     });
 
     // Initialize button states on page load
     updateButtonStates();
+    syncGroupSelectStates();
 
     // Form submit handlers
     initFormSubmitHandlers();

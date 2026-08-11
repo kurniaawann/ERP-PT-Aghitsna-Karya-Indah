@@ -5,7 +5,9 @@
              minggu), aksi bulk (Bayar/Hapus/Generate), dan ekspor (Excel/PDF).
 
      Data dari PayrollController@index:
-     - $payrolls            : LengthAwarePaginator daftar payroll (relasi employee)
+     - $payrollGroups   : LengthAwarePaginator grup payroll (proyek + periode),
+                          dipaginasi per-grup sehingga satu grup tidak terpotong antar halaman
+     - $currentPayrolls : Collection payroll pada halaman saat ini (untuk loop modal edit/detail)
      - $search, $month, $year, $weekNumber, $projectName : nilai filter aktif (nullable)
      - $projects            : daftar proyek unik dari data karyawan (opsi multi-select modal generate)
 
@@ -128,7 +130,7 @@
              (hanya payroll draft yang dapat dihapus/dibayar).
              ============================================================ --}}
         {{-- Table Component --}}
-        @include('components.sdm.payroll.table', ['payrolls' => $payrolls])
+        @include('components.sdm.payroll.table', ['payrollGroups' => $payrollGroups])
 
     </div>
 
@@ -137,7 +139,7 @@
          Kontrol navigasi halaman daftar payroll.
          ============================================================ --}}
     {{-- Pagination --}}
-    <x-pagination :paginator="$payrolls" />
+    <x-pagination :paginator="$payrollGroups" />
 
     {{-- ============================================================
          SECTION: Modals
@@ -153,7 +155,7 @@
     {{-- Hapus modal Bayar per-item: kini pembayaran hanya via Bulk Pay --}}
 
     {{-- Modal Detail untuk setiap payroll --}}
-    @foreach ($payrolls as $payroll)
+    @foreach ($currentPayrolls as $payroll)
         @if ($payroll->status === 'draft')
             @include('components.sdm.payroll.edit-modal', ['payroll' => $payroll])
         @endif

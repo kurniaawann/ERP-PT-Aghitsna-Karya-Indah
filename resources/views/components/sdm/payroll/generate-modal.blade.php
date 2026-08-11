@@ -107,8 +107,9 @@
             <i class="fa-solid fa-pen-nib text-primary"></i>
             <p class="text-sm font-semibold text-text-primary">Penanda Tangan</p>
         </div>
-        <p class="text-xs text-text-secondary mb-3">Setiap proyek bisa memiliki penanda tangan yang berbeda.
-            Isi form penanda tangan untuk setiap proyek yang dipilih. Data diambil dari modul Data Petinggi.</p>
+        <p class="text-xs text-text-secondary mb-3">Opsional — tidak wajib diisi. Setiap proyek bisa memiliki penanda
+            tangan yang berbeda. Data diambil dari modul Data Petinggi; jika dikosongkan, blok tanda tangan pada PDF
+            ditampilkan sebagai garis putus-putus.</p>
         <div id="signatory-sections"></div>
     </div>
 

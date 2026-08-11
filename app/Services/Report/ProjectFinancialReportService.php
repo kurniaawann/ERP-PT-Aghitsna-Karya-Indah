@@ -7,7 +7,9 @@ use App\Models\Finance\ProjectRecap;
 use App\Models\Report\ProjectFinancialReport;
 use App\Models\Report\ProjectFinancialReportItem;
 use App\Models\Report\TransactionCategory;
+use App\Models\Sdm\Payroll;
 use App\Services\InputNormalizer;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
@@ -302,6 +304,115 @@ class ProjectFinancialReportService
         $this->flushUsedCategoryCache($proof->created_by ?? auth()->id());
 
         return $created;
+    }
+
+    /**
+     * Ambil (atau buat otomatis) kategori pengeluaran "Upah Pekerja" milik user.
+     *
+     * Pola sama dengan resolveIncomeCategory(): kategori dicari per user dan
+     * dibuat otomatis satu kali bila belum ada. Karena kolom `code` unik
+     * global, kode dasar UPAH_PEKERJA di-increment menjadi UPAH_PEKERJA_1,
+     * UPAH_PEKERJA_2, dst. bila sudah terpakai (misal oleh user lain).
+     *
+     * @param  int|string|null  $userId  Default: user yang sedang login.
+     */
+    public function resolveUpahPekerjaCategory($userId = null): ?TransactionCategory
+    {
+        $userId = $userId ?? auth()->id();
+
+        if (! $userId) {
+            return null;
+        }
+
+        $expenseCategory = TransactionCategory::where('created_by', $userId)
+            ->module(TransactionCategory::MODULE_PROJECT_FINANCE)
+            ->where('type', TransactionCategory::TYPE_EXPENSE)
+            ->where('code', 'LIKE', 'UPAH_PEKERJA%')
+            ->orderBy('id')
+            ->first();
+
+        if ($expenseCategory) {
+            return $expenseCategory;
+        }
+
+        $baseCode = 'UPAH_PEKERJA';
+        $suffix = 1;
+
+        while (true) {
+            $code = $suffix === 1 ? $baseCode : $baseCode.'_'.$suffix;
+            $suffix++;
+
+            if (TransactionCategory::where('code', $code)->exists()) {
+                continue;
+            }
+
+            try {
+                $expenseCategory = TransactionCategory::create([
+                    'name' => 'Upah Pekerja',
+                    'code' => $code,
+                    'type' => TransactionCategory::TYPE_EXPENSE,
+                    'module' => TransactionCategory::MODULE_PROJECT_FINANCE,
+                    'sort_order' => 2,
+                    'is_active' => true,
+                    'created_by' => $userId,
+                ]);
+                break;
+            } catch (QueryException $e) {
+                if ($e->getCode() !== '23000') {
+                    throw $e;
+                }
+            }
+        }
+
+        $this->flushCategoryCache($userId);
+        app(TransactionCategoryService::class)->flushCache($userId);
+
+        return $expenseCategory;
+    }
+
+    /**
+     * Membuat satu baris "Upah Pekerja" pada laporan keuangan proyek dari
+     * sebuah payroll yang sudah dibayar.
+     *
+     * Setiap payroll (per karyawan) menjadi satu baris pengeluaran pada
+     * laporan keuangan rekap proyek terkait:
+     * - Kategori: "Upah Pekerja" (per-user, module project_finance)
+     * - Nominal: net_salary payroll (expense_amount)
+     * - Tanggal: payment_date payroll (fallback: hari ini)
+     * - Keterangan: nama karyawan + rentang periode payroll
+     *
+     * Laporan keuangan dibuat otomatis bila rekap proyek belum memilikinya
+     * (getOrCreateForRecap). Pemanggil wajib memastikan rekap proyek dengan
+     * nama proyek payroll sudah ada; bila tidak, method ini tidak dipanggil.
+     *
+     * @param  Payroll  $payroll  Payroll berstatus paid yang akan dicatat
+     */
+    public function createPayrollExpenseItem(ProjectRecap $recap, Payroll $payroll): ?ProjectFinancialReportItem
+    {
+        $category = $this->resolveUpahPekerjaCategory($payroll->created_by);
+
+        if (! $category) {
+            return null;
+        }
+
+        $report = $this->getOrCreateForRecap($recap);
+
+        $periodStart = Carbon::parse($payroll->period_start_date)->format('d/m/Y');
+        $periodEnd = $payroll->period_end_date
+            ? Carbon::parse($payroll->period_end_date)->format('d/m/Y')
+            : null;
+
+        $data = [
+            'transaction_category_id' => $category->id,
+            'transaction_date' => $payroll->payment_date
+                ? Carbon::parse($payroll->payment_date)->toDateString()
+                : now()->toDateString(),
+            'description' => 'Upah '.($payroll->employee->name ?? $payroll->employee_id)
+                .' periode '.$periodStart.($periodEnd ? ' - '.$periodEnd : ''),
+            'expense_amount' => (int) $payroll->net_salary,
+        ];
+
+        return $this->createItem($report, $data, null);
     }
 
     /**
