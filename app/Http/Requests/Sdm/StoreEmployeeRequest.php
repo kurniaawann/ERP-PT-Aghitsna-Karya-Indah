@@ -6,10 +6,11 @@ use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request untuk penyimpanan data karyawan baru.
+ * Form request untuk penyimpanan data karyawan baru (massal).
  *
- * Memastikan semua kolom yang diperlukan tersedia dengan tipe dan batasan yang tepat
- * sebelum data karyawan disimpan ke basis data.
+ * Mendukung penambahan banyak karyawan sekaligus lewat array `employees`.
+ * Memastikan semua kolom yang diperlukan tersedia dengan tipe dan batasan
+ * yang tepat sebelum data karyawan disimpan ke basis data.
  */
 class StoreEmployeeRequest extends FormRequest
 {
@@ -33,26 +34,38 @@ class StoreEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'position' => 'nullable|string|max:100',
-            'daily_wage' => 'required|integer|min:0',
-            'division' => 'required|string|max:100',
-            'project_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'required|string',
+            'employees' => 'required|array|min:1',
+            'employees.*.name' => 'required|string|max:255',
+            'employees.*.position' => 'nullable|string|max:100',
+            'employees.*.daily_wage' => 'required|integer|min:0',
+            'employees.*.division' => 'required|string|max:100',
+            'employees.*.project_name' => 'nullable|string|max:255',
+            'employees.*.phone' => 'nullable|string|max:20',
+            'employees.*.address' => 'required|string',
         ];
     }
 
     /**
      * Mempersiapkan data sebelum validasi.
      *
-     * Menormalisasi daily_wage dari format string mata uang (misalnya "150.000")
-     * menjadi integer (misalnya 150000) sebelum aturan validasi diterapkan.
+     * Menormalisasi daily_wage tiap karyawan dari format string mata uang
+     * (misalnya "150.000") menjadi integer (misalnya 150000) sebelum aturan
+     * validasi diterapkan.
      */
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'daily_wage' => InputNormalizer::normalizeCurrency($this->daily_wage),
-        ]);
+        $employees = $this->input('employees');
+
+        if (! is_array($employees) || empty($employees)) {
+            return;
+        }
+
+        foreach ($employees as $index => $employee) {
+            $employees[$index]['daily_wage'] = InputNormalizer::normalizeCurrency(
+                $employee['daily_wage'] ?? null
+            );
+        }
+
+        $this->merge(['employees' => $employees]);
     }
 }

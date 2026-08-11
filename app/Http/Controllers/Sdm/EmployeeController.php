@@ -92,18 +92,18 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Menyimpan data karyawan baru.
+     * Menyimpan data karyawan baru (mendukung banyak karyawan sekaligus).
      *
      * employee_code dibuat secara otomatis oleh service.
      * daily_wage sudah dinormalisasi oleh form request.
      */
     public function store(StoreEmployeeRequest $request): RedirectResponse
     {
-        $this->employeeService->createEmployee($request->validated());
+        $count = $this->employeeService->createEmployees($request->validated()['employees']);
         $this->employeeService->flushCache();
 
         return redirect()->route('employee.index')
-            ->with('success', 'Data karyawan berhasil ditambahkan!');
+            ->with('success', "{$count} data karyawan berhasil ditambahkan!");
     }
 
     /**

@@ -99,6 +99,27 @@ class EmployeeService
     }
 
     /**
+     * Membuat banyak karyawan sekaligus.
+     *
+     * Setiap data karyawan diproses satu per satu lewat createEmployee()
+     * sehingga kode karyawan di-generate otomatis dan unik untuk masing-masing.
+     *
+     * @param  array  $employees  Array data karyawan yang sudah divalidasi
+     * @return int Jumlah karyawan yang berhasil dibuat
+     */
+    public function createEmployees(array $employees): int
+    {
+        $created = 0;
+
+        foreach ($employees as $employeeData) {
+            $this->createEmployee($employeeData);
+            $created++;
+        }
+
+        return $created;
+    }
+
+    /**
      * Memperbarui karyawan yang sudah ada.
      *
      * @param  array  $data  Data karyawan yang sudah divalidasi

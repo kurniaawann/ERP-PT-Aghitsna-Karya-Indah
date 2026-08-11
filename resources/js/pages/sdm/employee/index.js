@@ -6,6 +6,7 @@
  * - Manajemen status checkbox individu dan tombol hapus
  * - Pengiriman formulir hapus massal dengan status memuat
  * - Format mata uang upah harian pada input
+ * - Baris dinamis pada modal Tambah (menambah banyak karyawan sekaligus)
  * - Penanganan pengiriman formulir Tambah/Edit dengan pencegahan pengiriman ganda
  *
  * Dropdown proyek (searchable + pagination 10 item) di modal Tambah/Edit dan
@@ -27,6 +28,102 @@ function formatCurrencyInput(input) {
 
     const numeric = input.value.replace(/[^\d]/g, '');
     input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+}
+
+// ==========================================
+// Baris Dinamis Modal Tambah (Massal)
+// ==========================================
+
+/**
+ * Mengambil semua baris karyawan yang sedang dirender di container.
+ */
+function getEmployeeRows(container) {
+    return container ? container.querySelectorAll('.employee-row') : [];
+}
+
+/**
+ * Memperbarui nomor urut tampilan tiap baris sesuai posisinya.
+ */
+function updateRowNumbers(container) {
+    getEmployeeRows(container).forEach(function (row, index) {
+        const numberEl = row.querySelector('.employee-row-number');
+        if (numberEl) {
+            numberEl.textContent = index + 1;
+        }
+    });
+}
+
+/**
+ * Mengikat event pada satu baris karyawan.
+ *
+ * @param {HTMLElement} row            Baris yang diikat.
+ * @param {boolean}     initComponents true = baris baru (inisialisasi ulang
+ *                                     searchable select & dropdown proyek);
+ *                                     false = baris awal yang sudah diinisialisasi.
+ */
+function bindEmployeeRowEvents(row, initComponents) {
+    if (!row) return;
+
+    // Tombol hapus baris
+    row.querySelectorAll('.employee-remove-row').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const container = document.getElementById('employeesContainer');
+            const rows = getEmployeeRows(container);
+
+            if (rows.length <= 1) {
+                // Jangan hapus baris terakhir; kosongkan saja isinya.
+                row.querySelectorAll('input, textarea').forEach(function (el) {
+                    if (el.type !== 'hidden') el.value = '';
+                });
+                return;
+            }
+
+            row.remove();
+            updateRowNumbers(container);
+        });
+    });
+
+    // Format mata uang upah harian untuk input pada baris ini
+    row.querySelectorAll('.daily-wage-input').forEach(function (input) {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+        input.addEventListener('input', function () {
+            formatCurrencyInput(this);
+        });
+    });
+
+    // Inisialisasi komponen baru pada baris yang baru ditambahkan.
+    // Untuk baris awal komponen sudah diinisialisasi saat DOM siap.
+    if (initComponents) {
+        if (typeof window.initSearchableSelects === 'function') {
+            window.initSearchableSelects(row);
+        }
+        initAllProjectDropdowns(row);
+    }
+
+    updateRowNumbers(document.getElementById('employeesContainer'));
+}
+
+/**
+ * Menambahkan satu baris karyawan baru dari template dinamis.
+ */
+function addEmployeeRow() {
+    const container = document.getElementById('employeesContainer');
+    const template = document.getElementById('employeeRowTemplate');
+    if (!container || !template) return;
+
+    const nextIndex = container.querySelectorAll('.employee-row').length;
+    const html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+
+    const row = wrapper.firstElementChild;
+    if (!row) return;
+
+    container.appendChild(row);
+    bindEmployeeRowEvents(row, true);
 }
 
 // ==========================================
@@ -118,6 +215,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // Inisialisasi dropdown proyek (searchable + pagination) di modal
     // Tambah/Edit dan filter index via modul bersama.
     initAllProjectDropdowns();
+
+    // Baris dinamis modal Tambah: ikat event baris awal (komponen sudah
+    // diinisialisasi di atas) dan daftarkan tombol tambah baris.
+    const employeesContainer = document.getElementById('employeesContainer');
+    getEmployeeRows(employeesContainer).forEach(function (row) {
+        bindEmployeeRowEvents(row, false);
+    });
+
+    const addEmployeeRowBtn = document.getElementById('addEmployeeRowBtn');
+    if (addEmployeeRowBtn) {
+        addEmployeeRowBtn.addEventListener('click', addEmployeeRow);
+    }
 
     // Format Mata Uang Upah Harian
     document.querySelectorAll('.daily-wage-input').forEach(function (input) {
