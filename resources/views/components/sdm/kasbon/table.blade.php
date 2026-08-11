@@ -20,6 +20,7 @@
                             <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Kode</th>
                             <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Karyawan/Divisi</th>
                             <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Jenis</th>
+                            <th class="p-2 text-center text-xs font-medium text-text-label uppercase tracking-wider">Tanggal</th>
                             <th class="p-2 text-left text-xs font-medium text-text-label uppercase tracking-wider">Proyek</th>
                             <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Jumlah</th>
                             <th class="p-2 text-right text-xs font-medium text-text-label uppercase tracking-wider">Terbayar</th>
@@ -66,6 +67,11 @@
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $kasbon->kasbon_type === 'personal' ? 'bg-primary-light text-primary' : 'bg-secondary-light text-secondary' }}">
                                         {{ $kasbon->kasbon_type_label }}
                                     </span>
+                                </td>
+
+                                {{-- Tanggal Kasbon --}}
+                                <td class="p-2 text-center text-sm text-text-primary">
+                                    {{ $kasbon->kasbon_date ? $kasbon->kasbon_date->format('d/m/Y') : '-' }}
                                 </td>
 
                                 {{-- Proyek (kasbon divisi ber-proyek) --}}
@@ -163,7 +169,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="px-6 py-8 text-center text-text-label">
+                                <td colspan="12" class="px-6 py-8 text-center text-text-label">
                                     <i class="fa-solid fa-inbox text-4xl mb-2 text-border"></i>
                                     <p>Tidak ada data kasbon</p>
                                 </td>

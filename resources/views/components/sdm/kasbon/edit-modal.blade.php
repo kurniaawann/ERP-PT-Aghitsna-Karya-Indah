@@ -58,6 +58,15 @@
         <p class="text-xs text-text-secondary mt-1">Kasbon divisi otomatis lunas saat payroll proyek tersebut dibayar (tidak bisa dicicil).</p>
     </div>
 
+    {{-- Tanggal Kasbon (untuk personal & tim) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
+        <input type="date" name="kasbon_date" id="edit_{{ $kasbon->kasbon_code }}_kasbon_date"
+            class="w-full border rounded p-2"
+            value="{{ $kasbon->kasbon_date?->format('Y-m-d') }}"
+            onchange="checkMaxKasbon('edit_{{ $kasbon->kasbon_code }}')">
+    </div>
+
     {{-- Input Jumlah (untuk kasbon personal & tim) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
@@ -68,15 +77,6 @@
 
     {{-- Detail Kasbon (Personal) --}}
     <div id="edit_{{ $kasbon->kasbon_code }}_kasbon_detail_field" style="display: none;">
-        {{-- Periode Kasbon --}}
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Periode Kasbon <span class="text-error">*</span></label>
-            <input type="date" name="kasbon_date" id="edit_{{ $kasbon->kasbon_code }}_kasbon_date"
-                class="w-full border rounded p-2"
-                value="{{ $kasbon->kasbon_date->format('Y-m-d') }}"
-                onchange="checkMaxKasbon('edit_{{ $kasbon->kasbon_code }}')">
-        </div>
-
         {{-- Bidang Tersembunyi untuk Periode (diisi ulang dari kasbon_date) --}}
         <input type="hidden" name="week_number" id="edit_{{ $kasbon->kasbon_code }}_week_number"
             value="{{ $kasbon->week_number }}">

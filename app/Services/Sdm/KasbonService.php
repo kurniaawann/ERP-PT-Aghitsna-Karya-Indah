@@ -377,7 +377,9 @@ class KasbonService
 
             // Bidang periode hanya berlaku untuk kasbon personal dan tidak
             // dikirim oleh form edit untuk kasbon tim; pertahankan nilai lama.
-            $data['kasbon_date'] = $kasbon->kasbon_date;
+            if (empty($data['kasbon_date'])) {
+                $data['kasbon_date'] = $kasbon->kasbon_date;
+            }
             $data['period_start_date'] = $kasbon->period_start_date;
             $data['period_end_date'] = $kasbon->period_end_date;
             $data['week_number'] = $kasbon->week_number;
