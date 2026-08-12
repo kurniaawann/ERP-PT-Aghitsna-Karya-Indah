@@ -15,15 +15,37 @@ use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill};
 use Illuminate\Support\Collection;
 
 /**
- * Export DO Semen ke format Excel (.xlsx).
+ * Export Delivery Order ke format Excel (.xlsx).
  *
- * Menghasilkan file Excel berisi laporan DO Semen (master-detail):
- * header DO (no, tanggal, tanggal datang, tanggal bayar, harga modal)
- * diikuti baris-baris Data Semen (proyek, volume, satuan, harga, jumlah,
- * tanggal lunas, harga modal, profit) dan baris subtotal per DO.
+ * Menghasilkan file Excel berisi laporan Delivery Order 4 kolom yang dikelompokkan per bulan,
+ * dengan styling dan layout yang persis sama seperti dokumen PDF/HTML.
  */
 class CementDeliveryOrderExport implements FromCollection, WithHeadings, WithStyles, WithTitle, WithColumnWidths
 {
+    protected $groupedDeliveryOrders;
+
+    /**
+     * Menampung indeks baris untuk styling dinamis
+     */
+    protected array $monthHeaderRows = [];
+    protected array $emptyRows = [];
+
+    /**
+     * Constructor menerima data DO yang sudah digroup per bulan, 
+     * atau melakukan query dan grouping otomatis jika null.
+     */
+    public function __construct($groupedDeliveryOrders = null)
+    {
+        if ($groupedDeliveryOrders) {
+            $this->groupedDeliveryOrders = $groupedDeliveryOrders;
+        } else {
+            $orders = CementDeliveryOrder::orderBy('tanggal', 'asc')->get();
+            $this->groupedDeliveryOrders = $orders->groupBy(function ($do) {
+                return $do->tanggal ? $do->tanggal->translatedFormat('F Y') : 'TANPA TANGGAL';
+            });
+        }
+    }
+
     /**
      * Kumpulan baris (array) yang akan ditulis ke Excel.
      *
@@ -32,64 +54,35 @@ class CementDeliveryOrderExport implements FromCollection, WithHeadings, WithSty
     public function collection(): Collection
     {
         $rows = collect();
+        $currentRow = 3; // Baris 1: Judul Laporan, Baris 2: Header Tabel, Baris 3+: Data
 
-        CementDeliveryOrder::with('cements')
-            ->orderBy('tanggal', 'asc')
-            ->orderBy('no', 'asc')
-            ->get()
-            ->each(function (CementDeliveryOrder $do) use ($rows) {
-                // Baris info header DO
-                $rows->push([
-                    $do->no_urutan,
-                    $do->tanggal ? $do->tanggal->format('d M Y') : '-',
-                    'Datang: ' . ($do->tanggal_datang?->format('d M Y') ?? '-') . ' | Bayar: ' . ($do->tanggal_bayar?->format('d M Y') ?? '-'),
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    'Rp' . number_format($do->harga_modal, 0, ',', '.'),
-                    'Rp' . number_format($do->profit, 0, ',', '.'),
-                ]);
+        foreach ($this->groupedDeliveryOrders as $month => $orders) {
+            // 1. Baris Header Bulan (Merge A-D, Teks Merah)
+            $rows->push([
+                strtoupper($month), '', '', ''
+            ]);
+            $this->monthHeaderRows[] = $currentRow;
+            $currentRow++;
 
-                if ($do->cements->isEmpty()) {
-                    $rows->push($this->emptyDataRow());
-                }
-
-                foreach ($do->cements as $cement) {
+            // 2. Baris Data DO
+            if ($orders->isEmpty()) {
+                $rows->push(['Tidak ada data DO.', '', '', '']);
+                $this->emptyRows[] = $currentRow;
+                $currentRow++;
+            } else {
+                foreach ($orders as $do) {
                     $rows->push([
-                        $cement->no,
-                        $cement->tanggal ? $cement->tanggal->format('d M Y') : '-',
-                        $cement->nama_proyek,
-                        $cement->jumlah,
-                        $cement->satuan ?: 'zak',
-                        'Rp' . number_format($cement->harga, 0, ',', '.'),
-                        'Rp' . number_format($cement->total, 0, ',', '.'),
-                        $cement->tanggal_lunas ? $cement->tanggal_lunas->format('d M Y') : '-',
-                        '',
-                        '',
+                        $do->no_urutan,
+                        $do->tanggal ? $do->tanggal->format('d.m.Y') : '-',
+                        $do->tanggal_datang ? $do->tanggal_datang->format('d.m.Y') : '-',
+                        $do->tanggal_bayar ? $do->tanggal_bayar->format('d.m.Y') : '-',
                     ]);
+                    $currentRow++;
                 }
-
-                // Baris subtotal DO
-                $rows->push([
-                    'SUBTOTAL', '', '', '', '', '', 'Rp' . number_format($do->subtotal, 0, ',', '.'),
-                    '', 'Rp' . number_format($do->harga_modal, 0, ',', '.'), 'Rp' . number_format($do->profit, 0, ',', '.'),
-                ]);
-                $rows->push([]); // baris pemisah kosong
-            });
+            }
+        }
 
         return $rows;
-    }
-
-    /**
-     * Baris penanda DO tanpa data semen.
-     *
-     * @return array
-     */
-    private function emptyDataRow(): array
-    {
-        return ['', '', 'Tidak ada data semen', '', '', '', '', '', '', ''];
     }
 
     /**
@@ -100,47 +93,67 @@ class CementDeliveryOrderExport implements FromCollection, WithHeadings, WithSty
     public function headings(): array
     {
         return [
-            ['DO SEMEN', '', '', '', '', '', '', '', '', ''],
-            ['No', 'Tanggal', 'Proyek', 'Volume', 'Satuan', 'Harga', 'Jumlah', 'Tgl Lunas', 'Harga Modal', 'Profit']
+            ['DELIVERY ORDER', '', '', ''],
+            ['No', 'Tanggal DO', 'Tanggal Datang', 'Tanggal Bayar']
         ];
     }
 
     /**
-     * Style header dan border untuk seluruh sheet.
+     * Style header, warna, font, dan border untuk seluruh sheet.
      *
      * @param  Worksheet  $sheet
      * @return array
      */
     public function styles(Worksheet $sheet): array
     {
-        $sheet->getStyle('A1:J1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 14],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF00']],
-        ]);
-        $sheet->mergeCells('A1:J1');
+        $highestRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A2:J2')->applyFromArray([
+        // 1. Mengatur font global sheet menjadi Times New Roman (sesuai CSS HTML)
+        $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman');
+
+        // 2. Judul Laporan (A1:D1) - Bold 15pt, Rata Tengah
+        $sheet->mergeCells('A1:D1');
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 15],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // 3. Header Tabel (A2:D2) - Background #8EA9DB, Bold 11pt, Rata Tengah
+        $sheet->getStyle('A2:D2')->applyFromArray([
             'font' => ['bold' => true, 'size' => 11],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E0E0E0']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '8EA9DB']],
         ]);
 
-        for ($row = 3; $row <= $sheet->getHighestRow(); $row++) {
-            $proyek = (string) $sheet->getCell('C' . $row)->getValue();
-            $isDoHeader = $proyek === '' && (string) $sheet->getCell('A' . $row)->getValue() !== '';
-            $isSubtotal = strtoupper((string) $sheet->getCell('A' . $row)->getValue()) === 'SUBTOTAL';
-            if ($isDoHeader || $isSubtotal) {
-                $sheet->getStyle('A' . $row . ':J' . $row)->applyFromArray([
-                    'font' => ['bold' => true],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $isSubtotal ? 'FFFF99' : 'DDDDDD']],
-                ]);
-            }
+        // 4. Style Dasar Sel Data (Rata Tengah)
+        $sheet->getStyle('A3:D' . $highestRow)->applyFromArray([
+            'font' => ['size' => 11],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // 5. Header Bulan (Merge A-D, Teks Merah #FF0000, Bold 12pt)
+        foreach ($this->monthHeaderRows as $row) {
+            $sheet->mergeCells("A{$row}:D{$row}");
+            $sheet->getStyle("A{$row}:D{$row}")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FF0000']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
         }
 
-        $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle('A1:J' . $lastRow)->applyFromArray([
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        // 6. Baris Kosong (Merge A-D)
+        foreach ($this->emptyRows as $row) {
+            $sheet->mergeCells("A{$row}:D{$row}");
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        // 7. Border seluruh tabel dari Header (A2) sampai baris terakhir
+        $sheet->getStyle('A2:D' . $highestRow)->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
         ]);
 
         return [];
@@ -153,7 +166,7 @@ class CementDeliveryOrderExport implements FromCollection, WithHeadings, WithSty
      */
     public function title(): string
     {
-        return 'DO_Semen';
+        return 'Delivery_Order';
     }
 
     /**
@@ -164,16 +177,10 @@ class CementDeliveryOrderExport implements FromCollection, WithHeadings, WithSty
     public function columnWidths(): array
     {
         return [
-            'A' => 12,
-            'B' => 15,
-            'C' => 30,
-            'D' => 12,
-            'E' => 12,
-            'F' => 18,
-            'G' => 18,
-            'H' => 15,
-            'I' => 18,
-            'J' => 18,
+            'A' => 12, // No
+            'B' => 25, // Tanggal DO
+            'C' => 25, // Tanggal Datang
+            'D' => 25, // Tanggal Bayar
         ];
     }
 }
