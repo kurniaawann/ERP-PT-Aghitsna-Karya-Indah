@@ -5,7 +5,7 @@
  * - Checkbox Pilih Semua / Batalkan Pilih Semua
  * - Manajemen status checkbox individu dan tombol hapus
  * - Pengiriman formulir hapus massal dengan status memuat
- * - Format mata uang upah harian pada input
+ * - Format mata uang (upah harian, gaji pokok, transport, makan, UMP) pada input
  * - Baris dinamis pada modal Tambah (menambah banyak karyawan sekaligus)
  * - Penanganan pengiriman formulir Tambah/Edit dengan pencegahan pengiriman ganda
  *
@@ -28,6 +28,59 @@ function formatCurrencyInput(input) {
 
     const numeric = input.value.replace(/[^\d]/g, '');
     input.value = numeric ? new Intl.NumberFormat('id-ID').format(numeric) : '';
+}
+
+// ==========================================
+// Toggle Jenis Karyawan (Harian / Bulanan)
+// ==========================================
+
+/**
+ * Menampilkan/menyembunyikan kolom upah sesuai jenis karyawan pada baris
+ * form massal modal Tambah.
+ *
+ * - harian  : tampil "Upah Per Hari" (wajib), sembunyikan "Gaji Pokok"
+ *             serta tampil detail tukang (No. Telepon, Divisi, Proyek, Alamat).
+ * - bulanan : tampil "Gaji Pokok / Bulan" (wajib), sembunyikan "Upah Per Hari"
+ *             serta sembunyikan detail tukang (No. Telepon, Divisi, Proyek, Alamat).
+ *
+ * @param {HTMLElement} row  Baris karyawan (div.employee-row).
+ * @param {string}      type 'harian' | 'bulanan'
+ */
+function toggleRowWageFields(row, type) {
+    if (!row) return;
+
+    const isBulanan = type === 'bulanan';
+    const harianField = row.querySelector('.wage-field-harian');
+    const bulananField = row.querySelector('.wage-field-bulanan');
+    const dailyWage = row.querySelector('.daily-wage-input');
+    const baseSalary = row.querySelector('.base-salary-input');
+
+    if (harianField) harianField.classList.toggle('hidden', isBulanan);
+    if (bulananField) bulananField.classList.toggle('hidden', !isBulanan);
+
+    if (dailyWage) dailyWage.required = !isBulanan;
+    if (baseSalary) baseSalary.required = isBulanan;
+
+    row.querySelectorAll('.harian-extra-field').forEach(function (field) {
+        field.classList.toggle('hidden', isBulanan);
+    });
+}
+
+/**
+ * Mengikat event toggle jenis karyawan pada satu baris form massal modal
+ * Tambah (dropdown .employment-type-select).
+ */
+function bindEmploymentTypeToggle(row) {
+    if (!row) return;
+
+    const select = row.querySelector('.employment-type-select');
+    if (!select) return;
+
+    select.addEventListener('change', function () {
+        toggleRowWageFields(row, this.value);
+    });
+
+    toggleRowWageFields(row, select.value);
 }
 
 // ==========================================
@@ -92,6 +145,29 @@ function bindEmployeeRowEvents(row, initComponents) {
             formatCurrencyInput(this);
         });
     });
+
+    // Format mata uang gaji pokok bulanan untuk input pada baris ini
+    row.querySelectorAll('.base-salary-input').forEach(function (input) {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+        input.addEventListener('input', function () {
+            formatCurrencyInput(this);
+        });
+    });
+
+    // Format mata uang transport/makan/UMP bulanan untuk input pada baris ini
+    row.querySelectorAll('.monthly-currency-input').forEach(function (input) {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+        input.addEventListener('input', function () {
+            formatCurrencyInput(this);
+        });
+    });
+
+    // Toggle kolom upah sesuai jenis karyawan (harian / bulanan)
+    bindEmploymentTypeToggle(row);
 
     // Inisialisasi komponen baru pada baris yang baru ditambahkan.
     // Untuk baris awal komponen sudah diinisialisasi saat DOM siap.
@@ -228,8 +304,57 @@ document.addEventListener('DOMContentLoaded', function () {
         addEmployeeRowBtn.addEventListener('click', addEmployeeRow);
     }
 
+    // Toggle kolom upah pada modal Edit (satu karyawan) sesuai jenis karyawan.
+    document.querySelectorAll('.edit-employment-type-select').forEach(function (select) {
+        const code = select.dataset.employeeCode;
+
+        select.addEventListener('change', function () {
+            const isBulanan = this.value === 'bulanan';
+            const harianField = document.querySelector('.edit-wage-field-harian-' + code);
+            const bulananField = document.querySelector('.edit-wage-field-bulanan-' + code);
+            const dailyWage = harianField ? harianField.querySelector('.daily-wage-input') : null;
+            const baseSalary = bulananField ? bulananField.querySelector('.base-salary-input') : null;
+
+            if (harianField) {
+                harianField.style.display = isBulanan ? 'none' : 'block';
+            }
+            if (bulananField) {
+                bulananField.style.display = isBulanan ? 'block' : 'none';
+                bulananField.classList.toggle('hidden', !isBulanan);
+            }
+            if (dailyWage) dailyWage.required = !isBulanan;
+            if (baseSalary) baseSalary.required = isBulanan;
+
+            document.querySelectorAll('.edit-harian-extra-' + code).forEach(function (field) {
+                field.style.display = isBulanan ? 'none' : 'block';
+            });
+        });
+    });
+
+    // Format Mata Uang Gaji Pokok (modal Edit)
+    document.querySelectorAll('.base-salary-input').forEach(function (input) {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+
+        input.addEventListener('input', function () {
+            formatCurrencyInput(this);
+        });
+    });
+
     // Format Mata Uang Upah Harian
     document.querySelectorAll('.daily-wage-input').forEach(function (input) {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+
+        input.addEventListener('input', function () {
+            formatCurrencyInput(this);
+        });
+    });
+
+    // Format Mata Uang Transport / Makan / UMP (modal Edit, karyawan bulanan)
+    document.querySelectorAll('.monthly-currency-input').forEach(function (input) {
         if (input.value) {
             formatCurrencyInput(input);
         }

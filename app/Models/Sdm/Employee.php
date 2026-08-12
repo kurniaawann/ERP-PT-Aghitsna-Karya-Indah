@@ -19,12 +19,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $employee_code
  * @property string $name
  * @property string|null $position
+ * @property string|null $status
  * @property string|null $phone
  * @property string|null $email
  * @property string|null $address
  * @property string|null $division
  * @property int|null $base_salary
+ * @property int|null $transport_rate
+ * @property int|null $meal_rate
+ * @property int|null $ump
  * @property int|null $daily_wage
+ * @property string $employment_type
  * @property Carbon|null $join_date
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -68,13 +73,18 @@ class Employee extends Model
         'employee_code',
         'name',
         'position',
+        'status',
         'phone',
         'email',
         'address',
         'division',
         'project_name',
         'base_salary',
+        'transport_rate',
+        'meal_rate',
+        'ump',
         'daily_wage',
+        'employment_type',
         'join_date',
         'created_by',
     ];
@@ -87,6 +97,9 @@ class Employee extends Model
     protected $casts = [
         'join_date' => 'date',
         'base_salary' => 'integer',
+        'transport_rate' => 'integer',
+        'meal_rate' => 'integer',
+        'ump' => 'integer',
         'daily_wage' => 'integer',
     ];
 
@@ -154,6 +167,16 @@ class Employee extends Model
     public function getEffectiveWageAttribute(): int|null
     {
         return $this->daily_wage ?? $this->base_salary;
+    }
+
+    /**
+     * Apakah karyawan berjenis bulanan (berhak slip gaji).
+     *
+     * @return bool
+     */
+    public function isBulanan(): bool
+    {
+        return $this->employment_type === 'bulanan';
     }
 
     /**

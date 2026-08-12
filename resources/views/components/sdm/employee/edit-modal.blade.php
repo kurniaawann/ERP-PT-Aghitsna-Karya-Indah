@@ -22,17 +22,69 @@
     </div>
 
     <div class="mb-3">
+        <label class="block text-text-primary mb-1">Jenis Karyawan <span class="text-error">*</span></label>
+        <select name="employment_type" id="edit-employment-type-{{ $employee->employee_code }}"
+            class="w-full border rounded p-2 edit-employment-type-select"
+            data-employee-code="{{ $employee->employee_code }}">
+            <option value="harian" @selected($employee->employment_type === 'harian')>Harian (Tukang)</option>
+            <option value="bulanan" @selected($employee->employment_type === 'bulanan')>Bulanan (Slip Gaji)</option>
+        </select>
+    </div>
+
+    <div class="mb-3 edit-wage-field-harian-{{ $employee->employee_code }}"
+        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
         <label class="block text-text-primary mb-1">Upah Per Hari <span class="text-error">*</span></label>
         <input type="text" inputmode="numeric" name="daily_wage" class="w-full border rounded p-2 daily-wage-input"
             placeholder="Masukkan upah per hari" value="{{ $employee->daily_wage }}" required min="0">
     </div>
 
-    <x-forms.searchable-select name="division" label="Divisi" :required="true"
-        placeholder="Cari divisi..."
-        :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
-        selected="{{ $employee->division ?? '' }}" />
+    <div class="mb-3 edit-wage-field-bulanan-{{ $employee->employee_code }} hidden"
+        @if ($employee->employment_type === 'bulanan') style="display: block;" @endif>
+        <div class="p-3 border border-border-light rounded-lg bg-surface-secondary space-y-3">
+            <div>
+                <label class="block text-text-primary mb-1">Gaji Pokok / Bulan <span class="text-error">*</span></label>
+                <input type="text" inputmode="numeric" name="base_salary" class="w-full border rounded p-2 base-salary-input"
+                    placeholder="Masukkan gaji pokok per bulan" value="{{ $employee->base_salary }}" min="0">
+            </div>
 
-    <div class="mb-3">
+            <div>
+                <label class="block text-text-primary mb-1">Status Karyawan <span class="text-text-tertiary text-sm">(Opsional)</span></label>
+                <input type="text" name="status" class="w-full border rounded p-2"
+                    placeholder="cth: Karyawan Tetap / Kontrak" value="{{ $employee->status }}" maxlength="100">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-text-primary mb-1">Transport / Hari <span class="text-text-tertiary text-sm">(Opsional)</span></label>
+                    <input type="text" inputmode="numeric" name="transport_rate" class="w-full border rounded p-2 monthly-currency-input"
+                        placeholder="cth: 5.000" value="{{ $employee->transport_rate }}" min="0">
+                </div>
+
+                <div>
+                    <label class="block text-text-primary mb-1">Makan / Hari <span class="text-text-tertiary text-sm">(Opsional)</span></label>
+                    <input type="text" inputmode="numeric" name="meal_rate" class="w-full border rounded p-2 monthly-currency-input"
+                        placeholder="cth: 10.000" value="{{ $employee->meal_rate }}" min="0">
+                </div>
+
+                <div>
+                    <label class="block text-text-primary mb-1">UMP <span class="text-text-tertiary text-sm">(Opsional)</span></label>
+                    <input type="text" inputmode="numeric" name="ump" class="w-full border rounded p-2 monthly-currency-input"
+                        placeholder="cth: 4.200.000" value="{{ $employee->ump }}" min="0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="edit-harian-extra-{{ $employee->employee_code }}"
+        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
+        <x-forms.searchable-select name="division" label="Divisi"
+            placeholder="Cari divisi (opsional)..."
+            :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
+            selected="{{ $employee->division ?? '' }}" />
+    </div>
+
+    <div class="mb-3 edit-harian-extra-{{ $employee->employee_code }}"
+        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
         <label class="block text-text-primary mb-1">Proyek <span class="text-text-tertiary text-sm">(Opsional)</span></label>
         <div class="project-dropdown relative" data-route="{{ route('employee.projects-dropdown') }}">
             <input type="hidden" name="project_name" class="project-dropdown-hidden" value="{{ $employee->project_name ?? '' }}">
@@ -58,14 +110,16 @@
         </div>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-3 edit-harian-extra-{{ $employee->employee_code }}"
+        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
         <label class="block text-text-primary mb-1">No. Telepon</label>
         <input type="text" name="phone" class="w-full border rounded p-2" placeholder="Masukkan no. telepon (opsional)"
             value="{{ $employee->phone }}" maxlength="20">
     </div>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Alamat <span class="text-error">*</span></label>
-        <textarea name="address" class="w-full border rounded p-2" placeholder="Masukkan alamat" rows="3" required>{{ $employee->address }}</textarea>
+    <div class="mb-3 edit-harian-extra-{{ $employee->employee_code }}"
+        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
+        <label class="block text-text-primary mb-1">Alamat <span class="text-text-tertiary text-sm">(Opsional)</span></label>
+        <textarea name="address" class="w-full border rounded p-2" placeholder="Masukkan alamat" rows="3">{{ $employee->address }}</textarea>
     </div>
 </x-modal>

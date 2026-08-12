@@ -94,6 +94,7 @@ class EmployeeService
     {
         $data['employee_code'] = Employee::generateEmployeeCode();
         $data['created_by'] = auth()->id();
+        $data['employment_type'] = $data['employment_type'] ?? 'harian';
 
         return Employee::create($data);
     }

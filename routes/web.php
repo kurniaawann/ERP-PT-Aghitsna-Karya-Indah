@@ -39,6 +39,7 @@ use App\Http\Controllers\Sdm\ExecutiveController;
 use App\Http\Controllers\Sdm\KasbonController;
 use App\Http\Controllers\Sdm\OvertimeController;
 use App\Http\Controllers\Sdm\PayrollController;
+use App\Http\Controllers\Sdm\SalarySlipController;
 use App\Http\Controllers\UserManagement\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -337,6 +338,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
         Route::patch('/payroll/bulk-pay', [PayrollController::class, 'bulkPay'])->name('payroll.bulk-pay');
         Route::delete('/payroll/destroy-selected', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+
+        // Route Slip Gaji (Penggajian Karyawan Bulanan)
+        Route::get('/salary-slip', [SalarySlipController::class, 'index'])->name('salary-slips.index');
+        Route::post('/salary-slip/eligible', [SalarySlipController::class, 'eligibleEmployees'])->name('salary-slips.eligible');
+        Route::post('/salary-slip/generate', [SalarySlipController::class, 'generate'])->name('salary-slips.generate');
+        Route::put('/salary-slip/{salary_slip}', [SalarySlipController::class, 'update'])->name('salary-slips.update');
+        Route::patch('/salary-slip/bulk-pay', [SalarySlipController::class, 'bulkPay'])->name('salary-slips.bulk-pay');
+        Route::delete('/salary-slip/destroy-selected', [SalarySlipController::class, 'destroy'])->name('salary-slips.destroy');
+        Route::get('/salary-slip/export/pdf', [SalarySlipController::class, 'printBulk'])->name('salary-slips.export.pdf');
+        Route::get('/salary-slip/{salary_slip}/print/pdf', [SalarySlipController::class, 'printPdf'])->name('salary-slips.print.pdf');
 
         // Route Kasbon (Cash Advance)
         Route::get('/kasbon', [KasbonController::class, 'index'])->name('kasbon.index');

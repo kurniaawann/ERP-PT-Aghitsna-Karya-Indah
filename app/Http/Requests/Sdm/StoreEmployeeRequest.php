@@ -37,20 +37,27 @@ class StoreEmployeeRequest extends FormRequest
             'employees' => 'required|array|min:1',
             'employees.*.name' => 'required|string|max:255',
             'employees.*.position' => 'nullable|string|max:100',
-            'employees.*.daily_wage' => 'required|integer|min:0',
-            'employees.*.division' => 'required|string|max:100',
+            'employees.*.status' => 'nullable|string|max:100',
+            'employees.*.employment_type' => 'nullable|in:harian,bulanan',
+            'employees.*.daily_wage' => 'required_unless:employees.*.employment_type,bulanan|nullable|integer|min:0',
+            'employees.*.base_salary' => 'required_if:employees.*.employment_type,bulanan|nullable|integer|min:0',
+            'employees.*.transport_rate' => 'nullable|integer|min:0',
+            'employees.*.meal_rate' => 'nullable|integer|min:0',
+            'employees.*.ump' => 'nullable|integer|min:0',
+            'employees.*.division' => 'nullable|string|max:100',
             'employees.*.project_name' => 'nullable|string|max:255',
             'employees.*.phone' => 'nullable|string|max:20',
-            'employees.*.address' => 'required|string',
+            'employees.*.address' => 'nullable|string',
         ];
     }
 
     /**
      * Mempersiapkan data sebelum validasi.
      *
-     * Menormalisasi daily_wage tiap karyawan dari format string mata uang
-     * (misalnya "150.000") menjadi integer (misalnya 150000) sebelum aturan
-     * validasi diterapkan.
+     * Menormalisasi daily_wage/base_salary tiap karyawan dari format string
+     * mata uang (misalnya "150.000") menjadi integer (misalnya 150000) serta
+     * memastikan employment_type memiliki nilai default 'harian' sebelum
+     * aturan validasi diterapkan.
      */
     protected function prepareForValidation(): void
     {
@@ -61,8 +68,21 @@ class StoreEmployeeRequest extends FormRequest
         }
 
         foreach ($employees as $index => $employee) {
+            $employees[$index]['employment_type'] = $employee['employment_type'] ?? 'harian';
             $employees[$index]['daily_wage'] = InputNormalizer::normalizeCurrency(
                 $employee['daily_wage'] ?? null
+            );
+            $employees[$index]['base_salary'] = InputNormalizer::normalizeCurrency(
+                $employee['base_salary'] ?? null
+            );
+            $employees[$index]['transport_rate'] = InputNormalizer::normalizeCurrency(
+                $employee['transport_rate'] ?? null
+            );
+            $employees[$index]['meal_rate'] = InputNormalizer::normalizeCurrency(
+                $employee['meal_rate'] ?? null
+            );
+            $employees[$index]['ump'] = InputNormalizer::normalizeCurrency(
+                $employee['ump'] ?? null
             );
         }
 
