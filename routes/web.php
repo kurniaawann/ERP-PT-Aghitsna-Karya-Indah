@@ -20,6 +20,8 @@ use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Finance\RecapProyekController;
 use App\Http\Controllers\Finance\RecapSalesController;
 use App\Http\Controllers\Finance\ReimburseController;
+use App\Http\Controllers\Inventory\CementController;
+use App\Http\Controllers\Inventory\CementDeliveryOrderController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ItemReturnController;
 use App\Http\Controllers\Inventory\ItemStockInController;
@@ -103,6 +105,28 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/item/export/pdf', [ItemController::class, 'exportPdf'])->name('item.export.pdf');
         Route::get('/item/export/excel', [ItemController::class, 'exportExcel'])->name('item.export.excel');
+    });
+
+    // ─── Inventory: Data Semen (Super Admin only) ───
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/cement', [CementController::class, 'index'])->name('cement.index');
+        Route::post('/cement', [CementController::class, 'store'])->name('cement.store');
+        Route::put('/cement/{no}', [CementController::class, 'update'])->name('cement.update');
+        Route::delete('/cements', [CementController::class, 'destroySelected'])->name('cements.destroySelected');
+
+        Route::get('/cement/export/pdf', [CementController::class, 'exportPdf'])->name('cement.export.pdf');
+        Route::get('/cement/export/excel', [CementController::class, 'exportExcel'])->name('cement.export.excel');
+    });
+
+    // ─── Inventory: DO Semen (Super Admin only) ───
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/do-semen', [CementDeliveryOrderController::class, 'index'])->name('cement-do.index');
+        Route::post('/do-semen', [CementDeliveryOrderController::class, 'store'])->name('cement-do.store');
+        Route::put('/do-semen/{no}', [CementDeliveryOrderController::class, 'update'])->name('cement-do.update');
+        Route::delete('/do-semens', [CementDeliveryOrderController::class, 'destroySelected'])->name('cement-does.destroySelected');
+
+        Route::get('/do-semen/export/pdf', [CementDeliveryOrderController::class, 'exportPdf'])->name('cement-do.export.pdf');
+        Route::get('/do-semen/export/excel', [CementDeliveryOrderController::class, 'exportExcel'])->name('cement-do.export.excel');
     });
 
     // ─── Inventory: Stock In (Super Admin only) ───

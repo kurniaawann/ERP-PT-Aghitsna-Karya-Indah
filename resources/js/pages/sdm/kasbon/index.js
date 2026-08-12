@@ -213,6 +213,8 @@ window.toggleEmployeeSelect = function (prefix) {
         }
         if (limitAlert) limitAlert.classList.add('hidden');
 
+        updateEmployeeTypeLabel(prefix);
+
         // empty() sudah menghapus semua baris; setProjectRowsRequired(false)
         // di sini hanya sebagai pengaman bila ada baris yang tersisa.
         if (isAdd) setProjectRowsRequired(false);
@@ -361,6 +363,52 @@ const projectRows = {
         });
     },
 };
+
+// ==========================================
+// LABEL JENIS KARYAWAN
+// ==========================================
+
+/**
+ * Menampilkan label jenis karyawan ("Harian (Tukang)" / "Bulanan (Slip
+ * Gaji)") di samping label "Karyawan" pada modal Tambah/Edit kasbon
+ * berdasarkan karyawan yang dipilih.
+ *
+ * @param {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
+ */
+function updateEmployeeTypeLabel(prefix) {
+    const select = document.getElementById(prefix + '_employee_id');
+    const label = document.getElementById(prefix + '_employee_type_label');
+    if (!select || !label) return;
+
+    const option = select.selectedOptions[0];
+    const type = option ? option.dataset.type : '';
+
+    if (type === 'harian') {
+        label.textContent = 'Harian (Tukang)';
+        label.classList.remove('hidden');
+    } else if (type === 'bulanan') {
+        label.textContent = 'Bulanan (Slip Gaji)';
+        label.classList.remove('hidden');
+    } else {
+        label.textContent = '';
+        label.classList.add('hidden');
+    }
+}
+
+/**
+ * Menginisialisasi label jenis karyawan untuk semua dropdown karyawan
+ * (modal Tambah 'add' dan semua modal Edit kasbon), lalu memperbaruinya
+ * setiap kali pilihan berubah.
+ */
+function initEmployeeTypeLabels() {
+    document.querySelectorAll('[id$="_employee_id"]').forEach((select) => {
+        const prefix = select.id.replace(/_employee_id$/, '');
+        updateEmployeeTypeLabel(prefix);
+        select.addEventListener('change', function () {
+            updateEmployeeTypeLabel(prefix);
+        });
+    });
+}
 
 // ==========================================
 // PENYELESAIAN TANGGAL PERIODE (AJAX)
@@ -673,6 +721,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initSelectAllCheckbox();
     initFormSubmitHandlers();
     initAmountFormatting();
+    initEmployeeTypeLabels();
 
     projectRows.init();
 

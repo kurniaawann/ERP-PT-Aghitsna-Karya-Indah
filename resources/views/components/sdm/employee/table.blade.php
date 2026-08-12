@@ -13,6 +13,7 @@
                             <th class="p-2 text-left">Kode</th>
                             <th class="p-2 text-left">Nama</th>
                             <th class="p-2 text-left">Jabatan</th>
+                            <th class="p-2 text-center">Jenis Karyawan</th>
                             <th class="p-2 text-center">Upah Per Hari</th>
                             <th class="p-2 text-left">Divisi</th>
                             <th class="p-2 text-left">Proyek</th>
@@ -31,6 +32,11 @@
                                 <td class="p-2 font-medium text-primary">{{ $employee->employee_code }}</td>
                                 <td class="p-2">{{ $employee->name }}</td>
                                 <td class="p-2">{{ $employee->position ?? '-' }}</td>
+                                <td class="p-2 text-center">
+                                    <span class="px-2 py-1 bg-primary-light text-primary text-xs rounded-full">
+                                        {{ $employee->employment_type === 'bulanan' ? 'Bulanan' : 'Harian' }}
+                                    </span>
+                                </td>
                                 <td class="p-2 text-center">
                                     @if ($employee->employment_type === 'bulanan')
                                         -
@@ -58,7 +64,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center p-4 text-text-secondary">
+                                <td colspan="11" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

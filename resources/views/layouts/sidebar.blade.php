@@ -64,7 +64,7 @@
 
                 {{-- Submenu --}}
                 <ul id="inventoryDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('cement*') || request()->is('do-semen*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -74,6 +74,28 @@
                                 {{ (request()->is('item') || request()->is('item/*')) && !request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Data Barang</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('cement.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('cement*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-cubes w-4 
+                                {{ request()->is('cement*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Data Semen</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('cement-do.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('do-semen*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-truck w-4 
+                                {{ request()->is('do-semen*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">DO Semen</span>
                         </a>
                     </li>
                     <li>
