@@ -1,23 +1,20 @@
 {{-- =====================================================================
      Halaman: Data Payroll (payroll)
-     Tujuan: Halaman utama pengelolaan payroll karyawan. Menampilkan daftar
-             payroll (paginasi) dengan pencarian & filter (bulan, tahun,
-             minggu), aksi bulk (Bayar/Hapus/Generate), dan ekspor (Excel/PDF).
+     Tujuan: Halaman utama pengelolaan payroll karyawan yang ber-tab:
+             1. "Data Payroll" — payroll mingguan (paginasi) dengan pencarian
+                & filter (bulan, tahun, minggu, proyek), aksi bulk
+                (Bayar/Hapus/Generate), dan ekspor (Excel/PDF).
+              2. "Slip Gaji" — slip gaji karyawan bulanan (di-include dari
+                 partial pages.sdm.partials.salary-slip-content), aktif saat
+                 ?tab=salary-slip. Tab menu hanya tampil untuk role admin.
 
-     Data dari PayrollController@index:
-     - $payrollGroups   : LengthAwarePaginator grup payroll (proyek + periode),
-                          dipaginasi per-grup sehingga satu grup tidak terpotong antar halaman
-     - $currentPayrolls : Collection payroll pada halaman saat ini (untuk loop modal edit/detail)
-     - $search, $month, $year, $weekNumber, $projectName : nilai filter aktif (nullable)
-     - $projects            : daftar proyek unik dari data karyawan (opsi multi-select modal generate)
-
-     Dropdown filter proyek memakai komponen searchable
-     (components.filters.project-filter) yang mengambil data dari Rekap Proyek
-     via route employee.projects-dropdown (10 item per load). Pada modal
-     generate, pemilihan proyek memakai multi-select searchable (sama seperti
-     pemilihan karyawan pada modul Absensi) dengan opsi dari $projects.
-     Ekspor Excel/PDF hanya aktif saat proyek dipilih (tombol Print Laporan
-     disabled bila project_name kosong).
+     Data dari PayrollController@index (bergantung tab aktif):
+     - Tab payroll: $payrollGroups (LengthAwarePaginator grup payroll),
+       $currentPayrolls, $search, $month, $year, $weekNumber, $projectName,
+       $projects, $executives
+     - Tab salary-slip: $slips, $search, $month, $year, $executives,
+       $eligibleEmployees, $filterMonth, $filterYear
+     - $tab : tab aktif (payroll|salary-slip)
 
      Komponen yang di-include:
      - components.sdm.payroll.table                     : tabel daftar payroll
@@ -26,6 +23,7 @@
      - components.sdm.payroll.detail-modal              : modal detail payroll (loop)
      - x-pagination                                     : kontrol pagination
      - x-modal (deleteModal / bulkPayModal)             : konfirmasi hapus & bayar massal
+     - pages.sdm.partials.salary-slip-content           : konten tab Slip Gaji
 
      Alur logika yang perlu diperhatikan:
      - Dropdown minggu diisi secara dinamis via AJAX ke route payroll.get-weeks
@@ -36,9 +34,12 @@
        (route payroll.check-attendance) sebelum menciptakan payroll draft.
      - Konfigurasi diteruskan ke JS via @json($payrollConfig) →
        window.payrollConfig (URL AJAX + nilai filter aktif).
+     - Pada tab salary-slip, konfigurasi diteruskan via window.salarySlipConfig
+       di partial (URL AJAX eligible + daftar petinggi).
 
-     JS yang di-load:
-     - @vite('resources/js/pages/sdm/payroll/index.js')
+     JS yang di-load (sesuai tab aktif):
+     - @vite('resources/js/pages/sdm/payroll/index.js')        (tab payroll)
+     - @vite('resources/js/pages/sdm/salary-slip/index.js')    (tab salary-slip)
      ===================================================================== --}}
 
 @extends('layouts.app')
@@ -46,13 +47,54 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Payroll')
 
 @section('content')
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        {{-- ============================================================
-             SECTION: Header
-             Judul halaman.
-             ============================================================ --}}
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Payroll</h1>
+    {{-- ============================================================
+         SECTION: Header
+         Judul halaman.
+         ============================================================ --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-text-primary mb-1">Data Payroll</h1>
+            <p class="text-text-secondary text-sm">
+                @if (!auth()->user()->isSuperAdmin())
+                    Pilih tab di bawah untuk mengelola payroll mingguan atau slip gaji karyawan bulanan.
+                @else
+                    Kelola payroll mingguan karyawan.
+                @endif
+            </p>
+        </div>
+    </div>
 
+    {{-- ============================================================
+         SECTION: Tab Menu (Data Payroll | Slip Gaji)
+         Tab menu hanya tampil untuk role admin.
+         ============================================================ --}}
+    @if (auth()->user()->isAdmin())
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 my-6">
+        <a href="{{ route('payroll.index') }}"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 text-sm font-semibold
+                {{ $tab === 'payroll' ? 'bg-primary text-white border-primary' : 'bg-surface-base text-text-primary border-border-strong hover:bg-primary-light hover:text-primary' }}">
+            <i class="fa-solid fa-money-check-alt"></i>
+            <span>Data Payroll</span>
+        </a>
+        <a href="{{ route('payroll.index', ['tab' => 'salary-slip']) }}"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 text-sm font-semibold
+                {{ $tab === 'salary-slip' ? 'bg-primary text-white border-primary' : 'bg-surface-base text-text-primary border-border-strong hover:bg-primary-light hover:text-primary' }}">
+            <i class="fa-solid fa-file-invoice"></i>
+            <span>Slip Gaji</span>
+        </a>
+    </div>
+    @endif
+
+    @if ($tab === 'salary-slip')
+        {{-- ============================================================
+             Tab: Slip Gaji (hanya non-superadmin) — konten di partial
+             ============================================================ --}}
+        @include('pages.sdm.partials.salary-slip-content')
+    @else
+        {{-- ============================================================
+             Tab: Data Payroll (default)
+             ============================================================ --}}
+        <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         {{-- ============================================================
              SECTION: Filter / Toolbar
              Form filter (bulan, tahun, minggu, pencarian) + aksi kanan
@@ -208,4 +250,5 @@
 
     {{-- JavaScript --}}
     @vite('resources/js/pages/sdm/payroll/index.js')
+    @endif
 @endsection

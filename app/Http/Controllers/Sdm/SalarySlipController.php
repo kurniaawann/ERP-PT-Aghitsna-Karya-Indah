@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Sdm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sdm\Executive;
 use App\Models\Sdm\SalarySlip;
 use App\Services\Sdm\SalarySlipService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 /**
  * Controller untuk Slip Gaji Karyawan Bulanan.
+ *
+ * Halaman indeksnya kini menjadi tab "Slip Gaji" di dalam halaman Data
+ * Payroll (dikelola PayrollController@index); controller ini menangani
+ * seluruh aksi (eligible, generate, update, bayar, hapus, cetak PDF).
  *
  * Hanya role admin (route dibungkus middleware role:admin). Alur:
  * generate slip draft dari daftar karyawan bulanan, isi rekap absensi
@@ -31,37 +33,15 @@ class SalarySlipController extends Controller
     ) {}
 
     /**
-     * Daftar slip gaji dengan filter (bulan, tahun, pencarian).
+     * Halaman Slip Gaji dipindah menjadi tab di dalam halaman Data Payroll
+     * (route payroll.index?tab=salary-slip), sehingga URL lama /salary-slip
+     * cukup dialihkan ke tab tersebut.
      */
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        $search = $request->input('search');
-        $month = $request->input('month') ? (int) $request->input('month') : null;
-        $year = $request->input('year') ? (int) $request->input('year') : null;
-
-        $slips = $this->service->getSlipsForIndex($search, $month, $year)
-            ->paginate(10)
-            ->appends($request->all());
-
-        $executives = Executive::where('created_by', auth()->id())
-            ->orderBy('name')
-            ->get();
-
-        // Daftar karyawan bulanan yang belum punya slip untuk periode filter
-        // (atau bulan berjalan bila tidak ada filter) — dipakai modal generate.
-        $filterMonth = $month ?: (int) date('n');
-        $filterYear = $year ?: (int) date('Y');
-        $eligibleEmployees = $this->service->getEligibleEmployees($filterYear, $filterMonth);
-
-        return view('pages.sdm.salary-slips', compact(
-            'slips',
-            'search',
-            'month',
-            'year',
-            'executives',
-            'eligibleEmployees',
-            'filterMonth',
-            'filterYear'
+        return redirect()->route('payroll.index', array_merge(
+            $request->query(),
+            ['tab' => 'salary-slip']
         ));
     }
 

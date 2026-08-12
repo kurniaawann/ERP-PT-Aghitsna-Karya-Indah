@@ -2,23 +2,28 @@
 
 namespace App\Http\Controllers\Sdm;
 
+use App\Exports\Sdm\PayrollExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sdm\UpdatePayrollRequest;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Executive;
 use App\Models\Sdm\Payroll;
 use App\Services\Sdm\PayrollService;
-use App\Exports\Sdm\PayrollExport;
+use App\Services\Sdm\SalarySlipService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * Controller untuk mengelola payroll karyawan.
  *
  * Menangani permintaan HTTP untuk daftar payroll, validasi absensi,
  * pembuatan, pembayaran massal, penghapusan, dan ekspor (Excel/PDF).
+ *
+ * Halaman Data Payroll kini ber-tab: "Data Payroll" dan "Slip Gaji".
+ * Tab menu hanya tampil untuk role admin; superadmin hanya melihat
+ * konten tab payroll tanpa tab menu.
  *
  * Seluruh logika bisnis didelegasikan ke PayrollService.
  * Validasi untuk pembaruan ditangani oleh UpdatePayrollRequest.
@@ -27,6 +32,8 @@ class PayrollController extends Controller
 {
     protected PayrollService $payrollService;
 
+    protected SalarySlipService $salarySlipService;
+
     protected array $monthNames = [
         1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
         4 => 'April', 5 => 'Mei', 6 => 'Juni',
@@ -34,21 +41,64 @@ class PayrollController extends Controller
         10 => 'Oktober', 11 => 'November', 12 => 'Desember',
     ];
 
-    public function __construct(PayrollService $payrollService)
-    {
+    public function __construct(
+        PayrollService $payrollService,
+        SalarySlipService $salarySlipService
+    ) {
         $this->payrollService = $payrollService;
+        $this->salarySlipService = $salarySlipService;
     }
 
     /**
-     * Menampilkan daftar payroll dengan paginasi, pencarian, dan penyaringan.
+     * Menampilkan halaman Data Payroll yang ber-tab: "Data Payroll" (daftar
+     * payroll mingguan) dan "Slip Gaji" (slip gaji karyawan bulanan).
      *
-     * Filter mencakup bulan, tahun, minggu, dan proyek. Dropdown proyek pada
-     * filter maupun modal generate memakai komponen searchable yang mengambil
-     * data dari Rekap Proyek (route employee.projects-dropdown), bukan daftar
-     * proyek statis.
+     * Param `tab` menentukan konten aktif (payroll|salary-slip). Tab menu
+     * hanya tampil untuk role admin, sehingga superadmin selalu diarahkan
+     * ke tab payroll.
      */
     public function index(Request $request)
     {
+        $tab = $request->input('tab', 'payroll');
+
+        if (! in_array($tab, ['payroll', 'salary-slip'], true)) {
+            $tab = 'payroll';
+        }
+
+        // Role superadmin tidak diperlihatkan fitur Slip Gaji (khusus admin).
+        if ($tab === 'salary-slip' && auth()->user()->isSuperAdmin()) {
+            $tab = 'payroll';
+        }
+
+        // ─── Tab Slip Gaji (khusus admin) ───
+        if ($tab === 'salary-slip') {
+            $search = $request->input('search');
+            $month = $request->input('month') ? (int) $request->input('month') : null;
+            $year = $request->input('year') ? (int) $request->input('year') : null;
+
+            $slips = $this->salarySlipService->getSlipsForIndex($search, $month, $year)
+                ->paginate(10)
+                ->appends(array_merge($request->query(), ['tab' => 'salary-slip']));
+
+            // Petinggi milik user untuk pemilihan penandatangan pada modal
+            // Generate Slip Gaji (blok Disetujui/Diperiksa/Dibuat oleh).
+            $executives = Executive::where('created_by', auth()->id())
+                ->orderBy('name')
+                ->get();
+
+            // Daftar karyawan bulanan yang belum punya slip untuk periode
+            // filter (atau bulan berjalan bila tidak ada filter).
+            $filterMonth = $month ?: (int) date('n');
+            $filterYear = $year ?: (int) date('Y');
+            $eligibleEmployees = $this->salarySlipService->getEligibleEmployees($filterYear, $filterMonth);
+
+            return view('pages.sdm.payroll', compact(
+                'tab', 'slips', 'search', 'month', 'year',
+                'executives', 'eligibleEmployees', 'filterMonth', 'filterYear'
+            ));
+        }
+
+        // ─── Tab Data Payroll (default) ───
         $search = $request->input('search');
         $month = $request->input('month');
         $year = $request->input('year');
@@ -80,14 +130,13 @@ class PayrollController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('pages.sdm.payroll', compact('payrollGroups', 'currentPayrolls', 'search', 'month', 'year', 'weekNumber', 'projectName', 'projects', 'executives'));
+        return view('pages.sdm.payroll', compact('tab', 'payrollGroups', 'currentPayrolls', 'search', 'month', 'year', 'weekNumber', 'projectName', 'projects', 'executives'));
     }
 
     /**
      * Menormalkan input proyek (tunggal/array) menjadi array nama proyek
      * yang tidak kosong.
      *
-     * @param  mixed  $input
      * @return array<int, string>
      */
     private function normalizeProjectNames(mixed $input): array
@@ -102,13 +151,11 @@ class PayrollController extends Controller
 
     /**
      * Membersihkan teks agar aman dipakai sebagai nama file.
-     *
-     * @param  string  $name
-     * @return string
      */
     private function sanitizeForFilename(string $name): string
     {
         $name = preg_replace('/\s+/', '_', trim($name));
+
         return preg_replace('/[^A-Za-z0-9_\-]+/', '', $name) ?: 'Semua_Proyek';
     }
 
@@ -134,11 +181,11 @@ class PayrollController extends Controller
             $end = $week['end'];
 
             if ($start->month === $end->month) {
-                $label = 'Minggu ' . $week['week_number'] .
-                    ' (' . $start->format('d') . '-' . $end->format('d M') . ')';
+                $label = 'Minggu '.$week['week_number'].
+                    ' ('.$start->format('d').'-'.$end->format('d M').')';
             } else {
-                $label = 'Minggu ' . $week['week_number'] .
-                    ' (' . $start->format('d M') . ' - ' . $end->format('d M') . ')';
+                $label = 'Minggu '.$week['week_number'].
+                    ' ('.$start->format('d M').' - '.$end->format('d M').')';
             }
 
             return [
@@ -308,8 +355,8 @@ class PayrollController extends Controller
                 ->with('error', 'Tidak ada data payroll untuk diexport!');
         }
 
-        $projectPart = $projectName ? '_' . $this->sanitizeForFilename($projectName) : '';
-        $fileName = 'Laporan_Payroll' . $projectPart . '_' . ($month ? $month . '_' : '') . ($year ? $year : 'Semua') . '_' . date('Ymd_His') . '.xlsx';
+        $projectPart = $projectName ? '_'.$this->sanitizeForFilename($projectName) : '';
+        $fileName = 'Laporan_Payroll'.$projectPart.'_'.($month ? $month.'_' : '').($year ? $year : 'Semua').'_'.date('Ymd_His').'.xlsx';
 
         $teamKasbonRecap = $this->payrollService->getTeamKasbonRecap($payrolls);
 
@@ -341,9 +388,9 @@ class PayrollController extends Controller
 
         // Memformat teks periode
         if ($month && $year) {
-            $periodText = $this->monthNames[$month] . ' ' . $year;
+            $periodText = $this->monthNames[$month].' '.$year;
         } elseif ($year) {
-            $periodText = 'Tahun ' . $year;
+            $periodText = 'Tahun '.$year;
         } else {
             $periodText = 'Semua Periode';
         }
@@ -360,7 +407,7 @@ class PayrollController extends Controller
         if ($firstPayroll && $firstPayroll->period_start_date && $firstPayroll->period_end_date) {
             $startDate = Carbon::parse($firstPayroll->period_start_date);
             $endDate = Carbon::parse($firstPayroll->period_end_date);
-            $dateRange = $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y');
+            $dateRange = $startDate->format('d M Y').' - '.$endDate->format('d M Y');
 
             // Membuat array hari untuk kolom header (Senin-Sabtu = 6 hari kerja).
             // Minggu dikecualikan karena hari Minggu adalah hari libur
@@ -432,10 +479,10 @@ class PayrollController extends Controller
                 $filenameParts[] = Carbon::parse($firstPayroll->period_end_date)->format('d_M_Y');
             }
         }
-        if (!$month && !$year) {
+        if (! $month && ! $year) {
             $filenameParts[] = 'Semua_Periode';
         }
-        $fileName = implode('_', $filenameParts) . '.pdf';
+        $fileName = implode('_', $filenameParts).'.pdf';
 
         return $pdf->download($fileName);
     }

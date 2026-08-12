@@ -1,5 +1,5 @@
 /**
- * Halaman Indeks Slip Gaji - Modul JavaScript
+ * Tab "Slip Gaji" (Halaman Data Payroll) - Modul JavaScript
  *
  * Menangani semua fungsionalitas interaktif untuk halaman Slip Gaji:
  * - Grid rekap absensi pada modal Edit (toggle H/I/S/C/A/L) + ringkasan live
@@ -9,7 +9,8 @@
  * - Handler submit form Generate/Edit dengan pencegahan double submit
  *
  * Data server dikirim lewat window.salarySlipConfig (di-set di
- * pages/sdm/salary-slips.blade.php). Fungsi yang dipanggil dari atribut HTML
+ * pages/sdm/partials/salary-slip-content.blade.php — tab "Slip Gaji" pada
+ * halaman Data Payroll). Fungsi yang dipanggil dari atribut HTML
  * inline diekspos ke window karena Vite memuat JS sebagai ES module.
  */
 
