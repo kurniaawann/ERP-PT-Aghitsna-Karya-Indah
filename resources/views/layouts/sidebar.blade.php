@@ -621,7 +621,7 @@
                 @if ($isAdmin)
                 {{-- Admin: Penawaran Aluminium hidden, Penawaran Proyek renamed to "Penawaran" --}}
                 <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('rab*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') || request()->is('rab*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/cash-out-proof') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -636,23 +636,23 @@
                     <li>
                         <button onclick="toggleDropdown('suratMenyuratDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <div class="flex items-center">
                                 <i
                                     class="fas fa-envelope w-4
-                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                 </i>
                                 <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
                             </div>
 
                             <i id="suratMenyuratDropdownIcon"
                                 class="fas fa-chevron-down text-xs transition-transform duration-200
-                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                         </button>
 
                         <ul id="suratMenyuratDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? '' : 'hidden' }}">
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="{{ url('/document-receipt') }}"
                                     class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -695,6 +695,17 @@
                                         {{ request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                     </i>
                                     <span class="ml-3 text-sm font-medium">Surat Jalan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/surat-perintah-kerja') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('surat-perintah-kerja*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-file-contract w-4 
+                                        {{ request()->is('surat-perintah-kerja*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Surat Perintah Kerja</span>
                                 </a>
                             </li>
                         </ul>
@@ -747,7 +758,7 @@
                 @else
                 {{-- Super Admin: Full Administration menu --}}
                 <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('rab*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') || request()->is('rab*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/cash-out-proof') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -762,23 +773,23 @@
                     <li>
                         <button onclick="toggleDropdown('suratMenyuratDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <div class="flex items-center">
                                 <i
                                     class="fas fa-envelope w-4
-                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                 </i>
                                 <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
                             </div>
 
                             <i id="suratMenyuratDropdownIcon"
                                 class="fas fa-chevron-down text-xs transition-transform duration-200
-                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                         </button>
 
                         <ul id="suratMenyuratDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') ? '' : 'hidden' }}">
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('document-receipt*') || request()->is('kwintansi*') || request()->is('nota-administrasi*') || request()->is('delivery-note*') || request()->is('surat-perintah-kerja*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="{{ url('/document-receipt') }}"
                                     class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -821,6 +832,17 @@
                                         {{ request()->is('delivery-note*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                     </i>
                                     <span class="ml-3 text-sm font-medium">Surat Jalan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('/surat-perintah-kerja') }}"
+                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                        {{ request()->is('surat-perintah-kerja*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                    <i
+                                        class="fas fa-file-contract w-4 
+                                        {{ request()->is('surat-perintah-kerja*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    </i>
+                                    <span class="ml-3 text-sm font-medium">Surat Perintah Kerja</span>
                                 </a>
                             </li>
                         </ul>

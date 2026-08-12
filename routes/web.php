@@ -8,6 +8,7 @@ use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\NotaController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use App\Http\Controllers\Administrasi\RABController;
+use App\Http\Controllers\Administrasi\SuratPerintahKerjaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
 use App\Http\Controllers\Finance\ItemInvoiceController;
@@ -454,6 +455,19 @@ Route::middleware('auth')->group(function () {
         // Route Delivery Note - Export PDF
         Route::get('/delivery-note/export/pdf', [DeliveryNoteController::class, 'exportPdfAll'])->name('delivery-note.administrasi.export.pdf');
         Route::post('/delivery-note/export/pdf-selected', [DeliveryNoteController::class, 'exportPdfSelected'])->name('delivery-note.administrasi.export.pdf.selected');
+
+        // ─── Surat Perintah Kerja (SPK) ─────────────────────────────────────────
+        Route::get('/surat-perintah-kerja', [SuratPerintahKerjaController::class, 'index'])->name('surat-perintah-kerja.administrasi.index');
+        Route::get('/surat-perintah-kerja/next-number', [SuratPerintahKerjaController::class, 'getNextNomor'])->name('surat-perintah-kerja.administrasi.nextNumber');
+        Route::post('/surat-perintah-kerja', [SuratPerintahKerjaController::class, 'store'])->name('surat-perintah-kerja.administrasi.store');
+        Route::put('/surat-perintah-kerja/{nomor}', [SuratPerintahKerjaController::class, 'update'])->name('surat-perintah-kerja.administrasi.update')->where('nomor', '.*');
+        Route::delete('/surat-perintah-kerja/destroy-selected', [SuratPerintahKerjaController::class, 'destroySelected'])->name('surat-perintah-kerja.administrasi.destroySelected');
+
+        // Route SPK - Export PDF (per nomor)
+        Route::get('/surat-perintah-kerja/{nomor}/export-pdf', [SuratPerintahKerjaController::class, 'exportPdf'])->name('surat-perintah-kerja.administrasi.export.pdf')->where('nomor', '.*');
+
+        // Route SPK - Export Word (per nomor)
+        Route::get('/surat-perintah-kerja/{nomor}/export-word', [SuratPerintahKerjaController::class, 'exportWord'])->name('surat-perintah-kerja.administrasi.export.word')->where('nomor', '.*');
 
         // ─── Penawaran Proyek (Project Quotation) ───────────────────────────────────
         Route::get('/project-quotation', [ProjectQuotationController::class, 'index'])->name('project-quotation.index');
