@@ -35,20 +35,6 @@
                 {{-- Search --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari proyek..." responsive="custom" />
             </form>
-
-            {{-- Print Dropdown (kanan): export terpisah hanya untuk laporan ini --}}
-            <div class="w-full min-[1520px]:w-auto">
-                <x-buttons.print-dropdown
-                    :pdfRoute="route('report.sales.export.pdf')"
-                    :excelRoute="route('report.sales.export.excel')"
-                    :queryParams="[
-                        'month' => request('month'),
-                        'year' => request('year'),
-                        'status' => request('status'),
-                        'search' => request('search'),
-                    ]"
-                    size="sm" responsive="custom" />
-            </div>
         </div>
     </div>
 

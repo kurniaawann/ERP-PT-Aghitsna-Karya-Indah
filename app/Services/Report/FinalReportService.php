@@ -11,19 +11,21 @@ use Illuminate\Pagination\LengthAwarePaginator;
 /**
  * Service orchestrator untuk modul Laporan Akhir.
  *
- * Laporan Akhir menggabungkan tiga jenis laporan dalam satu halaman:
- * - Laporan Stok (Stock Report)  → StockReportService
+ * Laporan Akhir menggabungkan empat jenis laporan dalam satu halaman:
+ * - Laporan Stok (Stock Report)      → StockReportService
  * - Laporan Penjualan (Sales Report) → SalesReportService
  * - Laporan Pengeluaran (Expense Report) → ExpenseReportService
+ * - Laporan Semen (Cement Report)    → CementReportService
  *
  * Service ini TIDAK menduplikasi business logic domain. Ia hanya
- * mengorkestrasi pemanggilan ke tiga service di atas sesuai tab yang aktif.
+ * mengorkestrasi pemanggilan ke service di atas sesuai tab yang aktif.
  * Filter tiap laporan tetap memakai parameter masing-masing (lihat partial view).
  *
  * Akses per tab meniru aturan di sidebar (resources/views/layouts/sidebar.blade.php):
  * - stock  : superadmin + user (bukan admin & bukan general_manager)
  * - sales  : superadmin + general_manager
  * - expense: superadmin + admin + general_manager
+ * - cement : superadmin + user (bukan admin & bukan general_manager)
  */
 class FinalReportService
 {
@@ -31,6 +33,7 @@ class FinalReportService
         private StockReportService $stockReportService,
         private SalesReportService $salesReportService,
         private ExpenseReportService $expenseReportService,
+        private CementReportService $cementReportService,
     ) {}
 
     /**
@@ -49,6 +52,7 @@ class FinalReportService
 
         if (!$user->isAdmin() && !$user->isGeneralManager()) {
             $tabs[] = 'stock';
+            $tabs[] = 'cement';
         }
 
         if ($user->isSuperAdmin() || $user->isGeneralManager()) {
@@ -65,7 +69,7 @@ class FinalReportService
     /**
      * Membangun seluruh data yang dibutuhkan view untuk tab aktif.
      *
-     * @param  string              $tab      Tab aktif (stock|sales|expense)
+     * @param  string              $tab      Tab aktif (stock|sales|expense|cement)
      * @param  \Illuminate\Http\Request  $request
      * @return array<string, mixed>
      */
@@ -74,6 +78,7 @@ class FinalReportService
         return match ($tab) {
             'stock' => $this->buildStockData($request),
             'expense' => $this->buildExpenseData($request),
+            'cement' => $this->buildCementData($request),
             default => $this->buildSalesData($request),
         };
     }
@@ -194,6 +199,23 @@ class FinalReportService
             'categoryDistribution',
             'cashFlow',
             'categories'
+        );
+    }
+
+    /**
+     * Data Laporan Semen (replikasi logic CementReportController@index).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array<string, mixed>
+     */
+    private function buildCementData(Request $request): array
+    {
+        $cementDeliveryOrders = $this->cementReportService->getPaginatedDeliveryOrders($request);
+        $summary = $this->cementReportService->calculateSummary($request);
+
+        return compact(
+            'cementDeliveryOrders',
+            'summary'
         );
     }
 }

@@ -71,15 +71,7 @@
                 </div>
             </div>
 
-            {{-- Print Dropdown: export terpisah hanya untuk laporan ini --}}
-            <div class="flex items-end">
-                <x-buttons.print-dropdown
-                    :pdfRoute="route('stock-report.export.pdf')"
-                    :excelRoute="route('stock-report.export.excel')"
-                    :queryParams="request()->except([])"
-                    size="sm"
-                />
-            </div>
+            {{-- Print Dropdown dihapus: sudah terpusat di header Laporan Akhir --}}
 
         </form>
     </div>

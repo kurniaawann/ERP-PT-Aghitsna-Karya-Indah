@@ -31,20 +31,6 @@
                 {{-- Search (debounce via JS, 500ms) --}}
                 <x-filters.search-input :value="request('search')" placeholder="Cari transaksi..." responsive="custom" />
             </form>
-
-            {{-- Print Dropdown (kanan): export terpisah hanya untuk laporan ini --}}
-            <div class="w-full min-[1520px]:w-auto">
-                <x-buttons.print-dropdown
-                    :pdfRoute="route('report.expense.export.pdf')"
-                    :excelRoute="route('report.expense.export.excel')"
-                    :queryParams="[
-                        'month' => request('month'),
-                        'year' => request('year'),
-                        'category' => request('category'),
-                        'search' => request('search'),
-                    ]"
-                    size="sm" responsive="custom" />
-            </div>
         </div>
     </div>
 

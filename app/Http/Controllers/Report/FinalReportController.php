@@ -22,6 +22,7 @@ class FinalReportController extends Controller
         'stock' => 'Laporan Stok',
         'sales' => 'Laporan Penjualan',
         'expense' => 'Laporan Pengeluaran',
+        'cement' => 'Laporan Semen',
     ];
 
     public function __construct(

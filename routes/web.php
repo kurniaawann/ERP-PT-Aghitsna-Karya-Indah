@@ -29,6 +29,7 @@ use App\Http\Controllers\Inventory\ItemStockOutController;
 use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Report\CementReportController;
 use App\Http\Controllers\Report\ExpenseReportController;
 use App\Http\Controllers\Report\FinalReportController;
 use App\Http\Controllers\Report\ProjectFinancialReportController;
@@ -162,6 +163,10 @@ Route::middleware('auth')->group(function () {
 
     // Route Laporan Akhir (Gabungan: Stok, Penjualan, Pengeluaran) — semua role yang punya akses ke salah satu laporan
     Route::get('/report/final', [FinalReportController::class, 'index'])->name('report.final');
+
+    // Route Export Laporan Semen (tab Laporan Akhir: gabungan DO Semen + Data Semen)
+    Route::get('/report/cement/export/pdf', [CementReportController::class, 'exportPdf'])->name('report.cement.export.pdf');
+    Route::get('/report/cement/export/excel', [CementReportController::class, 'exportExcel'])->name('report.cement.export.excel');
 
     // Route Laporan Keuangan Proyek (per Rekap Proyek)
     Route::get('/report/project-financial-report', [ProjectFinancialReportController::class, 'index'])->name('project-financial-report.index');
