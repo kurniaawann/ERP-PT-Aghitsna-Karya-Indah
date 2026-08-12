@@ -200,6 +200,43 @@
 
     </div>
 
+    {{-- Card E: Bukti Pembayaran --}}
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Bukti Pembayaran</h3>
+
+        @php $proofs = $invoice->paymentProofs()->get(); @endphp
+        @if ($proofs->isNotEmpty())
+            <div class="space-y-2">
+                @foreach ($proofs as $proof)
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer"
+                        title="{{ $proof->file_name }}"
+                        class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 hover:border-blue-300 hover:bg-blue-50">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <i class="fa-solid fa-file-invoice text-blue-500"></i>
+                            <span class="truncate text-sm font-medium text-gray-900">{{ $proof->file_name }}</span>
+                        </span>
+                        <span class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-sm font-semibold text-green-600">
+                                Rp {{ number_format($proof->amount ?? 0, 0, ',', '.') }}
+                            </span>
+                            <span class="text-xs text-gray-400">
+                                {{ optional($proof->payment_date ?? $proof->created_at)->format('d M Y') }}
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                                <i class="fa-solid fa-paperclip"></i> Lihat
+                            </span>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+        @else
+            <div class="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <p class="text-sm text-gray-400 font-medium">Belum ada bukti pembayaran</p>
+                <p class="text-xs text-gray-300 mt-1">Upload melalui menu Bukti Pembayaran.</p>
+            </div>
+        @endif
+    </div>
+
     {{-- Tanda Tangan --}}
     @if ($invoice->signedBy)
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">

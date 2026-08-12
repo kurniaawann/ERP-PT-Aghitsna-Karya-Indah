@@ -332,6 +332,13 @@
                                             </span>
                                         @endif
                                     </div>
+                                    @if (!empty($proof->file_path))
+                                        <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank"
+                                            rel="noopener noreferrer" title="{{ $proof->file_name }}"
+                                            class="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline">
+                                            <i class="fa-solid fa-paperclip"></i> Lihat Bukti
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

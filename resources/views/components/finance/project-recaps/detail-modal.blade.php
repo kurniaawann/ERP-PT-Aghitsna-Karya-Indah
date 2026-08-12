@@ -190,6 +190,13 @@
                                         </span>
                                     @endif
                                 </div>
+                                @if (!empty($proof->file_path))
+                                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank"
+                                        rel="noopener noreferrer" title="{{ $proof->file_name }}"
+                                        class="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline">
+                                        <i class="fa-solid fa-paperclip"></i> Lihat Bukti
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -211,31 +218,27 @@
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Bukti Pembayaran</h3>
 
         @if ($paymentProofs->isNotEmpty())
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="space-y-2">
                 @foreach ($paymentProofs as $proof)
-                    <div class="overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
-                        <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer">
-                            <img src="{{ asset('storage/' . $proof->file_path) }}" alt="Bukti pembayaran"
-                                class="h-40 w-full object-cover">
-                        </a>
-                        <div class="p-3 space-y-2">
-                            <div>
-                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $proof->file_name }}</p>
-                                <p class="text-xs text-gray-400">
-                                    {{ optional($proof->payment_date ?? $proof->created_at)->format('d M Y') }}
-                                </p>
-                            </div>
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-sm font-semibold text-green-600">
-                                    Rp {{ number_format($proof->amount ?? 0, 0, ',', '.') }}
-                                </span>
-                                <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer"
-                                    class="text-sm text-blue-600 hover:underline">
-                                    Lihat
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer"
+                        title="{{ $proof->file_name }}"
+                        class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 hover:border-blue-300 hover:bg-blue-50">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <i class="fa-solid fa-file-invoice text-blue-500"></i>
+                            <span class="truncate text-sm font-medium text-gray-900">{{ $proof->file_name }}</span>
+                        </span>
+                        <span class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-sm font-semibold text-green-600">
+                                Rp {{ number_format($proof->amount ?? 0, 0, ',', '.') }}
+                            </span>
+                            <span class="text-xs text-gray-400">
+                                {{ optional($proof->payment_date ?? $proof->created_at)->format('d M Y') }}
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                                <i class="fa-solid fa-paperclip"></i> Lihat
+                            </span>
+                        </span>
+                    </a>
                 @endforeach
             </div>
         @else
