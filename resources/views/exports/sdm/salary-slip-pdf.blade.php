@@ -244,7 +244,7 @@ body {
     border: none !important;
 }
 
-.note-box {
+/* .note-box {
     background-color: #b8daff;
     color: #004080;
     font-size: 10.5px;
@@ -252,7 +252,7 @@ body {
     display: inline-block;
     margin-bottom: 3px;
     font-weight: bold;
-}
+} */
 
 .received-box {
     background-color: #d4edda;
@@ -482,11 +482,11 @@ body {
                 </div>
                 <div class="sig-name">{{ $payrollName }}</div>
             </td>
-            <td width="60%" style="padding-left: 10px;">
+            {{-- <td width="60%" style="padding-left: 10px;">
                 <span class="note-box">*Bpjs Kesehatan : 1% dari Gaji Pokok</span><br>
                 <span class="note-box">*JHT (Jaminan Hari Tua) : 2% dari Rp. {{ number_format($slip->ump, 0, ',', '.') }} (UMK Depok)</span><br>
                 <span class="note-box">*JPN (Jaminan Pensiun) : 1% dari Rp. {{ number_format($slip->ump, 0, ',', '.') }} (UMK Depok)</span>
-            </td>
+            </td> --}}
             <td width="20%" class="text-right">
                 <span class="received-box">Diterima Oleh,</span><br>
                 <div class="sig-space"></div>
