@@ -67,27 +67,27 @@
                             <td class="p-2 text-center text-xs">
                                 <div class="flex items-center justify-center gap-2">
                                     <span class="inline-flex items-center gap-1">
-                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-success-light text-success font-semibold">H</span>
+                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-surface-hover text-text-primary font-semibold">H</span>
                                         {{ $slip->present_days }}
                                     </span>
                                     <span class="inline-flex items-center gap-1">
-                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-warning-light text-warning font-semibold">I</span>
+                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-surface-hover text-text-primary font-semibold">I</span>
                                         {{ $slip->permission_days }}
                                     </span>
                                     <span class="inline-flex items-center gap-1">
-                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-error-light text-error font-semibold">S</span>
+                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-surface-hover text-text-primary font-semibold">S</span>
                                         {{ $slip->sick_days }}
                                     </span>
                                     <span class="inline-flex items-center gap-1">
-                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-purple-100 text-purple-700 font-semibold">C</span>
+                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-surface-hover text-text-primary font-semibold">C</span>
                                         {{ $slip->leave_days }}
                                     </span>
                                     <span class="inline-flex items-center gap-1">
-                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-surface-hover text-text-label font-semibold">A</span>
+                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-surface-hover text-text-primary font-semibold">A</span>
                                         {{ $slip->absent_days }}
                                     </span>
                                     <span class="inline-flex items-center gap-1">
-                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-primary-light text-primary font-semibold">L</span>
+                                        <span class="w-4 h-4 inline-flex items-center justify-center rounded bg-surface-hover text-text-primary font-semibold">L</span>
                                         {{ $slip->libur_days }}
                                     </span>
                                 </div>

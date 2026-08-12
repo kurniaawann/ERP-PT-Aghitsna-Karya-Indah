@@ -32,7 +32,11 @@
                                 <td class="p-2">{{ $employee->name }}</td>
                                 <td class="p-2">{{ $employee->position ?? '-' }}</td>
                                 <td class="p-2 text-center">
-                                    {{ 'Rp ' . number_format($employee->daily_wage ?? 0, 0, ',', '.') }}
+                                    @if ($employee->employment_type === 'bulanan')
+                                        -
+                                    @else
+                                        {{ 'Rp ' . number_format($employee->daily_wage ?? 0, 0, ',', '.') }}
+                                    @endif
                                 </td>
                                 <td class="p-2">
                                     <span class="px-2 py-1 bg-primary-light text-primary text-xs rounded-full">

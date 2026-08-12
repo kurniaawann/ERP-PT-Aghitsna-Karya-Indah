@@ -7,7 +7,6 @@ use App\Models\Sdm\Executive;
 use App\Models\Sdm\SalarySlip;
 use App\Services\Sdm\SalarySlipService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -188,19 +187,42 @@ class SalarySlipController extends Controller
             abort(403, 'Anda tidak memiliki akses ke slip gaji ini.');
         }
 
-        $data = [
-            'slip' => $salarySlip,
-            'signatures' => $this->service->getSlipSignatures($salarySlip),
-        ];
-
-        $pdf = Pdf::loadView('exports.sdm.salary-slip-pdf', $data);
+        $pdf = Pdf::loadView('exports.sdm.salary-slip-pdf', [
+            'slips' => collect([$salarySlip]),
+        ]);
         $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download($this->buildFileName($salarySlip));
     }
 
     /**
-     * Cetak PDF rekap slip gaji untuk periode yang sedang difilter.
+     * Cetak PDF slip gaji terpilih (checkbox) — satu slip per halaman.
+     */
+    public function printPdfSelected(Request $request)
+    {
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return back()->with('error', 'Tidak ada slip gaji yang dipilih!');
+        }
+
+        $slips = $this->service->getSlipsByIds($ids);
+
+        if ($slips->isEmpty()) {
+            return back()->with('error', 'Tidak ada slip gaji yang ditemukan!');
+        }
+
+        $pdf = Pdf::loadView('exports.sdm.salary-slip-pdf', [
+            'slips' => $slips,
+        ]);
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download('Slip_Gaji_Terpilih_'.date('Y-m-d').'.pdf');
+    }
+
+    /**
+     * Cetak PDF slip gaji sesuai filter (bulan/tahun/pencarian) — satu slip
+     * per halaman.
      */
     public function printBulk(Request $request)
     {
@@ -214,22 +236,15 @@ class SalarySlipController extends Controller
             return back()->with('error', 'Tidak ada slip gaji untuk dicetak!');
         }
 
+        $pdf = Pdf::loadView('exports.sdm.salary-slip-pdf', [
+            'slips' => $slips,
+        ]);
+        $pdf->setPaper('a4', 'portrait');
+
         $periodText = $month && $year
             ? $this->monthNames[$month].' '.$year
-            : 'Semua Periode';
+            : 'Semua_Periode';
 
-        $data = [
-            'slips' => $slips,
-            'periodText' => $periodText,
-            'signatures' => $this->service->getSlipSignatures($slips->first()),
-            'printedAt' => Carbon::now(),
-        ];
-
-        $pdf = Pdf::loadView('exports.sdm.salary-slips-recap-pdf', $data);
-        $pdf->setPaper('a4', 'landscape');
-
-        $fileName = 'Rekap_Slip_Gaji_'.str_replace(' ', '_', $periodText).'.pdf';
-
-        return $pdf->download($fileName);
+        return $pdf->download('Slip_Gaji_'.str_replace(' ', '_', $periodText).'.pdf');
     }
 }

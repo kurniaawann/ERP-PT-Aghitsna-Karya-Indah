@@ -330,10 +330,14 @@ function escapeAttr(value) {
  * Memperbarui status tombol Bayar & Hapus massal berdasarkan checkbox terpilih.
  * - Tombol Bayar hanya aktif bila minimal satu slip DRAFT dipilih.
  * - Tombol Hapus aktif bila minimal satu slip (status apa pun) dipilih.
+ * - Item "Export Dipilih" pada dropdown Print tampil bila ada yang dipilih,
+ *   dengan jumlah terpilih pada selectedCountText.
  */
 function updateButtonStates() {
     const deleteButton = document.getElementById('delete-button');
     const bulkPayButton = document.getElementById('bulk-pay-button');
+    const printSelectedItem = document.getElementById('printSelectedItem');
+    const selectedCountText = document.getElementById('selectedCountText');
     const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:not(:disabled):checked');
     const checkedDraft = document.querySelectorAll('input[name="ids[]"][data-status="draft"]:not(:disabled):checked');
 
@@ -352,7 +356,40 @@ function updateButtonStates() {
         bulkPayButton.disabled = true;
         bulkPayButton.classList.add('opacity-50', 'cursor-not-allowed');
     }
+
+    if (printSelectedItem) {
+        if (checkedCheckboxes.length > 0) {
+            printSelectedItem.classList.remove('hidden');
+        } else {
+            printSelectedItem.classList.add('hidden');
+        }
+    }
+
+    if (selectedCountText) {
+        selectedCountText.textContent = checkedCheckboxes.length;
+    }
 }
+
+/**
+ * Mencetak slip gaji terpilih sebagai PDF (satu slip per halaman).
+ *
+ * Alur:
+ * 1. Ambil route cetak dari hidden input `salary-slip-print-selected-route`.
+ * 2. Jika route kosong, hentikan proses.
+ * 3. Delegasikan ke sharedPrintSelected(route, btn) yang mengumpulkan
+ *    checkbox tercentang, mengirim via AJAX, dan mengunduh file PDF.
+ *
+ * @param {HTMLButtonElement} btn - Tombol yang diklik.
+ * @returns {boolean} true jika proses dimulai; false jika route kosong.
+ */
+window.printSelected = function (btn) {
+    const printRoute = document.getElementById('salary-slip-print-selected-route');
+    const route = printRoute ? printRoute.value : '';
+
+    if (!route) return false;
+
+    return window.sharedPrintSelected(route, btn);
+};
 
 /**
  * Mengirim form hapus massal dengan status memuat.

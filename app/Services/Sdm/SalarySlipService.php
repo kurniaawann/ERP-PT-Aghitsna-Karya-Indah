@@ -69,6 +69,21 @@ class SalarySlipService
     }
 
     /**
+     * Mengambil slip gaji berdasarkan id (hanya milik user login), lengkap
+     * dengan relasi karyawan — dipakai cetak PDF terpilih.
+     *
+     * @param  array<int, int>  $ids
+     * @return \Illuminate\Database\Eloquent\Collection<int, SalarySlip>
+     */
+    public function getSlipsByIds(array $ids)
+    {
+        return SalarySlip::with('employee')
+            ->where('created_by', auth()->id())
+            ->whereIn('id', $ids)
+            ->get();
+    }
+
+    /**
      * Membuat slip gaji draft untuk karyawan bulanan terpilih pada periode.
      *
      * Setiap slip dibuat dengan matriks absensi default: hari Minggu dan
@@ -433,23 +448,5 @@ class SalarySlipService
         }
 
         return $snapshot;
-    }
-
-    /**
-     * Snapshot petinggi untuk cetakan PDF sebuah slip.
-     *
-     * @return array<string, array<string, mixed>|null>
-     */
-    public function getSlipSignatures(?SalarySlip $slip): array
-    {
-        if ($slip && is_array($slip->signatures)) {
-            return $slip->signatures;
-        }
-
-        return [
-            'disetujui' => null,
-            'diperiksa' => null,
-            'dibuat' => null,
-        ];
     }
 }

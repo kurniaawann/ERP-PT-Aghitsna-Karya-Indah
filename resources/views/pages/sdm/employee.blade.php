@@ -47,6 +47,21 @@
                 <x-filters.project-filter :route="route('employee.projects-dropdown')"
                     :value="request('project_name')" dropdown-id="filter_project_name"
                     :auto-submit="true" />
+
+                {{-- Filter Jenis Karyawan --}}
+                {{-- Memfilter daftar karyawan berdasarkan jenis (Harian/Bulanan);
+                     berubah langsung submit form pencarian. --}}
+                <div class="w-full min-[1280px]:w-auto">
+                    <label for="filter_employment_type" class="sr-only">Jenis Karyawan</label>
+                    <select name="employment_type" id="filter_employment_type"
+                        onchange="this.form.requestSubmit()"
+                        class="block w-full min-[1280px]:w-44 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
+                        <option value="">Semua Jenis</option>
+                        <option value="harian" @selected(request('employment_type') === 'harian')>Harian (Tukang)</option>
+                        <option value="bulanan" @selected(request('employment_type') === 'bulanan')>Bulanan (Slip Gaji)</option>
+                    </select>
+                </div>
+
                 <x-filters.search-input :value="request('search')" placeholder="Cari karyawan..." />
             </form>
 

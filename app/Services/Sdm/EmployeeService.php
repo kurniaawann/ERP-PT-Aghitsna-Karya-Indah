@@ -27,10 +27,12 @@ class EmployeeService
      *   kolom tidak mengganggu kondisi lain.
      * - Filter proyek (project_name) memakai where opsional; nilai kosong
      *   diabaikan.
+     * - Filter jenis karyawan (employment_type: harian/bulanan) memakai where
+     *   opsional; nilai kosong diabaikan.
      * - Diurutkan created_at terbaru; kode karyawan dipakai sebagai primary key
      *   bisnis (employee_code), bukan id numerik.
      */
-    public function getPaginatedEmployees(?string $search, ?string $projectName = null, int $perPage = 15): LengthAwarePaginator
+    public function getPaginatedEmployees(?string $search, ?string $projectName = null, ?string $employmentType = null, int $perPage = 15): LengthAwarePaginator
     {
         return Employee::where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
@@ -41,6 +43,9 @@ class EmployeeService
             })
             ->when($projectName, function ($query, $projectName) {
                 $query->where('project_name', $projectName);
+            })
+            ->when($employmentType, function ($query, $employmentType) {
+                $query->where('employment_type', $employmentType);
             })
             ->latest('created_at')
             ->paginate($perPage);

@@ -347,6 +347,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/salary-slip/bulk-pay', [SalarySlipController::class, 'bulkPay'])->name('salary-slips.bulk-pay');
         Route::delete('/salary-slip/destroy-selected', [SalarySlipController::class, 'destroy'])->name('salary-slips.destroy');
         Route::get('/salary-slip/export/pdf', [SalarySlipController::class, 'printBulk'])->name('salary-slips.export.pdf');
+        Route::post('/salary-slip/export/pdf-selected', [SalarySlipController::class, 'printPdfSelected'])->name('salary-slips.export.pdf.selected');
         Route::get('/salary-slip/{salary_slip}/print/pdf', [SalarySlipController::class, 'printPdf'])->name('salary-slips.print.pdf');
 
         // Route Kasbon (Cash Advance)

@@ -42,10 +42,11 @@ class EmployeeController extends Controller
     {
         $search = $request->input('search');
         $projectName = $request->input('project_name');
-        $employees = $this->employeeService->getPaginatedEmployees($search, $projectName);
+        $employmentType = $request->input('employment_type');
+        $employees = $this->employeeService->getPaginatedEmployees($search, $projectName, $employmentType);
         $divisions = $this->employeeService->getAllDivisions();
 
-        return view('pages.sdm.employee', compact('employees', 'search', 'divisions'));
+        return view('pages.sdm.employee', compact('employees', 'search', 'divisions', 'employmentType'));
     }
 
     /**

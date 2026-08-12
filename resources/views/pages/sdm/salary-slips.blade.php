@@ -57,8 +57,8 @@
             {{-- Aksi di Kanan --}}
             <div class="flex items-center gap-2 mt-2 min-[1560px]:mt-0 w-full min-[1560px]:w-auto">
                 <div class="flex flex-col min-[1560px]:flex-row gap-2 w-full min-[1560px]:w-auto">
-                    {{-- Print Rekap PDF (semua slip sesuai filter saat ini) --}}
-                    <x-buttons.print-dropdown :pdfRoute="route('salary-slips.export.pdf')" :queryParams="[
+                    {{-- Print Slip Gaji (semua sesuai filter / terpilih) --}}
+                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('salary-slips.export.pdf')" :queryParams="[
                         'search' => request('search'),
                         'month' => request('month'),
                         'year' => request('year'),
@@ -140,6 +140,9 @@
             ])->values()->toArray(),
         ];
     @endphp
+
+    {{-- Hidden input untuk route print selected (dipakai JS modul halaman). --}}
+    <input type="hidden" id="salary-slip-print-selected-route" value="{{ route('salary-slips.export.pdf.selected') }}">
 
     <script>
         window.salarySlipConfig = @json($salarySlipConfig);
