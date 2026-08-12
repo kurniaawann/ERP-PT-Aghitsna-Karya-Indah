@@ -6,93 +6,218 @@
  * Penggunaan: panggil initSearchableMultiSelects() setelah DOM siap atau setelah modal terbuka.
  */
 /**
+ * State per wrapper multi-select.
+ *
+ * Disimpan di WeakMap agar:
+ * - Listener diikat CUKUP SEKALI (event delegation pada wrapper) dan tidak
+ *   menumpuk ketika wrapper di-reset via pola `delete dataset.multiSelectInitialized`
+ *   lalu init ulang (dipakai loadEligibleEmployees / resetProjectMultiSelect).
+ * - Opsi yang dirender ulang via AJAX (innerHTML pada .searchable-multi-options)
+ *   tetap berfungsi tanpa perlu rebind, karena delegasi event menyatu pada wrapper.
+ *
+ * Alur inisialisasi:
+ * 1. Jika wrapper sudah bertanda initialized (dataset.multiSelectInitialized) →
+ *    tidak melakukan apa-apa (mis. dipanggil ulang oleh openModal).
+ * 2. Jika state lama ada di WeakMap (pola reset: flag dihapus lalu init ulang) →
+ *    cukup kosongkan pilihan (reset) tanpa mengikat listener baru.
+ * 3. Jika benar-benar baru → buat state, ikat listener sekali, terapkan preselection.
+ */
+const multiSelectStates = new WeakMap();
+
+/**
  * Menginisialisasi seluruh komponen searchable multi-select dalam container
  * (atau seluruh dokumen bila container kosong).
- *
- * ALUR LENGKAP:
- * 1. Kumpulkan semua wrapper `.searchable-multi-select-wrapper` dari container.
- * 2. Untuk setiap wrapper yang belum diinisialisasi (dataset.multiSelectInitialized
- *    != 'true'), tandai sebagai sudah diinisialisasi.
- * 3. Ambil elemen penting wrapper: input pencarian, dropdown, opsi individual
- *    (.searchable-multi-options .searchable-multi-option), tombol select-all,
- *    container tag, container input tersembunyi, dan nama field dari
- *    dataset.name container hidden inputs.
- * 4. Bila input pencarian/dropdown tidak ada, lewati wrapper ini.
- * 5. State inti berupa Map `selectedValues` yang memetakan value -> label.
- *    Map dipakai agar: (a) penyimpanan unik (satu value satu entri),
- *    (b) urutan pemilihan terjaga, dan (c) akses nilai cepat.
- * 6. Registrasi event:
- *    - focus input  -> tampilkan dropdown.
- *    - input pencarian -> saring opsi individual berdasarkan dataset.search;
- *      tampilkan/sembunyikan pesan "no results"; lalu updateSelectAllState().
- *    - klik opsi individual -> toggle checkbox (kecuali klik tepat pada
- *      checkbox agar tidak double-toggle), lalu handleCheckboxChange().
- *    - change checkbox -> handleCheckboxChange().
- *    - change select-all -> iterasi opsi yang terlihat saja, set checkbox ke
- *      nilai target yang disimpan sebelum loop (karena handleCheckboxChange()
- *      memanggil updateSelectAllState() yang mengubah state select-all selama
- *      iterasi), lindungi dengan flag isSelectAllInProgress agar state select-all
- *      tidak dihitung ulang di tengah proses, lalu updateSelectAllState() di akhir.
- *    - klik di luar wrapper -> tutup dropdown.
- * 7. handleCheckboxChange(checkbox):
- *    - Ambil value & label dari opsi terdekat (fallback label = value).
- *    - Jika dicentang -> selectedValues.set(value, label);
- *      jika tidak -> selectedValues.delete(value).
- *    - Panggil renderTags(), renderHiddenInputs(), updateSelectAllState().
- * 8. renderTags():
- *    - Kosongkan container tag, lalu untuk tiap entri Map buat elemen <span>
- *      tag berisi label + tombol hapus (×) dengan data-value.
- *    - Tombol hapus pada tag: hapus value dari Map, uncheck checkbox terkait,
- *      lalu render ulang tag, hidden inputs, dan state select-all.
- * 9. renderHiddenInputs():
- *    - Kosongkan container, lalu untuk tiap value buat <input type="hidden"
- *      name="namaField[]" value="value"> agar terkirim saat submit form.
- * 10. updateSelectAllState():
- *    - Dilewati bila select-all tidak ada atau sedang proses select-all.
- *    - Hitung checkbox terlihat & jumlah yang dicentang; set checked bila semua
- *      tercentang, dan indeterminate bila sebagian tercentang.
  *
  * @param  {HTMLElement|Document}  [container]  Elemen pencarian; default document.
  * @returns {void}
  */
 function initSearchableMultiSelects(container) {
-    const wrappers = (container || document).querySelectorAll('.searchable-multi-select-wrapper');
+    // Container boleh berupa elemen wrapper itu sendiri (dipanggil langsung
+    // setelah opsi dirender ulang via AJAX). Dalam hal itu proses wrapper
+    // tersebut; bila tidak, ambil semua wrapper di dalam container/dokumen.
+    let wrappers;
+    if (container && typeof container.querySelectorAll !== 'function') {
+        wrappers = [];
+    } else if (container && container.classList && container.classList.contains('searchable-multi-select-wrapper')) {
+        wrappers = [container];
+    } else {
+        wrappers = (container || document).querySelectorAll('.searchable-multi-select-wrapper');
+    }
 
     wrappers.forEach(function (wrapper) {
         if (wrapper.dataset.multiSelectInitialized === 'true') return;
         wrapper.dataset.multiSelectInitialized = 'true';
 
-        const searchInput = wrapper.querySelector('.searchable-multi-select-input');
-        const dropdown = wrapper.querySelector('.searchable-multi-dropdown');
-        const options = wrapper.querySelectorAll('.searchable-multi-option');
-        const individualOptions = wrapper.querySelectorAll('.searchable-multi-options .searchable-multi-option');
-        const noResults = wrapper.querySelector('.searchable-multi-no-results');
-        const selectAllCheckbox = wrapper.querySelector('.searchable-multi-select-all');
-        const tagsContainer = wrapper.querySelector('.searchable-multi-tags');
-        const hiddenInputsContainer = wrapper.querySelector('.searchable-multi-hidden-inputs');
-        const name = wrapper.querySelector('.searchable-multi-hidden-inputs')?.dataset?.name || '';
+        const state = multiSelectStates.get(wrapper);
 
-        if (!searchInput || !dropdown) return;
+        if (state) {
+            // Re-init via pola reset: kosongkan pilihan, JANGAN ikat ulang listener.
+            state.reset();
+            return;
+        }
 
-        const selectedValues = new Map();
-        var isSelectAllInProgress = false;
+        const newState = createMultiSelectState(wrapper);
+        if (!newState) return;
 
-        // Preseleksi: nilai awal dari atribut data-selected (mis. saat edit).
-        // Nilai yang tidak ada pada daftar opsi tetap dirender sebagai tag.
+        multiSelectStates.set(wrapper, newState);
+        bindMultiSelectListeners(wrapper, newState);
+        newState.initPreselection();
+    });
+}
+
+/**
+ * Membuat state komponen untuk satu wrapper.
+ *
+ * Semua akses ke opsi dilakukan via query DOM saat dibutuhkan (bukan
+ * menyimpan NodeList statis) sehingga perubahan opsi via AJAX selalu terlihat.
+ *
+ * @param  {HTMLElement}  wrapper  Elemen .searchable-multi-select-wrapper.
+ * @returns {object|null}  State komponen, atau null bila struktur tidak valid.
+ */
+function createMultiSelectState(wrapper) {
+    const searchInput = wrapper.querySelector('.searchable-multi-select-input');
+    const dropdown = wrapper.querySelector('.searchable-multi-dropdown');
+
+    if (!searchInput || !dropdown) return null;
+
+    const noResults = wrapper.querySelector('.searchable-multi-no-results');
+    const selectAllCheckbox = wrapper.querySelector('.searchable-multi-select-all');
+    const tagsContainer = wrapper.querySelector('.searchable-multi-tags');
+    const hiddenInputsContainer = wrapper.querySelector('.searchable-multi-hidden-inputs');
+    const fieldName = (hiddenInputsContainer && hiddenInputsContainer.dataset.name) || '';
+
+    const selectedValues = new Map();
+
+    const state = {
+        wrapper,
+        searchInput,
+        dropdown,
+        noResults,
+        selectAllCheckbox,
+        tagsContainer,
+        hiddenInputsContainer,
+        fieldName,
+        selectedValues,
+        isSelectAllInProgress: false,
+    };
+
+    /**
+     * Opsi individual (di dalam .searchable-multi-options); tanpa opsi
+     * "Pilih Semua" yang berada di luar container tersebut.
+     */
+    state.getIndividualOptions = function () {
+        return wrapper.querySelectorAll('.searchable-multi-options .searchable-multi-option');
+    };
+
+    /**
+     * Checkbox opsi yang sedang terlihat (tidak disembunyikan filter pencarian).
+     */
+    state.getVisibleCheckboxes = function () {
+        const checkboxes = [];
+
+        state.getIndividualOptions().forEach(function (option) {
+            if (option.style.display !== 'none') {
+                const checkbox = option.querySelector('.searchable-multi-checkbox');
+                if (checkbox) checkboxes.push(checkbox);
+            }
+        });
+
+        return checkboxes;
+    };
+
+    /**
+     * Render item terpilih sebagai tag di bawah input.
+     */
+    state.renderTags = function () {
+        if (!tagsContainer) return;
+
+        tagsContainer.innerHTML = '';
+
+        selectedValues.forEach(function (label, value) {
+            const tag = document.createElement('span');
+            tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-primary-light text-primary text-xs font-medium rounded-full';
+            tag.innerHTML = label +
+                ' <button type="button" class="searchable-multi-tag-remove hover:text-error" data-value="' + value + '">&times;</button>';
+            tagsContainer.appendChild(tag);
+        });
+    };
+
+    /**
+     * Render input tersembunyi untuk pengiriman form.
+     */
+    state.renderHiddenInputs = function () {
+        if (!hiddenInputsContainer) return;
+
+        hiddenInputsContainer.innerHTML = '';
+
+        selectedValues.forEach(function (label, value) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = fieldName + '[]';
+            input.value = value;
+            hiddenInputsContainer.appendChild(input);
+        });
+    };
+
+    /**
+     * Perbarui state checkbox Select All berdasarkan checkbox yang terlihat.
+     * Dilewati selama iterasi Select All untuk mencegah kedipan (flickering).
+     */
+    state.updateSelectAllState = function () {
+        if (!selectAllCheckbox || state.isSelectAllInProgress) return;
+
+        const visible = state.getVisibleCheckboxes();
+        const checkedCount = visible.filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+
+        selectAllCheckbox.checked = visible.length > 0 && checkedCount === visible.length;
+        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < visible.length;
+    };
+
+    /**
+     * Menangani perubahan checkbox - memperbarui nilai terpilih, tag, dan input tersembunyi.
+     *
+     * @param {HTMLInputElement} checkbox
+     */
+    state.handleCheckboxChange = function (checkbox) {
+        const value = checkbox.value;
+        const option = checkbox.closest('.searchable-multi-option');
+        const label = (option && option.dataset.label) || value;
+
+        if (checkbox.checked) {
+            selectedValues.set(value, label);
+        } else {
+            selectedValues.delete(value);
+        }
+
+        state.renderTags();
+        state.renderHiddenInputs();
+        state.updateSelectAllState();
+    };
+
+    /**
+     * Preseleksi: nilai awal dari atribut data-selected (mis. saat edit).
+     * Nilai yang tidak ada pada daftar opsi tetap dirender sebagai tag.
+     */
+    state.initPreselection = function () {
         try {
             const preselected = JSON.parse(wrapper.dataset.selected || '[]');
+
             if (Array.isArray(preselected)) {
                 preselected.forEach(function (value) {
                     if (value === '' || value === null || value === undefined) return;
+
                     let matched = null;
-                    individualOptions.forEach(function (option) {
+                    state.getIndividualOptions().forEach(function (option) {
                         const checkbox = option.querySelector('.searchable-multi-checkbox');
                         if (checkbox && checkbox.value === value && !matched) {
                             checkbox.checked = true;
                             matched = option;
                         }
                     });
-                    const label = matched?.dataset?.label || value;
+
+                    const label = (matched && matched.dataset.label) || value;
                     selectedValues.set(value, label);
                 });
             }
@@ -100,193 +225,152 @@ function initSearchableMultiSelects(container) {
             // abaikan data-selected yang tidak valid
         }
 
-        // Render tag & hidden input untuk preseleksi (dan perbarui select-all).
         if (selectedValues.size > 0) {
-            renderTags();
-            renderHiddenInputs();
-            updateSelectAllState();
+            state.renderTags();
+            state.renderHiddenInputs();
+            state.updateSelectAllState();
         }
+    };
 
-        /**
-         * Tampilkan dropdown saat fokus
-         */
-        searchInput.addEventListener('focus', function () {
-            dropdown.classList.remove('hidden');
+    /**
+     * Mereset pilihan tanpa melepas listener (dipakai pola re-init/reset).
+     */
+    state.reset = function () {
+        selectedValues.clear();
+
+        wrapper.querySelectorAll('.searchable-multi-checkbox').forEach(function (checkbox) {
+            checkbox.checked = false;
         });
 
-        /**
-         * Cari / saring opsi (dengan debounce agar tidak memfilter ulang pada
-         * setiap ketukan keyboard)
-         */
-        searchInput.addEventListener('input', window.debounce(function () {
-            const searchTerm = this.value.toLowerCase();
-            let hasResults = false;
-
-            individualOptions.forEach(function (option) {
-                const searchText = option.dataset.search || '';
-                if (searchText.includes(searchTerm)) {
-                    option.style.display = '';
-                    hasResults = true;
-                } else {
-                    option.style.display = 'none';
-                }
-            });
-
-            if (hasResults) {
-                noResults.classList.add('hidden');
-            } else {
-                noResults.classList.remove('hidden');
-            }
-
-            updateSelectAllState();
-        }, 200));
-
-        /**
-         * Menangani klik checkbox individual
-         */
-        individualOptions.forEach(function (option) {
-            option.addEventListener('click', function (e) {
-                if (e.target.classList.contains('searchable-multi-checkbox')) return;
-
-                const checkbox = this.querySelector('.searchable-multi-checkbox');
-                checkbox.checked = !checkbox.checked;
-                handleCheckboxChange(checkbox);
-            });
-
-            const checkbox = option.querySelector('.searchable-multi-checkbox');
-            if (checkbox) {
-                checkbox.addEventListener('change', function () {
-                    handleCheckboxChange(this);
-                });
-            }
-        });
-
-        /**
-         * Menangani checkbox Select All.
-         *
-         * PENTING: Kita harus menyimpan state target (this.checked) sebelum perulangan,
-         * karena handleCheckboxChange() memanggil updateSelectAllState() yang mengubah
-         * selectAllCheckbox.checked berdasarkan state parsial selama iterasi.
-         */
         if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function () {
-                var shouldCheck = this.checked;
-                isSelectAllInProgress = true;
-
-                var isVisible = function (option) {
-                    return option.style.display !== 'none';
-                };
-
-                individualOptions.forEach(function (option) {
-                    if (isVisible(option)) {
-                        var checkbox = option.querySelector('.searchable-multi-checkbox');
-                        checkbox.checked = shouldCheck;
-                        handleCheckboxChange(checkbox);
-                    }
-                });
-
-                isSelectAllInProgress = false;
-                updateSelectAllState();
-            });
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
         }
 
-        /**
-         * Menangani perubahan checkbox - memperbarui nilai terpilih, tag, dan input tersembunyi
-         *
-         * @param {HTMLInputElement} checkbox
-         */
-        function handleCheckboxChange(checkbox) {
-            const value = checkbox.value;
-            const option = checkbox.closest('.searchable-multi-option');
-            const label = option?.dataset.label || value;
+        state.renderTags();
+        state.renderHiddenInputs();
+        state.updateSelectAllState();
+    };
 
-            if (checkbox.checked) {
-                selectedValues.set(value, label);
+    return state;
+}
+
+/**
+ * Mengikat seluruh listener komponen ke wrapper (event delegation).
+ *
+ * Listener hanya diikat SEKALI per wrapper pada init pertama. Opsi yang
+ * dirender ulang (innerHTML) tetap tertangkap karena event berjalan melalui
+ * wrapper. Karena itu pola reset (hapus flag lalu init ulang) TIDAK menumpuk
+ * listener ganda pada input pencarian / checkbox Select All / document.
+ *
+ * @param  {HTMLElement}  wrapper  Elemen .searchable-multi-select-wrapper.
+ * @param  {object}       state    State komponen dari createMultiSelectState.
+ * @returns {void}
+ */
+function bindMultiSelectListeners(wrapper, state) {
+    // Tampilkan dropdown saat fokus
+    state.searchInput.addEventListener('focus', function () {
+        state.dropdown.classList.remove('hidden');
+    });
+
+    // Cari / saring opsi (dengan debounce agar tidak memfilter ulang pada
+    // setiap ketukan keyboard)
+    state.searchInput.addEventListener('input', window.debounce(function () {
+        const searchTerm = this.value.toLowerCase();
+        let hasResults = false;
+
+        state.getIndividualOptions().forEach(function (option) {
+            const searchText = option.dataset.search || '';
+            if (searchText.includes(searchTerm)) {
+                option.style.display = '';
+                hasResults = true;
             } else {
-                selectedValues.delete(value);
-            }
-
-            renderTags();
-            renderHiddenInputs();
-            updateSelectAllState();
-        }
-
-        /**
-         * Render item terpilih sebagai tag di bawah input
-         */
-        function renderTags() {
-            tagsContainer.innerHTML = '';
-
-            selectedValues.forEach(function (label, value) {
-                const tag = document.createElement('span');
-                tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-primary-light text-primary text-xs font-medium rounded-full';
-                tag.innerHTML = label +
-                    ' <button type="button" class="searchable-multi-tag-remove hover:text-error" data-value="' + value + '">&times;</button>';
-                tagsContainer.appendChild(tag);
-            });
-
-            tagsContainer.querySelectorAll('.searchable-multi-tag-remove').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    const removeValue = this.dataset.value;
-                    selectedValues.delete(removeValue);
-
-                    const checkbox = wrapper.querySelector('.searchable-multi-checkbox[value="' + removeValue + '"]');
-                    if (checkbox) checkbox.checked = false;
-
-                    renderTags();
-                    renderHiddenInputs();
-                    updateSelectAllState();
-                });
-            });
-        }
-
-        /**
-         * Render input tersembunyi untuk pengiriman form
-         */
-        function renderHiddenInputs() {
-            const fieldName = hiddenInputsContainer.dataset.name || name;
-            hiddenInputsContainer.innerHTML = '';
-
-            selectedValues.forEach(function (label, value) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = fieldName + '[]';
-                input.value = value;
-                hiddenInputsContainer.appendChild(input);
-            });
-        }
-
-        /**
-         * Perbarui state checkbox Select All berdasarkan checkbox yang terlihat dan dicentang.
-         * Dilewati selama iterasi Select All untuk mencegah kedipan (flickering).
-         */
-        function updateSelectAllState() {
-            if (!selectAllCheckbox || isSelectAllInProgress) return;
-
-            const visibleCheckboxes = [];
-            individualOptions.forEach(function (option) {
-                if (option.style.display !== 'none') {
-                    const cb = option.querySelector('.searchable-multi-checkbox');
-                    if (cb) visibleCheckboxes.push(cb);
-                }
-            });
-
-            const checkedCount = visibleCheckboxes.filter(function (cb) {
-                return cb.checked;
-            }).length;
-
-            selectAllCheckbox.checked = visibleCheckboxes.length > 0 && checkedCount === visibleCheckboxes.length;
-            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length;
-        }
-
-        /**
-         * Tutup dropdown saat mengklik di luar
-         */
-        document.addEventListener('click', function (e) {
-            if (!wrapper.contains(e.target)) {
-                dropdown.classList.add('hidden');
+                option.style.display = 'none';
             }
         });
+
+        if (state.noResults) {
+            if (hasResults) {
+                state.noResults.classList.add('hidden');
+            } else {
+                state.noResults.classList.remove('hidden');
+            }
+        }
+
+        state.updateSelectAllState();
+    }, 200));
+
+    // Delegasi klik pada wrapper: tombol hapus tag + area opsi.
+    //
+    // PENTING (perbaikan bug): tanpa preventDefault, klik pada teks opsi yang
+    // dibungkus <label> akan men-toggle checkbox DUA KALI — sekali oleh kode di
+    // bawah ini dan sekali lagi oleh perilaku default label yang meneruskan klik
+    // ke checkbox. Akibatnya pemilihan tidak pernah berubah (seolah "tidak bisa
+    // diklik"). preventDefault pada klik area teks mencegah penerusan tersebut.
+    wrapper.addEventListener('click', function (e) {
+        const tagRemove = e.target.closest('.searchable-multi-tag-remove');
+        if (tagRemove) {
+            e.preventDefault();
+            const removeValue = tagRemove.dataset.value;
+
+            state.selectedValues.delete(removeValue);
+
+            const checkbox = wrapper.querySelector('.searchable-multi-checkbox[value="' + removeValue + '"]');
+            if (checkbox) checkbox.checked = false;
+
+            state.renderTags();
+            state.renderHiddenInputs();
+            state.updateSelectAllState();
+            return;
+        }
+
+        const option = e.target.closest('.searchable-multi-option');
+        if (!option) return;
+
+        // "Pilih Semua" ditangani lewat event change checkbox-nya (label default
+        // cukup men-toggle sekali tanpa kode tambahan di sini).
+        if (option.dataset.value === '__select_all__') return;
+
+        // Klik tepat pada checkbox: biarkan perilaku default (change event
+        // menanganinya) agar tidak double-toggle.
+        if (e.target.classList.contains('searchable-multi-checkbox')) return;
+
+        // Klik pada area teks opsi: cegah penerusan klik oleh label, lalu
+        // toggle checkbox secara manual.
+        e.preventDefault();
+        const checkbox = option.querySelector('.searchable-multi-checkbox');
+        checkbox.checked = !checkbox.checked;
+        state.handleCheckboxChange(checkbox);
+    });
+
+    // Delegasi change: checkbox opsi & checkbox "Pilih Semua".
+    wrapper.addEventListener('change', function (e) {
+        if (e.target.classList.contains('searchable-multi-checkbox')) {
+            state.handleCheckboxChange(e.target);
+            return;
+        }
+
+        if (e.target.classList.contains('searchable-multi-select-all')) {
+            // Simpan state target sebelum perulangan karena handleCheckboxChange
+            // memanggil updateSelectAllState() yang mengubah checkbox ini.
+            const shouldCheck = e.target.checked;
+            state.isSelectAllInProgress = true;
+
+            state.getVisibleCheckboxes().forEach(function (checkbox) {
+                checkbox.checked = shouldCheck;
+                state.handleCheckboxChange(checkbox);
+            });
+
+            state.isSelectAllInProgress = false;
+            state.updateSelectAllState();
+        }
+    });
+
+    // Tutup dropdown saat mengklik di luar
+    document.addEventListener('click', function (e) {
+        if (!wrapper.contains(e.target)) {
+            state.dropdown.classList.add('hidden');
+        }
     });
 }
 

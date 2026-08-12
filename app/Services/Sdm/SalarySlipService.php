@@ -5,6 +5,7 @@ namespace App\Services\Sdm;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Executive;
 use App\Models\Sdm\Kasbon;
+use App\Models\Sdm\KasbonPayment;
 use App\Models\Sdm\SalarySlip;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -361,6 +362,42 @@ class SalarySlipService
     }
 
     /**
+     * Menghitung ulang seluruh slip gaji DRAFT milik seorang karyawan pada
+     * periode (bulan/tahun) tertentu dari data kasbon terkini.
+     *
+     * Dipanggil setiap kali data kasbon personal berubah (tambah/ubah/hapus/
+     * cicilan) agar potongan kasbon pada snapshot slip draft tetap sinkron
+     * dengan tabel kasbon. Slip yang sudah paid tidak disentuh.
+     *
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  Carbon|string  $periodStartDate  Tanggal mulai periode (Y-m-d)
+     * @return int Jumlah slip draft yang berhasil dihitung ulang
+     */
+    public function recalculateDraftSlipsForPeriod(string $employeeCode, Carbon|string $periodStartDate): int
+    {
+        $periodStart = $periodStartDate instanceof Carbon
+            ? $periodStartDate
+            : Carbon::parse($periodStartDate);
+
+        $slips = SalarySlip::where('created_by', auth()->id())
+            ->where('employee_code', $employeeCode)
+            ->where('period_year', $periodStart->year)
+            ->where('period_month', $periodStart->month)
+            ->where('status', 'draft')
+            ->get();
+
+        $recalculated = 0;
+
+        foreach ($slips as $slip) {
+            if ($this->recalculate($slip)) {
+                $recalculated++;
+            }
+        }
+
+        return $recalculated;
+    }
+
+    /**
      * Membayar beberapa slip gaji sekaligus.
      *
      * @param  array<int, int>  $ids
@@ -382,6 +419,10 @@ class SalarySlipService
                     $slip->status = 'paid';
                     $slip->payment_date = Carbon::parse($paymentDate);
                     $slip->save();
+
+                    // Potong kasbon personal pending milik karyawan pada periode
+                    // slip ini — lunas otomatis dari slip gaji.
+                    $this->settleKasbonForSlip($slip, $paymentDate);
                 }
 
                 return $slips->count();
@@ -396,8 +437,54 @@ class SalarySlipService
     }
 
     /**
+     * Mencatat pemotongan kasbon dari slip gaji.
+     *
+     * Saat slip gaji dibayar, seluruh kasbon personal karyawan pada periode
+     * slip yang masih pending langsung lunas. Dibuat rekaman KasbonPayment
+     * bertanda salary_slip_id agar bisa dibatalkan bila slip dihapus.
+     */
+    private function settleKasbonForSlip(SalarySlip $slip, string $paymentDate): void
+    {
+        $kasbons = Kasbon::personal()
+            ->pending()
+            ->notPaid()
+            ->forPeriod($slip->period_month, $slip->period_year)
+            ->where('employee_id', $slip->employee_code)
+            ->where('created_by', auth()->id())
+            ->get();
+
+        foreach ($kasbons as $kasbon) {
+            $remaining = (int) $kasbon->remaining_amount;
+
+            if ($remaining <= 0) {
+                continue;
+            }
+
+            KasbonPayment::create([
+                'kasbon_code' => $kasbon->kasbon_code,
+                'payroll_id' => null,
+                'salary_slip_id' => $slip->id,
+                'amount' => $remaining,
+                'payment_method' => 'payroll_deduction',
+                'payment_date' => Carbon::parse($paymentDate),
+                'notes' => 'Pemotongan slip gaji '.$slip->formatted_period,
+                'created_by' => auth()->id(),
+            ]);
+
+            $kasbon->paid_amount = (int) ($kasbon->paid_amount ?? 0) + $remaining;
+            $kasbon->remaining_amount = max(0, (int) $kasbon->amount - (int) $kasbon->paid_amount);
+            $kasbon->payment_status = $kasbon->remaining_amount <= 0 ? 'paid' : 'partial';
+            $kasbon->status = 'deducted';
+            $kasbon->save();
+        }
+    }
+
+    /**
      * Menghapus slip gaji terpilih (draft maupun paid — dibayar bisa dihapus
      * untuk memperbaiki data lalu dibuat ulang).
+     *
+     * Kasbon yang sempat dipotong oleh slip yang dihapus dikembalikan ke
+     * kondisi pending (belum lunas) sesuai sisa pembayaran yang tersisa.
      *
      * @param  array<int, int>  $ids
      */
@@ -407,11 +494,54 @@ class SalarySlipService
             return ['success' => false, 'message' => 'Tidak ada slip yang dipilih.', 'count' => 0];
         }
 
-        $deleted = SalarySlip::where('created_by', auth()->id())
-            ->whereIn('id', $ids)
-            ->delete();
+        try {
+            $deleted = DB::transaction(function () use ($ids) {
+                $slips = SalarySlip::where('created_by', auth()->id())
+                    ->whereIn('id', $ids)
+                    ->get();
 
-        return ['success' => true, 'message' => "Berhasil menghapus {$deleted} slip gaji.", 'count' => $deleted];
+                foreach ($slips as $slip) {
+                    $this->revertKasbonForSlip($slip);
+                }
+
+                return SalarySlip::whereIn('id', $slips->pluck('id'))->delete();
+            });
+
+            return ['success' => true, 'message' => "Berhasil menghapus {$deleted} slip gaji.", 'count' => $deleted];
+        } catch (\Throwable $e) {
+            Log::error('Hapus slip gaji gagal: '.$e->getMessage());
+
+            return ['success' => false, 'message' => 'Terjadi kesalahan saat menghapus slip gaji. Data tidak disimpan.', 'count' => 0];
+        }
+    }
+
+    /**
+     * Membatalkan pemotongan kasbon yang dilakukan oleh slip gaji yang
+     * dihapus, lalu menghitung ulang status kasbon dari pembayaran tersisa.
+     */
+    private function revertKasbonForSlip(SalarySlip $slip): void
+    {
+        $payments = KasbonPayment::where('salary_slip_id', $slip->id)->get();
+
+        foreach ($payments as $payment) {
+            $payment->delete();
+
+            $kasbon = Kasbon::find($payment->kasbon_code);
+
+            if (! $kasbon) {
+                continue;
+            }
+
+            $paid = (int) KasbonPayment::where('kasbon_code', $kasbon->kasbon_code)->sum('amount');
+
+            $kasbon->paid_amount = $paid;
+            $kasbon->remaining_amount = max(0, (int) $kasbon->amount - $paid);
+            $kasbon->payment_status = $paid <= 0
+                ? 'unpaid'
+                : ($paid >= (int) $kasbon->amount ? 'paid' : 'partial');
+            $kasbon->status = $paid <= 0 ? 'pending' : $kasbon->status;
+            $kasbon->save();
+        }
     }
 
     /**

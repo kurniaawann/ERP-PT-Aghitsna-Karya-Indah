@@ -35,13 +35,19 @@
 
     {{-- Pilihan Karyawan (Personal) --}}
     <div class="mb-3" id="add_employee_field">
-        <label class="block text-text-primary mb-1">Karyawan <span class="text-error">*</span></label>
+        <label class="flex items-center gap-2 text-text-primary mb-1">
+            <span>Karyawan <span class="text-error">*</span></span>
+            <span id="add_employee_type_label"
+                class="hidden px-2 py-0.5 bg-primary-light text-primary text-xs rounded-full"></span>
+        </label>
         <select name="employee_id" id="add_employee_id"
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             onchange="checkMaxKasbon('add')">
             <option value="">Pilih Karyawan</option>
             @foreach ($employees as $employee)
-                <option value="{{ $employee->employee_code }}">{{ $employee->name }} ({{ $employee->employee_code }})</option>
+                <option value="{{ $employee->employee_code }}" data-type="{{ $employee->employment_type }}">
+                    {{ $employee->name }} ({{ $employee->employee_code }}) - {{ $employee->employment_type === 'bulanan' ? 'Gaji Bulanan' : 'Gaji Harian' }}
+                </option>
             @endforeach
         </select>
     </div>

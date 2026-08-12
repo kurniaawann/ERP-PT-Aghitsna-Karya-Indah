@@ -244,6 +244,16 @@ function renderHolidayDays() {
 }
 
 /**
+ * Penghitung urutan permintaan pemuatan daftar karyawan (anti race condition).
+ *
+ * Saat periode diubah beruntun (mis. mengganti bulan lalu mengetik tahun),
+ * beberapa fetch boleh berjalan bersamaan dan respons yang tiba lebih dulu
+ * bisa berasal dari periode yang TIDAK lagi aktif. Penghitung ini memastikan
+ * hanya respons dari permintaan TERAKHIR yang diterapkan ke dropdown.
+ */
+let employeeLoadSequence = 0;
+
+/**
  * Memuat daftar karyawan bulanan yang belum punya slip untuk periode yang
  * dipilih pada modal Generate, lalu memperbarui multi-select searchable.
  *
@@ -265,6 +275,8 @@ async function loadEligibleEmployees() {
 
     if (!month || !year) return;
 
+    const sequence = ++employeeLoadSequence;
+
     try {
         const response = await fetch(config.eligibleEmployeesUrl, {
             method: 'POST',
@@ -279,6 +291,10 @@ async function loadEligibleEmployees() {
         });
 
         const data = await response.json();
+
+        // Respons dari permintaan lama (periode sudah berubah) diabaikan.
+        if (sequence !== employeeLoadSequence) return;
+
         const optionsContainer = wrapper.querySelector('.searchable-multi-options');
         if (!optionsContainer) return;
 
@@ -532,8 +548,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Grid hari libur awal pada modal Generate
+    // Selaraskan daftar karyawan & grid hari libur dengan periode form saat
+    // modal Generate dibuka (mencegah opsi periode lama masih tampil).
+    window.addEventListener('modalOpened', function (e) {
+        if (e.detail === 'generateModal') {
+            loadEligibleEmployees();
+            renderHolidayDays();
+        }
+    });
+
+    // Grid hari libur awal + daftar karyawan pada modal Generate
     renderHolidayDays();
+    loadEligibleEmployees();
 
     // Checkbox Pilih Semua
     const selectAll = document.getElementById('selectAll');

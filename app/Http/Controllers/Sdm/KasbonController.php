@@ -236,6 +236,12 @@ class KasbonController extends Controller
             return redirect()->back()->with('error', 'Kasbon divisi dengan proyek tidak bisa dibayar manual. Kasbon otomatis lunas saat payroll proyek tersebut dibayar.');
         }
 
+        // Kasbon karyawan bulanan tidak bisa dicicil manual: dipotong penuh
+        // dari slip gaji bulanan saat slip dibuat.
+        if ($kasbon->kasbon_type === 'personal' && $kasbon->employee && $kasbon->employee->employment_type === 'bulanan') {
+            return redirect()->back()->with('error', 'Kasbon karyawan bulanan tidak bisa dibayar manual. Kasbon otomatis dipotong dari slip gaji.');
+        }
+
         $request->validate([
             'amount' => 'required',
         ], [

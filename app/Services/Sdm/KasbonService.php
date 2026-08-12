@@ -6,6 +6,7 @@ use App\Models\Sdm\Division;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Kasbon;
 use App\Models\Sdm\KasbonPayment;
+use App\Models\Sdm\SalarySlip;
 use App\Services\InputNormalizer;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -28,7 +29,8 @@ use Illuminate\Support\Facades\Log;
 class KasbonService
 {
     public function __construct(
-        private readonly PayrollService $payrollService
+        private readonly PayrollService $payrollService,
+        private readonly SalarySlipService $salarySlipService
     ) {}
 
     /**
@@ -109,7 +111,7 @@ class KasbonService
                 function () use ($userId) {
                     return Employee::where('created_by', $userId)
                         ->orderBy('name')
-                        ->get(['employee_code', 'name']);
+                        ->get(['employee_code', 'name', 'employment_type']);
                 }
             );
         } catch (\Exception $e) {
@@ -120,7 +122,7 @@ class KasbonService
 
             return Employee::where('created_by', $userId)
                 ->orderBy('name')
-                ->get(['employee_code', 'name']);
+                ->get(['employee_code', 'name', 'employment_type']);
         }
     }
 
@@ -201,6 +203,11 @@ class KasbonService
                 Carbon::parse($data['period_start_date']),
                 Carbon::parse($data['period_end_date'] ?? $data['period_start_date'])
             );
+
+            $this->assertKasbonNotLockedBySlip(
+                $data['employee_id'],
+                Carbon::parse($data['period_start_date'])
+            );
         }
 
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? 0);
@@ -219,9 +226,10 @@ class KasbonService
         $kasbon = Kasbon::create($data);
 
         if ($kasbon->employee_id) {
-            $this->payrollService->recalculateForEmployeePeriod(
+            $this->recalculateKasbonPayroll(
+                'personal',
                 $kasbon->employee_id,
-                $kasbon->period_start_date
+                $kasbon->period_start_date->format('Y-m-d')
             );
         }
 
@@ -396,6 +404,7 @@ class KasbonService
         // boleh diubah (kecuali karyawan baru yang belum masuk payroll paid).
         if ($oldType === 'personal' && $oldEmployeeId) {
             $this->assertKasbonNotLocked($oldEmployeeId, $oldPeriodStart, $oldPeriodEnd);
+            $this->assertKasbonNotLockedBySlip($oldEmployeeId, $oldPeriodStart);
         } elseif ($oldType === 'team' && ! empty($oldProjectNames)) {
             $this->assertTeamKasbonProjectsNotLocked($oldProjectNames, $oldPeriodStart, $oldPeriodEnd);
         }
@@ -449,6 +458,7 @@ class KasbonService
                 : $newStart->copy();
 
             $this->assertKasbonNotLocked($data['employee_id'], $newStart, $newEnd);
+            $this->assertKasbonNotLockedBySlip($data['employee_id'], $newStart);
         } elseif ($data['kasbon_type'] === 'team') {
             $newProjectNames = array_values(array_unique(array_filter(
                 array_map('trim', (array) ($data['project_names'] ?? [])),
@@ -516,6 +526,7 @@ class KasbonService
 
             if ($kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
                 $this->assertKasbonNotLocked($kasbon->employee_id, $periodStart, $periodEnd);
+                $this->assertKasbonNotLockedBySlip($kasbon->employee_id, $periodStart);
             } elseif ($kasbon->kasbon_type === 'team') {
                 $projectNames = is_array($kasbon->project_names) ? $kasbon->project_names : [];
 
@@ -533,9 +544,10 @@ class KasbonService
 
             foreach ($pendingKasbons as $kasbon) {
                 if ($kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
-                    $this->payrollService->recalculateForEmployeePeriod(
+                    $this->recalculateKasbonPayroll(
+                        'personal',
                         $kasbon->employee_id,
-                        $kasbon->period_start_date
+                        $kasbon->period_start_date->format('Y-m-d')
                     );
                 }
             }
@@ -609,12 +621,14 @@ class KasbonService
         $kasbon->payment_status = $kasbon->remaining_amount <= 0 ? 'paid' : 'partial';
         $kasbon->save();
 
-        // Payment manual baru belum ter-assign; hitung ulang payroll draft pada
-        // periode kasbon agar cicilan ini otomatis masuk potongan payroll.
+        // Payment manual baru belum ter-assign; hitung ulang payroll draft dan
+        // slip gaji draft pada periode kasbon agar cicilan ini otomatis masuk
+        // potongan payroll/slip.
         if ($method === 'manual' && $kasbon->kasbon_type === 'personal' && $kasbon->employee_id) {
-            $this->payrollService->recalculateForEmployeePeriod(
+            $this->recalculateKasbonPayroll(
+                'personal',
                 $kasbon->employee_id,
-                $kasbon->period_start_date
+                $kasbon->period_start_date->format('Y-m-d')
             );
         }
 
@@ -637,17 +651,22 @@ class KasbonService
             return;
         }
 
+        // Payroll draft (karyawan harian) dihitung ulang agar potongan kasbon
+        // pada snapshot payroll sinkron dengan data kasbon terkini.
         $this->payrollService->recalculateForEmployeePeriod($employeeId, $periodStart);
+
+        // Slip gaji draft (karyawan bulanan) ikut dihitung ulang — slip draft
+        // harus selalu mencerminkan kasbon terkini; slip paid tidak tersentuh.
+        $this->salarySlipService->recalculateDraftSlipsForPeriod($employeeId, $periodStart);
     }
 
     /**
      * Melempar DomainException jika kasbon personal seorang karyawan pada
      * rentang periode menimpa payroll PAID (data terkunci).
      *
-     * @param  string         $employeeCode  Kode karyawan
-     * @param  Carbon|string  $startDate     Awal periode kasbon (inklusif)
-     * @param  Carbon|string  $endDate       Akhir periode kasbon (inklusif)
-     * @return void
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  Carbon|string  $startDate  Awal periode kasbon (inklusif)
+     * @param  Carbon|string  $endDate  Akhir periode kasbon (inklusif)
      *
      * @throws \DomainException
      */
@@ -674,11 +693,47 @@ class KasbonService
     }
 
     /**
+     * Melempar DomainException jika kasbon personal seorang karyawan bulanan
+     * menimpa slip gaji PAID pada bulan yang sama (data terkunci).
+     *
+     * Setelah slip gaji bulanan dibayar, kasbon pada periode itu tidak boleh
+     * diubah/ditambah lagi karena potongan sudah terkunci pada slip.
+     *
+     * @param  string  $employeeCode  Kode karyawan
+     * @param  Carbon|string  $startDate  Tanggal mulai periode kasbon
+     *
+     * @throws \DomainException
+     */
+    private function assertKasbonNotLockedBySlip(string $employeeCode, Carbon|string $startDate): void
+    {
+        $start = $startDate instanceof Carbon ? $startDate : Carbon::parse($startDate);
+
+        $locking = SalarySlip::where('created_by', auth()->id())
+            ->where('employee_code', $employeeCode)
+            ->where('period_year', $start->year)
+            ->where('period_month', $start->month)
+            ->where('status', 'paid')
+            ->exists();
+
+        if ($locking) {
+            $employee = Employee::find($employeeCode);
+            $name = $employee?->name ?: $employeeCode;
+
+            throw new \DomainException(sprintf(
+                'Kasbon %s (%s) pada bulan %s terkunci karena slip gaji periode tersebut sudah dibayar (status: paid). '
+                .'Hapus slip gaji paid terkait untuk membuka kunci dan mengubah data periode ini.',
+                $name,
+                $employeeCode,
+                $start->locale('id')->translatedFormat('F Y')
+            ));
+        }
+    }
+
+    /**
      * Melempar DomainException jika kasbon divisi untuk satu baris proyek
      * menimpa payroll PAID pada proyek + periode tersebut.
      *
      * @param  array<string, mixed>  $project  Baris proyek (project, period_start_date, period_end_date)
-     * @return void
      *
      * @throws \DomainException
      */
@@ -702,9 +757,8 @@ class KasbonService
      * rentang periode menimpa payroll PAID (data terkunci).
      *
      * @param  array<int, string>  $projectNames  Nama proyek
-     * @param  Carbon|string       $startDate     Awal periode kasbon (inklusif)
-     * @param  Carbon|string       $endDate       Akhir periode kasbon (inklusif)
-     * @return void
+     * @param  Carbon|string  $startDate  Awal periode kasbon (inklusif)
+     * @param  Carbon|string  $endDate  Akhir periode kasbon (inklusif)
      *
      * @throws \DomainException
      */

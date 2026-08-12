@@ -18,8 +18,6 @@ class UpdateKasbonRequest extends FormRequest
 {
     /**
      * Menentukan apakah pengguna berwenang melakukan permintaan ini.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
@@ -83,7 +81,13 @@ class UpdateKasbonRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if (($this->kasbon_type ?? '') === 'personal') {
-            $this->merge(['amount' => InputNormalizer::normalizeCurrency($this->amount)]);
+            $this->merge([
+                'amount' => InputNormalizer::normalizeCurrency($this->amount),
+                // Kasbon personal tidak memakai proyek; abaikan nilai kosong
+                // project_names[] dari DOM agar tidak lolos validasi
+                // project_names.* (required).
+                'project_names' => null,
+            ]);
 
             return;
         }

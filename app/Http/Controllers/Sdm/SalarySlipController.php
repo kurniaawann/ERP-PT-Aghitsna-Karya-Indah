@@ -109,10 +109,21 @@ class SalarySlipController extends Controller
             $request->input('holidays', [])
         );
 
-        return $result['success']
-            ? redirect()->route('salary-slips.index', ['month' => $periodMonth, 'year' => $periodYear])
-                ->with('success', $result['message'])
-            : back()->with('error', $result['message']);
+        if (! $result['success']) {
+            return back()->with('error', $result['message']);
+        }
+
+        $message = $result['message'];
+
+        // Perjelas periode tujuan agar slip yang baru dibuat mudah ditemukan
+        // (mis. "Berhasil membuat 1 slip gaji. Periode Desember 2026.").
+        if ($result['count'] > 0) {
+            $message .= ' Periode '.$this->monthNames[$periodMonth].' '.$periodYear.'.';
+        }
+
+        return redirect()
+            ->route('salary-slips.index', ['month' => $periodMonth, 'year' => $periodYear])
+            ->with('success', $message);
     }
 
     /**

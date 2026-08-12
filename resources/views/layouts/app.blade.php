@@ -109,6 +109,7 @@
                 if (typeof initSearchableMultiSelects === 'function') {
                     initSearchableMultiSelects(modal);
                 }
+                window.dispatchEvent(new CustomEvent('modalOpened', { detail: id }));
             }
         }
 
@@ -117,6 +118,7 @@
             if (modal) {
                 modal.classList.remove('flex');
                 modal.classList.add('hidden');
+                window.dispatchEvent(new CustomEvent('modalClosed', { detail: id }));
             }
         }
 
