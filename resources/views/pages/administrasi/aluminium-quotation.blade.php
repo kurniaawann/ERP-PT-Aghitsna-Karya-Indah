@@ -46,15 +46,17 @@
              ═══════════════════════════════════════════════════════════ --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
 
-            {{-- Form Pencarian --}}
+            {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('aluminium-quotation.index') }}"
-                class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
-                <x-filters.search-input :value="request('search')" placeholder="Cari nomor / penerima..." />
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari nomor / penerima..." responsive="custom" />
             </form>
 
             {{-- Tombol Aksi --}}
-            <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
-                <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
 
                     {{-- Tombol Hapus Massal --}}
                     <x-buttons.delete-button modalId="deleteModal" />

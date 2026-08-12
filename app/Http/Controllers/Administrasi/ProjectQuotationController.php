@@ -46,7 +46,9 @@ class ProjectQuotationController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $quotations = $this->service->getPaginatedSearch($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $quotations = $this->service->getPaginatedSearch($search, $month, $year);
         $paymentAccounts = $this->service->getActivePaymentAccounts();
         $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
         $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();

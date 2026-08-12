@@ -30,13 +30,17 @@ class SuratPerintahKerjaService
      * Mengambil data SPK dengan filter pencarian dan paginasi.
      *
      * @param  string|null  $search  Keyword pencarian (nomor, proyek, lokasi, pemberi_tugas_nama)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return LengthAwarePaginator Hasil pencarian dengan paginasi
      */
-    public function getPaginated(?string $search): LengthAwarePaginator
+    public function getPaginated(?string $search, ?int $month = null, ?int $year = null): LengthAwarePaginator
     {
         return SuratPerintahKerja::query()
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($month, fn ($query, $month) => $query->whereMonth('tanggal', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('tanggal', $year))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
     }

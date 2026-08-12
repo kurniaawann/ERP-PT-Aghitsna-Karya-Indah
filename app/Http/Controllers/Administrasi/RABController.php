@@ -43,7 +43,9 @@ class RABController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $rabs = $this->rabService->getPaginatedRABs($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $rabs = $this->rabService->getPaginatedRABs($search, $month, $year);
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
         $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
         $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();

@@ -58,9 +58,11 @@ class ProjectQuotationService
      * Mendapatkan daftar penawaran dengan paginasi dan pencarian.
      *
      * @param  string|null  $search  Kata kunci pencarian
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return LengthAwarePaginator
      */
-    public function getPaginatedSearch(?string $search): LengthAwarePaginator
+    public function getPaginatedSearch(?string $search, ?int $month = null, ?int $year = null): LengthAwarePaginator
     {
         return ProjectQuotation::query()
             ->with('invoices')
@@ -71,6 +73,8 @@ class ProjectQuotationService
                     ->orWhere('recipient', 'like', "%{$escapedSearch}%")
                     ->orWhere('subject', 'like', "%{$escapedSearch}%");
             })
+            ->when($month, fn ($query, $month) => $query->whereMonth('date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('date', $year))
             ->orderBy('sequence_number', 'desc')
             ->paginate(self::PER_PAGE);
     }

@@ -40,12 +40,16 @@ class NotaService
      * Mengambil data nota dengan filter pencarian dan paginasi.
      *
      * @param  string|null  $search  Keyword pencarian (id_nota, kepada, faktur_no, sj_no)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return LengthAwarePaginator Hasil pencarian dengan paginasi
      */
-    public function getPaginated(?string $search): LengthAwarePaginator
+    public function getPaginated(?string $search, ?int $month = null, ?int $year = null): LengthAwarePaginator
     {
         return Nota::where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($month, fn ($query, $month) => $query->whereMonth('nota_date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('nota_date', $year))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
     }
@@ -54,12 +58,16 @@ class NotaService
      * Mengambil seluruh data nota untuk ekspor PDF.
      *
      * @param  string|null  $search  Keyword pencarian (opsional)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return Collection Koleksi seluruh data nota
      */
-    public function getAllForExport(?string $search): Collection
+    public function getAllForExport(?string $search, ?int $month = null, ?int $year = null): Collection
     {
         return Nota::where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($month, fn ($query, $month) => $query->whereMonth('nota_date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('nota_date', $year))
             ->latest('created_at')
             ->get();
     }

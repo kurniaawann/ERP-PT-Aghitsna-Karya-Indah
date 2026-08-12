@@ -34,13 +34,17 @@ class CashOutProofService
      * Mengambil data bukti kas keluar dengan filter pencarian dan paginasi.
      *
      * @param  string|null  $search  Keyword pencarian (bkk_no, cek_no, paid_to, description)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return LengthAwarePaginator Hasil pencarian dengan paginasi
      */
-    public function getPaginated(?string $search): LengthAwarePaginator
+    public function getPaginated(?string $search, ?int $month = null, ?int $year = null): LengthAwarePaginator
     {
         return CashOutProof::query()
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($month, fn ($query, $month) => $query->whereMonth('date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('date', $year))
             ->latest('created_at')
             ->paginate(15);
     }
@@ -49,13 +53,17 @@ class CashOutProofService
      * Mengambil seluruh data bukti kas keluar untuk ekspor PDF.
      *
      * @param  string|null  $search  Keyword pencarian (opsional)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return Collection Koleksi seluruh data bukti kas keluar
      */
-    public function getAllForExport(?string $search): Collection
+    public function getAllForExport(?string $search, ?int $month = null, ?int $year = null): Collection
     {
         return CashOutProof::query()
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($month, fn ($query, $month) => $query->whereMonth('date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('date', $year))
             ->latest('created_at')
             ->get();
     }

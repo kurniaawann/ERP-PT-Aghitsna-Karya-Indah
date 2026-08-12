@@ -36,7 +36,9 @@ class CashOutProofController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $cashOuts = $this->service->getPaginated($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $cashOuts = $this->service->getPaginated($search, $month, $year);
 
         return view('pages.administrasi.cash-out-proof', compact('cashOuts', 'search'));
     }
@@ -104,7 +106,9 @@ class CashOutProofController extends Controller
     public function exportPdfAll(Request $request)
     {
         $search = $request->input('search');
-        $cashOuts = $this->service->getAllForExport($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $cashOuts = $this->service->getAllForExport($search, $month, $year);
 
         return $this->generatePdfResponse($cashOuts);
     }

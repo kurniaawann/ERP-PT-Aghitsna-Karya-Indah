@@ -44,18 +44,20 @@
              ═══════════════════════════════════════════════════════════ --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
 
-            {{-- Form Pencarian --}}
+            {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('delivery-note.administrasi.index') }}"
-                class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
-                <x-filters.search-input :value="request('search')" placeholder="Cari surat jalan..." />
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari surat jalan..." responsive="custom" />
             </form>
 
             {{-- Tombol Aksi: Print, Hapus, Tambah --}}
-            <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
-                <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
 
                     {{-- Dropdown Export PDF --}}
-                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('delivery-note.administrasi.export.pdf')" :queryParams="['search' => request('search')]" responsive="custom" fill />
+                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('delivery-note.administrasi.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" responsive="custom" fill />
 
                     {{-- Tombol Hapus Massal --}}
                     <x-buttons.delete-button modalId="deleteModal" />

@@ -37,14 +37,18 @@ class KwintansiService
      *
      * @param  string|null  $search  Keyword pencarian (id_kwintansi, received_from, payment_for)
      * @param  string|null  $invoiceType  Filter jenis invoice (proyek|alumunium|barang) — opsional
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return LengthAwarePaginator Hasil pencarian dengan paginasi
      */
-    public function getPaginated(?string $search, ?string $invoiceType = null): LengthAwarePaginator
+    public function getPaginated(?string $search, ?string $invoiceType = null, ?int $month = null, ?int $year = null): LengthAwarePaginator
     {
         return Kwintansi::with(['paymentAccount', 'invoiceProyek', 'invoiceAlumunium', 'invoiceBarang'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->when($invoiceType, fn ($query, $type) => $query->where('invoice_type', $type))
+            ->when($month, fn ($query, $month) => $query->whereMonth('kwintansi_date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('kwintansi_date', $year))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
     }
@@ -54,14 +58,18 @@ class KwintansiService
      *
      * @param  string|null  $search  Keyword pencarian (opsional)
      * @param  string|null  $invoiceType  Filter jenis invoice (proyek|alumunium|barang) — opsional
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return Collection Koleksi seluruh data kwitansi
      */
-    public function getAllForExport(?string $search, ?string $invoiceType = null): Collection
+    public function getAllForExport(?string $search, ?string $invoiceType = null, ?int $month = null, ?int $year = null): Collection
     {
         return Kwintansi::with(['paymentAccount', 'invoiceProyek', 'invoiceAlumunium', 'invoiceBarang'])
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->when($invoiceType, fn ($query, $type) => $query->where('invoice_type', $type))
+            ->when($month, fn ($query, $month) => $query->whereMonth('kwintansi_date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('kwintansi_date', $year))
             ->latest('created_at')
             ->get();
     }

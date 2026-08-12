@@ -36,7 +36,9 @@ class DocumentReceiptController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $documents = $this->service->getPaginated($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $documents = $this->service->getPaginated($search, $month, $year);
 
         return view('pages.administrasi.document-receipt', compact('documents', 'search'));
     }
@@ -104,7 +106,9 @@ class DocumentReceiptController extends Controller
     public function exportPdfAll(Request $request)
     {
         $search = $request->input('search');
-        $documents = $this->service->getAllForExport($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $documents = $this->service->getAllForExport($search, $month, $year);
 
         return $this->generatePdfResponse($documents);
     }

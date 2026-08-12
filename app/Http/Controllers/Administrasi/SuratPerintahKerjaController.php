@@ -45,7 +45,9 @@ class SuratPerintahKerjaController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $suratPerintahKerjas = $this->service->getPaginated($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $suratPerintahKerjas = $this->service->getPaginated($search, $month, $year);
 
         return view('pages.administrasi.surat-perintah-kerja', compact('suratPerintahKerjas', 'search'));
     }

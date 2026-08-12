@@ -63,7 +63,9 @@
                     </div>
                 @endif
 
-                <x-filters.search-input :value="request('search')" placeholder="Cari kwintansi..." />
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari kwintansi..." responsive="custom" />
             </form>
 
             {{-- Tombol Aksi: Print, Hapus, Tambah --}}
@@ -71,7 +73,7 @@
                 <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
 
                     {{-- Dropdown Export PDF --}}
-                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('kwintansi.export.pdf')" :queryParams="['search' => request('search'), 'invoice_type' => request('invoice_type')]" responsive="custom" fill />
+                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('kwintansi.export.pdf')" :queryParams="['search' => request('search'), 'invoice_type' => request('invoice_type'), 'month' => request('month'), 'year' => request('year')]" responsive="custom" fill />
 
                     {{-- Tombol Hapus Massal --}}
                     <x-buttons.delete-button modalId="deleteModal" />

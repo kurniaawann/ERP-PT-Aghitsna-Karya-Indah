@@ -39,7 +39,9 @@ class NotaController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $notas = $this->notaService->getPaginated($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $notas = $this->notaService->getPaginated($search, $month, $year);
 
         return view('pages.administrasi.nota', compact('notas', 'search'));
     }
@@ -104,7 +106,9 @@ class NotaController extends Controller
     public function exportPdfAll(Request $request)
     {
         $search = $request->input('search');
-        $notas = $this->notaService->getAllForExport($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $notas = $this->notaService->getAllForExport($search, $month, $year);
 
         $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 

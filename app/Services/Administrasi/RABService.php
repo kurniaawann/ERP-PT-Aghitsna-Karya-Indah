@@ -31,9 +31,13 @@ class RABService
     /**
      * Mendapatkan daftar RAB dengan eager load dan pagination.
      *
+     * @param  string|null  $search  Kata kunci pencarian (rab_number, recipient)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
+     * @param  int          $perPage Jumlah data per halaman
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function getPaginatedRABs(?string $search = null, int $perPage = 15)
+    public function getPaginatedRABs(?string $search = null, ?int $month = null, ?int $year = null, int $perPage = 15)
     {
         return RAB::with(['categories', 'miscellaneousCosts'])
             ->where('created_by', auth()->id())
@@ -41,6 +45,8 @@ class RABService
                 return $query->where('rab_number', 'like', "%{$search}%")
                     ->orWhere('recipient', 'like', "%{$search}%");
             })
+            ->when($month, fn ($query, $month) => $query->whereMonth('date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('date', $year))
             ->orderBy('sequence_number', 'desc')
             ->paginate($perPage);
     }

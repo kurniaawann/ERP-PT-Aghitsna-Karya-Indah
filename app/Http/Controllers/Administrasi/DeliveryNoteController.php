@@ -45,7 +45,9 @@ class DeliveryNoteController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $deliveryNotes = $this->deliveryNoteService->getPaginated($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $deliveryNotes = $this->deliveryNoteService->getPaginated($search, $month, $year);
 
         return view('pages.administrasi.delivery-note', compact('deliveryNotes', 'search'));
     }
@@ -107,7 +109,9 @@ class DeliveryNoteController extends Controller
     public function exportPdfAll(Request $request)
     {
         $search = $request->input('search');
-        $deliveryNotes = $this->deliveryNoteService->getAllForExport($search);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $deliveryNotes = $this->deliveryNoteService->getAllForExport($search, $month, $year);
 
         $pdf = Pdf::loadView('exports.administrasi.delivery-note-pdf', compact('deliveryNotes'));
 

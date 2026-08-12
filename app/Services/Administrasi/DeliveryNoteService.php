@@ -36,13 +36,17 @@ class DeliveryNoteService
      * Mengambil data surat jalan dengan filter pencarian dan paginasi.
      *
      * @param  string|null  $search  Keyword pencarian (id_delivery_note, document_number, receiver_name, shipper_name)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return LengthAwarePaginator Hasil pencarian dengan paginasi
      */
-    public function getPaginated(?string $search): LengthAwarePaginator
+    public function getPaginated(?string $search, ?int $month = null, ?int $year = null): LengthAwarePaginator
     {
         return DeliveryNote::query()
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($month, fn ($query, $month) => $query->whereMonth('delivery_date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('delivery_date', $year))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
     }
@@ -51,13 +55,17 @@ class DeliveryNoteService
      * Mengambil seluruh data surat jalan untuk ekspor PDF.
      *
      * @param  string|null  $search  Keyword pencarian (opsional)
+     * @param  int|null     $month   Filter bulan (opsional)
+     * @param  int|null     $year    Filter tahun (opsional)
      * @return Collection Koleksi seluruh data surat jalan
      */
-    public function getAllForExport(?string $search): Collection
+    public function getAllForExport(?string $search, ?int $month = null, ?int $year = null): Collection
     {
         return DeliveryNote::query()
             ->where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($month, fn ($query, $month) => $query->whereMonth('delivery_date', $month))
+            ->when($year, fn ($query, $year) => $query->whereYear('delivery_date', $year))
             ->latest('created_at')
             ->get();
     }

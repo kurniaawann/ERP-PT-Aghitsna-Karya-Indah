@@ -39,11 +39,13 @@ class KwintansiController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
 
         $isSuperadmin = auth()->user()?->role === 'superadmin';
         $invoiceType = $isSuperadmin ? $request->input('invoice_type') : null;
 
-        $kwintansis = $this->service->getPaginated($search, $invoiceType);
+        $kwintansis = $this->service->getPaginated($search, $invoiceType, $month, $year);
         $executives = Executive::query()
             ->where('created_by', auth()->id())
             ->orderBy('name')
@@ -131,7 +133,9 @@ class KwintansiController extends Controller
     public function exportPdfAll(Request $request)
     {
         $invoiceType = auth()->user()?->role === 'superadmin' ? $request->input('invoice_type') : null;
-        $kwintansis = $this->service->getAllForExport($request->input('search'), $invoiceType);
+        $month = $request->integer('month') ?: null;
+        $year = $request->integer('year') ?: null;
+        $kwintansis = $this->service->getAllForExport($request->input('search'), $invoiceType, $month, $year);
         $pdf = Pdf::loadView('exports.administrasi.kwintansi-pdf', compact('kwintansis'));
         $pdf->setPaper('a4', 'portrait');
 
