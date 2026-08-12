@@ -20,7 +20,7 @@ body {
 
 .slip-page {
     border: 2px solid #000;
-    padding: 15px;
+    padding: 0;
     page-break-inside: avoid;
     box-sizing: border-box;
 }
@@ -29,13 +29,14 @@ body {
 .header-table {
     width: 100%;
     border-collapse: collapse;
+    border-spacing: 0;
     border-bottom: 2px solid #000;
-    padding-bottom: 10px;
     margin-bottom: 8px;
 }
 
 .header-table td {
     vertical-align: middle;
+    padding: 12px 15px 10px 15px;
 }
 
 .company-logo {
@@ -64,40 +65,82 @@ body {
     text-align: center;
     font-weight: bold;
     font-size: 15px;
-    margin: 8px 0 12px 0;
+    margin: 8px 15px 12px 15px;
     letter-spacing: 1px;
 }
 
 /* ── DATA KARYAWAN ── */
 .info-table {
-    width: 350px;
+    width: 36%;
     border-collapse: collapse;
-    margin-bottom: 12px;
+    border-spacing: 0;
+    margin: 0 15px 12px 0px;
 }
 
 .info-table td {
     padding: 2px 0;
     font-size: 11px;
     vertical-align: top;
+    border: none !important;
 }
 
-/* ── TABEL UTAMA PENERIMAAN & POTONGAN ── */
+/* ── TABEL UTAMA ── */
 .main-table {
     width: 100%;
     border-collapse: collapse;
-    border: 1px solid #000;
+    border-spacing: 0;
+    table-layout: fixed;
+    border: none !important;
 }
 
-.main-table th, 
-.main-table td {
-    border: 1px solid #000;
-    padding: 5px 8px;
+/* Header Tabel */
+.main-table thead tr th {
+    border-top: 1px solid #000 !important;
+    border-bottom: 1px solid #000 !important;
+    border-left: none !important;
+    border-right: none !important;
+    padding: 6px 8px;
     font-size: 11px;
-}
-
-.main-table th {
     font-weight: bold;
     text-align: left;
+    box-sizing: border-box;
+}
+
+/* Sel Isi Tabel */
+.main-table tbody td {
+    border: none !important;
+    padding: 4px 8px;
+    font-size: 11px;
+    box-sizing: border-box;
+}
+
+/* Margins Sisi Kiri & Kanan Tabel Utama */
+.main-table th:first-child,
+.main-table td:first-child {
+    padding-left: 15px !important;
+}
+
+.main-table th:last-child,
+.main-table td:last-child {
+    padding-right: 15px !important;
+}
+
+/* Sub-tabel Dalam Kolom */
+.inner-table,
+.inner-table tr,
+.inner-table td {
+    border: none !important;
+    border-style: none !important;
+    outline: none !important;
+    padding: 0 !important;
+    font-size: 11px;
+    vertical-align: top;
+}
+
+.inner-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
 .bg-yellow-header {
@@ -112,10 +155,13 @@ body {
     font-weight: bold;
 }
 
+/* Kotak Total Dibayar Perusahaan */
 .bg-yellow-total {
     background-color: #ffff00 !important;
     text-align: center;
     font-weight: bold;
+    border-top: 1px solid #000 !important;
+    border-bottom: none !important;
 }
 
 .red-text {
@@ -127,6 +173,10 @@ body {
     font-style: italic;
 }
 
+.text-left {
+    text-align: left;
+}
+
 .text-right {
     text-align: right;
 }
@@ -135,16 +185,23 @@ body {
     text-align: center;
 }
 
-/* ── BARIS TOTAL ── */
-.total-row td {
+.colon-right {
+    float: right;
+}
+
+/* ── BARIS TOTAL TUNGGAL (TANPA GARIS DALAM/GANDA) ── */
+.main-table tbody tr.total-row td {
     font-weight: bold;
-    border-top: 2px solid #000;
-    border-bottom: 2px solid #000;
+    border-top: 1px solid #000 !important;
+    border-bottom: 1px solid #000 !important;
+    border-left: none !important;
+    border-right: none !important;
+    padding: 6px 8px;
 }
 
 /* ── THP ── */
 .thp-section {
-    margin: 18px 0 25px 120px;
+    margin: 18px 15px 25px 135px;
     font-size: 11px;
 }
 
@@ -166,10 +223,13 @@ body {
 .footer-table {
     width: 100%;
     border-collapse: collapse;
+    border-spacing: 0;
+    padding: 0 15px 15px 15px;
 }
 
 .footer-table td {
     vertical-align: top;
+    border: none !important;
 }
 
 .note-box {
@@ -224,7 +284,7 @@ body {
 <div class="slip-page">
 
     <!-- Header -->
-    <table class="header-table">
+    <table class="header-table" cellspacing="0" cellpadding="0">
         <tr>
             <td width="18%">
                 <img src="{{ public_path('images/logo.jpeg') }}" alt="PT. AGHITSNA KARYA INDAH" class="company-logo">
@@ -243,11 +303,11 @@ body {
     <div class="slip-title">SLIP GAJI</div>
 
     <!-- Data Karyawan -->
-    <table class="info-table">
+    <table class="info-table" cellspacing="0" cellpadding="0">
         <tr>
-            <td width="30%">ID</td>
-            <td width="5%">:</td>
-            <td>{{ $slip->employee_code }}</td>
+            <td width="58%">ID</td>
+            <td width="4%">:</td>
+            <td width="38%">{{ $slip->employee_code }}</td>
         </tr>
         <tr>
             <td>NAMA</td>
@@ -260,14 +320,14 @@ body {
             <td>{{ $slip->employee->position ?? 'Staff' }}</td>
         </tr>
         <tr>
-            <td style="padding-left: 20px;">STATUS</td>
+            <td>STATUS</td>
             <td>:</td>
             <td>{{ $slip->employee->status ?? 'K/2' }}</td>
         </tr>
     </table>
 
     <!-- Tabel Utama -->
-    <table class="main-table">
+    <table class="main-table" cellspacing="0" cellpadding="0">
         <thead>
             <tr>
                 <th width="36%">PENERIMAAN</th>
@@ -278,58 +338,85 @@ body {
         </thead>
         <tbody>
             <tr>
-                <td>Gaji Pokok &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Rp {{ number_format($slip->base_salary, 0, ',', '.') }}</td>
-                <td>Kasbon :</td>
-                <td class="text-right"></td>
-                <td class="text-right">Rp {{ number_format($slip->kasbon_deduction, 0, ',', '.') }}</td>
+                <td>
+                    <table class="inner-table" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td width="58%">Gaji Pokok</td>
+                            <td width="4%">:</td>
+                            <td width="38%" style="padding-left: 4px;">Rp {{ number_format($slip->base_salary, 0, ',', '.') }}</td>
+                        </tr>
+                    </table>
+                </td>
+                <td>Kasbon <span class="colon-right">:</span></td>
+                <td class="text-left"></td>
+                <td class="text-left">Rp {{ number_format($slip->kasbon_deduction, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td>Transport / {{ $slip->present_days }} Hari &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="red-italic">Rp {{ number_format($slip->transport_total, 0, ',', '.') }}</span></td>
-                <td>BPJS KESEHATAN :</td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->bpjs_kesehatan_company, 0, ',', '.') }}</td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->bpjs_kesehatan_employee, 0, ',', '.') }}</td>
+                <td>
+                    <table class="inner-table" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td width="58%">Transport / {{ $slip->present_days }} Hari</td>
+                            <td width="4%">:</td>
+                            <td width="38%" style="padding-left: 4px;" class="red-italic">Rp {{ number_format($slip->transport_total, 0, ',', '.') }}</td>
+                        </tr>
+                    </table>
+                </td>
+                <td>BPJS KESEHATAN <span class="colon-right">:</span></td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->bpjs_kesehatan_company, 0, ',', '.') }}</td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->bpjs_kesehatan_employee, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td>Uang Makan / {{ $slip->present_days }} Hari &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="red-italic">Rp {{ number_format($slip->meal_total, 0, ',', '.') }}</span></td>
-                <td>JHT :</td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->jht_company, 0, ',', '.') }}</td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->jht_employee, 0, ',', '.') }}</td>
+                <td>
+                    <table class="inner-table" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td width="58%">Uang Makan / {{ $slip->present_days }} Hari</td>
+                            <td width="4%">:</td>
+                            <td width="38%" style="padding-left: 4px;" class="red-italic">Rp {{ number_format($slip->meal_total, 0, ',', '.') }}</td>
+                        </tr>
+                    </table>
+                </td>
+                <td>JHT <span class="colon-right">:</span></td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->jht_company, 0, ',', '.') }}</td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->jht_employee, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td></td>
-                <td>JKK :</td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->jkk_company, 0, ',', '.') }}</td>
+                <td>JKK <span class="colon-right">:</span></td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->jkk_company, 0, ',', '.') }}</td>
                 <td class="text-center">-</td>
             </tr>
             <tr>
                 <td></td>
-                <td>JPN :</td>
-                <td class="text-right red-italic">Rp {{ number_format($jpnCompany, 0, ',', '.') }}</td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->jpn_employee, 0, ',', '.') }}</td>
+                <td>JPN <span class="colon-right">:</span></td>
+                <td class="text-left red-italic">Rp {{ number_format($jpnCompany, 0, ',', '.') }}</td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->jpn_employee, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td></td>
-                <td>JKM :</td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->jkm_company, 0, ',', '.') }}</td>
+                <td>JKM <span class="colon-right">:</span></td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->jkm_company, 0, ',', '.') }}</td>
                 <td class="text-center">-</td>
             </tr>
             <tr>
                 <td></td>
-                <td>PPH 21 :</td>
+                <td>PPH 21 <span class="colon-right">:</span></td>
                 <td></td>
-                <td class="text-right red-italic">Rp {{ number_format($slip->pph21, 0, ',', '.') }}</td>
+                <td class="text-left red-italic">Rp {{ number_format($slip->pph21, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td></td>
                 <td></td>
-                <td class="bg-yellow-total">Rp {{ number_format($totalCompanyPaid, 0, ',', '.') }}</td>
+                <td class="bg-yellow-total text-center">Rp {{ number_format($totalCompanyPaid, 0, ',', '.') }}</td>
                 <td></td>
             </tr>
             <tr class="total-row">
-                <td>TOTAL PENERIMAAN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Rp {{ number_format($slip->total_income, 0, ',', '.') }}</td>
-                <td class="text-center"></td>
-                <td>TOTAL POTONGAN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</td>
-                <td class="text-right red-text" style="font-weight: bold;">Rp {{ number_format($slip->total_deduction, 0, ',', '.') }}</td>
+                <td>
+                    <span style="float: left; font-weight: bold;">TOTAL PENERIMAAN</span>
+                    <span style="float: right; font-weight: bold;">Rp {{ number_format($slip->total_income, 0, ',', '.') }}</span>
+                </td>
+                <td></td>
+                <td>TOTAL POTONGAN <span class="colon-right">:</span></td>
+                <td class="text-left red-text">Rp {{ number_format($slip->total_deduction, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
@@ -341,7 +428,7 @@ body {
     </div>
 
     <!-- Catatan Tambahan & Tanda Tangan -->
-    <table class="footer-table">
+    <table class="footer-table" cellspacing="0" cellpadding="0">
         <tr>
             <td width="20%">
                 Payroll,<br>
