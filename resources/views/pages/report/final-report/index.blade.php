@@ -29,6 +29,16 @@
             'label' => 'Laporan Semen',
             'desc'  => 'Rekap data DO Semen & Data Semen',
         ],
+        'recap' => [
+            'icon' => 'fa-folder-tree',
+            'label' => 'Rekap Proyek',
+            'desc'  => 'Rekap nilai proyek, pembayaran & sisa tagihan',
+        ],
+        'financial' => [
+            'icon' => 'fa-file-invoice-dollar',
+            'label' => 'Keuangan Proyek',
+            'desc'  => 'Rekap uang masuk, uang keluar & saldo per proyek',
+        ],
     ];
 
     $exportRoutes = [
@@ -54,7 +64,9 @@
     $exportQuery = request()->except(['tab']);
 
     $activeMeta = $tabMeta[$tab];
-    $activeExport = $exportRoutes[$tab];
+    // Tab Rekap Proyek & Keuangan Proyek tidak punya export global
+    // (export dilakukan per proyek pada baris tabel).
+    $activeExport = $exportRoutes[$tab] ?? null;
 @endphp
 
 @extends('layouts.app')
@@ -81,6 +93,7 @@
                 </div>
 
                 {{-- Tombol Print Laporan: menyesuaikan tab aktif --}}
+                @if ($activeExport && ($activeExport['pdf'] || $activeExport['excel']))
                 <div class="w-full sm:w-56 lg:w-auto">
                     <x-buttons.print-dropdown
                         :pdfRoute="$activeExport['pdf']"
@@ -89,12 +102,13 @@
                         size="sm"
                     />
                 </div>
+                @endif
             </div>
         </div>
 
         {{-- ==================== Tab Pilihan Jenis Laporan ==================== --}}
         <div class="bg-surface-base rounded-xl shadow-sm p-1.5">
-            <div class="flex flex-wrap gap-1.5 sm:grid sm:grid-cols-4">
+            <div class="flex flex-wrap gap-1.5 sm:grid sm:grid-cols-2 lg:grid-cols-3 min-[1600px]:grid-cols-6">
                 @foreach ($allowedTabs as $t)
                     <a href="{{ route('report.final', ['tab' => $t]) }}"
                         class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border-2
@@ -115,6 +129,10 @@
             @include('pages.report.final-report.partials.expense')
         @elseif ($tab === 'cement')
             @include('pages.report.final-report.partials.cement')
+        @elseif ($tab === 'recap')
+            @include('pages.report.final-report.partials.recap')
+        @elseif ($tab === 'financial')
+            @include('pages.report.final-report.partials.financial')
         @else
             @include('pages.report.final-report.partials.sales')
         @endif

@@ -23,7 +23,7 @@
             line-height: 1.3;
             color: #000;
             background: #fff;
-            padding: 10px;
+            padding: 20px;
         }
 
         .page {
@@ -132,7 +132,7 @@
         /* TABLE ITEM */
         .items-table {
             margin: 10px 0 15px;
-            border: 1px solid #000;
+            border: none !important; /* Hapus border terluar tabel utama */
         }
 
         .items-table th,
@@ -183,18 +183,14 @@
             font-weight: bold;
         }
 
-        /* MENGHAPUS SEMUA GARIS DI AREA KOSONG SEBELAH KIRI */
-        /* .total-row td.empty-cells {
+        /* AREA KOSONG SEBELAH KIRI (HANYA GARIS ATAS, HILANGKAN GARIS KIRI KELUAR) */
+        .total-row td.empty-cells {
             border: none !important;
-            border-top: 1px solid #000 !important;
+            border-top: 1px solid #000 !important; /* Menjaga garis horizontal yang ditandai kuning */
             background-color: transparent !important;
-        } */
-         .total-row td.empty-cells {
-    border: none !important;
-    background-color: transparent !important;
-}
+        }
 
-        /* KOTAK KUNING TOTAL DENGAN BORDER LENGKAP */
+        /* KOTAK KUNING TOTAL */
         .total-row td.total-label {
             background-color: #ffc000 !important;
             text-align: left !important;
@@ -225,7 +221,7 @@
             margin-top: 15px;
             font-size: 11pt;
             text-align: justify;
-            background-color: #d9ead3;
+            /* background-color: #d9ead3; */
             padding: 2px;
         }
 
@@ -363,40 +359,18 @@
                         </tr>
 
                         {{-- Detail Sub Item --}}
-                        {{-- Detail Sub Item --}}
-@foreach (data_get($item, 'details', []) as $detail)
-    <tr>
-        <td class="@if($loop->last && $loop->parent->last) no-bottom-border @endif"></td>
-
-        <td class="@if($loop->last && $loop->parent->last) no-bottom-border @endif">
-            {{ $detail['keterangan'] ?? '-' }}
-        </td>
-
-        <td class="text-center @if($loop->last && $loop->parent->last) no-bottom-border @endif">
-            {{ $detail['volume'] }}
-        </td>
-
-        <td class="text-center">
-            {!! $detail['satuan'] ?? '-' !!}
-        </td>
-
-        <td class="currency-symbol">
-            Rp
-        </td>
-
-        <td class="currency-amount">
-            {{ number_format($detail['harga'], 0, ',', '.') }}
-        </td>
-
-        <td class="currency-symbol">
-            Rp
-        </td>
-
-        <td class="currency-amount">
-            {{ number_format($detail['jumlah'], 0, ',', '.') }}
-        </td>
-    </tr>
-@endforeach
+                        @foreach (data_get($item, 'details', []) as $detail)
+                            <tr>
+                                <td></td>
+                                <td>{{ $detail['keterangan'] ?? '-' }}</td>
+                                <td class="text-center">{{ $detail['volume'] }}</td>
+                                <td class="text-center">{!! $detail['satuan'] ?? '-' !!}</td>
+                                <td class="currency-symbol">Rp</td>
+                                <td class="currency-amount">{{ number_format($detail['harga'], 0, ',', '.') }}</td>
+                                <td class="currency-symbol">Rp</td>
+                                <td class="currency-amount">{{ number_format($detail['jumlah'], 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
                     @empty
                         <tr>
                             <td colspan="8" class="text-center">Tidak ada item pekerjaan</td>
@@ -405,7 +379,7 @@
 
                     {{-- TOTAL ROW --}}
                     <tr class="total-row">
-                        <!-- Area Kosong Sebelah Kiri Tanpa Garis Bawah & Kiri -->
+                        <!-- Area Sebelah Kiri: Memiliki Garis Atas, Tanpa Garis Kiri -->
                         <td colspan="3" class="empty-cells"></td>
                         
                         <!-- Gabungan Kolom Satuan & Harga untuk kata 'Jumlah' -->

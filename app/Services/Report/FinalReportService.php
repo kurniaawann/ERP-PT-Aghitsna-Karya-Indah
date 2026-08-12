@@ -2,6 +2,7 @@
 
 namespace App\Services\Report;
 
+use App\Models\Finance\ProjectRecap;
 use App\Models\Inventory\Items;
 use App\Services\Inventory\StockReportService;
 use Carbon\Carbon;
@@ -11,21 +12,25 @@ use Illuminate\Pagination\LengthAwarePaginator;
 /**
  * Service orchestrator untuk modul Laporan Akhir.
  *
- * Laporan Akhir menggabungkan empat jenis laporan dalam satu halaman:
- * - Laporan Stok (Stock Report)      → StockReportService
- * - Laporan Penjualan (Sales Report) → SalesReportService
- * - Laporan Pengeluaran (Expense Report) → ExpenseReportService
- * - Laporan Semen (Cement Report)    → CementReportService
+ * Laporan Akhir menggabungkan enam jenis laporan dalam satu halaman:
+ * - Laporan Stok (Stock Report)           → StockReportService
+ * - Laporan Penjualan (Sales Report)      → SalesReportService
+ * - Laporan Pengeluaran (Expense Report)  → ExpenseReportService
+ * - Laporan Semen (Cement Report)         → CementReportService
+ * - Rekap Proyek (Project Recap)          → ProjectRecap (query langsung)
+ * - Laporan Keuangan Proyek (Financial)   → ProjectRecap + financialReport
  *
  * Service ini TIDAK menduplikasi business logic domain. Ia hanya
  * mengorkestrasi pemanggilan ke service di atas sesuai tab yang aktif.
  * Filter tiap laporan tetap memakai parameter masing-masing (lihat partial view).
  *
  * Akses per tab meniru aturan di sidebar (resources/views/layouts/sidebar.blade.php):
- * - stock  : superadmin + user (bukan admin & bukan general_manager)
- * - sales  : superadmin + general_manager
- * - expense: superadmin + admin + general_manager
- * - cement : superadmin + user (bukan admin & bukan general_manager)
+ * - stock    : superadmin + user (bukan admin & bukan general_manager)
+ * - sales    : superadmin + general_manager
+ * - expense  : superadmin + admin + general_manager
+ * - cement   : superadmin + user (bukan admin & bukan general_manager)
+ * - recap    : superadmin + admin (bukan general_manager)
+ * - financial: semua role (menu Report di sidebar tampil untuk semua role)
  */
 class FinalReportService
 {
@@ -63,6 +68,12 @@ class FinalReportService
             $tabs[] = 'expense';
         }
 
+        if (!$user->isGeneralManager() && ($user->isSuperAdmin() || $user->isAdmin())) {
+            $tabs[] = 'recap';
+        }
+
+        $tabs[] = 'financial';
+
         return $tabs;
     }
 
@@ -79,6 +90,8 @@ class FinalReportService
             'stock' => $this->buildStockData($request),
             'expense' => $this->buildExpenseData($request),
             'cement' => $this->buildCementData($request),
+            'recap' => $this->buildRecapData($request),
+            'financial' => $this->buildFinancialData($request),
             default => $this->buildSalesData($request),
         };
     }
@@ -216,6 +229,156 @@ class FinalReportService
         return compact(
             'cementDeliveryOrders',
             'summary'
+        );
+    }
+
+    /**
+     * Query dasar daftar Rekap Proyek untuk laporan.
+     *
+     * Superadmin melihat seluruh rekap; role lain hanya miliknya sendiri
+     * (sama seperti modul Rekap Proyek & Laporan Keuangan Proyek). Relasi
+     * yang dipakai untuk perhitungan (rab, paymentProofs, financialReport)
+     * ikut di-load agar tidak terjadi N+1.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function baseRecapQuery(Request $request)
+    {
+        $user = auth()->user();
+
+        return ProjectRecap::query()
+            ->with(['creator', 'rab', 'paymentProofs', 'financialReport.items'])
+            ->when($user && $user->role !== 'superadmin', fn ($query) => $query->where('created_by', $user->id))
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->search;
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('project_name', 'like', "%{$search}%")
+                        ->orWhere('location', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('month'), fn ($query) => $query->whereMonth('created_at', $request->month))
+            ->when($request->filled('year'), fn ($query) => $query->whereYear('created_at', $request->year))
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Data Rekap Proyek untuk tab laporan.
+     *
+     * Menampilkan ringkasan nilai proyek, pembayaran, dan sisa tagihan.
+     * Ringkasan dihitung dari seluruh data yang lolos filter (bukan hanya
+     * halaman aktif) agar konsisten dengan laporan lainnya.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array<string, mixed>
+     */
+    private function buildRecapData(Request $request): array
+    {
+        $collection = $this->baseRecapQuery($request)->get();
+
+        // Filter status pembayaran (status turunan, dihitung per rekap).
+        if ($request->filled('status')) {
+            $status = $request->status;
+            $collection = $collection->filter(function (ProjectRecap $recap) use ($status) {
+                if ($recap->isFullyPaid()) {
+                    $currentStatus = 'lunas';
+                } elseif ($recap->getTotalPaidAmount() > 0) {
+                    $currentStatus = 'sebagian';
+                } else {
+                    $currentStatus = 'belum';
+                }
+
+                return $currentStatus === $status;
+            })->values();
+        }
+
+        $summary = [
+            'total_projects' => $collection->count(),
+            'total_rab' => (int) $collection->sum(fn (ProjectRecap $recap) => $recap->getTotalAmount()),
+            'total_paid' => (int) $collection->sum(fn (ProjectRecap $recap) => $recap->getTotalPaidAmount()),
+            'total_remaining' => (int) $collection->sum(fn (ProjectRecap $recap) => $recap->getRemainingAmount()),
+            'paid_projects' => $collection->filter(fn (ProjectRecap $recap) => $recap->isFullyPaid())->count(),
+        ];
+
+        $recaps = $this->paginateCollection($collection, $request);
+
+        return compact('recaps', 'summary');
+    }
+
+    /**
+     * Data Laporan Keuangan Proyek untuk tab laporan.
+     *
+     * Menampilkan ringkasan uang masuk, uang keluar, dan saldo per proyek
+     * berdasarkan baris transaksi (item) pada laporan keuangan proyek.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array<string, mixed>
+     */
+    private function buildFinancialData(Request $request): array
+    {
+        $collection = $this->baseRecapQuery($request)->get()
+            ->map(function (ProjectRecap $recap) {
+                $items = $recap->financialReport?->items
+                    ->where('is_informational', false)
+                    ?? collect();
+
+                $recap->fin_income = (int) $items->sum('income_amount');
+                $recap->fin_expense = (int) $items->sum('expense_amount');
+                $recap->fin_balance = $recap->fin_income - $recap->fin_expense;
+                $recap->fin_transactions = $items->count();
+
+                return $recap;
+            });
+
+        // Filter status laporan (ada/belum ada transaksi).
+        if ($request->filled('status')) {
+            $status = $request->status;
+            $collection = $collection->filter(function (ProjectRecap $recap) use ($status) {
+                if ($status === 'with_transactions') {
+                    return $recap->fin_transactions > 0;
+                }
+
+                return $recap->fin_transactions === 0;
+            })->values();
+        }
+
+        $summary = [
+            'total_projects' => $collection->count(),
+            'total_income' => (int) $collection->sum('fin_income'),
+            'total_expense' => (int) $collection->sum('fin_expense'),
+            'total_balance' => (int) $collection->sum('fin_balance'),
+            'total_transactions' => (int) $collection->sum('fin_transactions'),
+        ];
+
+        $recaps = $this->paginateCollection($collection, $request);
+
+        return compact('recaps', 'summary');
+    }
+
+    /**
+     * Pagination manual untuk hasil laporan berbentuk Collection.
+     *
+     * @param  \Illuminate\Support\Collection  $collection
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
+    private function paginateCollection($collection, Request $request): LengthAwarePaginator
+    {
+        $perPage = max(1, min((int) ($request->input('per_page') ?: 10), 100));
+        $page = max(1, (int) ($request->input('page') ?: 1));
+
+        $total = $collection->count();
+        $pageItems = $collection->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $pageItems,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
         );
     }
 }

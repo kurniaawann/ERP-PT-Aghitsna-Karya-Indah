@@ -148,7 +148,7 @@
                         <div class="mt-2">
                             <label class="block text-xs font-semibold text-text-label mb-1">Satuan</label>
                             <input type="text" name="detail_satuan[0][]"
-                                class="w-full border border-border-strong rounded px-2 py-2 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                class="w-full border border-border-strong rounded px-2 py-2 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all text-center"
                                 placeholder="bh / m2 / lsn">
                         </div>
                         <div class="mt-2">

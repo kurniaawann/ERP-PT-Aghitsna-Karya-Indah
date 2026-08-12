@@ -8,7 +8,7 @@
 
 <x-modal id="editModal-{{ $spk->nomor }}" title="Edit Surat Perintah Kerja"
     action="{{ route('surat-perintah-kerja.administrasi.update', $spk->nomor) }}" method="PUT" buttonText="Perbarui"
-    size="4xl">
+    size="xl">
 
     {{-- Nomor SPK & Tanggal --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -145,7 +145,7 @@
                                 <div class="mt-2">
                                     <label class="block text-xs font-semibold text-text-label mb-1">Satuan</label>
                                     <input type="text" name="detail_satuan[{{ $key }}][]"
-                                        class="w-full border border-border-strong rounded px-2 py-2 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        class="w-full border border-border-strong rounded px-2 py-2 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all text-center"
                                         value="{{ data_get($detail, 'satuan', '') }}">
                                 </div>
                                 <div class="mt-2">
