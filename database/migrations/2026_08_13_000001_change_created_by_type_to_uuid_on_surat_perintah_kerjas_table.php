@@ -16,6 +16,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('surat_perintah_kerjas', function (Blueprint $table) {
+            $table->dropForeign(['created_by']);
             $table->dropColumn('created_by');
         });
 
