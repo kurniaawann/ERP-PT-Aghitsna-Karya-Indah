@@ -31,7 +31,11 @@ class CementDeliveryOrderController extends Controller
      */
     public function index(Request $request)
     {
-        $cementDeliveryOrders = $this->cementDeliveryOrderService->getPaginatedSearch($request->input('search'));
+        $cementDeliveryOrders = $this->cementDeliveryOrderService->getPaginatedSearch(
+            $request->input('search'),
+            $request->input('month'),
+            $request->input('year')
+        );
 
         return view('pages.inventory.cement-do', compact('cementDeliveryOrders'));
     }
@@ -95,9 +99,9 @@ class CementDeliveryOrderController extends Controller
      */
     public function exportPdf()
     {
-        $cementDeliveryOrders = $this->cementDeliveryOrderService->getAll();
+        $groupedDeliveryOrders = $this->cementDeliveryOrderService->getGroupedByMonth();
 
-        $pdf = Pdf::loadView('exports.inventory.cement-do-pdf', compact('cementDeliveryOrders'));
+        $pdf = Pdf::loadView('exports.inventory.cement-do-pdf', compact('groupedDeliveryOrders'));
 
         return $pdf->download('DO_Semen_' . date('Y-m-d') . '.pdf');
     }

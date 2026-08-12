@@ -1,17 +1,14 @@
 {{-- =====================================================================
      Halaman: Data Semen (Inventory)
-     Tujuan: Halaman CRUD master data semen. Menampilkan daftar data
-             semen (pencarian & paginasi) serta menyediakan aksi tambah,
-             edit, hapus massal, dan export PDF/Excel.
+     Tujuan: Tampilan rekap (read-only) semua baris Data Semen yang sudah
+             diinput melalui modul DO Semen. Menampilkan daftar data semen
+             (pencarian & paginasi) beserta export PDF/Excel.
      Data dari CementController@index:
      - $cements : LengthAwarePaginator hasil CementService::getPaginatedSearch()
                  (terfilter request('search')).
      Komponen yang di-include:
-     - components.inventory.cement.table       : tabel data semen
-     - components.inventory.cement.add-modal   : modal tambah data semen
-     - components.inventory.cement.edit-modal  : modal edit data semen (per item)
-     - x-filters.search-input, x-buttons.*, x-pagination, x-modal
-     JS: @vite('resources/js/pages/inventory/cement/index.js')
+     - components.inventory.cement.table       : tabel data semen (read-only)
+     - x-filters.search-input, x-buttons.*, x-pagination
      ===================================================================== --}}
 @extends('layouts.app')
 
@@ -23,7 +20,7 @@
         {{-- SECTION: Header Halaman --}}
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Semen</h1>
 
-        {{-- SECTION: Filter & Toolbar Aksi --}}
+        {{-- SECTION: Toolbar Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
 
             {{-- Form Pencarian: submit GET ke route('cement.index') dengan param 'search'. --}}
@@ -32,21 +29,18 @@
                 <x-filters.search-input :value="request('search')" placeholder="Cari data semen..." />
             </form>
 
-            {{-- Tombol Aksi: Print, Hapus, Tambah --}}
+            {{-- Tombol Aksi: Export PDF & Excel --}}
             <div class="flex items-center gap-2 mt-2 xl:mt-0 w-full xl:w-auto">
-                <div class="flex flex-col xl:flex-row gap-2 w-full xl:w-auto">
-
-                    {{-- Dropdown Export (PDF & Excel) --}}
-                    <x-buttons.print-dropdown :excelRoute="route('cement.export.excel')" :pdfRoute="route('cement.export.pdf')" />
-
-                    {{-- Tombol Hapus Massal --}}
-                    <x-buttons.delete-button modalId="deleteModal" />
-
-                    {{-- Tombol Tambah Data Semen --}}
-                    <x-buttons.add-button modalId="addModal" text="Tambah Data" />
-                </div>
+                <x-buttons.print-dropdown :excelRoute="route('cement.export.excel')"
+                    :pdfRoute="route('cement.export.pdf')" />
             </div>
         </div>
+
+        {{-- Keterangan bahwa data diinput lewat modul DO Semen --}}
+        <p class="mb-4 text-sm text-text-secondary">
+            Data semen diinput pada modul <strong>DO Semen</strong> (1 DO dapat memuat banyak baris data semen).
+            Halaman ini hanya menampilkan rekapan seluruh data semen.
+        </p>
 
         {{-- SECTION: Tabel Data Semen --}}
         @include('components.inventory.cement.table', ['cements' => $cements])
@@ -55,20 +49,6 @@
 
     {{-- SECTION: Pagination --}}
     <x-pagination :paginator="$cements" />
-
-    {{-- SECTION: Modal Tambah Data Semen --}}
-    @include('components.inventory.cement.add-modal')
-
-    {{-- SECTION: Modal Edit Data Semen (satu modal per item) --}}
-    @foreach ($cements as $cement)
-        @include('components.inventory.cement.edit-modal', ['cement' => $cement])
-    @endforeach
-
-    {{-- SECTION: Modal Konfirmasi Hapus Massal --}}
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
-        Apakah kamu yakin ingin menghapus data yang dipilih?
-    </x-modal>
 
     {{-- SECTION: Scripts (JavaScript Modular) --}}
     @push('scripts')

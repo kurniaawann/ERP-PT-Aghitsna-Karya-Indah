@@ -20,9 +20,11 @@ class StoreCementRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'do_no' => 'nullable|string|max:255',
             'tanggal' => 'required|date',
             'nama_proyek' => 'required|string|max:255',
             'jumlah' => 'required|integer|min:0',
+            'satuan' => 'nullable|string|max:50',
             'harga' => 'required|string',
             'tanggal_lunas' => 'nullable|date',
         ];

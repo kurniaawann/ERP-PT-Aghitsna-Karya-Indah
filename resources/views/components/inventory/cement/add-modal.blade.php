@@ -1,5 +1,18 @@
 {{-- Modal Tambah Data Semen --}}
-<x-modal id="addModal" title="Tambah Data Semen" action="{{ route('cement.store') }}" method="POST" buttonText="Simpan">
+<x-modal id="addModal" title="Tambah Data Semen" action="{{ route('cement.store') }}" method="POST" buttonText="Simpan"
+    size="6xl">
+
+    {{-- Field: DO Semen --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">DO Semen</label>
+        <select name="do_no" class="w-full border rounded p-2">
+            <option value="">-- Pilih DO --</option>
+            @foreach ($cementDeliveryOrders as $deliveryOrder)
+                <option value="{{ $deliveryOrder->no }}">{{ $deliveryOrder->no }}</option>
+            @endforeach
+        </select>
+        <p class="text-xs text-text-secondary mt-1">Opsional. Semen data dapat dikaitkan ke sebuah DO Semen.</p>
+    </div>
 
     {{-- Field: Tanggal --}}
     <div class="mb-3">
@@ -22,6 +35,13 @@
         <input type="number" name="jumlah" value="0" class="w-full border rounded p-2"
             placeholder="Masukkan jumlah sak" required min="0"
             oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
+    </div>
+
+    {{-- Field: Satuan --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Satuan</label>
+        <input type="text" name="satuan" value="zak" class="w-full border rounded p-2" placeholder="cth: zak"
+            maxlength="50">
     </div>
 
     {{-- Field: Harga Per Sak --}}

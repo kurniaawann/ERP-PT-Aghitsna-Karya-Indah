@@ -18,8 +18,8 @@ use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill};
  * Export Data Semen ke format Excel (.xlsx).
  *
  * Menghasilkan file Excel dengan header "DATA SEMEN" berisi daftar
- * pembelian semen beserta tanggal, nama proyek, jumlah sak, harga per sak,
- * total (harga per sak x jumlah sak), dan tanggal lunas.
+ * pembelian semen beserta DO, tanggal, nama proyek, jumlah sak, satuan,
+ * harga per sak, total, dan tanggal lunas.
  */
 class CementExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
 {
@@ -41,8 +41,8 @@ class CementExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
     public function headings(): array
     {
         return [
-            ['DATA SEMEN', '', '', '', '', '', ''],
-            ['No', 'Tanggal', 'Nama Proyek', 'Jumlah', 'Harga', 'Total', 'Tanggal Lunas']
+            ['DATA SEMEN', '', '', '', '', '', '', ''],
+            ['No', 'DO', 'Tanggal', 'Nama Proyek', 'Jumlah', 'Satuan', 'Harga', 'Total', 'Tanggal Lunas']
         ];
     }
 
@@ -60,9 +60,11 @@ class CementExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
 
         return [
             $cement->no,
+            $cement->do_no ?: '-',
             $cement->tanggal ? $cement->tanggal->format('d M Y') : '-',
             $cement->nama_proyek,
             $jumlah,
+            $cement->satuan ?: 'zak',
             'Rp' . number_format($harga, 0, ',', '.'),
             'Rp' . number_format($total, 0, ',', '.'),
             $cement->tanggal_lunas ? $cement->tanggal_lunas->format('d M Y') : '-',
@@ -77,50 +79,22 @@ class CementExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
      */
     public function styles(Worksheet $sheet): array
     {
-        // Header utama style (baris 1)
-        $sheet->getStyle('A1:G1')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 14,
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => [
-                    'rgb' => 'FFFF00',
-                ],
-            ],
+        $sheet->getStyle('A1:I1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF00']],
+        ]);
+        $sheet->mergeCells('A1:I1');
+
+        $sheet->getStyle('A2:I2')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 11],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E0E0E0']],
         ]);
 
-        $sheet->mergeCells('A1:G1');
-
-        // Header kolom style (baris 2)
-        $sheet->getStyle('A2:G2')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 11,
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => [
-                    'rgb' => 'E0E0E0',
-                ],
-            ],
-        ]);
-
-        // Border style untuk seluruh data
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle('A1:G' . $lastRow)->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                ],
-            ],
+        $sheet->getStyle('A1:I' . $lastRow)->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
 
         return [];
@@ -145,12 +119,14 @@ class CementExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
     {
         return [
             'A' => 12,
-            'B' => 15,
-            'C' => 30,
-            'D' => 12,
-            'E' => 18,
-            'F' => 18,
-            'G' => 15,
+            'B' => 12,
+            'C' => 15,
+            'D' => 30,
+            'E' => 12,
+            'F' => 12,
+            'G' => 18,
+            'H' => 18,
+            'I' => 15,
         ];
     }
 }

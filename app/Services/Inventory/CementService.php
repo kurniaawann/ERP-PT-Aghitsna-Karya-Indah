@@ -8,11 +8,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 /**
- * Service untuk logika bisnis Data Semen.
+ * Service untuk logika bisnis Data Semen (baris detail dari DO Semen).
  *
  * Menangani pencarian dengan paginasi, penyimpanan, pembaruan, dan
- * penghapusan massal data semen. Modul ini berdiri sendiri dan tidak
- * memiliki relasi ke modul lain.
+ * penghapusan massal data semen. Setiap baris data semen terikat ke
+ * sebuah DO Semen melalui kolom do_no (master-detail).
  */
 class CementService
 {
@@ -24,7 +24,8 @@ class CementService
      */
     public function getPaginatedSearch(?string $search = null): LengthAwarePaginator
     {
-        return Cement::search($search)
+        return Cement::with('deliveryOrder')
+            ->search($search)
             ->orderBy('tanggal', 'desc')
             ->orderBy('no', 'desc')
             ->paginate(15)
@@ -39,7 +40,8 @@ class CementService
      */
     public function getAll(?string $search = null): Collection
     {
-        return Cement::search($search)
+        return Cement::with('deliveryOrder')
+            ->search($search)
             ->orderBy('tanggal', 'asc')
             ->orderBy('no', 'asc')
             ->get();
@@ -66,9 +68,11 @@ class CementService
     {
         return Cement::create([
             'no' => Cement::generateNextNo(),
+            'do_no' => $data['do_no'] ?? null,
             'tanggal' => $data['tanggal'] ?? null,
             'nama_proyek' => $data['nama_proyek'],
             'jumlah' => (int) $data['jumlah'],
+            'satuan' => $data['satuan'] ?? 'zak',
             'harga' => InputNormalizer::normalizeCurrency($data['harga']),
             'tanggal_lunas' => $data['tanggal_lunas'] ?? null,
         ]);
@@ -84,9 +88,11 @@ class CementService
     public function update(Cement $cement, array $data): bool
     {
         return $cement->update([
+            'do_no' => $data['do_no'] ?? $cement->do_no,
             'tanggal' => $data['tanggal'] ?? null,
             'nama_proyek' => $data['nama_proyek'],
             'jumlah' => (int) $data['jumlah'],
+            'satuan' => $data['satuan'] ?? $cement->satuan,
             'harga' => InputNormalizer::normalizeCurrency($data['harga']),
             'tanggal_lunas' => $data['tanggal_lunas'] ?? null,
         ]);

@@ -27,9 +27,18 @@
         {{-- SECTION: Filter & Toolbar Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
 
-            {{-- Form Pencarian: submit GET ke route('cement-do.index') dengan param 'search'. --}}
-            <form method="GET" action="{{ route('cement-do.index') }}"
+            {{-- Form Filter & Pencarian: submit GET ke route('cement-do.index'). --}}
+            <form method="GET" action="{{ route('cement-do.index') }}" id="filterForm"
                 class="w-full lg:w-auto lg:flex-1 flex flex-col lg:flex-row gap-3">
+
+                {{-- Filter Bulan: onchange langsung submit form (#filterForm) = auto filter --}}
+                <x-filters.month-filter :value="request('month')"
+                    onchange="document.getElementById('filterForm').submit()" />
+
+                {{-- Filter Tahun: onchange langsung submit form (#filterForm) = auto filter --}}
+                <x-filters.year-filter :value="request('year')"
+                    onchange="document.getElementById('filterForm').submit()" />
+
                 <x-filters.search-input :value="request('search')" placeholder="Cari data DO Semen..." />
             </form>
 
@@ -38,7 +47,8 @@
                 <div class="flex flex-col xl:flex-row gap-2 w-full xl:w-auto">
 
                     {{-- Dropdown Export (PDF & Excel) --}}
-                    <x-buttons.print-dropdown :excelRoute="route('cement-do.export.excel')" :pdfRoute="route('cement-do.export.pdf')" />
+                    <x-buttons.print-dropdown :excelRoute="route('cement-do.export.excel')"
+                        :pdfRoute="route('cement-do.export.pdf')" />
 
                     {{-- Tombol Hapus Massal --}}
                     <x-buttons.delete-button modalId="deleteModal" />

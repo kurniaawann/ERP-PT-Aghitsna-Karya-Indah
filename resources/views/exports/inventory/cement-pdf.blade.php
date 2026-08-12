@@ -61,9 +61,11 @@
         <thead>
             <tr>
                 <th>No</th>
+                <th>DO</th>
                 <th>Tanggal</th>
                 <th>Nama Proyek</th>
                 <th class="text-center">Jumlah</th>
+                <th class="text-center">Satuan</th>
                 <th class="text-right">Harga</th>
                 <th class="text-right">Total</th>
                 <th>Tanggal Lunas</th>
@@ -73,9 +75,11 @@
             @foreach ($cements as $cement)
                 <tr>
                     <td>{{ $cement->no }}</td>
+                    <td>{{ $cement->do_no ?: '-' }}</td>
                     <td>{{ $cement->tanggal?->format('d M Y') ?: '-' }}</td>
                     <td>{{ $cement->nama_proyek }}</td>
                     <td class="text-center">{{ number_format($cement->jumlah, 0, ',', '.') }}</td>
+                    <td class="text-center">{{ $cement->satuan ?: 'zak' }}</td>
                     <td class="text-right">Rp{{ number_format($cement->harga, 0, ',', '.') }}</td>
                     <td class="text-right">Rp{{ number_format($cement->total, 0, ',', '.') }}</td>
                     <td>{{ $cement->tanggal_lunas?->format('d M Y') ?: '-' }}</td>

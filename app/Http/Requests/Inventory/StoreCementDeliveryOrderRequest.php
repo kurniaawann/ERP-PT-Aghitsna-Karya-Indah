@@ -5,7 +5,7 @@ namespace App\Http\Requests\Inventory;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form Request untuk validasi penyimpanan DO Semen.
+ * Form Request untuk validasi penyimpanan DO Semen (header + baris detail).
  */
 class StoreCementDeliveryOrderRequest extends FormRequest
 {
@@ -15,25 +15,36 @@ class StoreCementDeliveryOrderRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
             'tanggal' => 'required|date',
-            'proyek' => 'required|string|max:255',
-            'volume' => 'required|integer|min:0',
-            'satuan' => 'nullable|string|max:50',
-            'harga' => 'required|string',
-            'tanggal_lunas' => 'nullable|date',
+            'tanggal_datang' => 'nullable|date',
+            'tanggal_bayar' => 'nullable|date',
             'harga_modal' => 'required|string',
+
+            'cements' => 'nullable|array',
+            'cements.*.tanggal' => 'nullable|date',
+            'cements.*.nama_proyek' => 'required|string|max:255',
+            'cements.*.jumlah' => 'required|integer|min:0',
+            'cements.*.satuan' => 'nullable|string|max:50',
+            'cements.*.harga' => 'required|string',
+            'cements.*.tanggal_lunas' => 'nullable|date',
         ];
     }
 
     protected function prepareForValidation(): void
     {
+        $cements = collect($this->input('cements', []))
+            ->filter(fn ($row) => !empty($row['nama_proyek']) || !empty($row['jumlah']))
+            ->map(fn ($row) => $row + ['jumlah' => (int) ($row['jumlah'] ?? 0)])
+            ->values()
+            ->all();
+
         $this->merge([
-            'volume' => (int) $this->volume,
+            'cements' => $cements,
         ]);
     }
 }
