@@ -57,27 +57,46 @@
 
     {{-- Teks Pengantar --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Teks Pengantar <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Teks Pengantar</label>
         <textarea class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" name="intro_text"
-            rows="3"
+            id="editIntroText{{ $rab->rab_number }}" rows="3"
             placeholder="Contoh: Bersama ini kami sampaikan perihal penawaran harga pekerjaan renovasi rumah tinggal 1 lantai, sebagai berikut:"
-            required maxlength="1000" oninvalid="this.setCustomValidity('Teks pengantar tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">{{ $rab->intro_text }}</textarea>
-        <small class="text-text-secondary text-xs">Maksimal 1000 karakter</small>
+            maxlength="1000">{{ $rab->intro_text }}</textarea>
+        <small class="text-text-secondary text-xs">Maksimal 1000 karakter. Bila kosong, PDF/Excel memakai teks default.</small>
     </div>
 
     {{-- Ditandatangani Oleh --}}
+    @php $executiveNames = $executives->pluck('name')->all(); @endphp
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Ditandatangani Oleh</label>
-        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            name="signed_by" placeholder="Nama pejabat" value="{{ $rab->signed_by ?? '' }}" maxlength="255">
+        <select name="signed_by" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input">
+            <option value="">-- Pilih Penandatangan --</option>
+            @if ($rab->signed_by && !in_array($rab->signed_by, $executiveNames, true))
+                <option value="{{ $rab->signed_by }}" selected>{{ $rab->signed_by }}</option>
+            @endif
+            @foreach ($executives as $executive)
+                <option value="{{ $executive->name }}" {{ $rab->signed_by == $executive->name ? 'selected' : '' }}>
+                    {{ $executive->name }} ({{ $executive->position }})
+                </option>
+            @endforeach
+        </select>
     </div>
 
     {{-- Divisi --}}
+    @php $divisionNames = $divisions->pluck('name')->all(); @endphp
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Divisi/Bagian</label>
-        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            name="division" placeholder="Nama divisi" value="{{ $rab->division ?? '' }}" maxlength="255">
+        <select name="division" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input">
+            <option value="">-- Pilih Divisi --</option>
+            @if ($rab->division && !in_array($rab->division, $divisionNames, true))
+                <option value="{{ $rab->division }}" selected>{{ $rab->division }}</option>
+            @endif
+            @foreach ($divisions as $division)
+                <option value="{{ $division->name }}" {{ $rab->division == $division->name ? 'selected' : '' }}>
+                    {{ $division->name }}
+                </option>
+            @endforeach
+        </select>
     </div>
 
     @if (!auth()->user()->isAdmin())
@@ -212,6 +231,14 @@
 
             attachPriceListeners();
             updatePricesForEditModal('editGrandTotalPrice{{ $rab->rab_number }}');
+
+            // Bila Teks Pengantar kosong, isi otomatis dengan teks default
+            // (menyertakan nama proyek) agar mudah ditambah/diubah user.
+            const introTextarea = document.getElementById('editIntroText{{ $rab->rab_number }}');
+            const projectInput = container.closest('form').querySelector('input[name="project_name"]');
+            if (introTextarea && projectInput && introTextarea.value.trim() === '') {
+                introTextarea.value = 'Bersamaan dengan ini kami sampaikan perihal rencana anggaran biaya untuk ' + projectInput.value.trim();
+            }
         });
     </script>
 

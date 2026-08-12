@@ -126,8 +126,8 @@ function addCategoryBlock(prefixOrContainerId, categoryData) {
                             min="0" step="0.01" value="${item.volume ?? 0}" required>
                         <input type="text" class="w-full border border-border-strong rounded p-2 item-unit bg-surface-base text-text-input" placeholder="Satuan"
                             value="${item.unit || ''}" maxlength="50" required>
-                        <input type="number" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga"
-                            min="0" step="0.01" value="${item.unit_price ?? 0}" required>
+                        <input type="text" inputmode="numeric" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga"
+                            value="${formatInputNumber(item.unit_price ?? 0)}" required oninput="handlePriceFormatInput(this)">
                         <div class="w-full px-3 py-2 bg-info-light border border-info-light rounded text-right">
                             <span class="item-sub-total-price text-sm font-semibold text-info">Rp ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.sub_harga || 0).replace('Rp\u00a0', 'Rp ')}</span>
                         </div>
@@ -198,7 +198,7 @@ function addSubcategoryBlock(button) {
                     <input type="text" class="w-full border border-border-strong rounded p-2 item-description bg-surface-base text-text-input" placeholder="Masukkan item pekerjaan" required>
                     <input type="number" class="w-full border border-border-strong rounded p-2 item-volume bg-surface-base text-text-input" placeholder="Vol" min="0" step="0.01" required>
                     <input type="text" class="w-full border border-border-strong rounded p-2 item-unit bg-surface-base text-text-input" placeholder="Satuan" maxlength="50" required>
-                    <input type="number" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga" min="0" step="0.01" required>
+                    <input type="text" inputmode="numeric" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga" required oninput="handlePriceFormatInput(this)">
                     <div class="w-full px-3 py-2 bg-info-light border border-info-light rounded text-right">
                         <span class="item-sub-total-price text-sm font-semibold text-info">Rp 0</span>
                     </div>
@@ -252,7 +252,7 @@ function addItemBlock(button) {
         <input type="text" class="w-full border border-border-strong rounded p-2 item-description bg-surface-base text-text-input" placeholder="Masukkan item pekerjaan" required>
         <input type="number" class="w-full border border-border-strong rounded p-2 item-volume bg-surface-base text-text-input" placeholder="Vol" min="0" step="0.01" required>
         <input type="text" class="w-full border border-border-strong rounded p-2 item-unit bg-surface-base text-text-input" placeholder="Satuan" maxlength="50" required>
-        <input type="number" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga" min="0" step="0.01" required>
+        <input type="text" inputmode="numeric" class="w-full border border-border-strong rounded p-2 item-unit-price bg-surface-base text-text-input" placeholder="Harga" required oninput="handlePriceFormatInput(this)">
         <div class="w-full px-3 py-2 bg-info-light border border-info-light rounded text-right">
             <span class="item-sub-total-price text-sm font-semibold text-info">Rp 0</span>
         </div>
@@ -450,7 +450,7 @@ function updatePricesForEditModalContext(rabNumber) {
 
             block.querySelectorAll('.item-block').forEach(itemBlock => {
                 const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
-                const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')?.value) ||
+                const unitPrice = parseCurrencyInput(itemBlock.querySelector('.item-unit-price')?.value) ||
                     0;
                 const itemTotal = volume * unitPrice;
                 const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
@@ -522,7 +522,7 @@ function updatePrices() {
 
             block.querySelectorAll('.item-block').forEach(itemBlock => {
                 const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
-                const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')?.value) ||
+                const unitPrice = parseCurrencyInput(itemBlock.querySelector('.item-unit-price')?.value) ||
                     0;
                 const itemTotal = volume * unitPrice;
                 const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
@@ -577,6 +577,36 @@ function updatePrices() {
 
     // Hitung dan update grand total keseluruhan (kategori + misc costs)
     calculateAndUpdateGrandTotal();
+}
+
+/* ==========================================
+ * FORMAT INPUT HARGA (RUPIAH)
+ * ========================================== */
+
+/**
+ * Format sebuah nilai menjadi teks angka ribuan (id-ID), mis. 1500000 -> "1.500.000".
+ *
+ * @param {*} value - Nilai angka/string yang akan diformat.
+ * @returns {string} Teks angka dengan pemisah ribuan titik.
+ */
+function formatInputNumber(value) {
+    const num = parseCurrencyInput(value);
+    return num ? new Intl.NumberFormat('id-ID').format(num) : '0';
+}
+
+/**
+ * Handler input harga satuan (item-unit-price) pada form tambah & edit RAB.
+ *
+ * Alur:
+ * 1. Format nilai input menjadi format ribuan (mis. 1000000 -> 1.000.000)
+ *    via formatCurrencyInput() dari shared/currency.js.
+ * 2. Hitung ulang total mengikuti konteks modal (tambah vs edit).
+ *
+ * @param {HTMLInputElement} input - Input harga satuan yang diisi pengguna.
+ */
+function handlePriceFormatInput(input) {
+    formatCurrencyInput(input);
+    updatePricesForContext(input);
 }
 
 /* ==========================================
@@ -637,7 +667,7 @@ function prepareRABSubmit() {
             subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
                 const volume = parseFloat(itemEl.querySelector('.item-volume')
                     ?.value) || 0;
-                const unitPrice = parseFloat(itemEl.querySelector('.item-unit-price')
+                const unitPrice = parseCurrencyInput(itemEl.querySelector('.item-unit-price')
                     ?.value) || 0;
                 const itemSubHarga = volume * unitPrice;
 
@@ -744,7 +774,7 @@ function prepareEditRABSubmit(rabNumber) {
             subEl.querySelectorAll('.item-block').forEach(function(itemEl) {
                 const volume = parseFloat(itemEl.querySelector('.item-volume')
                     ?.value) || 0;
-                const unitPrice = parseFloat(itemEl.querySelector('.item-unit-price')
+                const unitPrice = parseCurrencyInput(itemEl.querySelector('.item-unit-price')
                     ?.value) || 0;
                 const itemSubHarga = volume * unitPrice;
 
@@ -822,7 +852,7 @@ function updatePricesForEditModal(grandTotalElementId) {
 
             block.querySelectorAll('.item-block').forEach(itemBlock => {
                 const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
-                const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')
+                const unitPrice = parseCurrencyInput(itemBlock.querySelector('.item-unit-price')
                     ?.value) || 0;
                 const itemTotal = volume * unitPrice;
                 const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
@@ -906,7 +936,7 @@ function calculateAndUpdateGrandTotal() {
 
             block.querySelectorAll('.item-block').forEach(itemBlock => {
                 const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
-                const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')
+                const unitPrice = parseCurrencyInput(itemBlock.querySelector('.item-unit-price')
                     ?.value) || 0;
                 const itemTotal = volume * unitPrice;
                 const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
@@ -1008,7 +1038,7 @@ function calculateAndUpdateGrandTotalForEditModal(rabNumber) {
 
             block.querySelectorAll('.item-block').forEach(itemBlock => {
                 const volume = parseFloat(itemBlock.querySelector('.item-volume')?.value) || 0;
-                const unitPrice = parseFloat(itemBlock.querySelector('.item-unit-price')
+                const unitPrice = parseCurrencyInput(itemBlock.querySelector('.item-unit-price')
                     ?.value) || 0;
                 const itemTotal = volume * unitPrice;
                 const itemPriceDisplay = itemBlock.querySelector('.item-sub-total-price');
@@ -1235,3 +1265,5 @@ window.prepareRABSubmit = prepareRABSubmit;
 window.prepareEditRABSubmit = prepareEditRABSubmit;
 window.calculateAndUpdateGrandTotal = calculateAndUpdateGrandTotal;
 window.calculateAndUpdateGrandTotalForEditModal = calculateAndUpdateGrandTotalForEditModal;
+window.handlePriceFormatInput = handlePriceFormatInput;
+window.formatInputNumber = formatInputNumber;

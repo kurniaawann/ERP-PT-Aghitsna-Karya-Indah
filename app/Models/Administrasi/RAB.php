@@ -47,6 +47,26 @@ class RAB extends Model
         return 'rab_number';
     }
 
+    /**
+     * Teks pengantar untuk dokumen PDF/Excel.
+     *
+     * Bila user mengisi intro_text, gunakan isian tersebut. Bila kosong,
+     * gunakan default: "Bersamaan dengan ini kami sampaikan perihal rencana
+     * anggaran biaya untuk {Nama Proyek}", dengan nama proyek diambil dari
+     * kolom project_name.
+     */
+    public function getIntroTextOrDefaultAttribute(): string
+    {
+        $project = trim((string) $this->project_name);
+        $intro = trim((string) $this->intro_text);
+
+        if ($intro !== '') {
+            return $intro;
+        }
+
+        return trim('Bersamaan dengan ini kami sampaikan perihal rencana anggaran biaya untuk '.$project);
+    }
+
     // ─── Relationships ────────────────────────────────────────────────────────
 
     public function categories()

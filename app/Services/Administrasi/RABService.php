@@ -155,7 +155,7 @@ class RABService
                 'date' => $validatedData['date'],
                 'recipient' => $validatedData['recipient'],
                 'recipient_address' => $validatedData['recipient_address'] ?? 'Ditempat',
-                'intro_text' => $validatedData['intro_text'],
+                'intro_text' => $validatedData['intro_text'] ?? null,
                 'total_amount' => $totalAnggaranBiaya,
                 'incoming_payment' => $isSuperAdmin ? ($validatedData['incoming_payment'] ?? 0) : 0,
                 'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)).' rupiah',
@@ -208,7 +208,7 @@ class RABService
                 'date' => $validatedData['date'],
                 'recipient' => $validatedData['recipient'],
                 'recipient_address' => $validatedData['recipient_address'] ?? 'Ditempat',
-                'intro_text' => $validatedData['intro_text'],
+                'intro_text' => $validatedData['intro_text'] ?? null,
                 'total_amount' => $totalAnggaranBiaya,
                 'incoming_payment' => $isSuperAdmin
                     ? ($validatedData['incoming_payment'] ?? 0)

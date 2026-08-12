@@ -56,27 +56,34 @@
 
     {{-- Teks Pengantar --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Teks Pengantar <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Teks Pengantar</label>
         <textarea class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" name="intro_text"
             rows="3"
             placeholder="Contoh: Bersama ini kami sampaikan perihal penawaran harga pekerjaan renovasi rumah tinggal 1 lantai, sebagai berikut:"
-            required maxlength="1000" oninvalid="this.setCustomValidity('Teks pengantar tidak boleh kosong')"
-            oninput="this.setCustomValidity('')"></textarea>
-        <small class="text-text-secondary text-xs">Maksimal 1000 karakter</small>
+            maxlength="1000"></textarea>
+        <small class="text-text-secondary text-xs">Maksimal 1000 karakter. Bila kosong, PDF/Excel memakai teks default.</small>
     </div>
 
     {{-- Ditandatangani Oleh --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Ditandatangani Oleh</label>
-        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            name="signed_by" placeholder="Nama pejabat" maxlength="255">
+        <select name="signed_by" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input">
+            <option value="">-- Pilih Penandatangan --</option>
+            @foreach ($executives as $executive)
+                <option value="{{ $executive->name }}">{{ $executive->name }} ({{ $executive->position }})</option>
+            @endforeach
+        </select>
     </div>
 
     {{-- Divisi --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Divisi/Bagian</label>
-        <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            name="division" placeholder="Nama divisi" maxlength="255">
+        <select name="division" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input">
+            <option value="">-- Pilih Divisi --</option>
+            @foreach ($divisions as $division)
+                <option value="{{ $division->name }}">{{ $division->name }}</option>
+            @endforeach
+        </select>
     </div>
 
     @if (!auth()->user()->isAdmin())
@@ -151,10 +158,10 @@
                                 <input type="text"
                                     class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input item-unit"
                                     placeholder="Satuan" maxlength="50" required oninput="updatePrices()">
-                                <input type="number"
+                                <input type="text" inputmode="numeric"
                                     class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input item-unit-price"
-                                    placeholder="Harga" min="0" step="0.01" required
-                                    oninput="updatePrices()">
+                                    placeholder="Harga" required
+                                    oninput="handlePriceFormatInput(this)">
                                 <div class="w-full px-3 py-2 bg-primary-light border border-primary rounded text-right">
                                     <span class="item-sub-total-price text-sm font-semibold text-primary">Rp 0</span>
                                 </div>

@@ -114,7 +114,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", $rab->intro_text);
+                $sheet->setCellValue("A{$currentRow}", $rab->intro_text_or_default);
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
 
                 $currentRow += 2;

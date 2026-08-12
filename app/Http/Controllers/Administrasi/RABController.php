@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\RABStoreRequest;
 use App\Http\Requests\Administrasi\RABUpdateRequest;
 use App\Models\Administrasi\RAB;
+use App\Models\Sdm\Division;
+use App\Models\Sdm\Executive;
 use App\Services\Administrasi\RABService;
 use App\Services\Finance\PaymentAccountService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -43,8 +45,10 @@ class RABController extends Controller
         $search = $request->input('search');
         $rabs = $this->rabService->getPaginatedRABs($search);
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+        $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.administrasi.RAB', compact('rabs', 'paymentAccounts', 'search'));
+        return view('pages.administrasi.RAB', compact('rabs', 'paymentAccounts', 'search', 'executives', 'divisions'));
     }
 
     /**

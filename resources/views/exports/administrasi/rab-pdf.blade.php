@@ -315,7 +315,7 @@
         <!-- Opening -->
         <div class="opening">
             <p><strong>Dengan Hormat,</strong></p>
-            <p>{{ $rab->intro_text }}</p>
+            <p>{{ $rab->intro_text_or_default }}</p>
         </div>
 
         <!-- Main Table -->
