@@ -113,6 +113,19 @@ function setRequired(elementId, required) {
     } else {
         el.removeAttribute('required');
     }
+
+    // Sinkronkan atribut required pada input pencarian searchable-select yang
+    // berada dalam wrapper yang sama, agar pesan validasi tetap tampil.
+    if (el.classList && el.classList.contains('searchable-select-hidden')) {
+        const searchInput = el.closest('.searchable-select-wrapper')?.querySelector('.searchable-select-input');
+        if (searchInput) {
+            if (required) {
+                searchInput.setAttribute('required', 'required');
+            } else {
+                searchInput.removeAttribute('required');
+            }
+        }
+    }
 }
 
 /**
@@ -380,8 +393,14 @@ function updateEmployeeTypeLabel(prefix) {
     const label = document.getElementById(prefix + '_employee_type_label');
     if (!select || !label) return;
 
-    const option = select.selectedOptions[0];
-    const type = option ? option.dataset.type : '';
+    let type = '';
+    if (select.value) {
+        const wrapper = select.closest('.searchable-select-wrapper');
+        if (wrapper) {
+            const option = wrapper.querySelector('.searchable-option[data-value="' + select.value + '"]');
+            type = option ? (option.dataset.type || '') : '';
+        }
+    }
 
     if (type === 'harian') {
         label.textContent = 'Harian (Tukang)';
@@ -406,6 +425,11 @@ function initEmployeeTypeLabels() {
         updateEmployeeTypeLabel(prefix);
         select.addEventListener('change', function () {
             updateEmployeeTypeLabel(prefix);
+            // Saat pilih karyawan pada form Tambah, hitung ulang periode kasbon
+            // (perilaku sama dengan onchange pada <select> lama).
+            if (prefix === 'add' && typeof window.checkMaxKasbon === 'function') {
+                window.checkMaxKasbon('add');
+            }
         });
     });
 }

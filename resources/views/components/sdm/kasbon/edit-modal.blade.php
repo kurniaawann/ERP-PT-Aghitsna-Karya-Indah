@@ -25,28 +25,20 @@
             <span id="edit_{{ $kasbon->kasbon_code }}_employee_type_label"
                 class="hidden px-2 py-0.5 bg-primary-light text-primary text-xs rounded-full"></span>
         </label>
-        <select name="employee_id" id="edit_{{ $kasbon->kasbon_code }}_employee_id" class="w-full border rounded p-2">
-            <option value="">Pilih Karyawan</option>
-            @foreach ($employees as $employee)
-                <option value="{{ $employee->employee_code }}" data-type="{{ $employee->employment_type }}"
-                    {{ $kasbon->employee_id === $employee->employee_code ? 'selected' : '' }}>
-                    {{ $employee->name }} ({{ $employee->employee_code }}) - {{ $employee->employment_type === 'bulanan' ? 'Gaji Bulanan' : 'Gaji Harian' }}
-                </option>
-            @endforeach
-        </select>
+        <x-forms.searchable-select name="employee_id" id="edit_{{ $kasbon->kasbon_code }}_employee_id" :label="''"
+            invalidMessage="Karyawan" placeholder="Cari karyawan..."
+            :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' (' . $e->employee_code . ') - ' . ($e->employment_type === 'bulanan' ? 'Gaji Bulanan' : 'Gaji Harian'), 'type' => $e->employment_type])->values()"
+            :extraData="['type']"
+            :selected="$kasbon->employee_id" />
     </div>
 
     {{-- Pilihan Divisi (Tim) --}}
     <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_division_field" style="display: none;">
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
-        <select name="division" id="edit_{{ $kasbon->kasbon_code }}_division" class="w-full border rounded p-2">
-            <option value="">Pilih Divisi</option>
-            @foreach ($divisions as $division)
-                <option value="{{ $division->name }}" {{ $kasbon->division === $division->name ? 'selected' : '' }}>
-                    {{ $division->name }}
-                </option>
-            @endforeach
-        </select>
+        <x-forms.searchable-select name="division" id="edit_{{ $kasbon->kasbon_code }}_division" :label="''"
+            invalidMessage="Divisi" placeholder="Cari divisi..."
+            :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
+            :selected="$kasbon->division" />
     </div>
 
     {{-- Pilihan Proyek (Tim, satu proyek sesuai data yang sudah ada) --}}

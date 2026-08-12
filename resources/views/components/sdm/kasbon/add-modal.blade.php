@@ -40,16 +40,10 @@
             <span id="add_employee_type_label"
                 class="hidden px-2 py-0.5 bg-primary-light text-primary text-xs rounded-full"></span>
         </label>
-        <select name="employee_id" id="add_employee_id"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            onchange="checkMaxKasbon('add')">
-            <option value="">Pilih Karyawan</option>
-            @foreach ($employees as $employee)
-                <option value="{{ $employee->employee_code }}" data-type="{{ $employee->employment_type }}">
-                    {{ $employee->name }} ({{ $employee->employee_code }}) - {{ $employee->employment_type === 'bulanan' ? 'Gaji Bulanan' : 'Gaji Harian' }}
-                </option>
-            @endforeach
-        </select>
+        <x-forms.searchable-select name="employee_id" id="add_employee_id" :label="''"
+            invalidMessage="Karyawan" placeholder="Cari karyawan..."
+            :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' (' . $e->employee_code . ') - ' . ($e->employment_type === 'bulanan' ? 'Gaji Bulanan' : 'Gaji Harian'), 'type' => $e->employment_type])->values()"
+            :extraData="['type']" />
     </div>
 
     {{-- Detail Kasbon (Personal) --}}
@@ -83,13 +77,9 @@
     {{-- Pilihan Divisi (Tim) --}}
     <div class="mb-3" id="add_division_field" style="display: none;">
         <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
-        <select name="division" id="add_division"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input">
-            <option value="">Pilih Divisi</option>
-            @foreach ($divisions as $division)
-                <option value="{{ $division->name }}">{{ $division->name }}</option>
-            @endforeach
-        </select>
+        <x-forms.searchable-select name="division" id="add_division" :label="''"
+            invalidMessage="Divisi" placeholder="Cari divisi..."
+            :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()" />
     </div>
 
     {{-- Proyek & Detail per Proyek (Tim, dinamis) --}}

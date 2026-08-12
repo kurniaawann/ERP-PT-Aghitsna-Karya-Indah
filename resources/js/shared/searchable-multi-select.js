@@ -99,6 +99,9 @@ function createMultiSelectState(wrapper) {
         fieldName,
         selectedValues,
         isSelectAllInProgress: false,
+        PAGE_SIZE: 10,
+        visibleLimit: 10,
+        searchTerm: '',
     };
 
     /**
@@ -123,6 +126,32 @@ function createMultiSelectState(wrapper) {
         });
 
         return checkboxes;
+    };
+
+    /**
+     * Terapkan filter pencarian + batas tampilan (10 opsi awal).
+     * Opsi di luar `visibleLimit` disembunyikan kecuali saat scroll diperluas.
+     */
+    state.applyFilter = function () {
+        let matchIndex = 0;
+        let hasResults = false;
+
+        state.getIndividualOptions().forEach(function (option) {
+            const matches = (option.dataset.search || '').includes(state.searchTerm);
+            if (matches) {
+                hasResults = true;
+                option.style.display = (matchIndex < state.visibleLimit) ? '' : 'none';
+                matchIndex++;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        const optionsDiv = state.wrapper.querySelector('.searchable-multi-options');
+        if (optionsDiv) optionsDiv.classList.toggle('hidden', !hasResults);
+        if (state.noResults) state.noResults.classList.toggle('hidden', hasResults);
+
+        state.updateSelectAllState();
     };
 
     /**
@@ -271,34 +300,24 @@ function bindMultiSelectListeners(wrapper, state) {
     // Tampilkan dropdown saat fokus
     state.searchInput.addEventListener('focus', function () {
         state.dropdown.classList.remove('hidden');
+        state.applyFilter();
     });
 
     // Cari / saring opsi (dengan debounce agar tidak memfilter ulang pada
     // setiap ketukan keyboard)
     state.searchInput.addEventListener('input', window.debounce(function () {
-        const searchTerm = this.value.toLowerCase();
-        let hasResults = false;
-
-        state.getIndividualOptions().forEach(function (option) {
-            const searchText = option.dataset.search || '';
-            if (searchText.includes(searchTerm)) {
-                option.style.display = '';
-                hasResults = true;
-            } else {
-                option.style.display = 'none';
-            }
-        });
-
-        if (state.noResults) {
-            if (hasResults) {
-                state.noResults.classList.add('hidden');
-            } else {
-                state.noResults.classList.remove('hidden');
-            }
-        }
-
-        state.updateSelectAllState();
+        state.searchTerm = this.value.toLowerCase();
+        state.visibleLimit = state.PAGE_SIZE; // reset ke 10 awal saat cari baru
+        state.applyFilter();
     }, 200));
+
+    // Infinite scroll: muat 10 opsi berikutnya saat mendekati dasar dropdown
+    state.dropdown.addEventListener('scroll', function () {
+        if (this.scrollTop + this.clientHeight >= this.scrollHeight - 5) {
+            state.visibleLimit += state.PAGE_SIZE;
+            state.applyFilter();
+        }
+    });
 
     // Delegasi klik pada wrapper: tombol hapus tag + area opsi.
     //

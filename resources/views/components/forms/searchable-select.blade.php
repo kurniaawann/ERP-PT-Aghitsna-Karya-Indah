@@ -81,6 +81,6 @@
         </div>
     </div>
 
-    <input type="hidden" name="{{ $name }}" class="searchable-select-hidden"
+    <input type="hidden" name="{{ $name }}" id="{{ $selectId }}" class="searchable-select-hidden"
         value="{{ $selected }}">
 </div>
