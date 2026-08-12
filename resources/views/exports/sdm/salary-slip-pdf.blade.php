@@ -115,7 +115,7 @@ body {
 }
 
 /* Margins Sisi Kiri & Kanan Tabel Utama */
-.main-table th:first-child,
+/* .main-table th:first-child,
 .main-table td:first-child {
     padding-left: 15px !important;
 }
@@ -123,7 +123,19 @@ body {
 .main-table th:last-child,
 .main-table td:last-child {
     padding-right: 15px !important;
+} */
+
+.main-table th:first-child {
+    padding-left: 15px !important;
 }
+
+.main-table td:first-child {
+    padding-left: 2px !important;
+}
+/* .main-table td:first-child .inner-table {
+    margin-left: -15px;
+    width: calc(100% + 15px);
+} */
 
 /* Sub-tabel Dalam Kolom */
 .inner-table,
@@ -257,6 +269,15 @@ body {
     font-weight: bold;
     text-decoration: underline;
 }
+
+.info-table .colon {
+    text-align: left;
+    transform: translateX(-3px);
+}
+
+.info-table .value {
+    transform: translateX(-5px);
+}
 </style>
 </head>
 
@@ -303,7 +324,29 @@ body {
     <div class="slip-title">SLIP GAJI</div>
 
     <!-- Data Karyawan -->
-    <table class="info-table" cellspacing="0" cellpadding="0">
+   <table class="info-table" cellspacing="0" cellpadding="0">
+    <tr>
+        <td width="58%">ID</td>
+        <td width="4%" class="colon">:</td>
+        <td width="38%" class="value">{{ $slip->employee_code }}</td>
+    </tr>
+    <tr>
+        <td>NAMA</td>
+        <td class="colon">:</td>
+        <td class="value">{{ $slip->employee->name ?? 'XXXX' }}</td>
+    </tr>
+    <tr>
+        <td>JABATAN</td>
+        <td class="colon">:</td>
+        <td class="value">{{ $slip->employee->position ?? 'Staff' }}</td>
+    </tr>
+    <tr>
+        <td>STATUS</td>
+        <td class="colon">:</td>
+        <td class="value">{{ $slip->employee->status ?? 'K/2' }}</td>
+    </tr>
+</table>
+    {{-- <table class="info-table" cellspacing="0" cellpadding="0" style="padding-left: 2px">
         <tr>
             <td width="58%">ID</td>
             <td width="4%">:</td>
@@ -324,7 +367,7 @@ body {
             <td>:</td>
             <td>{{ $slip->employee->status ?? 'K/2' }}</td>
         </tr>
-    </table>
+    </table> --}}
 
     <!-- Tabel Utama -->
     <table class="main-table" cellspacing="0" cellpadding="0">
