@@ -60,19 +60,19 @@
 
     {{-- Total Keseluruhan --}}
     <div class="flex justify-end mb-3">
-        <div class="bg-success-light border-2 border-success rounded p-4 w-full">
+        <div class="bg-surface-secondary border-2 border-border-strong rounded p-4 w-full">
             <div class="space-y-2">
-                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
+                <div class="flex justify-between text-sm text-text-heading border-b border-border-strong pb-2">
                     <span><strong>Total Pemasukan:</strong></span>
                     <span id="transactionsContainer-totalIncome" class="font-semibold">Rp 0</span>
                 </div>
-                <div class="flex justify-between text-sm text-success border-b border-success pb-2">
+                <div class="flex justify-between text-sm text-text-heading border-b border-border-strong pb-2">
                     <span><strong>Total Pengeluaran:</strong></span>
                     <span id="transactionsContainer-totalExpense" class="font-semibold">Rp 0</span>
                 </div>
-                <div class="flex justify-between text-lg text-success">
+                <div class="flex justify-between text-lg text-text-heading">
                     <span><strong>Saldo:</strong></span>
-                    <p class="font-bold text-2xl text-success"><span id="transactionsContainer-balance">Rp 0</span></p>
+                    <p class="font-bold text-2xl text-text-heading"><span id="transactionsContainer-balance">Rp 0</span></p>
                 </div>
             </div>
         </div>
