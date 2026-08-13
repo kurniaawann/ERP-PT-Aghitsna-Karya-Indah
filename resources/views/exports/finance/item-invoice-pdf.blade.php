@@ -165,6 +165,11 @@
             font-size: 10px;
         }
 
+        .payment-info {
+            margin: 5px 0;
+            line-height: 1.8;
+        }
+
         .closing {
             margin: 5px 0;
             text-align: justify;
@@ -296,6 +301,31 @@
         </table>
 
         <div class="terbilang">Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</div>
+
+        <!-- Payment Information -->
+        <div class="payment-info">
+            Pembayaran dapat ditransfer melalui nomor rekening<br>
+            @php
+                $selectedAccountIds = is_string($invoice->selected_payment_accounts)
+                    ? json_decode($invoice->selected_payment_accounts, true)
+                    : $invoice->selected_payment_accounts ?? [];
+
+                if (!empty($selectedAccountIds)) {
+                    $paymentAccounts = \App\Models\Finance\PaymentAccount::whereIn('id', $selectedAccountIds)
+                        ->orderBy('id')
+                        ->get();
+                } else {
+                    $paymentAccounts = \App\Models\Finance\PaymentAccount::active()->get();
+                }
+            @endphp
+            @foreach ($paymentAccounts as $account)
+                <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
+                <strong>{{ $account->account_holder }}</strong><br>
+            @endforeach
+            @if ($paymentAccounts->isEmpty())
+                <em>Tidak ada rekening pembayaran yang tersedia</em>
+            @endif
+        </div>
 
         <div class="closing">Demikian invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.</div>
 
