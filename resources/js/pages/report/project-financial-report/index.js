@@ -119,6 +119,27 @@ function computeExistingIncome(container) {
 }
 
 /**
+ * Nonaktifkan/aktifkan tombol submit modal (Tambah/Update) sesuai kondisi
+ * pemasukan baru melebihi sisa pembayaran.
+ *
+ * Tombol submit pada komponen x-modal memakai id `submit-btn-{idModal}`.
+ *
+ * @param {HTMLElement} container - Kontainer transaksi.
+ * @param {boolean} disabled
+ */
+function setRecapSubmitDisabled(container, disabled) {
+    const modal = container.closest('[id^="addModal"], [id^="editPfrModal-"]');
+    if (!modal) return;
+
+    const btn = document.getElementById('submit-btn-' + modal.id);
+    if (!btn) return;
+
+    btn.disabled = disabled;
+    btn.classList.toggle('opacity-50', disabled);
+    btn.classList.toggle('cursor-not-allowed', disabled);
+}
+
+/**
  * Menampilkan/menyembunyikan peringatan "pemasukan melebihi sisa pembayaran".
  *
  * Yang dibandingkan adalah PEMASUKAN BARU (total pemasukan pada form dikurangi
@@ -139,6 +160,7 @@ function updateRecapIncomeWarning(containerId) {
     const remaining = parseInt(container.dataset.remainingAmount, 10);
     if (isNaN(remaining)) {
         warningEl.classList.add('hidden');
+        setRecapSubmitDisabled(container, false);
         return;
     }
 
@@ -146,7 +168,11 @@ function updateRecapIncomeWarning(containerId) {
     const existingIncome = computeExistingIncome(container);
     const newIncome = totalIncome - existingIncome;
 
-    if (newIncome > remaining) {
+    const exceeds = newIncome > remaining;
+
+    setRecapSubmitDisabled(container, exceeds);
+
+    if (exceeds) {
         warningEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Pemasukan baru <strong>' +
             formatRupiahId(newIncome) + '</strong> melebihi Sisa Pembayaran proyek <strong>' +
             formatRupiahId(remaining) + '</strong>. Jumlah pemasukan tidak boleh melebihi sisa pembayaran.';
