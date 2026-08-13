@@ -501,6 +501,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/aluminium-quotation/destroy-selected', [AluminiumQuotationController::class, 'destroySelected'])->name('aluminium-quotation.destroySelected');
     Route::get('/aluminium-quotation/{quotation_number}/print/pdf', [AluminiumQuotationController::class, 'printPdf'])->name('aluminium-quotation.print.pdf')->where('quotation_number', '.*');
     Route::get('/aluminium-quotation/{quotation_number}/print/excel', [AluminiumQuotationController::class, 'printExcel'])->name('aluminium-quotation.print.excel')->where('quotation_number', '.*');
+    Route::post('/aluminium-quotation/{quotation_number}/create-invoice', [AluminiumQuotationController::class, 'createInvoiceFromQuotation'])->name('aluminium-quotation.invoice.create')->where('quotation_number', '.*');
     Route::post('/aluminium-quotation/export/pdf-selected', [AluminiumQuotationController::class, 'exportPdfSelected'])->name('aluminium-quotation.export.pdf.selected');
     Route::put('/aluminium-quotation/{aluminium_quotation}', [AluminiumQuotationController::class, 'update'])->name('aluminium-quotation.update')->where('aluminium_quotation', '.*');
 

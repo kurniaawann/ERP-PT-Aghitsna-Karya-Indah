@@ -63,6 +63,15 @@
                                             </span>
                                         @endif
 
+                                        {{-- Detail --}}
+                                        <button type="button"
+                                            onclick="openModal('detailModal-{{ $quotation->quotation_number }}')"
+                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Detail">
+                                            <i class="fa-solid fa-eye w-3 h-3"></i>
+                                            Detail
+                                        </button>
+
                                         {{-- Edit --}}
                                         <button type="button"
                                             onclick="openModal('editModal-{{ $quotation->quotation_number }}')"

@@ -79,6 +79,11 @@
          Alur: iterasi setiap $quotation pada halaman aktif lalu render
          satu modal edit per baris data.
          ═══════════════════════════════════════════════════════════════ --}}
+    {{-- Detail Modals --}}
+    @foreach ($quotations as $quotation)
+        @include('components.administrasi.project-quotation.detail-modal', ['quotation' => $quotation])
+    @endforeach
+
     {{-- Edit Modals --}}
     @foreach ($quotations as $quotation)
         @include('components.administrasi.project-quotation.edit-modal', ['quotation' => $quotation])

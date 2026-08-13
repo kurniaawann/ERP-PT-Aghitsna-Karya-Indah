@@ -213,6 +213,38 @@ class AluminiumQuotationService
         return AluminiumQuotation::find($quotationNumber);
     }
 
+    /**
+     * Membuat Invoice Alumunium (snapshot) dari penawaran yang diterima.
+     *
+     * Dipanggil lewat aksi eksplisit "Buat Invoice" pada modul penawaran —
+     * berguna bila invoice otomatis dari penawaran tersebut sudah terhapus
+     * sehingga bisa dibuat ulang. Seluruh field penawaran yang relevan
+     * disalin ke invoice; invoice berstatus "Belum Lunas" dan menautkan
+     * quotation_number ke penawaran asal (snapshot — perubahan penawaran
+     * tidak mengubah invoice).
+     *
+     * Separasi ketat: DP TIDAK ikut disalin — DP diisi langsung pada form
+     * invoice (modul Finance).
+     *
+     * @param  AluminiumQuotation  $quotation  Penawaran yang diterima
+     * @return InvoiceAlumunium
+     */
+    public function createInvoiceFromQuotation(AluminiumQuotation $quotation): InvoiceAlumunium
+    {
+        $items = $this->normalizeItems($quotation->items ?? []);
+        $totalAmount = $this->calculateItemsTotal($items);
+        $discountAmount = $this->calculator->calculateDiscountAmount(
+            $totalAmount,
+            $quotation->discount_type,
+            $quotation->discount_value ? (float) $quotation->discount_value : null
+        );
+        $totalAfterDiscount = ($discountAmount > 0 && $discountAmount < $totalAmount)
+            ? $totalAmount - (int) $discountAmount
+            : null;
+
+        return $this->createLinkedInvoice($quotation, $items, $totalAmount, $discountAmount, $totalAfterDiscount);
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // PUBLIC HELPERS (dipakai controller/views)
     // ═══════════════════════════════════════════════════════════════

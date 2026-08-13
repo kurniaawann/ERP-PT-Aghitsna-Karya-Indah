@@ -100,6 +100,33 @@ class AluminiumQuotationController extends Controller
     }
 
     /**
+     * Membuat Invoice Alumunium (snapshot) dari penawaran yang diterima.
+     *
+     * Penawaran alumunium otomatis membuat invoice saat disimpan. Aksi ini
+     * dipakai untuk membuat ulang invoice bila invoice tersebut terhapus.
+     *
+     * @param  string  $quotationNumber  Nomor penawaran
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function createInvoiceFromQuotation(string $quotationNumber)
+    {
+        $quotation = $this->quotationService->findByNumber($quotationNumber);
+
+        if (!$quotation) {
+            return back()->with('error', 'Data tidak ditemukan!');
+        }
+
+        if ($quotation->invoices()->exists()) {
+            return back()->with('error', "Invoice untuk penawaran {$quotation->quotation_number} sudah pernah dibuat.");
+        }
+
+        $invoice = $this->quotationService->createInvoiceFromQuotation($quotation);
+
+        return redirect()->route('alumunium-invoice.index')
+            ->with('success', "Invoice {$invoice->invoice_number} berhasil dibuat dari penawaran {$quotation->quotation_number}. Silakan lengkapi DP dan rekening pembayaran pada modul Finance.");
+    }
+
+    /**
      * Menghapus beberapa penawaran sekaligus (bulk delete).
      *
      * @param  Request  $request  Request HTTP dengan array nomor penawaran
