@@ -60,6 +60,103 @@ function formatNumber(value) {
 }
 
 /**
+ * Format angka ke Rupiah (Rp X.XXX).
+ * @param {number} value
+ * @returns {string}
+ */
+function formatRupiahId(value) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(value);
+}
+
+/**
+ * Total pemasukan (uang masuk / kategori INCOME) pada kontainer transaksi.
+ *
+ * @param {HTMLElement} container - Kontainer transaksi.
+ * @returns {number}
+ */
+function computeTotalIncome(container) {
+    let totalIncome = 0;
+
+    container.querySelectorAll('.bon-block').forEach(function (block) {
+        const catHidden = block.querySelector('.transaction-category-hidden');
+        const amountInput = block.querySelector('.expense-amount-input');
+        const amount = parseInt((amountInput ? amountInput.value : '').replace(/[^\d]/g, ''), 10) || 0;
+        const type = catHidden ? catHidden.dataset.type : '';
+        if (type === 'INCOME') totalIncome += amount;
+    });
+
+    return totalIncome;
+}
+
+/**
+ * Total pemasukan dari transaksi EXISTING (punya hidden `items[N][id]`).
+ *
+ * Sisa Pembayaran rekap (`data-remaining-amount`) sudah mengurangi pemasukan
+ * yang sudah tercatat di database, sehingga pemasukan existing tidak boleh
+ * dihitung lagi saat membandingkan dengan sisa (menghindari hitung ganda).
+ *
+ * @param {HTMLElement} container - Kontainer transaksi.
+ * @returns {number}
+ */
+function computeExistingIncome(container) {
+    let existingIncome = 0;
+
+    container.querySelectorAll('.bon-block').forEach(function (block) {
+        if (!block.querySelector('input[name^="items["][name$="][id]"]')) return;
+
+        const catHidden = block.querySelector('.transaction-category-hidden');
+        const amountInput = block.querySelector('.expense-amount-input');
+        const amount = parseInt((amountInput ? amountInput.value : '').replace(/[^\d]/g, ''), 10) || 0;
+        const type = catHidden ? catHidden.dataset.type : '';
+        if (type === 'INCOME') existingIncome += amount;
+    });
+
+    return existingIncome;
+}
+
+/**
+ * Menampilkan/menyembunyikan peringatan "pemasukan melebihi sisa pembayaran".
+ *
+ * Yang dibandingkan adalah PEMASUKAN BARU (total pemasukan pada form dikurangi
+ * pemasukan existing) terhadap Sisa Pembayaran rekap (`data-remaining-amount`),
+ * karena sisa pembayaran sudah memperhitungkan pemasukan yang sudah tercatat.
+ *
+ * Elemen peringatan memakai ID turunan `{containerId}-incomeWarning`.
+ *
+ * @param {string|HTMLElement} containerId - ID atau elemen kontainer transaksi.
+ */
+function updateRecapIncomeWarning(containerId) {
+    const container = getTransactionContainer(containerId);
+    if (!container || !container.id) return;
+
+    const warningEl = document.getElementById(container.id + '-incomeWarning');
+    if (!warningEl) return;
+
+    const remaining = parseInt(container.dataset.remainingAmount, 10);
+    if (isNaN(remaining)) {
+        warningEl.classList.add('hidden');
+        return;
+    }
+
+    const totalIncome = computeTotalIncome(container);
+    const existingIncome = computeExistingIncome(container);
+    const newIncome = totalIncome - existingIncome;
+
+    if (newIncome > remaining) {
+        warningEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Pemasukan baru <strong>' +
+            formatRupiahId(newIncome) + '</strong> melebihi Sisa Pembayaran proyek <strong>' +
+            formatRupiahId(remaining) + '</strong>. Jumlah pemasukan tidak boleh melebihi sisa pembayaran.';
+        warningEl.classList.remove('hidden');
+    } else {
+        warningEl.classList.add('hidden');
+    }
+}
+
+/**
  * Ambil elemen kontainer transaksi dari id atau elemen.
  * @param {string|HTMLElement} containerId - ID atau elemen kontainer.
  * @returns {HTMLElement|null}
@@ -626,7 +723,7 @@ function updateTransactionsSummary(containerId) {
     const container = getTransactionContainer(containerId);
     if (!container || !container.id) return;
 
-    let totalIncome = 0;
+    const totalIncome = computeTotalIncome(container);
     let totalExpense = 0;
 
     container.querySelectorAll('.bon-block').forEach(function (block) {
@@ -634,29 +731,21 @@ function updateTransactionsSummary(containerId) {
         const amountInput = block.querySelector('.expense-amount-input');
         const amount = parseInt((amountInput ? amountInput.value : '').replace(/[^\d]/g, ''), 10) || 0;
         const type = catHidden ? catHidden.dataset.type : '';
-        if (type === 'INCOME') {
-            totalIncome += amount;
-        } else {
+        if (type !== 'INCOME') {
             totalExpense += amount;
         }
     });
-
-    const formatRupiah = function (value) {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(value);
-    };
 
     const baseId = container.id;
     const incomeEl = document.getElementById(baseId + '-totalIncome');
     const expenseEl = document.getElementById(baseId + '-totalExpense');
     const balanceEl = document.getElementById(baseId + '-balance');
 
-    if (incomeEl) incomeEl.textContent = formatRupiah(totalIncome);
-    if (expenseEl) expenseEl.textContent = formatRupiah(totalExpense);
-    if (balanceEl) balanceEl.textContent = formatRupiah(totalIncome - totalExpense);
+    if (incomeEl) incomeEl.textContent = formatRupiahId(totalIncome);
+    if (expenseEl) expenseEl.textContent = formatRupiahId(totalExpense);
+    if (balanceEl) balanceEl.textContent = formatRupiahId(totalIncome - totalExpense);
+
+    updateRecapIncomeWarning(container);
 }
 
 /**
@@ -692,6 +781,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (document.getElementById('transactionsContainer')) {
         addTransactionCategoryGroup('transactionsContainer');
+    }
+
+    // ============================================================
+    // MODAL TAMBAH — SISA PEMBAYARAN REKAP TERPILIH
+    // ============================================================
+
+    const addRecapSelect = document.querySelector('#addModal select[name="project_recap_id"]');
+    const addContainer = document.getElementById('transactionsContainer');
+
+    function syncAddModalRemaining() {
+        if (!addRecapSelect || !addContainer) return;
+
+        const selected = addRecapSelect.options[addRecapSelect.selectedIndex];
+        const raw = (selected && selected.dataset.remainingAmount != null)
+            ? parseInt(selected.dataset.remainingAmount, 10)
+            : NaN;
+        addContainer.dataset.remainingAmount = isNaN(raw) ? '' : raw;
+
+        updateTransactionsSummary(addContainer);
+    }
+
+    if (addRecapSelect) {
+        addRecapSelect.addEventListener('change', syncAddModalRemaining);
+        syncAddModalRemaining();
     }
 
     // ============================================================
@@ -808,6 +921,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
         input.addEventListener('input', function () {
             formatCurrencyInput(this);
+
+            // Total RAB berubah → Sisa Pembayaran ikut berubah (DP & bukti
+            // pembayaran tidak bisa diubah dari form ini).
+            if (this.classList.contains('total-rab-input')) {
+                const container = this.closest('[data-categories]');
+                if (container && container.dataset.remainingAmountBase != null) {
+                    const baseRemaining = parseInt(container.dataset.remainingAmountBase, 10) || 0;
+                    const originalTotal = parseInt(container.dataset.originalTotalRab, 10) || 0;
+                    const newTotal = parseInt((this.value || '').replace(/[^\d]/g, ''), 10) || 0;
+                    container.dataset.remainingAmount = Math.max(0, baseRemaining + (newTotal - originalTotal));
+                    updateTransactionsSummary(container);
+                }
+            }
         });
     });
 

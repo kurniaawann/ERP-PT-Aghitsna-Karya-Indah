@@ -110,7 +110,13 @@
     {{-- Container Transaksi (terisi otomatis dari transaksi existing) --}}
     <div id="transactionsContainer-{{ $recap->id }}" class="space-y-4 mb-3"
         data-categories="{{ $categoriesJson }}"
-        data-existing-items="{{ $existingItemsJson }}"></div>
+        data-existing-items="{{ $existingItemsJson }}"
+        data-remaining-amount="{{ $recap->getRemainingAmount() }}"
+        data-remaining-amount-base="{{ $recap->getRemainingAmount() }}"
+        data-original-total-rab="{{ $recap->total_rab }}"></div>
+
+    <div id="transactionsContainer-{{ $recap->id }}-incomeWarning"
+        class="hidden mb-3 p-3 bg-error-light border-2 border-error rounded text-sm text-error font-medium"></div>
 
     <button type="button" onclick="addTransactionCategoryGroup('transactionsContainer-{{ $recap->id }}')"
         class="btn btn-outline-primary w-full">

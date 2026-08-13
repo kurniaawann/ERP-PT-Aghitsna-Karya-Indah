@@ -85,8 +85,17 @@ class ProjectFinancialReportController extends Controller
             ->when(auth()->user()->role !== 'superadmin', function ($query) {
                 $query->where('created_by', auth()->id());
             })
+            ->with(['rab', 'paymentProofs', 'financialReport.items'])
             ->orderByDesc('created_at')
-            ->get(['id', 'project_name', 'location']);
+            ->get()
+            ->map(function (ProjectRecap $rekap) {
+                return [
+                    'id' => $rekap->id,
+                    'project_name' => $rekap->project_name,
+                    'location' => $rekap->location,
+                    'remaining_amount' => $rekap->getRemainingAmount(),
+                ];
+            });
 
         return view('pages.report.project-financial-report', compact('recaps', 'categories', 'rekapOptions'));
     }

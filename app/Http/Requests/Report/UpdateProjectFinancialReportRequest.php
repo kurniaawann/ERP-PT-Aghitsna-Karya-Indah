@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Report;
 
+use App\Http\Requests\Report\Concerns\ValidatesRecapIncome;
+use App\Models\Finance\ProjectRecap;
 use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -24,12 +26,53 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class UpdateProjectFinancialReportRequest extends FormRequest
 {
+    use ValidatesRecapIncome;
+
     /**
      * Menentukan apakah user memiliki akses ke request ini.
      */
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Menambahkan validasi tambahan: total proyeksi "uang masuk" (kategori
+     * INCOME) setelah update tidak boleh melebihi sisa pembayaran rekap proyek.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $recap = $this->route('projectRecap');
+
+            if (! $recap instanceof ProjectRecap) {
+                return;
+            }
+
+            $items = $this->input('items', []);
+
+            if (empty($items)) {
+                return;
+            }
+
+            $existingItems = $recap->financialReport?->items()->get() ?? collect();
+
+            $projectedIncome = $this->submittedIncomeTotal($items, $existingItems);
+
+            if ($projectedIncome <= 0) {
+                return;
+            }
+
+            $submittedTotal = (int) InputNormalizer::normalizeCurrency($this->input('total_rab'));
+            $allowed = $this->recapAllowedIncome($recap, $submittedTotal);
+
+            if ($projectedIncome > $allowed) {
+                $validator->errors()->add(
+                    'items',
+                    'Total pemasukan tidak boleh melebihi sisa pembayaran rekap proyek (Rp '.number_format($allowed, 0, ',', '.').').'
+                );
+            }
+        });
     }
 
     /**

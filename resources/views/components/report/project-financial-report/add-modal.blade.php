@@ -18,8 +18,8 @@
             oninput="this.setCustomValidity('')">
             <option value="">-- Pilih Rekap Proyek --</option>
             @foreach ($rekapOptions as $rekap)
-                <option value="{{ $rekap->id }}">
-                    {{ $rekap->id }} — {{ $rekap->project_name }}{{ $rekap->location ? ' (' . $rekap->location . ')' : '' }}
+                <option value="{{ $rekap['id'] }}" data-remaining-amount="{{ $rekap['remaining_amount'] }}">
+                    {{ $rekap['id'] }} — {{ $rekap['project_name'] }}{{ $rekap['location'] ? ' (' . $rekap['location'] . ')' : '' }}
                 </option>
             @endforeach
         </select>
@@ -48,6 +48,9 @@
     {{-- Container Transaksi --}}
     <div id="transactionsContainer" class="space-y-4 mb-3"
         data-categories="{{ $categoriesJson }}"></div>
+
+    <div id="transactionsContainer-incomeWarning"
+        class="hidden mb-3 p-3 bg-error-light border-2 border-error rounded text-sm text-error font-medium"></div>
 
     <button type="button" onclick="addTransactionCategoryGroup('transactionsContainer')" class="btn btn-outline-primary w-full">
         <i class="fa-solid fa-plus"></i> Tambah Kategori

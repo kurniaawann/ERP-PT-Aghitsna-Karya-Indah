@@ -103,8 +103,12 @@ class PaymentProofService
      * bagian tagihan kepada pelanggan; sebelumnya PPN tidak dihitung sehingga nominal
      * yang sah di depan (frontend) ditolak di belakang (backend).
      *
-     * Khusus ProjectRecap (rekap proyek), sisa dihitung via getRemainingAmount()
-     * milik model: Total RAB - DP (Uang Masuk dari RAB) - terbayar.
+     * Khusus ProjectRecap (rekap proyek), sisa dihitung konsisten dengan
+     * getRemainingAmount() milik model: Total RAB - DP (Uang Masuk dari RAB)
+     * - terbayar. Terbayar mencakup bukti pembayaran (yang sedang diedit
+     * dikecualikan saat update) DAN baris "uang masuk" (kategori INCOME) pada
+     * Laporan Keuangan Proyek, sehingga nominal bukti pembayaran tidak bisa
+     * melebihi sisa setelah memperhitungkan income yang sudah tercatat.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @param  int|null  $excludePaymentProofId  ID yang dikecualikan (untuk update)
@@ -113,7 +117,9 @@ class PaymentProofService
     public function validatePaymentAmount($invoice, int $amount, ?int $excludePaymentProofId = null): ?string
     {
         if ($invoice instanceof ProjectRecap) {
-            $remainingAmount = $invoice->getRemainingAmount();
+            $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
+            $incomeAmount = (int) $invoice->getIncomePayments()->sum('income_amount');
+            $remainingAmount = max(0, (int) $invoice->getTotalAmount() - (int) $invoice->getDpAmount() - $paidAmount - $incomeAmount);
         } else {
             $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
             $ppnAmount = (int) (method_exists($invoice, 'getPpnAmount') ? $invoice->getPpnAmount() : 0);
