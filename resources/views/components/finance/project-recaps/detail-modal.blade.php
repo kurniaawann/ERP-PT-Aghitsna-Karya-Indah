@@ -9,6 +9,8 @@
     $paymentProofs = $recap->relationLoaded('paymentProofs')
         ? $recap->paymentProofs
         : $recap->paymentProofs()->get();
+
+    $incomePayments = $recap->getIncomePayments();
 @endphp
 
 <x-modal id="detailModal-{{ $recap->id }}" title="Detail Rekap Proyek" :hideFooter="true" size="4xl">
@@ -248,6 +250,60 @@
                 </div>
                 <p class="text-sm text-gray-400 font-medium">Belum ada bukti pembayaran</p>
                 <p class="text-xs text-gray-300 mt-1">Upload melalui menu Bukti Pembayaran (kategori Rekap Proyek).</p>
+            </div>
+        @endif
+    </div>
+
+    {{-- Card E2: Uang Masuk (Laporan Keuangan Proyek) --}}
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Uang Masuk (Laporan Keuangan)</h3>
+        <p class="text-xs text-gray-400 mb-3">Pembayaran dari transaksi kategori pemasukan pada Laporan Keuangan Proyek.</p>
+
+        @if ($incomePayments->isNotEmpty())
+            <div class="space-y-2">
+                @foreach ($incomePayments as $income)
+                    @php
+                        $incomeDate = $income->transaction_date ?? $income->created_at;
+                    @endphp
+                    <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <i class="fa-solid fa-arrow-down text-green-500"></i>
+                            <span class="min-w-0">
+                                <span class="block truncate text-sm font-medium text-gray-900">
+                                    {{ $income->category?->name ?? 'Uang Masuk' }}
+                                </span>
+                                @if (!empty($income->description))
+                                    <span class="block truncate text-xs text-gray-400">{{ $income->description }}</span>
+                                @endif
+                            </span>
+                        </span>
+                        <span class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-sm font-semibold text-green-600">
+                                Rp {{ number_format($income->income_amount ?? 0, 0, ',', '.') }}
+                            </span>
+                            <span class="text-xs text-gray-400">
+                                {{ optional($incomeDate)->format('d M Y') }}
+                            </span>
+                            @if (!empty($income->proof_file))
+                                <a href="{{ asset('storage/' . $income->proof_file) }}" target="_blank"
+                                    rel="noopener noreferrer" title="{{ $income->proof_file_name }}"
+                                    class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                                    <i class="fa-solid fa-paperclip"></i> Lihat
+                                </a>
+                            @else
+                                <span class="text-xs text-gray-300 italic">Tanpa bukti</span>
+                            @endif
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                    <i class="fa-solid fa-arrow-down text-gray-300 text-lg"></i>
+                </div>
+                <p class="text-sm text-gray-400 font-medium">Belum ada transaksi uang masuk</p>
+                <p class="text-xs text-gray-300 mt-1">Transaksi kategori pemasukan akan muncul di sini.</p>
             </div>
         @endif
     </div>

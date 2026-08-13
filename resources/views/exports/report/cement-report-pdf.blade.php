@@ -98,11 +98,6 @@
             display: table;
             clear: both;
         }
-
-        /* Highlight Warna Kuning untuk Proyek GENTENG IJO */
-        .bg-yellow {
-            background-color: #ffff00 !important;
-        }
     </style>
 </head>
 
@@ -135,7 +130,7 @@
 
                     {{-- Detail Item Semen --}}
                     @foreach ($do->cements as $index => $cement)
-                        <tr class="{{ strtolower($cement->nama_proyek) == 'genteng ijo' ? 'bg-yellow' : '' }}">
+                        <tr class="{{ strtolower($cement->nama_proyek)}}">
                             <td class="text-center">{{ $index + 1 }}</td>
 
                             {{-- Tanggal (Rowspan digabung vertikal per DO) --}}

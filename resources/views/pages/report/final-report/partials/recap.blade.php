@@ -212,6 +212,7 @@
     @php
         $recapProofs = $recap->paymentProofs;
         $recapTotalPaid = $recap->getTotalPaidAmount();
+        $recapIncomePayments = $recap->getIncomePayments();
     @endphp
 
     <x-modal id="recapDetailModal-{{ $recap->id }}"
@@ -309,6 +310,55 @@
                 </div>
             @endif
         </div>
+
+        {{-- Daftar Uang Masuk (Laporan Keuangan) --}}
+        @if ($recapIncomePayments->isNotEmpty())
+            <div class="mt-6">
+                <h6 class="text-text-primary font-semibold mb-3">Uang Masuk (Laporan Keuangan) ({{ $recapIncomePayments->count() }})</h6>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-surface-secondary">
+                            <tr>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary w-10">No</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Kategori</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Keterangan</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-text-secondary">Nominal</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary">Bukti</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach ($recapIncomePayments as $index => $income)
+                                <tr class="hover:bg-surface-secondary transition-colors duration-150">
+                                    <td class="px-4 py-3 text-center text-sm font-medium text-primary">{{ $index + 1 }}</td>
+                                    <td class="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">
+                                        {{ $income->transaction_date ? \Carbon\Carbon::parse($income->transaction_date)->format('d M Y') : '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-text-primary">
+                                        {{ $income->category?->name ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-text-secondary">{{ $income->description ?: '-' }}</td>
+                                    <td class="px-4 py-3 text-right text-sm font-bold text-success">
+                                        Rp {{ number_format((int) $income->income_amount, 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-sm">
+                                        @if ($income->proof_file)
+                                            <a href="{{ asset('storage/' . $income->proof_file) }}" target="_blank"
+                                                rel="noopener noreferrer" title="{{ $income->proof_file_name }}"
+                                                class="text-blue-600 hover:underline">
+                                                <i class="fa-solid fa-paperclip"></i> File
+                                            </a>
+                                        @else
+                                            <span class="text-text-tertiary">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
 
     </x-modal>
 @endforeach

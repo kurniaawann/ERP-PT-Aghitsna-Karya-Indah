@@ -42,7 +42,7 @@ class RecapProyekService
                 $search = $request->search;
                 $query->where('project_name', 'like', "%{$search}%");
             })
-            ->with(['creator', 'rab', 'paymentProofs'])
+            ->with(['creator', 'rab', 'paymentProofs', 'financialReport.items'])
             ->orderByDesc('created_at');
     }
 

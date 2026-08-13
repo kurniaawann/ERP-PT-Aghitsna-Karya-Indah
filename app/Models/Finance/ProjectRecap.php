@@ -153,7 +153,47 @@ class ProjectRecap extends Model
     }
 
     /**
-     * Total pembayaran yang sudah masuk dari bukti pembayaran.
+     * Item "uang masuk" pada Laporan Keuangan Proyek yang dihitung sebagai
+     * pembayaran rekap.
+     *
+     * Pembayaran rekap proyek tidak hanya berasal dari bukti pembayaran
+     * (payment_proofs), tapi juga dari baris "Bon" ber-kategori INCOME pada
+     * Laporan Keuangan Proyek. Identifikasi dilakukan lewat nilai
+     * income_amount > 0 (bukan lewat kode kategori) sehingga kategori uang
+     * masuk dengan kode apa pun tetap terhitung, tidak hanya UANG_MASUK.
+     *
+     * Item yang berasal dari bukti pembayaran (payment_proof_id terisi)
+     * dikecualikan karena sudah dihitung lewat getTotalPaidAmount() dari
+     * payment_proofs — menghindari hitung ganda.
+     *
+     * @return \Illuminate\Support\Collection<int, \App\Models\Report\ProjectFinancialReportItem>
+     */
+    public function getIncomePayments()
+    {
+        $report = $this->financialReport;
+
+        if (! $report) {
+            return collect();
+        }
+
+        $items = $report->relationLoaded('items')
+            ? $report->items
+            : $report->items()->get();
+
+        return $items
+            ->where('income_amount', '>', 0)
+            ->whereNull('payment_proof_id')
+            ->where('is_informational', false)
+            ->values();
+    }
+
+    /**
+     * Total pembayaran yang sudah masuk.
+     *
+     * Terdiri dari dua sumber:
+     * - Bukti pembayaran (payment_proofs) yang ditautkan ke rekap.
+     * - Baris "uang masuk" (kategori INCOME) pada Laporan Keuangan Proyek
+     *   yang tidak berasal dari bukti pembayaran.
      *
      * @return int Total nominal yang sudah dibayar
      */
@@ -163,7 +203,11 @@ class ProjectRecap extends Model
             ? $this->paymentProofs
             : $this->paymentProofs()->get();
 
-        return (int) max(0, $paymentProofs->sum(fn ($proof) => (int) ($proof->amount ?? 0)));
+        $proofTotal = (int) max(0, $paymentProofs->sum(fn ($proof) => (int) ($proof->amount ?? 0)));
+
+        $incomeTotal = (int) $this->getIncomePayments()->sum('income_amount');
+
+        return $proofTotal + $incomeTotal;
     }
 
     /**
