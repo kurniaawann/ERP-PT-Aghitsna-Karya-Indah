@@ -103,8 +103,9 @@ class RecapProyekController extends Controller
     /**
      * Hapus beberapa rekap proyek sekaligus (bulk delete).
      *
-     * Rekap yang masih digunakan (Laporan Keuangan, payroll, kasbon, atau
-     * karyawan) tidak bisa dihapus agar tidak meninggalkan data yatim.
+     * Rekap yang masih dipakai data lain (payroll, kasbon, atau karyawan)
+     * tidak bisa dihapus agar tidak meninggalkan data yatim. Laporan Keuangan
+     * Proyek milik rekap ikut terhapus (cascade) sehingga tidak memblokir.
      *
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -121,7 +122,7 @@ class RecapProyekController extends Controller
 
         if (! empty($usedIds)) {
             $usedNames = $this->service->getRecapLabels($usedIds);
-            $msg = "Rekap proyek berikut tidak dapat dihapus karena masih digunakan pada data lain (Laporan Keuangan, payroll, kasbon, atau karyawan): {$usedNames}. Silakan hapus atau ubah data yang menggunakan proyek ini terlebih dahulu.";
+            $msg = "Rekap proyek berikut tidak dapat dihapus karena masih digunakan pada data lain (payroll, kasbon, atau karyawan): {$usedNames}. Silakan hapus atau ubah data yang menggunakan proyek ini terlebih dahulu.";
 
             return back()->with('error', $msg);
         }

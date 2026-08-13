@@ -264,11 +264,11 @@ class RABService
      * Menghapus RAB berdasarkan nomor RAB.
      * Menghapus header dan cascade ke kategori, sub-kategori, item, dan biaya lain-lain.
      *
-     * Rekap Proyek yang tertaut RAB ikut dihapus, TAPI hanya jika rekap tersebut
-     * tidak lagi dipakai data lain. Bila rekap masih digunakan (Laporan Keuangan
-     * berisi transaksi, payroll, kasbon, atau karyawan), penghapusan RAB diblokir
-     * agar data transaksi riil tidak hilang diam-diam — konsisten dengan guard
-     * hapus rekap di RecapProyekController.
+     * Rekap Proyek yang tertaut RAB ikut dihapus beserta Laporan Keuangan
+     * Proyek-nya (cascade), TAPI hanya jika rekap tersebut tidak lagi dipakai
+     * data eksternal lain (payroll, kasbon, atau karyawan). Bila rekap masih
+     * digunakan, penghapusan RAB diblokir agar tidak meninggalkan data yatim —
+     * konsisten dengan guard hapus rekap di RecapProyekController.
      *
      * @param  array  $rabNumbers  Array nomor RAB yang akan dihapus
      * @return int Jumlah RAB yang dihapus
@@ -292,7 +292,7 @@ class RABService
             if (! empty($usedRecapIds)) {
                 $usedNames = $recapService->getRecapLabels($usedRecapIds);
                 throw new \DomainException(
-                    "RAB tidak dapat dihapus karena masih terhubung dengan rekap proyek yang digunakan data lain (Laporan Keuangan, payroll, kasbon, atau karyawan): {$usedNames}. Silakan hapus atau ubah data yang menggunakan proyek tersebut terlebih dahulu."
+                    "RAB tidak dapat dihapus karena masih terhubung dengan rekap proyek yang digunakan data lain (payroll, kasbon, atau karyawan): {$usedNames}. Silakan hapus atau ubah data yang menggunakan proyek tersebut terlebih dahulu."
                 );
             }
 

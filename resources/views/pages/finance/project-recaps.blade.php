@@ -62,7 +62,11 @@
 
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
-        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data yang dipilih?</p>
+        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data rekap proyek yang dipilih?</p>
+        <p class="text-sm text-text-secondary mb-4">
+            <i class="fa-solid fa-info-circle"></i> Laporan Keuangan Proyek beserta seluruh transaksi "Bon"-nya pada
+            rekap tersebut juga akan ikut terhapus (tidak dapat dikembalikan).
+        </p>
         <p class="text-sm text-text-secondary">
             <i class="fa-solid fa-info-circle"></i> File design dari data yang dihapus juga akan ikut terhapus.
         </p>
