@@ -322,7 +322,15 @@
     {{-- ═══ PARAGRAF PEMBUKA ══════════════════════════════════════════════════════ --}}
     <div class="opening-text">
         Dengan Hormat,<br>
-        Dengan ini kami sampaikan Invoice untuk pekerjaan {{ $invoice->project_description }},<strong>Lokasi {{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}, </strong>sebagai berikut : 
+        @if ($invoice->project_description)
+            Dengan ini kami sampaikan Invoice untuk pekerjaan {{ $invoice->project_description }},<strong>Lokasi {{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}, </strong>sebagai berikut :
+        @else
+            @if ($invoice->location ?? $invoice->quotation?->location)
+                Dengan ini kami sampaikan invoice sebagai berikut : Lokasi {{ $invoice->location ?? $invoice->quotation?->location }}
+            @else
+                Dengan ini kami sampaikan invoice sebagai berikut :
+            @endif
+        @endif
     </div>
 
     {{-- ═══ TABEL ITEMS (TIDAK DIUBAH) ════════════════════════════════════════════ --}}

@@ -304,7 +304,11 @@
     </div>
 
     <div class="opening">
-        Dengan ini kami sampaikan penawaran untuk proyek {{ $q->project_description }} sebagai berikut :
+        @if ($q->project_description)
+            Dengan ini kami sampaikan penawaran untuk proyek {{ $q->project_description }} sebagai berikut :
+        @else
+            Dengan ini kami sampaikan penawaran sebagai berikut :
+        @endif
     </div>
 
     {{-- ═══ ITEMS TABLE ═════════════════════════════════════════════════════════════ --}}

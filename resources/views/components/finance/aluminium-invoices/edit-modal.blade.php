@@ -32,9 +32,8 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
-        <textarea name="project_description" class="w-full border rounded p-2" rows="2" required
-            oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">{{ $invoice->project_description }}</textarea>
+        <label class="block text-text-primary mb-1">Deskripsi Proyek</label>
+        <textarea name="project_description" class="w-full border rounded p-2" rows="2">{{ $invoice->project_description }}</textarea>
     </div>
 
     <div class="mb-3">

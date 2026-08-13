@@ -171,8 +171,11 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $location = $invoice->location ?? $invoice->quotation?->location ?? '-';
                 $sheet->setCellValue("A{$currentRow}",
-                    'Dengan ini kami sampaikan Invoice untuk pekerjaan ' . ($invoice->project_description ?? '') .
-                    ', ' . $location . ', sebagai berikut :');
+                    $invoice->project_description
+                        ? 'Dengan ini kami sampaikan Invoice untuk pekerjaan ' . $invoice->project_description . ', ' . $location . ', sebagai berikut :'
+                        : (($invoice->location ?? $invoice->quotation?->location)
+                            ? 'Dengan ini kami sampaikan invoice sebagai berikut : Lokasi ' . ($invoice->location ?? $invoice->quotation?->location)
+                            : 'Dengan ini kami sampaikan invoice sebagai berikut :'));
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
                 $sheet->getRowDimension($currentRow)->setRowHeight(30);
 

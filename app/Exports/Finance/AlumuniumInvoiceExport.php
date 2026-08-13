@@ -123,7 +123,10 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Dengan ini kami sampaikan invoice untuk proyek ' . ($invoice->project_description ?? '') . ' sebagai berikut :');
+                $sheet->setCellValue("A{$currentRow}",
+                    $invoice->project_description
+                        ? 'Dengan ini kami sampaikan invoice untuk proyek ' . $invoice->project_description . ' sebagai berikut :'
+                        : 'Dengan ini kami sampaikan invoice sebagai berikut :');
 
                 $currentRow += 2;
                 $tableHeaderRow = $currentRow;

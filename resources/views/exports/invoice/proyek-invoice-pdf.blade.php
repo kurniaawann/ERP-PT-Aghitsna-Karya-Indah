@@ -252,7 +252,11 @@
 
         <!-- Description -->
         <div class="description">
-            Dengan ini kami sampaikan {{ $invoice->project_description }}
+            @if ($invoice->project_description)
+                Dengan ini kami sampaikan {{ $invoice->project_description }}
+            @else
+                Dengan ini kami sampaikan invoice sebagai berikut :
+            @endif
         </div>
 
         <!-- Items Table -->

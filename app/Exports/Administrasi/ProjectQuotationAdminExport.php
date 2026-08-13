@@ -134,9 +134,11 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}",
-                    'Sehubungan dengan rencana pembangunan bangunan ' . ($quotation->project_description ?? '') .
-                    ' yang berlokasi di jalan ' . ($quotation->location ?? '-') .
-                    ', bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :');
+                    $quotation->project_description
+                        ? 'Sehubungan dengan rencana pembangunan bangunan ' . $quotation->project_description . ' yang berlokasi di jalan ' . ($quotation->location ?? '-') . ', bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :'
+                        : ($quotation->location
+                            ? 'Sehubungan dengan rencana pembangunan yang berlokasi di jalan ' . $quotation->location . ', bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :'
+                            : 'Sehubungan dengan rencana pembangunan, bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :'));
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
                 $sheet->getRowDimension($currentRow)->setRowHeight(42);
 

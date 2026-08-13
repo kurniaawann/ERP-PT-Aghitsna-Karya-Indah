@@ -291,7 +291,13 @@
         {{-- ═══ PARAGRAF PEMBUKA ══════════════════════════════════════════════════════ --}}
         <div class="opening-text">
             Dengan Hormat,<br>
-            Sehubungan dengan rencana pembangunan bangunan <strong>{{ $q->project_description }}</strong> yang berlokasi di jalan <strong>{{ $q->location ?? '-' }}</strong>, bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :
+            @if ($q->project_description)
+                Sehubungan dengan rencana pembangunan bangunan <strong>{{ $q->project_description }}</strong> yang berlokasi di jalan <strong>{{ $q->location ?? '-' }}</strong>, bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :
+            @elseif ($q->location)
+                Sehubungan dengan rencana pembangunan yang berlokasi di jalan <strong>{{ $q->location }}</strong>, bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :
+            @else
+                Sehubungan dengan rencana pembangunan, bersama ini kami sampaikan penawaran harga pelaksanaan pekerjaan pembangunan dengan rincian sebagai berikut :
+            @endif
         </div>
 
         {{-- ═══ TABEL ITEMS ══════════════════════════════════════════════════════════ --}}

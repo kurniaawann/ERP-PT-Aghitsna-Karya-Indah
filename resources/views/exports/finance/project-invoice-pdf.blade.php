@@ -320,7 +320,11 @@
 
         <!-- Description -->
         <div class="description">
-            Dengan ini kami sampaikan invoice untuk proyek {{ $invoice->project_description }} sebagai berikut :
+            @if ($invoice->project_description)
+                Dengan ini kami sampaikan invoice untuk proyek {{ $invoice->project_description }} sebagai berikut :
+            @else
+                Dengan ini kami sampaikan invoice sebagai berikut :
+            @endif
         </div>
 
         <!-- Items Table -->

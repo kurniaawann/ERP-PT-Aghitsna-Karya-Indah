@@ -25,10 +25,9 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Deskripsi Proyek <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Deskripsi Proyek</label>
         <textarea name="project_description" class="w-full border rounded p-2" rows="2"
-            placeholder="Contoh: Renovasi Rumah" required
-            oninvalid="this.setCustomValidity('Deskripsi proyek tidak boleh kosong')" oninput="this.setCustomValidity('')"></textarea>
+            placeholder="Contoh: Renovasi Rumah"></textarea>
     </div>
 
     @if (auth()->user()->role === 'superadmin')
