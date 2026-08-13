@@ -271,7 +271,7 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
 
                 $currentRow++;
                 $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("B{$currentRow}", $quotation->division?->name ?? 'Pelaksana Pekerjaan');
+                $sheet->setCellValue("B{$currentRow}", $quotation->division?->name ?? '');
 
                 if ($quotation->signedBy?->signature_image) {
                     $signaturePath = storage_path('app/public/' . $quotation->signedBy->signature_image);
@@ -296,8 +296,7 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                 }
 
                 $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
-                $signedBy = $quotation->signedBy?->name ?? 'Zulkarnain';
-                $sheet->setCellValue("B{$currentRow}", $signedBy);
+                $sheet->setCellValue("B{$currentRow}", $quotation->signedBy?->name ?? '');
                 $sheet->getStyle("B{$currentRow}")->getFont()->setBold(true)->setUnderline(Font::UNDERLINE_SINGLE);
             },
         ];

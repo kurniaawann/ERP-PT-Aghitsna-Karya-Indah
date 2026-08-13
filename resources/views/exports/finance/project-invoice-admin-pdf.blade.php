@@ -449,8 +449,10 @@
                     <img src="{{ storage_path('app/public/' . $invoice->signedBy->signature_image) }}" alt="Tanda Tangan">
                 @endif
             </div>
-            <div class="signature-name">{{ $invoice->signedBy?->name ?? 'Zulkarnain,S.T.,M.T.' }}</div>
-            <div>{{ $invoice->signedBy?->position ?? 'Direktur' }}</div>
+            @if ($invoice->signedBy)
+            <div class="signature-name">{{ $invoice->signedBy->name }}</div>
+            <div>{{ $invoice->signedBy->position }}</div>
+            @endif
         </div>
     </div>
 

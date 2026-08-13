@@ -442,8 +442,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 }
 
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $signedBy = $invoice->signedBy?->name ?? 'Akhmad Khaidir';
-                $sheet->setCellValue("A{$currentRow}", $signedBy);
+                $sheet->setCellValue("A{$currentRow}", $invoice->signedBy?->name ?? '');
 
                 if ($invoice->division) {
                     $currentRow++;

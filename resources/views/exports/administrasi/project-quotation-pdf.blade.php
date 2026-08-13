@@ -380,8 +380,12 @@
             <img src="{{ storage_path('app/public/' . $q->signedBy->signature_image) }}" alt="Tanda Tangan"
                 style="max-height: 55px; max-width: 160px;">
         @endif
-        <div class="signature-line">{{ $q->signedBy?->name ?? 'Akhmad Khaidir' }}</div>
-        <div class="signature-division">{{ $q->division?->name ?? 'Divisi Proyek' }}</div>
+        @if ($q->signedBy)
+            <div class="signature-line">{{ $q->signedBy->name }}</div>
+        @endif
+        @if ($q->division)
+            <div class="signature-division">{{ $q->division->name }}</div>
+        @endif
     </div>
     @endforeach
 

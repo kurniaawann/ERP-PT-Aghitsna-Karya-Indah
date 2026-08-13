@@ -357,13 +357,17 @@
             <div class="signature-box">
                 <div>{{ $q->city ?? 'Jakarta' }}, {{ \Carbon\Carbon::parse($q->date)->isoFormat('D MMMM YYYY') }}</div>
                 <div>Hormat Kami,</div>
-                <div>{{ $q->division?->name ?? 'Pelaksana Pekerjaan' }}</div>
+                @if ($q->division)
+                <div>{{ $q->division->name }}</div>
+                @endif
                 <div class="signature-img-wrapper">
                     @if ($q->signedBy?->signature_image)
                         <img src="{{ storage_path('app/public/' . $q->signedBy->signature_image) }}" alt="Tanda Tangan">
                     @endif
                 </div>
-                <div class="signature-name">{{ $q->signedBy?->name ?? 'Zulkarnain' }}</div>
+                @if ($q->signedBy)
+                <div class="signature-name">{{ $q->signedBy->name }}</div>
+                @endif
             </div>
         </div>
     @endforeach

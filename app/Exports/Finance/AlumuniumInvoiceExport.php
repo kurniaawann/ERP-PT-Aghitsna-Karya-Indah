@@ -397,8 +397,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 }
 
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $signedBy = $invoice->signedBy?->name ?? 'Akhmad Khaidir';
-                $sheet->setCellValue("A{$currentRow}", $signedBy);
+                $sheet->setCellValue("A{$currentRow}", $invoice->signedBy?->name ?? '');
 
                 if ($invoice->division) {
                     $currentRow++;

@@ -365,12 +365,12 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 }
 
                 $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("B{$currentRow}", $invoice->signedBy?->name ?? 'Zulkarnain, S.T., M.T.');
+                $sheet->setCellValue("B{$currentRow}", $invoice->signedBy?->name ?? '');
                 $sheet->getStyle("B{$currentRow}")->getFont()->setBold(true)->setUnderline(Font::UNDERLINE_SINGLE);
 
                 $currentRow++;
                 $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("B{$currentRow}", $invoice->signedBy?->position ?? 'Direktur');
+                $sheet->setCellValue("B{$currentRow}", $invoice->signedBy?->position ?? '');
 
                 // Stamp LUNAS jika invoice lunas
                 if ($invoice->isFullyPaid()) {
