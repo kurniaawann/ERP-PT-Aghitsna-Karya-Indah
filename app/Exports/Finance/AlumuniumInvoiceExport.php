@@ -111,14 +111,16 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $currentRow = 7;
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
 
-                $sheet->setCellValue("B{$currentRow}", $invoice->recipient);
-                $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
+                $currentRow++;
+                $sheet->setCellValue("A{$currentRow}", $invoice->recipient);
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
 
                 if (!empty($invoice->proyek)) {
                     $currentRow++;
-                    $sheet->setCellValue("B{$currentRow}", $invoice->proyek);
-                    $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", $invoice->proyek);
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 }
 
                 $currentRow += 2;

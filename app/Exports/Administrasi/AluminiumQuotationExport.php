@@ -118,16 +118,18 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $currentRow = 8;
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
 
-                // Recipient Name (Row 8, kolom B)
-                $sheet->setCellValue("B{$currentRow}", $quotation->recipient);
-                $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
+                // Recipient Name (Row 9)
+                $currentRow++;
+                $sheet->setCellValue("A{$currentRow}", $quotation->recipient);
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
 
-                // Nama Proyek (Row 9, kolom B)
+                // Nama Proyek (Row 10)
                 if (!empty($quotation->proyek)) {
                     $currentRow++;
-                    $sheet->setCellValue("B{$currentRow}", $quotation->proyek);
-                    $sheet->mergeCells("B{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", $quotation->proyek);
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 }
 
                 // Opening text (Row 11)

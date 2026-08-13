@@ -285,17 +285,13 @@
 </div>
         <!-- Recipient -->
         <div class="recipient">
-            <table class="recipient-table">
-                <tr>
-                    <td class="recipient-label-cell">Kepada Yth :</td>
-                    <td class="recipient-name-cell">
-                        <div>{{ $invoice->recipient }}</div>
-                        @if (!empty($invoice->proyek))
-                            <div>{{ $invoice->proyek }}</div>
-                        @endif
-                    </td>
-                </tr>
-            </table>
+            <div class="recipient-label">Kepada Yth :</div>
+            <div>
+                <div>{{ $invoice->recipient }}</div>
+                @if (!empty($invoice->proyek))
+                    <div>{{ $invoice->proyek }}</div>
+                @endif
+            </div>
         </div>
 
         <!-- Description -->

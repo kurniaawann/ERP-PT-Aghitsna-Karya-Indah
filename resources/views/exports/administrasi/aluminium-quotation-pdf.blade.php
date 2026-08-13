@@ -290,17 +290,13 @@
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <table class="recipient-table">
-            <tr>
-                <td class="recipient-label-cell"><strong>Kepada Yth :</strong></td>
-                <td class="recipient-name-cell">
-                    <div>{{ $q->recipient }}</div>
-                    @if (!empty($q->proyek))
-                        <div>{{ $q->proyek }}</div>
-                    @endif
-                </td>
-            </tr>
-        </table>
+        <div class="recipient-label"><strong>Kepada Yth :</strong></div>
+        <div>
+            <div>{{ $q->recipient }}</div>
+            @if (!empty($q->proyek))
+                <div>{{ $q->proyek }}</div>
+            @endif
+        </div>
     </div>
 
     <div class="opening">
