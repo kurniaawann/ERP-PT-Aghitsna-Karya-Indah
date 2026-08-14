@@ -1,14 +1,11 @@
 {{-- =====================================================================
      Halaman: Invoice Barang (Item Invoices)
-     Tujuan: Menampilkan daftar invoice barang beserta summary cards
-             (total invoice, jumlah, lunas), filter bulan/tahun & search,
-             serta CRUD (tambah, edit, detail, hapus massal).
+     Tujuan: Menampilkan daftar invoice barang beserta filter bulan/tahun &
+             search, serta CRUD (tambah, edit, detail, hapus massal).
      Data dari ItemInvoiceController@index:
      - $invoices       : Paginator InvoiceBarang (10/halaman) dari
                          ItemInvoiceService::baseQuery($request),
                          difilter oleh month, year, search.
-     - $totals         : Ringkasan hasil ItemInvoiceService::buildTotals()
-                         dengan field total_invoice, invoice_count, paid_count.
      - $items          : Daftar item inventory (Items) dari cache
                          'inventory:items:all', dipakai dropdown di modal
                          dan window._itemsData untuk autofill harga.
@@ -47,25 +44,6 @@
 
                     <x-buttons.add-button modalId="addModal" text="Tambah Invoice" responsive="custom" />
                 </div>
-            </div>
-        </div>
-
-        {{-- ==================== Section: Summary Cards ==================== --}}
-        {{-- Kartu ringkasan cepat: total nominal invoice, jumlah invoice,
-             dan jumlah invoice yang sudah lunas (berasal dari $totals). --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
-            <div class="rounded-xl border border-border-strong p-4 bg-surface-secondary">
-                <p class="uppercase tracking-wide text-text-secondary">Total Invoice</p>
-                <p class="text-xl font-bold text-text-primary mt-1">Rp
-                    {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</p>
-            </div>
-            <div class="rounded-xl border border-border-strong p-4 bg-surface-secondary">
-                <p class="uppercase tracking-wide text-text-secondary">Jumlah Invoice</p>
-                <p class="text-xl font-bold text-success mt-1">{{ $totals->invoice_count ?? 0 }} invoice</p>
-            </div>
-            <div class="rounded-xl border border-border-strong p-4 bg-surface-secondary">
-                <p class="uppercase tracking-wide text-text-secondary">Lunas</p>
-                <p class="text-xl font-bold text-success mt-1">{{ $totals->paid_count ?? 0 }} invoice</p>
             </div>
         </div>
 

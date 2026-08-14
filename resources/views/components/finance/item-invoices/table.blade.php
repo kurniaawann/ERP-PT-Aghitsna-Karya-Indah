@@ -80,17 +80,6 @@
                                     ditemukan.</td>
                             </tr>
                         @endforelse
-
-                        @if ($invoices->isNotEmpty())
-                            <tr
-                                class="bg-gradient-to-r from-primary/20 to-primary/10 border-t-4 border-primary font-bold text-base">
-                                <td colspan="5" class="p-3 text-right text-text-heading">TOTAL INVOICE BARANG</td>
-                                <td class="p-3 text-right text-text-heading">Rp
-                                    {{ number_format($invoices->sum(fn($invoice) => $invoice->getNetAmount()), 0, ',', '.') }}
-                                </td>
-                                <td colspan="2"></td>
-                            </tr>
-                        @endif
                     </tbody>
                 </table>
             </div>

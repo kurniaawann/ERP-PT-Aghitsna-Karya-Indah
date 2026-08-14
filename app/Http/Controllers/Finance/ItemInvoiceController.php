@@ -43,8 +43,6 @@ class ItemInvoiceController extends Controller
     public function index(Request $request)
     {
         $invoices = $this->service->baseQuery($request)->paginate(10)->appends($request->all());
-        $summaryInvoices = (clone $this->service->baseQuery($request))->get();
-        $totals = $this->service->buildTotals($summaryInvoices);
 
         try {
             $items = Cache::remember(
@@ -61,7 +59,7 @@ class ItemInvoiceController extends Controller
         $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
         $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.finance.item-invoices', compact('invoices', 'totals', 'items', 'paymentAccounts', 'executives', 'divisions'));
+        return view('pages.finance.item-invoices', compact('invoices', 'items', 'paymentAccounts', 'executives', 'divisions'));
     }
 
     /**
