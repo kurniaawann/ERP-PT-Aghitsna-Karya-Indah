@@ -90,7 +90,7 @@
 
                 {{-- Submenu --}}
                 <ul id="inventoryDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item*') || request()->is('do-semen*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ (request()->is('item') || request()->is('item/*')) || request()->is('do-semen*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/item') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
