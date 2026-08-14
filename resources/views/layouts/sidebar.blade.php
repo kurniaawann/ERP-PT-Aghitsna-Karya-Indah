@@ -30,7 +30,7 @@
             @endphp
 
             {{-- Dashboard --}}
-            @if (!$isGeneralManager && !$isAdmin)
+            @if (!$isGeneralManager)
             <li>
                 <a href="{{ url('/dashboard') }}"
                     class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
