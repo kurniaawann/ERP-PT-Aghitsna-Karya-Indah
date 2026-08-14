@@ -25,9 +25,9 @@ use Illuminate\Support\Facades\Log;
  * Semua logika perhitungan gaji dipusatkan di sini.
  *
  * Identifikasi periode menggunakan period_start_date sebagai kunci utama.
- * Minggu berjalan dari Senin-Sabtu dan TIDAK dipotong di batas bulan.
- * Hari Minggu adalah hari libur: tidak ada absensi maupun lembur di hari
- * Minggu, sehingga Minggu dikecualikan dari semua perhitungan payroll.
+ * Minggu berjalan mengikuti format kalender Minggu-Sabtu (7 hari penuh) dan
+ * TIDAK dipotong di batas bulan. Semua hari kalender (termasuk Minggu)
+ * diperhitungkan sebagai hari kerja selama ada absensinya.
  */
 class PayrollService
 {
@@ -336,12 +336,11 @@ class PayrollService
      * 1. Lewati jika sudah ada payroll untuk periode ini (already_generated).
      * 2. Lewati jika join_date lebih besar dari akhir periode (belum bekerja).
  * 3. Susun daftar hari kerja yang diwajibkan: dari max(join_date, start)
- *    sampai end, mengecualikan Minggu (hari libur).
+ *    sampai end.
  * 4. Bandingkan dengan tanggal absensi milik karyawan (dari batch query);
  *    selisihnya = hari hilang. Lengkap → complete, ada kurang → incomplete.
  * 5. can_generate = ada karyawan baru DAN tidak ada yang incomplete.
- * 6. Rentang absensi dibatasi startDate sampai endDate (Senin-Sabtu) —
- *    Minggu tidak dihitung karena tidak ada absensi di hari libur.
+ * 6. Rentang absensi dibatasi startDate sampai endDate (inklusif).
  *
  * @param  Carbon        $periodStartDate
  * @param  Carbon        $periodEndDate
@@ -357,7 +356,7 @@ class PayrollService
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
 
-        // working_days = hari kalender Senin-Sabtu (Minggu dikecualikan oleh loop)
+        // working_days = seluruh hari kalender dalam rentang (inklusif)
         $workingDays = $this->countWorkingDays($startDate, $endDate);
 
         // === QUERY BATCH (perbaikan N+1) ===
@@ -366,9 +365,7 @@ class PayrollService
             ->pluck('employee_id')
             ->toArray();
 
-        // Rentang absensi = startDate sampai endDate (Senin-Sabtu).
-        // Minggu adalah hari libur, jadi tidak ada absensi maupun lembur
-        // yang perlu diambil untuk hari Minggu.
+        // Rentang absensi = startDate sampai endDate (inklusif).
         $allAttendances = Attendance::whereIn('employee_id', $employees->pluck('employee_code'))
             ->whereBetween('attendance_date', [$startDate, $endDate])
             ->get()
@@ -416,9 +413,7 @@ class PayrollService
             $currentCheckDate = $employeeStartDate->copy();
 
             while ($currentCheckDate->lte($endDate)) {
-                if ($currentCheckDate->dayOfWeek !== Carbon::SUNDAY) {
-                    $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
-                }
+                $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
                 $currentCheckDate->addDay();
             }
 
@@ -546,9 +541,7 @@ class PayrollService
             ->pluck('employee_id')
             ->toArray();
 
-        // Rentang absensi = startDate sampai endDate (Senin-Sabtu).
-        // Minggu adalah hari libur, jadi tidak ada absensi maupun lembur
-        // yang perlu diambil untuk hari Minggu.
+        // Rentang absensi = startDate sampai endDate (inklusif).
         $allAttendances = Attendance::whereIn('employee_id', $employees->pluck('employee_code'))
             ->whereBetween('attendance_date', [$startDate, $endDate])
             ->get()
@@ -578,9 +571,7 @@ class PayrollService
             $currentCheckDate = $employeeStartDate->copy();
 
             while ($currentCheckDate->lte($endDate)) {
-                if ($currentCheckDate->dayOfWeek !== Carbon::SUNDAY) {
-                    $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
-                }
+                $employeeWorkingDates[] = $currentCheckDate->format('Y-m-d');
                 $currentCheckDate->addDay();
             }
 
@@ -614,7 +605,12 @@ class PayrollService
                 $errorMessage .= '<strong class="text-red-600">' . $emp['filled_days'] . '</strong> dari <strong>' . $emp['total_days'] . '</strong> hari kerja';
 
                 if (!empty($emp['missing_dates'])) {
-                    $dates = array_map(fn($date) => Carbon::parse($date)->format('d/m'), $emp['missing_dates']);
+                    $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    $dates = array_map(function ($date) use ($dayNames) {
+                        $c = Carbon::parse($date);
+
+                        return $dayNames[$c->dayOfWeek].' '.$c->format('d/m');
+                    }, $emp['missing_dates']);
                     $errorMessage .= '<br>&nbsp;&nbsp;&nbsp;Tanggal kosong: ' . implode(', ', $dates);
                 }
                 $errorMessage .= '<br>';
@@ -1366,23 +1362,15 @@ class PayrollService
     }
 
     /**
-     * Mendapatkan semua minggu dalam sebulan menggunakan sistem minggu Senin-Sabtu.
+     * Mendapatkan semua minggu dalam sebulan mengikuti format kalender (Minggu-Sabtu).
      *
-     * Setiap minggu berjalan dari Senin hingga Sabtu (6 hari kerja).
-     * Minggu TIDAK dipotong di batas bulan — minggu yang dimulai di
-     * Februari dan berakhir di Maret diperlakukan sebagai satu periode.
+     * Setiap minggu berjalan dari Minggu hingga Sabtu (7 hari penuh), sesuai
+     * format tanggalan. Minggu TIDAK dipotong di batas bulan — minggu yang
+     * dimulai di Februari dan berakhir di Maret diperlakukan sebagai satu
+     * periode.
      *
-     * Jika bulan tidak dimulai pada hari Senin, hari-hari sebelum Senin
-     * pertama membentuk "Minggu 1" parsial (contoh: Rabu-Sabtu = 4 hari).
-     *
-     * Contoh untuk Februari 2028 (1 Februari = hari Rabu):
-     *   Minggu 1: Feb 1-4   (Rabu-Sabtu) = 4 hari
-     *   Minggu 2: Feb 6-11  (Senin-Sabtu) = 6 hari
-     *   Minggu 3: Feb 13-18 (Senin-Sabtu) = 6 hari
-     *   Minggu 4: Feb 20-25 (Senin-Sabtu) = 6 hari
-     *   Minggu 5: Feb 27 - Mar 4 (Senin-Sabtu) = 6 hari (lintas bulan)
-     *
-     * Minggu selalu dikecualikan sebagai hari non-kerja.
+     * Jika bulan tidak dimulai pada hari Minggu, hari-hari sebelum Minggu
+     * pertama membentuk minggu terakhir bulan sebelumnya.
      *
      * @param  int  $year
      * @param  int  $month
@@ -1395,18 +1383,19 @@ class PayrollService
         $weeks = [];
         $weekNumber = 1;
 
-        // Minggu kerja selalu dimulai hari Senin. Jika tanggal 1 jatuh di tengah
-        // minggu (bukan Senin), hari-hari awal bulan tersebut sudah termasuk
-        // minggu terakhir bulan sebelumnya, jadi tidak dibuat minggu parsial di sini.
+        // Minggu kalender selalu dimulai hari Minggu. Jika tanggal 1 jatuh di
+        // tengah minggu (bukan Minggu), hari-hari awal bulan tersebut sudah
+        // termasuk minggu terakhir bulan sebelumnya, jadi tidak dibuat minggu
+        // parsial di sini.
         $currentDate = $firstDayOfMonth->copy();
-        while ($currentDate->dayOfWeek !== Carbon::MONDAY) {
+        while ($currentDate->dayOfWeek !== Carbon::SUNDAY) {
             $currentDate->addDay();
         }
 
         while ($currentDate->month === $month && $currentDate->year === $year) {
             $weekStart = $currentDate->copy();
 
-            // Cari hari Sabtu dari minggu ini
+            // Cari hari Sabtu dari minggu ini (akhir minggu kalender).
             $weekEnd = $weekStart->copy();
             while ($weekEnd->dayOfWeek !== Carbon::SATURDAY) {
                 $weekEnd->addDay();
@@ -1419,15 +1408,15 @@ class PayrollService
             ];
             $weekNumber++;
 
-            // Pindah ke Senin minggu berikutnya (Sabtu + 2 hari)
-            $currentDate = $weekEnd->copy()->addDays(2);
+            // Pindah ke Minggu minggu berikutnya (Sabtu + 1 hari)
+            $currentDate = $weekEnd->copy()->addDay();
         }
 
         return $weeks;
     }
 
     /**
-     * Menghitung hari kerja (Senin-Sabtu) antara dua tanggal secara inklusif.
+     * Menghitung hari kerja antara dua tanggal secara inklusif.
      *
      * @param  Carbon  $startDate
      * @param  Carbon  $endDate
@@ -1439,9 +1428,7 @@ class PayrollService
         $current = $startDate->copy();
 
         while ($current->lte($endDate)) {
-            if ($current->dayOfWeek !== Carbon::SUNDAY) {
-                $count++;
-            }
+            $count++;
             $current->addDay();
         }
 

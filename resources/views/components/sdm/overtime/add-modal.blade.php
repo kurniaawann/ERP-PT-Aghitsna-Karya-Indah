@@ -30,7 +30,8 @@
             class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
             max="{{ date('Y-m-d') }}"
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Minggu adalah hari libur — lembur tidak dapat diinput pada hari Minggu</p>
+        <p class="text-xs text-text-secondary mt-1">Lembur hanya dapat diinput jika karyawan sudah absen dengan status
+            Hadir</p>
     </div>
 
     {{-- Duplicate Warning: client-side validation --}}

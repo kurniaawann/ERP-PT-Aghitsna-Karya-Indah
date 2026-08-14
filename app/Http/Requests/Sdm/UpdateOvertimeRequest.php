@@ -4,8 +4,6 @@ namespace App\Http\Requests\Sdm;
 
 use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Carbon;
-use Illuminate\Validation\Validator;
 
 /**
  * Form request untuk pembaruan data lembur.
@@ -41,28 +39,6 @@ class UpdateOvertimeRequest extends FormRequest
             'overtime_rate' => 'required|integer|min:0',
             'notes' => 'nullable|string|max:1000',
         ];
-    }
-
-    /**
-     * Validasi tambahan: menolak lembur pada hari Minggu (hari libur).
-     *
-     * @param  Validator  $validator
-     * @return void
-     */
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator) {
-            if (!$validator->errors()->has('attendance_date') && $this->attendance_date) {
-                $date = Carbon::parse($this->attendance_date);
-
-                if ($date->dayOfWeek === Carbon::SUNDAY) {
-                    $validator->errors()->add(
-                        'attendance_date',
-                        'Tidak dapat menyimpan lembur pada hari Minggu karena Minggu adalah hari libur.'
-                    );
-                }
-            }
-        });
     }
 
     /**

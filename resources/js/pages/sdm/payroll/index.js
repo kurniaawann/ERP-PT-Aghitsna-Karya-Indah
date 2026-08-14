@@ -548,10 +548,13 @@ async function checkAttendanceData() {
                 `<p class="text-xs text-error mb-2 pb-2 border-b border-error font-semibold">${periodInfo}</p>`;
 
             incompleteHTML += data.incomplete_employees.map(emp => {
-                // Format tanggal yang kosong
+                // Format tanggal yang kosong; sertakan nama hari & tandai Minggu
+                // (kini dihitung sebagai hari kerja wajib) dengan warna error.
+                const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
                 const missingDatesFormatted = emp.missing_dates.map(date => {
                     const d = new Date(date);
-                    return d.getDate();
+                    const isSunday = d.getDay() === 0;
+                    return `<strong class="${isSunday ? 'text-error underline' : ''}">${dayNames[d.getDay()]} ${d.getDate()}</strong>`;
                 }).join(', ');
 
                 return `

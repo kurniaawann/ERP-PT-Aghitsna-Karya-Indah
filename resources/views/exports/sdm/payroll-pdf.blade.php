@@ -297,7 +297,7 @@
 
     {{-- KETERANGAN LEGEND --}}
     <div class="legend">
-        Keterangan: &#10003;=Hadir, Lb=Lembur, I=Izin, S=Sakit, C=Cuti — Minggu adalah hari libur
+        Keterangan: &#10003;=Hadir, Lb=Lembur, I=Izin, S=Sakit, C=Cuti
     </div>
 
     {{-- REKAPITULASI DANA --}}

@@ -3,8 +3,6 @@
 namespace App\Http\Requests\Sdm;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Carbon;
-use Illuminate\Validation\Validator;
 
 /**
  * Form request untuk pembaruan data absensi.
@@ -39,28 +37,6 @@ class UpdateAttendanceRequest extends FormRequest
             'status' => 'required|string|in:hadir,izin,sakit,cuti',
             'notes' => 'nullable|string|max:1000',
         ];
-    }
-
-    /**
-     * Validasi tambahan: menolak absensi pada hari Minggu (hari libur).
-     *
-     * @param  Validator  $validator
-     * @return void
-     */
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator) {
-            if (!$validator->errors()->has('attendance_date') && $this->attendance_date) {
-                $date = Carbon::parse($this->attendance_date);
-
-                if ($date->dayOfWeek === Carbon::SUNDAY) {
-                    $validator->errors()->add(
-                        'attendance_date',
-                        'Tidak dapat menyimpan absensi pada hari Minggu karena Minggu adalah hari libur.'
-                    );
-                }
-            }
-        });
     }
 
     /**

@@ -131,7 +131,6 @@ class AttendanceService
      *   lookup O(1) per kombinasi, bukan query per karyawan/tanggal (anti N+1).
      * - Loop karyawan × tanggal melewati setiap hari; kunci disamakan dengan
      *   keyBy di atas sehingga pengecekan cukup `isset`.
-     * - Hari Minggu dilewati karena tidak ada absensi di hari libur.
      * - Nama karyawan di-pluck sekaligus untuk pesan yang mudah dibaca.
      *
      * @param  array<int, string>  $employeeIds  Array nilai employee_code
@@ -158,11 +157,6 @@ class AttendanceService
             $currentDate = $startDate->copy();
 
             while ($currentDate->lte($endDate)) {
-                if ($currentDate->dayOfWeek === Carbon::SUNDAY) {
-                    $currentDate->addDay();
-                    continue;
-                }
-
                 $key = $employeeId . '_' . $currentDate->format('Y-m-d');
 
                 if (isset($existingRecords[$key])) {
@@ -188,8 +182,6 @@ class AttendanceService
      * Logika:
      * - Nested loop karyawan × tanggal; `$currentDate` di-copy dari startDate
      *   tiap karyawan lalu digeser per hari sampai melewati endDate.
-     * - Hari Minggu DILEWATI (skip) karena Minggu adalah hari libur — tidak
-     *   ada absensi di hari Minggu.
      * - Setiap record dibuat terpisah (bukan bulk insert) agar created_by dan
      *   nilai per record konsisten; jumlah total dikembalikan untuk pesan sukses.
      * - Catatan: diasumsikan caller sudah menjalankan findDuplicates() lebih dulu.
@@ -214,16 +206,14 @@ class AttendanceService
             $currentDate = $startDate->copy();
 
             while ($currentDate->lte($endDate)) {
-                if ($currentDate->dayOfWeek !== Carbon::SUNDAY) {
-                    Attendance::create([
-                        'employee_id' => $employeeId,
-                        'attendance_date' => $currentDate->format('Y-m-d'),
-                        'status' => $status,
-                        'notes' => $notes,
-                        'created_by' => auth()->id(),
-                    ]);
-                    $totalInserted++;
-                }
+                Attendance::create([
+                    'employee_id' => $employeeId,
+                    'attendance_date' => $currentDate->format('Y-m-d'),
+                    'status' => $status,
+                    'notes' => $notes,
+                    'created_by' => auth()->id(),
+                ]);
+                $totalInserted++;
                 $currentDate->addDay();
             }
         }
@@ -421,8 +411,7 @@ class AttendanceService
      * Membuat pesan sukses yang mudah dibaca untuk pembuatan massal.
      *
      * Logika:
-     * - totalDays = jumlah hari kerja dalam rentang (Senin-Sabtu, Minggu
-     *   dikecualikan karena hari libur).
+     * - totalDays = jumlah hari dalam rentang tanggal yang dipilih.
      * - Memakai sprintf agar format nominal pesan konsisten dan terhindar dari
      *   concatenation yang berantakan.
      *
@@ -438,9 +427,7 @@ class AttendanceService
         $currentDate = $startDate->copy();
 
         while ($currentDate->lte($endDate)) {
-            if ($currentDate->dayOfWeek !== Carbon::SUNDAY) {
-                $totalDays++;
-            }
+            $totalDays++;
             $currentDate->addDay();
         }
 

@@ -27,11 +27,8 @@
             required oninvalid="this.setCustomValidity('Tanggal akhir tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
         <p class="text-xs text-text-secondary mt-1">Untuk 1 hari, isi tanggal yang sama</p>
-        <p class="text-xs text-text-secondary mt-1">Hari Minggu otomatis dilewati karena Minggu adalah hari libur</p>
         <p id="date-error" class="text-xs text-red-600 mt-1 hidden">Tanggal akhir tidak boleh lebih kecil dari tanggal
             mulai!</p>
-        <p id="sunday-error" class="text-xs text-red-600 mt-1 hidden">Tidak dapat menambah absensi pada hari Minggu
-            karena Minggu adalah hari libur.</p>
     </div>
 
     {{-- Status Absensi --}}

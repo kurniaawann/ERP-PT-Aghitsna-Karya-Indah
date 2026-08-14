@@ -191,16 +191,11 @@ class Employee extends Model
     }
 
     /**
-     * Mendeteksi nomor minggu untuk tanggal tertentu menggunakan minggu Senin-Sabtu.
+     * Mendeteksi nomor minggu untuk tanggal tertentu menggunakan minggu kalender (Minggu-Sabtu).
      *
-     * Setiap minggu berjalan dari Senin sampai Sabtu. Jika bulan tidak dimulai
-     * pada hari Senin, hari-hari sebelum Senin pertama membentuk "Minggu 1" parsial.
-     * Minggu selalu dikecualikan sebagai hari non-kerja.
-     *
-     * Contoh untuk Juli 2026 (1 Jul = Rabu):
-     *   Minggu 1: Jul 1-4   (Rab-Sab)
-     *   Minggu 2: Jul 6-11  (Sen-Sab)
-     *   Minggu 5: Jul 27-31 (Sen-Jum)
+     * Setiap minggu berjalan dari Minggu sampai Sabtu. Jika bulan tidak dimulai
+     * pada hari Minggu, hari-hari sebelum Minggu pertama sudah termasuk minggu
+     * terakhir bulan sebelumnya.
      *
      * @param  \Carbon\Carbon|string  $date
      * @return int  Nomor minggu (1-N, tergantung bulan)

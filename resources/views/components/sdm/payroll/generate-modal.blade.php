@@ -31,7 +31,9 @@
                 <ul class="list-disc list-inside space-y-1">
                     <li>Payroll dibuat <strong>per proyek (bisa lebih dari satu)</strong> — hanya karyawan pada proyek terpilih yang diproses</li>
                     <li>Sistem menghitung upah harian × hari masuk untuk pekerja harian</li>
-                    <li>Data diambil dari absensi minggu yang dipilih (Senin-Sabtu)</li>
+                    <li>Data diambil dari absensi minggu yang dipilih (Minggu-Sabtu)</li>
+                    <li><strong class="text-error">Hari Minggu ikut dihitung</strong> — absensi Minggu wajib
+                        terisi untuk semua karyawan</li>
                     <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
                     <li><strong class="text-error">Setiap karyawan harus memiliki absensi lengkap sesuai hari
                             kerjanya</strong></li>
