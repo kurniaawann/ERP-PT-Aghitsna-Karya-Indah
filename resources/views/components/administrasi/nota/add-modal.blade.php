@@ -21,6 +21,9 @@
 <x-modal id="addModal" title="Tambah Nota" action="{{ route('nota.administrasi.store') }}" method="POST"
     buttonText="Simpan">
 
+    {{-- Tipe nota tersembunyi --}}
+    <input type="hidden" name="tipe_nota" value="sewa_jual">
+
     {{-- ═══════════════════════════════════════════════════════════
          FIELD: Lokasi & Tanggal
          ═══════════════════════════════════════════════════════════ --}}
@@ -111,7 +114,7 @@
             </button>
         </div>
 
-        <div id="itemsContainer-addModal" class="space-y-3">
+        <div id="itemsContainer-addModal" data-tipe="sewa_jual" class="space-y-3">
             {{-- Item Row Pertama (default) --}}
             <div
                 class="item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">

@@ -41,10 +41,18 @@ class Nota extends Model
     protected $keyType = 'string';
 
     /**
+     * Konstanta tipe nota.
+     */
+    public const TIPE_SEWA_JUAL = 'sewa_jual';
+    public const TIPE_PROYEK = 'proyek';
+
+    /**
      * Kolom yang boleh diisi secara massal (mass assignable).
      */
     protected $fillable = [
         'id_nota',
+        'tipe_nota',
+        'nama_proyek',
         'location',
         'nota_date',
         'periode_start',
@@ -54,6 +62,7 @@ class Nota extends Model
         'sj_no',
         'items',
         'penerima',
+        'penandatangan',
         'sewa_jual',
         'ongkos_kirim',
         'bongkar_pasang',
@@ -81,6 +90,8 @@ class Nota extends Model
         'periode_start' => 'date',
         'periode_end' => 'date',
         'items' => 'array',
+        'penerima' => 'string',
+        'penandatangan' => 'array',
         'sewa_jual' => 'integer',
         'ongkos_kirim' => 'integer',
         'bongkar_pasang' => 'integer',
@@ -120,6 +131,37 @@ class Nota extends Model
         }
 
         return sprintf('NTA-%03d/AKI/%s', $nextNumber, $year);
+    }
+
+    /**
+     * Generate kode nota proyek berikutnya secara otomatis.
+     *
+     * Format: NTP-001/AKI/26 (NTP = Nota Proyek, 001 = nomor urut,
+     * AKI = Aghitsna Karya Indah, 26 = tahun).
+     * Nomor urut terpisah dari NTA (per tipe).
+     *
+     * @return string Kode nota proyek baru (contoh: NTP-001/AKI/26)
+     */
+    public static function generateProyekCode(): string
+    {
+        $year = date('y');
+
+        // Ambil nota terakhir dengan pola NTP-xxx/AKI/[year]
+        $lastNota = self::where('tipe_nota', self::TIPE_PROYEK)
+            ->where('id_nota', 'like', "NTP-%/AKI/{$year}")
+            ->orderBy('id_nota', 'desc')
+            ->first();
+
+        if ($lastNota) {
+            // Extract nomor urut dari id_nota (NTP-001/AKI/26 -> 001)
+            $parts = explode('/', $lastNota->id_nota);
+            $numberPart = explode('-', $parts[0])[1];
+            $nextNumber = intval($numberPart) + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        return sprintf('NTP-%03d/AKI/%s', $nextNumber, $year);
     }
 
     /**

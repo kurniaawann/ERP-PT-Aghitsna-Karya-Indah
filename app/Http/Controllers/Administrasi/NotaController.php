@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\StoreNotaRequest;
 use App\Http\Requests\Administrasi\UpdateNotaRequest;
 use App\Models\Administrasi\Nota;
+use App\Models\Sdm\Executive;
+use App\Models\Sdm\Division;
 use App\Services\Administrasi\NotaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -41,9 +43,20 @@ class NotaController extends Controller
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
         $year = $request->integer('year') ?: null;
-        $notas = $this->notaService->getPaginated($search, $month, $year);
+        $tipe = $request->input('tipe');
+        $notas = $this->notaService->getPaginated($search, $month, $year, $tipe);
 
-        return view('pages.administrasi.nota', compact('notas', 'search'));
+        // Data petinggi (Executive) & divisi (Division) untuk dropdown
+        // penanda tangan pada form nota proyek (add & edit).
+        $executives = Executive::where('created_by', auth()->id())
+            ->orderBy('name')
+            ->get();
+
+        $divisions = Division::where('created_by', auth()->id())
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.administrasi.nota', compact('notas', 'search', 'tipe', 'executives', 'divisions'));
     }
 
     /**
@@ -108,7 +121,8 @@ class NotaController extends Controller
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
         $year = $request->integer('year') ?: null;
-        $notas = $this->notaService->getAllForExport($search, $month, $year);
+        $tipe = $request->input('tipe');
+        $notas = $this->notaService->getAllForExport($search, $month, $year, $tipe);
 
         $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 

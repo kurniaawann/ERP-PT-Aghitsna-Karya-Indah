@@ -27,7 +27,33 @@ class StoreNotaRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tipe = $this->input('tipe_nota');
+
+        if ($tipe === 'proyek') {
+            return [
+                'tipe_nota' => 'required|string|in:sewa_jual,proyek',
+                'nama_proyek' => 'required|string|max:255',
+                'location' => 'nullable|string|max:100',
+                'nota_date' => 'required|date',
+                'kepada' => 'required|string|max:255',
+                'item_quantity' => 'required|array|min:1',
+                'item_quantity.*' => 'required|integer|min:1',
+                'item_satuan' => 'nullable|array',
+                'item_satuan.*' => 'nullable|string|max:50',
+                'item_nama_barang' => 'required|array|min:1',
+                'item_nama_barang.*' => 'required|string|max:255',
+                'item_harga' => 'required|array|min:1',
+                'item_harga.*' => 'required',
+                'penerima' => 'nullable|string|max:255',
+                'petinggi_id' => 'nullable|integer|exists:executives,id',
+                'divisi' => 'nullable|string|max:100',
+                'selected_payment_accounts' => 'nullable|array',
+                'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
+            ];
+        }
+
         return [
+            'tipe_nota' => 'required|string|in:sewa_jual,proyek',
             'location' => 'nullable|string|max:100',
             'nota_date' => 'required|date',
             'periode_start' => 'nullable|date',
@@ -61,6 +87,10 @@ class StoreNotaRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'tipe_nota.required' => 'Tipe nota tidak boleh kosong.',
+            'tipe_nota.in' => 'Tipe nota tidak valid.',
+            'nama_proyek.required' => 'Nama proyek tidak boleh kosong.',
+            'nama_proyek.max' => 'Nama proyek maksimal 255 karakter.',
             'nota_date.required' => 'Tanggal nota tidak boleh kosong.',
             'nota_date.date' => 'Format tanggal tidak valid.',
             'periode_start.date' => 'Format tanggal periode tidak valid.',
@@ -81,7 +111,16 @@ class StoreNotaRequest extends FormRequest
             'item_nama_barang.*.max' => 'Nama barang maksimal 255 karakter.',
             'item_harga_satuan.required' => 'Harga satuan tidak boleh kosong.',
             'item_harga_satuan.*.required' => 'Harga satuan tidak boleh kosong.',
+            'item_quantity.required' => 'Minimal harus ada 1 item barang.',
+            'item_quantity.*.required' => 'Quantity tidak boleh kosong.',
+            'item_quantity.*.integer' => 'Quantity harus berupa angka.',
+            'item_quantity.*.min' => 'Quantity minimal 1.',
+            'item_satuan.*.max' => 'Satuan maksimal 50 karakter.',
+            'item_harga.required' => 'Harga tidak boleh kosong.',
+            'item_harga.*.required' => 'Harga tidak boleh kosong.',
             'penerima.max' => 'Penerima maksimal 255 karakter.',
+            'petinggi_id.exists' => 'Petinggi yang dipilih tidak valid.',
+            'divisi.max' => 'Divisi maksimal 100 karakter.',
             'selected_payment_accounts.*.exists' => 'Bank yang dipilih tidak valid.',
             'ppn_percentage.numeric' => 'Persentase PPN harus berupa angka.',
             'ppn_percentage.min' => 'Persentase PPN minimal 0.',

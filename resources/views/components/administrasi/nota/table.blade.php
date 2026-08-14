@@ -7,10 +7,10 @@
 
      Kolom:
      - Checkbox (select all)
+     - Tipe (Sewa/Jual | Proyek)
      - No. Nota (kode unik)
      - Kepada (penerima)
-     - Faktur No
-     - SJ No
+     - Informasi nota (Nama Proyek untuk tipe proyek, Faktur/SJ untuk sewa/jual)
      - Jumlah Total (format Rupiah)
      - Tanggal
      - Aksi (Edit)
@@ -31,10 +31,10 @@
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
+                            <th class="p-2 text-left">Tipe</th>
                             <th class="p-2 text-left">No. Nota</th>
                             <th class="p-2 text-left">Kepada</th>
-                            <th class="p-2 text-left">Faktur No</th>
-                            <th class="p-2 text-left">SJ No</th>
+                            <th class="p-2 text-left">Informasi Nota</th>
                             <th class="p-2 text-right">Jumlah Total</th>
                             <th class="p-2 text-center">Tanggal</th>
                             <th class="p-2 text-center">Aksi</th>
@@ -52,17 +52,32 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
+                                {{-- Tipe --}}
+                                <td class="p-2">
+                                    @if ($nota->tipe_nota === \App\Models\Administrasi\Nota::TIPE_PROYEK)
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800">Proyek</span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">Sewa/Jual</span>
+                                    @endif
+                                </td>
+
                                 {{-- No. Nota --}}
                                 <td class="p-2 font-medium text-primary">{{ $nota->id_nota }}</td>
 
                                 {{-- Kepada --}}
                                 <td class="p-2">{{ $nota->kepada }}</td>
 
-                                {{-- Faktur No --}}
-                                <td class="p-2">{{ $nota->faktur_no }}</td>
-
-                                {{-- SJ No --}}
-                                <td class="p-2">{{ $nota->sj_no }}</td>
+                                {{-- Informasi Nota (Proyek: Nama Proyek, Sewa/Jual: Faktur & SJ) --}}
+                                <td class="p-2">
+                                    @if ($nota->tipe_nota === \App\Models\Administrasi\Nota::TIPE_PROYEK)
+                                        <span class="font-medium">{{ $nota->nama_proyek }}</span>
+                                    @else
+                                        <span class="mr-3">Faktur: {{ $nota->faktur_no }}</span>
+                                        <span>SJ: {{ $nota->sj_no }}</span>
+                                    @endif
+                                </td>
 
                                 {{-- Jumlah Total (format Rupiah) --}}
                                 <td class="p-2 text-right font-semibold text-success">

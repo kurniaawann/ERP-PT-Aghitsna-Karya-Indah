@@ -1,64 +1,40 @@
 {{-- =====================================================================
-     Modal Edit Nota
+     Modal Edit Nota Proyek
      PT Aghitsna Karya Indah
 
-     Komponen form untuk mengedit nota yang sudah ada.
-     Setiap item existing akan di-pre-fill dengan data yang tersimpan.
-
-     Field sama dengan modal Tambah, namun menggunakan data existing.
+     Komponen form untuk mengedit nota proyek (tipe_nota = proyek).
+     Field sesuai tipe proyek: nama proyek, tanggal, kepada, items
+     (quantity, satuan, nama barang, harga, jumlah), tanda terima.
      ===================================================================== --}}
 
-{{-- Modal Edit Nota --}}
-<x-modal id="editModal-{{ $nota->id_nota }}" title="Edit Nota"
+{{-- Modal Edit Nota Proyek --}}
+<x-modal id="editModal-{{ $nota->id_nota }}" title="Edit Nota Proyek"
         action="{{ route('nota.administrasi.update', $nota->id_nota) }}" method="PUT" buttonText="Perbarui">
 
         {{-- Tipe nota tersembunyi --}}
-        <input type="hidden" name="tipe_nota" value="sewa_jual">
+        <input type="hidden" name="tipe_nota" value="proyek">
 
         {{-- ═══════════════════════════════════════════════════════
-             FIELD: Lokasi & Tanggal
+             FIELD: Nama Proyek & Tanggal
              ═══════════════════════════════════════════════════════ --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
-                <label class="block text-text-primary mb-1">Lokasi</label>
-                <input type="text" name="location"
+                <label class="block text-text-primary mb-1">Nama Proyek <span class="text-error">*</span></label>
+                <input type="text" name="nama_proyek"
                     class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                    placeholder="Jakarta (default)" maxlength="100" value="{{ $nota->location ?? 'Jakarta' }}">
-                <small class="text-text-secondary text-xs">Contoh: Jakarta, Depok, Bogor</small>
+                    placeholder="Nama proyek" required maxlength="255" value="{{ $nota->nama_proyek }}"
+                    oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">
             </div>
 
-        <div>
-            <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-            <input type="date" name="nota_date"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-                value="{{ $nota->nota_date->format('Y-m-d') }}"
-                oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
-                oninput="this.setCustomValidity('')">
+            <div>
+                <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
+                <input type="date" name="nota_date"
+                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
+                    value="{{ $nota->nota_date->format('Y-m-d') }}"
+                    oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
+            </div>
         </div>
-    </div>
-
-    {{-- ═══════════════════════════════════════════════════════
-         FIELD: Periode (Awal s/d Akhir)
-         ═══════════════════════════════════════════════════════ --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 items-end">
-        <div>
-            <label class="block text-text-primary mb-1">Periode Awal</label>
-            <input type="date" name="periode_start"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                value="{{ $nota->periode_start?->format('Y-m-d') }}"
-                oninvalid="this.setCustomValidity('Format tanggal periode tidak valid')"
-                oninput="this.setCustomValidity('')">
-        </div>
-
-        <div>
-            <label class="block text-text-primary mb-1">s/d</label>
-            <input type="date" name="periode_end"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                value="{{ $nota->periode_end?->format('Y-m-d') }}"
-                oninvalid="this.setCustomValidity('Format tanggal periode tidak valid')"
-                oninput="this.setCustomValidity('')">
-        </div>
-    </div>
 
         {{-- ═══════════════════════════════════════════════════════
              FIELD: Kepada (Penerima)
@@ -69,29 +45,6 @@
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
                 placeholder="Nama penerima" required maxlength="255" value="{{ $nota->kepada }}"
                 oninvalid="this.setCustomValidity('Kepada tidak boleh kosong')" oninput="this.setCustomValidity('')">
-        </div>
-
-        {{-- ═══════════════════════════════════════════════════════
-             FIELD: Faktur No & SJ No
-             ═══════════════════════════════════════════════════════ --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-            <div>
-                <label class="block text-text-primary mb-1">Faktur No <span class="text-error">*</span></label>
-                <input type="text" name="faktur_no"
-                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                    placeholder="Masukkan faktur no" required maxlength="100" value="{{ $nota->faktur_no }}"
-                    oninvalid="this.setCustomValidity('Faktur No tidak boleh kosong')"
-                    oninput="this.setCustomValidity('')">
-            </div>
-
-            <div>
-                <label class="block text-text-primary mb-1">SJ.NO <span class="text-error">*</span></label>
-                <input type="text" name="sj_no"
-                    class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                    placeholder="Masukkan SJ No" required maxlength="100" value="{{ $nota->sj_no }}"
-                    oninvalid="this.setCustomValidity('SJ No tidak boleh kosong')"
-                    oninput="this.setCustomValidity('')">
-            </div>
         </div>
 
         {{-- ═══════════════════════════════════════════════════════
@@ -108,21 +61,27 @@
                 </button>
             </div>
 
-            <div id="itemsContainer-editModal-{{ $nota->id_nota }}" data-tipe="sewa_jual" class="space-y-3">
+            <div id="itemsContainer-editModal-{{ $nota->id_nota }}" data-tipe="proyek" class="space-y-3">
                 @forelse($nota->items as $item)
                     {{-- Item Row Existing --}}
                     <div
                         class="item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                         <div class="space-y-3">
                             <div class="grid grid-cols-12 gap-3">
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Qty <span
+                                <div class="col-span-3">
+                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Quantity <span
                                             class="text-error">*</span></label>
-                                    <input type="number" name="item_banyaknya[]"
+                                    <input type="number" name="item_quantity[]"
                                         class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                                        placeholder="0" min="1" value="{{ $item['banyaknya'] }}" required>
+                                        placeholder="0" min="1" value="{{ $item['quantity'] }}" required>
                                 </div>
-                                <div class="col-span-10">
+                                <div class="col-span-3">
+                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Satuan</label>
+                                    <input type="text" name="item_satuan[]"
+                                        class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        placeholder="unit" maxlength="50" value="{{ $item['satuan'] }}">
+                                </div>
+                                <div class="col-span-6">
                                     <label class="block text-xs font-semibold text-text-label mb-1.5">Nama Barang <span
                                             class="text-error">*</span></label>
                                     <input type="text" name="item_nama_barang[]"
@@ -134,12 +93,12 @@
 
                             <div class="grid grid-cols-12 gap-3">
                                 <div class="col-span-4">
-                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Harga Satuan
+                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Harga
                                         <span class="text-error">*</span></label>
-                                    <input type="text" name="item_harga_satuan[]"
+                                    <input type="text" name="item_harga[]"
                                         class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right text-text-input price-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                         placeholder="0"
-                                        value="{{ $item['harga_satuan'] ? number_format($item['harga_satuan'], 0, ',', '.') : '0' }}"
+                                        value="{{ $item['harga'] ? number_format($item['harga'], 0, ',', '.') : '0' }}"
                                         required>
                                 </div>
                                 <div class="col-span-3">
@@ -165,14 +124,20 @@
                         class="item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                         <div class="space-y-3">
                             <div class="grid grid-cols-12 gap-3">
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Qty <span
+                                <div class="col-span-3">
+                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Quantity <span
                                             class="text-error">*</span></label>
-                                    <input type="number" name="item_banyaknya[]"
+                                    <input type="number" name="item_quantity[]"
                                         class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                         placeholder="0" min="1" required>
                                 </div>
-                                <div class="col-span-10">
+                                <div class="col-span-3">
+                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Satuan</label>
+                                    <input type="text" name="item_satuan[]"
+                                        class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        placeholder="unit" maxlength="50">
+                                </div>
+                                <div class="col-span-6">
                                     <label class="block text-xs font-semibold text-text-label mb-1.5">Nama Barang <span
                                             class="text-error">*</span></label>
                                     <input type="text" name="item_nama_barang[]"
@@ -183,9 +148,9 @@
 
                             <div class="grid grid-cols-12 gap-3">
                                 <div class="col-span-4">
-                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Harga Satuan
+                                    <label class="block text-xs font-semibold text-text-label mb-1.5">Harga
                                         <span class="text-error">*</span></label>
-                                    <input type="text" name="item_harga_satuan[]"
+                                    <input type="text" name="item_harga[]"
                                         class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right text-text-input price-input focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                         placeholder="0" required>
                                 </div>
@@ -222,79 +187,34 @@
         </div>
 
         {{-- ═══════════════════════════════════════════════════════
-             FIELD: Penerima
+             FIELD: Tanda Terima (Penerima)
              ═══════════════════════════════════════════════════════ --}}
         <div class="mb-3">
-            <label class="block text-text-primary mb-1">Penerima s/d</label>
+            <label class="block text-text-primary mb-1">Tanda Terima</label>
             <input type="text" name="penerima"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="Nama penerima" maxlength="255" value="{{ $nota->penerima }}">
+                placeholder="Nama yang menerima" maxlength="255" value="{{ $nota->penerima }}">
         </div>
 
-        {{-- ═══════════════════════════════════════════════════════
-             SECTION: Biaya Tambahan (Opsional)
-             ═══════════════════════════════════════════════════════ --}}
-        <div class="border-t pt-3 mt-3">
-            <label class="block text-text-primary font-semibold mb-2">Biaya Tambahan (Opsional)</label>
+    {{-- ═══════════════════════════════════════════════════════
+         FIELD: Penanda Tangan (Petinggi) & Divisi
+         ═══════════════════════════════════════════════════════ --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+        <x-forms.searchable-select
+            name="petinggi_id"
+            id="editModal-{{ $nota->id_nota }}-petinggi_id"
+            label="Penanda Tangan (Petinggi)"
+            placeholder="Cari petinggi..."
+            :options="$executives->map(fn($e) => ['value' => (string) $e->id, 'label' => $e->name . ($e->position ? ' — ' . $e->position : '')])->values()"
+            selected="{{ $nota->penandatangan['id'] ?? '' }}" />
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-text-primary mb-1 text-sm">Sewa / Jual</label>
-                    <input type="text" name="sewa_jual"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input price-input"
-                        placeholder="0"
-                        value="{{ $nota->sewa_jual ? number_format($nota->sewa_jual, 0, ',', '.') : '' }}">
-                </div>
-
-                <div>
-                    <label class="block text-text-primary mb-1 text-sm">Ongkos Kirim PP / 1x</label>
-                    <input type="text" name="ongkos_kirim"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input price-input"
-                        placeholder="0"
-                        value="{{ $nota->ongkos_kirim ? number_format($nota->ongkos_kirim, 0, ',', '.') : '' }}">
-                </div>
-
-                <div>
-                    <label class="block text-text-primary mb-1 text-sm">Bongkar / Pasang</label>
-                    <input type="text" name="bongkar_pasang"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input price-input"
-                        placeholder="0"
-                        value="{{ $nota->bongkar_pasang ? number_format($nota->bongkar_pasang, 0, ',', '.') : '' }}">
-                </div>
-
-                <div>
-                    <label class="block text-text-primary mb-1 text-sm">Lembur Antar / Ambil</label>
-                    <input type="text" name="lembur"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input price-input"
-                        placeholder="0"
-                        value="{{ $nota->lembur ? number_format($nota->lembur, 0, ',', '.') : '' }}">
-                </div>
-
-                <div class="md:col-span-2">
-                    <label class="block text-text-primary mb-1 text-sm">Uang Jaminan</label>
-                    <input type="text" name="uang_jaminan"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input price-input"
-                        placeholder="0"
-                        value="{{ $nota->uang_jaminan ? number_format($nota->uang_jaminan, 0, ',', '.') : '' }}">
-                </div>
-            </div>
-        </div>
-
-        {{-- ═══════════════════════════════════════════════════════
-             SECTION: PPN
-             ═══════════════════════════════════════════════════════ --}}
-        <div class="border-t pt-3 mt-3">
-            <label class="block text-text-primary font-semibold mb-2">PPN</label>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-text-primary mb-1 text-sm">Persentase PPN (%)</label>
-                    <input type="text" inputmode="decimal" name="ppn_percentage"
-                        class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                        placeholder="12,5" min="0" max="100" value="{{ $nota->ppn_percentage ?? 12 }}"
-                        oninput="this.setCustomValidity('')">
-                </div>
-            </div>
-        </div>
+        <x-forms.searchable-select
+            name="divisi"
+            id="editModal-{{ $nota->id_nota }}-divisi"
+            label="Divisi"
+            placeholder="Cari divisi..."
+            :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
+            selected="{{ $nota->penandatangan['divisi'] ?? '' }}" />
+    </div>
 
     </x-modal>

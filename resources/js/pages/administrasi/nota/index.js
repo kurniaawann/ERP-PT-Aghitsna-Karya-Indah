@@ -98,28 +98,40 @@ function updateDeleteButtons(modalId) {
 }
 
 /**
- * Menghitung total per item (Qty × Harga Satuan) dan menampilkannya.
+ * Menentukan tipe nota dari container items.
  *
- * Alur:
- * 1. Baca nilai input name="item_banyaknya[]" pada baris tsb sebagai
- *    integer (fallback 0).
- * 2. Baca nilai input name="item_harga_satuan[]" lalu parse via
- *    parseCurrencyInput() (dari shared/currency.js) yang membuang
- *    pemisah ribuan dan karakter non-digit.
- * 3. Hitung total = qty × harga.
- * 4. Tampilkan total di elemen .item-total dengan format angka ribuan
- *    Indonesia (Intl.NumberFormat 'id-ID'); tampilkan '0' bila nol.
- * 5. Kembalikan total untuk diakumulasi calculateGrandTotal().
+ * Tipe dibaca dari atribut data-tipe pada container:
+ * - 'sewa_jual' (default): kolom item_banyaknya[] / item_harga_satuan[]
+ * - 'proyek': kolom item_quantity[] / item_harga[]
  *
- * Nilai 'jumlah' per item juga dihitung ulang server-side oleh
- * NotaService::processItems() saat penyimpanan.
+ * @param {HTMLElement} container - Container items (#itemsContainer-...)
+ * @returns {string} 'sewa_jual' atau 'proyek'
+ */
+function getItemTipe(container) {
+    return container ? container.dataset.tipe || 'sewa_jual' : 'sewa_jual';
+}
+
+/**
+ * Menghitung total per item dan menampilkannya.
+ *
+ * Tipe sewa_jual: Qty (item_banyaknya) × Harga Satuan (item_harga_satuan)
+ * Tipe proyek: Quantity (item_quantity) × Harga (item_harga)
  *
  * @param {HTMLElement} row - Element baris item
  * @returns {number} Total jumlah item
  */
 function calculateItemTotal(row) {
-    const qty = parseInt(row.querySelector('input[name="item_banyaknya[]"]')?.value) || 0;
-    const harga = parseCurrencyInput(row.querySelector('input[name="item_harga_satuan[]"]')?.value);
+    const tipe = getItemTipe(row.closest('[id^="itemsContainer-"]'));
+
+    let qty, harga;
+    if (tipe === 'proyek') {
+        qty = parseInt(row.querySelector('input[name="item_quantity[]"]')?.value) || 0;
+        harga = parseCurrencyInput(row.querySelector('input[name="item_harga[]"]')?.value);
+    } else {
+        qty = parseInt(row.querySelector('input[name="item_banyaknya[]"]')?.value) || 0;
+        harga = parseCurrencyInput(row.querySelector('input[name="item_harga_satuan[]"]')?.value);
+    }
+
     const total = qty * harga;
 
     const totalEl = row.querySelector('.item-total');
@@ -152,12 +164,19 @@ function calculateGrandTotal(modalId) {
     const container = document.getElementById('itemsContainer-' + modalId);
     if (!container) return 0;
 
+    const tipe = getItemTipe(container);
     const rows = container.querySelectorAll('.item-row');
     let grandTotal = 0;
 
     rows.forEach(function (row) {
-        const qty = parseInt(row.querySelector('input[name="item_banyaknya[]"]')?.value) || 0;
-        const harga = parseCurrencyInput(row.querySelector('input[name="item_harga_satuan[]"]')?.value);
+        let qty, harga;
+        if (tipe === 'proyek') {
+            qty = parseInt(row.querySelector('input[name="item_quantity[]"]')?.value) || 0;
+            harga = parseCurrencyInput(row.querySelector('input[name="item_harga[]"]')?.value);
+        } else {
+            qty = parseInt(row.querySelector('input[name="item_banyaknya[]"]')?.value) || 0;
+            harga = parseCurrencyInput(row.querySelector('input[name="item_harga_satuan[]"]')?.value);
+        }
         grandTotal += qty * harga;
     });
 
@@ -187,8 +206,17 @@ function calculateGrandTotal(modalId) {
  * @param {string} modalId - ID modal
  */
 function attachItemListeners(row, modalId) {
-    const qtyInput = row.querySelector('input[name="item_banyaknya[]"]');
-    const hargaInput = row.querySelector('input[name="item_harga_satuan[]"]');
+    const container = document.getElementById('itemsContainer-' + modalId);
+    const tipe = getItemTipe(container);
+
+    let qtyInput, hargaInput;
+    if (tipe === 'proyek') {
+        qtyInput = row.querySelector('input[name="item_quantity[]"]');
+        hargaInput = row.querySelector('input[name="item_harga[]"]');
+    } else {
+        qtyInput = row.querySelector('input[name="item_banyaknya[]"]');
+        hargaInput = row.querySelector('input[name="item_harga_satuan[]"]');
+    }
 
     function recalc() {
         calculateItemTotal(row);
@@ -226,9 +254,48 @@ function addItemRow(modalId) {
     const container = document.getElementById('itemsContainer-' + modalId);
     if (!container) return;
 
+    const tipe = getItemTipe(container);
     const newRow = document.createElement('div');
     newRow.className = 'item-row bg-surface-base border-2 border-border-strong rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
-    newRow.innerHTML = `
+
+    if (tipe === 'proyek') {
+        newRow.innerHTML = `
+        <div class="space-y-3">
+            <div class="grid grid-cols-12 gap-3">
+                <div class="col-span-3">
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Quantity <span class="text-error">*</span></label>
+                    <input type="number" name="item_quantity[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="0" min="1" required>
+                </div>
+                <div class="col-span-3">
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Satuan</label>
+                    <input type="text" name="item_satuan[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-center text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="unit" maxlength="50">
+                </div>
+                <div class="col-span-6">
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Nama Barang <span class="text-error">*</span></label>
+                    <input type="text" name="item_nama_barang[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-text-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="Masukkan nama barang..." required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-3">
+                <div class="col-span-4">
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Harga <span class="text-error">*</span></label>
+                    <input type="text" name="item_harga[]" class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right text-text-input price-input focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="0" required>
+                </div>
+                <div class="col-span-3">
+                    <label class="block text-xs font-semibold text-text-label mb-1.5">Jumlah</label>
+                    <div class="w-full border border-border-strong rounded-lg px-3 py-2.5 text-sm text-right bg-surface-secondary text-text-input item-total">0</div>
+                </div>
+                <div class="col-span-5 flex items-end">
+                    <button type="button" class="delete-btn w-full bg-btn-delete hover:bg-btn-delete-hover text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Hapus</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    } else {
+        newRow.innerHTML = `
         <div class="space-y-3">
             <div class="grid grid-cols-12 gap-3">
                 <div class="col-span-2">
@@ -259,6 +326,7 @@ function addItemRow(modalId) {
             </div>
         </div>
     `;
+    }
 
     container.appendChild(newRow);
 
@@ -406,6 +474,8 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ─── Inisialisasi Tombol Hapus & Total untuk Modal Tambah ─── */
     updateDeleteButtons('addModal');
     calculateGrandTotal('addModal');
+    updateDeleteButtons('addModalProyek');
+    calculateGrandTotal('addModalProyek');
 
     /* ─── Inisialisasi Tombol Hapus & Total untuk Modal Edit ─── */
     document.querySelectorAll('[id^="itemsContainer-editModal-"]').forEach(function (container) {
@@ -446,6 +516,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Modal Tambah Proyek: tombol dengan id addItemBtn-addModalProyek
+    var addItemBtnAddProyek = document.getElementById('addItemBtn-addModalProyek');
+    if (addItemBtnAddProyek) {
+        addItemBtnAddProyek.addEventListener('click', function () {
+            addItemRow('addModalProyek');
+        });
+    }
+
     // Modal Edit: tombol dengan class addItemBtn
     document.querySelectorAll('.addItemBtn').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -459,15 +537,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* ─── Form Submit dengan Loading Indicator: Modal Tambah ─── */
-    var addForm = document.querySelector('#addModal form');
-    if (addForm) {
-        addForm.addEventListener('submit', function (e) {
+    document.querySelectorAll('#addModal form, #addModalProyek form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
             var submitBtn = this.querySelector('button[type="submit"]');
             if (submitBtn && !submitBtn.disabled) {
                 setButtonLoading(submitBtn, true, 'Menyimpan...');
             }
         });
-    }
+    });
 
     /* ─── Form Submit dengan Loading Indicator: Modal Edit ─── */
     document.querySelectorAll('[id^="editModal-"] form').forEach(function (form) {

@@ -3,6 +3,7 @@
 namespace App\Services\Administrasi;
 
 use App\Models\Administrasi\Nota;
+use App\Models\Sdm\Executive;
 use App\Services\InputNormalizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,14 +43,16 @@ class NotaService
      * @param  string|null  $search  Keyword pencarian (id_nota, kepada, faktur_no, sj_no)
      * @param  int|null     $month   Filter bulan (opsional)
      * @param  int|null     $year    Filter tahun (opsional)
+     * @param  string|null  $tipe    Filter tipe nota (sewa_jual|proyek, opsional)
      * @return LengthAwarePaginator Hasil pencarian dengan paginasi
      */
-    public function getPaginated(?string $search, ?int $month = null, ?int $year = null): LengthAwarePaginator
+    public function getPaginated(?string $search, ?int $month = null, ?int $year = null, ?string $tipe = null): LengthAwarePaginator
     {
         return Nota::where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->when($month, fn ($query, $month) => $query->whereMonth('nota_date', $month))
             ->when($year, fn ($query, $year) => $query->whereYear('nota_date', $year))
+            ->when($tipe, fn ($query, $tipe) => $query->where('tipe_nota', $tipe))
             ->latest('created_at')
             ->paginate(self::PER_PAGE);
     }
@@ -60,14 +63,16 @@ class NotaService
      * @param  string|null  $search  Keyword pencarian (opsional)
      * @param  int|null     $month   Filter bulan (opsional)
      * @param  int|null     $year    Filter tahun (opsional)
+     * @param  string|null  $tipe    Filter tipe nota (opsional)
      * @return Collection Koleksi seluruh data nota
      */
-    public function getAllForExport(?string $search, ?int $month = null, ?int $year = null): Collection
+    public function getAllForExport(?string $search, ?int $month = null, ?int $year = null, ?string $tipe = null): Collection
     {
         return Nota::where('created_by', auth()->id())
             ->when($search, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->when($month, fn ($query, $month) => $query->whereMonth('nota_date', $month))
             ->when($year, fn ($query, $year) => $query->whereYear('nota_date', $year))
+            ->when($tipe, fn ($query, $tipe) => $query->where('tipe_nota', $tipe))
             ->latest('created_at')
             ->get();
     }
@@ -90,12 +95,12 @@ class NotaService
      * Membuat data nota baru.
      *
      * Proses:
-     * 1. Generate kode nota otomatis (NTA-001/AKI/26)
-     * 2. Proses array items (qty, nama_barang, harga_satuan, jumlah)
+     * 1. Generate kode nota otomatis (NTA-001/AKI/26 atau NTP-001/AKI/26)
+     * 2. Proses array items sesuai tipe nota
      * 3. Hitung total items
-     * 4. Proses biaya tambahan opsional
+     * 4. Proses biaya tambahan opsional (khusus tipe sewa_jual)
      * 5. Hitung grand total (items + biaya tambahan)
-     * 6. Hitung PPN
+     * 6. Hitung PPN (khusus tipe sewa_jual)
      * 7. Simpan ke database
      *
      * @param  array<string, mixed>  $validated  Data yang sudah divalidasi dari StoreNotaRequest
@@ -103,33 +108,38 @@ class NotaService
      */
     public function create(array $validated): Nota
     {
-        $notaCode = Nota::generateNotaCode();
+        $tipe = $validated['tipe_nota'] ?? Nota::TIPE_SEWA_JUAL;
+        $isProyek = $tipe === Nota::TIPE_PROYEK;
+        $notaCode = $isProyek ? Nota::generateProyekCode() : Nota::generateNotaCode();
         $location = $validated['location'] ?? self::DEFAULT_LOCATION;
 
-        // Proses array items
-        $items = $this->processItems($validated);
+        // Proses array items sesuai tipe
+        $items = $this->processItems($validated, $isProyek);
         $itemsTotal = $this->calculateItemsTotal($items);
 
-        // Proses biaya tambahan opsional
-        $optionalFees = $this->processOptionalFees($validated);
+        // Biaya tambahan & PPN hanya untuk tipe sewa_jual
+        $optionalFees = $isProyek ? $this->emptyOptionalFees() : $this->processOptionalFees($validated);
         $jumlahTotal = $itemsTotal + array_sum($optionalFees);
 
-        // Proses PPN
-        $ppnPercentage = InputNormalizer::normalizeDecimal($validated['ppn_percentage'] ?? self::DEFAULT_PPN_PERCENTAGE);
+        $ppnPercentage = $isProyek ? 0 : InputNormalizer::normalizeDecimal($validated['ppn_percentage'] ?? self::DEFAULT_PPN_PERCENTAGE);
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
+        $penandatangan = $isProyek ? $this->resolvePenandatangan($validated) : null;
 
         return Nota::create([
             'id_nota' => $notaCode,
+            'tipe_nota' => $tipe,
+            'nama_proyek' => $validated['nama_proyek'] ?? null,
             'location' => $location,
             'nota_date' => $validated['nota_date'],
             'periode_start' => $validated['periode_start'] ?? null,
             'periode_end' => $validated['periode_end'] ?? null,
             'kepada' => $validated['kepada'],
-            'faktur_no' => $validated['faktur_no'],
-            'sj_no' => $validated['sj_no'],
+            'faktur_no' => $validated['faktur_no'] ?? null,
+            'sj_no' => $validated['sj_no'] ?? null,
             'items' => $items,
             'penerima' => $validated['penerima'] ?? null,
+            'penandatangan' => $penandatangan,
             'sewa_jual' => $optionalFees['sewa_jual'],
             'ongkos_kirim' => $optionalFees['ongkos_kirim'],
             'bongkar_pasang' => $optionalFees['bongkar_pasang'],
@@ -155,31 +165,36 @@ class NotaService
      */
     public function update(Nota $nota, array $validated): Nota
     {
+        $tipe = $validated['tipe_nota'] ?? $nota->tipe_nota ?? Nota::TIPE_SEWA_JUAL;
+        $isProyek = $tipe === Nota::TIPE_PROYEK;
         $location = $validated['location'] ?? self::DEFAULT_LOCATION;
 
-        // Proses array items
-        $items = $this->processItems($validated);
+        // Proses array items sesuai tipe
+        $items = $this->processItems($validated, $isProyek);
         $itemsTotal = $this->calculateItemsTotal($items);
 
-        // Proses biaya tambahan opsional
-        $optionalFees = $this->processOptionalFees($validated);
+        // Biaya tambahan & PPN hanya untuk tipe sewa_jual
+        $optionalFees = $isProyek ? $this->emptyOptionalFees() : $this->processOptionalFees($validated);
         $jumlahTotal = $itemsTotal + array_sum($optionalFees);
 
-        // Proses PPN
-        $ppnPercentage = InputNormalizer::normalizeDecimal($validated['ppn_percentage'] ?? self::DEFAULT_PPN_PERCENTAGE);
+        $ppnPercentage = $isProyek ? 0 : InputNormalizer::normalizeDecimal($validated['ppn_percentage'] ?? self::DEFAULT_PPN_PERCENTAGE);
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
+        $penandatangan = $isProyek ? $this->resolvePenandatangan($validated) : null;
 
         $nota->update([
+            'tipe_nota' => $tipe,
+            'nama_proyek' => $validated['nama_proyek'] ?? $nota->nama_proyek,
             'location' => $location,
             'nota_date' => $validated['nota_date'],
             'periode_start' => $validated['periode_start'] ?? null,
             'periode_end' => $validated['periode_end'] ?? null,
             'kepada' => $validated['kepada'],
-            'faktur_no' => $validated['faktur_no'],
-            'sj_no' => $validated['sj_no'],
+            'faktur_no' => $validated['faktur_no'] ?? null,
+            'sj_no' => $validated['sj_no'] ?? null,
             'items' => $items,
             'penerima' => $validated['penerima'] ?? null,
+            'penandatangan' => $penandatangan,
             'sewa_jual' => $optionalFees['sewa_jual'],
             'ongkos_kirim' => $optionalFees['ongkos_kirim'],
             'bongkar_pasang' => $optionalFees['bongkar_pasang'],
@@ -196,20 +211,74 @@ class NotaService
     }
 
     /**
-     * Memproses array items dari form input.
+     * Membuat snapshot petinggi penanda tangan untuk blok "Hormat Kami"
+     * pada PDF nota proyek.
      *
-     * Mengambil data item_banyaknya[], item_nama_barang[], item_harga_satuan[]
-     * dan mengubahnya menjadi array of items dengan struktur:
-     * - banyaknya (int): jumlah qty
-     * - nama_barang (string): nama barang
-     * - harga_satuan (int): harga satuan (sudah dinormalisasi)
-     * - jumlah (int): total per item (banyaknya × harga_satuan)
+     * Data diambil dari tabel executives (id, name, position, signature_image)
+     * milik user login, plus divisi dari tabel divisions. Hasil disimpan
+     * sebagai JSON snapshot (penandatangan) agar dokumen tidak berubah
+     * bila data petinggi/divisi diedit atau dihapus kemudian.
      *
      * @param  array<string, mixed>  $validated  Data dari form request
+     * @return array<string, mixed>|null Snapshot petinggi, null bila tidak dipilih
+     */
+    private function resolvePenandatangan(array $validated): ?array
+    {
+        $petinggiId = $validated['petinggi_id'] ?? null;
+        $divisi = $validated['divisi'] ?? null;
+
+        if ($petinggiId) {
+            $executive = Executive::where('created_by', auth()->id())
+                ->find($petinggiId);
+
+            if ($executive) {
+                return [
+                    'id' => (int) $executive->id,
+                    'name' => $executive->name,
+                    'position' => $executive->position,
+                    'signature_image' => $executive->signature_image,
+                    'divisi' => $divisi ?: null,
+                ];
+            }
+        }
+
+        // Petinggi tidak dipilih/kosong: simpan divisi saja agar tetap
+        // terekam di snapshot.
+        return $divisi ? [
+            'id' => null,
+            'name' => null,
+            'position' => null,
+            'signature_image' => null,
+            'divisi' => $divisi,
+        ] : null;
+    }
+
+    /**
+     * Memproses array items dari form input.
+     *
+     * Tipe sewa_jual:
+     * - item_banyaknya[]     -> banyaknya
+     * - item_nama_barang[]   -> nama_barang
+     * - item_harga_satuan[]  -> harga_satuan
+     * - jumlah = banyaknya × harga_satuan
+     *
+     * Tipe proyek:
+     * - item_quantity[]      -> quantity
+     * - item_satuan[]        -> satuan
+     * - item_nama_barang[]   -> nama_barang
+     * - item_harga[]         -> harga
+     * - jumlah = quantity × harga
+     *
+     * @param  array<string, mixed>  $validated  Data dari form request
+     * @param  bool  $isProyek  true bila tipe nota proyek
      * @return array<int, array<string, mixed>> Array of items
      */
-    private function processItems(array $validated): array
+    private function processItems(array $validated, bool $isProyek = false): array
     {
+        if ($isProyek) {
+            return $this->processProyekItems($validated);
+        }
+
         $items = [];
 
         if (empty($validated['item_banyaknya'])) {
@@ -229,6 +298,43 @@ class NotaService
                     'banyaknya' => (int) $qty,
                     'nama_barang' => $namaBarang[$index],
                     'harga_satuan' => $harga,
+                    'jumlah' => $jumlah,
+                ];
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Memproses array items untuk tipe nota proyek.
+     *
+     * @param  array<string, mixed>  $validated  Data dari form request
+     * @return array<int, array<string, mixed>> Array of items proyek
+     */
+    private function processProyekItems(array $validated): array
+    {
+        $items = [];
+
+        if (empty($validated['item_quantity'])) {
+            return $items;
+        }
+
+        $quantity = $validated['item_quantity'] ?? [];
+        $satuan = $validated['item_satuan'] ?? [];
+        $namaBarang = $validated['item_nama_barang'] ?? [];
+        $harga = $validated['item_harga'] ?? [];
+
+        foreach ($quantity as $index => $qty) {
+            if (!empty($qty) && !empty($namaBarang[$index])) {
+                $hargaValue = InputNormalizer::normalizeCurrency($harga[$index] ?? 0);
+                $jumlah = (int) $qty * $hargaValue;
+
+                $items[] = [
+                    'quantity' => (int) $qty,
+                    'satuan' => $satuan[$index] ?? null,
+                    'nama_barang' => $namaBarang[$index],
+                    'harga' => $hargaValue,
                     'jumlah' => $jumlah,
                 ];
             }
@@ -277,6 +383,22 @@ class NotaService
     }
 
     /**
+     * Mengembalikan biaya tambahan kosong (khusus tipe proyek).
+     *
+     * @return array<string, null> Biaya tambahan semuanya null
+     */
+    private function emptyOptionalFees(): array
+    {
+        return [
+            'sewa_jual' => null,
+            'ongkos_kirim' => null,
+            'bongkar_pasang' => null,
+            'lembur' => null,
+            'uang_jaminan' => null,
+        ];
+    }
+
+    /**
      * Menghapus beberapa nota sekaligus (bulk delete).
      *
      * @param  array  $ids  Daftar id_nota yang akan dihapus
@@ -292,7 +414,7 @@ class NotaService
     /**
      * Menerapkan filter pencarian pada query builder.
      *
-     * Pencarian dilakukan pada kolom: id_nota, kepada, faktur_no, sj_no.
+     * Pencarian dilakukan pada kolom: id_nota, nama_proyek, kepada, faktur_no, sj_no.
      * Karakter wildcard LIKE (% dan _) di-escape untuk mencegah hasil yang tidak diinginkan.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query  Query builder
@@ -304,6 +426,7 @@ class NotaService
         $escapedSearch = $this->escapeLikeWildcards($search);
 
         return $query->where('id_nota', 'like', "%{$escapedSearch}%")
+            ->orWhere('nama_proyek', 'like', "%{$escapedSearch}%")
             ->orWhere('kepada', 'like', "%{$escapedSearch}%")
             ->orWhere('faktur_no', 'like', "%{$escapedSearch}%")
             ->orWhere('sj_no', 'like', "%{$escapedSearch}%");
