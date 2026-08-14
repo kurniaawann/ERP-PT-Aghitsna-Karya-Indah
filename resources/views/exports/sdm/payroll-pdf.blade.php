@@ -304,9 +304,10 @@
     @php
         $totalKerja = (int) $payrolls->sum(fn ($p) => $p->base_salary * $p->present_days);
         $totalLembur = (int) $payrolls->sum('overtime_total');
-        $totalKasbonPersonal = (int) $payrolls->sum('kasbon_deduction');
         $teamKasbonRecap = $teamKasbonRecap ?? collect();
-        $grandTotalDibayar = $totalNetSalary ?? (int) $payrolls->sum('net_salary');
+        $totalUpahPekerja = $totalNetSalary ?? (int) $payrolls->sum('net_salary');
+        $totalKasbonProyek = (int) $teamKasbonRecap->sum();
+        $grandTotalDibayar = $totalUpahPekerja - $totalKasbonProyek;
     @endphp
     <table class="main-table" style="margin-top: 12px; width: 45%;">
         <thead>
@@ -323,10 +324,6 @@
                 <td>Total Lembur</td>
                 <td class="text-right">{{ number_format($totalLembur, 0, ',', '.') }}</td>
             </tr>
-            <tr>
-                <td>Total Kasbon</td>
-                <td class="text-right" style="color: #c0392b;">-{{ number_format($totalKasbonPersonal, 0, ',', '.') }}</td>
-            </tr>
             @foreach ($teamKasbonRecap as $kasbonLabel => $amount)
                 <tr>
                     <td>{{ $kasbonLabel }}</td>
@@ -335,7 +332,7 @@
             @endforeach
             <tr>
                 <td>Total Upah Pekerja</td>
-                <td class="text-right font-bold">{{ number_format($grandTotalDibayar, 0, ',', '.') }}</td>
+                <td class="text-right font-bold">{{ number_format($totalUpahPekerja, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td colspan="2" style="background-color: #E0E0E0; font-weight: bold; text-align: right; font-size: 10px;">

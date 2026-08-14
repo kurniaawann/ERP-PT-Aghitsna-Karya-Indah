@@ -149,7 +149,6 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
 
         $totalKerja = 0;
         $totalOvertime = 0;
-        $totalKasbon = 0;
         $totalNetSalary = 0;
 
         foreach ($this->payrolls as $payroll) {
@@ -187,16 +186,14 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
 
             $totalKerja += (int) $payroll->base_salary * (int) $payroll->present_days;
             $totalOvertime += (int) $payroll->overtime_total;
-            $totalKasbon += (int) $payroll->kasbon_deduction;
             $totalNetSalary += (int) $payroll->net_salary;
         }
 
         $this->totals = [
             'total_kerja' => $totalKerja,
             'overtime_total' => $totalOvertime,
-            'kasbon_deduction' => $totalKasbon,
             'net_salary' => $totalNetSalary,
-            'grand_total' => $totalNetSalary,
+            'grand_total' => $totalNetSalary - (int) $this->teamKasbon->sum(),
         ];
 
         return collect($data);
@@ -319,17 +316,6 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 $sheet->setCellValue("A{$rekapRow}", "Total Lembur");
                 $sheet->setCellValue("C{$rekapRow}", $this->totals['overtime_total']);
                 $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('+#,##0;-#,##0');
-                $rekapRow++;
-
-                $sheet->setCellValue("A{$rekapRow}", "Total Kasbon");
-                $sheet->setCellValue("C{$rekapRow}", -$this->totals['kasbon_deduction']);
-                $sheet->getStyle("A{$rekapRow}")->getFont()->setColor(
-                    new Color(Color::COLOR_RED)
-                );
-                $sheet->getStyle("C{$rekapRow}")->getFont()->setColor(
-                    new Color(Color::COLOR_RED)
-                );
-                $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $rekapRow++;
 
                 foreach ($this->teamKasbon as $kasbonLabel => $amount) {

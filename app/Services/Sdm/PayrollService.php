@@ -1352,7 +1352,7 @@ class PayrollService
                 if (! empty($kasbon->project_names)) {
                     $project = $payment->payroll?->project_name;
 
-                    return 'Kasbon Proyek '.($project ?: ($kasbon->project_names[0] ?? 'Tanpa Proyek'));
+                    return 'Kasbon '.($project ?: ($kasbon->project_names[0] ?? 'Tanpa Proyek'));
                 }
 
                 return 'Kasbon Divisi '.($kasbon->division ?: 'Tanpa Divisi');
