@@ -4,8 +4,89 @@
 
 @section('content')
     {{-- ============================================================
+         SECTION: REIMBURSEMENT CARDS (Admin & Super Admin)
+         Ditampilkan paling atas (memenuhi lebar halaman)
+         ============================================================ --}}
+    @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
+        <div class="bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden mt-6">
+            {{-- Header Seksi Reimbursement --}}
+            <div class="bg-primary-light px-6 py-4 border-b border-primary-light">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3-2 2 2 2-2 2 2 2-2 3 2zm-6-11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-text-heading">Reimbursement</h3>
+                        <p class="text-sm text-text-secondary">
+                            @if (auth()->user()->isAdmin())
+                                Pengajuan yang menunggu persetujuan Anda
+                            @else
+                                Status pengajuan reimbursement
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {{-- Menunggu Persetujuan (Draft) --}}
+                    <a href="{{ route('reimburse.index', ['status' => 'draft']) }}"
+                        class="block rounded-lg border border-warning-light bg-warning-light p-4 hover:bg-white transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-text-heading">Menunggu Persetujuan</span>
+                            <i class="fa-solid fa-clock text-warning"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-warning">
+                            {{ $reimburseSummary['draft_count'] }} Pengajuan
+                        </p>
+                        <p class="text-sm text-text-secondary mt-1">
+                            Total: Rp {{ number_format($reimburseSummary['draft_total'], 0, ',', '.') }}
+                        </p>
+                        @if (auth()->user()->isAdmin() && $reimburseSummary['draft_count'] > 0)
+                            <span class="inline-flex items-center gap-1 mt-3 text-xs font-semibold text-primary">
+                                <i class="fa-solid fa-check-circle"></i>
+                                Segera disetujui
+                            </span>
+                        @endif
+                    </a>
+
+                    {{-- Disetujui (Approved) --}}
+                    <a href="{{ route('reimburse.index', ['status' => 'approved']) }}"
+                        class="block rounded-lg border border-success-light bg-success-light p-4 hover:bg-white transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-text-heading">Disetujui</span>
+                            <i class="fa-solid fa-check text-success"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-success">{{ $reimburseSummary['approved_count'] }} Pengajuan</p>
+                        <p class="text-sm text-text-secondary mt-1">
+                            Total: Rp {{ number_format($reimburseSummary['approved_total'], 0, ',', '.') }}
+                        </p>
+                    </a>
+
+                    {{-- Ditolak (Rejected) --}}
+                    <a href="{{ route('reimburse.index', ['status' => 'rejected']) }}"
+                        class="block rounded-lg border border-error-light bg-error-light p-4 hover:bg-white transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-text-heading">Ditolak</span>
+                            <i class="fa-solid fa-times text-error"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-error">{{ $reimburseSummary['rejected_count'] }} Pengajuan</p>
+                        <p class="text-sm text-text-secondary mt-1">
+                            Total: Rp {{ number_format($reimburseSummary['rejected_total'], 0, ',', '.') }}
+                        </p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ============================================================
          REMINDER CARDS (GAJI & STOK MENIPIS)
          Hanya tampil untuk non-admin (super admin / general manager).
+         Ditampilkan tepat di bawah Seksi Reimbursement.
          ============================================================ --}}
     @if (!auth()->user()->isAdmin())
     <!-- Reminder Cards Section Grid -->
@@ -174,85 +255,5 @@
         </div>     {{-- Penutup Card Reminder Stok Menipis --}}
 
     </div>         {{-- Penutup Grid 2 Kolom --}}
-    @endif
-
-    {{-- ============================================================
-         SECTION: REIMBURSEMENT CARDS (Admin & Super Admin)
-         Ditampilkan tepat di bawah Grid Reminder Card (memenuhi lebar halaman)
-         ============================================================ --}}
-    @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
-        <div class="bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden mt-6">
-            {{-- Header Seksi Reimbursement --}}
-            <div class="bg-primary-light px-6 py-4 border-b border-primary-light">
-                <div class="flex items-center gap-3">
-                    <div class="bg-white p-2 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3-2 2 2 2-2 2 2 2-2 3 2zm-6-11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-text-heading">Reimbursement</h3>
-                        <p class="text-sm text-text-secondary">
-                            @if (auth()->user()->isAdmin())
-                                Pengajuan yang menunggu persetujuan Anda
-                            @else
-                                Status pengajuan reimbursement
-                            @endif
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {{-- Menunggu Persetujuan (Draft) --}}
-                    <a href="{{ route('reimburse.index', ['status' => 'draft']) }}"
-                        class="block rounded-lg border border-warning-light bg-warning-light p-4 hover:bg-white transition-colors duration-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-text-heading">Menunggu Persetujuan</span>
-                            <i class="fa-solid fa-clock text-warning"></i>
-                        </div>
-                        <p class="text-2xl font-bold text-warning">
-                            {{ $reimburseSummary['draft_count'] }} Pengajuan
-                        </p>
-                        <p class="text-sm text-text-secondary mt-1">
-                            Total: Rp {{ number_format($reimburseSummary['draft_total'], 0, ',', '.') }}
-                        </p>
-                        @if (auth()->user()->isAdmin() && $reimburseSummary['draft_count'] > 0)
-                            <span class="inline-flex items-center gap-1 mt-3 text-xs font-semibold text-primary">
-                                <i class="fa-solid fa-check-circle"></i>
-                                Segera disetujui
-                            </span>
-                        @endif
-                    </a>
-
-                    {{-- Disetujui (Approved) --}}
-                    <a href="{{ route('reimburse.index', ['status' => 'approved']) }}"
-                        class="block rounded-lg border border-success-light bg-success-light p-4 hover:bg-white transition-colors duration-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-text-heading">Disetujui</span>
-                            <i class="fa-solid fa-check text-success"></i>
-                        </div>
-                        <p class="text-2xl font-bold text-success">{{ $reimburseSummary['approved_count'] }} Pengajuan</p>
-                        <p class="text-sm text-text-secondary mt-1">
-                            Total: Rp {{ number_format($reimburseSummary['approved_total'], 0, ',', '.') }}
-                        </p>
-                    </a>
-
-                    {{-- Ditolak (Rejected) --}}
-                    <a href="{{ route('reimburse.index', ['status' => 'rejected']) }}"
-                        class="block rounded-lg border border-error-light bg-error-light p-4 hover:bg-white transition-colors duration-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-text-heading">Ditolak</span>
-                            <i class="fa-solid fa-times text-error"></i>
-                        </div>
-                        <p class="text-2xl font-bold text-error">{{ $reimburseSummary['rejected_count'] }} Pengajuan</p>
-                        <p class="text-sm text-text-secondary mt-1">
-                            Total: Rp {{ number_format($reimburseSummary['rejected_total'], 0, ',', '.') }}
-                        </p>
-                    </a>
-                </div>
-            </div>
-        </div>
     @endif
 @endsection
