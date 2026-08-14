@@ -39,8 +39,8 @@
         </p>
     </div>
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan<span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Keterangan</label>
         <input type="text" name="keterangan" class="w-full border rounded p-2" placeholder="Masukkan keterangan"
-            maxlength="255" required>
+            maxlength="255">
     </div>
 </x-modal>

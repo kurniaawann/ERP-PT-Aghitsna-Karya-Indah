@@ -98,6 +98,7 @@ class ItemService
             'quantity' => $data['quantity'],
             'capital_price' => InputNormalizer::normalizeCurrency($data['capital_price']),
             'selling_price' => InputNormalizer::normalizeCurrency($data['selling_price']),
+            'keterangan' => $data['keterangan'] ?? null,
         ]);
     }
 
@@ -115,6 +116,7 @@ class ItemService
             'quantity' => $data['quantity'],
             'capital_price' => InputNormalizer::normalizeCurrency($data['capital_price']),
             'selling_price' => InputNormalizer::normalizeCurrency($data['selling_price']),
+            'keterangan' => $data['keterangan'] ?? null,
         ]);
     }
 

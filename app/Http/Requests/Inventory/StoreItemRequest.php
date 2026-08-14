@@ -35,6 +35,7 @@ class StoreItemRequest extends FormRequest
             'quantity' => 'required|integer|min:0',
             'capital_price' => 'required|string',
             'selling_price' => 'required|string',
+            'keterangan' => 'nullable|string|max:255',
         ];
     }
 

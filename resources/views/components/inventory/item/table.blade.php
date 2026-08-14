@@ -71,7 +71,7 @@
                         @empty
                             {{-- Pesan jika data kosong --}}
                             <tr>
-                                <td colspan="7" class="text-center p-4 text-text-secondary">
+                                <td colspan="8" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

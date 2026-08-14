@@ -40,6 +40,7 @@ class Items extends Model
         'quantity',
         'capital_price',
         'selling_price',
+        'keterangan',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────
