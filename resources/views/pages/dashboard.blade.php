@@ -253,7 +253,6 @@
                 @endif
             </div> {{-- Penutup p-6 --}}
         </div>     {{-- Penutup Card Reminder Stok Menipis --}}
-
     </div>         {{-- Penutup Grid 2 Kolom --}}
     @endif
 @endsection

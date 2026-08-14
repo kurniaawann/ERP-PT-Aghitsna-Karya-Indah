@@ -211,16 +211,31 @@ function addEmployeeRow() {
  */
 function updateDeleteButtonState() {
     const deleteButton = document.getElementById('delete-button');
+    const bulkProjectButton = document.getElementById('bulk-project-button');
     const checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
 
     if (checkedCheckboxes.length > 0) {
-        deleteButton.disabled = false;
-        deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        deleteButton.classList.add('hover:bg-btn-delete-hover');
+        if (deleteButton) {
+            deleteButton.disabled = false;
+            deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            deleteButton.classList.add('hover:bg-btn-delete-hover');
+        }
+        if (bulkProjectButton) {
+            bulkProjectButton.disabled = false;
+            bulkProjectButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            bulkProjectButton.classList.add('hover:bg-btn-edit-hover');
+        }
     } else {
-        deleteButton.disabled = true;
-        deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
-        deleteButton.classList.remove('hover:bg-btn-delete-hover');
+        if (deleteButton) {
+            deleteButton.disabled = true;
+            deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
+            deleteButton.classList.remove('hover:bg-btn-delete-hover');
+        }
+        if (bulkProjectButton) {
+            bulkProjectButton.disabled = true;
+            bulkProjectButton.classList.add('opacity-50', 'cursor-not-allowed');
+            bulkProjectButton.classList.remove('hover:bg-btn-edit-hover');
+        }
     }
 }
 
@@ -235,6 +250,77 @@ function submitDeleteForm() {
         deleteBtn.classList.add('opacity-70', 'cursor-not-allowed');
     }
     document.getElementById('deleteForm').submit();
+}
+
+// ==========================================
+// Bulk Update Project (Ubah Proyek Massal)
+// ==========================================
+
+/**
+ * Membuka modal ubah proyek massal dan menampilkan jumlah karyawan terpilih.
+ */
+function openBulkProjectModal() {
+    const checked = document.querySelectorAll('input[name="ids[]"]:checked');
+    const countEl = document.getElementById('bulkProjectCount');
+    if (countEl) {
+        countEl.textContent = String(checked.length);
+    }
+
+    // Reset isian modal setiap kali dibuka.
+    const hidden = document.getElementById('bulkProjectHidden');
+    const clearCheckbox = document.getElementById('clearProjectCheckbox');
+    if (hidden) hidden.value = '';
+    if (clearCheckbox) clearCheckbox.checked = false;
+
+    const label = document.querySelector('#bulkProjectDropdown .project-dropdown-label');
+    if (label) {
+        label.textContent = '-- Pilih Proyek --';
+    }
+
+    openModal('bulkProjectModal');
+}
+
+/**
+ * Mengirimkan form ubah proyek massal.
+ *
+ * Mengumpulkan kode karyawan dari checkbox yang dicentang, lalu menentukan
+ * mode aksi:
+ * - "Kosongkan proyek" dicentang → clear_project = 1 (proyek dikosongkan).
+ * - Selain itu, proyek tujuan wajib diisi dari dropdown.
+ */
+function submitBulkProjectForm() {
+    const checked = Array.from(document.querySelectorAll('input[name="ids[]"]:checked'))
+        .map(function (cb) {
+            return cb.value;
+        });
+
+    if (checked.length === 0) {
+        showToast('Tidak ada karyawan yang dipilih.', 'error');
+        return;
+    }
+
+    const clearCheckbox = document.getElementById('clearProjectCheckbox');
+    const clearProject = clearCheckbox && clearCheckbox.checked;
+    const hidden = document.getElementById('bulkProjectHidden');
+    const projectName = hidden ? hidden.value : '';
+
+    if (!clearProject && !projectName) {
+        showToast('Pilih proyek tujuan atau centang "Kosongkan proyek".', 'error');
+        return;
+    }
+
+    document.getElementById('bulkProjectIds').value = checked.join(',');
+    document.getElementById('bulkClearProject').value = clearProject ? '1' : '0';
+    document.getElementById('bulkProjectValue').value = clearProject ? '' : projectName;
+
+    const confirmBtn = document.getElementById('confirm-btn-bulkProjectModal');
+    if (confirmBtn) {
+        confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('opacity-70', 'cursor-not-allowed');
+    }
+
+    document.getElementById('bulkProjectForm').submit();
 }
 
 // ==========================================
@@ -253,6 +339,20 @@ function submitDeleteForm() {
  */
 document.addEventListener('DOMContentLoaded', function () {
     window.submitDeleteForm = submitDeleteForm;
+    window.openBulkProjectModal = openBulkProjectModal;
+    window.submitBulkProjectForm = submitBulkProjectForm;
+
+    // Toggle visibilitas dropdown proyek saat "Kosongkan proyek" dicentang.
+    var clearProjectCheckbox = document.getElementById('clearProjectCheckbox');
+    if (clearProjectCheckbox) {
+        clearProjectCheckbox.addEventListener('change', function () {
+            var dropdownWrap = document.getElementById('bulkProjectDropdown');
+            if (dropdownWrap) {
+                dropdownWrap.classList.toggle('opacity-40', this.checked);
+                dropdownWrap.classList.toggle('pointer-events-none', this.checked);
+            }
+        });
+    }
 
     // Checkbox Pilih Semua
     var selectAll = document.getElementById('selectAll');

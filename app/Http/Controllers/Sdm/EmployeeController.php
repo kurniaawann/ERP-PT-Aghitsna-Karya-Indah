@@ -120,6 +120,56 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Memperbarui kolom proyek secara massal untuk karyawan terpilih.
+     *
+     * Mendukung dua mode:
+     * - memindahkan karyawan ke proyek lain (isi project_name),
+     * - mengosongkan proyek (kirim kosongkan_proyek = 1).
+     *
+     * Hanya kolom project_name yang diubah; data karyawan lainnya tetap.
+     */
+    public function bulkUpdateProject(Request $request): RedirectResponse
+    {
+        $ids = $request->input('ids', []);
+
+        if (is_string($ids)) {
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
+        }
+        $ids = array_values($ids);
+
+        if (empty($ids)) {
+            return redirect()->route('employee.index')
+                ->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        $projectName = $request->input('project_name');
+        $clearProject = $request->boolean('clear_project');
+
+        try {
+            $count = $this->employeeService->bulkUpdateProject(
+                $ids,
+                $clearProject ? null : $projectName
+            );
+        } catch (\Exception $e) {
+            Log::error('Employee bulk update project failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('employee.index')
+                ->with('error', 'Terjadi kesalahan saat mengubah proyek. Silakan coba lagi.');
+        }
+
+        $this->employeeService->flushCache();
+
+        $message = $clearProject
+            ? "{$count} data karyawan berhasil dihapus dari proyek!"
+            : "{$count} data karyawan berhasil dipindahkan ke proyek '{$projectName}'!";
+
+        return redirect()->route('employee.index')->with('success', $message);
+    }
+
+    /**
      * Menghapus karyawan yang ditentukan secara massal.
      *
      * Penghapusan diblokir bila karyawan masih memiliki data payroll atau

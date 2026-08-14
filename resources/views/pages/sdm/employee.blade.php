@@ -68,6 +68,11 @@
             {{-- Action Buttons --}}
             <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
                 <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
+                    <button type="button" id="bulk-project-button" onclick="openBulkProjectModal()" disabled
+                        class="w-full xl:w-auto flex items-center justify-center gap-2 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-3.5 rounded-lg transition-colors duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-btn-edit">
+                        <i class="fa-solid fa-arrows-rotate w-4 h-4"></i>
+                        <span>Ubah Proyek</span>
+                    </button>
                     <x-buttons.delete-button modalId="deleteModal" />
                     <x-buttons.add-button modalId="addModal" text="Tambah Data" />
                 </div>
@@ -107,6 +112,56 @@
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
+    </x-modal>
+
+    {{-- Bulk Update Project Modal --}}
+    <form id="bulkProjectForm" method="POST" action="{{ route('employee.bulk-update-project') }}" class="hidden">
+        @csrf
+        <input type="hidden" id="bulkProjectIds" name="ids">
+        <input type="hidden" id="bulkClearProject" name="clear_project" value="0">
+        <input type="hidden" id="bulkProjectValue" name="project_name">
+    </form>
+    <x-modal id="bulkProjectModal" title="Ubah Proyek Massal" :onConfirm="'submitBulkProjectForm()'"
+        buttonText="Simpan">
+        <p class="text-sm text-text-secondary mb-4">
+            Ubah proyek untuk <span id="bulkProjectCount" class="font-semibold text-text-heading">0</span> karyawan
+            terpilih. Hanya kolom proyek yang diubah.
+        </p>
+
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Proyek Tujuan <span class="text-text-tertiary text-sm">(Opsional)</span></label>
+            <div class="project-dropdown relative" data-route="{{ route('employee.projects-dropdown') }}"
+                id="bulkProjectDropdown">
+                <input type="hidden" class="project-dropdown-hidden" id="bulkProjectHidden">
+                <button type="button"
+                    class="project-dropdown-toggle w-full border border-border-strong rounded p-2 bg-surface-base text-text-input flex items-center justify-between">
+                    <span class="project-dropdown-label text-text-input">-- Pilih Proyek --</span>
+                    <span class="text-text-tertiary text-xs">▼</span>
+                </button>
+                <div class="project-dropdown-menu absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 hidden">
+                    <div class="p-2 border-b border-border-light">
+                        <input type="text" class="project-dropdown-search w-full border border-border-light rounded px-2 py-1.5 text-sm bg-surface-base text-text-input"
+                            placeholder="Cari nama proyek...">
+                    </div>
+                    <div class="project-dropdown-list max-h-60 overflow-y-auto">
+                        <div class="p-2 text-sm text-text-secondary">Silakan klik untuk memuat data...</div>
+                    </div>
+                    <div class="p-2 border-t border-border-light">
+                        <button type="button" class="project-dropdown-clear text-sm text-error hover:text-error">
+                            Reset (- Tidak Ada Proyek -)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <label class="mt-3 flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" id="clearProjectCheckbox" class="mt-1 w-4 h-4 accent-error">
+            <span class="text-sm text-text-primary">
+                <span class="font-semibold text-text-heading">Kosongkan proyek</span>
+                <span class="block text-xs text-text-tertiary">Hapus proyek dari karyawan terpilih (tidak menghapus data karyawan)</span>
+            </span>
+        </label>
     </x-modal>
 
     {{-- ============================================================

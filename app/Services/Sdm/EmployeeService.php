@@ -192,6 +192,27 @@ class EmployeeService
             ->delete();
     }
 
+    /**
+     * Memperbarui kolom proyek secara massal untuk karyawan terpilih.
+     *
+     * Hanya kolom project_name yang diubah (set ke proyek baru atau dihapus
+     * bila $projectName null). Hanya karyawan milik user login yang diubah.
+     *
+     * @param  array  $employeeCodes  Kode karyawan terpilih
+     * @param  string|null  $projectName  Nama proyek tujuan; null berarti kosongkan
+     * @return int Jumlah karyawan yang diperbarui
+     */
+    public function bulkUpdateProject(array $employeeCodes, ?string $projectName): int
+    {
+        if (empty($employeeCodes)) {
+            return 0;
+        }
+
+        return Employee::where('created_by', auth()->id())
+            ->whereIn('employee_code', $employeeCodes)
+            ->update(['project_name' => $projectName]);
+    }
+
     public function flushCache(): void
     {
         try {
