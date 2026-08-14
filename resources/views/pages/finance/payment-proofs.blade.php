@@ -13,6 +13,7 @@
      - $recapProofs      : Jumlah bukti bertipe 'recap' (rekap proyek).
      - $alumuniumProofs  : Jumlah bukti bertipe 'alumunium' (non-admin).
      - $barangProofs     : Jumlah bukti bertipe 'barang' (non-admin).
+     - $rekapPenjualanProofs: Jumlah bukti bertipe 'rekap_penjualan' (super admin).
      - $moduleOptions    : Opsi filter modul ('finance' = Keuangan).
      - $invoiceTypeOptions: Opsi filter jenis invoice; antara lain
                             Rekap Proyek, Invoice Proyek, Alumunium, Barang.
@@ -65,8 +66,9 @@
         {{-- Section: Summary Cards --}}
         {{-- Lima kartu ringkasan (Total Bukti, Invoice/Proyek, Rekap Proyek,
              Alumunium, Invoice Barang). Kartu kedua memakai nama berbeda
-             sesuai role: admin = 'Invoice', non-admin = 'Invoice Proyek'. --}}
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+             sesuai role: admin = 'Invoice', non-admin = 'Invoice Proyek'.
+             Untuk Super Admin muncul kartu tambahan 'Rekap Penjualan'. --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
             <div
                 class="group rounded-2xl border border-border-strong bg-surface-base p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div class="flex items-start justify-between gap-3">
@@ -141,6 +143,23 @@
                     </div>
                 </div>
             </div>
+
+            @if (auth()->user()?->role === 'superadmin')
+                <div
+                    class="group rounded-2xl border border-secondary/20 bg-gradient-to-br from-secondary-light to-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">Rekap Penjualan</p>
+                            <p class="mt-2 text-3xl font-bold tracking-tight text-secondary">
+                                {{ number_format($rekapPenjualanProofs) }}</p>
+                        </div>
+                        <div
+                            class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-secondary ring-1 ring-secondary/10 transition-colors group-hover:bg-secondary group-hover:text-white">
+                            <i class="fa-solid fa-store text-base"></i>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- Section: Filter --}}

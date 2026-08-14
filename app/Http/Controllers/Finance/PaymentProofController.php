@@ -10,6 +10,7 @@ use App\Models\Finance\InvoiceBarang;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Finance\ProjectRecap;
+use App\Models\Report\SalesRecap;
 use App\Services\Finance\InvoiceCalculatorService;
 use App\Services\Finance\PaymentProofService;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ class PaymentProofController extends Controller
         ];
 
         $isAdmin = auth()->user()?->role === 'admin';
+        $isSuperAdmin = auth()->user()?->role === 'superadmin';
         $invoiceTypeOptions = $isAdmin
             ? [
                 ['value' => 'proyek', 'label' => 'Invoice'],
@@ -52,6 +54,11 @@ class PaymentProofController extends Controller
                 ['value' => 'alumunium', 'label' => 'Invoice Alumunium'],
                 ['value' => 'barang', 'label' => 'Invoice Barang'],
             ];
+
+        // Rekap Penjualan hanya tersedia untuk Super Admin.
+        if ($isSuperAdmin) {
+            $invoiceTypeOptions[] = ['value' => 'rekap_penjualan', 'label' => 'Rekap Penjualan'];
+        }
 
         if (in_array(auth()->user()?->role, ['admin', 'superadmin'], true)) {
             $query->where('created_by', auth()->id());
@@ -83,6 +90,7 @@ class PaymentProofController extends Controller
         $recapProofs = (clone $query)->where('invoice_type', 'recap')->count();
         $alumuniumProofs = (clone $query)->where('invoice_type', 'alumunium')->count();
         $barangProofs = (clone $query)->where('invoice_type', 'barang')->count();
+        $rekapPenjualanProofs = (clone $query)->where('invoice_type', 'rekap_penjualan')->count();
 
         $proofStageMap = $this->service->buildProofStageMap();
 
@@ -124,6 +132,15 @@ class PaymentProofController extends Controller
             )->values()->all();
         }
 
+        // Rekap Penjualan hanya tersedia untuk Super Admin.
+        if (auth()->user()?->role === 'superadmin') {
+            $availableInvoices['finance']['rekap_penjualan'] = collect(
+                SalesRecap::query()->with('paymentProofs')->orderByDesc('date')->get()
+            )->map(
+                fn ($recap) => $this->service->buildInvoiceOption($recap, 'finance', 'rekap_penjualan', $proofStageMap, $invoiceLookup)
+            )->values()->all();
+        }
+
         return view('pages.finance.payment-proofs', compact(
             'paymentProofs',
             'totalProofs',
@@ -131,6 +148,7 @@ class PaymentProofController extends Controller
             'recapProofs',
             'alumuniumProofs',
             'barangProofs',
+            'rekapPenjualanProofs',
             'moduleOptions',
             'invoiceTypeOptions',
             'availableInvoices',

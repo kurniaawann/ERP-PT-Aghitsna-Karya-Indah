@@ -22,6 +22,7 @@ const PAYMENT_PROOF_INVOICE_CHUNK_SIZE = 10;
  *
  * 'proyek' dan 'recap' memakai input manual yang divalidasi terhadap sisa
  * tagihan; tipe lain mengikuti sisa tagihan (readonly / otomatis lunas).
+ * Rekap Penjualan tidak bisa dicicil, jadi nominal otomatis lunas.
  *
  * @param  {string} invoiceType
  * @return {boolean}

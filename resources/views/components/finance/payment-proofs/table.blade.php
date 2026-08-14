@@ -58,12 +58,14 @@
                                                 'proyek' => auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek',
                                                 'recap' => 'Rekap Proyek',
                                                 'alumunium' => 'Invoice Alumunium',
+                                                'rekap_penjualan' => 'Rekap Penjualan',
                                                 default => 'Invoice Barang',
                                             };
                                             $proofTypeClass = match ($paymentProof->invoice_type) {
                                                 'proyek' => 'bg-primary-light text-primary',
                                                 'recap' => 'bg-success-light text-success',
                                                 'alumunium' => 'bg-warning-light text-warning',
+                                                'rekap_penjualan' => 'bg-secondary-light text-secondary',
                                                 default => 'bg-info-light text-info',
                                             };
                                         @endphp
@@ -84,8 +86,7 @@
                                         </span>
                                     @else
                                         <span class="text-text-label">Tidak ada tahap</span>
-                                    @endif
-                                </td>
+                                    @endif                                </td>
                                 <td class="p-3 text-sm text-right font-medium text-primary whitespace-nowrap">
                                     Rp {{ number_format($paymentProof->amount ?? 0, 0, ',', '.') }}
                                 </td>

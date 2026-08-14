@@ -46,8 +46,9 @@ class PaymentProofService
      * - 'alumunium'       → tabel alumunium_invoices, kolom invoice_number
      * - 'barang'          → tabel barang_invoices, kolom invoice_number
      * - 'recap'           → tabel project_recaps, kolom id (format RP-00001)
+     * - 'rekap_penjualan' → tabel sales_recaps, kolom id_sales_recap
      *
-     * @param  string  $invoiceType  Tipe invoice: proyek|alumunium|barang|recap
+     * @param  string  $invoiceType  Tipe invoice: proyek|alumunium|barang|recap|rekap_penjualan
      * @param  string  $invoiceNumber  Nomor atau ID invoice
      * @return \Illuminate\Database\Eloquent\Model|null
      */
@@ -58,6 +59,7 @@ class PaymentProofService
             'alumunium' => InvoiceAlumunium::where('invoice_number', $invoiceNumber)->first(),
             'barang' => InvoiceBarang::where('invoice_number', $invoiceNumber)->first(),
             'recap' => ProjectRecap::where('id', $invoiceNumber)->first(),
+            'rekap_penjualan' => SalesRecap::where('id_sales_recap', $invoiceNumber)->first(),
             default => null,
         };
     }
@@ -142,8 +144,8 @@ class PaymentProofService
      * Logika:
      * - Invoice 'proyek' dan 'recap': amount berasal dari input user (dari form).
      *   Divalidasi tidak melebihi sisa tagihan. Jika amount <= 0 → null (tidak valid).
-     * - Invoice lain (alumunium/barang): amount otomatis = seluruh sisa
-     *   tagihan (pembayaran dianggap lunas). Dikembalikan sebagai int.
+     * - Invoice lain (alumunium/barang/rekap_penjualan): amount otomatis = seluruh sisa
+     *   tagihan (pembayaran dianggap lunas sekaligus, tidak bisa dicicil). Dikembalikan sebagai int.
      *
      * Return union:
      * - int (amount valid) / string (pesan error validasi) / null (amount <= 0).
@@ -205,7 +207,7 @@ class PaymentProofService
             return ['success' => false, 'message' => $amount];
         }
 
-        $salesRecapId = null;
+        $salesRecapId = $validated['invoice_type'] === 'rekap_penjualan' ? $validated['invoice_number'] : null;
         $storedFile = null;
         $paymentStage = null;
 
@@ -294,7 +296,7 @@ class PaymentProofService
         $originalInvoiceType = $paymentProof->invoice_type;
         $originalInvoiceNumber = $paymentProof->invoice_number;
         $originalSalesRecapId = $paymentProof->sales_recap_id;
-        $salesRecapId = null;
+        $salesRecapId = $validated['invoice_type'] === 'rekap_penjualan' ? $validated['invoice_number'] : null;
         $storedFile = null;
 
         try {
@@ -518,7 +520,7 @@ class PaymentProofService
      */
     public function buildInvoiceOption($invoice, string $moduleType, string $invoiceType, $proofStageMap, array &$invoiceLookup): array
     {
-        $invoiceKey = $invoice->invoice_number ?? $invoice->id;
+        $invoiceKey = $invoice->invoice_number ?? $invoice->id ?? $invoice->id_sales_recap;
         $mapKey = $moduleType.'|'.$invoiceType.'|'.$invoiceKey;
         $proofMeta = $proofStageMap->get($mapKey);
         $nextStage = in_array($invoiceType, ['proyek', 'recap'], true)
@@ -528,7 +530,7 @@ class PaymentProofService
 
         $label = $invoiceKey;
         $recipient = $invoice->recipient ?? null;
-        $projectDescription = $invoice->project_description ?? $invoice->project_name ?? null;
+        $projectDescription = $invoice->project_description ?? $invoice->project_name ?? $invoice->name_proyek ?? null;
 
         if (! empty($recipient)) {
             $label .= ' - '.$recipient;
@@ -607,7 +609,24 @@ class PaymentProofService
             }
         } elseif ($invoiceType === 'barang') {
             $this->syncBarangSalesRecapStatus($invoice);
+        } elseif ($invoiceType === 'rekap_penjualan' && $invoice instanceof SalesRecap) {
+            $this->syncRekapPenjualanStatus($invoice);
         }
+    }
+
+    /**
+     * Sinkronisasi status sales recap (rekap penjualan).
+     *
+     * Status di-update mengikuti ketersediaan dana: 'Lunas' jika total
+     * bukti pembayaran sudah mencapai total_selling, 'Belum Lunas' jika belum.
+     */
+    private function syncRekapPenjualanStatus(SalesRecap $salesRecap): void
+    {
+        $remainingAmount = $this->calculator->getRemainingAmount($salesRecap);
+
+        $salesRecap->update([
+            'status' => $remainingAmount <= 0 ? 'Lunas' : 'Belum Lunas',
+        ]);
     }
 
     /**
