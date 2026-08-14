@@ -54,9 +54,6 @@ class User extends Authenticatable
 
     public function getHomeRoute(): string
     {
-        if ($this->isAdmin()) {
-            return '/proyek-invoice';
-        }
         if ($this->isGeneralManager()) {
             return '/report/final';
         }
