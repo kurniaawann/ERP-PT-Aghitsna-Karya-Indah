@@ -115,6 +115,22 @@
         <div id="signatory-sections"></div>
     </div>
 
+    {{-- Biaya Lain-lain — diisi PER PROYEK saat generate. Blok form per
+         proyek dirender dinamis oleh JS (renderAdditionalCostSections) dari
+         daftar proyek yang dipilih di multi-select. Setiap baris berisi nama
+         biaya dan jumlah; nama field:
+         additional_costs[NAMA_PROYEK][INDEX][name|amount]. Total seluruh
+         biaya ditambahkan ke TOTAL DIBAYARKAN pada cetakan payroll. --}}
+    <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-receipt text-primary"></i>
+            <p class="text-sm font-semibold text-text-primary">Biaya Lain-lain</p>
+        </div>
+        <p class="text-xs text-text-secondary mb-3">Opsional — tambahkan biaya tambahan per proyek (misal konsumsi,
+            transport, dll). Jumlahnya akan ditambahkan ke TOTAL DIBAYARKAN pada cetakan payroll.</p>
+        <div id="additional-costs-sections"></div>
+    </div>
+
     {{-- Loading State --}}
     <div id="checking-loader" class="hidden mb-3 p-4 bg-surface-secondary border border-border rounded-lg text-center">
         <i class="fa-solid fa-spinner fa-spin text-primary text-2xl mb-2"></i>

@@ -8,7 +8,9 @@ use App\Models\Sdm\Employee;
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Kasbon;
 use App\Models\Sdm\KasbonPayment;
+use App\Models\Sdm\PayrollAdditionalCost;
 use App\Models\Sdm\Executive;
+use App\Services\InputNormalizer;
 use App\Services\Report\ProjectFinancialReportService;
 
 use Carbon\Carbon;
@@ -184,6 +186,7 @@ class PayrollService
             // + periode ini (kasbon perorangan tidak dihitung di sini; potongan
             // perorangan tetap tampil pada baris "Potongan Kasbon" per karyawan).
             $teamKasbonTotal = 0;
+            $additionalCosts = collect();
             if (! empty($first->project_name) && $first->period_start_date) {
                 $periodStart = Carbon::parse($first->period_start_date);
                 $periodEnd = $first->period_end_date
@@ -203,6 +206,16 @@ class PayrollService
                             });
                     })
                     ->sum('amount');
+
+                // Biaya lain-lain untuk proyek + periode ini (rincian items
+                // dipakai untuk badge jumlah di baris header dan modal detail).
+                $additionalCosts = PayrollAdditionalCost::where('created_by', $first->created_by)
+                    ->where('project_name', $first->project_name)
+                    ->whereDate('period_start_date', $periodStartStr)
+                    ->whereDate('period_end_date', $periodEndStr)
+                    ->get()
+                    ->flatMap(fn ($cost) => $cost->items ?? [])
+                    ->values();
             }
 
             return [
@@ -220,6 +233,10 @@ class PayrollService
                 'total_base' => (int) $group->sum('base_salary'),
                 'total_overtime' => (int) $group->sum('overtime_total'),
                 'total_kasbon' => $teamKasbonTotal,
+                'additional_costs' => $additionalCosts,
+                'additional_cost_count' => $additionalCosts->count(),
+                'total_additional_cost' => (int) $additionalCosts->sum('amount'),
+                'total_dibayarkan' => (int) $group->sum('net_salary') - $teamKasbonTotal + (int) $additionalCosts->sum('amount'),
             ];
         })->values();
     }
@@ -383,6 +400,7 @@ class PayrollService
                 $alreadyGenerated[] = [
                     'name' => $employee->name,
                     'employee_code' => $employee->employee_code,
+                    'project_name' => $employee->project_name,
                 ];
                 continue;
             }
@@ -405,6 +423,7 @@ class PayrollService
             $newEmployees[] = [
                 'name' => $employee->name,
                 'employee_code' => $employee->employee_code,
+                'project_name' => $employee->project_name,
                 'join_date' => $employee->join_date ? $employeeJoinDate->format('Y-m-d') : null,
             ];
 
@@ -431,6 +450,7 @@ class PayrollService
                 $incompleteEmployees[] = [
                     'name' => $employee->name,
                     'employee_code' => $employee->employee_code,
+                    'project_name' => $employee->project_name,
                     'total_days' => $requiredDays,
                     'filled_days' => $filledDays,
                     'missing_days' => count($missingDates),
@@ -441,6 +461,7 @@ class PayrollService
                 $completeEmployees[] = [
                     'name' => $employee->name,
                     'employee_code' => $employee->employee_code,
+                    'project_name' => $employee->project_name,
                     'total_days' => $requiredDays,
                     'filled_days' => $filledDays,
                 ];
@@ -499,13 +520,16 @@ class PayrollService
      * @param  array|null    $projectNames   Filter hanya karyawan pada proyek-proyek tertentu (opsional)
      * @param  array|null    $signatories    Penanda tangan per proyek:
      *                                       [Nama Proyek => [disetujui|diperiksa|dibuat => ID petinggi]]
+     * @param  array|null    $additionalCosts  Biaya lain-lain per proyek (opsional):
+     *                                       [Nama Proyek => [[name, amount], ...]]
      * @return array  ['success' => bool, 'message' => string]
      */
     public function generatePayroll(
         Carbon $periodStartDate,
         Carbon $periodEndDate,
         ?array $projectNames = null,
-        ?array $signatories = null
+        ?array $signatories = null,
+        ?array $additionalCosts = null
     ): array {
         $startDate = $periodStartDate->copy();
         $endDate = $periodEndDate->copy();
@@ -753,7 +777,67 @@ class PayrollService
             }
         }
 
+        // Simpan biaya lain-lain per proyek (opsional). Satu record per
+        // proyek + periode; generate ulang akan menimpa record yang sama.
+        if (! empty($additionalCosts)) {
+            foreach ($additionalCosts as $project => $rows) {
+                $normalized = $this->normalizeAdditionalCosts($rows);
+
+                if (empty($normalized)) {
+                    continue;
+                }
+
+                PayrollAdditionalCost::updateOrCreate(
+                    [
+                        'created_by' => auth()->id(),
+                        'project_name' => trim((string) $project),
+                        'period_start_date' => $startDate->format('Y-m-d'),
+                        'period_end_date' => $endDate->format('Y-m-d'),
+                    ],
+                    [
+                        'items' => $normalized,
+                        'total_amount' => (int) collect($normalized)->sum('amount'),
+                    ]
+                );
+            }
+        }
+
         return ['success' => true, 'message' => 'Payroll berhasil digenerate!'];
+    }
+
+    /**
+     * Menormalkan daftar baris biaya lain-lain dari input form generate.
+     *
+     * Membuang baris tanpa nama dan jumlah, menormalkan jumlah (format
+     * Indonesia, mis. "50.000" → 50000), dan mengembalikan array berindeks
+     * ulang berisi {name, amount}.
+     *
+     * @param  mixed  $rows  Baris input: [[name, amount], ...]
+     * @return array<int, array{name: string, amount: int}>
+     */
+    private function normalizeAdditionalCosts(mixed $rows): array
+    {
+        $items = [];
+
+        foreach ((array) $rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $name = trim((string) ($row['name'] ?? ''));
+            $amount = (int) InputNormalizer::normalizeCurrency($row['amount'] ?? 0);
+
+            if ($name === '' || $amount <= 0) {
+                continue;
+            }
+
+            $items[] = [
+                'name' => $name,
+                'amount' => $amount,
+            ];
+        }
+
+        return $items;
     }
 
     /**
@@ -1359,6 +1443,62 @@ class PayrollService
             })
             ->map(fn ($payments) => (int) $payments->sum('amount'))
             ->filter(fn ($total) => $total > 0);
+    }
+
+    /**
+     * Mendapatkan biaya lain-lain untuk payroll yang diexport.
+     *
+     * Mengembalikan record payroll_additional_costs yang cocok dengan
+     * kombinasi proyek + periode pada kumpulan payroll yang diexport,
+     * lengkap dengan rincian items (nama & jumlah per biaya).
+     *
+     * @param  Collection  $payrolls  Koleksi payroll yang diexport
+     * @return \Illuminate\Support\Collection<int, PayrollAdditionalCost>
+     */
+    public function getAdditionalCosts(Collection $payrolls): Collection
+    {
+        $criteria = $payrolls->map(function (Payroll $payroll) {
+            return [
+                'project_name' => $payroll->project_name ?: null,
+                'period_start_date' => $payroll->period_start_date
+                    ? Carbon::parse($payroll->period_start_date)->format('Y-m-d')
+                    : null,
+                'period_end_date' => $payroll->period_end_date
+                    ? Carbon::parse($payroll->period_end_date)->format('Y-m-d')
+                    : null,
+            ];
+        })->unique()->values();
+
+        if ($criteria->isEmpty()) {
+            return collect();
+        }
+
+        return PayrollAdditionalCost::where('created_by', auth()->id())
+            ->get()
+            ->filter(function (PayrollAdditionalCost $cost) use ($criteria) {
+                return $criteria->contains(function ($c) use ($cost) {
+                    return $cost->project_name === $c['project_name']
+                        && Carbon::parse($cost->period_start_date)->format('Y-m-d') === $c['period_start_date']
+                        && Carbon::parse($cost->period_end_date)->format('Y-m-d') === $c['period_end_date'];
+                });
+            })
+            ->values();
+    }
+
+    /**
+     * Mendapatkan total biaya lain-lain untuk payroll yang diexport.
+     *
+     * Menjumlahkan total biaya lain-lain (payroll_additional_costs) yang
+     * cocok dengan kombinasi proyek + periode pada kumpulan payroll yang
+     * diexport, sehingga TOTAL DIBAYARKAN pada cetakan bisa menambahkan
+     * biaya tersebut.
+     *
+     * @param  Collection  $payrolls  Koleksi payroll yang diexport
+     * @return int
+     */
+    public function getAdditionalCostsTotal(Collection $payrolls): int
+    {
+        return (int) $this->getAdditionalCosts($payrolls)->sum('total_amount');
     }
 
     /**

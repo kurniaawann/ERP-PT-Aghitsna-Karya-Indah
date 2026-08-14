@@ -123,6 +123,7 @@ let noProjectWarningDiv = null;
 let noProjectList = null;
 let generateSubmitBtn = null;
 let signatorySectionsContainer = null;
+let additionalCostsSectionsContainer = null;
 
 /**
  * Seleksi penanda tangan yang tersimpan secara persisten (keyboard:
@@ -382,6 +383,119 @@ function renderSignatorySections() {
     }
 }
 
+// ==========================================
+// BIAYA LAIN-LAIN (Per Proyek)
+// ==========================================
+
+/**
+ * Merender blok form "Biaya Lain-lain" untuk SETIAP proyek yang dipilih pada
+ * multi-select di modal Generate.
+ *
+ * Alur:
+ * - Render inkremental: blok proyek yang masih dipilih dipertahankan (nilai
+ *   input tidak hilang), blok proyek yang dihapus dihapus, dan blok baru
+ *   ditambahkan untuk proyek yang baru dipilih.
+ * - Tiap blok memuat daftar baris biaya: nama biaya + jumlah (Rp). Nilai
+ *   terkirim sebagai additional_costs[NAMA_PROYEK][INDEX][name|amount].
+ *
+ * @returns {void}
+ */
+function renderAdditionalCostSections() {
+    if (!additionalCostsSectionsContainer) return;
+
+    const projects = getSelectedProjects();
+
+    if (projects.length === 0) {
+        additionalCostsSectionsContainer.innerHTML =
+            '<p class="text-xs text-text-label italic">Pilih proyek terlebih dahulu untuk menambahkan biaya lain-lain.</p>';
+        return;
+    }
+
+    const blocks = additionalCostsSectionsContainer.querySelectorAll('.additional-cost-block');
+    const existing = new Map();
+    blocks.forEach(function (block) {
+        existing.set(block.dataset.project, block);
+    });
+
+    // Hapus blok untuk proyek yang tidak lagi dipilih
+    existing.forEach(function (block, project) {
+        if (!projects.includes(project)) block.remove();
+    });
+
+    // Tambahkan blok untuk proyek baru
+    projects.forEach(function (project) {
+        if (!existing.has(project)) {
+            additionalCostsSectionsContainer.appendChild(createAdditionalCostBlock(project));
+        }
+    });
+}
+
+/**
+ * Membuat blok form biaya lain-lain untuk satu proyek berisi satu baris
+ * kosong pertama dan tombol "Tambah Biaya".
+ *
+ * @param {string} project  Nama proyek.
+ * @returns {HTMLElement}
+ */
+function createAdditionalCostBlock(project) {
+    const block = document.createElement('div');
+    block.className = 'mb-4 p-3 bg-surface-base border border-border-strong rounded-lg additional-cost-block';
+    block.dataset.project = project;
+
+    const projectAttr = escapeAttr(project);
+
+    block.innerHTML =
+        '<p class="text-sm font-semibold text-text-primary mb-3">' +
+        '<i class="fa-solid fa-folder-open text-text-label mr-1"></i>' +
+        'Biaya Lain-lain - <span class="text-primary">' + projectAttr + '</span></p>' +
+        '<div class="additional-cost-rows"></div>' +
+        '<button type="button" class="additional-cost-add-btn mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover">' +
+        '<i class="fa-solid fa-plus"></i> Tambah Biaya</button>';
+
+    block.querySelector('.additional-cost-rows').appendChild(createAdditionalCostRow(project, 0));
+
+    return block;
+}
+
+/**
+ * Membuat satu baris input biaya lain-lain (nama + jumlah).
+ *
+ * @param {string} project  Nama proyek (dipakai di atribut name).
+ * @param {number} index    Indeks baris.
+ * @returns {HTMLElement}
+ */
+function createAdditionalCostRow(project, index) {
+    const row = document.createElement('div');
+    row.className = 'additional-cost-row flex gap-2 mb-2 items-center';
+
+    const projectKey = escapeAttr(project);
+
+    row.innerHTML =
+        '<input type="text" name="additional_costs[' + projectKey + '][' + index + '][name]" ' +
+        'placeholder="Nama biaya" class="w-1/2 border border-border-strong rounded p-2 bg-surface-base text-text-input text-sm">' +
+        '<input type="text" name="additional_costs[' + projectKey + '][' + index + '][amount]" ' +
+        'placeholder="Jumlah (Rp)" inputmode="numeric" ' +
+        'class="w-1/3 border border-border-strong rounded p-2 bg-surface-base text-text-input text-sm additional-cost-amount">' +
+        '<button type="button" class="additional-cost-remove-btn text-error hover:text-red-700 px-2">' +
+        '<i class="fa-solid fa-trash"></i></button>';
+
+    return row;
+}
+
+/**
+ * Menambahkan satu baris biaya kosong baru pada akhir daftar baris blok.
+ *
+ * @param {HTMLElement} block  Blok proyek.
+ * @returns {void}
+ */
+function addAdditionalCostRow(block) {
+    const rows = block.querySelector('.additional-cost-rows');
+    const project = block.dataset.project;
+    const nextIndex = rows.querySelectorAll('.additional-cost-row').length;
+
+    rows.appendChild(createAdditionalCostRow(project, nextIndex));
+}
+
 /**
  * Menyembunyikan semua panel status pengecekan absensi di modal Generate.
  *
@@ -510,9 +624,10 @@ async function checkAttendanceData() {
         let canGenerate = data.can_generate;
         let disableReason = '';
 
-        // Tampilkan informasi periode
+        // Tampilkan informasi periode (nama proyek terpilih tidak lagi
+        // ditampilkan di header panel — proyek ditampilkan per karyawan).
         const periodInfo =
-            `Proyek: <strong>${projects.join(', ')}</strong> — Periode: <strong>${data.period_start} - ${data.period_end}</strong> (${data.working_days} hari kerja)`;
+            `Periode: <strong>${data.period_start} - ${data.period_end}</strong> (${data.working_days} hari kerja)`;
 
         // Tampilkan karyawan dengan data lengkap (jika ada)
         if (data.complete_employees && data.complete_employees.length > 0) {
@@ -529,6 +644,7 @@ async function checkAttendanceData() {
                             <i class="fa-solid fa-circle-check text-success"></i>
                             <span class="font-medium text-text-heading">${emp.name}</span>
                             <span class="text-xs text-text-label">(${emp.employee_code})</span>
+                            ${emp.project_name ? `<span class="text-xs bg-primary-light text-primary px-2 py-1 rounded">${emp.project_name}</span>` : ''}
                         </div>
                         <span class="text-xs text-success font-semibold">${emp.filled_days}/${emp.total_days} hari</span>
                     </div>
@@ -561,7 +677,10 @@ async function checkAttendanceData() {
                     <div class="bg-surface-base p-2 rounded border border-error">
                         <div class="flex justify-between items-start mb-1">
                             <span class="font-semibold text-text-heading text-sm">${emp.name}</span>
-                            <span class="text-xs bg-error-light text-error px-2 py-1 rounded">${emp.employee_code}</span>
+                            <div class="flex items-center gap-1 flex-wrap justify-end">
+                                ${emp.project_name ? `<span class="text-xs bg-primary-light text-primary px-2 py-1 rounded">${emp.project_name}</span>` : ''}
+                                <span class="text-xs bg-error-light text-error px-2 py-1 rounded">${emp.employee_code}</span>
+                            </div>
                         </div>
                         <div class="text-xs text-text-label space-y-1">
                             <div class="flex items-center gap-1">
@@ -809,6 +928,56 @@ window.togglePayrollGroup = function (index) {
 };
 
 /**
+ * Menampilkan modal detail biaya lain-lain untuk sebuah grup proyek.
+ *
+ * Dipanggil dari badge jumlah di header grup (onclick inline). Data rincian
+ * diambil dari atribut data-items (JSON) pada tombol badge, lalu dirender ke
+ * modal shared #additionalCostDetailModal (judul, periode, baris nama+jumlah,
+ * dan total).
+ *
+ * @param {HTMLElement} button  Elemen badge yang diklik.
+ */
+window.showAdditionalCostDetail = function (button) {
+    const modal = document.getElementById('additionalCostDetailModal');
+    if (!modal) return;
+
+    const items = JSON.parse(button.dataset.items || '[]');
+    const titleEl = document.getElementById('additional-cost-detail-title');
+    const periodEl = document.getElementById('additional-cost-detail-period');
+    const bodyEl = document.getElementById('additional-cost-detail-body');
+    const totalEl = document.getElementById('additional-cost-detail-total');
+
+    if (titleEl) titleEl.textContent = button.dataset.title || '';
+    if (periodEl) periodEl.textContent = 'Periode: ' + (button.dataset.period || '');
+
+    let total = 0;
+    if (bodyEl) {
+        bodyEl.innerHTML = '';
+        if (items.length === 0) {
+            bodyEl.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-text-secondary">Tidak ada biaya lain-lain.</td></tr>';
+        } else {
+            items.forEach(function (item, index) {
+                const amount = Number(item.amount) || 0;
+                total += amount;
+                const tr = document.createElement('tr');
+                tr.className = 'border-t border-border-light';
+                tr.innerHTML =
+                    '<td class="p-2">' + (index + 1) + '</td>' +
+                    '<td class="p-2">' + (item.name || '-') + '</td>' +
+                    '<td class="p-2 text-right">' + 'Rp ' + amount.toLocaleString('id-ID') + '</td>';
+                bodyEl.appendChild(tr);
+            });
+        }
+    }
+
+    if (totalEl) totalEl.textContent = 'Rp ' + total.toLocaleString('id-ID');
+
+    if (typeof openModal === 'function') {
+        openModal('additionalCostDetailModal');
+    }
+};
+
+/**
  * Mengirim form hapus massal dengan status memuat.
  *
  * Alur:
@@ -983,6 +1152,7 @@ document.addEventListener('DOMContentLoaded', function () {
     noProjectList = document.getElementById('no-project-list');
     generateSubmitBtn = document.querySelector('#generateModal button[type="submit"]');
     signatorySectionsContainer = document.getElementById('signatory-sections');
+    additionalCostsSectionsContainer = document.getElementById('additional-costs-sections');
 
     // Catat pilihan penanda tangan ke map persisten (event delegation sekali,
     // bukan saat render ulang) agar pilihan tidak hilang saat blok dirender
@@ -1033,17 +1203,67 @@ document.addEventListener('DOMContentLoaded', function () {
             checkTimeout = setTimeout(checkAttendanceData, 300);
         };
 
-        projectMultiWrapper.addEventListener('change', function (e) {
-            if (e.target.matches('.searchable-multi-checkbox, .searchable-multi-select-all')) {
+        // PENTING: komponen searchable-multi-select men-toggle checkbox secara
+        // manual saat opsi diklik pada area teks (tanpa mengirim event 'change'
+        // native). Karena itu section dinamis (penanda tangan & biaya lain-lain)
+        // dirender ulang BAIK lewat event 'change' maupun 'click' pada opsi.
+        // setTimeout(0) memastikan hidden input project_name[] sudah diperbarui
+        // oleh handler komponen sebelum dibaca ulang.
+        const refreshGenerateSections = function () {
+            setTimeout(function () {
                 scheduleCheck();
                 renderSignatorySections();
+                renderAdditionalCostSections();
+            }, 0);
+        };
+
+        projectMultiWrapper.addEventListener('change', function (e) {
+            if (e.target.matches('.searchable-multi-checkbox, .searchable-multi-select-all')) {
+                refreshGenerateSections();
             }
         });
 
         projectMultiWrapper.addEventListener('click', function (e) {
             if (e.target.matches('.searchable-multi-tag-remove')) {
-                scheduleCheck();
-                renderSignatorySections();
+                refreshGenerateSections();
+                return;
+            }
+
+            if (e.target.closest('.searchable-multi-option')) {
+                refreshGenerateSections();
+            }
+        });
+    }
+
+    // Event delegation untuk tombol tambah/hapus baris biaya lain-lain.
+    if (additionalCostsSectionsContainer) {
+        // Live formatting jumlah biaya ke format ribuan Indonesia (mis. 10.000).
+        additionalCostsSectionsContainer.addEventListener('input', function (e) {
+            if (e.target.classList.contains('additional-cost-amount')) {
+                window.formatCurrencyInput(e.target);
+            }
+        });
+
+        additionalCostsSectionsContainer.addEventListener('click', function (e) {
+            const addBtn = e.target.closest('.additional-cost-add-btn');
+            if (addBtn) {
+                addAdditionalCostRow(addBtn.closest('.additional-cost-block'));
+                return;
+            }
+
+            const removeBtn = e.target.closest('.additional-cost-remove-btn');
+            if (removeBtn) {
+                const rows = removeBtn.closest('.additional-cost-rows');
+                const row = removeBtn.closest('.additional-cost-row');
+                const rowCount = rows.querySelectorAll('.additional-cost-row').length;
+
+                if (rowCount > 1) {
+                    row.remove();
+                } else {
+                    row.querySelectorAll('input').forEach(function (input) {
+                        input.value = '';
+                    });
+                }
             }
         });
     }
@@ -1065,6 +1285,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Render placeholder blok penanda tangan (belum ada proyek terpilih)
     renderSignatorySections();
+    renderAdditionalCostSections();
 
     // Dropdown proyek bersama (filter index): searchable dengan pagination
     // 10 item per load dari Rekap Proyek.
@@ -1088,6 +1309,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Bersihkan pilihan penanda tangan lalu render ulang blok (placeholder)
             signatorySelections.clear();
             renderSignatorySections();
+            renderAdditionalCostSections();
 
             // Reset button state
             if (generateSubmitBtn) {

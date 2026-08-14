@@ -276,11 +276,16 @@ class PayrollController extends Controller
         // garis putus-putus sebagai fallback.
         $signatories = $request->input('signatories', []);
 
+        // Biaya lain-lain per proyek (opsional). Struktur:
+        // additional_costs[NAMA_PROYEK][INDEX][name|amount].
+        $additionalCosts = $request->input('additional_costs', []);
+
         $result = $this->payrollService->generatePayroll(
             $startDate,
             $endDate,
             $projectNames,
-            $signatories
+            $signatories,
+            $additionalCosts
         );
 
         if ($result['success']) {
@@ -352,8 +357,10 @@ class PayrollController extends Controller
         $fileName = 'Laporan_Payroll'.$projectPart.'_'.($month ? $month.'_' : '').($year ? $year : 'Semua').'_'.date('Ymd_His').'.xlsx';
 
         $teamKasbonRecap = $this->payrollService->getTeamKasbonRecap($payrolls);
+        $additionalCostsTotal = $this->payrollService->getAdditionalCostsTotal($payrolls);
+        $additionalCosts = $this->payrollService->getAdditionalCosts($payrolls);
 
-        return Excel::download(new PayrollExport($payrolls, $month ? (int) $month : null, $year ? (int) $year : null, $projectName, $teamKasbonRecap), $fileName);
+        return Excel::download(new PayrollExport($payrolls, $month ? (int) $month : null, $year ? (int) $year : null, $projectName, $teamKasbonRecap, $additionalCostsTotal, $additionalCosts), $fileName);
     }
 
     /**
@@ -436,6 +443,8 @@ class PayrollController extends Controller
         $totalNetSalary = $payrolls->sum('net_salary');
 
         $teamKasbonRecap = $this->payrollService->getTeamKasbonRecap($payrolls);
+        $additionalCostsTotal = $this->payrollService->getAdditionalCostsTotal($payrolls);
+        $additionalCosts = $this->payrollService->getAdditionalCosts($payrolls);
 
         // Snapshot petinggi untuk blok tanda tangan (Disetujui/Diperiksa/Dibuat).
         // Mengutamakan pilihan yang tersimpan saat payroll di-generate;
@@ -453,6 +462,8 @@ class PayrollController extends Controller
             'totalOvertime' => $totalOvertime,
             'totalNetSalary' => $totalNetSalary,
             'teamKasbonRecap' => $teamKasbonRecap,
+            'additionalCostsTotal' => $additionalCostsTotal,
+            'additionalCosts' => $additionalCosts,
             'signatures' => $signatures,
         ];
 

@@ -444,19 +444,44 @@ class AttendanceService
     /**
      * Membuat pesan kesalahan yang mudah dibaca untuk data duplikat.
      *
-     * Membatasi tampilan hingga 5 duplikat pertama dan menambahkan jumlah item yang tersisa.
+     * Mendeskripsikan duplikat yang dikelompokkan per karyawan sehingga nama
+     * tidak terulang di tiap tanggal. Membatasi tampilan hingga 5 karyawan
+     * pertama dan menambahkan jumlah item yang tersisa.
      *
      * @param  array<int, string>  $duplicates  Array deskripsi duplikat
      * @return string
      */
     public function buildDuplicateErrorMessage(array $duplicates): string
     {
-        $errorMessage = 'Karyawan berikut sudah memiliki absensi: ';
-        $displayDuplicates = array_slice($duplicates, 0, 5);
-        $errorMessage .= implode('; ', $displayDuplicates);
+        $grouped = [];
+        foreach ($duplicates as $entry) {
+            $parts = explode(' pada tanggal ', $entry, 2);
 
-        if (count($duplicates) > 5) {
-            $errorMessage .= sprintf(' dan %d lainnya', count($duplicates) - 5);
+            if (count($parts) === 2) {
+                $name = $parts[0];
+                $datePart = $parts[1];
+                if (! isset($grouped[$name])) {
+                    $grouped[$name] = [];
+                }
+                $grouped[$name][] = $datePart;
+            } else {
+                if (! isset($grouped[$entry])) {
+                    $grouped[$entry] = [];
+                }
+                $grouped[$entry][] = '';
+            }
+        }
+
+        $messages = [];
+        foreach ($grouped as $name => $dates) {
+            $messages[] = $name . ' pada tanggal ' . implode(', ', $dates);
+        }
+
+        $errorMessage = 'Karyawan berikut sudah memiliki absensi: ';
+        $errorMessage .= implode('; ', array_slice($messages, 0, 5));
+
+        if (count($messages) > 5) {
+            $errorMessage .= sprintf(' dan %d lainnya', count($messages) - 5);
         }
 
         $errorMessage .= '. Silakan hapus atau edit data yang sudah ada.';

@@ -82,6 +82,22 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
     protected $totals;
 
     /**
+     * Total biaya lain-lain (dari payroll_additional_costs) yang ditambahkan
+     * ke TOTAL DIBAYARKAN.
+     *
+     * @var int
+     */
+    protected $additionalCostsTotal;
+
+    /**
+     * Rincian biaya lain-lain (record payroll_additional_costs) untuk section
+     * REKAPITULASI DANA, lengkap dengan items (nama & jumlah per biaya).
+     *
+     * @var \Illuminate\Support\Collection<int, \App\Models\Sdm\PayrollAdditionalCost>
+     */
+    protected $additionalCosts;
+
+    /**
      * Create a new PayrollExport instance.
      *
      * @param  \Illuminate\Support\Collection  $payrolls   Payroll data with employee relation loaded
@@ -89,12 +105,16 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
      * @param  int|null                        $year       Filter by year (optional)
      * @param  string|null                     $projectName  Project name for header (optional)
      * @param  \Illuminate\Support\Collection|null $teamKasbon  Rekap kasbon divisi (optional)
+     * @param  int                             $additionalCostsTotal  Total biaya lain-lain (optional)
+     * @param  \Illuminate\Support\Collection|null $additionalCosts  Rincian biaya lain-lain (optional)
      */
-    public function __construct($payrolls, $month = null, $year = null, $projectName = null, $teamKasbon = null)
+    public function __construct($payrolls, $month = null, $year = null, $projectName = null, $teamKasbon = null, $additionalCostsTotal = 0, $additionalCosts = null)
     {
         $this->payrolls = $payrolls;
         $this->projectName = $projectName;
         $this->teamKasbon = $teamKasbon ?? collect();
+        $this->additionalCostsTotal = (int) $additionalCostsTotal;
+        $this->additionalCosts = $additionalCosts ?? collect();
 
         $monthNames = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
@@ -193,7 +213,7 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             'total_kerja' => $totalKerja,
             'overtime_total' => $totalOvertime,
             'net_salary' => $totalNetSalary,
-            'grand_total' => $totalNetSalary - (int) $this->teamKasbon->sum(),
+            'grand_total' => $totalNetSalary - (int) $this->teamKasbon->sum() + $this->additionalCostsTotal,
         ];
 
         return collect($data);
@@ -329,6 +349,15 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                     );
                     $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                     $rekapRow++;
+                }
+
+                foreach ($this->additionalCosts as $additionalCost) {
+                    foreach ($additionalCost->items ?? [] as $item) {
+                        $sheet->setCellValue("A{$rekapRow}", ($item['name'] ?? 'Biaya Lain-lain'));
+                        $sheet->setCellValue("C{$rekapRow}", (int) ($item['amount'] ?? 0));
+                        $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+                        $rekapRow++;
+                    }
                 }
 
                 $sheet->setCellValue("A{$rekapRow}", "Total Upah Pekerja");

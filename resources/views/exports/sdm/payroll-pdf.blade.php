@@ -307,7 +307,8 @@
         $teamKasbonRecap = $teamKasbonRecap ?? collect();
         $totalUpahPekerja = $totalNetSalary ?? (int) $payrolls->sum('net_salary');
         $totalKasbonProyek = (int) $teamKasbonRecap->sum();
-        $grandTotalDibayar = $totalUpahPekerja - $totalKasbonProyek;
+        $totalBiayaLain = (int) ($additionalCostsTotal ?? 0);
+        $grandTotalDibayar = $totalUpahPekerja - $totalKasbonProyek + $totalBiayaLain;
     @endphp
     <table class="main-table" style="margin-top: 12px; width: 45%;">
         <thead>
@@ -329,6 +330,14 @@
                     <td>{{ $kasbonLabel }}</td>
                     <td class="text-right" style="color: #c0392b;">{{ number_format($amount, 0, ',', '.') }}</td>
                 </tr>
+            @endforeach
+            @foreach ($additionalCosts ?? [] as $additionalCost)
+                @foreach ($additionalCost->items ?? [] as $item)
+                    <tr>
+                        <td>{{ $item['name'] ?? 'Biaya Lain-lain' }}</td>
+                        <td class="text-right">{{ number_format($item['amount'] ?? 0, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
             @endforeach
             <tr>
                 <td>Total Upah Pekerja</td>

@@ -167,11 +167,32 @@ function validateDuplicateAttendance() {
     });
 
     if (duplicates.length > 0) {
-        var displayDuplicates = duplicates.slice(0, 5);
+        // Kelompokkan per karyawan agar nama tidak terulang di tiap tanggal
+        var grouped = {};
+        duplicates.forEach(function(entry) {
+            var match = entry.match(/^(.+?) pada tanggal (.+)$/);
+            if (match) {
+                if (!grouped[match[1]]) {
+                    grouped[match[1]] = [];
+                }
+                grouped[match[1]].push(match[2]);
+            } else {
+                if (!grouped[entry]) {
+                    grouped[entry] = [];
+                }
+                grouped[entry].push('');
+            }
+        });
+
+        var groupedMessages = Object.keys(grouped).map(function(name) {
+            return name + ' pada tanggal ' + grouped[name].join(', ');
+        });
+
+        var displayDuplicates = groupedMessages.slice(0, 5);
         var message = 'Karyawan berikut sudah memiliki absensi: ' + displayDuplicates.join('; ');
 
-        if (duplicates.length > 5) {
-            message += ' dan ' + (duplicates.length - 5) + ' lainnya';
+        if (groupedMessages.length > 5) {
+            message += ' dan ' + (groupedMessages.length - 5) + ' lainnya';
         }
 
         message += '. Silakan hapus atau edit data yang sudah ada.';
@@ -256,6 +277,28 @@ function initAddFormHandler() {
             }
         }
     });
+
+    // Validasi ulang duplikat SETIAP kali pilihan karyawan berubah (centang
+    // checkbox opsi, Pilih Semua, atau hapus tag), bukan hanya saat tanggal
+    // berubah / submit. Tanpa ini peringatan "Data Absensi Sudah Ada!"
+    // bertahan basi meski karyawan sebelumnya sudah dihapus & diganti.
+    var addMultiSelectWrapper = document.querySelector('#addModal .searchable-multi-select-wrapper');
+    if (addMultiSelectWrapper) {
+        addMultiSelectWrapper.addEventListener('change', function(e) {
+            if (e.target.classList.contains('searchable-multi-checkbox') ||
+                e.target.classList.contains('searchable-multi-select-all')) {
+                validateDuplicateAttendance();
+            }
+        });
+
+        // Hapus tag via tombol × (komponen memperbarui hidden inputs pada
+        // click handler yang sama, jadi validasi dijalankan setelahnya).
+        addMultiSelectWrapper.addEventListener('click', function(e) {
+            if (e.target.closest('.searchable-multi-tag-remove')) {
+                setTimeout(validateDuplicateAttendance, 0);
+            }
+        });
+    }
 }
 
 // ==========================================

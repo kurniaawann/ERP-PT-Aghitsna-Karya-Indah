@@ -93,6 +93,24 @@
                                             </span>
                                         @endif
 
+                                        @if (($group['additional_cost_count'] ?? 0) > 0)
+                                            <button type="button"
+                                                class="additional-cost-badge inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning hover:bg-warning-light/70 transition-colors duration-200"
+                                                onclick="showAdditionalCostDetail(this)"
+                                                data-title="{{ $group['project_name'] }}"
+                                                data-period="{{ $gStart->format('d M Y') }} - {{ $gEnd->format('d M Y') }}"
+                                                data-items='{{ json_encode($group['additional_costs']->values(), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG) }}'
+                                                title="Lihat rincian biaya lain-lain">
+                                                <i class="fa-solid fa-receipt text-xs"></i>
+                                                {{ $group['additional_cost_count'] }}
+                                            </button>
+                                        @endif
+
+                                        <span class="text-xs text-text-label">Total Dibayarkan:</span>
+                                        <span class="font-bold text-success text-sm">
+                                            {{ 'Rp ' . number_format($group['total_dibayarkan'], 0, ',', '.') }}
+                                        </span>
+
                                         {{-- Status ringkas grup --}}
                                         @if ($group['paid_count'] === 0)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
@@ -257,3 +275,30 @@
     @csrf
     @method('PATCH')
 </form>
+
+{{-- Modal Detail Biaya Lain-lain (shared, diisi via JS) --}}
+<x-modal id="additionalCostDetailModal" title="Biaya Lain-lain" :hideFooter="true">
+    <div class="space-y-4">
+        <div>
+            <p class="font-semibold text-text-primary" id="additional-cost-detail-title"></p>
+            <p class="text-xs text-text-label" id="additional-cost-detail-period"></p>
+        </div>
+
+        <table class="min-w-full divide-y divide-border-light text-sm">
+            <thead class="bg-surface-secondary">
+                <tr>
+                    <th class="p-2 text-left">No</th>
+                    <th class="p-2 text-left">Nama Biaya</th>
+                    <th class="p-2 text-right">Jumlah</th>
+                </tr>
+            </thead>
+            <tbody id="additional-cost-detail-body"></tbody>
+            <tfoot>
+                <tr class="border-t border-border-strong">
+                    <td colspan="2" class="p-2 font-semibold text-right">Total:</td>
+                    <td class="p-2 text-right font-semibold text-primary" id="additional-cost-detail-total"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</x-modal>
