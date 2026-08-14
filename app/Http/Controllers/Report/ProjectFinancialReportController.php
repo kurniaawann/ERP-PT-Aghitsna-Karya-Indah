@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Report\StoreProjectFinancialReportItemRequest;
 use App\Http\Requests\Report\UpdateProjectFinancialReportRequest;
 use App\Models\Finance\ProjectRecap;
+use App\Models\Sdm\Executive;
 use App\Services\Finance\RecapProyekService;
 use App\Services\Report\ProjectFinancialReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -97,7 +98,13 @@ class ProjectFinancialReportController extends Controller
                 ];
             });
 
-        return view('pages.report.project-financial-report', compact('recaps', 'categories', 'rekapOptions'));
+        // Petinggi milik user untuk pemilihan penandatangan pada modal edit
+        // (blok Mandor/Kabag Keuangan/Direktur).
+        $executives = Executive::where('created_by', auth()->id())
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.report.project-financial-report', compact('recaps', 'categories', 'rekapOptions', 'executives'));
     }
 
     /**
@@ -174,6 +181,14 @@ class ProjectFinancialReportController extends Controller
                 $report = $this->service->getOrCreateForRecap($projectRecap);
 
                 $this->service->syncItems($report, $items, $request->file('items', []));
+
+                // Simpan snapshot penanda tangan (dari Data Petinggi) agar cetakan
+                // PDF/Excel konsisten dengan pilihan saat edit.
+                $signatures = $this->service->resolveSignatureSnapshot(
+                    $request->input('signatures', [])
+                );
+
+                $report->update(['signatures' => $signatures ?: null]);
             }
 
             DB::commit();
@@ -237,12 +252,14 @@ class ProjectFinancialReportController extends Controller
         $report = $this->service->getOrCreateForRecap($projectRecap);
         $items = $this->service->getItems($report);
         $totals = $this->service->getGrandTotals($items);
+        $signatures = $this->service->getReportSignatures($report);
 
         $pdf = Pdf::loadView('exports.report.project-financial-report-pdf', [
             'recap' => $projectRecap,
             'report' => $report,
             'items' => $items,
             'totals' => $totals,
+            'signatures' => $signatures,
         ])->setPaper('a4', 'landscape');
 
         $filename = 'Laporan_Keuangan_'.$projectRecap->id.'_'.date('Y-m-d').'.pdf';
@@ -262,11 +279,12 @@ class ProjectFinancialReportController extends Controller
         $report = $this->service->getOrCreateForRecap($projectRecap);
         $items = $this->service->getItems($report);
         $totals = $this->service->getGrandTotals($items);
+        $signatures = $this->service->getReportSignatures($report);
 
         $filename = 'Laporan_Keuangan_'.$projectRecap->id.'_'.date('Y-m-d').'.xlsx';
 
         return Excel::download(
-            new ProjectFinancialReportExport($projectRecap, $items, $totals),
+            new ProjectFinancialReportExport($projectRecap, $items, $totals, $signatures),
             $filename
         );
     }

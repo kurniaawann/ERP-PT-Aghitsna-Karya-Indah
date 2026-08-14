@@ -65,6 +65,7 @@
         @include('components.report.project-financial-report.edit-modal', [
             'recap' => $recap,
             'categories' => $categories,
+            'executives' => $executives,
         ])
     @endforeach
 

@@ -37,6 +37,11 @@ class ProjectFinancialReport extends Model
         'id',
         'project_recap_id',
         'created_by',
+        'signatures',
+    ];
+
+    protected $casts = [
+        'signatures' => 'array',
     ];
 
     /**

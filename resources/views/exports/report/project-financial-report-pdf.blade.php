@@ -173,7 +173,7 @@
         /* Footer Signatures */
         .footer-signatures {
             width: 100%;
-            margin-top: 30px;
+            margin-top: 20px;
         }
 
         .footer-signatures table {
@@ -191,12 +191,20 @@
 
         .signature-title {
             font-weight: bold;
-            margin-bottom: 60px;
+            margin-bottom: 15px;
+        }
+
+        .sig-space {
+            min-height: 55px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
         }
 
         .signature-name {
             font-weight: bold;
             text-decoration: underline;
+            margin-top: 6px;
         }
     </style>
 </head>
@@ -355,15 +363,36 @@
             <tr>
                 <td>
                     <div class="signature-title">MANDOR</div>
-                    <div class="signature-name">Siswoyo</div>
+                    <div class="sig-space">
+                        @if (!empty($signatures['mandor']['signature_image']))
+                            <img src="{{ storage_path('app/public/' . $signatures['mandor']['signature_image']) }}"
+                                alt="Tanda tangan {{ $signatures['mandor']['name'] ?? '' }}"
+                                style="max-height: 50px; max-width: 140px; object-fit: contain;">
+                        @endif
+                    </div>
+                    <div class="signature-name">{{ $signatures['mandor']['name'] ?? '______________________' }}</div>
                 </td>
                 <td>
                     <div class="signature-title">KABAG KEUANGAN</div>
-                    <div class="signature-name">Kamila</div>
+                    <div class="sig-space">
+                        @if (!empty($signatures['kabag_keuangan']['signature_image']))
+                            <img src="{{ storage_path('app/public/' . $signatures['kabag_keuangan']['signature_image']) }}"
+                                alt="Tanda tangan {{ $signatures['kabag_keuangan']['name'] ?? '' }}"
+                                style="max-height: 50px; max-width: 140px; object-fit: contain;">
+                        @endif
+                    </div>
+                    <div class="signature-name">{{ $signatures['kabag_keuangan']['name'] ?? '______________________' }}</div>
                 </td>
                 <td>
                     <div class="signature-title">DIREKTUR PT. AGHITSNA KARYA INDAH</div>
-                    <div class="signature-name">Zulkarnain, S.T., M.T.</div>
+                    <div class="sig-space">
+                        @if (!empty($signatures['direktur']['signature_image']))
+                            <img src="{{ storage_path('app/public/' . $signatures['direktur']['signature_image']) }}"
+                                alt="Tanda tangan {{ $signatures['direktur']['name'] ?? '' }}"
+                                style="max-height: 50px; max-width: 140px; object-fit: contain;">
+                        @endif
+                    </div>
+                    <div class="signature-name">{{ $signatures['direktur']['name'] ?? '______________________' }}</div>
                 </td>
             </tr>
         </table>

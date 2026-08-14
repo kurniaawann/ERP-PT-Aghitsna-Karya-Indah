@@ -27,15 +27,17 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
     protected $recap;
     protected $items;
     protected $totals;
+    protected $signatures;
 
     /** @var array Menyimpan metadata tipe baris untuk styling dinamis di AfterSheet */
     protected $rowMetadata = [];
 
-    public function __construct($recap, $items, $totals)
+    public function __construct($recap, $items, $totals, $signatures = [])
     {
         $this->recap = $recap;
         $this->items = $items;
         $this->totals = $totals;
+        $this->signatures = $signatures;
     }
 
     public function collection()
@@ -163,15 +165,19 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
         $data[] = array_fill(0, 8, ''); $currentRow++;
         $data[] = array_fill(0, 8, ''); $currentRow++;
 
-        // Nama Penandatangan
+        // Nama Penandatangan (dari snapshot petinggi pilihan user)
+        $mandor = $this->signatures['mandor']['name'] ?? '';
+        $kabagKeuangan = $this->signatures['kabag_keuangan']['name'] ?? '';
+        $direktur = $this->signatures['direktur']['name'] ?? '';
+
         $data[] = [
-            'no' => 'Siswoyo',
+            'no' => $mandor,
             'bon' => '',
             'date' => '',
-            'description' => 'Kamila',
+            'description' => $kabagKeuangan,
             'income' => '',
             'expense' => '',
-            'balance' => 'Zulkarnain, S.T., M.T.',
+            'balance' => $direktur,
             'keterangan_bon' => '',
         ];
         $this->rowMetadata[$currentRow] = ['type' => 'SIGNATURE_NAME'];

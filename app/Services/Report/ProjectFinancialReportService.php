@@ -8,6 +8,7 @@ use App\Models\Report\ProjectFinancialReport;
 use App\Models\Report\ProjectFinancialReportItem;
 use App\Models\Report\TransactionCategory;
 use App\Models\Sdm\KasbonPayment;
+use App\Models\Sdm\Executive;
 use App\Models\Sdm\Payroll;
 use App\Services\InputNormalizer;
 use Carbon\Carbon;
@@ -90,6 +91,71 @@ class ProjectFinancialReportService
             ->orderBy('transaction_date')
             ->orderBy('id')
             ->get();
+    }
+
+    /**
+     * Membangun snapshot petinggi untuk blok tanda tangan Laporan Keuangan Proyek.
+     *
+     * User memilih petinggi per peran (mandor, kabag_keuangan, direktur) pada
+     * modal edit; snapshot berisi id, nama, jabatan, dan gambar tanda tangan.
+     * Mengikuti pola resolveSignatureSnapshot() pada PayrollService. Peran yang
+     * tidak dipilih bernilai null (PDF menampilkan fallback garis).
+     *
+     * @param  array<string, mixed>  $signatureIds  Peta peran => id petinggi
+     * @return array<string, array<string, mixed>|null>
+     */
+    public function resolveSignatureSnapshot(array $signatureIds): array
+    {
+        $roles = ['mandor', 'kabag_keuangan', 'direktur'];
+
+        $ids = array_values(array_filter(array_map(
+            fn ($value) => (int) $value,
+            array_intersect_key($signatureIds, array_flip($roles))
+        )));
+
+        $executives = Executive::where('created_by', auth()->id())
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $snapshot = [];
+        foreach ($roles as $role) {
+            $id = isset($signatureIds[$role]) ? (int) $signatureIds[$role] : null;
+            $executive = $id ? $executives->get($id) : null;
+
+            $snapshot[$role] = $executive ? [
+                'id' => $executive->id,
+                'name' => $executive->name,
+                'position' => $executive->position,
+                'signature_image' => $executive->signature_image,
+            ] : null;
+        }
+
+        return $snapshot;
+    }
+
+    /**
+     * Mendapatkan snapshot petinggi untuk cetakan PDF/Excel laporan.
+     *
+     * Mengutamakan snapshot yang tersimpan saat laporan di-update agar dokumen
+     * konsisten dengan pilihan penandatangan saat itu. Bila laporan belum
+     * memiliki snapshot, ketiga peran (Mandor/Kabag Keuangan/Direktur) bernilai
+     * null sehingga PDF menampilkan fallback dan Excel kolom nama kosong.
+     *
+     * @param  ProjectFinancialReport|null  $report
+     * @return array<string, array<string, mixed>|null>
+     */
+    public function getReportSignatures(?ProjectFinancialReport $report): array
+    {
+        if ($report && is_array($report->signatures)) {
+            return $report->signatures;
+        }
+
+        return [
+            'mandor' => null,
+            'kabag_keuangan' => null,
+            'direktur' => null,
+        ];
     }
 
     /**

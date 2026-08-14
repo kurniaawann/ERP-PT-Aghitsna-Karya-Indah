@@ -120,6 +120,10 @@ class UpdateProjectFinancialReportRequest extends FormRequest
             'items.*.expense_amount' => ['required', 'numeric', 'min:0'],
             'items.*.keterangan_bon' => ['nullable', 'string', 'max:255'],
             'items.*.proof_file' => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp,bmp'],
+            'signatures' => ['nullable', 'array'],
+            'signatures.mandor' => ['nullable', 'integer', 'exists:executives,id'],
+            'signatures.kabag_keuangan' => ['nullable', 'integer', 'exists:executives,id'],
+            'signatures.direktur' => ['nullable', 'integer', 'exists:executives,id'],
         ];
     }
 
@@ -150,6 +154,10 @@ class UpdateProjectFinancialReportRequest extends FormRequest
             'items.*.proof_file.file' => 'File bukti tidak valid!',
             'items.*.proof_file.max' => 'File bukti maksimal 5 MB!',
             'items.*.proof_file.mimes' => 'Format file bukti tidak didukung (khusus gambar JPG, PNG, GIF, WEBP, BMP)!',
+            'signatures.array' => 'Format penanda tangan tidak valid!',
+            'signatures.mandor.exists' => 'Petinggi Mandor yang dipilih tidak ditemukan!',
+            'signatures.kabag_keuangan.exists' => 'Petinggi Kabag Keuangan yang dipilih tidak ditemukan!',
+            'signatures.direktur.exists' => 'Petinggi Direktur yang dipilih tidak ditemukan!',
         ];
     }
 }

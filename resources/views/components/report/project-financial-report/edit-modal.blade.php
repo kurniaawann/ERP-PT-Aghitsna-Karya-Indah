@@ -1,9 +1,17 @@
 {{-- Modal Edit Rekap Proyek + Transaksi Laporan Keuangan Proyek (satu design) --}}
-@props(['recap', 'categories'])
+@props(['recap', 'categories', 'executives' => collect()])
 
 @php
     $report = $recap->financialReport;
     $existingItems = optional($report)->items ?? collect();
+
+    $executiveOptions = $executives->map(fn ($executive) => [
+        'value' => $executive->id,
+        'label' => $executive->name.($executive->position ? ' - '.$executive->position : ''),
+    ])->values();
+
+    $reportSignatures = app(\App\Services\Report\ProjectFinancialReportService::class)
+        ->getReportSignatures($report);
 
     $categoriesJson = $categories->map(fn ($cat) => [
         'id' => $cat->id,
@@ -122,6 +130,37 @@
         class="btn btn-outline-primary w-full">
         <i class="fa-solid fa-plus"></i> Tambah Kategori
     </button>
+
+    <hr class="my-4">
+
+    {{-- ==================== Penanda Tangan (dari Data Petinggi) ==================== --}}
+    <div class="mb-3">
+        <h6 class="text-text-primary font-semibold mb-3">Penanda Tangan</h6>
+        <p class="text-xs text-text-secondary mb-3">Opsional — pilih petinggi sebagai penandatangan laporan. Data
+            diambil dari modul Data Petinggi; jika dikosongkan, blok tanda tangan pada cetakan PDF/Excel tidak
+            menampilkan nama.</p>
+
+        @php
+            $signatureRoles = [
+                'mandor' => 'Mandor',
+                'kabag_keuangan' => 'Kabag Keuangan',
+                'direktur' => 'Direktur PT. Aghitsna Karya Indah',
+            ];
+            $storedSignatures = is_array($reportSignatures) ? $reportSignatures : [];
+        @endphp
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            @foreach ($signatureRoles as $roleKey => $roleLabel)
+                <x-forms.searchable-select
+                    name="signatures[{{ $roleKey }}]"
+                    id="signatures-{{ $roleKey }}-{{ $recap->id }}"
+                    :label="$roleLabel"
+                    placeholder="Cari petinggi..."
+                    :options="$executiveOptions"
+                    :selected="($storedSignatures[$roleKey]['id'] ?? '')" />
+            @endforeach
+        </div>
+    </div>
 
     <hr class="my-4">
 
