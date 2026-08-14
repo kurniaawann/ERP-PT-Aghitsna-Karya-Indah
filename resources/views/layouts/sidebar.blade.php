@@ -27,6 +27,32 @@
                 $isSuperAdmin = $user?->isSuperAdmin();
                 $isAdmin = $user?->isAdmin();
                 $isGeneralManager = $user?->isGeneralManager();
+
+                // Badge notifikasi Reimbursement — hanya tampil jika ada
+                // aktivitas baru SEJAK user terakhir membuka halaman
+                // (reimburse_seen_at), lalu hilang saat menu diklik:
+                // - Admin      : pengajuan baru (status draft / menunggu
+                //                disetujui) yang dibuat setelah terakhir dibuka.
+                // - Super Admin: perubahan status disetujui/ditolak
+                //                (status_changed_at) setelah terakhir dibuka.
+                $reimburseBadgeCount = 0;
+                if ($user && ($user->isAdmin() || $user->isSuperAdmin())) {
+                    $seenAt = $user->reimburse_seen_at ?? now()->subYears(10);
+
+                    $reimburseBadgeQuery = \App\Models\Finance\Reimburse::query();
+
+                    if ($user->isAdmin()) {
+                        $reimburseBadgeCount = (clone $reimburseBadgeQuery)
+                            ->where('status', 'draft')
+                            ->where('created_at', '>', $seenAt)
+                            ->count();
+                    } else {
+                        $reimburseBadgeCount = (clone $reimburseBadgeQuery)
+                            ->whereIn('status', ['approved', 'rejected'])
+                            ->where('status_changed_at', '>', $seenAt)
+                            ->count();
+                    }
+                }
             @endphp
 
             {{-- Dashboard --}}
@@ -221,6 +247,12 @@
                                 {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Reimbursement</span>
+                            @if ($reimburseBadgeCount > 0)
+                                <span
+                                    class="inline-flex items-center justify-center ml-auto min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold bg-error text-white">
+                                    {{ $reimburseBadgeCount }}
+                                </span>
+                            @endif
                         </a>
                     </li>
                     <li>
@@ -391,6 +423,12 @@
                                 {{ request()->is('reimburse*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                             <span class="ml-3 text-sm font-medium">Reimbursement</span>
+                            @if ($reimburseBadgeCount > 0)
+                                <span
+                                    class="inline-flex items-center justify-center ml-auto min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold bg-error text-white">
+                                    {{ $reimburseBadgeCount }}
+                                </span>
+                            @endif
                         </a>
                     </li>
                     <li>

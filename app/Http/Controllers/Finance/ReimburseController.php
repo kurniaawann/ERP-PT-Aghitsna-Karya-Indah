@@ -34,6 +34,11 @@ class ReimburseController extends Controller
      */
     public function index(Request $request)
     {
+        // Tandai halaman Reimbursement sudah dibuka user (badge sidebar hilang).
+        if ($user = $request->user()) {
+            $user->forceFill(['reimburse_seen_at' => now()])->save();
+        }
+
         $reimburses = $this->reimburseService
             ->buildFilteredQuery($request)
             ->paginate(15)
