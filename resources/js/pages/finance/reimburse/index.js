@@ -1,4 +1,4 @@
-/* global handleFormSubmit, resetFormSubmitState, openModal, closeModal, showToast */
+/* global handleFormSubmit, resetFormSubmitState, openModal, closeModal, showToast, formatCurrencyInput */
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
@@ -106,6 +106,29 @@ function updateButtonStates() {
             approvalButton.classList.add('opacity-50', 'cursor-not-allowed');
         }
     }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FORMAT TOTAL AMOUNT (MATA UANG)
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Inisialisasi format mata uang pada input `.reimburse-amount-input`
+ * (modal Tambah & Edit) menggunakan formatCurrencyInput dari shared/currency.js.
+ *
+ * Alur:
+ * 1. Jika input sudah berisi nilai (mis. modal edit), format nilainya.
+ * 2. Ikat event input untuk memformat saat mengetik (pemisah ribuan id-ID).
+ */
+function initAmountFormatting() {
+    document.querySelectorAll('.reimburse-amount-input').forEach(function (input) {
+        if (input.value) {
+            formatCurrencyInput(input);
+        }
+        input.addEventListener('input', function () {
+            formatCurrencyInput(this);
+        });
+    });
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -332,6 +355,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Update state awal
     updateButtonStates();
     updateSelectedInfo();
+
+    // Format input Total Amount menjadi format Rupiah
+    initAmountFormatting();
 
     // Handler submit form
     initAddFormSubmit();

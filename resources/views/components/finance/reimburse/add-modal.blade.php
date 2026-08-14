@@ -33,7 +33,8 @@
     {{-- Field: Total Amount --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Total Amount <span class="text-red-600">*</span></label>
-        <input type="number" name="total_amount" value="0" class="w-full border rounded p-2"
+        <input type="text" inputmode="numeric" name="total_amount" value="0"
+            class="w-full border rounded p-2 reimburse-amount-input"
             placeholder="Masukkan total amount" required min="0"
             oninvalid="this.setCustomValidity('Total amount tidak boleh kosong')" oninput="this.setCustomValidity('')">
         <p class="text-xs text-text-secondary mt-1">Total keseluruhan biaya yang akan direimbursement</p>

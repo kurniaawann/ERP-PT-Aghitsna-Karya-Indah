@@ -39,11 +39,11 @@
     {{-- Field: Total Amount --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Total Amount <span class="text-error">*</span></label>
-        <input type="number" name="total_amount"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
+        <input type="text" inputmode="numeric" name="total_amount"
+            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input reimburse-amount-input"
             placeholder="Masukkan total amount" required min="0"
             oninvalid="this.setCustomValidity('Total amount tidak boleh kosong')" oninput="this.setCustomValidity('')"
-            value="{{ $reimburse->total_amount }}">
+            value="{{ number_format($reimburse->total_amount, 0, ',', '.') }}">
         <p class="text-xs text-text-secondary mt-1">Total keseluruhan biaya yang akan direimbursement</p>
     </div>
 

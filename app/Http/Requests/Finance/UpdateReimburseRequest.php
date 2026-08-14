@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Finance;
 
+use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -37,6 +38,20 @@ class UpdateReimburseRequest extends FormRequest
             'due_date'            => 'required|date',
             'notes'               => 'nullable|string',
         ];
+    }
+
+    /**
+     * Mempersiapkan data sebelum validasi.
+     *
+     * Menormalisasi total_amount dari format mata uang bertitik
+     * (misal "10.000.000.000") menjadi integer (10000000000) sebelum
+     * aturan validasi integer diterapkan.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'total_amount' => InputNormalizer::normalizeCurrency($this->total_amount),
+        ]);
     }
 
     /**
