@@ -44,7 +44,8 @@ class RecapSalesController extends Controller
         $salesRecaps = $this->service->buildFilteredQuery($request)
             ->orderBy('created_at', 'desc')
             ->orderBy('date', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->appends($request->all());
 
         $items = Items::orderBy('name_item')->get();
 

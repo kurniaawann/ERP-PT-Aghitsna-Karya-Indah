@@ -38,12 +38,13 @@
                 class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
                 <x-filters.month-filter :value="request('month')" responsive="custom" />
                 <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.status-filter :value="request('status')" responsive="custom" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari proyek..." responsive="custom" />
             </form>
 
             <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
                 <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('recap-sales.export.excel')" :pdfRoute="route('recap-sales.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" responsive="custom" />
+                    <x-buttons.print-dropdown :excelRoute="route('recap-sales.export.excel')" :pdfRoute="route('recap-sales.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'status' => request('status')]" responsive="custom" />
                     <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
                     <x-buttons.add-button modalId="addModal" text="Tambah Laporan" responsive="custom" />
                 </div>

@@ -53,6 +53,7 @@ class RecapSalesService
         $search = $request->get('search');
         $month = $request->get('month');
         $year = $request->get('year');
+        $status = $request->get('status');
 
         return SalesRecap::query()
             ->when($search, function ($query, $search) {
@@ -64,6 +65,13 @@ class RecapSalesService
             })
             ->when($year, function ($query, $year) {
                 $query->whereYear('date', $year);
+            })
+            ->when($status, function ($query, $status) {
+                if ($status === 'lunas') {
+                    $query->where('status', 'Lunas');
+                } else {
+                    $query->where('status', '!=', 'Lunas');
+                }
             });
     }
 

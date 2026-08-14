@@ -42,8 +42,44 @@ class RecapProyekService
                 $search = $request->search;
                 $query->where('project_name', 'like', "%{$search}%");
             })
+            ->when($request->filled('status'), function (Builder $query) use ($request) {
+                $this->applyStatusFilter($query, $request->status);
+            })
             ->with(['creator', 'rab', 'paymentProofs', 'financialReport.items'])
             ->orderByDesc('created_at');
+    }
+
+    /**
+     * Menerapkan filter status pembayaran rekap proyek.
+     *
+     * Status "lunas" mengikuti isFullyPaid() dari model: sisa tagihan
+     * = total_rab - dp (incoming_payment RAB) - total_paid <= 0, dengan
+     * total_paid = sum bukti pembayaran + sum baris "uang masuk" pada
+     * Laporan Keuangan Proyek (income_amount > 0, bukan dari bukti bayar,
+     * dan bukan informasional). Karena sisa dipastikan non-negatif
+     * (max(0, ...)), lunas berarti ekspresi di bawah <= 0.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $status  'lunas' atau 'belum'
+     * @return void
+     */
+    private function applyStatusFilter(Builder $query, string $status): void
+    {
+        $incomeItems = 'COALESCE((SELECT COALESCE(SUM(pfri.income_amount), 0)
+            FROM project_financial_report_items pfri
+            INNER JOIN project_financial_reports pfr ON pfr.id = pfri.project_financial_report_id
+            WHERE pfr.project_recap_id = project_recaps.id
+              AND pfri.income_amount > 0
+              AND pfri.payment_proof_id IS NULL
+              AND pfri.is_informational = 0), 0)';
+        $paid = 'COALESCE((SELECT COALESCE(SUM(pp.amount), 0) FROM payment_proofs pp
+            WHERE pp.invoice_type = \'recap\'
+              AND pp.invoice_number = project_recaps.id), 0)';
+        $dp = 'COALESCE((SELECT COALESCE(r.incoming_payment, 0) FROM rabs r
+            WHERE r.rab_number = project_recaps.rab_number), 0)';
+        $remaining = '(COALESCE(project_recaps.total_rab, 0) - ' . $dp . ' - ' . $paid . ' - ' . $incomeItems . ')';
+
+        $query->whereRaw($remaining . ($status === 'lunas' ? ' <= 0' : ' > 0'));
     }
 
     /**

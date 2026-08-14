@@ -20,6 +20,7 @@
                             <th class="p-2 text-right">Terbayar</th>
                             <th class="p-2 text-right">Sisa Pembayaran</th>
                             <th class="p-2 text-center">Progress</th>
+                            <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">File Design</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
@@ -38,11 +39,11 @@
                                     $recapStatusClass = 'bg-green-100 text-green-800';
                                     $recapProgressColor = 'bg-green-500';
                                 } elseif ($recapPaid > 0) {
-                                    $recapStatusLabel = 'Sebagian';
+                                    $recapStatusLabel = 'Belum Lunas';
                                     $recapStatusClass = 'bg-orange-100 text-orange-800';
                                     $recapProgressColor = 'bg-orange-400';
                                 } else {
-                                    $recapStatusLabel = 'Belum Ada';
+                                    $recapStatusLabel = 'Belum Lunas';
                                     $recapStatusClass = 'bg-red-100 text-red-800';
                                     $recapProgressColor = 'bg-red-400';
                                 }
@@ -75,6 +76,12 @@
                                         </div>
                                         <span class="text-[10px] font-medium text-gray-400 tabular-nums">{{ $recapProgress }}%</span>
                                     </div>
+                                </td>
+                                <td class="p-2 text-center">
+                                    <span
+                                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $recapStatusClass }}">
+                                        {{ $recapStatusLabel }}
+                                    </span>
                                 </td>
                                 <td class="p-2 text-sm text-center">
                                     @if ($recap->hasDesignFile())
@@ -117,7 +124,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ auth()->user()->role === 'superadmin' ? 10 : 9 }}" class="text-center p-4 text-text-secondary">Data rekap proyek tidak
+                                <td colspan="{{ auth()->user()->role === 'superadmin' ? 11 : 10 }}" class="text-center p-4 text-text-secondary">Data rekap proyek tidak
                                     ditemukan.</td>
                             </tr>
                         @endforelse

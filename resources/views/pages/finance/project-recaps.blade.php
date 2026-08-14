@@ -3,13 +3,13 @@
      Tujuan: Menampilkan daftar rekap proyek yang diinput manual dengan
              kolom No (auto-generate), Nama Proyek, Total RAB, Uang Masuk
              (DP, superadmin), Terbayar, Sisa Pembayaran, progress bar,
-             dan file design. Mendukung tambah, lihat detail, edit, dan
+             status, dan file design. Mendukung tambah, lihat detail, edit, dan
              hapus massal. Bukti pembayaran diupload lewat menu Bukti
              Pembayaran (kategori Rekap Proyek).
      Data dari RecapProyekController@index:
      - $recaps : Paginator ProjectRecap dari
                  RecapProyekService::buildIndexQuery($request),
-                 difilter oleh search.
+                 difilter oleh search & status.
      Komponen yang di-include:
      - x-filters.search-input                         : toolbar pencarian
      - x-buttons.delete-button / add-button           : tombol aksi
@@ -34,6 +34,7 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <form method="GET" action="{{ route('recap-proyek.index') }}"
                 class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                <x-filters.status-filter :value="request('status')" responsive="custom" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari nama proyek..." responsive="custom" />
             </form>
 
