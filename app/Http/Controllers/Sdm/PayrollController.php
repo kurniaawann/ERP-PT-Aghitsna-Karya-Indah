@@ -22,8 +22,7 @@ use Maatwebsite\Excel\Facades\Excel;
  * pembuatan, pembayaran massal, penghapusan, dan ekspor (Excel/PDF).
  *
  * Halaman Data Payroll kini ber-tab: "Data Payroll" dan "Slip Gaji".
- * Tab menu hanya tampil untuk role admin; superadmin hanya melihat
- * konten tab payroll tanpa tab menu.
+ * Tab menu tampil untuk role admin dan superadmin.
  *
  * Seluruh logika bisnis didelegasikan ke PayrollService.
  * Validasi untuk pembaruan ditangani oleh UpdatePayrollRequest.
@@ -54,8 +53,7 @@ class PayrollController extends Controller
      * payroll mingguan) dan "Slip Gaji" (slip gaji karyawan bulanan).
      *
      * Param `tab` menentukan konten aktif (payroll|salary-slip). Tab menu
-     * hanya tampil untuk role admin, sehingga superadmin selalu diarahkan
-     * ke tab payroll.
+     * tampil untuk role admin dan superadmin.
      */
     public function index(Request $request)
     {
@@ -65,12 +63,7 @@ class PayrollController extends Controller
             $tab = 'payroll';
         }
 
-        // Role superadmin tidak diperlihatkan fitur Slip Gaji (khusus admin).
-        if ($tab === 'salary-slip' && auth()->user()->isSuperAdmin()) {
-            $tab = 'payroll';
-        }
-
-        // ─── Tab Slip Gaji (khusus admin) ───
+        // ─── Tab Slip Gaji (admin & superadmin) ───
         if ($tab === 'salary-slip') {
             $search = $request->input('search');
             $month = $request->input('month') ? (int) $request->input('month') : null;

@@ -4,9 +4,10 @@
              1. "Data Payroll" — payroll mingguan (paginasi) dengan pencarian
                 & filter (bulan, tahun, minggu, proyek), aksi bulk
                 (Bayar/Hapus/Generate), dan ekspor (Excel/PDF).
-              2. "Slip Gaji" — slip gaji karyawan bulanan (di-include dari
-                 partial pages.sdm.partials.salary-slip-content), aktif saat
-                 ?tab=salary-slip. Tab menu hanya tampil untuk role admin.
+             2. "Slip Gaji" — slip gaji karyawan bulanan (di-include dari
+                partial pages.sdm.partials.salary-slip-content), aktif saat
+                ?tab=salary-slip. Tab menu tampil untuk role admin &
+                superadmin.
 
      Data dari PayrollController@index (bergantung tab aktif):
      - Tab payroll: $payrollGroups (LengthAwarePaginator grup payroll),
@@ -55,20 +56,16 @@
         <div>
             <h1 class="text-2xl font-semibold text-text-primary mb-1">Data Payroll</h1>
             <p class="text-text-secondary text-sm">
-                @if (!auth()->user()->isSuperAdmin())
-                    Pilih tab di bawah untuk mengelola payroll mingguan atau slip gaji karyawan bulanan.
-                @else
-                    Kelola payroll mingguan karyawan.
-                @endif
+                Pilih tab di bawah untuk mengelola payroll mingguan atau slip gaji karyawan bulanan.
             </p>
         </div>
     </div>
 
     {{-- ============================================================
          SECTION: Tab Menu (Data Payroll | Slip Gaji)
-         Tab menu hanya tampil untuk role admin.
+         Tab menu tampil untuk role admin & superadmin.
          ============================================================ --}}
-    @if (auth()->user()->isAdmin())
+    @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
     <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 my-6">
         <a href="{{ route('payroll.index') }}"
             class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 text-sm font-semibold
@@ -87,7 +84,7 @@
 
     @if ($tab === 'salary-slip')
         {{-- ============================================================
-             Tab: Slip Gaji (hanya non-superadmin) — konten di partial
+             Tab: Slip Gaji (admin & superadmin) — konten di partial
              ============================================================ --}}
         @include('pages.sdm.partials.salary-slip-content')
     @else

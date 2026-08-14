@@ -15,7 +15,8 @@ use Illuminate\Http\Request;
  * Payroll (dikelola PayrollController@index); controller ini menangani
  * seluruh aksi (eligible, generate, update, bayar, hapus, cetak PDF).
  *
- * Hanya role admin (route dibungkus middleware role:admin). Alur:
+ * Hanya role admin & superadmin (route dibungkus middleware role:admin;
+ * superadmin lolos otomatis via CheckRole). Alur:
  * generate slip draft dari daftar karyawan bulanan, isi rekap absensi
  * per karyawan, bayar, lalu cetak PDF (per slip / rekap bulanan).
  */
