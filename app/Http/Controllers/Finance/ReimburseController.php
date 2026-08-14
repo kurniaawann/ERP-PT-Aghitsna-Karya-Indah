@@ -40,7 +40,7 @@ class ReimburseController extends Controller
         }
 
         $reimburses = $this->reimburseService
-            ->buildFilteredQuery($request)
+            ->buildFilteredQuery($request, 'created_at')
             ->paginate(15)
             ->appends($request->query());
 

@@ -26,14 +26,18 @@ class ReimburseService
      * Digunakan untuk halaman index, export PDF, dan export Excel.
      *
      * @param  \Illuminate\Http\Request|null $request  Request yang berisi parameter filter
+     * @param  string|null                   $orderBy  Kolom pengurutan (default 'date');
+     *                                                 halaman web memakai 'created_at'
+     *                                                 agar data terbaru tampil di atas,
+     *                                                 export tetap memakai 'date'.
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function buildFilteredQuery(?Request $request = null): Builder
+    public function buildFilteredQuery(?Request $request = null, ?string $orderBy = 'date'): Builder
     {
         $query = Reimburse::query();
 
         if (!$request) {
-            return $query->latest('date');
+            return $query->latest($orderBy);
         }
 
         $search = $request->input('search');
@@ -51,7 +55,7 @@ class ReimburseService
             ->when($status, fn ($builder) => $builder->where('status', $status))
             ->when($month, fn ($builder) => $builder->whereMonth('date', $month))
             ->when($year, fn ($builder) => $builder->whereYear('date', $year))
-            ->latest('date');
+            ->latest($orderBy);
     }
 
     /**
