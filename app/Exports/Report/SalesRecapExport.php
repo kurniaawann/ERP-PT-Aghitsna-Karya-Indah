@@ -144,7 +144,7 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
             }
 
             // Set PROJECT name dan STATUS di baris pertama
-            $data[$projectStartRow - self::DATA_START_ROW]['project'] = strtoupper($projectName);
+            $data[$projectStartRow - self::DATA_START_ROW]['project'] = strtoupper($projectName ?: '-');
             $data[$projectStartRow - self::DATA_START_ROW]['status'] = strtoupper($projectSales->first()->status);
 
             // Subtotal per proyek

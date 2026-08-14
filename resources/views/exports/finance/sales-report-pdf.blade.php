@@ -263,7 +263,7 @@
                             <td
                                 class="vertical-center {{ !$isFirstInProject ? 'border-top-none' : '' }} {{ !$isLastInProject ? 'border-bottom-none' : '' }}">
                                 <span
-                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($projectName) }}</span>
+                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($projectName ?: '-') }}</span>
                             </td>
 
                             <td>{{ $item['name_item'] ?? '-' }}</td>

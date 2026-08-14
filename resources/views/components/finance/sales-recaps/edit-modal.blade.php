@@ -19,10 +19,9 @@
 
     {{-- Nama Proyek --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Proyek <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nama Proyek</label>
         <input type="text" name="name_proyek" value="{{ $sale->name_proyek }}" class="w-full border rounded p-2"
-            required maxlength="255" oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+            maxlength="255">
     </div>
 
     {{-- Daftar Item --}}
