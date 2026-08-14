@@ -528,7 +528,7 @@
 
                 {{-- Submenu --}}
                 <ul id="sdmDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('reimburse*') || request()->is('tunjangan*') || request()->is('executive*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('tunjangan*') || request()->is('executive*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/employee') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group

@@ -283,7 +283,7 @@ class ProjectFinancialReportService
 
             try {
                 $incomeCategory = TransactionCategory::create([
-                    'name' => 'UANG MASUK',
+                    'name' => 'Uang Masuk',
                     'code' => $code,
                     'type' => TransactionCategory::TYPE_INCOME,
                     'module' => TransactionCategory::MODULE_PROJECT_FINANCE,

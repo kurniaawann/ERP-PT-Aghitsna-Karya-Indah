@@ -53,10 +53,18 @@ function isStagedPaymentType(invoiceType) {
  * @return {Object}  Config object berisi DOM element references
  */
 function getPaymentProofConfig(prefix) {
+    const root = document.getElementById(`payment-proof-invoice-dropdown-${prefix}`);
     return {
         module: document.getElementById(`payment-proof-module-${prefix}`),
         invoiceType: document.getElementById(`payment-proof-invoice-type-${prefix}`),
         invoiceNumber: document.getElementById(`payment-proof-invoice-number-${prefix}`),
+        invoiceDropdown: root,
+        invoiceToggle: root ? root.querySelector('.invoice-dropdown-toggle') : null,
+        invoiceMenu: root ? root.querySelector('.invoice-dropdown-menu') : null,
+        invoiceSearch: root ? root.querySelector('.invoice-dropdown-search') : null,
+        invoiceList: root ? root.querySelector('.invoice-dropdown-list') : null,
+        invoiceLabel: root ? root.querySelector('.invoice-dropdown-label') : null,
+        invoiceClear: root ? root.querySelector('.invoice-dropdown-clear') : null,
         stageText: document.getElementById(`payment-proof-stage-${prefix}`),
         stageInput: document.getElementById(`payment-proof-stage-input-${prefix}`),
         stageWrap: document.getElementById(`payment-proof-stage-wrap-${prefix}`),
@@ -86,117 +94,252 @@ function getPaymentProofInvoiceData(prefix) {
 // ─── Pemuatan Opsi Invoice ──────────────────────────────────────────────
 
 /**
- * Menambahkan opsi invoice ke dropdown secara bertahap (lazy loading).
+ * Mengambil data invoice yang di-filter berdasarkan kata kunci pencarian.
  *
- * Alur:
- * 1. Ambil data invoice dari window.paymentProofInvoiceData (via getPaymentProofInvoiceData).
- * 2. Baca jumlah item yang sudah dimuat dari dataset.loadedCount.
- * 3. Ambil `count` item berikutnya (default chunk 10) via slice.
- * 4. Untuk tiap item buat <option>: label (+ " (Lunas)" bila lunas), simpan
- *    next_stage & remaining_amount ke dataset, dan disable jika sudah lunas.
- * 5. Perbarui dataset.loadedCount dengan jumlah total yang sudah dimuat.
+ * @param  {string} prefix
+ * @return {Array}  Array of invoice option objects
+ */
+function getFilteredPaymentProofInvoiceData(prefix) {
+    const config = getPaymentProofConfig(prefix);
+    const invoiceData = getPaymentProofInvoiceData(prefix);
+    const keyword = (config.invoiceSearch?.value || '').trim().toLowerCase();
+
+    if (!keyword) {
+        return invoiceData;
+    }
+
+    return invoiceData.filter(item =>
+        String(item.label).toLowerCase().includes(keyword) ||
+        String(item.value).toLowerCase().includes(keyword)
+    );
+}
+
+/**
+ * Menambahkan item invoice ke list dropdown secara bertahap (10 per batch).
+ *
+ * Alur mirip lazy-loading select lama: membaca daftar filter hasil
+ * getFilteredPaymentProofInvoiceData, membaca jumlah yang sudah dimuat dari
+ * dataset.loadedCount, lalu menambah `count` item berikutnya. Tiap item dibuat
+ * sebagai tombol dengan data-invoice (next_stage, remaining_amount, dll).
  *
  * @param  {string}  prefix
- * @param  {number}  count  Jumlah item per chunk (default: 10)
+ * @param  {number}  count  Jumlah item per batch (default: 10)
  * @return {void}
  */
 function appendPaymentProofInvoiceOptions(prefix, count = PAYMENT_PROOF_INVOICE_CHUNK_SIZE) {
     const config = getPaymentProofConfig(prefix);
-    const invoiceData = getPaymentProofInvoiceData(prefix);
+    const invoiceData = getFilteredPaymentProofInvoiceData(prefix);
 
-    if (!config.invoiceNumber || invoiceData.length === 0) {
+    if (!config.invoiceList || invoiceData.length === 0) {
         return;
     }
 
-    const loadedCount = Number(config.invoiceNumber.dataset.loadedCount || 0);
+    const loadedCount = Number(config.invoiceList.dataset.loadedCount || 0);
     const nextItems = invoiceData.slice(loadedCount, loadedCount + count);
 
     nextItems.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.value;
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'w-full text-left px-3 py-2 hover:bg-surface-secondary text-sm text-text-primary border-b border-border-light' +
+            (item.is_fully_paid ? ' text-text-tertiary cursor-not-allowed' : '');
 
-        const optionSuffix = item.is_fully_paid ? ' (Lunas)' : '';
-        option.textContent = `${item.label}${optionSuffix}`;
-        option.dataset.nextStage = item.next_stage || '';
-        option.dataset.remainingAmount = item.remaining_amount || 0;
-        option.dataset.netAmount = item.net_amount || 0;
-        option.dataset.paidAmount = item.paid_amount || 0;
-        option.dataset.isFullyPaid = item.is_fully_paid ? '1' : '0';
+        const suffix = item.label.indexOf(' (Lunas)') === -1
+            ? (item.is_fully_paid ? ' (Lunas)' : '')
+            : '';
+        row.textContent = `${item.label}${suffix}`;
 
-        if (item.is_fully_paid) {
-            option.disabled = true;
+        row.dataset.value = item.value;
+        row.dataset.nextStage = item.next_stage || '';
+        row.dataset.remainingAmount = item.remaining_amount || 0;
+        row.dataset.netAmount = item.net_amount || 0;
+        row.dataset.paidAmount = item.paid_amount || 0;
+        row.dataset.isFullyPaid = item.is_fully_paid ? '1' : '0';
+
+        if (!item.is_fully_paid) {
+            row.addEventListener('click', () => selectPaymentProofInvoice(prefix, item));
         }
 
-        config.invoiceNumber.appendChild(option);
+        config.invoiceList.appendChild(row);
     });
 
-    config.invoiceNumber.dataset.loadedCount = String(loadedCount + nextItems.length);
+    config.invoiceList.dataset.loadedCount = String(loadedCount + nextItems.length);
 }
 
 /**
- * Memuat opsi invoice ke dropdown dan mengikat event scroll untuk lazy loading.
+ * Memilih invoice pada dropdown kustom.
  *
- * Alur pemilihan multi-invoice (chunked 10):
- * 1. Kosongkan dropdown lalu isi placeholder "Pilih invoice"; disable bila tidak ada data.
- * 2. Reset dataset.loadedCount = 0 lalu panggil appendPaymentProofInvoiceOptions
- *    untuk memuat chunk pertama (10 item).
- * 3. Jika ada selectedInvoiceNumber (mode edit), terus muat chunk berikutnya
- *    sampai opsi tersebut tersedia, lalu set nilai dropdown.
- * 4. Tampilkan/sembunyikan section tahap pembayaran (hanya untuk tipe 'proyek').
- * 5. Panggil updatePaymentProofStage untuk menyelaraskan tampilan.
- * 6. Ikat event scroll sekali saja (flag __paymentProofScrollBound) untuk memuat
- *    chunk berikutnya saat dropdown hampir habis di-scroll.
+ * Set nilai ke hidden input, perbarui label, tutup menu, lalu sinkronkan
+ * bagian tahap & nominal lewat event 'change'.
+ *
+ * @param  {string}  prefix
+ * @param  {Object}  item  Invoice option object hasil buildInvoiceOption
+ * @return {void}
+ */
+function selectPaymentProofInvoice(prefix, item) {
+    const config = getPaymentProofConfig(prefix);
+    if (!config.invoiceNumber) return;
+
+    config.invoiceNumber.value = item.value;
+    if (config.invoiceLabel) {
+        const suffix = item.is_fully_paid ? ' (Lunas)' : '';
+        config.invoiceLabel.textContent = `${item.label}${suffix}`;
+        config.invoiceLabel.classList.remove('text-text-tertiary');
+    }
+    if (config.invoiceMenu) {
+        config.invoiceMenu.classList.add('hidden');
+    }
+
+    config.invoiceNumber.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/**
+ * Mereset isian dropdown invoice (value + label).
+ *
+ * @param  {string}  prefix
+ * @return {void}
+ */
+function clearPaymentProofInvoice(prefix) {
+    const config = getPaymentProofConfig(prefix);
+    if (!config.invoiceNumber) return;
+
+    config.invoiceNumber.value = '';
+    if (config.invoiceLabel) {
+        config.invoiceLabel.textContent = '-- Pilih Invoice --';
+    }
+    if (config.invoiceMenu) {
+        config.invoiceMenu.classList.add('hidden');
+    }
+
+    config.invoiceNumber.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/**
+ * Memuat opsi invoice ke dropdown kustom dan mengikat interaksi
+ * (toggle menu, pencarian, infinite scroll, clear).
+ *
+ * Alur:
+ * 1. Kosongkan hidden input & list, reset dataset.loadedCount = 0.
+ * 2. Panggil appendPaymentProofInvoiceOptions untuk memuat batch pertama (10).
+ * 3. Jika ada selectedInvoiceNumber (mode edit), muat batch berikutnya sampai
+ *    opsi tersebut tersedia, lalu set nilainya.
+ * 4. Ikat event toggle menu, pencarian (debounce), infinite scroll, dan clear
+ *    — hanya sekali per prefix (flag __paymentProofDropdownBound).
  *
  * @param  {string}      prefix
- * @param  {string|null} selectedInvoiceNumber  Invoice yang sudah dipilih (untuk edit mode)
+ * @param  {string|null} selectedInvoiceNumber  Invoice yang sudah dipilih (edit mode)
  * @return {void}
  */
 function loadPaymentProofInvoices(prefix, selectedInvoiceNumber = null) {
     const config = getPaymentProofConfig(prefix);
     const invoiceData = getPaymentProofInvoiceData(prefix);
 
-    if (!config.module || !config.invoiceType || !config.invoiceNumber) return;
+    if (!config.invoiceNumber || !config.invoiceList) return;
 
-    config.invoiceNumber.innerHTML = '<option value="">Pilih invoice</option>';
-    config.invoiceNumber.disabled = invoiceData.length === 0;
-    config.invoiceNumber.dataset.loadedCount = '0';
+    const isEmpty = invoiceData.length === 0;
 
-    appendPaymentProofInvoiceOptions(prefix);
+    config.invoiceNumber.value = '';
+    config.invoiceList.innerHTML = '';
+    config.invoiceList.dataset.loadedCount = '0';
 
-    if (selectedInvoiceNumber) {
-        while (
-            Number(config.invoiceNumber.dataset.loadedCount || 0) < invoiceData.length &&
-            !Array.from(config.invoiceNumber.options).some(option => option.value === selectedInvoiceNumber)
-        ) {
-            appendPaymentProofInvoiceOptions(prefix);
+    if (config.invoiceLabel) {
+        config.invoiceLabel.textContent = '-- Pilih Invoice --';
+    }
+    if (config.invoiceSearch) {
+        config.invoiceSearch.value = '';
+        config.invoiceSearch.disabled = isEmpty;
+    }
+    if (config.invoiceToggle) {
+        config.invoiceToggle.disabled = isEmpty;
+    }
+    if (config.invoiceClear) {
+        config.invoiceClear.disabled = false;
+    }
+
+    if (isEmpty) {
+        const emptyRow = document.createElement('div');
+        emptyRow.className = 'p-3 text-sm text-text-secondary text-center';
+        emptyRow.textContent = 'Tidak ada invoice tersedia untuk kategori ini';
+        config.invoiceList.appendChild(emptyRow);
+    } else {
+        appendPaymentProofInvoiceOptions(prefix);
+
+        if (selectedInvoiceNumber) {
+            while (
+                Number(config.invoiceList.dataset.loadedCount || 0) < invoiceData.length &&
+                !Array.from(config.invoiceList.querySelectorAll('[data-value]'))
+                    .some(row => row.dataset.value === selectedInvoiceNumber)
+            ) {
+                appendPaymentProofInvoiceOptions(prefix);
+            }
+
+            const found = invoiceData.find(item => item.value === selectedInvoiceNumber);
+            if (found) {
+                selectPaymentProofInvoice(prefix, found);
+            }
         }
-
-        config.invoiceNumber.value = selectedInvoiceNumber;
     }
 
     if (config.stageWrap) {
         config.stageWrap.classList.toggle('hidden', !isStagedPaymentType(config.invoiceType.value));
     }
 
-    updatePaymentProofStage(prefix);
+    if (config.invoiceDropdown && config.invoiceDropdown.__paymentProofDropdownBound !== true) {
+        // Toggle buka/tutup menu
+        config.invoiceToggle?.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (config.invoiceMenu) {
+                const willOpen = config.invoiceMenu.classList.contains('hidden');
+                config.invoiceMenu.classList.toggle('hidden', !willOpen);
+                if (willOpen && config.invoiceSearch) {
+                    setTimeout(() => config.invoiceSearch.focus(), 50);
+                }
+            }
+        });
 
-    if (config.invoiceNumber.__paymentProofScrollBound !== true) {
-        config.invoiceNumber.addEventListener('scroll', () => {
-            const currentInvoiceData = getPaymentProofInvoiceData(prefix);
-            const remainingSpace = config.invoiceNumber.scrollHeight - config.invoiceNumber.scrollTop -
-                config.invoiceNumber.clientHeight;
+        // Pencarian (debounce) — reset pagination lalu muat ulang batch pertama
+        config.invoiceSearch?.addEventListener('input', window.debounce(function () {
+            config.invoiceList.dataset.loadedCount = '0';
+            config.invoiceList.innerHTML = '';
+            appendPaymentProofInvoiceOptions(prefix);
+        }, 300));
+
+        // Infinite scroll: muat 10 item berikutnya saat hampir habis di-scroll
+        config.invoiceList.addEventListener('scroll', () => {
+            const remainingSpace = config.invoiceList.scrollHeight - config.invoiceList.scrollTop -
+                config.invoiceList.clientHeight;
 
             if (remainingSpace <= 4) {
-                const loadedCount = Number(config.invoiceNumber.dataset.loadedCount || 0);
+                const loadedCount = Number(config.invoiceList.dataset.loadedCount || 0);
+                const filteredTotal = getFilteredPaymentProofInvoiceData(prefix).length;
 
-                if (loadedCount < currentInvoiceData.length) {
+                if (loadedCount < filteredTotal) {
                     appendPaymentProofInvoiceOptions(prefix);
                 }
             }
         });
 
-        config.invoiceNumber.__paymentProofScrollBound = true;
+        // Kosongkan pilihan
+        config.invoiceClear?.addEventListener('click', function (e) {
+            e.stopPropagation();
+            clearPaymentProofInvoice(prefix);
+        });
+
+        // Tutup menu saat klik di luar dropdown
+        document.addEventListener('click', function () {
+            if (config.invoiceMenu) {
+                config.invoiceMenu.classList.add('hidden');
+            }
+        });
+
+        // Cegah menu tertutup saat klik di dalamnya
+        config.invoiceMenu?.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        config.invoiceDropdown.__paymentProofDropdownBound = true;
     }
+
+    updatePaymentProofStage(prefix);
 }
 
 /**
@@ -232,8 +375,11 @@ function updatePaymentProofStage(prefix) {
     const config = getPaymentProofConfig(prefix);
     if (!config.invoiceNumber || !config.stageText || !config.stageInput) return;
 
-    const selectedOption = config.invoiceNumber.options[config.invoiceNumber.selectedIndex];
-    const nextStage = selectedOption?.dataset?.nextStage;
+    const selectedValue = config.invoiceNumber.value;
+    const selectedOption = selectedValue
+        ? (getPaymentProofInvoiceData(prefix).find(item => item.value === selectedValue) ?? null)
+        : null;
+    const nextStage = selectedOption?.next_stage;
 
     if (config.stageWrap) {
         config.stageWrap.classList.toggle('hidden', !isStagedPaymentType(config.invoiceType.value));
@@ -276,15 +422,18 @@ function updatePaymentProofAmountSection(prefix) {
         return;
     }
 
-    const selectedOption = config.invoiceNumber.options[config.invoiceNumber.selectedIndex];
-    const remainingAmount = Number(selectedOption?.dataset?.remainingAmount || 0);
+    const selectedValue = config.invoiceNumber.value;
+    const selectedOption = selectedValue
+        ? (getPaymentProofInvoiceData(prefix).find(item => item.value === selectedValue) ?? null)
+        : null;
+    const remainingAmount = Number(selectedOption?.remaining_amount || 0);
 
     if (!isManualPaymentAmountType(config.invoiceType.value)) {
         config.amountWrap.classList.add('hidden');
         config.amountInput.disabled = true;
         config.amountInput.required = false;
-        config.amountInput.value = selectedOption?.value ? formatRupiah(remainingAmount) : '';
-        config.amountHelp.textContent = selectedOption?.value ?
+        config.amountInput.value = selectedOption ? formatRupiah(remainingAmount) : '';
+        config.amountHelp.textContent = selectedOption ?
             `Nominal mengikuti sisa tagihan ${formatRupiah(remainingAmount)}.` :
             'Pilih invoice terlebih dahulu agar nominal otomatis terisi.';
         return;
@@ -323,10 +472,13 @@ function validatePaymentProofAmount(prefix) {
     const config = getPaymentProofConfig(prefix);
     if (!config.amountInput || !config.amountWarning) return true;
 
-    const selectedOption = config.invoiceNumber?.options[config.invoiceNumber.selectedIndex];
-    const remainingAmount = Number(selectedOption?.dataset?.remainingAmount || 0);
+    const selectedValue = config.invoiceNumber?.value;
+    const selectedOption = selectedValue
+        ? (getPaymentProofInvoiceData(prefix).find(item => item.value === selectedValue) ?? null)
+        : null;
+    const remainingAmount = Number(selectedOption?.remaining_amount || 0);
 
-    if (!isManualPaymentAmountType(config.invoiceType?.value) || !selectedOption?.value) {
+    if (!isManualPaymentAmountType(config.invoiceType?.value) || !selectedValue) {
         config.amountWarning.classList.add('hidden');
         return true;
     }

@@ -37,12 +37,14 @@ class OvertimeController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $month = $request->input('month') ? (int) $request->input('month') : null;
+        $year = $request->input('year') ? (int) $request->input('year') : null;
 
-        $overtimes = $this->overtimeService->getPaginatedOvertimes($search);
+        $overtimes = $this->overtimeService->getPaginatedOvertimes($search, $month, $year);
         $employees = $this->overtimeService->getAllEmployees();
         $existingAttendance = $this->overtimeService->getExistingAttendance();
 
-        return view('pages.sdm.overtime', compact('overtimes', 'employees', 'search', 'existingAttendance'));
+        return view('pages.sdm.overtime', compact('overtimes', 'employees', 'search', 'existingAttendance', 'month', 'year'));
     }
 
     /**

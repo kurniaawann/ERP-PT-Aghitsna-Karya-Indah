@@ -205,7 +205,7 @@ class SalesRecapObserver
 
             try {
                 $incomeCategory = TransactionCategory::create([
-                    'name' => 'UANG MASUK',
+                    'name' => 'Uang Masuk',
                     'code' => $code,
                     'type' => TransactionCategory::TYPE_INCOME,
                     'sort_order' => 1,

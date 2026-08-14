@@ -10,6 +10,8 @@
      - $employees         : Collection seluruh karyawan untuk pilihan di form
                             modal tambah/edit
      - $search            : Kata kunci pencarian saat ini (nullable)
+     - $month             : Filter bulan aktif (nullable)
+     - $year              : Filter tahun aktif (nullable)
      - $existingAttendance: Data absensi yang sudah ada untuk validasi duplikat
                             di sisi klien (via window.overtimeExistingAttendance)
 
@@ -45,6 +47,8 @@
             {{-- Search Form --}}
             <form method="GET" action="{{ route('overtime.index') }}"
                 class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" />
+                <x-filters.year-filter :value="request('year')" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari lembur..." />
             </form>
 

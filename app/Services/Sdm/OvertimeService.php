@@ -42,10 +42,12 @@ class OvertimeService
      *   lewat karyawan, bukan lewat tanggal.
      *
      * @param  string|null  $search   Kata kunci pencarian (nama atau kode karyawan)
+     * @param  int|null     $month    Bulan untuk filter (1-12)
+     * @param  int|null     $year     Tahun untuk filter
      * @param  int          $perPage  Jumlah data per halaman
      * @return LengthAwarePaginator
      */
-    public function getPaginatedOvertimes(?string $search, int $perPage = 15): LengthAwarePaginator
+    public function getPaginatedOvertimes(?string $search, ?int $month = null, ?int $year = null, int $perPage = 15): LengthAwarePaginator
     {
         return Attendance::where('status', 'lembur')
             ->where('created_by', auth()->id())
@@ -56,6 +58,8 @@ class OvertimeService
                         ->orWhere('employee_code', 'like', "%{$search}%");
                 });
             })
+            ->when($month, fn ($query) => $query->whereMonth('attendance_date', $month))
+            ->when($year, fn ($query) => $query->whereYear('attendance_date', $year))
             ->latest('attendance_date')
             ->latest('created_at')
             ->paginate($perPage);

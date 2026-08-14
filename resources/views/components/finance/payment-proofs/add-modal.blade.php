@@ -26,11 +26,33 @@
     {{-- Section: Invoice Number Selection --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Invoice <span class="text-error">*</span></label>
-        <select name="invoice_number" id="payment-proof-invoice-number-create" class="w-full border rounded p-2"
-            required disabled onfocus="this.size=8" onchange="this.size=1; this.blur()" onblur="this.size=1">
-            <option value="">Pilih kategori dulu</option>
-        </select>
-        <p class="text-xs text-text-secondary mt-1">Gulir daftar invoice untuk menampilkan data berikutnya.</p>
+        <div class="invoice-dropdown relative" id="payment-proof-invoice-dropdown-create"
+            data-prefix="create">
+            <input type="hidden" name="invoice_number" id="payment-proof-invoice-number-create"
+                class="invoice-dropdown-hidden" value="">
+            <button type="button" disabled
+                class="invoice-dropdown-toggle w-full border border-border-strong rounded p-2 bg-surface-base text-text-input flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="invoice-dropdown-label text-text-input truncate">-- Pilih Invoice --</span>
+                <span class="text-text-tertiary text-xs">▼</span>
+            </button>
+            <div
+                class="invoice-dropdown-menu absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 hidden">
+                <div class="p-2 border-b border-border-light">
+                    <input type="text" class="invoice-dropdown-search w-full border border-border-light rounded px-2 py-1.5 text-sm bg-surface-base text-text-input"
+                        placeholder="Cari invoice..." disabled>
+                </div>
+                <div class="invoice-dropdown-list max-h-60 overflow-y-auto">
+
+                </div>
+                <div class="p-2 border-t border-border-light">
+                    <button type="button" class="invoice-dropdown-clear text-sm text-error hover:text-error disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                        Kosongkan (- Pilih Invoice -)
+                    </button>
+                </div>
+            </div>
+        </div>
+        <p class="text-xs text-text-secondary mt-1">Cari nama invoice, lalu gulir daftar untuk menampilkan 10 data berikutnya.</p>
     </div>
 
     {{-- Section: Payment Stage --}}
