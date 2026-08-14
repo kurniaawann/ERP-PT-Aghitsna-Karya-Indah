@@ -38,13 +38,32 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             {{-- Form Pencarian --}}
             <form method="GET" action="{{ route('attendance.index') }}"
-                class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
+                class="w-full min-[1560px]:w-auto min-[1560px]:flex-1 flex flex-col min-[1560px]:flex-row gap-3">
+
+                {{-- Filter Bulan --}}
+                <x-filters.month-filter :value="request('month')" />
+
+                {{-- Filter Tahun --}}
+                <x-filters.year-filter :value="request('year')" />
+
+                {{-- Filter Minggu --}}
+                {{-- Dropdown ini diisi secara dinamis oleh JS via route
+                     payroll.get-weeks (bergantung bulan + tahun terpilih),
+                     sama seperti pada halaman payroll. --}}
+                <div class="w-full xl:w-56">
+                    <select name="week_number" id="filter_week_number"
+                        class="block w-full rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
+                        onchange="this.form.requestSubmit()">
+                        <option value="">Semua Minggu</option>
+                    </select>
+                </div>
+
                 <x-filters.search-input :value="request('search')" placeholder="Cari absensi..." />
             </form>
 
             {{-- Aksi: Hapus & Tambah --}}
-            <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
-                <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
+            <div class="flex items-center gap-2 mt-2 min-[1560px]:mt-0 w-full min-[1560px]:w-auto">
+                <div class="flex flex-col min-[1560px]:flex-row gap-2 w-full min-[1560px]:w-auto">
                     <x-buttons.delete-button modalId="deleteModal" />
                     <x-buttons.add-button modalId="addModal" text="Tambah Data" />
                 </div>
@@ -89,10 +108,19 @@
     </x-modal>
 
     {{-- Pass existing attendance data to JavaScript for client-side duplicate validation --}}
-    <script>
-        window.attendanceConfig = @json([
+    @php
+        $attendanceConfig = [
             'existingAttendance' => $existingAttendance ?? [],
-        ]);
+            'getWeeksUrl' => route('payroll.get-weeks'),
+            'currentYear' => (int) date('Y'),
+            'filterMonth' => request('month'),
+            'filterYear' => request('year'),
+            'filterWeek' => request('week_number'),
+        ];
+    @endphp
+
+    <script>
+        window.attendanceConfig = @json($attendanceConfig);
     </script>
 
     {{-- ============================================================

@@ -35,6 +35,82 @@ const config = window.attendanceConfig || {};
 const existingAttendance = config.existingAttendance || {};
 
 // ==========================================
+// FILTER WEEK DROPDOWN (Index Page)
+// ==========================================
+
+/**
+ * Referensi elemen dropdown filter (bulan/tahun/minggu) halaman index yang
+ * di-cache saat DOM siap, dipakai oleh fetchWeeks & loadFilterWeeks.
+ *
+ * @type {HTMLElement|null}
+ */
+let filterMonthSelect = null;
+let filterYearSelect = null;
+let filterWeekSelect = null;
+
+/**
+ * Mengambil daftar minggu (Minggu-Sabtu) dari server untuk bulan/tahun tertentu.
+ *
+ * Menggunakan endpoint payroll.get-weeks yang sama seperti halaman payroll,
+ * sehingga perilaku filter minggu sama persis.
+ *
+ * @param {string|number} month  Bulan (1-12).
+ * @param {string|number} year   Tahun.
+ * @returns {Promise<Array<{week_number: number, label: string, start: string, end: string}>>}
+ */
+async function fetchWeeks(month, year) {
+    if (!month || !year || month < 1 || month > 12 || year < 2000) {
+        return [];
+    }
+
+    try {
+        const response = await fetch(`${config.getWeeksUrl}?month=${month}&year=${year}`);
+        const data = await response.json();
+        return data.weeks || [];
+    } catch (error) {
+        console.error('Error fetching weeks:', error);
+        return [];
+    }
+}
+
+/**
+ * Memuat opsi minggu untuk dropdown filter halaman index.
+ *
+ * Alur:
+ * - Bulan/tahun belum dipilih → dropdown berisi "Semua Minggu".
+ * - Ambil minggu via fetchWeeks; tambahkan opsi per minggu.
+ * - Tandai opsi yang sesuai filter aktif (filterWeek + filterMonth +
+ *   filterYear) agar seleksi dipertahankan saat halaman dimuat.
+ */
+async function loadFilterWeeks() {
+    if (!filterMonthSelect || !filterYearSelect || !filterWeekSelect) return;
+
+    const month = filterMonthSelect.value;
+    const year = filterYearSelect.value;
+
+    if (!month || !year) {
+        filterWeekSelect.innerHTML = '<option value="">Semua Minggu</option>';
+        return;
+    }
+
+    const weeks = await fetchWeeks(month, year);
+    filterWeekSelect.innerHTML = '<option value="">Semua Minggu</option>';
+
+    weeks.forEach(function(week) {
+        const option = document.createElement('option');
+        option.value = week.week_number;
+        option.textContent = week.label;
+
+        if (config.filterWeek && parseInt(config.filterWeek) === week.week_number &&
+            config.filterMonth == month && config.filterYear == year) {
+            option.selected = true;
+        }
+
+        filterWeekSelect.appendChild(option);
+    });
+}
+
+// ==========================================
 // SELECT ALL ROW CHECKBOXES (Bulk Delete)
 // ==========================================
 
@@ -421,6 +497,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize delete button state on page load
     updateDeleteButtonState();
+
+    // Load filter weeks dynamically (same behavior as payroll index page)
+    filterMonthSelect = document.querySelector('select[name="month"]');
+    filterYearSelect = document.querySelector('select[name="year"]');
+    filterWeekSelect = document.getElementById('filter_week_number');
+
+    if (filterMonthSelect) {
+        filterMonthSelect.addEventListener('change', loadFilterWeeks);
+    }
+    if (filterYearSelect) {
+        filterYearSelect.addEventListener('change', loadFilterWeeks);
+    }
+
+    // Load filter weeks on page load if month/year are set
+    if (config.filterMonth && config.filterYear) {
+        loadFilterWeeks();
+    }
 
     initAddFormHandler();
     initDateValidation();

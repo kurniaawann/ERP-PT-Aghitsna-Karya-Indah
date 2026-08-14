@@ -34,23 +34,53 @@ class AttendanceService
      * - where('created_by') membatasi data hanya milik user yang login.
      * - Pencarian memakai whereHas pada relasi employee (nama/kode) ATAU
      *   attendance_date — dibungkus satu group agar OR tidak merusak filter user.
+     * - Filter bulan/tahun memakai whereMonth/whereYear pada attendance_date.
+     * - Filter minggu memakai rentang tanggal minggu (Minggu-Sabtu) dari
+     *   PayrollService::getWeeksInMonth, sama seperti cara payroll menentukan
+     *   periode mingguan. Hanya diterapkan saat bulan + tahun ikut dipilih.
      * - Urutan: tanggal terbaru dulu, lalu created_at sebagai tie-breaker.
      *
      * @param  string|null  $search     Kata kunci pencarian (nama karyawan, kode, atau tanggal)
+     * @param  int|null     $month      Bulan untuk filter (1-12)
+     * @param  int|null     $year       Tahun untuk filter
+     * @param  int|null     $weekNumber Nomor minggu untuk filter
      * @param  int          $perPage    Jumlah data per halaman
      * @return LengthAwarePaginator
      */
-    public function getPaginatedAttendances(?string $search, int $perPage = 15): LengthAwarePaginator
-    {
-        return Attendance::with('employee')
+    public function getPaginatedAttendances(
+        ?string $search,
+        ?int $month = null,
+        ?int $year = null,
+        ?int $weekNumber = null,
+        int $perPage = 15
+    ): LengthAwarePaginator {
+        $query = Attendance::with('employee')
             ->where('created_by', auth()->id())
             ->when($search, function ($query, $search) {
-                $query->whereHas('employee', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('employee_code', 'like', "%{$search}%");
-                })
-                    ->orWhere('attendance_date', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('employee', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('employee_code', 'like', "%{$search}%");
+                    })
+                        ->orWhere('attendance_date', 'like', "%{$search}%");
+                });
             })
+            ->when($month, fn ($query) => $query->whereMonth('attendance_date', $month))
+            ->when($year, fn ($query) => $query->whereYear('attendance_date', $year));
+
+        if ($weekNumber && $month && $year) {
+            $weeks = PayrollService::getWeeksInMonth($year, $month);
+            $week = $weeks[$weekNumber - 1] ?? null;
+
+            if ($week) {
+                $query->whereBetween('attendance_date', [
+                    $week['start']->format('Y-m-d'),
+                    $week['end']->format('Y-m-d'),
+                ]);
+            }
+        }
+
+        return $query
             ->latest('attendance_date')
             ->latest('created_at')
             ->paginate($perPage);

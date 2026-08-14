@@ -25,18 +25,21 @@ class AttendanceController extends Controller
     /**
      * Menampilkan daftar data absensi dengan paginasi.
      *
-     * @param  Request  $request  Permintaan masuk dengan parameter query 'search' opsional
+     * @param  Request  $request  Permintaan masuk dengan parameter query 'search', 'month', 'year', dan 'week_number' opsional
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $month = $request->input('month') ? (int) $request->input('month') : null;
+        $year = $request->input('year') ? (int) $request->input('year') : null;
+        $weekNumber = $request->input('week_number') ? (int) $request->input('week_number') : null;
 
-        $attendances = $this->attendanceService->getPaginatedAttendances($search);
+        $attendances = $this->attendanceService->getPaginatedAttendances($search, $month, $year, $weekNumber);
         $employees = $this->attendanceService->getAllEmployees();
         $existingAttendance = $this->attendanceService->getExistingAttendance();
 
-        return view('pages.sdm.attendance', compact('attendances', 'employees', 'search', 'existingAttendance'));
+        return view('pages.sdm.attendance', compact('attendances', 'employees', 'search', 'existingAttendance', 'month', 'year', 'weekNumber'));
     }
 
     /**
