@@ -59,6 +59,26 @@ function bindFormSubmit(form) {
 }
 
 /**
+ * Bangun elemen <select> rekening pembayaran dengan daftar dari
+ * window.cementPaymentAccounts (dari Blade).
+ *
+ * @param {string} name
+ * @param {string|null} selectedId
+ * @returns {string} HTML string untuk <select>
+ */
+function renderPaymentAccountSelect(name, selectedId) {
+    const accounts = window.cementPaymentAccounts || [];
+    let options = '<option value="">-- Pilih Rekening --</option>';
+
+    accounts.forEach(function (account) {
+        const selected = String(account.id) === String(selectedId) ? ' selected' : '';
+        options += '<option value="' + account.id + '"' + selected + '>' + account.label + '</option>';
+    });
+
+    return '<select name="' + name + '" class="w-full border rounded p-2 text-sm">' + options + '</select>';
+}
+
+/**
  * Bangun elemen baris Data Semen baru di dalam sebuah <tbody>.
  *
  * @param {HTMLTableSectionElement} tbody
@@ -78,6 +98,8 @@ function buildCementRow(tbody) {
 
     tr.appendChild(cell('<input type="date" name="cements[' + index + '][tanggal]" class="w-full border rounded p-2 text-sm">'));
     tr.appendChild(cell('<input type="text" name="cements[' + index + '][nama_proyek]" class="w-full border rounded p-2 text-sm" placeholder="Nama proyek" required maxlength="255" oninvalid="this.setCustomValidity(\'Nama proyek tidak boleh kosong\')" oninput="this.setCustomValidity(\'\')">'));
+    tr.appendChild(cell('<input type="text" name="cements[' + index + '][name]" class="w-full border rounded p-2 text-sm" placeholder="Nama pemesan" maxlength="255">'));
+    tr.appendChild(cell(renderPaymentAccountSelect('cements[' + index + '][payment_account_id]')));
     tr.appendChild(cell('<input type="number" name="cements[' + index + '][jumlah]" value="0" min="0" class="w-full border rounded p-2 text-sm text-center" placeholder="0" required>'));
     tr.appendChild(cell('<input type="text" name="cements[' + index + '][harga]" value="Rp 0" class="w-full border rounded p-2 text-sm text-right cement-harga" placeholder="Rp 0" required inputmode="numeric">'));
     tr.appendChild(cell('<input type="date" name="cements[' + index + '][tanggal_lunas]" class="w-full border rounded p-2 text-sm">'));

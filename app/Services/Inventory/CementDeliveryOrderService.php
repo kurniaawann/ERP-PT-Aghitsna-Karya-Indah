@@ -28,7 +28,7 @@ class CementDeliveryOrderService
      */
     public function getPaginatedSearch(?string $search = null, ?string $month = null, ?string $year = null): LengthAwarePaginator
     {
-        return CementDeliveryOrder::with('cements')
+        return CementDeliveryOrder::with('cements.paymentAccount')
             ->search($search)
             ->filterMonth($month)
             ->filterYear($year)
@@ -46,7 +46,7 @@ class CementDeliveryOrderService
      */
     public function getAll(?string $search = null): Collection
     {
-        return CementDeliveryOrder::with('cements')
+        return CementDeliveryOrder::with('cements.paymentAccount')
             ->search($search)
             ->orderBy('no', 'asc')
             ->get();
@@ -158,10 +158,14 @@ class CementDeliveryOrderService
                 'do_no' => $cementDeliveryOrder->no,
                 'tanggal' => $row['tanggal'] ?? null,
                 'nama_proyek' => $row['nama_proyek'],
+                'name' => $row['name'] ?? null,
                 'jumlah' => (int) ($row['jumlah'] ?? 0),
                 'satuan' => $row['satuan'] ?? 'zak',
                 'harga' => InputNormalizer::normalizeCurrency($row['harga'] ?? 0),
                 'tanggal_lunas' => $row['tanggal_lunas'] ?? null,
+                'payment_account_id' => !empty($row['payment_account_id'])
+                    ? (int) $row['payment_account_id']
+                    : null,
             ]);
         }
     }

@@ -201,6 +201,13 @@ class PaymentAccountService
             ->all();
         $usedIds = array_merge($usedIds, $kwintansiIds);
 
+        // Cek relasi langsung via FK: cements.payment_account_id
+        $cementIds = DB::table('cements')
+            ->whereIn('payment_account_id', $ids)
+            ->pluck('payment_account_id')
+            ->all();
+        $usedIds = array_merge($usedIds, $cementIds);
+
         // Cek referensi JSON di tabel-tabel lain
         foreach (self::JSON_REFERENCE_TABLES as $ref) {
             $foundIds = [];
@@ -307,6 +314,14 @@ class PaymentAccountService
             ->count();
         if ($count > 0) {
             $summary[] = ['table' => 'Kwintansi', 'count' => $count];
+        }
+
+        // Cek cements / Data Semen (FK langsung)
+        $count = DB::table('cements')
+            ->where('payment_account_id', $id)
+            ->count();
+        if ($count > 0) {
+            $summary[] = ['table' => 'Data Semen', 'count' => $count];
         }
 
         // Cek tabel-tabel JSON

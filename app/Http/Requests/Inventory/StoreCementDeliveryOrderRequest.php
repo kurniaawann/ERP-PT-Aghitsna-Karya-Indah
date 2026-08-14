@@ -28,10 +28,12 @@ class StoreCementDeliveryOrderRequest extends FormRequest
             'cements' => 'nullable|array',
             'cements.*.tanggal' => 'nullable|date',
             'cements.*.nama_proyek' => 'required|string|max:255',
+            'cements.*.name' => 'nullable|string|max:255',
             'cements.*.jumlah' => 'required|integer|min:0',
             'cements.*.satuan' => 'nullable|string|max:50',
             'cements.*.harga' => 'required|string',
             'cements.*.tanggal_lunas' => 'nullable|date',
+            'cements.*.payment_account_id' => 'nullable|integer|exists:payment_accounts,id',
         ];
     }
 

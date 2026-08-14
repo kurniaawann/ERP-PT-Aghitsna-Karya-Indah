@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreCementDeliveryOrderRequest;
 use App\Http\Requests\Inventory\UpdateCementDeliveryOrderRequest;
 use App\Services\Inventory\CementDeliveryOrderService;
+use App\Services\Finance\PaymentAccountService;
 use App\Exports\Inventory\CementDeliveryOrderExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ use Maatwebsite\Excel\Facades\Excel;
 class CementDeliveryOrderController extends Controller
 {
     public function __construct(
-        private readonly CementDeliveryOrderService $cementDeliveryOrderService
+        private readonly CementDeliveryOrderService $cementDeliveryOrderService,
+        private readonly PaymentAccountService $paymentAccountService
     ) {}
 
     /**
@@ -37,7 +39,9 @@ class CementDeliveryOrderController extends Controller
             $request->input('year')
         );
 
-        return view('pages.inventory.cement-do', compact('cementDeliveryOrders'));
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+
+        return view('pages.inventory.cement-do', compact('cementDeliveryOrders', 'paymentAccounts'));
     }
 
     /**

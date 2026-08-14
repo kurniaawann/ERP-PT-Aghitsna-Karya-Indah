@@ -64,6 +64,8 @@
                     <tr class="text-xs text-text-secondary">
                         <th class="p-2 text-left">Tanggal</th>
                         <th class="p-2 text-left">Nama Proyek</th>
+                        <th class="p-2 text-left">Nama</th>
+                        <th class="p-2 text-left">Rekening Pembayaran</th>
                         <th class="p-2 text-center">Jumlah (zak)</th>
                         <th class="p-2 text-right">Harga</th>
                         <th class="p-2 text-left">Tgl Lunas</th>
@@ -83,6 +85,23 @@
                                     placeholder="Nama proyek" required maxlength="255"
                                     oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')"
                                     oninput="this.setCustomValidity('')">
+                            </td>
+                            <td class="p-1">
+                                <input type="text" name="cements[{{ $index }}][name]"
+                                    value="{{ $cement->name }}" class="w-full border rounded p-2 text-sm"
+                                    placeholder="Nama pemesan" maxlength="255">
+                            </td>
+                            <td class="p-1">
+                                <select name="cements[{{ $index }}][payment_account_id]"
+                                    class="w-full border rounded p-2 text-sm">
+                                    <option value="">-- Pilih Rekening --</option>
+                                    @foreach ($paymentAccounts as $account)
+                                        <option value="{{ $account->id }}"
+                                            @if ((int) $cement->payment_account_id === (int) $account->id) selected @endif>
+                                            {{ $account->bank_name }} - {{ $account->account_number }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td class="p-1">
                                 <input type="number" name="cements[{{ $index }}][jumlah]"
@@ -119,6 +138,21 @@
                                     maxlength="255"
                                     oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')"
                                     oninput="this.setCustomValidity('')">
+                            </td>
+                            <td class="p-1">
+                                <input type="text" name="cements[0][name]"
+                                    class="w-full border rounded p-2 text-sm" placeholder="Nama pemesan"
+                                    maxlength="255">
+                            </td>
+                            <td class="p-1">
+                                <select name="cements[0][payment_account_id]"
+                                    class="w-full border rounded p-2 text-sm">
+                                    <option value="">-- Pilih Rekening --</option>
+                                    @foreach ($paymentAccounts as $account)
+                                        <option value="{{ $account->id }}">{{ $account->bank_name }} -
+                                            {{ $account->account_number }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td class="p-1">
                                 <input type="number" name="cements[0][jumlah]" value="0" min="0"

@@ -79,7 +79,17 @@
                                     <td class="p-2"></td>
                                     <td class="p-2 pl-6 text-xs text-text-secondary">{{ $cement->no }}</td>
                                     <td class="p-2">{{ $cement->tanggal?->format('d M Y') ?: '-' }}</td>
-                                    <td class="p-2">{{ $cement->nama_proyek }}</td>
+                                    <td class="p-2">{{ $cement->nama_proyek }}
+                                        @if ($cement->name)
+                                            <div class="text-xs text-text-secondary">{{ $cement->name }}</div>
+                                        @endif
+                                        @if ($cement->paymentAccount)
+                                            <div class="text-xs text-primary">
+                                                {{ $cement->paymentAccount->bank_name }} -
+                                                {{ $cement->paymentAccount->account_number }}
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td class="p-2 text-center">{{ number_format($cement->jumlah, 0, ',', '.') }}</td>
                                     <td class="p-2 text-center">{{ $cement->satuan ?: 'zak' }}</td>
                                     <td class="p-2 text-right">{{ 'Rp ' . number_format($cement->harga, 0, ',', '.') }}</td>
