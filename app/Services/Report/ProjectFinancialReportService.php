@@ -1107,13 +1107,25 @@ class ProjectFinancialReportService
     /**
      * Menyimpan file bukti pembayaran.
      *
-     * File disimpan apa adanya dengan nama UUID di Storage::disk('public').
-     * Path yang disimpan ke DB adalah path RELATIF agar portabel antar server.
+     * Jika GD tersedia: gambar di-resize maksimal 1200×1200 (proporsional, tidak
+     * diperbesar) lalu dikonversi ke WEBP kualitas 80 dan disimpan dengan nama
+     * UUID di Storage::disk('public'). Jika GD tidak tersedia / bukan gambar
+     * valid: file disimpan apa adanya. Path yang disimpan ke DB adalah path
+     * RELATIF agar portabel antar server.
      *
      * @return array{file_name: string, file_path: string}
      */
     private function storeProofFile(UploadedFile $file): array
     {
+        $convertedPath = $this->convertImageToWebp($file);
+
+        if ($convertedPath !== null) {
+            return [
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $convertedPath,
+            ];
+        }
+
         $extension = strtolower($file->getClientOriginalExtension() ?: 'bin');
         $fileName = Str::uuid()->toString().'.'.$extension;
         $relativePath = self::PROOF_DIRECTORY.'/'.$fileName;
@@ -1124,6 +1136,71 @@ class ProjectFinancialReportService
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $relativePath,
         ];
+    }
+
+    /**
+     * Mengonversi file gambar menjadi WEBP (resize maksimal 1200×1200).
+     *
+     * Mengembalikan path relatif file WEBP yang tersimpan, atau null jika
+     * konversi tidak memungkinkan (GD tidak tersedia, file bukan gambar valid,
+     * atau webp tidak didukung).
+     */
+    private function convertImageToWebp(UploadedFile $file): ?string
+    {
+        if (! function_exists('imagecreatetruecolor') || ! function_exists('imagewebp')) {
+            return null;
+        }
+
+        $imageInfo = @getimagesize($file->getPathname());
+
+        if ($imageInfo === false) {
+            return null;
+        }
+
+        [$sourceWidth, $sourceHeight] = $imageInfo;
+        $sourceImage = match ($file->getMimeType()) {
+            'image/jpeg', 'image/jpg' => imagecreatefromjpeg($file->getPathname()),
+            'image/png' => imagecreatefrompng($file->getPathname()),
+            'image/gif' => imagecreatefromgif($file->getPathname()),
+            'image/webp' => function_exists('imagecreatefromwebp') ? imagecreatefromwebp($file->getPathname()) : null,
+            default => null,
+        };
+
+        if (! $sourceImage) {
+            return null;
+        }
+
+        $maxWidth = 1200;
+        $maxHeight = 1200;
+        $ratio = min($maxWidth / $sourceWidth, $maxHeight / $sourceHeight, 1);
+        $targetWidth = (int) round($sourceWidth * $ratio);
+        $targetHeight = (int) round($sourceHeight * $ratio);
+
+        $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefill($canvas, 0, 0, $white);
+        imagecopyresampled($canvas, $sourceImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+
+        $fileName = Str::uuid()->toString().'.webp';
+        $relativePath = self::PROOF_DIRECTORY.'/'.$fileName;
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'proof_');
+
+        if (! imagewebp($canvas, $tempPath, 80)) {
+            imagedestroy($sourceImage);
+            imagedestroy($canvas);
+            @unlink($tempPath);
+
+            return null;
+        }
+
+        imagedestroy($sourceImage);
+        imagedestroy($canvas);
+
+        Storage::disk('public')->put($relativePath, file_get_contents($tempPath));
+        @unlink($tempPath);
+
+        return $relativePath;
     }
 
     /**

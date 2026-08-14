@@ -681,7 +681,7 @@ class PaymentProofService
      * - Jika ekstensi GD tidak tersedia (imagecreatetruecolor tidak ada): simpan file
      *   asli apa adanya (tanpa resize).
      * - Jika ada: resize gambar maksimal 1200×1200 (proporsional, tidak pernah diperbesar),
-     *   konversi ke JPEG kualitas 80, lalu simpan. File disimpan dengan nama UUID unik.
+     *   konversi ke WEBP kualitas 80, lalu simpan. File disimpan dengan nama UUID unik.
      * - Semua file disimpan via Storage::disk('public') — jadi path yang disimpan ke DB
      *   adalah path RELATIF (bukan absolut) agar portabel antar server.
      *
@@ -727,29 +727,64 @@ class PaymentProofService
         imagefill($canvas, 0, 0, $white);
         imagecopyresampled($canvas, $sourceImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
 
-        $fileName = Str::uuid()->toString().'.jpg';
+        $fileName = Str::uuid()->toString().'.webp';
         $relativePath = $relativeDirectory.'/'.$fileName;
 
+        // Konversi ke WEBP menggunakan GD. Jika server tidak mendukung imagewebp,
+        // fallback ke JPEG agar upload tetap berjalan.
         $tempPath = tempnam(sys_get_temp_dir(), 'proof_');
 
-        if (! imagejpeg($canvas, $tempPath, 80)) {
+        if (function_exists('imagewebp') && imagewebp($canvas, $tempPath, 80)) {
             imagedestroy($sourceImage);
             imagedestroy($canvas);
+
+            Storage::disk('public')->put($relativePath, file_get_contents($tempPath));
             @unlink($tempPath);
+
+            return [
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $relativePath,
+                'mime_type' => 'image/webp',
+                'file_size' => Storage::disk('public')->size($relativePath),
+            ];
+        }
+
+        // Fallback: simpan sebagai JPEG.
+        imagedestroy($sourceImage);
+        imagedestroy($canvas);
+        @unlink($tempPath);
+
+        $fileNameJpg = Str::uuid()->toString().'.jpg';
+        $relativePathJpg = $relativeDirectory.'/'.$fileNameJpg;
+        $tempPathJpg = tempnam(sys_get_temp_dir(), 'proof_');
+
+        $sourceImage = $this->createImageResource($file->getPathname(), $file->getMimeType());
+        $ratioJpg = min($maxWidth / $sourceWidth, $maxHeight / $sourceHeight, 1);
+        $targetWidthJpg = (int) round($sourceWidth * $ratioJpg);
+        $targetHeightJpg = (int) round($sourceHeight * $ratioJpg);
+        $canvasJpg = imagecreatetruecolor($targetWidthJpg, $targetHeightJpg);
+        $whiteJpg = imagecolorallocate($canvasJpg, 255, 255, 255);
+        imagefill($canvasJpg, 0, 0, $whiteJpg);
+        imagecopyresampled($canvasJpg, $sourceImage, 0, 0, 0, 0, $targetWidthJpg, $targetHeightJpg, $sourceWidth, $sourceHeight);
+
+        if (! imagejpeg($canvasJpg, $tempPathJpg, 80)) {
+            imagedestroy($sourceImage);
+            imagedestroy($canvasJpg);
+            @unlink($tempPathJpg);
             throw new RuntimeException('Gagal menyimpan file bukti pembayaran.');
         }
 
         imagedestroy($sourceImage);
-        imagedestroy($canvas);
+        imagedestroy($canvasJpg);
 
-        Storage::disk('public')->put($relativePath, file_get_contents($tempPath));
-        @unlink($tempPath);
+        Storage::disk('public')->put($relativePathJpg, file_get_contents($tempPathJpg));
+        @unlink($tempPathJpg);
 
         return [
             'file_name' => $file->getClientOriginalName(),
-            'file_path' => $relativePath,
+            'file_path' => $relativePathJpg,
             'mime_type' => 'image/jpeg',
-            'file_size' => Storage::disk('public')->size($relativePath),
+            'file_size' => Storage::disk('public')->size($relativePathJpg),
         ];
     }
 
