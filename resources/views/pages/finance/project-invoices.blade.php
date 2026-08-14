@@ -36,6 +36,7 @@
                 class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
                 <x-filters.month-filter :value="request('month')" responsive="custom" />
                 <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.status-filter :value="request('status')" responsive="custom" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari no invoice atau kepada..." responsive="custom" />
             </form>
 

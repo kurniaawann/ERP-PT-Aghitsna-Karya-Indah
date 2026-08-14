@@ -36,7 +36,7 @@ class AlumuniumInvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $invoices = $this->service->baseQuery($request)->paginate(15);
+        $invoices = $this->service->baseQuery($request)->paginate(15)->appends($request->all());
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
         $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
         $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();

@@ -47,6 +47,13 @@ class ItemInvoiceService
             })
             ->when($request->filled('month'), fn($builder) => $builder->whereMonth('invoice_date', $request->month))
             ->when($request->filled('year'), fn($builder) => $builder->whereYear('invoice_date', $request->year))
+            ->when($request->filled('status'), function ($builder) use ($request) {
+                if ($request->status === 'lunas') {
+                    $builder->whereHas('salesRecap', fn($query) => $query->where('status', 'Lunas'));
+                } else {
+                    $builder->whereDoesntHave('salesRecap', fn($query) => $query->where('status', 'Lunas'));
+                }
+            })
             ->orderByDesc('invoice_date');
     }
 

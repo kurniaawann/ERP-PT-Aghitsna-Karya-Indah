@@ -42,7 +42,40 @@ class AlumuniumInvoiceService
             })
             ->when($request->filled('month'), fn($builder) => $builder->whereMonth('invoice_date', $request->month))
             ->when($request->filled('year'), fn($builder) => $builder->whereYear('invoice_date', $request->year))
+            ->when($request->filled('status'), function ($builder) use ($request) {
+                $this->applyStatusFilter($builder, $request->status);
+            })
             ->orderByDesc('invoice_date');
+    }
+
+    /**
+     * Menerapkan filter status pembayaran invoice alumunium.
+     *
+     * Status "lunas" mengikuti isFullyPaid() dari kalkulator: sisa tagihan
+     * = (total_amount - discount - dp - total_payment) <= 0. Karena sisa
+     * dipastikan non-negatif (max(0, ...)), lunas berarti
+     * (total_amount - discount - dp - paid) <= 0.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $builder
+     * @param  string  $status  'lunas' atau 'belum'
+     * @return void
+     */
+    private function applyStatusFilter($builder, string $status): void
+    {
+        $base = '(CASE WHEN total_after_discount IS NOT NULL AND total_after_discount <> total_amount
+            THEN total_after_discount ELSE total_amount END)';
+        $discount = '(CASE WHEN discount_value IS NOT NULL AND discount_value > 0 THEN
+            (CASE WHEN discount_type = \'percentage\' THEN ROUND(total_amount * discount_value / 100)
+                  ELSE ROUND(discount_value) END) ELSE 0 END)';
+        $dp = '(CASE WHEN dp_value IS NOT NULL AND dp_value > 0 THEN
+            (CASE WHEN dp_type = \'percentage\' THEN ROUND(' . $base . ' * dp_value / 100)
+                  ELSE ROUND(dp_value) END) ELSE 0 END)';
+        $paid = '(SELECT COALESCE(SUM(pp.amount), 0) FROM payment_proofs pp
+            WHERE pp.invoice_type = \'alumunium\'
+              AND pp.invoice_number = alumunium_invoices.invoice_number)';
+        $remaining = '(total_amount - ' . $discount . ' - ' . $dp . ' - ' . $paid . ')';
+
+        $builder->whereRaw($remaining . ($status === 'lunas' ? ' <= 0' : ' > 0'));
     }
 
     /**
