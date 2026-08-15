@@ -10,6 +10,7 @@ use App\Models\Report\TransactionCategory;
 use App\Models\Sdm\KasbonPayment;
 use App\Models\Sdm\Executive;
 use App\Models\Sdm\Payroll;
+use App\Models\User;
 use App\Services\InputNormalizer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -711,6 +712,14 @@ class ProjectFinancialReportService
             return null;
         }
 
+        // Kasbon divisi/tim hanya dicatat pada Laporan Keuangan Proyek milik
+        // Super Admin. Untuk role Admin, penyelesaian kasbon (KasbonPayment +
+        // status kasbon) tetap dilakukan, namun baris informasi "Kasbon Divisi"
+        // tidak dibuat agar tidak tercampur ke Laporan Keuangan Proyek.
+        if (! $this->isSuperAdmin($userId)) {
+            return null;
+        }
+
         // Kasbon divisi dicatat sebagai baris INFORMASI pada kategori "Upah
         // Pekerja" (sama dengan baris agregat Upah Kerja dari payroll paid),
         // bukan kategori kasbon terpisah. is_informational = true membuat baris
@@ -809,44 +818,58 @@ class ProjectFinancialReportService
         $remainingPayrollIds = $remainingPayrolls->pluck('id');
 
         // ── Baris Kasbon Divisi (informasi) ────────────────────────────
-        $teamGroups = KasbonPayment::whereIn('payroll_id', $remainingPayrollIds)
-            ->where('payment_method', 'payroll_deduction')
-            ->whereHas('kasbon', fn ($q) => $q->where('kasbon_type', 'team'))
-            ->with('kasbon')
-            ->get()
-            ->groupBy(fn (KasbonPayment $payment) => $this->teamKasbonDescription(
-                $payment->kasbon->division,
-                $payment->kasbon->period_start_date,
-                $payment->kasbon->period_end_date
-            ));
+        // Kasbon divisi/tim hanya dicatat untuk Super Admin. Untuk role lain
+        // (Admin), baris kasbon divisi yang mungkin tersisa dari data lama
+        // dibersihkan agar tidak muncul di Laporan Keuangan Proyek.
+        if ($this->isSuperAdmin($userId)) {
+            $teamGroups = KasbonPayment::whereIn('payroll_id', $remainingPayrollIds)
+                ->where('payment_method', 'payroll_deduction')
+                ->whereHas('kasbon', fn ($q) => $q->where('kasbon_type', 'team'))
+                ->with('kasbon')
+                ->get()
+                ->groupBy(fn (KasbonPayment $payment) => $this->teamKasbonDescription(
+                    $payment->kasbon->division,
+                    $payment->kasbon->period_start_date,
+                    $payment->kasbon->period_end_date
+                ));
 
-        $validTeamDescriptions = $teamGroups->keys();
+            $validTeamDescriptions = $teamGroups->keys();
 
-        foreach ($teamGroups as $description => $payments) {
-            $firstKasbon = $payments->first()->kasbon;
-            $this->upsertTeamKasbonExpenseItem(
-                $recap,
-                $firstKasbon->division,
-                $firstKasbon->period_start_date,
-                $firstKasbon->period_end_date,
-                (int) $payments->sum('amount'),
-                now()->toDateString(),
-                $userId
-            );
+            foreach ($teamGroups as $description => $payments) {
+                $firstKasbon = $payments->first()->kasbon;
+                $this->upsertTeamKasbonExpenseItem(
+                    $recap,
+                    $firstKasbon->division,
+                    $firstKasbon->period_start_date,
+                    $firstKasbon->period_end_date,
+                    (int) $payments->sum('amount'),
+                    now()->toDateString(),
+                    $userId
+                );
+            }
+
+            $teamQuery = $report->items()
+                ->where('transaction_category_id', $category->id)
+                ->where('description', 'LIKE', 'Kasbon Divisi%');
+
+            if ($validTeamDescriptions->isNotEmpty()) {
+                $teamQuery->whereNotIn('description', $validTeamDescriptions);
+            }
+
+            $teamQuery->get()->each(function ($item) {
+                $this->deleteProofFile($item->proof_file);
+                $item->delete();
+            });
+        } else {
+            $report->items()
+                ->where('transaction_category_id', $category->id)
+                ->where('description', 'LIKE', 'Kasbon Divisi%')
+                ->get()
+                ->each(function ($item) {
+                    $this->deleteProofFile($item->proof_file);
+                    $item->delete();
+                });
         }
-
-        $teamQuery = $report->items()
-            ->where('transaction_category_id', $category->id)
-            ->where('description', 'LIKE', 'Kasbon Divisi%');
-
-        if ($validTeamDescriptions->isNotEmpty()) {
-            $teamQuery->whereNotIn('description', $validTeamDescriptions);
-        }
-
-        $teamQuery->get()->each(function ($item) {
-            $this->deleteProofFile($item->proof_file);
-            $item->delete();
-        });
 
         // ── Baris "Kasbon Pak {nama}" (informasi) dihapus total ─────────────
         // Kasbon personal tidak lagi dicatat sebagai baris informasi pada
@@ -862,6 +885,24 @@ class ProjectFinancialReportService
             });
 
         $this->flushUsedCategoryCache($userId);
+    }
+
+    /**
+     * Menentukan apakah userId adalah Super Admin.
+     *
+     * Dipakai untuk membatasi baris informasi "Kasbon Divisi" pada Laporan
+     * Keuangan Proyek agar hanya tercatat untuk role Super Admin.
+     *
+     * @param  int|string|null  $userId
+     * @return bool
+     */
+    private function isSuperAdmin($userId): bool
+    {
+        if (! $userId) {
+            return false;
+        }
+
+        return User::where('id', $userId)->where('role', 'superadmin')->exists();
     }
 
     /**
