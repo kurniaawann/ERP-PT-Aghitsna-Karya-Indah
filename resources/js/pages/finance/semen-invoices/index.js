@@ -207,6 +207,9 @@ function addProject(cfg, data) {
         const namaInput = projectEl.querySelector('.semen-nama-proyek');
         if (namaInput) namaInput.value = data.nama_proyek || '';
 
+        const pengurusInput = projectEl.querySelector('.semen-pengurus');
+        if (pengurusInput) pengurusInput.value = data.pengurus_proyek || '';
+
         const accountSelect = projectEl.querySelector('.semen-payment-account');
         if (accountSelect && data.payment_account_id) {
             accountSelect.value = data.payment_account_id;
@@ -310,7 +313,7 @@ function bindProjectEvents(projectEl, cfg) {
         });
     }
 
-    projectEl.querySelectorAll('.semen-nama-proyek, .semen-payment-account').forEach((input) => {
+    projectEl.querySelectorAll('.semen-nama-proyek, .semen-pengurus, .semen-payment-account').forEach((input) => {
         input.addEventListener('change', () => syncJson(cfg));
         input.addEventListener('input', () => syncJson(cfg));
     });
@@ -407,6 +410,15 @@ function selectCementOption(rowEl, option, cfg) {
     if (harga) harga.value = hargaVal;
     if (jumlah) jumlah.value = formatNumber(qtyVal * hargaVal);
 
+    // Auto-fill nama pengurus proyek dari Data Semen yang dipilih.
+    const projectEl = rowEl.closest('.semen-project');
+    if (projectEl) {
+        const pengurus = projectEl.querySelector('.semen-pengurus');
+        if (pengurus && !pengurus.value.trim()) {
+            pengurus.value = cementData.name || '';
+        }
+    }
+
     syncJson(cfg);
 }
 
@@ -471,6 +483,7 @@ function syncJson(cfg) {
 
     list.querySelectorAll(':scope > .semen-project').forEach((project) => {
         const namaProyek = (project.querySelector('.semen-nama-proyek')?.value || '').trim();
+        const pengurusProyek = (project.querySelector('.semen-pengurus')?.value || '').trim();
         const paymentAccountId = project.querySelector('.semen-payment-account')?.value || '';
 
         const items = [];
@@ -497,6 +510,7 @@ function syncJson(cfg) {
         if (namaProyek && paymentAccountId && items.length) {
             projects.push({
                 nama_proyek: namaProyek,
+                pengurus_proyek: pengurusProyek,
                 payment_account_id: paymentAccountId,
                 items,
             });

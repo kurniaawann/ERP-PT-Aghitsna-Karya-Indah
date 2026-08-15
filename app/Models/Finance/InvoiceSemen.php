@@ -84,14 +84,25 @@ class InvoiceSemen extends Model
 
     /**
      * Daftar nama proyek yang digabung dengan koma.
+     * Jika proyek memiliki nama pengurus proyek, nama pengurus
+     * ikut ditampilkan dengan format "Nama Proyek (Nama Pengurus)".
      *
      * @return string
      */
     public function getNamaProyekListAttribute(): string
     {
         return $this->getProjectsCollectionAttribute()
-            ->pluck('nama_proyek')
+            ->map(function ($project) {
+                $nama = trim((string) ($project['nama_proyek'] ?? ''));
+                if ($nama === '') {
+                    return null;
+                }
+
+                $pengurus = trim((string) ($project['pengurus_proyek'] ?? ''));
+                return $pengurus !== '' ? "{$nama} ({$pengurus})" : $nama;
+            })
             ->filter()
+            ->values()
             ->implode(', ');
     }
 }

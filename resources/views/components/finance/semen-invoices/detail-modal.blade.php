@@ -22,7 +22,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                 <div>
                     <label class="block text-xs text-text-label mb-0.5">Nama Proyek</label>
-                    <p class="text-gray-900 font-semibold">{{ $project['nama_proyek'] ?? '-' }}</p>
+                    <p class="text-gray-900 font-semibold">
+                        {{ $project['nama_proyek'] ?? '-' }}
+                        @if (!empty($project['pengurus_proyek']))
+                            ({{ $project['pengurus_proyek'] }})
+                        @endif
+                    </p>
                 </div>
                 <div>
                     <label class="block text-xs text-text-label mb-0.5">Rekening Pembayaran</label>
@@ -40,6 +45,7 @@
                     <thead class="bg-surface-hover">
                         <tr>
                             <th class="border border-border-strong px-2 py-2 text-center text-sm w-10">No</th>
+                            <th class="border border-border-strong px-2 py-2 text-left text-sm">No Data</th>
                             <th class="border border-border-strong px-2 py-2 text-left text-sm">Tanggal</th>
                             <th class="border border-border-strong px-2 py-2 text-left text-sm">Nama Barang</th>
                             <th class="border border-border-strong px-2 py-2 text-center text-sm">QTY</th>
@@ -63,7 +69,9 @@
                                 <td class="border border-border-strong px-2 py-2 text-center text-sm">
                                     {{ $item['no'] ?? $loop->iteration }}</td>
                                 <td class="border border-border-strong px-2 py-2 text-sm">
-                                    {{ \Carbon\Carbon::parse($item['tanggal'] ?? null)->format('d-m-Y') }}</td>
+                                    {{ $item['data_no'] ?: '-' }}</td>
+                                <td class="border border-border-strong px-2 py-2 text-sm">
+                                    {{ $item['tanggal'] ? \Carbon\Carbon::parse($item['tanggal'])->format('d-m-Y') : '-' }}</td>
                                 <td class="border border-border-strong px-2 py-2 text-sm">
                                     {{ $item['nama_barang'] ?? 'SEMEN' }}</td>
                                 <td class="border border-border-strong px-2 py-2 text-center text-sm">
@@ -75,7 +83,7 @@
                             </tr>
                         @endforeach
                         <tr class="bg-primary/5 font-bold">
-                            <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">
+                            <td colspan="6" class="border border-border-strong px-2 py-2 text-right text-sm">
                                 Subtotal {{ $project['nama_proyek'] ?? '' }}</td>
                             <td class="border border-border-strong px-2 py-2 text-right text-sm text-primary">Rp
                                 {{ number_format($subtotal, 0, ',', '.') }}</td>

@@ -66,6 +66,12 @@
                         oninput="this.setCustomValidity('')">
                 </div>
                 <div>
+                    <label class="block text-text-label text-sm mb-1">Nama Pengurus Proyek</label>
+                    <input type="text" class="semen-pengurus w-full border rounded p-2"
+                        placeholder="Nama pengurus proyek" maxlength="255">
+                    <p class="text-xs text-text-label mt-1">Otomatis terisi dari Data Semen yang dipilih.</p>
+                </div>
+                <div>
                     <label class="block text-text-label text-sm mb-1">Rekening Pembayaran <span
                             class="text-error">*</span></label>
                     <select class="semen-payment-account w-full border rounded p-2" required

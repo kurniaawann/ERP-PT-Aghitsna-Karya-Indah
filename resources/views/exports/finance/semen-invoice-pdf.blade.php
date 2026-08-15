@@ -249,24 +249,31 @@
                 $grandTotal += $subtotal;
             @endphp
             <div class="project-block">
-                <div class="project-title">Proyek: {{ $project['nama_proyek'] ?? '-' }}</div>
+                <div class="project-title">
+                    Proyek: {{ $project['nama_proyek'] ?? '-' }}
+                    @if (!empty($project['pengurus_proyek']))
+                        ({{ $project['pengurus_proyek'] }})
+                    @endif
+                </div>
 
                 <table class="items-table">
                     <thead>
                         <tr>
                             <th style="width: 5%">No</th>
-                            <th style="width: 15%">Tanggal</th>
-                            <th style="width: 40%">Nama Barang</th>
-                            <th style="width: 10%">Qty</th>
-                            <th style="width: 15%">Harga</th>
-                            <th style="width: 15%">Jumlah</th>
+                            <th style="width: 13%">No Data</th>
+                            <th style="width: 13%">Tanggal</th>
+                            <th style="width: 34%">Nama Barang</th>
+                            <th style="width: 9%">Qty</th>
+                            <th style="width: 13%">Harga</th>
+                            <th style="width: 13%">Jumlah</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($items as $item)
                             <tr>
                                 <td class="center">{{ $item['no'] ?? $loop->iteration }}</td>
-                                <td class="center">{{ \Carbon\Carbon::parse($item['tanggal'] ?? null)->format('d-m-Y') }}</td>
+                                <td class="center">{{ $item['data_no'] ?: '-' }}</td>
+                                <td class="center">{{ $item['tanggal'] ? \Carbon\Carbon::parse($item['tanggal'])->format('d-m-Y') : '-' }}</td>
                                 <td>{{ $item['nama_barang'] ?? 'SEMEN' }}</td>
                                 <td class="center">{{ $item['qty'] ?? 0 }}</td>
                                 <td class="right">Rp {{ number_format((int) ($item['harga'] ?? 0), 0, ',', '.') }}</td>
@@ -274,7 +281,7 @@
                             </tr>
                         @endforeach
                         <tr class="subtotal-row">
-                            <td colspan="5" class="right">Subtotal</td>
+                            <td colspan="6" class="right">Subtotal</td>
                             <td class="right">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
                         </tr>
                     </tbody>
@@ -295,7 +302,7 @@
         <table class="items-table">
             <tbody>
                 <tr class="grand-total">
-                    <td colspan="5" class="right">Jumlah</td>
+                    <td colspan="6" class="right">Jumlah</td>
                     <td class="right">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
                 </tr>
             </tbody>

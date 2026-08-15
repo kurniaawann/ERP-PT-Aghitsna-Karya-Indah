@@ -43,6 +43,7 @@ class SemenInvoiceService
      *
      * Format masukan: array proyek, masing-masing berisi:
      * - nama_proyek (string)
+     * - pengurus_proyek (string|null)
      * - payment_account_id (int|null)
      * - items (array baris): {no, data_no, tanggal, nama_barang, qty, harga, jumlah}
      *
@@ -78,6 +79,7 @@ class SemenInvoiceService
 
             $normalized[] = [
                 'nama_proyek' => $namaProyek,
+                'pengurus_proyek' => trim((string) ($project['pengurus_proyek'] ?? '')) ?: null,
                 'payment_account_id' => !empty($project['payment_account_id'])
                     ? (int) $project['payment_account_id']
                     : null,

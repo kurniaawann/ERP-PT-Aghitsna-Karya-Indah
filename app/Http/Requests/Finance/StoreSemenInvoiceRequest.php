@@ -41,6 +41,9 @@ class StoreSemenInvoiceRequest extends FormRequest
             'invoice_date' => 'required|date',
             'projects' => 'required|array|min:1',
             'projects.*.nama_proyek' => 'required|string|max:255',
+
+            'projects.*.pengurus_proyek' => 'nullable|string|max:255',
+
             'projects.*.payment_account_id' => 'nullable|exists:payment_accounts,id',
             'projects.*.items' => 'required|array|min:1',
             'projects.*.items.*.tanggal' => 'nullable|date',

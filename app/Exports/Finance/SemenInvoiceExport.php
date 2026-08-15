@@ -46,10 +46,11 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
         return [
             'A' => 6,
             'B' => 14,
-            'C' => 32,
-            'D' => 9,
-            'E' => 16,
-            'F' => 18,
+            'C' => 14,
+            'D' => 30,
+            'E' => 9,
+            'F' => 16,
+            'G' => 18,
         ];
     }
 
@@ -108,20 +109,25 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                         continue;
                     }
 
-                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                    $sheet->setCellValue("A{$currentRow}", 'Proyek: ' . ($project['nama_proyek'] ?? '-'));
+                    $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
+                    $projectTitle = 'Proyek: ' . ($project['nama_proyek'] ?? '-');
+                    if (!empty($project['pengurus_proyek'])) {
+                        $projectTitle .= ' (' . $project['pengurus_proyek'] . ')';
+                    }
+                    $sheet->setCellValue("A{$currentRow}", $projectTitle);
                     $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->setSize(12);
                     $currentRow++;
 
                     $headerRow = $currentRow;
                     $sheet->setCellValue("A{$headerRow}", 'No');
-                    $sheet->setCellValue("B{$headerRow}", 'Tanggal');
-                    $sheet->setCellValue("C{$headerRow}", 'Nama Barang');
-                    $sheet->setCellValue("D{$headerRow}", 'Qty');
-                    $sheet->setCellValue("E{$headerRow}", 'Harga');
-                    $sheet->setCellValue("F{$headerRow}", 'Jumlah');
+                    $sheet->setCellValue("B{$headerRow}", 'No Data');
+                    $sheet->setCellValue("C{$headerRow}", 'Tanggal');
+                    $sheet->setCellValue("D{$headerRow}", 'Nama Barang');
+                    $sheet->setCellValue("E{$headerRow}", 'Qty');
+                    $sheet->setCellValue("F{$headerRow}", 'Harga');
+                    $sheet->setCellValue("G{$headerRow}", 'Jumlah');
 
-                    $sheet->getStyle("A{$headerRow}:F{$headerRow}")->applyFromArray([
+                    $sheet->getStyle("A{$headerRow}:G{$headerRow}")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
@@ -147,23 +153,25 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                         $subtotal += $jumlah;
 
                         $sheet->setCellValue("A{$currentRow}", $item['no'] ?? ($currentRow - $itemStartRow + 1));
-                        $sheet->setCellValue("B{$currentRow}", $item['tanggal']
+                        $sheet->setCellValue("B{$currentRow}", $item['data_no'] ?: '-');
+                        $sheet->setCellValue("C{$currentRow}", $item['tanggal']
                             ? Carbon::parse($item['tanggal'])->format('d-m-Y')
-                            : '');
-                        $sheet->setCellValue("C{$currentRow}", $item['nama_barang'] ?? 'SEMEN');
-                        $sheet->setCellValue("D{$currentRow}", $qty);
-                        $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($harga, 0, ',', '.'));
-                        $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                            : '-');
+                        $sheet->setCellValue("D{$currentRow}", $item['nama_barang'] ?? 'SEMEN');
+                        $sheet->setCellValue("E{$currentRow}", $qty);
+                        $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($harga, 0, ',', '.'));
+                        $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
 
                         $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                         $sheet->getStyle("B{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                        $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                        $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                         $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                        $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                     }
 
                     $itemEndRow = $currentRow;
-                    $sheet->getStyle("A{$itemStartRow}:F{$itemEndRow}")->applyFromArray([
+                    $sheet->getStyle("A{$itemStartRow}:G{$itemEndRow}")->applyFromArray([
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                         ],
@@ -174,11 +182,12 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                     $sheet->setCellValue("B{$currentRow}", '');
                     $sheet->setCellValue("C{$currentRow}", '');
                     $sheet->setCellValue("D{$currentRow}", '');
-                    $sheet->setCellValue("E{$currentRow}", 'Subtotal');
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($subtotal, 0, ',', '.'));
+                    $sheet->setCellValue("E{$currentRow}", '');
+                    $sheet->setCellValue("F{$currentRow}", 'Subtotal');
+                    $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($subtotal, 0, ',', '.'));
 
-                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
+                    $sheet->getStyle("A{$currentRow}:G{$currentRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("F{$currentRow}:G{$currentRow}")->applyFromArray([
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
                             'startColor' => ['rgb' => 'F5F5F5'],
@@ -187,8 +196,8 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                         ],
                     ]);
-                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                     $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                     $account = $project['payment_account_id']
                         ? PaymentAccount::find($project['payment_account_id'])
@@ -196,7 +205,7 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
 
                     if ($account) {
                         $currentRow++;
-                        $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                        $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
                         $bankName = $this->sanitizeExcel($account->bank_name);
                         $accountNumber = $this->sanitizeExcel($account->account_number);
                         $accountHolder = $this->sanitizeExcel($account->account_holder);
@@ -212,11 +221,12 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                 $sheet->setCellValue("B{$currentRow}", '');
                 $sheet->setCellValue("C{$currentRow}", '');
                 $sheet->setCellValue("D{$currentRow}", '');
-                $sheet->setCellValue("E{$currentRow}", 'Jumlah');
-                $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($invoice->getNetAmount(), 0, ',', '.'));
+                $sheet->setCellValue("E{$currentRow}", '');
+                $sheet->setCellValue("F{$currentRow}", 'Jumlah');
+                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($invoice->getNetAmount(), 0, ',', '.'));
 
-                $sheet->getStyle("A{$currentRow}:F{$currentRow}")->getFont()->setBold(true);
-                $sheet->getStyle("D{$currentRow}:F{$currentRow}")->applyFromArray([
+                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->getFont()->setBold(true);
+                $sheet->getStyle("E{$currentRow}:G{$currentRow}")->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'FFFF00'],
@@ -225,30 +235,30 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                     ],
                 ]);
-                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($invoice->getNetAmount())) . ' rupiah');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
 
                 $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Demikian invoice semen ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
 
                 $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Hormat Kami,');
 
                 $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
                 $currentRow += 3;
-                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Direktur');
             },
         ];
