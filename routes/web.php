@@ -21,6 +21,7 @@ use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Finance\RecapProyekController;
 use App\Http\Controllers\Finance\RecapSalesController;
 use App\Http\Controllers\Finance\ReimburseController;
+use App\Http\Controllers\Finance\SemenInvoiceController;
 use App\Http\Controllers\Inventory\CementDeliveryOrderController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ItemReturnController;
@@ -178,6 +179,23 @@ Route::middleware('auth')->group(function () {
     // Item Invoice Print Routes
     Route::get('/item-invoice/{invoice_number}/print/pdf', [ItemInvoiceController::class, 'printPdf'])->name('item-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/item-invoice/{invoice_number}/print/excel', [ItemInvoiceController::class, 'printExcel'])->name('item-invoice.print.excel')->where('invoice_number', '.*');
+
+    // Route Invoice Semen
+    Route::get('/semen-invoice', [SemenInvoiceController::class, 'index'])->name('semen-invoice.index');
+    Route::get('/semen-invoice/next-number', [SemenInvoiceController::class, 'getNextInvoiceNumber'])->name('semen-invoice.getNextNumber');
+    Route::get('/semen-invoice/cements-data', [SemenInvoiceController::class, 'cementsData'])->name('semen-invoice.cementsData');
+    Route::post('/semen-invoice', [SemenInvoiceController::class, 'store'])->name('semen-invoice.store');
+    Route::get('/semen-invoice/{invoice_number}/edit', [SemenInvoiceController::class, 'edit'])->name('semen-invoice.edit')->where('invoice_number', '.*');
+    Route::put('/semen-invoice/{invoice_number}', [SemenInvoiceController::class, 'update'])->name('semen-invoice.update')->where('invoice_number', '.*');
+    Route::delete('/semen-invoice/destroy-selected', [SemenInvoiceController::class, 'destroySelected'])->name('semen-invoice.destroySelected');
+
+    // Semen Invoice Print Routes
+    Route::get('/semen-invoice/{invoice_number}/print/pdf', [SemenInvoiceController::class, 'printPdf'])->name('semen-invoice.print.pdf')->where('invoice_number', '.*');
+    Route::get('/semen-invoice/{invoice_number}/print/excel', [SemenInvoiceController::class, 'printExcel'])->name('semen-invoice.print.excel')->where('invoice_number', '.*');
+
+    // Semen Invoice Export Routes
+    Route::get('/semen-invoice/export/excel', [SemenInvoiceController::class, 'exportExcel'])->name('semen-invoice.export.excel');
+    Route::get('/semen-invoice/export/pdf', [SemenInvoiceController::class, 'exportPdf'])->name('semen-invoice.export.pdf');
 
     // Route Alumunium Invoice
     Route::get('/alumunium-invoice', [AlumuniumInvoiceController::class, 'index'])->name('alumunium-invoice.index');
