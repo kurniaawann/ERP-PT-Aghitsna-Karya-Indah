@@ -200,6 +200,7 @@ class SemenInvoiceService
             'invoice_date' => $data['invoice_date'],
             'projects' => $projects,
             'total_amount' => $this->calculateTotal($projects),
+            'signed_by_id' => $data['signed_by_id'] ?? null,
         ]);
     }
 
@@ -217,6 +218,7 @@ class SemenInvoiceService
             'invoice_date' => $data['invoice_date'],
             'projects' => $projects,
             'total_amount' => $this->calculateTotal($projects),
+            'signed_by_id' => $data['signed_by_id'] ?? null,
         ]);
     }
 

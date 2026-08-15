@@ -38,9 +38,6 @@
 
             <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
                 <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('semen-invoice.export.excel')"
-                        :pdfRoute="route('semen-invoice.export.pdf')" :queryParams="request()->only(['month', 'year', 'search'])" responsive="custom" />
-
                     <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
 
                     <x-buttons.add-button modalId="addModal" text="Tambah Invoice" responsive="custom" />
@@ -56,10 +53,10 @@
     <x-pagination :paginator="$invoices" />
 
     {{-- ==================== Section: Modals ==================== --}}
-    <x-finance.semen-invoices.add-modal :paymentAccounts="$paymentAccounts" />
+    <x-finance.semen-invoices.add-modal :paymentAccounts="$paymentAccounts" :executives="$executives" />
 
     {{-- Modal Edit (tunggal, diisi via AJAX) --}}
-    <x-finance.semen-invoices.edit-modal :paymentAccounts="$paymentAccounts" />
+    <x-finance.semen-invoices.edit-modal :paymentAccounts="$paymentAccounts" :executives="$executives" />
 
     {{-- Modal Detail untuk setiap invoice --}}
     @foreach ($invoices as $invoice)

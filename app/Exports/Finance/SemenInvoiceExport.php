@@ -13,15 +13,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
-/**
- * Export Invoice Semen per nomor invoice ke Excel.
- *
- * Menyusun header perusahaan, data invoice, lalu blok per proyek
- * dengan tabel data semen (No, Tanggal, Nama Barang, Qty, Harga, Jumlah),
- * subtotal tiap proyek, dan jumlah akhir.
- */
 class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
     protected $invoice;
@@ -44,13 +36,11 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
     public function columnWidths(): array
     {
         return [
-            'A' => 6,
-            'B' => 14,
-            'C' => 14,
-            'D' => 30,
-            'E' => 9,
-            'F' => 16,
-            'G' => 18,
+            'A' => 12, // No. / Label Tanggal
+            'B' => 16, // Tanggal / Titik dua
+            'C' => 45, // Nama Barang / Nilai Tanggal & Pembayaran
+            'D' => 12, // QTY
+            'E' => 22, // Jumlah
         ];
     }
 
@@ -61,77 +51,84 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                 $sheet = $event->sheet->getDelegate();
                 $invoice = $this->invoice;
 
-                $sheet->getRowDimension(1)->setRowHeight(60);
-                $sheet->getRowDimension(2)->setRowHeight(15);
+                // Set Font Default ke Times New Roman
+                $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(9.5);
 
-                $drawing = new Drawing();
-                $drawing->setName('Logo');
-                $drawing->setDescription('Company Logo');
-                $drawing->setPath(public_path('images/logo.jpeg'));
-                $drawing->setHeight(55);
-                $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(5);
-                $drawing->setOffsetY(3);
-                $drawing->setWorksheet($sheet);
+                // 1. JUDUL HEADER INVOICE (HIJAU SAGE)
+                $sheet->mergeCells('A1:E1');
+                $sheet->setCellValue('A1', 'INVOICE');
+                $sheet->getStyle('A1:E1')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 11],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'A2C48C'],
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                    ],
+                ]);
+                $sheet->getRowDimension(1)->setRowHeight(22);
 
-                $sheet->mergeCells('B1:F1');
-                $sheet->setCellValue('B1', 'INVOICE');
-                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22);
-                $sheet->getStyle('B1')->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
+                // 2. INFORMASI TANGGAL & TOTAL PEMBAYARAN
+                // Baris Tanggal
+                $sheet->setCellValue('A2', 'Tanggal');
+                $sheet->setCellValue('B2', ':');
+                $sheet->mergeCells('C2:E2');
+                $sheet->setCellValue('C2', Carbon::parse($invoice->invoice_date)->isoFormat('dddd, D MMMM YYYY'));
 
-                $sheet->mergeCells('A2:D2');
-                $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A2')->getFont()->setBold(true);
+                // Baris Total Pembayaran
+                $sheet->setCellValue('A3', 'Total Pembayaran');
+                $sheet->setCellValue('B3', ':');
+                $sheet->mergeCells('C3:E3');
+                $sheet->setCellValue('C3', 'Rp. ' . number_format($invoice->total_amount ?? 0, 0, ',', '.'));
 
-                $sheet->mergeCells('A3:D3');
-                $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT');
+                // Styling Info Atas (A2:E3)
+                $sheet->getStyle('B2:B3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A2:E3')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                    ],
+                ]);
 
-                $sheet->mergeCells('A4:D4');
-                $sheet->setCellValue('A4', 'Telp. 021 - 29034923 - 0812 9596 552');
+                // 3. BARIS KOSONG PEMISAH DENGAN GARIS TERHUBUNG LURUS
+                $sheet->getStyle('A4:E4')->applyFromArray([
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                    ],
+                ]);
+                $sheet->getRowDimension(4)->setRowHeight(10);
 
-                $sheet->mergeCells('A5:D5');
-                $sheet->setCellValue('A5', 'Email : Design@aghitsna.id');
+                $currentRow = 5;
+                $grandTotal = 0;
+                $projects = $this->getProjects();
+                $totalProjects = count($projects);
 
-                $sheet->setCellValue('E2', 'No');
-                $sheet->setCellValue('F2', ': ' . $invoice->invoice_number);
-                $sheet->setCellValue('E3', 'Tanggal');
-                $sheet->setCellValue('F3', ': ' . Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY'));
-                $sheet->setCellValue('E4', 'Hal');
-                $sheet->setCellValue('F4', ': Penagihan Semen');
-
-                $currentRow = 7;
-
-                foreach ($this->getProjects() as $project) {
+                // 4. LOOPING PROYEK & BARANG
+                foreach ($projects as $project) {
                     $items = $project['items'] ?? [];
-                    if (empty($items)) {
-                        continue;
+                    $subtotal = 0;
+                    foreach ($items as $item) {
+                        $subtotal += (int) ($item['jumlah'] ?? 0);
                     }
+                    $grandTotal += $subtotal;
 
-                    $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                    $projectTitle = 'Proyek: ' . ($project['nama_proyek'] ?? '-');
-                    if (!empty($project['pengurus_proyek'])) {
-                        $projectTitle .= ' (' . $project['pengurus_proyek'] . ')';
-                    }
-                    $sheet->setCellValue("A{$currentRow}", $projectTitle);
-                    $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->setSize(12);
-                    $currentRow++;
-
+                    // Header Kolom Tabel Barang (Hijau Sage)
                     $headerRow = $currentRow;
-                    $sheet->setCellValue("A{$headerRow}", 'No');
-                    $sheet->setCellValue("B{$headerRow}", 'No Data');
-                    $sheet->setCellValue("C{$headerRow}", 'Tanggal');
-                    $sheet->setCellValue("D{$headerRow}", 'Nama Barang');
-                    $sheet->setCellValue("E{$headerRow}", 'Qty');
-                    $sheet->setCellValue("F{$headerRow}", 'Harga');
-                    $sheet->setCellValue("G{$headerRow}", 'Jumlah');
+                    $sheet->setCellValue("A{$headerRow}", 'No.');
+                    $sheet->setCellValue("B{$headerRow}", 'Tanggal');
+                    $sheet->setCellValue("C{$headerRow}", 'Nama Barang');
+                    $sheet->setCellValue("D{$headerRow}", 'QTY');
+                    $sheet->setCellValue("E{$headerRow}", 'Jumlah');
 
-                    $sheet->getStyle("A{$headerRow}:G{$headerRow}")->applyFromArray([
+                    $sheet->getStyle("A{$headerRow}:E{$headerRow}")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'F0F0F0'],
+                            'startColor' => ['rgb' => 'A2C48C'],
                         ],
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
@@ -142,124 +139,134 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                         ],
                     ]);
 
-                    $subtotal = 0;
-                    $itemStartRow = $currentRow + 1;
+                    // Baris Nama Proyek (Kuning)
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
+                    $projectTitle = 'Proyek ' . ($project['nama_proyek'] ?? '-');
+                    if (!empty($project['pengurus_proyek'])) {
+                        $projectTitle .= ' (' . $project['pengurus_proyek'] . ')';
+                    }
+                    $sheet->setCellValue("A{$currentRow}", $projectTitle);
 
-                    foreach ($items as $item) {
+                    $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FFFF00'],
+                        ],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        ],
+                    ]);
+
+                    // Loop Item Barang
+                    $itemStartRow = $currentRow + 1;
+                    foreach ($items as $index => $item) {
                         $currentRow++;
                         $qty = (int) ($item['qty'] ?? 0);
-                        $harga = (int) ($item['harga'] ?? 0);
-                        $jumlah = $qty * $harga;
-                        $subtotal += $jumlah;
+                        $jumlah = (int) ($item['jumlah'] ?? 0);
 
-                        $sheet->setCellValue("A{$currentRow}", $item['no'] ?? ($currentRow - $itemStartRow + 1));
-                        $sheet->setCellValue("B{$currentRow}", $item['data_no'] ?: '-');
-                        $sheet->setCellValue("C{$currentRow}", $item['tanggal']
-                            ? Carbon::parse($item['tanggal'])->format('d-m-Y')
-                            : '-');
-                        $sheet->setCellValue("D{$currentRow}", $item['nama_barang'] ?? 'SEMEN');
-                        $sheet->setCellValue("E{$currentRow}", $qty);
-                        $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($harga, 0, ',', '.'));
-                        $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                        $sheet->setCellValue("A{$currentRow}", ($item['no'] ?? ($index + 1)) . '.');
+                        $sheet->setCellValue("B{$currentRow}", $item['tanggal'] ? Carbon::parse($item['tanggal'])->format('d M Y') : '-');
+                        $sheet->setCellValue("C{$currentRow}", $item['nama_barang'] ?? 'SEMEN');
+                        $sheet->setCellValue("D{$currentRow}", $qty . ' Zak');
+                        $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
 
                         $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                         $sheet->getStyle("B{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                        $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                        $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                        $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                     }
 
                     $itemEndRow = $currentRow;
-                    $sheet->getStyle("A{$itemStartRow}:G{$itemEndRow}")->applyFromArray([
+                    $sheet->getStyle("A{$itemStartRow}:E{$itemEndRow}")->applyFromArray([
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                         ],
                     ]);
 
+                    // Total 1 Bon Proyek (Kuning)
                     $currentRow++;
-                    $sheet->setCellValue("A{$currentRow}", '');
-                    $sheet->setCellValue("B{$currentRow}", '');
-                    $sheet->setCellValue("C{$currentRow}", '');
-                    $sheet->setCellValue("D{$currentRow}", '');
-                    $sheet->setCellValue("E{$currentRow}", '');
-                    $sheet->setCellValue("F{$currentRow}", 'Subtotal');
-                    $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($subtotal, 0, ',', '.'));
+                    $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", 'TOTAL 1 BON PROYEK ' . strtoupper($project['nama_proyek'] ?? ''));
+                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($subtotal, 0, ',', '.'));
 
-                    $sheet->getStyle("A{$currentRow}:G{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("F{$currentRow}:G{$currentRow}")->applyFromArray([
+                    $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'F5F5F5'],
+                            'startColor' => ['rgb' => 'FFFF00'],
                         ],
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                         ],
                     ]);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-                    $account = $project['payment_account_id']
+                    // Baris Rekening Bank
+                    $account = !empty($project['payment_account_id'])
                         ? PaymentAccount::find($project['payment_account_id'])
                         : null;
 
-                    if ($account) {
-                        $currentRow++;
-                        $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                        $bankName = $this->sanitizeExcel($account->bank_name);
-                        $accountNumber = $this->sanitizeExcel($account->account_number);
-                        $accountHolder = $this->sanitizeExcel($account->account_holder);
-                        $sheet->setCellValue("A{$currentRow}",
-                            "Pembayaran proyek ini melalui: {$bankName} / No : {$accountNumber} a/n {$accountHolder}");
-                        $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
-                    }
+                    $currentRow++;
+                    $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
+                    
+                    $bankName = $this->sanitizeExcel($account->bank_name ?? 'BCA');
+                    $accountNumber = $this->sanitizeExcel($account->account_number ?? 'Nomor rekening');
+                    $accountHolder = strtoupper($this->sanitizeExcel($account->account_holder ?? 'PEMILIK'));
 
-                    $currentRow += 2;
+                    $sheet->setCellValue("A{$currentRow}", "Bank {$bankName} : {$accountNumber} / A/N {$accountHolder}");
+
+                    $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
+                        'font' => ['italic' => true, 'size' => 8.5],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        ],
+                    ]);
+
+                    $currentRow++; // Jarak antar proyek
                 }
 
-                $sheet->setCellValue("A{$currentRow}", '');
-                $sheet->setCellValue("B{$currentRow}", '');
-                $sheet->setCellValue("C{$currentRow}", '');
-                $sheet->setCellValue("D{$currentRow}", '');
-                $sheet->setCellValue("E{$currentRow}", '');
-                $sheet->setCellValue("F{$currentRow}", 'Jumlah');
-                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($invoice->getNetAmount(), 0, ',', '.'));
+                // 5. CATATAN NB
+                $noteText = !empty($invoice->note) 
+                    ? 'NB : ' . $invoice->note 
+                    : '';
 
-                $sheet->getStyle("A{$currentRow}:G{$currentRow}")->getFont()->setBold(true);
-                $sheet->getStyle("E{$currentRow}:G{$currentRow}")->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FFFF00'],
-                    ],
+                if (!empty($noteText)) {
+                    $sheet->setCellValue("A{$currentRow}", $noteText);
+                    $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setBold(true)->setSize(8.5);
+                    $currentRow += 2;
+                } else {
+                    $currentRow++;
+                }
+
+                // 6. GRAND TOTAL (DOUBLE UNDERLINE)
+                $sheet->setCellValue("D{$currentRow}", "TOTAL {$totalProjects} INVOICE:");
+                $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($grandTotal, 0, ',', '.'));
+
+                $sheet->getStyle("D{$currentRow}:E{$currentRow}")->getFont()->setBold(true);
+                $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+                // Border Top Single + Border Bottom Double pada angka Grand Total
+                $sheet->getStyle("E{$currentRow}")->applyFromArray([
                     'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                        'top' => ['borderStyle' => Border::BORDER_THIN],
+                        'bottom' => ['borderStyle' => Border::BORDER_DOUBLE],
                     ],
                 ]);
-                $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-                $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($invoice->getNetAmount())) . ' rupiah');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
-
-                $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Demikian invoice semen ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
-                $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
-
-                $currentRow += 2;
-                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Hormat Kami,');
-
-                $currentRow++;
-                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
-
+                // 7. TANDA TANGAN
                 $currentRow += 3;
-                $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Direktur');
+                $signedBy = $invoice->signedBy;
+
+                $sheet->setCellValue("E{$currentRow}", $signedBy?->position ?? 'Manager Divisi Hollo');
+                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                $currentRow += 4; // Space untuk tanda tangan
+                $sheet->setCellValue("E{$currentRow}", $signedBy?->name ?? '................');
+                $sheet->getStyle("E{$currentRow}")->getFont()->setUnderline(true);
+                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             },
         ];
     }

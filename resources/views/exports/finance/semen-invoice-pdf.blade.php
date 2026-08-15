@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Semen - {{ $invoice->invoice_number }}</title>
     <style>
+        @page {
+            size: A4;
+            margin: 10mm 12mm;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,231 +17,182 @@
 
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 11px;
-            line-height: 1.4;
-            padding: 15mm 15mm 15mm 15mm;
-            position: relative;
+            font-size: 9.5pt;
+            color: #000;
+            line-height: 1.1;
+            padding: 7%;
         }
 
-        .container {
-            max-width: 210mm;
-            margin: 0 auto;
-        }
-
-        .header {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .header-table {
+        .main-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 3px;
+            table-layout: auto; /* Membiarkan lebar kolom menyesuaikan teks otomatis */
         }
 
-        .header-table td {
-            border: none;
-            padding: 0;
+        /* Padding 10px kiri-kanan sesuai permintaan */
+        .main-table th, .main-table td {
+            border: 1px solid #000;
+            padding: 2px 10px; 
+            font-size: 9pt;
+            white-space: nowrap; /* Mencegah teks terpotong turun ke bawah */
         }
 
-        .logo-cell {
-            width: 100px;
-            vertical-align: top;
-            padding-right: 10px;
+        /* Khusus Nama Barang boleh wrap jika teksnya sangat panjang */
+        .col-nama-barang {
+            white-space: normal !important;
         }
 
-        .logo-cell img {
-            display: block;
-            width: 80px;
-            height: 60px;
-            object-fit: contain;
-        }
-
-        .title-cell {
+        /* Header Style Hijau Olive / Sage */
+        .header-title {
+            background-color: #a2c48c;
             text-align: center;
-            vertical-align: middle;
+            font-weight: bold;
+            font-size: 11pt;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
         }
 
-        .invoice-title {
-            font-size: 24px;
+        .table-header-row {
+            background-color: #a2c48c;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Highlight Kuning */
+        .yellow-bg {
+            background-color: #ffff00;
             font-weight: bold;
         }
 
-        .company-address {
-            font-size: 10px;
-            line-height: 1.8;
-        }
-
-        .invoice-info {
-            font-size: 11px;
-            line-height: 1.8;
-        }
-
-        .invoice-info td {
-            padding: 2px 0;
-        }
-
-        .invoice-info td:first-child {
-            width: 65px;
-        }
-
-        .invoice-info td:nth-child(2) {
-            width: 10px;
-        }
-
-        .recipient {
-            margin: 5px 0;
-        }
-
-        .recipient-label {
+        .project-title-cell {
+            background-color: #ffff00;
             font-weight: bold;
+            font-size: 9pt;
         }
 
-        .description {
-            margin: 5px 0;
-            text-align: justify;
+        /* Style Rekening Bank */
+        .bank-info-cell {
+            font-style: italic;
+            font-size: 8.5pt;
         }
 
-        .project-block {
-            margin: 8px 0;
-        }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .bold { font-weight: bold; }
 
-        .project-title {
-            font-weight: bold;
-            font-size: 11px;
-            margin-bottom: 4px;
-        }
-
-        .items-table {
+        /* Format Currency */
+        .currency-cell {
+            display: table;
             width: 100%;
-            border-collapse: collapse;
-            margin: 5px 0;
         }
-
-        .items-table th {
-            background-color: #f0f0f0;
-            border: 1px solid #000;
-            padding: 6px 5px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 10px;
+        .currency-symbol {
+            display: table-cell;
+            text-align: left;
+            padding-right: 8px;
         }
-
-        .items-table td {
-            border: 1px solid #000;
-            padding: 5px;
-            font-size: 10px;
-        }
-
-        .items-table td.center {
-            text-align: center;
-        }
-
-        .items-table td.right {
+        .currency-amount {
+            display: table-cell;
             text-align: right;
         }
 
-        .subtotal-row td {
-            background-color: #f5f5f5;
-            font-weight: bold;
-        }
-
-        .grand-total td {
-            background-color: #FFFF00;
-            font-weight: bold;
-        }
-
-        .terbilang {
+        /* Note NB */
+        .note {
             font-style: italic;
-            margin: 5px 0;
-            font-size: 10px;
+            font-weight: bold;
+            font-size: 8.5pt;
+            margin-top: 6px;
+            margin-bottom: 8px;
         }
 
-        .payment-info {
-            margin: 5px 0;
-            line-height: 1.8;
+        /* Total Akhir & Double Underline */
+        .grand-total-container {
+            width: 100%;
+            margin-top: 6px;
         }
 
-        .closing {
-            margin: 5px 0;
-            text-align: justify;
+        .grand-total-table {
+            float: right;
+            border-collapse: collapse;
+        }
+
+        .grand-total-table td {
+            padding: 2px 10px;
+            font-size: 9.5pt;
+            font-weight: bold;
+        }
+
+        .double-underline {
+            border-top: 1.5px solid #000;
+            border-bottom: 3px double #000;
+        }
+
+        /* Tanda Tangan */
+        .signature-section {
+            float: right;
+            width: 200px;
+            text-align: center;
+            margin-top: 50px;
+            clear: both;
+        }
+
+        .signature-space {
+            height: 50px;
+            margin-bottom: 4px;
+        }
+
+        .signature-space img {
+            max-height: 50px;
+            max-width: 160px;
+        }
+
+        .signature-title {
+            font-size: 9.5pt;
+            margin-top: 2px;
+        }
+
+        .signature-name {
+            font-size: 9.5pt;
+            text-decoration: underline;
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <!-- Header -->
-        <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
-            <tr>
-                <td width="45%" valign="top" style="padding-bottom: 15px;">
-                    <div class="logo-cell">
-                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
-                    </div>
-                </td>
 
-                <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
-                    <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                        INVOICE
-                    </div>
-                </td>
+    @php
+        $projects = is_string($invoice->projects) ? json_decode($invoice->projects, true) : $invoice->projects;
+        $grandTotal = 0;
+        $totalProjects = count($projects);
+    @endphp
 
-                <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
-            </tr>
+    <table class="main-table">
+        <!-- Judul Invoice Atas -->
+        <tr>
+            <td colspan="5" class="header-title">INVOICE</td>
+        </tr>
+        <tr>
+            <td style="width: 1%;">Tanggal</td>
+            <td style="width: 1%; text-align: center;">:</td>
+            <td colspan="3">
+                {{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('dddd, D MMMM YYYY') }}
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 1%;">Total Pembayaran</td>
+            <td style="width: 1%; text-align: center;">:</td>
+            <td colspan="3">Rp. {{ number_format($invoice->total_amount ?? 0, 0, ',', '.') }}</td>
+        </tr>
+        
+        <!-- Pemisah Spasi Tipis -->
+        <tr style="height: 6px;">
+            <td style="border: none;"></td>
+            <td style="border: none;"></td>
+            <td style="border: none;"></td>
+            <td style="border: none;"></td>
+            <td style="border: none;"></td>
+        </tr>
 
-            <tr>
-                <td valign="top">
-                    <div class="company-info" style="white-space: pre-line">
-                        PT. AGHITSNA KARYA INDAH
-                        JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT
-                        Telp. 021 - 29034923 - 0812 9596 552
-                        Email : Design@aghitsna.id
-                    </div>
-                </td>
-
-                <td valign="top"></td>
-
-                <td valign="top">
-                    <div class="invoice-info" style="font-size: 12px;">
-                        <table cellpadding="0" cellspacing="0" border="0" align="right">
-                            <tr>
-                                <td style="padding-right: 5px;" valign="top">No</td>
-                                <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ $invoice->invoice_number }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding-right: 5px;" valign="top">Tanggal</td>
-                                <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding-right: 5px;" valign="top">Hal</td>
-                                <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">Penagihan Semen</td>
-                            </tr>
-                        </table>
-                    </div>
-                </td>
-            </tr>
-        </table>
-
-        <!-- Recipient -->
-        <div class="recipient">
-            <div class="recipient-label">Kepada Yth :</div>
-            <div>
-                <div>PT. AGHITSNA KARYA INDAH</div>
-            </div>
-        </div>
-
-        <!-- Description -->
-        <div class="description">
-            Dengan ini kami sampaikan invoice semen sebagai berikut :
-        </div>
-
-        @php
-            $projects = is_string($invoice->projects) ? json_decode($invoice->projects, true) : $invoice->projects;
-            $grandTotal = 0;
-        @endphp
-
+        <!-- Loop Setiap Proyek -->
         @foreach ($projects as $project)
             @php
                 $items = $project['items'] ?? [];
@@ -247,81 +201,118 @@
                     $subtotal += (int) ($item['jumlah'] ?? 0);
                 }
                 $grandTotal += $subtotal;
+                $account = \App\Models\Finance\PaymentAccount::find($project['payment_account_id'] ?? null);
             @endphp
-            <div class="project-block">
-                <div class="project-title">
-                    Proyek: {{ $project['nama_proyek'] ?? '-' }}
+
+            <!-- Header Kolom (Ukuran Menyesuaikan Teks + 10px Kiri Kanan) -->
+            <tr class="table-header-row">
+                <td class="center" style="width: 1%;">No.</td>
+                <td class="center" style="width: 1%;">Tanggal</td>
+                <td class="center col-nama-barang" style="width: auto;">Nama Barang</td>
+                <td class="center" style="width: 1%;">QTY</td>
+                <td class="center" style="width: 1%;">Jumlah</td>
+            </tr>
+
+            <!-- Baris Nama Proyek -->
+            <tr>
+                <td colspan="3" class="project-title-cell col-nama-barang">
+                    Proyek {{ $project['nama_proyek'] ?? '-' }}
                     @if (!empty($project['pengurus_proyek']))
                         ({{ $project['pengurus_proyek'] }})
                     @endif
-                </div>
+                </td>
+                <td class="project-title-cell"></td>
+                <td></td>
+            </tr>
 
-                <table class="items-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 5%">No</th>
-                            <th style="width: 13%">No Data</th>
-                            <th style="width: 13%">Tanggal</th>
-                            <th style="width: 34%">Nama Barang</th>
-                            <th style="width: 9%">Qty</th>
-                            <th style="width: 13%">Harga</th>
-                            <th style="width: 13%">Jumlah</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($items as $item)
-                            <tr>
-                                <td class="center">{{ $item['no'] ?? $loop->iteration }}</td>
-                                <td class="center">{{ $item['data_no'] ?: '-' }}</td>
-                                <td class="center">{{ $item['tanggal'] ? \Carbon\Carbon::parse($item['tanggal'])->format('d-m-Y') : '-' }}</td>
-                                <td>{{ $item['nama_barang'] ?? 'SEMEN' }}</td>
-                                <td class="center">{{ $item['qty'] ?? 0 }}</td>
-                                <td class="right">Rp {{ number_format((int) ($item['harga'] ?? 0), 0, ',', '.') }}</td>
-                                <td class="right">Rp {{ number_format((int) ($item['jumlah'] ?? 0), 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                        <tr class="subtotal-row">
-                            <td colspan="6" class="right">Subtotal</td>
-                            <td class="right">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                @php
-                    $account = \App\Models\Finance\PaymentAccount::find($project['payment_account_id'] ?? null);
-                @endphp
-                @if ($account)
-                    <div style="font-size: 10px; margin-top: 3px;">
-                        Pembayaran proyek ini melalui: <strong>{{ $account->bank_name }}</strong> / No :
-                        <strong>{{ $account->account_number }}</strong> a/n <strong>{{ $account->account_holder }}</strong>
-                    </div>
-                @endif
-            </div>
-        @endforeach
-
-        <table class="items-table">
-            <tbody>
-                <tr class="grand-total">
-                    <td colspan="6" class="right">Jumlah</td>
-                    <td class="right">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
+            <!-- Item Barang -->
+            @foreach ($items as $item)
+                <tr>
+                    <td class="center">{{ $item['no'] ?? $loop->iteration }}.</td>
+                    <td class="center">{{ $item['tanggal'] ? \Carbon\Carbon::parse($item['tanggal'])->format('d M Y') : '-' }}</td>
+                    <td class="col-nama-barang">{{ $item['nama_barang'] ?? 'SEMEN' }}</td>
+                    <td class="center">{{ $item['qty'] ?? 0 }} Zak</td>
+                    <td>
+                        <div class="currency-cell">
+                            <span class="currency-symbol">Rp</span>
+                            <span class="currency-amount">{{ number_format((int)($item['jumlah'] ?? 0), 0, ',', '.') }}</span>
+                        </div>
+                    </td>
                 </tr>
-            </tbody>
-        </table>
+            @endforeach
 
-        <div class="terbilang">Terbilang : {{ ucwords(terbilang($grandTotal)) }} rupiah</div>
+            <!-- Subtotal Proyek -->
+            <tr class="yellow-bg">
+                <td colspan="3" class="center bold col-nama-barang">
+                    TOTAL 1 BON PROYEK {{ strtoupper($project['nama_proyek'] ?? '') }}
+                </td>
+                <td class="yellow-bg"></td>
+                <td>
+                    <div class="currency-cell bold">
+                        <span class="currency-symbol">Rp</span>
+                        <span class="currency-amount">{{ number_format($subtotal, 0, ',', '.') }}</span>
+                    </div>
+                </td>
+            </tr>
 
-        <div class="closing">Demikian invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.</div>
-
-        <table style="width: 100%; border: none; margin-top: 5px;">
+            <!-- Rekening Bank -->
             <tr>
-                <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
-                    <div>Hormat Kami,</div>
-                    <div>PT. AGHITSNA KARYA INDAH</div>
-                    <div style="margin-top: 60px; font-weight: bold;">Direktur</div>
+                <td colspan="3" class="bank-info-cell col-nama-barang">
+                    Bank {{ $account->bank_name ?? 'BCA' }} : {{ $account->account_number ?? 'Nomor rekening' }} / A/N {{ strtoupper($account->account_holder ?? 'PEMILIK') }}
+                </td>
+                <td class="bank-info-cell"></td>
+                <td class="bank-info-cell"></td>
+            </tr>
+        @endforeach
+    </table>
+
+    <!-- Catatan Tambahan (NB) -->
+    @if(!empty($invoice->note))
+        <div class="note">
+            NB : {{ $invoice->note }}
+        </div>
+    @else
+        <div class="note">
+          
+        </div>
+    @endif
+
+    <!-- Grand Total -->
+    <div class="grand-total-container">
+        <table class="grand-total-table">
+            <tr>
+                <td style="padding-right: 15px;">TOTAL {{ $totalProjects }} INVOICE:</td>
+                <td class="double-underline" style="min-width: 140px;">
+                    <div class="currency-cell">
+                        <span class="currency-symbol">Rp</span>
+                        <span class="currency-amount">{{ number_format($grandTotal, 0, ',', '.') }}</span>
+                    </div>
                 </td>
             </tr>
         </table>
     </div>
-</body>
 
+    <!-- Tanda Tangan -->
+    <div class="signature-section">
+        @if ($invoice->signedBy)
+            <div class="signature-title">
+                {{ $invoice->signedBy->position }}
+            </div>
+            <div class="signature-space">
+                @if ($invoice->signedBy->signature_image)
+                    <img src="{{ storage_path('app/public/' . $invoice->signedBy->signature_image) }}"
+                        alt="Tanda Tangan">
+                @endif
+            </div>
+            <div class="signature-name">
+                {{ $invoice->signedBy->name }}
+            </div>
+        @else
+            <div class="signature-title">&nbsp;</div>
+            <div class="signature-space"></div>
+            <div class="signature-name">................</div>
+        @endif
+    </div>
+
+</body>
 </html>

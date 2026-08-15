@@ -10,6 +10,18 @@
             <label class="block text-sm font-semibold text-text-primary mb-1">Tanggal Invoice</label>
             <p class="text-gray-900">{{ $invoice->invoice_date->format('d F Y') }}</p>
         </div>
+        <div>
+            <label class="block text-sm font-semibold text-text-primary mb-1">Nama Tanda Tangan</label>
+            <p class="text-gray-900">
+                @if ($invoice->signedBy)
+                    {{ $invoice->signedBy->name }} @if ($invoice->signedBy->position)
+                        ({{ $invoice->signedBy->position }})
+                    @endif
+                @else
+                    -
+                @endif
+            </p>
+        </div>
     </div>
 
     @php

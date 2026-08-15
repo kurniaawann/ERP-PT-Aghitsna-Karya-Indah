@@ -2,6 +2,7 @@
 
 namespace App\Models\Finance;
 
+use App\Models\Sdm\Executive;
 use App\Services\Finance\SemenInvoiceService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,7 @@ class InvoiceSemen extends Model
         'invoice_date',
         'projects',
         'total_amount',
+        'signed_by_id',
     ];
 
     protected $casts = [
@@ -50,6 +52,16 @@ class InvoiceSemen extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke petinggi (Nama Penandatangan) yang menandatangani invoice.
+     *
+     * Diambil dari data petinggi (executives) melalui foreign key signed_by_id.
+     */
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(Executive::class, 'signed_by_id');
     }
 
     /**

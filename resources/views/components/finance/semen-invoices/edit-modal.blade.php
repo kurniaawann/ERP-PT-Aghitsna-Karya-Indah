@@ -12,11 +12,25 @@
         <p class="text-xs text-text-secondary mt-1">No Invoice tidak dapat diubah</p>
     </div>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
-        <input type="date" name="invoice_date" id="edit-invoice-date" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div>
+            <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
+            <input type="date" name="invoice_date" id="edit-invoice-date" class="w-full border rounded p-2" required
+                oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
+                oninput="this.setCustomValidity('')">
+        </div>
+        <div>
+            <label class="block text-text-primary mb-1">Nama Tanda Tangan</label>
+            <select name="signed_by_id" id="edit-signed-by" class="w-full border rounded p-2">
+                <option value="">-- Pilih Nama Tanda Tangan --</option>
+                @foreach ($executives as $executive)
+                    <option value="{{ $executive->id }}">{{ $executive->name }} @if ($executive->position)
+                            ({{ $executive->position }})
+                        @endif
+                    </option>
+                @endforeach
+            </select>
+        </div>
     </div>
 
     {{-- Container: banyak proyek --}}

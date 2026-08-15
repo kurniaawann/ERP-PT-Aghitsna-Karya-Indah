@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Exports\Finance\SemenInvoiceExport;
-use App\Exports\Finance\SemenInvoiceIndexExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreSemenInvoiceRequest;
 use App\Http\Requests\Finance\UpdateSemenInvoiceRequest;
 use App\Models\Finance\InvoiceSemen;
 use App\Models\Inventory\Cement;
+use App\Models\Sdm\Executive;
 use App\Services\Finance\PaymentAccountService;
 use App\Services\Finance\SemenInvoiceService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -39,8 +39,9 @@ class SemenInvoiceController extends Controller
         $invoices = $this->service->baseQuery($request)->paginate(10)->appends($request->all());
 
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
 
-        return view('pages.finance.semen-invoices', compact('invoices', 'paymentAccounts'));
+        return view('pages.finance.semen-invoices', compact('invoices', 'paymentAccounts', 'executives'));
     }
 
     /**
@@ -135,6 +136,7 @@ class SemenInvoiceController extends Controller
         return response()->json([
             'invoice' => $invoice,
             'projects' => is_string($invoice->projects) ? json_decode($invoice->projects, true) : $invoice->projects,
+            'signed_by_id' => $invoice->signed_by_id,
         ]);
     }
 
@@ -220,38 +222,5 @@ class SemenInvoiceController extends Controller
         $date = date('Y-m-d');
 
         return Excel::download(new SemenInvoiceExport($invoiceNumber), "Invoice_Semen_{$safeFileName}_{$date}.xlsx");
-    }
-
-    /**
-     * Export rekap Invoice Semen sebagai PDF.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
-     */
-    public function exportPdf(Request $request)
-    {
-        $invoices = $this->service->baseQuery($request)->get();
-
-        $pdf = Pdf::loadView('exports.finance.semen-invoice-recap-pdf', [
-            'invoices' => $invoices,
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->download('Rekap_Invoice_Semen_' . date('Y-m-d') . '.pdf');
-    }
-
-    /**
-     * Export rekap Invoice Semen sebagai Excel.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
-     */
-    public function exportExcel(Request $request)
-    {
-        $invoices = $this->service->baseQuery($request)->get();
-
-        return Excel::download(
-            new SemenInvoiceIndexExport($invoices, $request->month, $request->year),
-            'Rekap_Invoice_Semen_' . date('Y-m-d') . '.xlsx'
-        );
     }
 }
