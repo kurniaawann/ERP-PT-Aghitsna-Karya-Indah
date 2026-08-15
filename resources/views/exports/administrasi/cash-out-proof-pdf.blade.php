@@ -100,6 +100,10 @@
             font-size: 9px;
         }
 
+        .standard .header-right table {
+            float: right;
+        }
+
         .standard .title {
             font-size: 14px;
             font-weight: bold;
@@ -115,9 +119,22 @@
 
         .standard .signature-title {
             font-weight: bold;
-            margin-bottom: 70px;
+            margin-bottom: 8px;
             font-size: 10px;
             margin-top: 25px;
+        }
+
+        .standard .signature-space {
+            min-height: 65px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .standard .signature-space img {
+            max-height: 55px;
+            max-width: 140px;
+            object-fit: contain;
         }
 
         {{-- ==========================================
@@ -193,6 +210,10 @@
             font-size: 9px;
         }
 
+        .hollow .header-right table {
+            float: right;
+        }
+
         .hollow .signature-col {
             display: table-cell;
             width: 33.33%;
@@ -202,8 +223,21 @@
 
         .hollow .signature-title {
             font-size: 9px;
-            margin-bottom: 60px;
+            margin-bottom: 8px;
             margin-top: 20px;
+        }
+
+        .hollow .signature-space {
+            min-height: 55px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .hollow .signature-space img {
+            max-height: 55px;
+            max-width: 140px;
+            object-fit: contain;
         }
 
         {{-- ==========================================
@@ -271,11 +305,93 @@
     @foreach ($cashOuts as $index => $cashOut)
 
         {{-- Page break setiap 2 record (2 form per halaman) --}}
-        @if ($index > 0 && $index % 2 == 0)
+        @if ($index > 0 && $index % 1 == 0)
             <div style="page-break-before: always;"></div>
         @endif
 
-        <div class="container {{ $cashOut->template_type ?? 'standard' }}">
+        @php
+    // Data penandatangan dari snapshot Data Petinggi.
+    // Nilai null, string "null", atau string kosong dianggap tidak ada.
+    $sig = is_array($cashOut->signatures) ? $cashOut->signatures : [];
+    $isHollow = ($cashOut->template_type ?? 'standard') === 'hollow';
+    $isBkc = ($cashOut->template_type ?? 'standard') === 'bkc';
+    $containerClass = $isHollow ? 'hollow' : 'standard';
+    $docTitle = $isBkc ? 'BUKTI CEK/GIRO KELUAR' : ($isHollow ? 'BUKTI KAS KELUAR' : 'BUKTI KAS KELUAR');
+    $docNoLabel = $isBkc ? 'BKC No.' : 'BKK No.';
+
+    // Helper untuk memastikan null / "null" / kosong tidak ditampilkan
+    $validValue = function ($value) {
+        return $value !== null
+            && trim((string) $value) !== ''
+            && strtolower(trim((string) $value)) !== 'null';
+    };
+
+    // =========================
+    // DIREKTUR / MANAGER
+    // =========================
+    $directorSig = $sig['direktur'] ?? [];
+    $directorTitle = $isHollow
+        ? 'MENYETUJUI,<br><strong>MANAGER</strong>'
+        : 'DIREKTUR,';
+
+    $directorName = $directorSig['name'] ?? null;
+
+    if (!$validValue($directorName)) {
+        $directorName = $cashOut->director;
+
+        if (!$validValue($directorName)) {
+            $directorName = $isHollow
+                ? 'SISWORO SUBENO'
+                : 'Zulkarnain,ST.,MT';
+        }
+    }
+
+    $directorImage = $validValue($directorSig['signature_image'] ?? null)
+        ? $directorSig['signature_image']
+        : null;
+
+
+    // =========================
+    // KABAG KEUANGAN
+    // =========================
+    $financeSig = $sig['kabag_keuangan'] ?? [];
+    $financeTitle = $isHollow
+        ? 'MENGETAHUI,<br><strong>KABAG.KEUANGAN</strong>'
+        : 'KABAG.KEUANGAN,';
+
+    $financeName = $financeSig['name'] ?? null;
+
+    if (!$validValue($financeName)) {
+        $financeName = $cashOut->finance_head;
+
+        if (!$validValue($financeName)) {
+            $financeName = 'Kamila,AMK';
+        }
+    }
+
+    $financeImage = $validValue($financeSig['signature_image'] ?? null)
+        ? $financeSig['signature_image']
+        : null;
+
+
+    // =========================
+    // DITERIMA OLEH
+    // =========================
+    $receivedSig = $sig['diterima_oleh'] ?? [];
+    $receivedTitle = 'DITERIMA OLEH,';
+
+    $receivedName = $receivedSig['name'] ?? null;
+
+    if (!$validValue($receivedName)) {
+        $receivedName = '_________________';
+    }
+
+    $receivedImage = $validValue($receivedSig['signature_image'] ?? null)
+        ? $receivedSig['signature_image']
+        : null;
+@endphp
+
+        <div class="container {{ $containerClass }}">
 
             {{-- ==========================================
                  TEMPLATE: HOLLOW
@@ -291,12 +407,12 @@
                     </div>
                     <div class="header-center">
                         <div class="hollow-title">HOLLOW</div>
-                        <div class="main-title">BUKTI KAS KELUAR</div>
+                        <div class="main-title">{{ $docTitle }}</div>
                     </div>
                     <div class="header-right">
                         <table style="border-collapse: collapse;">
                             <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>BKK No.</strong></td>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>{{ $docNoLabel }}</strong></td>
                                 <td style="padding-right: 5px;">:</td>
                                 <td>{{ $cashOut->bkk_no }}</td>
                             </tr>
@@ -351,24 +467,34 @@
                 {{-- Tanda Tangan: Manager, Kabag Keuangan, Diterima Oleh --}}
                 <div class="signature-section">
                     <div class="signature-col">
-                        <div class="signature-title">
-                            <strong>MENYETUJUI,</strong><br>
-                            <strong>MANAGER</strong>
+                        <div class="signature-title">{!! $directorTitle !!}</div>
+                        <div class="signature-space">
+                            @if ($directorImage)
+                                <img src="{{ storage_path('app/public/' . $directorImage) }}"
+                                    alt="Tanda tangan {{ $directorName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
+                            @endif
                         </div>
-                        <div class="signature-name">( {{ $cashOut->director ?? 'SISWORO SUBENO' }} )</div>
+                        <div class="signature-name">( {{ $directorName }} )</div>
                     </div>
                     <div class="signature-col">
-                        <div class="signature-title">
-                            <strong>MENGETAHUI,</strong><br>
-                            <strong>KABAG.KEUANGAN</strong>
+                        <div class="signature-title">{!! $financeTitle !!}</div>
+                        <div class="signature-space">
+                            @if ($financeImage)
+                                <img src="{{ storage_path('app/public/' . $financeImage) }}"
+                                    alt="Tanda tangan {{ $financeName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
+                            @endif
                         </div>
-                        <div class="signature-name">( {{ $cashOut->finance_head ?? 'Kamila,AMK' }} )</div>
+                        <div class="signature-name">( {{ $financeName }} )</div>
                     </div>
                     <div class="signature-col">
-                        <div class="signature-title">
-                            <strong>DITERIMA OLEH,</strong>
+                        <div class="signature-title">{!! $receivedTitle !!}</div>
+                        <div class="signature-space">
+                            @if ($receivedImage)
+                                <img src="{{ storage_path('app/public/' . $receivedImage) }}"
+                                    alt="Tanda tangan {{ $receivedName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
+                            @endif
                         </div>
-                        <div class="signature-name">( _________________ )</div>
+                        <div class="signature-name">( {{ $receivedName }} )</div>
                     </div>
                 </div>
 
@@ -385,12 +511,12 @@
                         </div>
                     </div>
                     <div class="header-center">
-                        <div class="title">BUKTI KAS KELUAR</div>
+                        <div class="title">{{ $docTitle }}</div>
                     </div>
                     <div class="header-right">
                         <table style="border-collapse: collapse;">
                             <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>BKK No.</strong></td>
+                                <td style="white-space: nowrap; padding-right: 5px;"><strong>{{ $docNoLabel }}</strong></td>
                                 <td style="padding-right: 5px;">:</td>
                                 <td>{{ $cashOut->bkk_no }}</td>
                             </tr>
@@ -443,16 +569,34 @@
                 {{-- Tanda Tangan: Direktur, Kabag Keuangan, Diterima Oleh --}}
                 <div class="signature-section">
                     <div class="signature-col">
-                        <div class="signature-title">DIREKTUR,</div>
-                        <div class="signature-name">( {{ $cashOut->director ?? 'Zulkarnain,ST.,MT' }} )</div>
+                        <div class="signature-title">{!! $directorTitle !!}</div>
+                        <div class="signature-space">
+                            @if ($directorImage)
+                                <img src="{{ storage_path('app/public/' . $directorImage) }}"
+                                    alt="Tanda tangan {{ $directorName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
+                            @endif
+                        </div>
+                        <div class="signature-name">( {{ $directorName }} )</div>
                     </div>
                     <div class="signature-col">
-                        <div class="signature-title">KABAG.KEUANGAN,</div>
-                        <div class="signature-name">( {{ $cashOut->finance_head ?? 'Kamila,AMK' }} )</div>
+                        <div class="signature-title">{!! $financeTitle !!}</div>
+                        <div class="signature-space">
+                            @if ($financeImage)
+                                <img src="{{ storage_path('app/public/' . $financeImage) }}"
+                                    alt="Tanda tangan {{ $financeName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
+                            @endif
+                        </div>
+                        <div class="signature-name">( {{ $financeName }} )</div>
                     </div>
                     <div class="signature-col">
-                        <div class="signature-title">DITERIMA OLEH,</div>
-                        <div class="signature-name">( _________________ )</div>
+                        <div class="signature-title">{!! $receivedTitle !!}</div>
+                        <div class="signature-space">
+                            @if ($receivedImage)
+                                <img src="{{ storage_path('app/public/' . $receivedImage) }}"
+                                    alt="Tanda tangan {{ $receivedName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
+                            @endif
+                        </div>
+                        <div class="signature-name">( {{ $receivedName }} )</div>
                     </div>
                 </div>
 

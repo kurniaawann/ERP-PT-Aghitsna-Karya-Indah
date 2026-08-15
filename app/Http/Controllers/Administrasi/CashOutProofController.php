@@ -7,6 +7,7 @@ use App\Http\Requests\Administrasi\StoreCashOutProofRequest;
 use App\Http\Requests\Administrasi\UpdateCashOutProofRequest;
 use App\Models\Administrasi\CashOutProof;
 use App\Services\CashOutProofService;
+use App\Models\Sdm\Executive;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -40,7 +41,13 @@ class CashOutProofController extends Controller
         $year = $request->integer('year') ?: null;
         $cashOuts = $this->service->getPaginated($search, $month, $year);
 
-        return view('pages.administrasi.cash-out-proof', compact('cashOuts', 'search'));
+        // Data petinggi (Executive) untuk dropdown penetapan Direktur/Manager
+        // dan Kabag Keuangan pada form tambah & edit.
+        $executives = Executive::where('created_by', auth()->id())
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.administrasi.cash-out-proof', compact('cashOuts', 'search', 'executives'));
     }
 
     /**

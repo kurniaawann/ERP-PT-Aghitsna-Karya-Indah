@@ -4,12 +4,13 @@
 
      Field Form:
      - Tanggal (date picker, default: hari ini)
-     - Tipe Template (dropdown: standard/hollow)
+     - Tipe Template (dropdown: standard/hollow/bkc)
      - Dibayarkan Kepada (text input)
      - Jumlah (Rp) (numeric input dengan format Rupiah)
      - Keterangan (textarea, opsional)
-     - Direktur/Manager (text input, default: Zulkarnain,ST.,MT atau SISWORO SUBENO)
-     - Kabag Keuangan (text input, default: Kamila,AMK)
+     - Direktur/Manager (dropdown Data Petinggi, opsional)
+     - Kabag Keuangan (dropdown Data Petinggi, opsional)
+     - Diterima Oleh (dropdown Data Petinggi, opsional)
 
      Catatan:
      - Label Direktur/Manager berubah otomatis berdasarkan tipe template yang dipilih
@@ -19,6 +20,16 @@
 <x-modal id="addModal" title="Tambah Bukti Kas Keluar" action="{{ route('cash-out-proof.store') }}"
     method="POST" buttonText="Simpan">
 
+    {{-- Options petinggi (dari modul Data Petinggi) untuk dropdown
+         Direktur/Manager, Kabag Keuangan, & Diterima Oleh. Nilai yang
+         dikirim adalah ID petinggi; disimpan sebagai snapshot signatures. --}}
+    @php
+        $executiveOptions = $executives->map(fn ($e) => [
+            'value' => (string) $e->id,
+            'label' => $e->name.($e->position ? ' — '.$e->position : ''),
+        ])->values();
+    @endphp
+
     {{-- Field: Tanggal --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
@@ -27,14 +38,17 @@
             oninput="this.setCustomValidity('')">
     </div>
 
-    {{-- Field: Tipe Template (Standard / Hollow) --}}
+    {{-- Field: Tipe Template (Standard / Hollow / BKC) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tipe Template <span class="text-error">*</span></label>
         <select name="template_type" id="addTemplateType" class="w-full border rounded p-2" required
             oninvalid="this.setCustomValidity('Tipe template tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
             <option value="standard">Standard (BUKTI KAS KELUAR)</option>
-            <option value="hollow">Hollow (HOLLOW - BUKTI KAS KELUAR)</option>
+            @if (auth()->user()->isSuperAdmin())
+                <option value="hollow">Hollow (HOLLOW - BUKTI KAS KELUAR)</option>
+            @endif
+            <option value="bkc">Bukti Cek/Giro (BUKTI CEK/GIRO KELUAR)</option>
         </select>
         <small class="text-gray-500 text-xs">Pilih format template yang akan digunakan</small>
     </div>
@@ -66,19 +80,24 @@
             placeholder="Masukkan keterangan (opsional)"></textarea>
     </div>
 
-    {{-- Field: Direktur / Manager (label berubah berdasarkan tipe template) --}}
+    {{-- Field: Direktur / Manager (dari Data Petinggi, label berubah sesuai tipe template) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1" id="addDirectorLabel">Direktur</label>
-        <input type="text" name="director" id="addDirectorInput" class="w-full border rounded p-2"
-            placeholder="Zulkarnain,ST.,MT (default)" maxlength="255">
+        <x-forms.searchable-select name="signatures[direktur]" id="addDirector" label="Direktur"
+            placeholder="Cari petinggi..." :options="$executiveOptions" />
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
 
-    {{-- Field: Kabag Keuangan --}}
+    {{-- Field: Kabag Keuangan (dari Data Petinggi) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kabag Keuangan</label>
-        <input type="text" name="finance_head" class="w-full border rounded p-2"
-            placeholder="Kamila,AMK (default)" maxlength="255">
+        <x-forms.searchable-select name="signatures[kabag_keuangan]" id="addFinanceHead" label="Kabag Keuangan"
+            placeholder="Cari petinggi..." :options="$executiveOptions" />
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
+    </div>
+
+    {{-- Field: Diterima Oleh (dari Data Petinggi) --}}
+    <div class="mb-3">
+        <x-forms.searchable-select name="signatures[diterima_oleh]" id="addReceivedBy" label="Diterima Oleh"
+            placeholder="Cari petinggi..." :options="$executiveOptions" />
+        <small class="text-gray-500 text-xs">Pilih petinggi yang menerima uang (opsional)</small>
     </div>
 </x-modal>

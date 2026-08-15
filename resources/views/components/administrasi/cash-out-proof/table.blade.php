@@ -8,6 +8,7 @@
      - Dibayarkan Kepada
      - Jumlah (Rp)
      - Keterangan
+     - Tipe Template
      - Aksi (Edit)
 
      Fitur:
@@ -35,6 +36,7 @@
                             <th class="p-2 text-left">Dibayarkan Kepada</th>
                             <th class="p-2 text-right">Jumlah (Rp)</th>
                             <th class="p-2 text-left">Keterangan</th>
+                            <th class="p-2 text-center">Tipe Template</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -80,6 +82,17 @@
                                     @endif
                                 </td>
 
+                                {{-- Tipe Template --}}
+                                <td class="p-2 text-center">
+                                    @if ($cashOut->template_type == 'hollow')
+                                        <span class="inline-block px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">Hollow</span>
+                                    @elseif ($cashOut->template_type == 'bkc')
+                                        <span class="inline-block px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700">Cek/Giro</span>
+                                    @else
+                                        <span class="inline-block px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">Standard</span>
+                                    @endif
+                                </td>
+
                                 {{-- Tombol Aksi --}}
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-2">
@@ -98,7 +111,7 @@
 
                             {{-- Empty State --}}
                             <tr>
-                                <td colspan="8" class="text-center p-4 text-text-secondary">
+                                <td colspan="9" class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
                             </tr>

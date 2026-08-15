@@ -21,6 +21,7 @@ use App\Models\User;
  * @property string $description Keterangan/deskripsi transaksi (opsional)
  * @property string $director Nama Direktur atau Manager (tergantung template)
  * @property string $finance_head Nama Kabag Keuangan
+ * @property array|null $signatures Snapshot petinggi untuk blok tanda tangan
  * @property string $template_type Tipe template: "standard" atau "hollow"
  */
 class CashOutProof extends Model
@@ -56,6 +57,7 @@ class CashOutProof extends Model
         'description',
         'director',
         'finance_head',
+        'signatures',
         'template_type',
         'created_by',
     ];
@@ -68,6 +70,7 @@ class CashOutProof extends Model
     protected $casts = [
         'date' => 'date',
         'amount' => 'integer',
+        'signatures' => 'array',
     ];
 
     /**

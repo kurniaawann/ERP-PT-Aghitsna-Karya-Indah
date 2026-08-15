@@ -6,7 +6,7 @@
      - BKK No. (read-only, hanya tampilan)
      - Cek No. (read-only, hanya tampilan)
      - Tanggal (date picker)
-     - Tipe Template (dropdown: standard/hollow)
+     - Tipe Template (dropdown: standard/hollow/bkc)
      - Dibayarkan Kepada (text input)
      - Jumlah (Rp) (numeric input dengan format Rupiah)
      - Keterangan (textarea, opsional)
@@ -21,6 +21,33 @@
 
 <x-modal id="editModal-{{ $cashOut->bkk_no }}" title="Edit Bukti Kas Keluar"
     action="{{ route('cash-out-proof.update', $cashOut->bkk_no) }}" method="PUT" buttonText="Update">
+
+    {{-- Options petinggi (dari modul Data Petinggi) untuk dropdown
+         Direktur/Manager, Kabag Keuangan, & Diterima Oleh. Nilai yang
+         dikirim adalah ID petinggi; disimpan sebagai snapshot signatures.
+         Untuk data lama tanpa snapshot, nilai saat ini (nama) dicocokkan
+         dengan petinggi agar dropdown tetap terpilih. --}}
+    @php
+        $executiveOptions = $executives->map(fn ($e) => [
+            'value' => (string) $e->id,
+            'label' => $e->name.($e->position ? ' — '.$e->position : ''),
+        ])->values();
+
+        $executiveByName = $executives->keyBy('name');
+        $storedSignatures = is_array($cashOut->signatures) ? $cashOut->signatures : [];
+
+        $selectedDirektur = $storedSignatures['direktur']['id'] ?? null;
+        if (! $selectedDirektur && $cashOut->director && $executiveByName->has($cashOut->director)) {
+            $selectedDirektur = $executiveByName[$cashOut->director]->id;
+        }
+
+        $selectedFinanceHead = $storedSignatures['kabag_keuangan']['id'] ?? null;
+        if (! $selectedFinanceHead && $cashOut->finance_head && $executiveByName->has($cashOut->finance_head)) {
+            $selectedFinanceHead = $executiveByName[$cashOut->finance_head]->id;
+        }
+
+        $selectedReceivedBy = $storedSignatures['diterima_oleh']['id'] ?? null;
+    @endphp
 
     {{-- Field: BKK No. (read-only) --}}
     <div class="mb-3">
@@ -45,7 +72,7 @@
             oninput="this.setCustomValidity('')">
     </div>
 
-    {{-- Field: Tipe Template (Standard / Hollow) --}}
+    {{-- Field: Tipe Template (Standard / Hollow / BKC) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Tipe Template <span class="text-error">*</span></label>
         <select name="template_type" id="editTemplateType-{{ $cashOut->bkk_no }}"
@@ -55,8 +82,13 @@
             <option value="standard" {{ $cashOut->template_type == 'standard' ? 'selected' : '' }}>
                 Standard (BUKTI KAS KELUAR)
             </option>
-            <option value="hollow" {{ $cashOut->template_type == 'hollow' ? 'selected' : '' }}>
-                Hollow (HOLLOW - BUKTI KAS KELUAR)
+            @if (auth()->user()->isSuperAdmin() || $cashOut->template_type == 'hollow')
+                <option value="hollow" {{ $cashOut->template_type == 'hollow' ? 'selected' : '' }}>
+                    Hollow (HOLLOW - BUKTI KAS KELUAR)
+                </option>
+            @endif
+            <option value="bkc" {{ $cashOut->template_type == 'bkc' ? 'selected' : '' }}>
+                Bukti Cek/Giro (BUKTI CEK/GIRO KELUAR)
             </option>
         </select>
         <small class="text-gray-500 text-xs">Pilih format template yang akan digunakan</small>
@@ -91,25 +123,28 @@
             placeholder="Masukkan keterangan (opsional)">{{ $cashOut->description }}</textarea>
     </div>
 
-    {{-- Field: Direktur / Manager (label berubah berdasarkan tipe template) --}}
+    {{-- Field: Direktur / Manager (dari Data Petinggi, label berubah sesuai tipe template) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1"
-            id="editDirectorLabel-{{ $cashOut->bkk_no }}">
-            {{ $cashOut->template_type == 'hollow' ? 'Manager' : 'Direktur' }}
-        </label>
-        <input type="text" name="director" id="editDirectorInput-{{ $cashOut->bkk_no }}"
-            class="w-full border rounded p-2"
-            placeholder="{{ $cashOut->template_type == 'hollow' ? 'SISWORO SUBENO (default)' : 'Zulkarnain,ST.,MT (default)' }}"
-            maxlength="255" value="{{ $cashOut->director }}">
+        <x-forms.searchable-select name="signatures[direktur]" id="editDirector-{{ $cashOut->bkk_no }}"
+            label="{{ $cashOut->template_type == 'hollow' ? 'Manager' : 'Direktur' }}"
+            placeholder="Cari petinggi..." :options="$executiveOptions"
+            :selected="$selectedDirektur" />
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
 
-    {{-- Field: Kabag Keuangan --}}
+    {{-- Field: Kabag Keuangan (dari Data Petinggi) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kabag Keuangan</label>
-        <input type="text" name="finance_head" class="w-full border rounded p-2"
-            placeholder="Kamila,AMK (default)" maxlength="255"
-            value="{{ $cashOut->finance_head }}">
+        <x-forms.searchable-select name="signatures[kabag_keuangan]" id="editFinanceHead-{{ $cashOut->bkk_no }}"
+            label="Kabag Keuangan" placeholder="Cari petinggi..." :options="$executiveOptions"
+            :selected="$selectedFinanceHead" />
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
+    </div>
+
+    {{-- Field: Diterima Oleh (dari Data Petinggi) --}}
+    <div class="mb-3">
+        <x-forms.searchable-select name="signatures[diterima_oleh]" id="editReceivedBy-{{ $cashOut->bkk_no }}"
+            label="Diterima Oleh" placeholder="Cari petinggi..." :options="$executiveOptions"
+            :selected="$selectedReceivedBy" />
+        <small class="text-gray-500 text-xs">Pilih petinggi yang menerima uang (opsional)</small>
     </div>
 </x-modal>

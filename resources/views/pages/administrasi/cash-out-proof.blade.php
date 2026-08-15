@@ -87,7 +87,7 @@
          ═══════════════════════════════════════════════════════════════ --}}
 
     {{-- Modal Form Tambah Bukti Kas Keluar --}}
-    @include('components.administrasi.cash-out-proof.add-modal')
+    @include('components.administrasi.cash-out-proof.add-modal', ['executives' => $executives])
 
     {{-- ═══════════════════════════════════════════════════════════════
          MODAL EDIT: Form edit bukti kas keluar (satu modal per baris).
@@ -95,12 +95,8 @@
          modal edit untuk masing-masing baris data.
          ═══════════════════════════════════════════════════════════════ --}}
     @foreach ($cashOuts as $cashOut)
-        @include('components.administrasi.cash-out-proof.edit-modal', ['cashOut' => $cashOut])
+        @include('components.administrasi.cash-out-proof.edit-modal', ['cashOut' => $cashOut, 'executives' => $executives])
     @endforeach
-
-    {{-- ═══════════════════════════════════════════════════════════════
-         MODAL HAPUS: Konfirmasi hapus massal
-         ═══════════════════════════════════════════════════════════════ --}}
 
     {{-- Modal Konfirmasi Hapus Massal --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true"

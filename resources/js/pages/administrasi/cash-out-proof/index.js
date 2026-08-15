@@ -95,17 +95,12 @@ window.printSelected = printSelected;
  * 3. Panggil `apply()` sekali di awal untuk menampilkan label default.
  */
 function initDirectorLabel() {
-    const bindLabel = function (templateSelect, labelEl, inputEl) {
-        if (!templateSelect || !labelEl || !inputEl) return;
+    const bindLabel = function (templateSelect, labelSelector, inputEl) {
+        if (!templateSelect || !labelSelector || !inputEl) return;
 
         const apply = function () {
-            if (templateSelect.value === 'hollow') {
-                labelEl.textContent = 'Manager';
-                inputEl.placeholder = 'SISWORO SUBENO (default)';
-            } else {
-                labelEl.textContent = 'Direktur';
-                inputEl.placeholder = 'Zulkarnain,ST.,MT (default)';
-            }
+            labelSelector.textContent = (templateSelect.value === 'hollow') ? 'Manager' : 'Direktur';
+            inputEl.placeholder = 'Cari petinggi...';
         };
 
         templateSelect.addEventListener('change', apply);
@@ -114,12 +109,16 @@ function initDirectorLabel() {
 
     const addTemplate = document.getElementById('addTemplateType');
     if (addTemplate) {
-        bindLabel(addTemplate, document.getElementById('addDirectorLabel'), document.getElementById('addDirectorInput'));
+        const addDirectorLabel = document.querySelector('label[for="addDirector-input"]');
+        const addDirectorInput = document.getElementById('addDirector-input');
+        bindLabel(addTemplate, addDirectorLabel, addDirectorInput);
     }
 
     document.querySelectorAll('[id^="editTemplateType-"]').forEach(function (select) {
         const suffix = select.id.replace('editTemplateType-', '');
-        bindLabel(select, document.getElementById('editDirectorLabel-' + suffix), document.getElementById('editDirectorInput-' + suffix));
+        const editDirectorLabel = document.querySelector('label[for="editDirector-' + suffix + '-input"]');
+        const editDirectorInput = document.getElementById('editDirector-' + suffix + '-input');
+        bindLabel(select, editDirectorLabel, editDirectorInput);
     });
 }
 

@@ -34,7 +34,19 @@ class UpdateCashOutProofRequest extends FormRequest
             'description' => 'nullable|string',
             'director' => 'nullable|string|max:255',
             'finance_head' => 'nullable|string|max:255',
-            'template_type' => 'required|in:standard,hollow',
+            'signatures' => 'nullable|array',
+            'signatures.*' => 'nullable|integer|exists:executives,id',
+            'template_type' => [
+                'required',
+                'in:standard,hollow,bkc',
+                function ($attribute, $value, $fail) {
+                    $current = $this->route('cashOutProof')->template_type ?? null;
+                    $allowed = auth()->user()->role === 'superadmin' || $current === 'hollow';
+                    if ($value === 'hollow' && ! $allowed) {
+                        $fail('Template Hollow hanya dapat digunakan oleh Super Admin.');
+                    }
+                },
+            ],
         ];
     }
 
@@ -54,8 +66,9 @@ class UpdateCashOutProofRequest extends FormRequest
             'date.date' => 'Format tanggal tidak valid.',
             'director.max' => 'Nama direktur maksimal 255 karakter.',
             'finance_head.max' => 'Nama kabag keuangan maksimal 255 karakter.',
+            'signatures.*.exists' => 'Petinggi yang dipilih tidak valid.',
             'template_type.required' => 'Tipe template tidak boleh kosong.',
-            'template_type.in' => 'Tipe template harus standard atau hollow.',
+            'template_type.in' => 'Tipe template harus standard, hollow, atau bkc.',
         ];
     }
 }

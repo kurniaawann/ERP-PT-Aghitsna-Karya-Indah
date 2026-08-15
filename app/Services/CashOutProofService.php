@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Administrasi\CashOutProof;
+use App\Models\Sdm\Executive;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -121,7 +122,8 @@ class CashOutProofService
      *
      * Fungsi ini menangani:
      * - Normalisasi format mata uang pada field amount
-     * - Pengisian default value untuk director dan finance_head jika kosong
+     * - Penyusunan snapshot petinggi (signatures) dari ID terpilih
+     * - Sinkronisasi kolom legacy director/finance_head dengan nama petinggi
      *
      * @param  array<string, mixed>  $data  Data input dari form
      * @return array<string, mixed> Data yang sudah disiapkan untuk disimpan
@@ -130,6 +132,17 @@ class CashOutProofService
     {
         // Normalisasi format mata uang (hilangkan karakter non-angka)
         $data['amount'] = InputNormalizer::normalizeCurrency($data['amount'] ?? null);
+
+        // Susun snapshot petinggi untuk blok tanda tangan PDF
+        $signatures = $this->resolveSignatureSnapshot($data['signatures'] ?? []);
+        $data['signatures'] = $signatures;
+
+        // Sinkronkan kolom legacy director/finance_head agar tetap berisi nama
+        // (fallback cetakan serta data lama yang belum punya snapshot).
+        $data['director'] = ($signatures['direktur']['name'] ?? null)
+            ?: ($data['director'] ?? null);
+        $data['finance_head'] = ($signatures['kabag_keuangan']['name'] ?? null)
+            ?: ($data['finance_head'] ?? null);
 
         // Set default untuk director jika kosong
         if (empty($data['director'])) {
@@ -142,6 +155,47 @@ class CashOutProofService
         }
 
         return $data;
+    }
+
+    /**
+     * Menyusun snapshot petinggi untuk blok tanda tangan BKK.
+     *
+     * User memilih petinggi per peran (direktur, kabag_keuangan,
+     * diterima_oleh) pada form tambah/edit; snapshot berisi id, nama,
+     * jabatan, dan gambar tanda tangan. Peran yang tidak dipilih bernilai
+     * null sehingga PDF menampilkan fallback sesuai template.
+     *
+     * @param  array<string, mixed>  $signatureIds  Peta peran => id petinggi
+     * @return array<string, array<string, mixed>|null>
+     */
+    public function resolveSignatureSnapshot(array $signatureIds): array
+    {
+        $roles = ['direktur', 'kabag_keuangan', 'diterima_oleh'];
+
+        $ids = array_values(array_filter(array_map(
+            fn ($value) => (int) $value,
+            array_intersect_key($signatureIds, array_flip($roles))
+        )));
+
+        $executives = Executive::where('created_by', auth()->id())
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $snapshot = [];
+        foreach ($roles as $role) {
+            $id = isset($signatureIds[$role]) ? (int) $signatureIds[$role] : null;
+            $executive = $id ? $executives->get($id) : null;
+
+            $snapshot[$role] = $executive ? [
+                'id' => $executive->id,
+                'name' => $executive->name,
+                'position' => $executive->position,
+                'signature_image' => $executive->signature_image,
+            ] : null;
+        }
+
+        return $snapshot;
     }
 
     /**
