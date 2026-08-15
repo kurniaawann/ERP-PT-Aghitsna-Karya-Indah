@@ -108,10 +108,16 @@
         <div class="flex items-center gap-2 mb-2">
             <i class="fa-solid fa-pen-nib text-primary"></i>
             <p class="text-sm font-semibold text-text-primary">Penanda Tangan</p>
+            <button type="button" id="apply-common-signatories"
+                class="ml-auto inline-flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 opacity-50 cursor-not-allowed"
+                disabled title="Salin penanda tangan proyek pertama ke semua proyek yang dipilih">
+                <i class="fa-solid fa-copy"></i> Tanda Tangan Sama Semua
+            </button>
         </div>
         <p class="text-xs text-text-secondary mb-3">Opsional — tidak wajib diisi. Setiap proyek bisa memiliki penanda
             tangan yang berbeda. Data diambil dari modul Data Petinggi; jika dikosongkan, blok tanda tangan pada PDF
-            ditampilkan sebagai garis putus-putus.</p>
+            ditampilkan sebagai garis putus-putus. Gunakan tombol <strong>"Tanda Tangan Sama Semua"</strong> untuk
+            menyalin penanda tangan proyek pertama ke seluruh proyek yang dipilih.</p>
         <div id="signatory-sections"></div>
     </div>
 

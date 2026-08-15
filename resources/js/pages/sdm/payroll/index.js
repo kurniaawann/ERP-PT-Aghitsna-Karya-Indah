@@ -325,6 +325,7 @@ function renderSignatorySections() {
     projects.forEach(function (project) {
         const block = document.createElement('div');
         block.className = 'mb-4 p-3 bg-surface-base border border-border-strong rounded-lg';
+        block.dataset.project = project;
 
         const projectAttr = escapeAttr(project);
 
@@ -342,7 +343,7 @@ function renderSignatorySections() {
             // Pulihkan pilihan yang tersimpan (tidak hilang saat re-render)
             const saved = signatorySelections.get(project + '\u0000' + roleKey);
 
-            blockHTML += '<div class="searchable-select-wrapper mb-3" data-select-id="' + inputId + '">';
+            blockHTML += '<div class="searchable-select-wrapper mb-3" data-select-id="' + inputId + '" data-role="' + roleKey + '">';
             blockHTML += '<label class="block text-text-primary mb-1" for="' + inputId + '-input">' +
                 roleLabel + ' <span class="text-xs text-text-label">(opsional)</span></label>';
             blockHTML += '<div class="relative">';
@@ -381,6 +382,93 @@ function renderSignatorySections() {
     if (typeof window.initSearchableSelects === 'function') {
         window.initSearchableSelects(signatorySectionsContainer);
     }
+
+    // Segarkan status tombol "Tanda Tangan Sama Semua" (aktif bila >= 2 proyek).
+    updateApplyCommonSignatoriesButton();
+}
+
+/**
+ * Menyalin penanda tangan proyek pertama ke seluruh proyek lain yang terpilih
+ * pada modal Generate.
+ *
+ * Alur:
+ * - Ambil blok penanda tangan proyek pertama (urutan sesuai pilihan proyek).
+ * - Untuk tiap peran (disetujui/diperiksa/dibuat), salin nilai (ID petinggi +
+ *   label) dari proyek pertama ke blok proyek lain melalui hidden input &
+ *   input pencarian komponen searchable-select.
+ * - Perbarui juga map signatorySelections agar pilihan tetap persisten saat
+ *   blok proyek dirender ulang (mis. user menambah/menghapus proyek lain).
+ *
+ * @returns {void}
+ */
+function applyCommonSignatories() {
+    if (!signatorySectionsContainer) return;
+
+    const blocks = signatorySectionsContainer.querySelectorAll('[data-project]');
+    if (blocks.length < 2) return;
+
+    const roleKeys = ['disetujui', 'diperiksa', 'dibuat'];
+    const firstBlock = blocks[0];
+    const source = {};
+
+    roleKeys.forEach(function (roleKey) {
+        const wrapper = firstBlock.querySelector('.searchable-select-wrapper[data-role="' + roleKey + '"]');
+        if (!wrapper) return;
+        const hidden = wrapper.querySelector('.searchable-select-hidden');
+        const searchInput = wrapper.querySelector('.searchable-select-input');
+        source[roleKey] = {
+            value: hidden ? hidden.value : '',
+            label: searchInput ? searchInput.value : '',
+        };
+    });
+
+    blocks.forEach(function (block, index) {
+        if (index === 0) return;
+        const project = block.dataset.project;
+
+        roleKeys.forEach(function (roleKey) {
+            const wrapper = block.querySelector('.searchable-select-wrapper[data-role="' + roleKey + '"]');
+            if (!wrapper || !source[roleKey]) return;
+
+            const hidden = wrapper.querySelector('.searchable-select-hidden');
+            const searchInput = wrapper.querySelector('.searchable-select-input');
+            if (hidden) hidden.value = source[roleKey].value;
+            if (searchInput) searchInput.value = source[roleKey].label;
+
+            signatorySelections.set(project + '\u0000' + roleKey, {
+                id: source[roleKey].value,
+                label: source[roleKey].label,
+            });
+        });
+    });
+
+    // Umpan balik visual singkat pada tombol.
+    const applyBtn = document.getElementById('apply-common-signatories');
+    if (applyBtn) {
+        const originalHtml = applyBtn.innerHTML;
+        applyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Diterapkan';
+        clearTimeout(applyCommonSignatories.flashTimer);
+        applyCommonSignatories.flashTimer = setTimeout(function () {
+            applyBtn.innerHTML = originalHtml;
+            updateApplyCommonSignatoriesButton();
+        }, 1500);
+    }
+}
+
+/**
+ * Mengaktifkan/menonaktifkan tombol "Tanda Tangan Sama Semua" berdasarkan
+ * jumlah proyek yang terpilih (butuh minimal 2 proyek agar bermakna).
+ *
+ * @returns {void}
+ */
+function updateApplyCommonSignatoriesButton() {
+    const applyBtn = document.getElementById('apply-common-signatories');
+    if (!applyBtn) return;
+
+    const disabled = getSelectedProjects().length < 2;
+    applyBtn.disabled = disabled;
+    applyBtn.classList.toggle('opacity-50', disabled);
+    applyBtn.classList.toggle('cursor-not-allowed', disabled);
 }
 
 // ==========================================
@@ -1175,6 +1263,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 label: option.dataset.label || ''
             });
         });
+    }
+
+    // Tombol "Tanda Tangan Sama Semua": salin penanda tangan proyek pertama
+    // ke seluruh proyek lain yang terpilih.
+    const applySignatoriesBtn = document.getElementById('apply-common-signatories');
+    if (applySignatoriesBtn) {
+        applySignatoriesBtn.addEventListener('click', applyCommonSignatories);
     }
 
     // Load weeks when month or year changes in generate modal
