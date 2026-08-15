@@ -668,12 +668,18 @@ class ProjectFinancialReportService
     }
 
     /**
-     * Membuat/memperbarui satu baris pengeluaran "Kasbon Divisi" pada Laporan
+     * Membuat/memperbarui satu baris INFORMASI "Kasbon Divisi" pada Laporan
      * Keuangan Proyek ketika kasbon divisi ber-proyek dilunasi otomatis saat
      * payroll proyek tersebut dibayar.
      *
      * Baris dicatat pada kategori "Upah Pekerja" (sama dengan baris agregat
      * Upah Kerja payroll paid) — bukan kategori kasbon terpisah.
+     *
+     * Baris ditandai is_informational = true sehingga TIDAK memengaruhi total
+     * uang masuk/keluar pada laporan (lihat getGrandTotals(), PDF, Excel, dan
+     * ringkasan rekap yang memfilter is_informational). Nominal tetap disimpan
+     * di expense_amount sebagai data, namun tampil hanya sebagai informasi
+     * (badge "Info" pada UI).
      *
      * Baris diagregasi per (divisi, periode kasbon) — beberapa kasbon divisi
      * dengan divisi + periode sama dijumlahkan ke satu baris. Keterangan memuat
@@ -705,8 +711,10 @@ class ProjectFinancialReportService
             return null;
         }
 
-        // Kasbon divisi dicatat pada kategori "Upah Pekerja" (sama dengan baris
-        // agregat Upah Kerja dari payroll paid), bukan kategori kasbon terpisah.
+        // Kasbon divisi dicatat sebagai baris INFORMASI pada kategori "Upah
+        // Pekerja" (sama dengan baris agregat Upah Kerja dari payroll paid),
+        // bukan kategori kasbon terpisah. is_informational = true membuat baris
+        // ini tidak memengaruhi total laporan.
         $category = $this->resolveUpahPekerjaCategory($userId);
 
         if (! $category) {
@@ -726,6 +734,7 @@ class ProjectFinancialReportService
             'transaction_category_id' => $category->id,
             'transaction_date' => $date ? Carbon::parse($date)->format('Y-m-d') : now()->toDateString(),
             'description' => $description,
+            'is_informational' => true,
             'expense_amount' => $amount,
         ];
 
@@ -743,7 +752,7 @@ class ProjectFinancialReportService
      * Menyesuaikan baris kasbon pada Laporan Keuangan setelah sebagian payroll
      * paid pada proyek + periode dihapus.
      *
-     * - Kasbon Divisi (pengeluaran) dihitung ulang dari KasbonPayment
+     * - Kasbon Divisi (informasi) dihitung ulang dari KasbonPayment
      *   payroll_deduction yang masih terhubung payroll paid tersisa.
      * - Baris "Kasbon Pak {nama}" (informasi) dihapus total — kasbon personal
      *   tidak lagi dicatat pada Laporan Keuangan Proyek.
@@ -799,7 +808,7 @@ class ProjectFinancialReportService
 
         $remainingPayrollIds = $remainingPayrolls->pluck('id');
 
-        // ── Baris Kasbon Divisi (pengeluaran) ──────────────────────────────
+        // ── Baris Kasbon Divisi (informasi) ────────────────────────────
         $teamGroups = KasbonPayment::whereIn('payroll_id', $remainingPayrollIds)
             ->where('payment_method', 'payroll_deduction')
             ->whereHas('kasbon', fn ($q) => $q->where('kasbon_type', 'team'))

@@ -1133,8 +1133,8 @@ class PayrollService
      * Kasbon divisi dengan proyek tidak bisa dicicil manual. Saat payroll
      * proyek + periode terkait dibayar, seluruh sisa hutang kasbon langsung
      * dilunasi penuh (payment_method = 'payroll_deduction', terikat payroll
-     * pertama pada grup) dan dicatat sebagai baris pengeluaran "Kasbon Divisi"
-     * pada Laporan Keuangan Proyek.
+     * pertama pada grup) dan dicatat sebagai baris INFORMASI "Kasbon Divisi"
+     * pada Laporan Keuangan Proyek (tidak memengaruhi total laporan).
      *
      * @param  ProjectRecap  $recap
      * @param  \Illuminate\Support\Collection<int, Payroll>  $periodPayrolls  Payroll paid satu proyek + periode

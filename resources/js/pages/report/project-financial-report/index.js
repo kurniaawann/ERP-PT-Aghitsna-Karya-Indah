@@ -82,6 +82,8 @@ function computeTotalIncome(container) {
     let totalIncome = 0;
 
     container.querySelectorAll('.bon-block').forEach(function (block) {
+        if (block.dataset.informational === '1') return;
+
         const catHidden = block.querySelector('.transaction-category-hidden');
         const amountInput = block.querySelector('.expense-amount-input');
         const amount = parseInt((amountInput ? amountInput.value : '').replace(/[^\d]/g, ''), 10) || 0;
@@ -106,6 +108,7 @@ function computeExistingIncome(container) {
     let existingIncome = 0;
 
     container.querySelectorAll('.bon-block').forEach(function (block) {
+        if (block.dataset.informational === '1') return;
         if (!block.querySelector('input[name^="items["][name$="][id]"]')) return;
 
         const catHidden = block.querySelector('.transaction-category-hidden');
@@ -289,6 +292,7 @@ function bonBlockHtml(categories, data, index) {
     const isProofProtected = !!data.payment_proof_id;
     const isAutoProtected = !isProofProtected && (data.auto_source === 'payroll' || data.auto_source === 'kasbon');
     const isProtected = isProofProtected || isAutoProtected;
+    const isInformational = !!data.is_informational;
 
     const protectedLabel = isProofProtected
         ? 'Dari Bukti Pembayaran'
@@ -332,10 +336,15 @@ function bonBlockHtml(categories, data, index) {
     //     : '';
 
     return `
-        <div class="bon-block ${isProtected ? 'bon-block-protected ' : ''}border border-border-strong rounded p-3 bg-surface-base"${isProtected ? ' data-protected-source="' + (isProofProtected ? 'proof' : data.auto_source) + '"' : ''}>
+        <div class="bon-block ${isProtected ? 'bon-block-protected ' : ''}border border-border-strong rounded p-3 bg-surface-base"${isProtected ? ' data-protected-source="' + (isProofProtected ? 'proof' : data.auto_source) + '"' : ''}${isInformational ? ' data-informational="1"' : ''}>
             <div class="flex items-center justify-between mb-3">
                 <span class="bon-number text-sm font-semibold text-primary">Bon No. 1</span>
-                ${actionButton}
+                <span class="flex items-center gap-1">
+                    ${isInformational
+                        ? '<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-lg text-xs font-semibold" title="Baris informasi — tidak memengaruhi total laporan"><i class="fa-solid fa-circle-info w-3 h-3"></i> Info</span>'
+                        : ''}
+                    ${actionButton}
+                </span>
             </div>
 
             ${idHidden}
@@ -363,7 +372,11 @@ function bonBlockHtml(categories, data, index) {
                 <input type="text" inputmode="numeric" name="items[${index}][expense_amount]"
                     class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000"
                     value="${escapeHtml(formatNumber(data.amount))}" required min="0"
+                    ${isInformational ? 'readonly' : ''}
                     oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
+                ${isInformational
+                    ? '<p class="text-xs text-text-secondary mt-1">Jumlah ini otomatis dari kasbon divisi dan hanya bersifat informasi (tidak memengaruhi total laporan).</p>'
+                    : ''}
             </div>
 
             <div class="mb-3">
@@ -753,6 +766,8 @@ function updateTransactionsSummary(containerId) {
     let totalExpense = 0;
 
     container.querySelectorAll('.bon-block').forEach(function (block) {
+        if (block.dataset.informational === '1') return;
+
         const catHidden = block.querySelector('.transaction-category-hidden');
         const amountInput = block.querySelector('.expense-amount-input');
         const amount = parseInt((amountInput ? amountInput.value : '').replace(/[^\d]/g, ''), 10) || 0;
