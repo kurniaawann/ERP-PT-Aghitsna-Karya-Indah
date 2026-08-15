@@ -182,7 +182,14 @@
 
         {{-- Pagination --}}
         <div class="px-6 py-4 border-t border-border-light">
-            {{ $recaps->appends(request()->query())->links() }}
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-sm text-text-primary font-semibold">
+                    Halaman {{ $recaps->currentPage() }} dari {{ $recaps->lastPage() }}
+                </div>
+                <div>
+                    {{ $recaps->appends(request()->query())->links() }}
+                </div>
+            </div>
         </div>
     </div>
 

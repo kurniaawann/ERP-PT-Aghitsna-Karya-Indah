@@ -150,7 +150,14 @@
 
         {{-- Pagination --}}
         <div class="px-6 py-4 border-t border-border-light">
-            {{ $cementDeliveryOrders->appends(request()->query())->links() }}
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-sm text-text-primary font-semibold">
+                    Halaman {{ $cementDeliveryOrders->currentPage() }} dari {{ $cementDeliveryOrders->lastPage() }}
+                </div>
+                <div>
+                    {{ $cementDeliveryOrders->appends(request()->query())->links() }}
+                </div>
+            </div>
         </div>
     </div>
 

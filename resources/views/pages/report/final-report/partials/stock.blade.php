@@ -228,7 +228,14 @@
 
         {{-- Pagination (manual LengthAwarePaginator) --}}
         <div class="px-6 py-4 border-t border-border-light">
-            {{ $reportData->appends(request()->query())->links() }}
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-sm text-text-primary font-semibold">
+                    Halaman {{ $reportData->currentPage() }} dari {{ $reportData->lastPage() }}
+                </div>
+                <div>
+                    {{ $reportData->appends(request()->query())->links() }}
+                </div>
+            </div>
         </div>
     </div>
 
