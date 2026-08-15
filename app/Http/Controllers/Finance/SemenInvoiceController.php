@@ -29,19 +29,21 @@ class SemenInvoiceController extends Controller
     ) {}
 
     /**
-     * Menampilkan daftar Invoice Semen dengan filter dan pagination.
+     * Menampilkan daftar Invoice Semen.
+     *
+     * Invoice Semen kini menjadi tab di halaman DO Semen
+     * (do-semen?tab=semen-invoice) sehingga tidak ada lagi sub-modul
+     * terpisah di sidebar. URL lama /semen-invoice diarahkan ke tab tersebut.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
     {
-        $invoices = $this->service->baseQuery($request)->paginate(10)->appends($request->all());
-
-        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
-        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
-
-        return view('pages.finance.semen-invoices', compact('invoices', 'paymentAccounts', 'executives'));
+        return redirect()->route('cement-do.index', array_merge(
+            $request->all(),
+            ['tab' => 'semen-invoice']
+        ));
     }
 
     /**
@@ -119,7 +121,7 @@ class SemenInvoiceController extends Controller
 
         $this->service->createInvoice($data, $projects);
 
-        return redirect()->route('semen-invoice.index')
+        return redirect()->route('cement-do.index', ['tab' => 'semen-invoice'])
             ->with('success', 'Invoice semen berhasil ditambahkan!');
     }
 
@@ -159,7 +161,7 @@ class SemenInvoiceController extends Controller
 
         $this->service->updateInvoice($invoice, $request->validated(), $projects);
 
-        return redirect()->route('semen-invoice.index')
+        return redirect()->route('cement-do.index', ['tab' => 'semen-invoice'])
             ->with('success', 'Invoice semen berhasil diupdate!');
     }
 

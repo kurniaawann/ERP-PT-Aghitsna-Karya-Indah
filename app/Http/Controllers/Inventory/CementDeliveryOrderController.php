@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreCementDeliveryOrderRequest;
 use App\Http\Requests\Inventory\UpdateCementDeliveryOrderRequest;
+use App\Models\Sdm\Executive;
+use App\Services\Finance\PaymentAccountService;
+use App\Services\Finance\SemenInvoiceService;
 use App\Services\Inventory\CementDeliveryOrderService;
 use App\Exports\Inventory\CementDeliveryOrderExport;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -20,24 +23,50 @@ use Maatwebsite\Excel\Facades\Excel;
 class CementDeliveryOrderController extends Controller
 {
     public function __construct(
-        private readonly CementDeliveryOrderService $cementDeliveryOrderService
+        private readonly CementDeliveryOrderService $cementDeliveryOrderService,
+        private readonly SemenInvoiceService $semenInvoiceService,
+        private readonly PaymentAccountService $paymentAccountService
     ) {}
 
     /**
-     * Menampilkan daftar DO Semen dengan paginasi dan pencarian.
+     * Menampilkan halaman tab DO Semen / Invoice Semen dengan paginasi,
+     * pencarian, dan filter bulan/tahun pada tab yang aktif.
+     *
+     * Halaman memakai pola tab seperti Payroll/Slip Gaji:
+     * - tab `do-semen` (default): daftar DO Semen.
+     * - tab `semen-invoice`: daftar Invoice Semen (sub-modul digabung ke sini).
      *
      * @param  Request  $request
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
+        $tab = $request->input('tab', 'do-semen');
+
+        if (! in_array($tab, ['do-semen', 'semen-invoice'], true)) {
+            $tab = 'do-semen';
+        }
+
+        // ─── Tab Invoice Semen ───
+        if ($tab === 'semen-invoice') {
+            $invoices = $this->semenInvoiceService->baseQuery($request)
+                ->paginate(15)
+                ->appends(array_merge($request->all(), ['tab' => 'semen-invoice']));
+
+            $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+            $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+
+            return view('pages.inventory.cement-do', compact('tab', 'invoices', 'paymentAccounts', 'executives'));
+        }
+
+        // ─── Tab DO Semen (default) ───
         $cementDeliveryOrders = $this->cementDeliveryOrderService->getPaginatedSearch(
             $request->input('search'),
             $request->input('month'),
             $request->input('year')
         );
 
-        return view('pages.inventory.cement-do', compact('cementDeliveryOrders'));
+        return view('pages.inventory.cement-do', compact('tab', 'cementDeliveryOrders'));
     }
 
     /**

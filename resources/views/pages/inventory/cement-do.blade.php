@@ -1,28 +1,66 @@
 {{-- =====================================================================
-     Halaman: DO Semen (Inventory)
-     Tujuan: Halaman CRUD data delivery order semen. Menampilkan daftar
-             DO semen (pencarian & paginasi) serta menyediakan aksi tambah,
-             edit, hapus massal, dan export PDF/Excel.
-     Data dari CementDeliveryOrderController@index:
-     - $cementDeliveryOrders : LengthAwarePaginator hasil
-                 CementDeliveryOrderService::getPaginatedSearch()
-                 (terfilter request('search')).
+     Halaman: DO Semen & Invoice Semen (Inventory)
+     Tujuan: Halaman utama pengelolaan data semen yang ber-tab:
+             1. "DO Semen" — CRUD delivery order semen (pencarian, filter
+                bulan/tahun, bulk hapus, export PDF/Excel).
+             2. "Invoice Semen" — invoice semen (di-include dari partial
+                pages.inventory.partials.semen-invoice-content), aktif saat
+                ?tab=semen-invoice.
+
+     Data dari CementDeliveryOrderController@index (bergantung tab aktif):
+     - Tab do-semen: $cementDeliveryOrders (LengthAwarePaginator hasil
+                 CementDeliveryOrderService::getPaginatedSearch())
+     - Tab semen-invoice: $invoices (Paginator InvoiceSemen), $paymentAccounts,
+                 $executives
+     - $tab : tab aktif (do-semen|semen-invoice)
+
      Komponen yang di-include:
      - components.inventory.cement-do.table       : tabel data DO semen
      - components.inventory.cement-do.add-modal   : modal tambah data DO semen
      - components.inventory.cement-do.edit-modal  : modal edit data DO semen
+     - pages.inventory.partials.semen-invoice-content : konten tab Invoice Semen
      - x-filters.search-input, x-buttons.*, x-pagination, x-modal
-     JS: @vite('resources/js/pages/inventory/cement-do/index.js')
+
+     JS yang di-load (sesuai tab aktif):
+     - @vite('resources/js/pages/inventory/cement-do/index.js')          (tab do-semen)
+     - @vite('resources/js/pages/finance/semen-invoices/index.js')       (tab semen-invoice)
      ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - DO Semen')
 
 @section('content')
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-text-primary mb-1">DO Semen</h1>
+            <p class="text-text-secondary text-sm">
+                Kelola delivery order semen dan invoice semen dalam satu halaman.
+            </p>
+        </div>
+    </div>
 
-        {{-- SECTION: Header Halaman --}}
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">DO Semen</h1>
+    {{-- ============================================================
+         SECTION: Tab Menu (DO Semen | Invoice Semen)
+         ============================================================ --}}
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 my-6">
+        <a href="{{ route('cement-do.index') }}"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 text-sm font-semibold
+                {{ $tab === 'do-semen' ? 'bg-primary text-white border-primary' : 'bg-surface-base text-text-primary border-border-strong hover:bg-primary-light hover:text-primary' }}">
+            <i class="fa-solid fa-truck"></i>
+            <span>DO Semen</span>
+        </a>
+        <a href="{{ route('cement-do.index', ['tab' => 'semen-invoice']) }}"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 text-sm font-semibold
+                {{ $tab === 'semen-invoice' ? 'bg-primary text-white border-primary' : 'bg-surface-base text-text-primary border-border-strong hover:bg-primary-light hover:text-primary' }}">
+            <i class="fa-solid fa-file-invoice"></i>
+            <span>Invoice Semen</span>
+        </a>
+    </div>
+
+    @if ($tab === 'semen-invoice')
+        @include('pages.inventory.partials.semen-invoice-content')
+    @else
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
 
         {{-- SECTION: Filter & Toolbar Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -85,4 +123,5 @@
     @push('scripts')
         @vite('resources/js/pages/inventory/cement-do/index.js')
     @endpush
+    @endif
 @endsection

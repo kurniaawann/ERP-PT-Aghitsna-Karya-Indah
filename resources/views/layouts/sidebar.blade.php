@@ -270,27 +270,27 @@
                 @else
                 {{-- Super Admin: Full Finance menu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('semen-invoice*') || request()->is('payment-proofs*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('payment-proofs*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <button onclick="toggleDropdown('invoiceMasterDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('semen-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                                {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
                             <div class="flex items-center">
                                 <i
                                     class="fas fa-file-invoice w-4
-                                    {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('semen-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                    {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                                 </i>
                                 <span class="ml-3 text-sm font-medium">Invoice</span>
                             </div>
 
                             <i id="invoiceMasterDropdownIcon"
                                 class="fas fa-chevron-down text-xs transition-transform duration-200
-                                {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('semen-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
                         </button>
 
                         <ul id="invoiceMasterDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('semen-invoice*') ? '' : 'hidden' }}">
+                            class="ml-6 mt-1 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="{{ url('/item-invoice') }}"
                                     class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -324,18 +324,7 @@
                                     <span class="ml-3 text-sm font-medium">{{ auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek' }}</span>
                                 </a>
                             </li>
-                            <li>
-                                <a href="{{ url('/semen-invoice') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('semen-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-file-contract w-4 
-                                        {{ request()->is('semen-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Invoice Semen</span>
-                                </a>
-                            </li>
-                        </ul>
+                            </ul>
                     </li>
                     <li>
                         <a href="{{ url('/purchase-invoice') }}"
