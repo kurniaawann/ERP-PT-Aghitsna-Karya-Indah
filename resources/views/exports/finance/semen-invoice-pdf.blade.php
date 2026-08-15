@@ -271,10 +271,6 @@
         <div class="note">
             NB : {{ $invoice->note }}
         </div>
-    @else
-        <div class="note">
-          
-        </div>
     @endif
 
     <!-- Grand Total -->

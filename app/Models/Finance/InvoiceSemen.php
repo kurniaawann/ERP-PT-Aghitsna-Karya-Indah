@@ -32,6 +32,7 @@ class InvoiceSemen extends Model
         'invoice_date',
         'projects',
         'total_amount',
+        'note',
         'signed_by_id',
     ];
 

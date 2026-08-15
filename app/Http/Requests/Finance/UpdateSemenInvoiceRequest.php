@@ -38,6 +38,7 @@ class UpdateSemenInvoiceRequest extends FormRequest
     {
         return [
             'invoice_date' => 'required|date',
+            'note' => 'nullable|string|max:65535',
             'signed_by_id' => 'nullable|exists:executives,id',
             'projects' => 'required|array|min:1',
             'projects.*.nama_proyek' => 'required|string|max:255',

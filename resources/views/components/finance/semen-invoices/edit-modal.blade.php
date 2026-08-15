@@ -33,7 +33,11 @@
         </div>
     </div>
 
-    {{-- Container: banyak proyek --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Note</label>
+        <textarea name="note" id="edit-invoice-note" rows="2" class="w-full border rounded p-2"
+            placeholder="Catatan tambahan (opsional)"></textarea>
+    </div>
     <div id="edit-semen-projects-container">
         <div class="flex items-center justify-between mb-2">
             <label class="block text-text-primary font-semibold">Proyek &amp; Data Semen <span

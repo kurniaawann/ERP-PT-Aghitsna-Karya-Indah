@@ -554,12 +554,14 @@ function openEditSemenModal(invoiceNumber) {
             const hiddenNumber = document.getElementById('edit-invoice-number-hidden');
             const dateInput = document.getElementById('edit-invoice-date');
             const signedBy = document.getElementById('edit-signed-by');
+            const noteInput = document.getElementById('edit-invoice-note');
             const submitForm = document.getElementById('editSemenForm');
 
             if (display) display.value = invoice.invoice_number || '';
             if (hiddenNumber) hiddenNumber.value = invoice.invoice_number || '';
             if (dateInput) dateInput.value = invoice.invoice_date ? String(invoice.invoice_date).split('T')[0] : '';
             if (signedBy) signedBy.value = data.signed_by_id || '';
+            if (noteInput) noteInput.value = invoice.note || '';
             if (submitForm) submitForm.action = `/semen-invoice/${encoded}`;
 
             const list = getProjectList(EDIT);
