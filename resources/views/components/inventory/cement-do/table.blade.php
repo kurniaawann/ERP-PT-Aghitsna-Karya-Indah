@@ -83,12 +83,6 @@
                                         @if ($cement->name)
                                             <div class="text-xs text-text-secondary">{{ $cement->name }}</div>
                                         @endif
-                                        @if ($cement->paymentAccount)
-                                            <div class="text-xs text-primary">
-                                                {{ $cement->paymentAccount->bank_name }} -
-                                                {{ $cement->paymentAccount->account_number }}
-                                            </div>
-                                        @endif
                                     </td>
                                     <td class="p-2 text-center">{{ number_format($cement->jumlah, 0, ',', '.') }}</td>
                                     <td class="p-2 text-center">{{ $cement->satuan ?: 'zak' }}</td>

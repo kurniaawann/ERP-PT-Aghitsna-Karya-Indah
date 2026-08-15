@@ -83,12 +83,6 @@
 
     {{-- SECTION: Scripts (JavaScript Modular) --}}
     @push('scripts')
-        <script>
-            window.cementPaymentAccounts = @json($paymentAccounts->map(fn($a) => [
-                'id' => $a->id,
-                'label' => $a->bank_name . ' - ' . $a->account_number,
-            ])->values());
-        </script>
         @vite('resources/js/pages/inventory/cement-do/index.js')
     @endpush
 @endsection

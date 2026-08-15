@@ -51,7 +51,6 @@
                         <th class="p-2 text-left">Tanggal</th>
                         <th class="p-2 text-left">Nama Proyek</th>
                         <th class="p-2 text-left">Nama</th>
-                        <th class="p-2 text-left">Rekening Pembayaran</th>
                         <th class="p-2 text-center">Jumlah (zak)</th>
                         <th class="p-2 text-right">Harga</th>
                         <th class="p-2 text-left">Tgl Lunas</th>
@@ -83,16 +82,6 @@
                 <input type="text" name="cements[IDX][name]"
                     class="w-full border rounded p-2 text-sm" placeholder="Nama pemesan"
                     maxlength="255">
-            </td>
-            <td class="p-1">
-                <select name="cements[IDX][payment_account_id]"
-                    class="w-full border rounded p-2 text-sm">
-                    <option value="">-- Pilih Rekening --</option>
-                    @foreach ($paymentAccounts as $account)
-                        <option value="{{ $account->id }}">{{ $account->bank_name }} -
-                            {{ $account->account_number }}</option>
-                    @endforeach
-                </select>
             </td>
             <td class="p-1">
                 <input type="number" name="cements[IDX][jumlah]" value="0" min="0"

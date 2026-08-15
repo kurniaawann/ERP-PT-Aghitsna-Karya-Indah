@@ -33,7 +33,6 @@ class UpdateCementDeliveryOrderRequest extends FormRequest
             'cements.*.satuan' => 'nullable|string|max:50',
             'cements.*.harga' => 'required|string',
             'cements.*.tanggal_lunas' => 'nullable|date',
-            'cements.*.payment_account_id' => 'nullable|integer|exists:payment_accounts,id',
         ];
     }
 

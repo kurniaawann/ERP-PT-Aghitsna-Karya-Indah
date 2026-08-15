@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Finance\PaymentAccount;
 
 /**
  * Model untuk entitas Data Semen (baris detail dari DO Semen).
@@ -14,7 +13,7 @@ use App\Models\Finance\PaymentAccount;
  * Sub modul dari Inventory. Merupakan detail dari relasi master-detail:
  * setiap baris Data Semen terikat ke satu DO Semen (cement_delivery_orders)
  * melalui kolom do_no. Menyimpan tanggal, nama proyek, nama pemesan, jumlah zak
- * (= volume), satuan, harga per zak, tanggal lunas, dan rekening pembayaran.
+ * (= volume), satuan, harga per zak, dan tanggal lunas.
  * Primary key bersifat string dan di-generate otomatis dengan format SMN-XXXX.
  *
  * @property string       $no
@@ -26,7 +25,6 @@ use App\Models\Finance\PaymentAccount;
  * @property string|null  $satuan
  * @property int          $harga
  * @property \Carbon\Carbon|null $tanggal_lunas
- * @property int|null     $payment_account_id
  */
 class Cement extends Model
 {
@@ -52,7 +50,6 @@ class Cement extends Model
         'satuan',
         'harga',
         'tanggal_lunas',
-        'payment_account_id',
     ];
 
     protected $casts = [
@@ -72,16 +69,6 @@ class Cement extends Model
     public function deliveryOrder(): BelongsTo
     {
         return $this->belongsTo(CementDeliveryOrder::class, 'do_no', 'no');
-    }
-
-    /**
-     * Rekening pembayaran yang dipilih (opsional) untuk baris Data Semen ini.
-     *
-     * @return BelongsTo<PaymentAccount, $this>
-     */
-    public function paymentAccount(): BelongsTo
-    {
-        return $this->belongsTo(PaymentAccount::class, 'payment_account_id');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────
