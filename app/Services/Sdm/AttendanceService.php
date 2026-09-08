@@ -225,6 +225,38 @@ class AttendanceService
      */
     public function bulkCreate(array $employeeIds, Carbon $startDate, Carbon $endDate, string $status, ?string $notes): int
     {
+        // Group per status per karyawan per tanggal agar tetap mendukung payload
+        // lama (satu status untuk seluruh range) — default 'hadir'.
+        return $this->bulkCreateWithDays(
+            $employeeIds,
+            $startDate,
+            $endDate,
+            collect($employeeIds)->mapWithKeys(function ($employeeId) use ($status) {
+                return [$employeeId => []];
+            })->all(),
+            $status,
+            $notes
+        );
+    }
+
+    /**
+     * Membuat data absensi secara massal per karyawan × per tanggal.
+     *
+     * Setiap sel menunjuk tanggal primernya sendiri: status diambil dari
+     * $attendanceStatuses[employeeId][date] bila ada, selain itu memakai
+     * $defaultStatus (default hadir). Payload lama (satu status global)
+     * tetap didukung lewat $defaultStatus.
+     *
+     * @param  array<int, string>                 $employeeIds        Nilai employee_code
+     * @param  Carbon                             $startDate          Tanggal mulai (inklusif)
+     * @param  Carbon                             $endDate            Tanggal akhir (inklusif)
+     * @param  array<string, array<string, string>>  $attendanceStatuses  Status per karyawan/tanggal
+     * @param  string                             $defaultStatus      Status default bila sel kosong (biasanya 'hadir')
+     * @param  string|null                        $notes              Catatan opsional
+     * @return int
+     */
+    public function bulkCreateWithDays(array $employeeIds, Carbon $startDate, Carbon $endDate, array $attendanceStatuses = [], string $defaultStatus = 'hadir', ?string $notes = null): int
+    {
         // Kunci data: absensi pada periode yang payroll-nya sudah dibayar
         // tidak boleh ditambah (kecuali karyawan baru yang belum masuk payroll
         // paid periode itu — tidak memiliki payroll paid → tidak terkunci).
@@ -236,9 +268,12 @@ class AttendanceService
             $currentDate = $startDate->copy();
 
             while ($currentDate->lte($endDate)) {
+                $dateStr = $currentDate->format('Y-m-d');
+                $status = $attendanceStatuses[$employeeId][$dateStr] ?? $defaultStatus;
+
                 Attendance::create([
                     'employee_id' => $employeeId,
-                    'attendance_date' => $currentDate->format('Y-m-d'),
+                    'attendance_date' => $dateStr,
                     'status' => $status,
                     'notes' => $notes,
                     'created_by' => auth()->id(),

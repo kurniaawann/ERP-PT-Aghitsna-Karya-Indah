@@ -363,6 +363,7 @@ function initAddFormHandler() {
         addMultiSelectWrapper.addEventListener('change', function(e) {
             if (e.target.classList.contains('searchable-multi-checkbox') ||
                 e.target.classList.contains('searchable-multi-select-all')) {
+                renderAttendanceGrid();
                 validateDuplicateAttendance();
             }
         });
@@ -371,7 +372,10 @@ function initAddFormHandler() {
         // click handler yang sama, jadi validasi dijalankan setelahnya).
         addMultiSelectWrapper.addEventListener('click', function(e) {
             if (e.target.closest('.searchable-multi-tag-remove')) {
-                setTimeout(validateDuplicateAttendance, 0);
+                setTimeout(function () {
+                    renderAttendanceGrid();
+                    validateDuplicateAttendance();
+                }, 0);
             }
         });
     }
@@ -411,6 +415,7 @@ function initDateValidation() {
         if (dateError) {
             dateError.classList.add('hidden');
         }
+        renderAttendanceGrid();
         validateDuplicateAttendance();
     });
 
@@ -426,8 +431,219 @@ function initDateValidation() {
                 dateError.classList.add('hidden');
             }
         }
+        renderAttendanceGrid();
         validateDuplicateAttendance();
     });
+}
+
+// ==========================================
+// GRID ABSENSI PER-HARI (ADD MODAL)
+// ==========================================
+
+/**
+ * Pilihan status yang tersedia untuk setiap sel grid absensi harian.
+ *
+ * Urutannya tetap (Hadir pertama) agar menjadi default sejak awal tanpa
+ * perlu menetapkan selectedValue eksplisit.
+ *
+ * @type {Array<{value: string, label: string}>}
+ */
+const ATTENDANCE_STATUSES = [
+    { value: 'hadir', label: 'Hadir' },
+    { value: 'izin', label: 'Izin' },
+    { value: 'sakit', label: 'Sakit' },
+    { value: 'cuti', label: 'Cuti' },
+];
+
+/**
+ * Mendapatkan daftar karyawan terpilih pada modal Tambah.
+ *
+ * Kode karyawan dibaca dari hidden input komponen searchable multi-select;
+ * nama diambil dari data-label opsi yang cocok.
+ *
+ * @returns {Array<{code: string, name: string}>}
+ */
+function getSelectedEmployees() {
+    var container = document.querySelector('#addModal .searchable-multi-hidden-inputs');
+    var hiddenInputs = container ? container.querySelectorAll('input[type="hidden"]') : [];
+    var wrapper = document.querySelector('#addModal .searchable-multi-select-wrapper');
+    var options = wrapper ? wrapper.querySelectorAll('.searchable-multi-options .searchable-multi-option') : [];
+
+    var employees = [];
+    hiddenInputs.forEach(function (input) {
+        var code = input.value;
+        var name = code;
+        options.forEach(function (opt) {
+            if (opt.dataset.value === code) {
+                name = opt.dataset.label.split(' - ')[0];
+            }
+        });
+        employees.push({ code: code, name: name });
+    });
+
+    return employees;
+}
+
+/**
+ * Mendapatkan daftar tanggal pada rentang start_date–end_date.
+ *
+ * Tanggal di-parse manual (bukan Date string) agar bebas dari pergeseran
+ * zona waktu; label memakai format lokal '{day} {month}', mis. 'Sen 07'.
+ *
+ * @returns {Array<{iso: string, label: string}>}
+ */
+function getRangeDates() {
+    var startInput = document.getElementById('start_date');
+    var endInput = document.getElementById('end_date');
+    if (!startInput || !endInput || !startInput.value || !endInput.value) return [];
+
+    var partsS = startInput.value.split('-');
+    var partsE = endInput.value.split('-');
+    var current = new Date(parseInt(partsS[0], 10), parseInt(partsS[1], 10) - 1, parseInt(partsS[2], 10));
+    var end = new Date(parseInt(partsE[0], 10), parseInt(partsE[1], 10) - 1, parseInt(partsE[2], 10));
+
+    if (current > end) return [];
+
+    var dates = [];
+    while (current <= end) {
+        var iso = current.getFullYear() + '-' +
+            String(current.getMonth() + 1).padStart(2, '0') + '-' +
+            String(current.getDate()).padStart(2, '0');
+        var label = current.toLocaleDateString('id-ID', {
+            weekday: 'short',
+            day: '2-digit',
+            month: 'short'
+        });
+        dates.push({ iso: iso, label: label });
+
+        current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+}
+
+/**
+ * Membuat elemen <select> status absensi untuk satu sel grid.
+ *
+ * @param  {string}  name  Nama field, format `attendance[KODE][TANGGAL]`.
+ * @param  {string}  [selectedValue='hadir']  Status awal; default Hadir.
+ * @returns {HTMLSelectElement}
+ */
+function buildStatusSelect(name, selectedValue) {
+    var select = document.createElement('select');
+    select.name = name;
+    select.className = 'w-full border border-border-strong rounded px-1.5 py-1 text-xs';
+
+    ATTENDANCE_STATUSES.forEach(function (s) {
+        var option = document.createElement('option');
+        option.value = s.value;
+        option.textContent = s.label;
+        if (s.value === (selectedValue || 'hadir')) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+
+    return select;
+}
+
+/**
+ * Merender grid absensi per karyawan × per tanggal pada modal Tambah.
+ *
+ * Alur:
+ * - Tanpa karyawan terpilih atau rentang tanggal tidak lengkap → tampilkan
+ *   hint dan kosongkan grid.
+ * - Selain itu: tabel dengan kolom pertama nama karyawan dan satu kolom
+ *   per tanggal; setiap sel adalah <select> default Hadir yang bernama
+ *   attendance[KODE][YYYY-MM-DD] sehingga mengirim status per hari.
+ * - Tombol "Reset semua ke Hadir" mengembalikan seluruh sel ke default.
+ *
+ * @returns {void}
+ */
+function renderAttendanceGrid() {
+    var container = document.getElementById('attendance-grid');
+    if (!container) return;
+
+    var employees = getSelectedEmployees();
+    var dates = getRangeDates();
+
+    if (employees.length === 0 || dates.length === 0) {
+        container.innerHTML =
+            '<p class="text-sm text-text-secondary">Pilih karyawan dan rentang tanggal untuk menampilkan grid absensi.</p>';
+        return;
+    }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'rounded-lg border border-border';
+
+    var headerRow = document.createElement('div');
+    headerRow.className = 'flex items-center justify-between px-3 py-2 bg-surface-secondary rounded-t-lg';
+    headerRow.innerHTML =
+        '<span class="text-sm font-medium">Absensi Harian</span>' +
+        '<button type="button" id="reset-attendance-grid" class="text-xs text-primary hover:underline">Reset semua ke Hadir</button>';
+
+    var tableWrap = document.createElement('div');
+    tableWrap.className = 'overflow-x-auto';
+
+    var table = document.createElement('table');
+    table.className = 'w-full text-xs';
+
+    var thead = document.createElement('thead');
+    var trHead = document.createElement('tr');
+    trHead.className = 'bg-surface-secondary text-left text-text-secondary';
+
+    var thEmp = document.createElement('th');
+    thEmp.className = 'px-3 py-2 font-medium whitespace-nowrap';
+    thEmp.textContent = 'Karyawan';
+    trHead.appendChild(thEmp);
+
+    dates.forEach(function (d) {
+        var th = document.createElement('th');
+        th.className = 'px-2 py-2 text-center font-medium whitespace-nowrap';
+        th.textContent = d.label;
+        trHead.appendChild(th);
+    });
+
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    employees.forEach(function (emp) {
+        var tr = document.createElement('tr');
+        tr.className = 'border-t border-border';
+
+        var tdEmp = document.createElement('td');
+        tdEmp.className = 'px-3 py-2 whitespace-nowrap';
+        tdEmp.innerHTML = '<div class="font-medium">' + emp.name + '</div>' +
+            '<div class="text-xs text-text-tertiary">' + emp.code + '</div>';
+        tr.appendChild(tdEmp);
+
+        dates.forEach(function (d) {
+            var td = document.createElement('td');
+            td.className = 'px-2 py-2';
+            td.appendChild(buildStatusSelect('attendance[' + emp.code + '][' + d.iso + ']', 'hadir'));
+            tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    tableWrap.appendChild(table);
+    wrap.appendChild(headerRow);
+    wrap.appendChild(tableWrap);
+
+    container.innerHTML = '';
+    container.appendChild(wrap);
+
+    var resetBtn = document.getElementById('reset-attendance-grid');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            container.querySelectorAll('select[name^="attendance["]').forEach(function (sel) {
+                sel.value = 'hadir';
+            });
+        });
+    }
 }
 
 // ==========================================

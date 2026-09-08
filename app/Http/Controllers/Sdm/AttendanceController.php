@@ -65,11 +65,16 @@ class AttendanceController extends Controller
         }
 
         try {
-            $totalInserted = $this->attendanceService->bulkCreate(
+            // Pemetaan status per karyawan × tanggal (dari grid di modal tambah).
+            // Bila tidak ada pemetaan (payload lama), fallback ke status tunggal.
+            $attendanceStatuses = $request->validated('attendance') ?? [];
+
+            $totalInserted = $this->attendanceService->bulkCreateWithDays(
                 $employeeIds,
                 $startDate,
                 $endDate,
-                $request->validated('status'),
+                $attendanceStatuses,
+                $request->validated('status') ?: 'hadir',
                 $request->validated('notes')
             );
         } catch (\DomainException $e) {

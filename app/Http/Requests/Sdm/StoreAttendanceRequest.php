@@ -36,7 +36,10 @@ class StoreAttendanceRequest extends FormRequest
             'employee_ids.*' => 'required|string|exists:employees,employee_code',
             'start_date' => 'required|date|before_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date|before_or_equal:today',
-            'status' => 'required|string|in:hadir,izin,sakit,cuti',
+            'status' => 'nullable|string|in:hadir,izin,sakit,cuti',
+            'attendance' => 'nullable|array',
+            'attendance.*' => 'array',
+            'attendance.*.*' => 'required|string|in:hadir,izin,sakit,cuti',
             'notes' => 'nullable|string|max:1000',
         ];
     }
@@ -59,6 +62,8 @@ class StoreAttendanceRequest extends FormRequest
             'end_date.before_or_equal' => 'Tanggal akhir tidak boleh lebih dari hari ini.',
             'status.required' => 'Status tidak boleh kosong.',
             'status.in' => 'Status harus salah satu dari: Hadir, Izin, Sakit, Cuti.',
+            'attendance.required' => 'Data absensi harian tidak boleh kosong.',
+            'attendance.*.*.in' => 'Status harian harus salah satu dari: Hadir, Izin, Sakit, Cuti.',
         ];
     }
 }

@@ -1,9 +1,10 @@
 {{--
-    Modal Tambah Absensi (Bulk Create)
-    Allows selecting multiple employees with a searchable multi-select dropdown,
-    a date range, status, and optional notes to create attendance records in bulk.
+    Modal Tambah Absensi (Bulk Create per Hari)
+    Memilih beberapa karyawan menggunakan searchable multi-select, rentang
+    tanggal, lalu grid per karyawan × per tanggal ditampilkan. Setiap sel
+    default ke 'Hadir' dan bisa diubah ke Izin/Sakit/Cuti per hari.
 --}}
-<x-modal id="addModal" title="Tambah Absensi" action="{{ route('attendance.store') }}" method="POST" buttonText="Simpan">
+<x-modal id="addModal" title="Tambah Absensi" action="{{ route('attendance.store') }}" method="POST" buttonText="Simpan" size="6xl">
 
     {{-- Pilih Karyawan (Searchable Multi-Select) --}}
     <x-forms.searchable-multi-select name="employee_ids"
@@ -11,43 +12,46 @@
         placeholder="Cari karyawan..."
         :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
 
-    {{-- Tanggal Mulai --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Mulai <span class="text-error">*</span></label>
-        <input type="date" name="start_date" id="start_date" class="w-full border rounded p-2"
-            max="{{ date('Y-m-d') }}" required oninvalid="this.setCustomValidity('Tanggal mulai tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Tanggal tidak boleh lebih dari hari ini</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {{-- Tanggal Mulai --}}
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Tanggal Mulai <span class="text-error">*</span></label>
+            <input type="date" name="start_date" id="start_date" class="w-full border rounded p-2"
+                max="{{ date('Y-m-d') }}" required oninvalid="this.setCustomValidity('Tanggal mulai tidak boleh kosong')"
+                oninput="this.setCustomValidity('')">
+            <p class="text-xs text-text-secondary mt-1">Tanggal tidak boleh lebih dari hari ini</p>
+        </div>
+
+        {{-- Tanggal Akhir --}}
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Tanggal Akhir <span class="text-error">*</span></label>
+            <input type="date" name="end_date" id="end_date" class="w-full border rounded p-2" max="{{ date('Y-m-d') }}"
+                required oninvalid="this.setCustomValidity('Tanggal akhir tidak boleh kosong')"
+                oninput="this.setCustomValidity('')">
+            <p class="text-xs text-text-secondary mt-1">Untuk 1 hari, isi tanggal yang sama</p>
+            <p id="date-error" class="text-xs text-red-600 mt-1 hidden">Tanggal akhir tidak boleh lebih kecil dari tanggal
+                mulai!</p>
+        </div>
     </div>
 
-    {{-- Tanggal Akhir --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Akhir <span class="text-error">*</span></label>
-        <input type="date" name="end_date" id="end_date" class="w-full border rounded p-2" max="{{ date('Y-m-d') }}"
-            required oninvalid="this.setCustomValidity('Tanggal akhir tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Untuk 1 hari, isi tanggal yang sama</p>
-        <p id="date-error" class="text-xs text-red-600 mt-1 hidden">Tanggal akhir tidak boleh lebih kecil dari tanggal
-            mulai!</p>
+    {{-- Info default hadir --}}
+    <div class="mb-3 rounded-lg bg-surface-secondary border border-border p-3 text-sm text-text-secondary">
+        <i class="fa-solid fa-circle-info text-primary mr-1"></i>
+        Setiap hari untuk karyawan terpilih <strong>default Hadir</strong>. Ubah sesuai kebutuhan:
+        Izin, Sakit, atau Cuti.
     </div>
 
-    {{-- Status Absensi --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Status <span class="text-error">*</span></label>
-        <select name="status" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Status tidak boleh kosong')" oninput="this.setCustomValidity('')">
-            <option value="">Pilih Status</option>
-            <option value="hadir">Hadir</option>
-            <option value="izin">Izin</option>
-            <option value="sakit">Sakit</option>
-            <option value="cuti">Cuti</option>
-        </select>
+    {{-- Grid Absensi per karyawan × tanggal --}}
+    <div id="attendance-grid" class="mb-3">
+        <p class="text-sm text-text-secondary" id="attendance-grid-hint">
+            Pilih karyawan dan rentang tanggal untuk menampilkan grid absensi.
+        </p>
     </div>
 
     {{-- Keterangan --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="notes" class="w-full border rounded p-2" placeholder="Masukkan keterangan (opsional)" rows="3"></textarea>
+        <textarea name="notes" class="w-full border rounded p-2" placeholder="Masukkan keterangan (opsional)" rows="2"></textarea>
     </div>
 
     {{-- Error Message untuk Duplicate Attendance --}}
