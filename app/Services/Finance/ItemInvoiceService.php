@@ -35,7 +35,7 @@ class ItemInvoiceService
      */
     public function baseQuery($request): Builder
     {
-        return InvoiceBarang::query()->with('salesRecap')
+        return InvoiceBarang::query()->with(['salesRecap', 'paymentProofs'])
             ->when($request->filled('search'), function ($builder) use ($request) {
                 $search = $request->search;
                 $builder->where(function ($searchQuery) use ($search) {

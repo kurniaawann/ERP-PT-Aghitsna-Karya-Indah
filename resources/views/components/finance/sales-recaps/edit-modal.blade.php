@@ -160,4 +160,8 @@
             <i class="fa-solid fa-plus"></i> Tambah Item
         </button>
     </div>
+
+    {{-- Payment Proof Section --}}
+    <x-finance.payment-proofs.manager :proofs="$sale->paymentProofs" invoiceType="rekap_penjualan"
+        :invoiceKey="$sale->id_sales_recap" :manualAmount="false" />
 </x-modal>

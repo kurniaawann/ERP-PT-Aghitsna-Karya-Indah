@@ -57,4 +57,8 @@
         <p class="text-xs text-text-secondary mt-1">Format: JPG, PNG, GIF, WEBP, BMP. Maksimal 5 MB.
             Kosongkan jika tidak ingin mengganti file.</p>
     </div>
+
+    {{-- Payment Proof Section --}}
+    <x-finance.payment-proofs.manager :proofs="$recap->paymentProofs" invoiceType="recap"
+        :invoiceKey="$recap->id" :manualAmount="true" />
 </x-modal>

@@ -262,4 +262,8 @@
         </div>
     </div>
 
+    {{-- Payment Proof Section --}}
+    <x-finance.payment-proofs.manager :proofs="$invoice->paymentProofs" invoiceType="alumunium"
+        :invoiceKey="$invoice->invoice_number" :manualAmount="false" />
+
 </x-modal>

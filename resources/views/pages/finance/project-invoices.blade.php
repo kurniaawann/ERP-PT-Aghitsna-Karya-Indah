@@ -73,6 +73,10 @@
         <x-finance.project-invoices.delete-modal :invoice="$invoice" />
     @endforeach
 
+    {{-- Modal Upload & Hapus Bukti Pembayaran (shared, dipicu dari modal Edit) --}}
+    @include('components.finance.payment-proofs.upload-modal')
+    @include('components.finance.payment-proofs.delete-modal')
+
     {{-- ==================== Section: Modal Konfirmasi Bulk Delete ==================== --}}
     {{-- Modal Konfirmasi Bulk Delete --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
@@ -82,5 +86,5 @@
 
     {{-- ==================== Section: JavaScript ==================== --}}
     {{-- JavaScript --}}
-    @vite('resources/js/pages/finance/project-invoices/index.js')
+    @vite(['resources/js/pages/finance/project-invoices/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
 @endsection

@@ -320,4 +320,8 @@
             @endif
         </div>
     </div>
+
+    {{-- Payment Proof Section --}}
+    <x-finance.payment-proofs.manager :proofs="$invoice->paymentProofs" invoiceType="proyek"
+        :invoiceKey="$invoice->invoice_number" :manualAmount="true" />
 </x-modal>

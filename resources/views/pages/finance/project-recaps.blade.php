@@ -4,8 +4,8 @@
              kolom No (auto-generate), Nama Proyek, Total RAB, Uang Masuk
              (DP, superadmin), Terbayar, Sisa Pembayaran, progress bar,
              status, dan file design. Mendukung tambah, lihat detail, edit, dan
-             hapus massal. Bukti pembayaran diupload lewat menu Bukti
-             Pembayaran (kategori Rekap Proyek).
+             hapus massal. Bukti pembayaran diupload lewat tombol di dalam
+             modal Edit (kategori Rekap Proyek).
      Data dari RecapProyekController@index:
      - $recaps : Paginator ProjectRecap dari
                  RecapProyekService::buildIndexQuery($request),
@@ -61,6 +61,10 @@
         @include('components.finance.project-recaps.edit-modal', ['recap' => $recap])
     @endforeach
 
+    {{-- Modal Upload & Hapus Bukti Pembayaran (shared, dipicu dari modal Edit) --}}
+    @include('components.finance.payment-proofs.upload-modal')
+    @include('components.finance.payment-proofs.delete-modal')
+
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
         <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data rekap proyek yang dipilih?</p>
@@ -74,5 +78,5 @@
     </x-modal>
 
     {{-- ==================== JavaScript ==================== --}}
-    @vite(['resources/js/pages/finance/project-recaps/index.js'])
+    @vite(['resources/js/pages/finance/project-recaps/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
 @endsection

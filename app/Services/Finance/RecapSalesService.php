@@ -55,7 +55,7 @@ class RecapSalesService
         $year = $request->get('year');
         $status = $request->get('status');
 
-        return SalesRecap::query()
+        return SalesRecap::query()->with('paymentProofs')
             ->when($search, function ($query, $search) {
                 $query->where('id_sales_recap', 'like', "%{$search}%")
                     ->orWhere('name_proyek', 'like', "%{$search}%");

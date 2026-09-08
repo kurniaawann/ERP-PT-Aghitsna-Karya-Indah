@@ -696,13 +696,15 @@ class PaymentProofService
     /**
      * Menyimpan file gambar bukti pembayaran.
      *
-     * Logika:
-     * - Jika ekstensi GD tidak tersedia (imagecreatetruecolor tidak ada): simpan file
-     *   asli apa adanya (tanpa resize).
-     * - Jika ada: resize gambar maksimal 1200×1200 (proporsional, tidak pernah diperbesar),
-     *   konversi ke WEBP kualitas 80, lalu simpan. File disimpan dengan nama UUID unik.
-     * - Semua file disimpan via Storage::disk('public') — jadi path yang disimpan ke DB
-     *   adalah path RELATIF (bukan absolut) agar portabel antar server.
+     * Seluruh format gambar input (JPG, PNG, GIF, WEBP, dst) selalu dikonversi
+     * menjadi WEBP (kualitas 80) dan diresize maksimal 1200×1200.
+     * Konversi dilakukan berjenjang: GD → ImageMagick → ffmpeg, agar server
+     * yang GD-nya tidak mendukung WebP tetap bisa menghasilkan file .webp.
+     * Jika semua encoder gagal, file asli disimpan apa adanya sebagai fallback
+     * terakhir supaya upload tidak gagal total (jarang terjadi).
+     *
+     * Semua file disimpan via Storage::disk('public') — jadi path yang disimpan ke DB
+     * adalah path RELATIF (bukan absolut) agar portabel antar server.
      *
      * @return array{file_name: string, file_path: string, mime_type: string, file_size: int|null}
      *
@@ -712,53 +714,19 @@ class PaymentProofService
     {
         $relativeDirectory = $this->buildRelativeDirectory($moduleType, $invoiceType, $invoiceNumber);
 
-        if (! function_exists('imagecreatetruecolor')) {
-            $fileName = Str::uuid()->toString().'.'.($file->getClientOriginalExtension() ?: 'jpg');
-            $relativePath = $relativeDirectory.'/'.$fileName;
-
-            $file->storeAs($relativeDirectory, $fileName, ['disk' => 'public']);
-
-            return [
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $relativePath,
-                'mime_type' => $file->getClientMimeType() ?: $file->getMimeType(),
-                'file_size' => Storage::disk('public')->size($relativePath),
-            ];
-        }
-
         $imageInfo = @getimagesize($file->getPathname());
 
         if ($imageInfo === false) {
             throw new RuntimeException('File yang diunggah bukan gambar yang valid.');
         }
 
-        [$sourceWidth, $sourceHeight] = $imageInfo;
-        $sourceImage = $this->createImageResource($file->getPathname(), $file->getMimeType());
+        $webpData = $this->encodeToWebp($file->getPathname(), $file->getMimeType(), $imageInfo);
 
-        $maxWidth = 1200;
-        $maxHeight = 1200;
-        $ratio = min($maxWidth / $sourceWidth, $maxHeight / $sourceHeight, 1);
-        $targetWidth = (int) round($sourceWidth * $ratio);
-        $targetHeight = (int) round($sourceHeight * $ratio);
+        if ($webpData !== null) {
+            $fileName = Str::uuid()->toString().'.webp';
+            $relativePath = $relativeDirectory.'/'.$fileName;
 
-        $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
-        $white = imagecolorallocate($canvas, 255, 255, 255);
-        imagefill($canvas, 0, 0, $white);
-        imagecopyresampled($canvas, $sourceImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
-
-        $fileName = Str::uuid()->toString().'.webp';
-        $relativePath = $relativeDirectory.'/'.$fileName;
-
-        // Konversi ke WEBP menggunakan GD. Jika server tidak mendukung imagewebp,
-        // fallback ke JPEG agar upload tetap berjalan.
-        $tempPath = tempnam(sys_get_temp_dir(), 'proof_');
-
-        if (function_exists('imagewebp') && imagewebp($canvas, $tempPath, 80)) {
-            imagedestroy($sourceImage);
-            imagedestroy($canvas);
-
-            Storage::disk('public')->put($relativePath, file_get_contents($tempPath));
-            @unlink($tempPath);
+            Storage::disk('public')->put($relativePath, $webpData);
 
             return [
                 'file_name' => $file->getClientOriginalName(),
@@ -768,43 +736,123 @@ class PaymentProofService
             ];
         }
 
-        // Fallback: simpan sebagai JPEG.
-        imagedestroy($sourceImage);
-        imagedestroy($canvas);
-        @unlink($tempPath);
+        // Fallback terakhir: simpan file asli apa adanya agar upload tidak gagal.
+        $originalExtension = $file->getClientOriginalExtension() ?: 'jpg';
+        $fileNameFallback = Str::uuid()->toString().'.'.$originalExtension;
+        $relativePathFallback = $relativeDirectory.'/'.$fileNameFallback;
 
-        $fileNameJpg = Str::uuid()->toString().'.jpg';
-        $relativePathJpg = $relativeDirectory.'/'.$fileNameJpg;
-        $tempPathJpg = tempnam(sys_get_temp_dir(), 'proof_');
-
-        $sourceImage = $this->createImageResource($file->getPathname(), $file->getMimeType());
-        $ratioJpg = min($maxWidth / $sourceWidth, $maxHeight / $sourceHeight, 1);
-        $targetWidthJpg = (int) round($sourceWidth * $ratioJpg);
-        $targetHeightJpg = (int) round($sourceHeight * $ratioJpg);
-        $canvasJpg = imagecreatetruecolor($targetWidthJpg, $targetHeightJpg);
-        $whiteJpg = imagecolorallocate($canvasJpg, 255, 255, 255);
-        imagefill($canvasJpg, 0, 0, $whiteJpg);
-        imagecopyresampled($canvasJpg, $sourceImage, 0, 0, 0, 0, $targetWidthJpg, $targetHeightJpg, $sourceWidth, $sourceHeight);
-
-        if (! imagejpeg($canvasJpg, $tempPathJpg, 80)) {
-            imagedestroy($sourceImage);
-            imagedestroy($canvasJpg);
-            @unlink($tempPathJpg);
-            throw new RuntimeException('Gagal menyimpan file bukti pembayaran.');
-        }
-
-        imagedestroy($sourceImage);
-        imagedestroy($canvasJpg);
-
-        Storage::disk('public')->put($relativePathJpg, file_get_contents($tempPathJpg));
-        @unlink($tempPathJpg);
+        $file->storeAs($relativeDirectory, $fileNameFallback, ['disk' => 'public']);
 
         return [
             'file_name' => $file->getClientOriginalName(),
-            'file_path' => $relativePathJpg,
-            'mime_type' => 'image/jpeg',
-            'file_size' => Storage::disk('public')->size($relativePathJpg),
+            'file_path' => $relativePathFallback,
+            'mime_type' => $file->getClientMimeType() ?: $file->getMimeType(),
+            'file_size' => Storage::disk('public')->size($relativePathFallback),
         ];
+    }
+
+    /**
+     * Mengonversi file gambar apapun menjadi konten WEBP (kualitas 80), resize
+     * maksimal 1200×1200. Berjenjang: GD → ImageMagick → ffmpeg.
+     *
+     * @return string|null  Data biner WEBP, atau null jika semua encoder gagal.
+     */
+    private function encodeToWebp(string $path, ?string $mime, array $imageInfo): ?string
+    {
+        // 1) GD (jika mendukung webp)
+        if (function_exists('imagecreatetruecolor') && function_exists('imagewebp')) {
+            try {
+                $source = $this->createImageResource($path, $mime ?: 'image/jpeg');
+                [$sourceWidth, $sourceHeight] = $imageInfo;
+
+                $maxWidth = 1200;
+                $maxHeight = 1200;
+                $ratio = min($maxWidth / $sourceWidth, $maxHeight / $sourceHeight, 1);
+                $targetWidth = max(1, (int) round($sourceWidth * $ratio));
+                $targetHeight = max(1, (int) round($sourceHeight * $ratio));
+
+                $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
+                $white = imagecolorallocate($canvas, 255, 255, 255);
+                imagefill($canvas, 0, 0, $white);
+                imagecopyresampled($canvas, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+
+                $tempPath = tempnam(sys_get_temp_dir(), 'proof_');
+                $ok = imagewebp($canvas, $tempPath, 80);
+                imagedestroy($source);
+                imagedestroy($canvas);
+
+                if ($ok) {
+                    $data = file_get_contents($tempPath);
+                    @unlink($tempPath);
+                    return $data === false ? null : $data;
+                }
+
+                @unlink($tempPath);
+            } catch (\Throwable $e) {
+                // Lanjut ke encoder berikutnya jika GD gagal.
+            }
+        }
+
+        // 2) ImageMagick (magick / convert)
+        $imageMagick = $this->findExecutable(['magick', 'convert']);
+        if ($imageMagick !== null) {
+            $tempOut = tempnam(sys_get_temp_dir(), 'proof_').'.webp';
+            $command = escapeshellarg($imageMagick)
+                .' '.escapeshellarg($path)
+                .' -resize '.escapeshellarg('1200x1200>')
+                .' -quality 80 '
+                .escapeshellarg($tempOut)
+                .' 2>&1';
+            exec($command, $output, $exitCode);
+
+            if ($exitCode === 0 && is_file($tempOut)) {
+                $data = file_get_contents($tempOut);
+                @unlink($tempOut);
+                if ($data !== false && $data !== '') {
+                    return $data;
+                }
+            }
+            @unlink($tempOut);
+        }
+
+        // 3) ffmpeg
+        $ffmpeg = $this->findExecutable(['ffmpeg']);
+        if ($ffmpeg !== null) {
+            $tempOut = tempnam(sys_get_temp_dir(), 'proof_').'.webp';
+            $command = escapeshellarg($ffmpeg)
+                .' -y -i '.escapeshellarg($path)
+                .' -vf '.escapeshellarg('scale=min(1200,iw):min(1200,ih)')
+                .' -q:v 80 '
+                .escapeshellarg($tempOut)
+                .' 2>&1';
+            exec($command, $output, $exitCode);
+
+            if ($exitCode === 0 && is_file($tempOut)) {
+                $data = file_get_contents($tempOut);
+                @unlink($tempOut);
+                if ($data !== false && $data !== '') {
+                    return $data;
+                }
+            }
+            @unlink($tempOut);
+        }
+
+        return null;
+    }
+
+    /**
+     * Mencari path executable dari daftar nama perintah yang tersedia di PATH.
+     */
+    private function findExecutable(array $names): ?string
+    {
+        foreach ($names as $name) {
+            $result = trim((string) shell_exec('command -v '.escapeshellarg($name).' 2>/dev/null'));
+            if ($result !== '' && is_executable($result)) {
+                return $result;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -171,7 +171,7 @@
                 @if ($isAdmin)
                 {{-- Admin: Invoice submenu with 4 new items --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('proyek-invoice*') || request()->is('payment-accounts*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') || request()->is('payment-proofs*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('proyek-invoice*') || request()->is('payment-accounts*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <a href="{{ url('/proyek-invoice') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -255,22 +255,11 @@
                             @endif
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('payment-proofs.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('payment-proofs*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-image w-4 
-                                {{ request()->is('payment-proofs*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Bukti Pembayaran</span>
-                        </a>
-                    </li>
                 </ul>
                 @else
                 {{-- Super Admin: Full Finance menu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('payment-proofs*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <button onclick="toggleDropdown('invoiceMasterDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -429,17 +418,6 @@
                                     {{ $reimburseBadgeCount }}
                                 </span>
                             @endif
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('payment-proofs.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('payment-proofs*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-image w-4 
-                                {{ request()->is('payment-proofs*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Bukti Pembayaran</span>
                         </a>
                     </li>
                 </ul>

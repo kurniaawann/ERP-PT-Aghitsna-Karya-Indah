@@ -77,6 +77,10 @@
         @endif
     @endforeach
 
+    {{-- Modal Upload & Hapus Bukti Pembayaran (shared, dipicu dari modal Edit) --}}
+    @include('components.finance.payment-proofs.upload-modal')
+    @include('components.finance.payment-proofs.delete-modal')
+
     {{-- ==================== Modal Konfirmasi Bulk Delete ==================== --}}
     <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
         buttonText="Ya, Hapus">
@@ -96,5 +100,5 @@
             'quantity' => $item->quantity,
         ])->values()) !!};
     </script>
-    @vite(['resources/js/pages/finance/sales-recaps/index.js'])
+    @vite(['resources/js/pages/finance/sales-recaps/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
 @endsection

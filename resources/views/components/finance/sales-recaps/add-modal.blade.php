@@ -113,4 +113,7 @@
 
     {{-- Hidden field untuk JSON items --}}
     <input type="hidden" name="items" id="items-json" value="[]">
+
+    {{-- Bukti Pembayaran: diupload setelah data tersimpan --}}
+    <x-finance.payment-proofs.add-note />
 </x-modal>

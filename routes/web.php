@@ -224,11 +224,8 @@ Route::middleware('auth')->group(function () {
 
     // ─── Routes tanpa middleware tambahan (Super Admin + Legacy roles only) ───
 
-    // Route Bukti Pembayaran Invoice
-    Route::get('/payment-proofs', [PaymentProofController::class, 'index'])->name('payment-proofs.index');
+    // Route Bukti Pembayaran Invoice (diakses dari modal Edit tiap modul)
     Route::post('/payment-proofs', [PaymentProofController::class, 'store'])->name('payment-proofs.store');
-    Route::put('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'update'])->name('payment-proofs.update');
-    Route::delete('/payment-proofs/destroy-selected', [PaymentProofController::class, 'destroySelected'])->name('payment-proofs.destroySelected');
     Route::delete('/payment-proofs/{payment_proof}', [PaymentProofController::class, 'destroy'])->name('payment-proofs.destroy');
 
     // Route Purchase Invoice
