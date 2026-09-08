@@ -75,6 +75,14 @@
                                             <i class="fa-solid fa-pencil"></i>
                                             <span>Edit</span>
                                         </button>
+
+                                        {{-- PDF --}}
+                                        <a href="{{ route('delivery-note.administrasi.export.pdf.single', $deliveryNote->id_delivery_note) }}"
+                                            class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Print PDF">
+                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
+                                            <span>PDF</span>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>

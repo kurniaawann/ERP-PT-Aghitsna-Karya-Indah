@@ -145,4 +145,22 @@ class DeliveryNoteController extends Controller
 
         return $pdf->download($filename);
     }
+
+    /**
+     * Export satu surat jalan ke PDF (tombol PDF pada kolom Aksi).
+     *
+     * @param  string  $id  Primary key id_delivery_note
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse File PDF
+     */
+    public function exportPdfSingle(string $id)
+    {
+        $deliveryNote = DeliveryNote::findOrFail($id);
+
+        $deliveryNotes = collect([$deliveryNote]);
+        $pdf = Pdf::loadView('exports.administrasi.delivery-note-pdf', compact('deliveryNotes'));
+
+        $safeId = str_replace(['/', '\\'], '-', $deliveryNote->id_delivery_note);
+
+        return $pdf->download('Surat_Jalan_'.$safeId.'_'.date('Y-m-d').'.pdf');
+    }
 }

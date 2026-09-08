@@ -415,6 +415,7 @@ Route::middleware('auth')->group(function () {
         // Route Document Receipt - Export PDF
         Route::get('/document-receipt/export/pdf', [DocumentReceiptController::class, 'exportPdfAll'])->name('document-receipt.export.pdf');
         Route::post('/document-receipt/export/pdf-selected', [DocumentReceiptController::class, 'exportPdfSelected'])->name('document-receipt.export.pdf.selected');
+        Route::get('/document-receipt/{id_document}/export-pdf', [DocumentReceiptController::class, 'exportPdfSingle'])->name('document-receipt.export.pdf.single')->where('id_document', '.*');
 
         // Route Cash Out Proof (Bukti Kas Keluar)
         Route::get('/cash-out-proof', [CashOutProofController::class, 'index'])->name('cash-out-proof.index');
@@ -425,6 +426,7 @@ Route::middleware('auth')->group(function () {
         // Route Cash Out Proof - Export PDF
         Route::get('/cash-out-proof/export/pdf', [CashOutProofController::class, 'exportPdfAll'])->name('cash-out-proof.export.pdf');
         Route::post('/cash-out-proof/export/pdf-selected', [CashOutProofController::class, 'exportPdfSelected'])->name('cash-out-proof.export.pdf.selected');
+        Route::get('/cash-out-proof/{bkk_no}/export-pdf', [CashOutProofController::class, 'exportPdfSingle'])->name('cash-out-proof.export.pdf.single')->where('bkk_no', '.*');
 
         // Route Kwintansi
         Route::get('/kwintansi', [KwintansiController::class, 'index'])->name('kwintansi.index');
@@ -435,6 +437,7 @@ Route::middleware('auth')->group(function () {
         // Route Kwintansi - Export PDF
         Route::get('/kwintansi/export/pdf', [KwintansiController::class, 'exportPdfAll'])->name('kwintansi.export.pdf');
         Route::post('/kwintansi/export/pdf-selected', [KwintansiController::class, 'exportPdfSelected'])->name('kwintansi.export.pdf.selected');
+        Route::get('/kwintansi/{id_kwintansi}/export-pdf', [KwintansiController::class, 'exportPdfSingle'])->name('kwintansi.export.pdf.single')->where('id_kwintansi', '.*');
 
         // Route Nota Administrasi
         Route::get('/nota-administrasi', [NotaController::class, 'index'])->name('nota.administrasi.index');
@@ -445,6 +448,7 @@ Route::middleware('auth')->group(function () {
         // Route Nota Administrasi - Export PDF
         Route::get('/nota-administrasi/export/pdf', [NotaController::class, 'exportPdfAll'])->name('nota.administrasi.export.pdf');
         Route::post('/nota-administrasi/export/pdf-selected', [NotaController::class, 'exportPdfSelected'])->name('nota.administrasi.export.pdf.selected');
+        Route::get('/nota-administrasi/{id_nota}/export-pdf', [NotaController::class, 'exportPdfSingle'])->name('nota.administrasi.export.pdf.single')->where('id_nota', '.*');
 
         // Route Delivery Note (Surat Jalan)
         Route::get('/delivery-note', [DeliveryNoteController::class, 'index'])->name('delivery-note.administrasi.index');
@@ -455,6 +459,7 @@ Route::middleware('auth')->group(function () {
         // Route Delivery Note - Export PDF
         Route::get('/delivery-note/export/pdf', [DeliveryNoteController::class, 'exportPdfAll'])->name('delivery-note.administrasi.export.pdf');
         Route::post('/delivery-note/export/pdf-selected', [DeliveryNoteController::class, 'exportPdfSelected'])->name('delivery-note.administrasi.export.pdf.selected');
+        Route::get('/delivery-note/{id_delivery_note}/export-pdf', [DeliveryNoteController::class, 'exportPdfSingle'])->name('delivery-note.administrasi.export.pdf.single')->where('id_delivery_note', '.*');
 
         // ─── Surat Perintah Kerja (SPK) ─────────────────────────────────────────
         Route::get('/surat-perintah-kerja', [SuratPerintahKerjaController::class, 'index'])->name('surat-perintah-kerja.administrasi.index');

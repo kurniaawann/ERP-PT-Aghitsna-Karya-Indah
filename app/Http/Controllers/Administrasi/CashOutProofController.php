@@ -154,4 +154,19 @@ class CashOutProofController extends Controller
 
         return $pdf->download('Bukti_Kas_Keluar_'.date('Y-m-d').'.pdf');
     }
+
+    /**
+     * Export satu bukti kas keluar ke PDF (tombol PDF pada kolom Aksi).
+     *
+     * @param  string  $bkkNo  Primary key bkk_no
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse File PDF
+     */
+    public function exportPdfSingle(string $bkkNo)
+    {
+        $cashOut = CashOutProof::findOrFail($bkkNo);
+
+        $cashOuts = collect([$cashOut]);
+
+        return $this->generatePdfResponse($cashOuts);
+    }
 }

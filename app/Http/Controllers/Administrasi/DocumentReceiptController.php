@@ -147,4 +147,19 @@ class DocumentReceiptController extends Controller
 
         return $pdf->download('Tanda_Terima_Dokumen_'.date('Y-m-d').'.pdf');
     }
+
+    /**
+     * Export satu tanda terima dokumen ke PDF (tombol PDF pada kolom Aksi).
+     *
+     * @param  string  $id  Primary key id_document
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse File PDF
+     */
+    public function exportPdfSingle(string $id)
+    {
+        $document = DocumentReceipt::findOrFail($id);
+
+        $documents = collect([$document]);
+
+        return $this->generatePdfResponse($documents);
+    }
 }

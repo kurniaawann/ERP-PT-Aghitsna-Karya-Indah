@@ -158,4 +158,22 @@ class NotaController extends Controller
 
         return $pdf->download($filename);
     }
+
+    /**
+     * Export satu nota ke PDF (tombol PDF pada kolom Aksi).
+     *
+     * @param  string  $id  Primary key id_nota
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse File PDF
+     */
+    public function exportPdfSingle(string $id)
+    {
+        $nota = Nota::findOrFail($id);
+
+        $notas = collect([$nota]);
+        $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
+
+        $safeId = str_replace(['/', '\\'], '-', $nota->id_nota);
+
+        return $pdf->download('Nota_'.$safeId.'_'.date('Y-m-d').'.pdf');
+    }
 }

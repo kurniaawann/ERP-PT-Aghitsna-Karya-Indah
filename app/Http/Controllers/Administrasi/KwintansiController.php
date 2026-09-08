@@ -162,4 +162,23 @@ class KwintansiController extends Controller
 
         return $pdf->download('Kwitansi_'.date('Y-m-d').'.pdf');
     }
+
+    /**
+     * Export satu kwitansi ke PDF (tombol PDF pada kolom Aksi).
+     *
+     * @param  string  $id  Primary key id_kwintansi
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse File PDF
+     */
+    public function exportPdfSingle(string $id)
+    {
+        $kwintansi = Kwintansi::findOrFail($id);
+
+        $kwintansis = collect([$kwintansi]);
+        $pdf = Pdf::loadView('exports.administrasi.kwintansi-pdf', compact('kwintansis'));
+        $pdf->setPaper('a4', 'portrait');
+
+        $safeId = str_replace(['/', '\\'], '-', $kwintansi->id_kwintansi);
+
+        return $pdf->download('Kwitansi_'.$safeId.'_'.date('Y-m-d').'.pdf');
+    }
 }
