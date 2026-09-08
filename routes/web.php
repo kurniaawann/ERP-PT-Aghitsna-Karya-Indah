@@ -8,6 +8,7 @@ use App\Http\Controllers\Administrasi\KwintansiController;
 use App\Http\Controllers\Administrasi\NotaController;
 use App\Http\Controllers\Administrasi\ProjectQuotationController;
 use App\Http\Controllers\Administrasi\RABController;
+use App\Http\Controllers\Administrasi\SuratMenyuratController;
 use App\Http\Controllers\Administrasi\SuratPerintahKerjaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Finance\AlumuniumInvoiceController;
@@ -406,8 +407,11 @@ Route::middleware('auth')->group(function () {
         // Administrasi Routes
         // ============================================
 
+        // Route Surat Menyurat (halaman terpusat ber-tab berisi semua submodul)
+        Route::get('/surat-menyurat', [SuratMenyuratController::class, 'index'])->name('surat-menyurat.index');
+
         // Route Document Receipt (Tanda Terima Dokumen)
-        Route::get('/document-receipt', [DocumentReceiptController::class, 'index'])->name('document-receipt.index');
+        Route::get('/document-receipt', fn () => redirect()->route('surat-menyurat.index', ['tab' => 'document-receipt']))->name('document-receipt.index');
         Route::post('/document-receipt', [DocumentReceiptController::class, 'store'])->name('document-receipt.store');
         Route::put('/document-receipt/{documentReceipt}', [DocumentReceiptController::class, 'update'])->name('document-receipt.update');
         Route::delete('/document-receipt/destroy-selected', [DocumentReceiptController::class, 'destroySelected'])->name('document-receipt.destroySelected');
@@ -429,7 +433,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/cash-out-proof/{bkk_no}/export-pdf', [CashOutProofController::class, 'exportPdfSingle'])->name('cash-out-proof.export.pdf.single')->where('bkk_no', '.*');
 
         // Route Kwintansi
-        Route::get('/kwintansi', [KwintansiController::class, 'index'])->name('kwintansi.index');
+        Route::get('/kwintansi', fn () => redirect()->route('surat-menyurat.index', ['tab' => 'kwintansi']))->name('kwintansi.index');
         Route::post('/kwintansi', [KwintansiController::class, 'store'])->name('kwintansi.store');
         Route::put('/kwintansi/{kwintansi}', [KwintansiController::class, 'update'])->name('kwintansi.update')->where('kwintansi', '.*');
         Route::delete('/kwintansi/destroy-selected', [KwintansiController::class, 'destroySelected'])->name('kwintansi.destroySelected');
@@ -440,7 +444,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/kwintansi/{id_kwintansi}/export-pdf', [KwintansiController::class, 'exportPdfSingle'])->name('kwintansi.export.pdf.single')->where('id_kwintansi', '.*');
 
         // Route Nota Administrasi
-        Route::get('/nota-administrasi', [NotaController::class, 'index'])->name('nota.administrasi.index');
+        Route::get('/nota-administrasi', fn () => redirect()->route('surat-menyurat.index', ['tab' => 'nota']))->name('nota.administrasi.index');
         Route::post('/nota-administrasi', [NotaController::class, 'store'])->name('nota.administrasi.store');
         Route::put('/nota-administrasi/{nota}', [NotaController::class, 'update'])->name('nota.administrasi.update')->where('nota', '.*');
         Route::delete('/nota-administrasi/destroy-selected', [NotaController::class, 'destroySelected'])->name('nota.administrasi.destroySelected');
@@ -451,7 +455,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/nota-administrasi/{id_nota}/export-pdf', [NotaController::class, 'exportPdfSingle'])->name('nota.administrasi.export.pdf.single')->where('id_nota', '.*');
 
         // Route Delivery Note (Surat Jalan)
-        Route::get('/delivery-note', [DeliveryNoteController::class, 'index'])->name('delivery-note.administrasi.index');
+        Route::get('/delivery-note', fn () => redirect()->route('surat-menyurat.index', ['tab' => 'surat-jalan']))->name('delivery-note.administrasi.index');
         Route::post('/delivery-note', [DeliveryNoteController::class, 'store'])->name('delivery-note.administrasi.store');
         Route::put('/delivery-note/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('delivery-note.administrasi.update')->where('deliveryNote', '.*');
         Route::delete('/delivery-note/destroy-selected', [DeliveryNoteController::class, 'destroySelected'])->name('delivery-note.administrasi.destroySelected');
@@ -462,7 +466,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/delivery-note/{id_delivery_note}/export-pdf', [DeliveryNoteController::class, 'exportPdfSingle'])->name('delivery-note.administrasi.export.pdf.single')->where('id_delivery_note', '.*');
 
         // ─── Surat Perintah Kerja (SPK) ─────────────────────────────────────────
-        Route::get('/surat-perintah-kerja', [SuratPerintahKerjaController::class, 'index'])->name('surat-perintah-kerja.administrasi.index');
+        Route::get('/surat-perintah-kerja', fn () => redirect()->route('surat-menyurat.index', ['tab' => 'spk']))
+            ->name('surat-perintah-kerja.administrasi.index');
         Route::get('/surat-perintah-kerja/next-number', [SuratPerintahKerjaController::class, 'getNextNomor'])->name('surat-perintah-kerja.administrasi.nextNumber');
         Route::post('/surat-perintah-kerja', [SuratPerintahKerjaController::class, 'store'])->name('surat-perintah-kerja.administrasi.store');
         Route::put('/surat-perintah-kerja/{nomor}', [SuratPerintahKerjaController::class, 'update'])->name('surat-perintah-kerja.administrasi.update')->where('nomor', '.*');

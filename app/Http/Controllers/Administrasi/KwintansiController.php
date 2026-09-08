@@ -38,6 +38,19 @@ class KwintansiController extends Controller
      */
     public function index(Request $request)
     {
+        return view('pages.administrasi.kwintansi', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman daftar kwitansi.
+     *
+     * Dipakai oleh index() dan oleh SuratMenyuratController (tab Kwintansi).
+     *
+     * @param  Request  $request  Request HTTP (search/filter parameter)
+     * @return array
+     */
+    public function indexData(Request $request)
+    {
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
         $year = $request->integer('year') ?: null;
@@ -52,7 +65,7 @@ class KwintansiController extends Controller
             ->get();
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
 
-        return view('pages.administrasi.kwintansi', compact('kwintansis', 'search', 'executives', 'paymentAccounts', 'invoiceType'));
+        return compact('kwintansis', 'search', 'executives', 'paymentAccounts', 'invoiceType');
     }
 
     /**

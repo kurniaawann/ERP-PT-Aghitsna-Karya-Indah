@@ -35,12 +35,25 @@ class DocumentReceiptController extends Controller
      */
     public function index(Request $request)
     {
+        return view('pages.administrasi.document-receipt', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman daftar tanda terima dokumen.
+     *
+     * Dipakai oleh index() dan oleh SuratMenyuratController (tab dokumen).
+     *
+     * @param  Request  $request  Request HTTP (search/filter parameter)
+     * @return array
+     */
+    public function indexData(Request $request)
+    {
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
         $year = $request->integer('year') ?: null;
         $documents = $this->service->getPaginated($search, $month, $year);
 
-        return view('pages.administrasi.document-receipt', compact('documents', 'search'));
+        return compact('documents', 'search');
     }
 
     /**

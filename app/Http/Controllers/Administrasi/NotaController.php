@@ -40,6 +40,19 @@ class NotaController extends Controller
      */
     public function index(Request $request)
     {
+        return view('pages.administrasi.nota', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman daftar nota.
+     *
+     * Dipakai oleh index() dan oleh SuratMenyuratController (tab Nota).
+     *
+     * @param  Request  $request  Request HTTP (search/filter parameter)
+     * @return array
+     */
+    public function indexData(Request $request)
+    {
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
         $year = $request->integer('year') ?: null;
@@ -56,7 +69,7 @@ class NotaController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('pages.administrasi.nota', compact('notas', 'search', 'tipe', 'executives', 'divisions'));
+        return compact('notas', 'search', 'tipe', 'executives', 'divisions');
     }
 
     /**

@@ -1,0 +1,69 @@
+{{-- =====================================================================
+     Partial Tab: Surat Perintah Kerja (dipakai pada halaman Surat Menyurat)
+     Data tersedia dari indexData() controller:
+     - $suratPerintahKerjas : koleksi SuratPerintahKerja (paginate)
+     - $search              : keyword pencarian
+     ===================================================================== --}}
+
+    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
+
+        {{-- ═══════════════════════════════════════════════════════════
+             TOOLBAR: Pencarian & Tombol Aksi
+             ═══════════════════════════════════════════════════════════ --}}
+        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
+
+            {{-- Form Pencarian & Filter --}}
+            <form method="GET" action="{{ route('surat-menyurat.index', ['tab' => 'spk']) }}"
+                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                <x-filters.month-filter :value="request('month')" responsive="custom" />
+                <x-filters.year-filter :value="request('year')" responsive="custom" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari surat perintah kerja..." responsive="custom" />
+            </form>
+
+            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
+                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
+
+                    {{-- Tombol Hapus Massal --}}
+                    <x-buttons.delete-button modalId="deleteModal" />
+
+                    {{-- Tombol Tambah SPK --}}
+                    <x-buttons.add-button modalId="addModal" text="Tambah Surat Perintah Kerja" />
+                </div>
+            </div>
+        </div>
+
+        @include('components.administrasi.surat-perintah-kerja.table', ['suratPerintahKerjas' => $suratPerintahKerjas])
+
+    </div>
+
+    <x-pagination :paginator="$suratPerintahKerjas" />
+
+    @include('components.administrasi.surat-perintah-kerja.add-modal')
+
+    @foreach ($suratPerintahKerjas as $spk)
+        @include('components.administrasi.surat-perintah-kerja.detail-modal', ['spk' => $spk])
+    @endforeach
+
+    @foreach ($suratPerintahKerjas as $spk)
+        @include('components.administrasi.surat-perintah-kerja.edit-modal', ['spk' => $spk])
+    @endforeach
+
+    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
+        buttonText="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus surat perintah kerja yang dipilih?
+    </x-modal>
+
+    @push('scripts')
+        @vite('resources/js/pages/administrasi/surat-perintah-kerja/index.js')
+
+        <script>
+            function showDetailModal(id) {
+                const modal = document.getElementById('detailModal-' + id);
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+        </script>
+    @endpush

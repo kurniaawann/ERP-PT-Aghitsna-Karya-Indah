@@ -44,12 +44,25 @@ class DeliveryNoteController extends Controller
      */
     public function index(Request $request)
     {
+        return view('pages.administrasi.delivery-note', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman daftar surat jalan.
+     *
+     * Dipakai oleh index() dan oleh SuratMenyuratController (tab surat jalan).
+     *
+     * @param  \Illuminate\Http\Request  $request  Request HTTP
+     * @return array
+     */
+    public function indexData(Request $request)
+    {
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
         $year = $request->integer('year') ?: null;
         $deliveryNotes = $this->deliveryNoteService->getPaginated($search, $month, $year);
 
-        return view('pages.administrasi.delivery-note', compact('deliveryNotes', 'search'));
+        return compact('deliveryNotes', 'search');
     }
 
     /**

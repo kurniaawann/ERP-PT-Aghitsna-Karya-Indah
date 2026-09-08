@@ -44,12 +44,25 @@ class SuratPerintahKerjaController extends Controller
      */
     public function index(Request $request)
     {
+        return view('pages.administrasi.surat-perintah-kerja', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman daftar surat perintah kerja.
+     *
+     * Dipakai oleh index() dan oleh SuratMenyuratController (tab SPK).
+     *
+     * @param  \Illuminate\Http\Request  $request  Request HTTP
+     * @return array
+     */
+    public function indexData(Request $request)
+    {
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
         $year = $request->integer('year') ?: null;
         $suratPerintahKerjas = $this->service->getPaginated($search, $month, $year);
 
-        return view('pages.administrasi.surat-perintah-kerja', compact('suratPerintahKerjas', 'search'));
+        return compact('suratPerintahKerjas', 'search');
     }
 
     /**
