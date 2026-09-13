@@ -7,9 +7,9 @@
      - $salesRecaps: Paginator SalesRecap (10/halaman) hasil
                      RecapSalesService::buildFilteredQuery($request)
                      diurutkan created_at/date desc, difilter month/year/search.
-     - $items      : Daftar item inventory (Items) diurutkan name_item,
-                     dipakai dropdown modal tambah/edit dan
-                     window._itemsData untuk autofill harga.
+- $items      : Daftar item inventory (Items) diurutkan name_item,
+                      dipakai dropdown modal tambah/edit dan di-expose lewat
+                     <script type="application/json"> untuk autofill harga.
      - $grandTotals: Grand totals hasil RecapSalesService::getGrandTotals()
                      (kapital, penjualan, laba) dengan filter yang sama.
      Komponen yang di-include:
@@ -19,8 +19,8 @@
      - components.finance.sales-recaps.add-modal / edit-modal / status-modal : modal CRUD
      - x-pagination                                        : navigasi halaman
      - x-modal                                             : konfirmasi hapus
-     JS: @vite('resources/js/pages/finance/sales-recaps/index.js')
-         (+ window._itemsData inline)
+JS: @vite('resources/js/pages/finance/sales-recaps/index.js')
+          (+ data item via <script type="application/json">)
      ===================================================================== --}}
 @extends('layouts.app')
 
@@ -88,17 +88,14 @@
     </x-modal>
 
     {{-- ==================== JavaScript ==================== --}}
-    {{-- Data item inventory di-expose ke window._itemsData sebagai array
-         JSON untuk autofill harga (capital/selling) & quantity saat
-         memilih item pada dropdown modal tambah/edit. --}}
-    <script>
-        window._itemsData = {!! json_encode($items->map(fn($item) => [
-            'id_item' => $item->id_item,
-            'name_item' => $item->name_item,
-            'capital_price' => $item->capital_price,
-            'selling_price' => $item->selling_price,
-            'quantity' => $item->quantity,
-        ])->values()) !!};
-    </script>
+    {{-- Data item inventory di-expose lewat blok JSON (type="application/json"
+         agar tidak di-parse sebagai JS oleh IDE/linter, lalu dibaca index.js). --}}
+    <script type="application/json" id="itemsDataJson">{!! json_encode($items->map(fn($item) => [
+        'id_item' => $item->id_item,
+        'name_item' => $item->name_item,
+        'capital_price' => $item->capital_price,
+        'selling_price' => $item->selling_price,
+        'quantity' => $item->quantity,
+    ])->values()) !!}</script>
     @vite(['resources/js/pages/finance/sales-recaps/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
 @endsection

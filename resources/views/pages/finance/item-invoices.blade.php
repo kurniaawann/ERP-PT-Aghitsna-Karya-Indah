@@ -6,9 +6,10 @@
      - $invoices       : Paginator InvoiceBarang (10/halaman) dari
                          ItemInvoiceService::baseQuery($request),
                          difilter oleh month, year, search.
-     - $items          : Daftar item inventory (Items) dari cache
-                         'inventory:items:all', dipakai dropdown di modal
-                         dan window._itemsData untuk autofill harga.
+- $items          : Daftar item inventory (Items) dari cache
+                          'inventory:items:all', dipakai dropdown di modal
+                          dan di-expose lewat <script type="application/json">
+                          untuk autofill harga.
      - $paymentAccounts: Rekening pembayaran aktif (PaymentAccountService),
                          untuk dropdown rekening pada modal tambah/edit.
      Komponen yang di-include:
@@ -17,8 +18,8 @@
      - x-finance.item-invoices.table / add-modal / edit-modal / detail-modal : UI CRUD
      - x-pagination                                       : navigasi halaman
      - x-modal                                            : konfirmasi hapus
-     JS: @vite('resources/js/pages/finance/item-invoices/index.js')
-         (+ window._itemsData via @push('scripts'))
+JS: @vite('resources/js/pages/finance/item-invoices/index.js')
+          (+ data item via <script type="application/json">)
      ===================================================================== --}}
 @extends('layouts.app')
 
@@ -75,18 +76,15 @@
     </x-modal>
 
     {{-- ==================== Section: Scripts (Data Inventory untuk JS) ==================== --}}
-    {{-- Data item inventory di-expose ke window._itemsData sebagai array JSON.
-         Dipakai JS form tambah/edit untuk autofill harga (capital/selling)
-         dan quantity saat memilih item pada dropdown. --}}
-    <script>
-        window._itemsData = {!! json_encode($items->map(fn($item) => [
-            'id_item' => $item->id_item,
-            'name_item' => $item->name_item,
-            'capital_price' => $item->capital_price,
-            'selling_price' => $item->selling_price,
-            'quantity' => $item->quantity,
-        ])->values()) !!};
-    </script>
+    {{-- Data item inventory di-expose lewat blok JSON (type="application/json"
+         agar tidak di-parse sebagai JS oleh IDE/linter, lalu dibaca index.js). --}}
+    <script type="application/json" id="itemsDataJson">{!! json_encode($items->map(fn($item) => [
+        'id_item' => $item->id_item,
+        'name_item' => $item->name_item,
+        'capital_price' => $item->capital_price,
+        'selling_price' => $item->selling_price,
+        'quantity' => $item->quantity,
+    ])->values()) !!}</script>
 @endsection
 
 @push('scripts')

@@ -63,14 +63,12 @@
     </x-modal>
 
     @push('scripts')
-        <script>
-            window._itemsData = {!! json_encode($items->map(fn($item) => [
-                'id_item' => $item->id_item,
-                'name_item' => $item->name_item,
-                'capital_price' => $item->capital_price,
-                'selling_price' => $item->selling_price,
-                'quantity' => $item->quantity,
-            ])->values()) !!};
-        </script>
+        <script type="application/json" id="itemsDataJson">{!! json_encode($items->map(fn($item) => [
+            'id_item' => $item->id_item,
+            'name_item' => $item->name_item,
+            'capital_price' => $item->capital_price,
+            'selling_price' => $item->selling_price,
+            'quantity' => $item->quantity,
+        ])->values()) !!}</script>
         @vite(['resources/js/pages/finance/sales-recaps/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
     @endpush

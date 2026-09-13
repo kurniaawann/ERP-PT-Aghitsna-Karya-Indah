@@ -61,7 +61,7 @@ class RekapController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()?->isSuperAdmin()) {
+        if ((auth()->user()?->role ?? null) !== 'superadmin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 

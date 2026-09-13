@@ -44,7 +44,7 @@ class RecapSalesController extends Controller
      */
     public function index(Request $request)
     {
-        if (auth()->user()?->isSuperAdmin()) {
+        if ((auth()->user()?->role ?? null) === 'superadmin') {
             return redirect()->route('rekap.index', ['tab' => 'sales']);
         }
 

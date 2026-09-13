@@ -17,10 +17,27 @@
 // ============================================================
 
 /**
- * Generate dropdown options HTML dari window._itemsData.
+ * Baca data barang dari blok <script type="application/json" id="itemsDataJson">,
+ * dengan fallback ke window._itemsData.
+ * @returns {Array}
+ */
+function readItemsData() {
+    const el = document.getElementById('itemsDataJson');
+    if (el) {
+        try {
+            return JSON.parse(el.textContent || '[]') || [];
+        } catch (e) {
+            // abaikan, fallback ke window._itemsData
+        }
+    }
+    return window._itemsData || [];
+}
+
+/**
+ * Generate dropdown options HTML dari data item.
  *
  * Alur:
- * - Baca window._itemsData (array barang backend berisi id_item, name_item,
+ * - Baca data barang backend (array berisi id_item, name_item,
  *   capital_price, selling_price, quantity).
  * - Kelas opsi memakai prefix '-edit' untuk mode edit, else 'item-option'.
  * - Setiap opsi menyimpan data barang di data-* attribute (data-value,
@@ -32,7 +49,7 @@
  * @returns {string}
  */
 function buildItemOptionsHtml(prefix = '') {
-    const items = window._itemsData || [];
+    const items = readItemsData();
     if (!Array.isArray(items) || items.length === 0) return '';
 
     const optionClass = prefix === '-edit' ? 'item-option-edit' : 'item-option';

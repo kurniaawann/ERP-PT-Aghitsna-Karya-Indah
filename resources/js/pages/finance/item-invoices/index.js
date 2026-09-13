@@ -33,10 +33,27 @@ window.formatCurrencyInput = formatCurrencyInput;
 // ─── Pembuat Opsi Item ─────────────────────────────────────────────────────
 
 /**
+ * Baca data barang dari blok <script type="application/json" id="itemsDataJson">,
+ * dengan fallback ke window._itemsData.
+ * @returns {Array}
+ */
+function readItemsData() {
+    const el = document.getElementById('itemsDataJson');
+    if (el) {
+        try {
+            return JSON.parse(el.textContent || '[]') || [];
+        } catch (e) {
+            // abaikan, fallback ke window._itemsData
+        }
+    }
+    return window._itemsData || [];
+}
+
+/**
  * Membangun HTML opsi barang untuk dropdown pencarian.
  *
  * Alur:
- * - Baca window._itemsData (array barang dari backend berisi id_item,
+ * - Baca data barang dari backend (array berisi id_item,
  *   name_item, capital_price, selling_price, quantity).
  * - Kelas opsi memakai prefix '-edit' untuk mode edit, else 'barang-option'.
  * - Setiap opsi menyimpan data barang di data-* attribute (data-value,
@@ -49,7 +66,7 @@ window.formatCurrencyInput = formatCurrencyInput;
  * @return {string} HTML string berisi daftar opsi barang
  */
 function buildBarangOptionsHtml(prefix) {
-    const items = window._itemsData || [];
+    const items = readItemsData();
     if (!Array.isArray(items) || items.length === 0) return '';
 
     const optionClass = prefix === '-edit' ? 'barang-option-edit' : 'barang-option';
