@@ -21,6 +21,7 @@ use App\Http\Controllers\Finance\RecapAlumuniumController;
 use App\Http\Controllers\Finance\RecapExpenseController;
 use App\Http\Controllers\Finance\RecapProyekController;
 use App\Http\Controllers\Finance\RecapSalesController;
+use App\Http\Controllers\Finance\RekapController;
 use App\Http\Controllers\Finance\ReimburseController;
 use App\Http\Controllers\Finance\SemenInvoiceController;
 use App\Http\Controllers\Inventory\CementDeliveryOrderController;
@@ -246,6 +247,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/payment-accounts/{paymentAccount}', [PaymentAccountController::class, 'update'])->name('payment-accounts.update');
     Route::post('/payment-accounts/{paymentAccount}/toggle', [PaymentAccountController::class, 'toggleActive'])->name('payment-accounts.toggle');
     Route::delete('/payment-accounts/destroy-selected', [PaymentAccountController::class, 'destroySelected'])->name('payment-accounts.destroySelected');
+
+    // Route Rekap (halaman ber-tab khusus Super Admin)
+    Route::get('/rekap', [RekapController::class, 'index'])->name('rekap.index');
 
     // Route Recap Sales
     Route::get('/recap-sales', [RecapSalesController::class, 'index'])->name('recap-sales.index');

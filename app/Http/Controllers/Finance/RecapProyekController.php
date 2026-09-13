@@ -32,16 +32,36 @@ class RecapProyekController extends Controller
     /**
      * Menampilkan daftar rekap proyek dengan pagination.
      *
+     * Role super admin diarahkan ke halaman Rekap ber-tab; role lain
+     * (mis. admin) tetap memakai halaman standalone ini.
+     *
      * @param  \Illuminate\Http\Request  $request  Filter: search
-     * @return \Illuminate\View\View
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
+    {
+        if (auth()->user()?->isSuperAdmin()) {
+            return redirect()->route('rekap.index', ['tab' => 'proyek']);
+        }
+
+        return view('pages.finance.project-recaps', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman Rekap Proyek.
+     *
+     * Dipakai oleh index() dan oleh RekapController (tab Proyek).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    public function indexData(Request $request)
     {
         $recaps = $this->service->buildIndexQuery($request)
             ->paginate(10)
             ->appends($request->all());
 
-        return view('pages.finance.project-recaps', compact('recaps'));
+        return compact('recaps');
     }
 
     /**

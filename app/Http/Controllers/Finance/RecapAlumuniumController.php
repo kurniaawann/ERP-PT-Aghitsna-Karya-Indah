@@ -26,10 +26,30 @@ class RecapAlumuniumController extends Controller
     /**
      * Menampilkan daftar rekap invoice aluminium dengan filter dan pagination.
      *
+     * Role super admin diarahkan ke halaman Rekap ber-tab; role lain
+     * (mis. admin) tetap memakai halaman standalone ini.
+     *
      * @param  \Illuminate\Http\Request  $request  Filter: search, month, year
-     * @return \Illuminate\View\View
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
+    {
+        if (auth()->user()?->isSuperAdmin()) {
+            return redirect()->route('rekap.index', ['tab' => 'aluminium']);
+        }
+
+        return view('pages.finance.aluminium-recaps', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman Rekap Alumunium.
+     *
+     * Dipakai oleh index() dan oleh RekapController (tab Alumunium).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    public function indexData(Request $request)
     {
         $query = $this->service->buildBaseQuery($request);
 
@@ -37,7 +57,7 @@ class RecapAlumuniumController extends Controller
         $totals = $this->service->buildTotals($this->service->getAllInvoices($query));
         $periodTitle = $this->service->buildPeriodTitle($request);
 
-        return view('pages.finance.aluminium-recaps', compact('invoices', 'totals', 'periodTitle'));
+        return compact('invoices', 'totals', 'periodTitle');
     }
 
     /**

@@ -36,10 +36,30 @@ class RecapExpenseController extends Controller
     /**
      * Menampilkan daftar rekap pengeluaran dengan filter dan grand totals.
      *
+     * Role super admin diarahkan ke halaman Rekap ber-tab; role lain
+     * (mis. admin) tetap memakai halaman standalone ini.
+     *
      * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\View\View
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
+    {
+        if (auth()->user()?->isSuperAdmin()) {
+            return redirect()->route('rekap.index', ['tab' => 'pengeluaran']);
+        }
+
+        return view('pages.finance.expense-recaps', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman Rekap Pengeluaran.
+     *
+     * Dipakai oleh index() dan oleh RekapController (tab Pengeluaran).
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return array
+     */
+    public function indexData(Request $request)
     {
         $expenseRecaps = $this->service->buildIndexQuery($request)
             ->paginate(10)
@@ -49,7 +69,7 @@ class RecapExpenseController extends Controller
 
         $totals = $this->service->getGrandTotals($request);
 
-        return view('pages.finance.expense-recaps', compact('expenseRecaps', 'categories', 'totals'));
+        return compact('expenseRecaps', 'categories', 'totals');
     }
 
     /**

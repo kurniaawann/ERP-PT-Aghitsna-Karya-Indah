@@ -259,7 +259,7 @@
                 @else
                 {{-- Super Admin: Full Finance menu --}}
                 <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
+                    class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('rekap*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') || request()->is('reimburse*') ? '' : 'hidden' }}">
                     <li>
                         <button onclick="toggleDropdown('invoiceMasterDropdown')"
                             class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
@@ -338,70 +338,15 @@
                         </a>
                     </li>
                     <li>
-                        <button onclick="toggleDropdown('rekapDropdown')"
+                        <a href="{{ url('/rekap') }}"
                             class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <div class="flex items-center">
-                                <i
-                                    class="fas fa-chart-bar w-4
-                                    {{ request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                </i>
-                                <span class="ml-3 text-sm font-medium">Rekap</span>
-                            </div>
-
-                            <i id="rekapDropdownIcon"
-                                class="fas fa-chevron-down text-xs transition-transform duration-200
-                                {{ request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                                {{ request()->is('rekap*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-chart-bar w-4 
+                                {{ request()->is('rekap*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                        </button>
-
-                        <ul id="rekapDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') ? '' : 'hidden' }}">
-                            <li>
-                                <a href="{{ url('/recap-sales') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('recap-sales*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-chart-bar w-4 
-                                        {{ request()->is('recap-sales*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Rekap Penjualan</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/recap-alumunium') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('recap-alumunium*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-file-invoice-dollar w-4 
-                                        {{ request()->is('recap-alumunium*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Rekap Alumunium</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/recap-proyek') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('recap-proyek*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-file-invoice w-4 
-                                        {{ request()->is('recap-proyek*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Rekap Proyek</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/recap-expense') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('recap-expense*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-money-bill-wave w-4 
-                                        {{ request()->is('recap-expense*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Rekap Pengeluaran</span>
-                                </a>
-                            </li>
-                        </ul>
+                            <span class="ml-3 text-sm font-medium">Rekap</span>
+                        </a>
                     </li>
                     <li>
                         <a href="{{ url('/reimburse') }}"

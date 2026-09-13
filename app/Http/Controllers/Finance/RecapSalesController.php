@@ -36,10 +36,30 @@ class RecapSalesController extends Controller
     /**
      * Menampilkan daftar rekap penjualan dengan filter pencarian.
      *
+     * Role super admin diarahkan ke halaman Rekap ber-tab; role lain
+     * (mis. admin) tetap memakai halaman standalone ini.
+     *
      * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\View\View
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
+    {
+        if (auth()->user()?->isSuperAdmin()) {
+            return redirect()->route('rekap.index', ['tab' => 'sales']);
+        }
+
+        return view('pages.finance.sales-recaps', $this->indexData($request));
+    }
+
+    /**
+     * Menyiapkan data untuk halaman Rekap Penjualan.
+     *
+     * Dipakai oleh index() dan oleh RekapController (tab Penjualan).
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return array
+     */
+    public function indexData(Request $request)
     {
         $salesRecaps = $this->service->buildFilteredQuery($request)
             ->orderBy('created_at', 'desc')
@@ -51,7 +71,7 @@ class RecapSalesController extends Controller
 
         $grandTotals = $this->service->getGrandTotals($request);
 
-        return view('pages.finance.sales-recaps', compact('salesRecaps', 'items', 'grandTotals'));
+        return compact('salesRecaps', 'items', 'grandTotals');
     }
 
     /**
