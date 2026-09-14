@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Pengeluaran Divisi Produksi</title>
+    <title>Laporan Pengeluaran{{ auth()->user()->isAdmin() ? '' : ' Divisi Produksi' }}</title>
     <style>
         * {
             margin: 0;
@@ -14,28 +14,28 @@
 
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 9px;
+            font-size: 14px;
             padding: 15px;
         }
 
         .header-title {
             text-align: center;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 20px;
             margin-bottom: 3px;
         }
 
         .header-subtitle {
             text-align: center;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 18px;
             margin-bottom: 3px;
         }
 
         .header-period {
             text-align: center;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 16px;
             margin-bottom: 15px;
         }
 
@@ -49,14 +49,14 @@
         td {
             border: 1px solid black;
             padding: 4px 6px;
-            text-align: left;
+            text-align: center;
         }
 
         th {
             background-color: #FFFF00;
             font-weight: bold;
             text-align: center;
-            font-size: 10px;
+            font-size: 15px;
             vertical-align: middle;
         }
 
@@ -74,10 +74,6 @@
 
         .text-center {
             text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
         }
 
         .category-row {
@@ -111,14 +107,14 @@
         .rekapitulasi {
             margin-top: 20px;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 16px;
         }
 
         .rekap-item {
             display: flex;
             justify-content: space-between;
             margin: 5px 0;
-            font-size: 10px;
+            font-size: 15px;
         }
 
         .rekap-label {
@@ -188,7 +184,13 @@
 
 <body>
     <div class="header-title">PT. AGHITSNA KARYA INDAH</div>
-    <div class="header-subtitle">LAPORAN PENGELUARAN DIVISI PRODUKSI</div>
+    <div class="header-subtitle">
+        @if (auth()->user()->isAdmin())
+            LAPORAN PENGELUARAN
+        @else
+            LAPORAN PENGELUARAN DIVISI PRODUKSI
+        @endif
+    </div>
     <div class="header-period">PERIODE {{ strtoupper($periodTitle) }}</div>
 
     <table>
@@ -241,10 +243,10 @@
                             {{ $expense->transaction_date ? \Carbon\Carbon::parse($expense->transaction_date)->format('d/m/Y') : '' }}
                         </td>
                         <td>{{ $expense->description ?? '' }}</td>
-                        <td class="text-right">
+                        <td>
                             {{ $expense->income_amount ? 'Rp ' . number_format($expense->income_amount, 0, ',', '.') : '' }}
                         </td>
-                        <td class="text-right">
+                        <td>
                             {{ $expense->expense_amount ? 'Rp ' . number_format($expense->expense_amount, 0, ',', '.') : '' }}
                         </td>
                         <td>{{ $expense->money_source ?? '' }}</td>
@@ -267,9 +269,9 @@
                 {{-- Category Subtotal --}}
                 <tr class="subtotal-row">
                     <td colspan="4"></td>
-                    <td class="text-right">
+                    <td>
                         {{ 'Rp ' . number_format($categoryIncome, 0, ',', '.') }}</td>
-                    <td class="text-right">
+                    <td>
                         {{ 'Rp ' . number_format($categoryExpense, 0, ',', '.') }}</td>
                     <td></td>
                 </tr>
@@ -277,14 +279,14 @@
 
             {{-- Grand Total --}}
             <tr class="total-row">
-                <td colspan="4" class="text-center"><strong>Jumlah</strong></td>
-                <td class="text-right">
+                <td colspan="4"><strong>Jumlah</strong></td>
+                <td>
                     <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
                 </td>
-                <td class="text-right">
+                <td>
                     <strong>Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</strong>
                 </td>
-                <td class="text-right">
+                <td>
                     <strong>Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}</strong>
                 </td>
             </tr>
@@ -293,27 +295,27 @@
 
     {{-- Rekapitulasi --}}
     <div class="rekapitulasi">
-        <div style="margin-bottom: 10px;">Rekapitulasi Pengeluaran Divisi Produksi {{ $periodTitle }}</div>
+        <div style="margin-bottom: 10px;">Rekapitulasi Pengeluaran{{ auth()->user()->isAdmin() ? '' : ' Divisi Produksi' }} {{ $periodTitle }}</div>
 
         <table style="border: none; width: 50%;">
             <tr style="border: none;">
                 <td style="border: none; width: 30px;">1.</td>
                 <td style="border: none;">UANG MASUK</td>
-                <td style="border: none; text-align: right;">
+                <td style="border: none;">
                     <strong>Rp {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}</strong>
                 </td>
             </tr>
             <tr style="border: none;">
                 <td style="border: none;">2.</td>
                 <td style="border: none;">UANG KELUAR</td>
-                <td style="border: none; text-align: right;">
+                <td style="border: none;">
                     <strong>Rp {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}</strong>
                 </td>
             </tr>
             <tr style="border: none;">
                 <td style="border: none;"></td>
                 <td style="border: none;"><strong>SALDO</strong></td>
-                <td style="border: none; text-align: right;">
+                <td style="border: none;">
                     <strong>Rp {{ number_format($totals->balance ?? 0, 0, ',', '.') }}</strong>
                 </td>
             </tr>
