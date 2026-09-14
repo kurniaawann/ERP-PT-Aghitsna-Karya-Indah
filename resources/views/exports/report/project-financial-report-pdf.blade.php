@@ -114,7 +114,11 @@
         }
 
         .text-brown {
-            color: #C65911;
+            color: #0070C0;
+        }
+
+        .text-red {
+            color: #FF0000;
         }
 
         .text-center { text-align: center; }
@@ -281,6 +285,10 @@
                         $categoryIncome += $inc;
                         $categoryExpense += $exp;
                         $runningBalance += ($inc - $exp);
+
+                        // Saldo baris: '-' saat nol, merah saat negatif, kosong untuk baris info.
+                        $saldoText = $item->is_informational ? '' : ($runningBalance == 0 ? '-' : number_format($runningBalance, 0, ',', '.'));
+                        $saldoStyle = (! $item->is_informational && $runningBalance < 0) ? 'color: red;' : '';
                     @endphp
                     <tr>
                         <td class="text-center">{{ $isFirstItem ? $catNo : '' }}</td>
@@ -288,20 +296,20 @@
                         <td class="text-center">
                             {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '' }}
                         </td>
-                        <td>
+                        <td class="text-left">
                             {{ $item->description ?? '' }}
                             @if ($item->is_informational)
                                 <span style="font-style: italic; color: #555;">(informasi)</span>
                             @endif
                         </td>
-                        <td class="text-right text-green">
+                        <td class="text-center text-green">
                             {{ $inc ? number_format($inc, 0, ',', '.') : '' }}
                         </td>
-                        <td class="text-right text-brown">
+                        <td class="text-center text-brown">
                             {{ $exp ? number_format($exp, 0, ',', '.') : '' }}
                         </td>
-                        <td class="text-right">
-                            {{ $item->is_informational ? '' : number_format($runningBalance, 0, ',', '.') }}
+                        <td class="text-center" style="{{ $saldoStyle }}">
+                            {{ $saldoText }}
                         </td>
                         <td class="text-center">{{ $item->keterangan_bon ?? '' }}</td>
                     </tr>
@@ -309,16 +317,20 @@
                 @endforeach
 
                 {{-- Subtotal Kategori (Warna Kuning) --}}
+                @php
+                    $subtotalSaldoText = $runningBalance == 0 ? '-' : number_format($runningBalance, 0, ',', '.');
+                    $subtotalSaldoStyle = $runningBalance < 0 ? 'color: red;' : '';
+                @endphp
                 <tr class="subtotal-row">
                     <td colspan="4"></td>
-                    <td class="text-right text-green">
+                    <td class="text-center text-green">
                         {{ $categoryIncome ? number_format($categoryIncome, 0, ',', '.') : '' }}
                     </td>
-                    <td class="text-right text-brown">
+                    <td class="text-center text-brown">
                         {{ $categoryExpense ? number_format($categoryExpense, 0, ',', '.') : '' }}
                     </td>
-                    <td class="text-right">
-                        {{ number_format($runningBalance, 0, ',', '.') }}
+                    <td class="text-center" style="{{ $subtotalSaldoStyle }}">
+                        {{ $subtotalSaldoText }}
                     </td>
                     <td></td>
                 </tr>
@@ -327,16 +339,22 @@
             @endforeach
 
             {{-- Grand Total (Warna Abu-abu) --}}
+            @php
+                $grandBalance = $totals->balance ?? $runningBalance;
+                $grandBalanceText = $grandBalance == 0 ? '-' : 'Rp. '.number_format($grandBalance, 0, ',', '.');
+                $grandBalanceStyle = $grandBalance < 0 ? 'color: red;' : '';
+                $grandBalanceLabel = $grandBalance <= 0 ? 'Defisit' : 'Sisa Saldo';
+            @endphp
             <tr class="total-row">
                 <td colspan="4" class="text-center">Jumlah</td>
-                <td class="text-right">
+                <td class="text-center">
                     Rp. {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}
                 </td>
-                <td class="text-right">
+                <td class="text-center">
                     Rp. {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}
                 </td>
-                <td class="text-right">
-                    Rp. {{ number_format($totals->balance ?? $runningBalance, 0, ',', '.') }}
+                <td class="text-center" style="{{ $grandBalanceStyle }}">
+                    {{ $grandBalanceText }}
                 </td>
                 <td></td>
             </tr>
@@ -352,7 +370,7 @@
             <td class="col-keterangan"></td>
             <td class="col-masuk text-center">Uang Masuk</td>
             <td class="col-keluar text-center">Uang Keluar</td>
-            <td class="col-saldo text-center">Sisa Saldo</td>
+            <td class="col-saldo text-center">{{ $grandBalanceLabel }}</td>
             <td class="col-bon-ket"></td>
         </tr>
     </table>
