@@ -84,8 +84,9 @@ class ProyekInvoiceService
     /**
      * Normalisasi item invoice dari input request.
      *
-     * Mengkonversi format input (JSON string / array) menjadi array bersih
-     * dengan field: keterangan, volume, satuan, harga.
+     * Mendukung dua format:
+     * - Superadmin: keterangan, volume, satuan, harga
+     * - Admin: deskripsi, harga, persentase
      *
      * @param  mixed  $items  Item dari request (JSON string atau array)
      * @return array  Item yang sudah dinormalisasi
@@ -101,15 +102,23 @@ class ProyekInvoiceService
         }
 
         return array_map(function ($item) {
-            $item['volume'] = InputNormalizer::normalizeDecimal($item['volume'] ?? 0);
             $item['harga'] = InputNormalizer::normalizeCurrency($item['harga'] ?? 0);
+
+            if (array_key_exists('persentase', $item)) {
+                $item['persentase'] = InputNormalizer::normalizeDecimal($item['persentase'] ?? 0);
+            } else {
+                $item['volume'] = InputNormalizer::normalizeDecimal($item['volume'] ?? 0);
+            }
 
             return $item;
         }, $items);
     }
 
     /**
-     * Menghitung total_amount dari array items (volume x harga).
+     * Menghitung total_amount dari array items.
+     *
+     * Format superadmin: volume x harga
+     * Format admin: harga x (persentase / 100)
      *
      * @param  array  $items  Item yang sudah dinormalisasi
      * @return int  Total amount
@@ -119,7 +128,11 @@ class ProyekInvoiceService
         $total = 0;
 
         foreach ($items as $item) {
-            $total += ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
+            if (array_key_exists('persentase', $item)) {
+                $total += ($item['harga'] ?? 0) * (($item['persentase'] ?? 0) / 100);
+            } else {
+                $total += ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
+            }
         }
 
         return (int) round($total);
@@ -138,20 +151,64 @@ class ProyekInvoiceService
     }
 
     /**
-     * Menghasilkan nomor invoice unik berformat: {A}/{B}/PT.AKI/{yy}.
-     * Kedua angka (A dan B) diincrement secara terpisah.
+     * Menghasilkan nomor invoice berikutnya berdasarkan role user.
      *
-     * Logika:
-     * - Cari invoice terakhir tahun ini (filter '%/PT.AKI/{yy}').
-     * - Urutkan berdasarkan PANJANG string DESC lalu string DESC (bukan hanya
-     *   string DESC) karena orderBy string murni salah saat melewati batas
-     *   digit (mis. "9/14/..." dianggap lebih besar dari "10/15/...").
-     * - Parse dua angka depan lewat regex /^(\d+)\/(\d+)\//, lalu increment keduanya.
-     * - Jika belum ada invoice tahun ini, mulai dari A=1, B=6.
+     * Format admin: {seq}/SPK/AKI/{bulan romawi}/{yy}
+     *   - seq: 3-digit increment mulai dari 060
+     *   - Bulan dalam numerals Romawi (I-XII)
+     *   - Contoh: 060/SPK/AKI/VII/26
      *
+     * Format superadmin: {A}/{B}/PT.AKI/{yy}
+     *   - Kedua angka diincrement secara terpisah
+     *
+     * @param  bool|null  $isAdmin  true untuk admin, null = cek auth()
      * @return string  Nomor invoice berikutnya
      */
-    public function generateInvoiceNumber(): string
+    public function generateInvoiceNumber(?bool $isAdmin = null): string
+    {
+        if ($isAdmin === null) {
+            $isAdmin = auth()->check() && auth()->user()->isAdmin();
+        }
+
+        if ($isAdmin) {
+            return $this->generateAdminInvoiceNumber();
+        }
+
+        return $this->generateSuperadminInvoiceNumber();
+    }
+
+    /**
+     * Format nomor invoice untuk admin: {seq}/SPK/AKI/{bulan romawi}/{yy}.
+     *
+     * @return string
+     */
+    private function generateAdminInvoiceNumber(): string
+    {
+        $year = date('y');
+        $month = (int) date('n');
+        $romanMonth = self::toRoman($month);
+        $suffix = "/SPK/AKI/{$romanMonth}/{$year}";
+
+        $lastInvoice = InvoiceProyek::where('invoice_number', 'like', "%{$suffix}")
+            ->orderByRaw('LENGTH(invoice_number) DESC')
+            ->orderByDesc('invoice_number')
+            ->first();
+
+        if ($lastInvoice && preg_match('/^(\d+)\//', $lastInvoice->invoice_number, $matches)) {
+            $next = (int) $matches[1] + 1;
+        } else {
+            $next = 60;
+        }
+
+        return str_pad($next, 3, '0', STR_PAD_LEFT) . $suffix;
+    }
+
+    /**
+     * Format nomor invoice untuk superadmin: {A}/{B}/PT.AKI/{yy}.
+     *
+     * @return string
+     */
+    private function generateSuperadminInvoiceNumber(): string
     {
         $year = date('y');
 
@@ -169,6 +226,29 @@ class ProyekInvoiceService
         }
 
         return "{$nextA}/{$nextB}/PT.AKI/{$year}";
+    }
+
+    /**
+     * Konversi angka 1-3999 ke numerals Romawi.
+     *
+     * @param  int  $number
+     * @return string
+     */
+    private static function toRoman(int $number): string
+    {
+        $map = [
+            1000 => 'M', 900 => 'CM', 500 => 'D', 400 => 'CD',
+            100 => 'C', 90 => 'XC', 50 => 'L', 40 => 'XL',
+            10 => 'X', 9 => 'IX', 5 => 'V', 4 => 'IV', 1 => 'I',
+        ];
+        $result = '';
+        foreach ($map as $value => $symbol) {
+            while ($number >= $value) {
+                $result .= $symbol;
+                $number -= $value;
+            }
+        }
+        return $result;
     }
 
     /**

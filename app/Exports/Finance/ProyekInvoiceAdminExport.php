@@ -40,11 +40,11 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
     {
         return [
             'A' => 5,   // No
-            'B' => 36,  // Keterangan
-            'C' => 12,  // Volume
-            'D' => 12,  // Satuan
-            'E' => 20,  // Harga
-            'F' => 22,  // Jumlah
+            'B' => 42,  // Deskripsi
+            'C' => 20,  // Harga
+            'D' => 10,  // %
+            'E' => 18,  // Jumlah
+            'F' => 18,  // Jumlah (lanjutan)
         ];
     }
 
@@ -184,11 +184,11 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 $tableHeaderRow = $currentRow;
 
                 $sheet->setCellValue("A{$currentRow}", 'No');
-                $sheet->setCellValue("B{$currentRow}", 'Keterangan');
-                $sheet->setCellValue("C{$currentRow}", 'Volume');
-                $sheet->setCellValue("D{$currentRow}", 'Satuan');
-                $sheet->setCellValue("E{$currentRow}", 'Harga');
-                $sheet->setCellValue("F{$currentRow}", 'Jumlah');
+                $sheet->setCellValue("B{$currentRow}", 'Deskripsi');
+                $sheet->setCellValue("C{$currentRow}", 'Harga');
+                $sheet->setCellValue("D{$currentRow}", '%');
+                $sheet->setCellValue("E{$currentRow}", 'Jumlah');
+                $sheet->mergeCells("E{$currentRow}:F{$currentRow}");
 
                 $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
@@ -211,22 +211,22 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
 
                 foreach ($items as $index => $item) {
                     $currentRow++;
-                    $jumlah = (float) ($item['volume'] ?? 0) * (float) ($item['harga'] ?? 0);
+                    $harga = (float) ($item['harga'] ?? 0);
+                    $persentase = (float) ($item['persentase'] ?? 0);
+                    $jumlah = $harga * ($persentase / 100);
                     $totalAmount += $jumlah;
 
                     $sheet->setCellValueExplicit("A{$currentRow}", ($index + 1) . '.', DataType::TYPE_STRING);
-                    $sheet->setCellValue("B{$currentRow}", '   ' . ($item['keterangan'] ?? ''));
-                    $volume = $item['volume'] ?? 0;
-                    $sheet->setCellValue("C{$currentRow}", ($volume !== null && $volume !== '') ? number_format((float) $volume, 2, ',', '.') : '-');
-                    $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '-');
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'] ?? 0, 0, ',', '.'));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                    $sheet->setCellValue("B{$currentRow}", '   ' . ($item['deskripsi'] ?? ''));
+                    $sheet->setCellValue("C{$currentRow}", 'Rp ' . number_format($harga, 0, ',', '.'));
+                    $sheet->setCellValue("D{$currentRow}", number_format($persentase, 2, ',', '.') . '%');
+                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                    $sheet->mergeCells("E{$currentRow}:F{$currentRow}");
 
                     $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
                 $itemEndRow = $currentRow;
@@ -238,26 +238,12 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 ]);
 
                 // ═══ RINGKASAN KEUANGAN ══════════════════════════════════════════════
-                $discountAmount = ($invoice->discount_value && (float) $invoice->discount_value > 0)
-                    ? $invoice->getDiscountAmount($totalAmount)
-                    : 0;
-                $dpAmount = ($invoice->dp_value && (float) $invoice->dp_value > 0)
-                    ? $invoice->getDpAmount()
-                    : 0;
                 $ppnAmount = $invoice->getPpnAmount();
-                $hasAdjustments = $discountAmount > 0 || $dpAmount > 0 || $ppnAmount > 0;
-                $finalAmount = $totalAmount - $discountAmount + $ppnAmount - $dpAmount;
+                $finalAmount = $totalAmount + $ppnAmount;
 
                 // Jumlah
                 $currentRow++;
                 $applySummaryRow($currentRow, 'Jumlah', $totalAmount);
-
-                // Discount
-                if ($discountAmount > 0) {
-                    $currentRow++;
-                    $discountLabel = 'Discount' . ($invoice->discount_type === 'percentage' ? ' (' . $trimNumber($invoice->discount_value) . '%)' : '');
-                    $applySummaryRow($currentRow, $discountLabel, -$discountAmount, 'Rp -' . number_format($discountAmount, 0, ',', '.'));
-                }
 
                 // PPN
                 if ($ppnAmount > 0) {
@@ -266,16 +252,9 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                     $applySummaryRow($currentRow, $ppnLabel, $ppnAmount);
                 }
 
-                // DP
-                if ($dpAmount > 0) {
-                    $currentRow++;
-                    $dpLabel = 'DP' . ($invoice->dp_type === 'percentage' ? ' (' . $trimNumber($invoice->dp_value) . '%)' : '');
-                    $applySummaryRow($currentRow, $dpLabel, -$dpAmount, 'Rp -' . number_format($dpAmount, 0, ',', '.'));
-                }
-
-                // Total / Sisa Pembayaran
+                // Total
                 $currentRow++;
-                $applySummaryRow($currentRow, $hasAdjustments ? 'Sisa Pembayaran' : 'Total', $finalAmount);
+                $applySummaryRow($currentRow, 'Total', $finalAmount);
 
                 // Cicilan (payment_installments)
                 if ($invoice->payment_installments) {
@@ -331,6 +310,12 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                     $sheet->setCellValue("A{$currentRow}", "{$bankName} / No : {$accountNumber} a/n {$accountHolder}");
                     $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
                 }
+
+                // ═══ PENUTUP ═════════════════════════════════════════════════════════
+                $currentRow++;
+                $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                $sheet->setCellValue("A{$currentRow}", 'Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.');
+                $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
 
                 // ═══ TANDA TANGAN ════════════════════════════════════════════════════
                 $currentRow += 2;

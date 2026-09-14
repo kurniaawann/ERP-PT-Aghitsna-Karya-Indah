@@ -244,18 +244,11 @@
         $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
         $totalAmount = 0;
         foreach ($items as $item) {
-            $totalAmount += floatval($item['volume'] ?? 0) * floatval($item['harga'] ?? 0);
+            $totalAmount += floatval($item['harga'] ?? 0) * (floatval($item['persentase'] ?? 0) / 100);
         }
 
-        $discountAmount = ($invoice->discount_value && $invoice->discount_value > 0)
-            ? $invoice->getDiscountAmount($totalAmount)
-            : 0;
-        $dpAmount = ($invoice->dp_value && $invoice->dp_value > 0)
-            ? $invoice->getDpAmount()
-            : 0;
         $ppnAmount = $invoice->getPpnAmount();
-        $hasAdjustments = $discountAmount > 0 || $dpAmount > 0 || $ppnAmount > 0;
-        $finalAmount = $totalAmount - $discountAmount + $ppnAmount - $dpAmount;
+        $finalAmount = $totalAmount + $ppnAmount;
 
         $selectedAccountIds = is_string($invoice->selected_payment_accounts)
             ? json_decode($invoice->selected_payment_accounts, true)
@@ -323,7 +316,7 @@
     <div class="opening-text">
         Dengan Hormat,<br>
         @if ($invoice->project_description)
-            Dengan ini kami sampaikan Invoice untuk pekerjaan {{ $invoice->project_description }},<strong>Lokasi {{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}, </strong>sebagai berikut :
+            Dengan ini kami sampaikan Invoice untuk pekerjaan {{ $invoice->project_description }}, Lokasi {{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}, sebagai berikut :
         @else
             @if ($invoice->location ?? $invoice->quotation?->location)
                 Dengan ini kami sampaikan invoice sebagai berikut : Lokasi {{ $invoice->location ?? $invoice->quotation?->location }}
@@ -333,68 +326,53 @@
         @endif
     </div>
 
-    {{-- ═══ TABEL ITEMS (TIDAK DIUBAH) ════════════════════════════════════════════ --}}
+    {{-- ═══ TABEL ITEMS (ADMIN) ════════════════════════════════════════════ --}}
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width:4%">No</th>
-                <th style="width:36%">Keterangan</th>
-                <th style="width:9%">Volume</th>
-                <th style="width:9%">Satuan</th>
-                <th style="width:21%">Harga</th>
-                <th style="width:21%">Jumlah</th>
+                <th style="width:5%">No</th>
+                <th style="width:35%">Deskripsi</th>
+                <th style="width:20%">Harga</th>
+                <th style="width:10%">%</th>
+                <th style="width:30%">Jumlah</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($items as $idx => $item)
+                @php
+                    $harga = floatval($item['harga'] ?? 0);
+                    $persentase = floatval($item['persentase'] ?? 0);
+                    $jumlah = $harga * ($persentase / 100);
+                @endphp
                 <tr>
                     <td class="c">{{ $idx + 1 }}.</td>
-                    <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
-                    <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
-                    <td class="c">{{ $item['satuan'] ?? '-' }}</td>
-                    <td class="c">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                    <td class="r">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
+                    <td class="l">{{ $item['deskripsi'] ?? '-' }}</td>
+                    <td class="r">Rp &nbsp;{{ number_format($harga, 0, ',', '.') }}</td>
+                    <td class="c">{{ number_format($persentase, 2, ',', '.') }}%</td>
+                    <td class="r">Rp &nbsp;{{ number_format($jumlah, 0, ',', '.') }}</td>
                 </tr>
             @endforeach
 
             {{-- Baris Jumlah --}}
             <tr>
-                <td colspan="4" class="empty-cell"></td>
+                <td colspan="3" class="empty-cell"></td>
                 <td class="summary-cell c">Jumlah</td>
                 <td class="summary-cell r">Rp &nbsp;{{ number_format($totalAmount, 0, ',', '.') }}</td>
             </tr>
 
-            {{-- Baris Discount --}}
-            @if ($discountAmount > 0)
-                <tr>
-                    <td colspan="4" class="empty-cell"></td>
-                    <td class="summary-cell c">Discount {{ $invoice->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
-                    <td class="summary-cell r">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
-                </tr>
-            @endif
-
             {{-- Baris PPN --}}
             @if ($ppnAmount > 0)
                 <tr>
-                    <td colspan="4" class="empty-cell"></td>
+                    <td colspan="3" class="empty-cell"></td>
                     <td class="summary-cell c">PPN ({{ rtrim(rtrim(number_format((float) $invoice->ppn, 2, ',', '.'), '0'), ',') }}%)</td>
                     <td class="summary-cell r">Rp &nbsp;{{ number_format($ppnAmount, 0, ',', '.') }}</td>
                 </tr>
             @endif
 
-            {{-- Baris DP --}}
-            @if ($dpAmount > 0)
-                <tr>
-                    <td colspan="4" class="empty-cell"></td>
-                    <td class="summary-cell c">DP {{ $invoice->dp_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
-                    <td class="summary-cell r">Rp &nbsp;-{{ number_format($dpAmount, 0, ',', '.') }}</td>
-                </tr>
-            @endif
-
-            {{-- Baris Total / Sisa Pembayaran --}}
+            {{-- Baris Total --}}
             <tr>
-                <td colspan="4" class="empty-cell"></td>
-                <td class="summary-cell c">{{ $hasAdjustments ? 'Sisa Pembayaran' : 'Total' }}</td>
+                <td colspan="3" class="empty-cell"></td>
+                <td class="summary-cell c">Total</td>
                 <td class="summary-cell r">Rp &nbsp;{{ number_format($finalAmount, 0, ',', '.') }}</td>
             </tr>
 
@@ -408,7 +386,7 @@
                 @if (is_array($paymentInstallments) && count($paymentInstallments) > 0)
                     @foreach ($paymentInstallments as $index => $payment)
                         <tr>
-                            <td colspan="4" class="empty-cell"></td>
+                            <td colspan="3" class="empty-cell"></td>
                             <td class="summary-cell c">{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</td>
                             <td class="summary-cell r">Rp &nbsp;{{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}</td>
                         </tr>
@@ -438,6 +416,11 @@
             </table>
         </div>
     @endif
+
+    {{-- ═══ PENUTUP ═════════════════════════════════════════════════════════════ --}}
+    <div class="closing" style="margin: 10px 0; font-size: 11px; text-align: justify;">
+        Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.
+    </div>
 
     {{-- ═══ TANDA TANGAN ═════════════════════════════════════════════════════════ --}}
     <div class="signature-container clearfix">

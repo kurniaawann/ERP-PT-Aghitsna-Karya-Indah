@@ -408,7 +408,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Demikian Invoice ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
+                $sheet->setCellValue("A{$currentRow}", 'Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.');
                 $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
 
                 $currentRow += 2;

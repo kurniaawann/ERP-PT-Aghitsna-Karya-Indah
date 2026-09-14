@@ -144,6 +144,15 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
 
                 // ═══ TABEL ITEMS ═════════════════════════════════════════════════════
                 $currentRow += 2;
+                $isTextMode = ($quotation->items_mode ?? 'items') === 'text';
+
+                if ($isTextMode) {
+                    $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                    $sheet->setCellValue("A{$currentRow}", $quotation->free_text ?? '-');
+                    $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                    $sheet->getRowDimension($currentRow)->setRowHeight(150);
+                } else {
+
                 $tableHeaderRow = $currentRow;
 
                 $sheet->setCellValue("A{$currentRow}", 'No');
@@ -252,6 +261,8 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                 $amountInWords = $quotation->amount_in_words ?? ucwords(terbilang($grandTotal)) . ' rupiah';
                 $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . $amountInWords);
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
+
+                } // end else items mode
 
                 // ═══ PARAGRAF PENUTUP ═════════════════════════════════════════════════
                 $currentRow += 2;

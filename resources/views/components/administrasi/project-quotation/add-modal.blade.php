@@ -86,14 +86,35 @@
         </div>
     @endif
 
+    @if (auth()->user()->isAdmin())
+        <div class="mb-3">
+            <label class="block text-text-primary font-semibold mb-1">Format Isi Penawaran</label>
+            <select name="items_mode" id="items-mode" class="w-full border rounded p-2"
+                onchange="toggleItemsMode(this, false)">
+                <option value="items">Item-Item Penawaran (Tabel)</option>
+                <option value="text">Teks / Deskripsi Saja</option>
+            </select>
+            <small class="text-xs text-text-secondary">Pilih tabel rincian item atau cukup teks/deskripsi pada
+                penawaran.</small>
+        </div>
+    @endif
+
+    @if (auth()->user()->isAdmin())
+        <div id="free-text-container-add" class="mb-4 hidden">
+            <label class="block text-text-primary font-semibold mb-2">Deskripsi / Teks Penawaran <span
+                    class="text-error">*</span></label>
+            <textarea name="free_text" id="free-text-add" rows="7" class="w-full border rounded p-2"
+                placeholder="Tulis rincian / deskripsi penawaran di sini..."></textarea>
+        </div>
+    @endif
+
     <div id="items-container" class="mb-4">
         <div id="items-error"
             class="hidden mb-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
             <i class="fa-solid fa-exclamation-circle"></i>
             <span>Minimal harus ada 1 item dalam penawaran dengan data lengkap</span>
         </div>
-        <label class="block text-text-primary font-semibold mb-2">Item-Item Penawaran <span
-                class="text-error">*</span></label>
+        <label class="block text-text-primary font-semibold mb-2">Item-Item Penawaran</label>
         <div id="items-list">
             <div class="item-row mb-3 p-3 border rounded bg-surface-secondary">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
@@ -102,14 +123,11 @@
                         oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
                     <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
-                        placeholder="Volume *" required oninput="calculateRowTotal(this); this.setCustomValidity('')"
-                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                        placeholder="Volume (opsional)" oninput="calculateRowTotal(this); this.setCustomValidity('')">
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <input type="text" class="item-satuan border rounded p-2 w-full"
-                        placeholder="Satuan (m3, unit) *" required
-                        oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
+                        placeholder="Satuan (m3, unit) — opsional">
                     <input type="text" inputmode="numeric" min="0"
                         class="item-harga border rounded p-2 w-full" placeholder="Harga *" required
                         oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')"
@@ -130,12 +148,13 @@
     </div>
 
     <!-- Live Total Preview -->
-    <div class="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
-        <div class="flex justify-between items-center">
-            <span class="text-text-primary font-semibold">Total Penawaran:</span>
-            <span id="invoice-total-preview" class="text-2xl font-bold text-primary">Rp 0</span>
+    <div id="items-totals-add">
+        <div class="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
+            <div class="flex justify-between items-center">
+                <span class="text-text-primary font-semibold">Total Penawaran:</span>
+                <span id="invoice-total-preview" class="text-2xl font-bold text-primary">Rp 0</span>
+            </div>
         </div>
-    </div>
 
     <!-- Discount Section -->
     <div class="mb-3 p-3 border rounded bg-yellow-50" id="discount-section">
@@ -180,6 +199,7 @@
                 <span id="total-after-discount" class="text-sm font-bold text-green-600">Rp 0</span>
             </div>
         </div>
+    </div>
     </div>
 
     {{-- Signature Section (Opsional) --}}

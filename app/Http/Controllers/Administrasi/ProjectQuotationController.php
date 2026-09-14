@@ -105,6 +105,8 @@ class ProjectQuotationController extends Controller
             'signed_by_id' => $quotation->signed_by_id,
             'division_id' => $quotation->division_id,
             'items' => $quotation->items ?? [],
+            'items_mode' => $quotation->items_mode ?? 'items',
+            'free_text' => $quotation->free_text,
         ]);
     }
 
@@ -143,6 +145,10 @@ class ProjectQuotationController extends Controller
 
         if ($quotation->invoices()->exists()) {
             return back()->with('error', "Invoice untuk penawaran {$quotation->quotation_number} sudah pernah dibuat.");
+        }
+
+        if (empty($quotation->items ?? [])) {
+            return back()->with('error', 'Penawaran berformat teks/deskripsi tidak memiliki item sehingga tidak dapat dibuatkan invoice.');
         }
 
         $invoice = $this->service->createInvoiceFromQuotation($quotation);

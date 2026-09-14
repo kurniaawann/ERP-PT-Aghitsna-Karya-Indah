@@ -75,14 +75,37 @@
         </div>
     @endif
 
+    @if (auth()->user()->isAdmin())
+        <div class="mb-3">
+            <label class="block text-text-primary font-semibold mb-1">Format Isi Penawaran</label>
+            <select name="items_mode" id="items-mode-edit-{{ $quotation->quotation_number }}"
+                class="w-full border rounded p-2" data-quotation-id="{{ $quotation->quotation_number }}"
+                onchange="toggleItemsMode(this, true)">
+                <option value="items" {{ ($quotation->items_mode ?? 'items') === 'items' ? 'selected' : '' }}>
+                    Item-Item Penawaran (Tabel)</option>
+                <option value="text" {{ ($quotation->items_mode ?? 'items') === 'text' ? 'selected' : '' }}>
+                    Teks / Deskripsi Saja</option>
+            </select>
+            <small class="text-xs text-text-secondary">Pilih tabel rincian item atau cukup teks/deskripsi pada
+                penawaran.</small>
+        </div>
+
+        <div id="free-text-container-edit-{{ $quotation->quotation_number }}" class="mb-4 hidden">
+            <label class="block text-text-primary font-semibold mb-2">Deskripsi / Teks Penawaran <span
+                    class="text-error">*</span></label>
+            <textarea name="free_text" id="free-text-edit-{{ $quotation->quotation_number }}" rows="7"
+                class="w-full border rounded p-2"
+                placeholder="Tulis rincian / deskripsi penawaran di sini...">{{ $quotation->free_text }}</textarea>
+        </div>
+    @endif
+
     <div id="items-container-edit-{{ $quotation->quotation_number }}" class="mb-4">
         <div id="items-error-edit-{{ $quotation->quotation_number }}"
             class="items-error-edit hidden mb-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
             <i class="fa-solid fa-exclamation-circle"></i>
             <span>Minimal harus ada 1 item dalam penawaran dengan data lengkap</span>
         </div>
-        <label class="block text-text-primary font-semibold mb-2">Item-Item Penawaran <span
-                class="text-error">*</span></label>
+        <label class="block text-text-primary font-semibold mb-2">Item-Item Penawaran</label>
         <div id="items-list-edit-{{ $quotation->quotation_number }}">
             @php
                 $existingItems = $quotation->items ?? [];
@@ -97,15 +120,13 @@
                             oninput="this.setCustomValidity('')">
                         <input type="number" step="0.01" min="0" name="items[{{ $index }}][volume]"
                             value="{{ $item['volume'] ?? 0 }}" class="item-volume border rounded p-2 w-full"
-                            placeholder="Volume" required oninput="calculateEditRowTotal(this); this.setCustomValidity('')"
-                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                            placeholder="Volume (opsional)"
+                            oninput="calculateEditRowTotal(this); this.setCustomValidity('')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <input type="text" name="items[{{ $index }}][satuan]"
                             value="{{ $item['satuan'] ?? '' }}" class="item-satuan border rounded p-2 w-full"
-                            placeholder="Satuan" required
-                            oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
+                            placeholder="Satuan (opsional)">
                         <input type="text" inputmode="numeric" min="0"
                             name="items[{{ $index }}][harga]"
                             value="{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
@@ -132,15 +153,16 @@
     </div>
 
     <!-- Live Total Preview for Edit -->
-    <div class="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
-        <div class="flex justify-between items-center">
-            <span class="text-text-primary font-semibold">Total Penawaran:</span>
-            <span id="invoice-total-preview-edit-{{ $quotation->quotation_number }}"
-                class="text-2xl font-bold text-primary">
-                Rp {{ number_format($quotation->total_amount, 0, ',', '.') }}
-            </span>
+    <div id="items-totals-edit-{{ $quotation->quotation_number }}">
+        <div class="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
+            <div class="flex justify-between items-center">
+                <span class="text-text-primary font-semibold">Total Penawaran:</span>
+                <span id="invoice-total-preview-edit-{{ $quotation->quotation_number }}"
+                    class="text-2xl font-bold text-primary">
+                    Rp {{ number_format($quotation->total_amount, 0, ',', '.') }}
+                </span>
+            </div>
         </div>
-    </div>
 
     <!-- Discount Section -->
     <div class="mb-3 p-3 border rounded bg-yellow-50"
@@ -189,6 +211,7 @@
                     class="text-sm font-bold text-green-600">Rp 0</span>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Signature Section (Opsional) -->

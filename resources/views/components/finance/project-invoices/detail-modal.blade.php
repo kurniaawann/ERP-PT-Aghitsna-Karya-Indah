@@ -83,30 +83,46 @@
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th class="py-2 pr-2 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                        <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-                        <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
-                        <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
-                        <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Harga</th>
-                        <th class="py-2 pl-2 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                        @if (auth()->user()->isAdmin())
+                            <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
+                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Harga</th>
+                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">%</th>
+                            <th class="py-2 pl-2 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                        @else
+                            <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
+                            <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
+                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Harga</th>
+                            <th class="py-2 pl-2 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($items as $index => $item)
                         <tr>
                             <td class="py-2 pr-2 text-gray-500">{{ $index + 1 }}</td>
-                            <td class="py-2 px-2 text-gray-900">{{ $item['keterangan'] ?? '-' }}</td>
-                            <td class="py-2 px-2 text-right text-gray-900">{{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
-                            <td class="py-2 px-2 text-gray-900">{{ $item['satuan'] ?? '-' }}</td>
-                            <td class="py-2 px-2 text-right text-gray-900">Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                            <td class="py-2 pl-2 text-right font-semibold text-gray-900">
-                                Rp {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}
-                            </td>
+                            @if (auth()->user()->isAdmin())
+                                <td class="py-2 px-2 text-gray-900">{{ $item['deskripsi'] ?? '-' }}</td>
+                                <td class="py-2 px-2 text-right text-gray-900">Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="py-2 px-2 text-right text-gray-900">{{ number_format($item['persentase'] ?? 0, 2, ',', '.') }}%</td>
+                                <td class="py-2 pl-2 text-right font-semibold text-gray-900">
+                                    Rp {{ number_format(($item['harga'] ?? 0) * (($item['persentase'] ?? 0) / 100), 0, ',', '.') }}
+                                </td>
+                            @else
+                                <td class="py-2 px-2 text-gray-900">{{ $item['keterangan'] ?? '-' }}</td>
+                                <td class="py-2 px-2 text-right text-gray-900">{{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
+                                <td class="py-2 px-2 text-gray-900">{{ $item['satuan'] ?? '-' }}</td>
+                                <td class="py-2 px-2 text-right text-gray-900">Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="py-2 pl-2 text-right font-semibold text-gray-900">
+                                    Rp {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}
+                                </td>
+                            @endif
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr class="border-t-2 border-gray-300 font-bold">
-                        <td colspan="5" class="pt-3 pr-2 text-right text-sm text-gray-700">Subtotal</td>
+                        <td colspan="{{ auth()->user()->isAdmin() ? 4 : 5 }}" class="pt-3 pr-2 text-right text-sm text-gray-700">Subtotal</td>
                         <td class="pt-3 pl-2 text-right text-sm text-gray-900">
                             Rp {{ number_format($totalAmount, 0, ',', '.') }}
                         </td>

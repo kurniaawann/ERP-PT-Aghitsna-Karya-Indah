@@ -72,44 +72,80 @@
                 $existingItems = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
             @endphp
             @foreach ($existingItems as $index => $item)
-                <div class="item-row-edit mb-3 p-3 border border-border-strong rounded-lg bg-surface-secondary">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                        <input type="text" name="items[{{ $index }}][keterangan]"
-                            value="{{ $item['keterangan'] ?? '' }}"
-                            class="item-keterangan border border-border-strong rounded-lg p-2 w-full text-text-input"
-                            placeholder="Keterangan *" required
-                            oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
-                        <input type="number" step="0.01" min="0" name="items[{{ $index }}][volume]"
-                            value="{{ $item['volume'] ?? 0 }}"
-                            class="item-volume border border-border-strong rounded-lg p-2 w-full text-text-input"
-                            placeholder="Volume *" required
-                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
-                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                        <input type="text" name="items[{{ $index }}][satuan]"
-                            value="{{ $item['satuan'] ?? '' }}"
-                            class="item-satuan border border-border-strong rounded-lg p-2 w-full text-text-input"
-                            placeholder="Satuan *" required
-                            oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
-                        <input type="text" inputmode="numeric" name="items[{{ $index }}][harga]"
-                            value="Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
-                            class="item-harga border border-border-strong rounded-lg p-2 w-full text-text-input"
-                            placeholder="Rp 0" required
-                            oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
-                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
-                        <div class="flex items-center">
-                            <span class="item-total text-sm font-semibold text-primary">Rp
-                                {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</span>
+                @if (auth()->user()->isAdmin())
+                    <div class="item-row-edit mb-3 p-3 border border-border-strong rounded-lg bg-surface-secondary">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <input type="text" name="items[{{ $index }}][deskripsi]"
+                                value="{{ $item['deskripsi'] ?? '' }}"
+                                class="item-deskripsi border border-border-strong rounded-lg p-2 w-full text-text-input"
+                                placeholder="Deskripsi *" required
+                                oninvalid="this.setCustomValidity('Deskripsi tidak boleh kosong')"
+                                oninput="this.setCustomValidity('')">
+                            <input type="text" inputmode="numeric" name="items[{{ $index }}][harga]"
+                                value="Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
+                                class="item-harga border border-border-strong rounded-lg p-2 w-full text-text-input"
+                                placeholder="Harga (Rp) *" required
+                                oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                                oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                         </div>
-                        <button type="button"
-                            class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                            <input type="text" inputmode="decimal" name="items[{{ $index }}][persentase]"
+                                value="{{ $item['persentase'] ?? '' }}"
+                                class="item-persentase border border-border-strong rounded-lg p-2 w-full text-text-input"
+                                placeholder="% *" required
+                                oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                                oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                            <div class="flex items-center">
+                                <span class="item-total text-sm font-semibold text-primary">Rp
+                                    {{ number_format(($item['harga'] ?? 0) * (($item['persentase'] ?? 0) / 100), 0, ',', '.') }}</span>
+                            </div>
+                            <div></div>
+                            <button type="button"
+                                class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <div class="item-row-edit mb-3 p-3 border border-border-strong rounded-lg bg-surface-secondary">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <input type="text" name="items[{{ $index }}][keterangan]"
+                                value="{{ $item['keterangan'] ?? '' }}"
+                                class="item-keterangan border border-border-strong rounded-lg p-2 w-full text-text-input"
+                                placeholder="Keterangan *" required
+                                oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
+                                oninput="this.setCustomValidity('')">
+                            <input type="number" step="0.01" min="0" name="items[{{ $index }}][volume]"
+                                value="{{ $item['volume'] ?? 0 }}"
+                                class="item-volume border border-border-strong rounded-lg p-2 w-full text-text-input"
+                                placeholder="Volume *" required
+                                oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                                oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                            <input type="text" name="items[{{ $index }}][satuan]"
+                                value="{{ $item['satuan'] ?? '' }}"
+                                class="item-satuan border border-border-strong rounded-lg p-2 w-full text-text-input"
+                                placeholder="Satuan *" required
+                                oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
+                                oninput="this.setCustomValidity('')">
+                            <input type="text" inputmode="numeric" name="items[{{ $index }}][harga]"
+                                value="Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
+                                class="item-harga border border-border-strong rounded-lg p-2 w-full text-text-input"
+                                placeholder="Rp 0" required
+                                oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
+                                oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
+                            <div class="flex items-center">
+                                <span class="item-total text-sm font-semibold text-primary">Rp
+                                    {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</span>
+                            </div>
+                            <button type="button"
+                                class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                @endif
             @endforeach
         </div>
         <button type="button" id="add-item-edit-{{ $invoice->invoice_number }}"
@@ -128,6 +164,7 @@
         </div>
     </div>
 
+    @if (!auth()->user()->isAdmin())
     {{-- Discount Section --}}
     <div class="mb-3 p-3 border border-warning-light rounded-lg bg-warning-light" id="discount-section-edit-{{ $invoice->invoice_number }}">
         <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
@@ -222,6 +259,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- PPN Section --}}
     <div class="mb-3 p-3 border border-purple-300 rounded-lg bg-purple-50"

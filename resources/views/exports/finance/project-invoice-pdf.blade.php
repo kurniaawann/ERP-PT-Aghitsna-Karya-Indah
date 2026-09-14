@@ -481,7 +481,7 @@
 
         <!-- Closing -->
         <div class="closing">
-            Demikian Invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.
+            Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.
         </div>
 
         <!-- Signature -->

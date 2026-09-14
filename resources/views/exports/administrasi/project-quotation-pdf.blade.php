@@ -119,6 +119,14 @@
             font-size: 11px;
         }
 
+        .free-text-block {
+            margin: 10px 0;
+            font-size: 11px;
+            line-height: 1.7;
+            text-align: justify;
+            white-space: normal;
+        }
+
         /* ── Items Table ────────────────────────────────────── */
         .items-table {
             width: 100%;
@@ -230,6 +238,7 @@
         @endif
         @php
             $items = $q->items ?? [];
+            $itemsMode = $q->items_mode ?? 'items';
             $grandTotal = $q->total_amount;
             $discountAmount = ($q->discount_type && (float) $q->discount_value > 0) ? $q->getDiscountAmount() : 0;
             $selectedIds = $q->selected_payment_accounts ?? [];
@@ -310,7 +319,12 @@
         @endif
     </div>
 
-    {{-- ═══ ITEMS TABLE (FLAT - NO GROUPING) ═══════════════════════════════════════ --}}
+    {{-- ═══ ISI PENAWARAN (TABEL ATAU TEKS) ═══════════════════════════════════════ --}}
+    @if ($itemsMode === 'text')
+        <div class="free-text-block">
+            {!! nl2br(e($q->free_text)) !!}
+        </div>
+    @else
     <table class="items-table">
         <thead>
             <tr>
@@ -352,11 +366,13 @@
         </tbody>
     </table>
 
-    {{-- ═══ FOOTER ══════════════════════════════════════════════════════════════════ --}}
+    {{-- ═══ TERBILANG ══════════════════════════════════════════════════════════════════ --}}
     <div class="terbilang">
         <em>Terbilang : {{ $q->amount_in_words ?? ucwords(terbilang($q->total_amount)) . ' rupiah' }}</em>
     </div>
+    @endif
 
+    {{-- ═══ FOOTER ══════════════════════════════════════════════════════════════════ --}}
     <div class="payment-info">
         Pembayaran dapat di transfer melalui rekening<br><br>
         @foreach ($paymentAccounts as $acc)

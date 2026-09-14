@@ -111,12 +111,13 @@ class ProjectQuotationService
     public function create(array $validated): ProjectQuotation
     {
         $items = $this->normalizeItems($validated['items'] ?? '[]');
+        $isTextMode = ($validated['items_mode'] ?? 'items') === 'text';
 
         $quotationNumber = ProjectQuotation::generateQuotationNumber();
         preg_match('/^(\d+)\//', $quotationNumber, $matches);
         $seqNumber = (int) $matches[1];
 
-        $totalAmount = $this->calculateItemsTotal($items);
+        $totalAmount = $isTextMode ? 0 : $this->calculateItemsTotal($items);
         $discountAmount = $this->calculator->calculateDiscountAmount(
             $totalAmount,
             $validated['discount_type'] ?? null,
@@ -126,7 +127,7 @@ class ProjectQuotationService
             ? $totalAmount - (int) $discountAmount
             : null;
 
-        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $discountAmount, $totalAfterDiscount, $items) {
+        return DB::transaction(function () use ($validated, $quotationNumber, $seqNumber, $totalAmount, $discountAmount, $totalAfterDiscount, $items, $isTextMode) {
             return ProjectQuotation::create([
                 'quotation_number' => $quotationNumber,
                 'sequence_number' => $seqNumber,
@@ -140,10 +141,12 @@ class ProjectQuotationService
                 'proyek' => (auth()->check() && auth()->user()->role === 'superadmin') ? ($validated['proyek'] ?? null) : null,
                 'total_amount' => $totalAmount,
                 'items' => $items,
-                'discount_type' => $validated['discount_type'] ?? null,
-                'discount_value' => $validated['discount_value'] ?? null,
-                'total_after_discount' => $totalAfterDiscount,
-                'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
+                'items_mode' => $isTextMode ? 'text' : 'items',
+                'free_text' => $isTextMode ? ($validated['free_text'] ?? null) : null,
+                'discount_type' => $isTextMode ? null : ($validated['discount_type'] ?? null),
+                'discount_value' => $isTextMode ? null : ($validated['discount_value'] ?? null),
+                'total_after_discount' => $isTextMode ? null : $totalAfterDiscount,
+                'amount_in_words' => $isTextMode ? null : (ucwords(terbilang($totalAmount)) . ' rupiah'),
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
                 'division_id' => $validated['division_id'] ?? null,
@@ -165,7 +168,8 @@ class ProjectQuotationService
     public function update(ProjectQuotation $quotation, array $validated): ProjectQuotation
     {
         $items = $this->normalizeItems($validated['items'] ?? []);
-        $totalAmount = $this->calculateItemsTotal($items);
+        $isTextMode = ($validated['items_mode'] ?? 'items') === 'text';
+        $totalAmount = $isTextMode ? 0 : $this->calculateItemsTotal($items);
         $discountAmount = $this->calculator->calculateDiscountAmount(
             $totalAmount,
             $validated['discount_type'] ?? null,
@@ -175,7 +179,7 @@ class ProjectQuotationService
             ? $totalAmount - (int) $discountAmount
             : null;
 
-        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $totalAfterDiscount, $items) {
+        return DB::transaction(function () use ($quotation, $validated, $totalAmount, $totalAfterDiscount, $items, $isTextMode) {
             $quotation->update([
                 'date' => $validated['date'],
                 'subject' => $validated['subject'] ?? 'Penawaran Harga',
@@ -187,10 +191,12 @@ class ProjectQuotationService
                 'proyek' => (auth()->check() && auth()->user()->role === 'superadmin') ? ($validated['proyek'] ?? null) : null,
                 'total_amount' => $totalAmount,
                 'items' => $items,
-                'discount_type' => $validated['discount_type'] ?? null,
-                'discount_value' => $validated['discount_value'] ?? null,
-                'total_after_discount' => $totalAfterDiscount,
-                'amount_in_words' => ucwords(terbilang($totalAmount)) . ' rupiah',
+                'items_mode' => $isTextMode ? 'text' : 'items',
+                'free_text' => $isTextMode ? ($validated['free_text'] ?? null) : null,
+                'discount_type' => $isTextMode ? null : ($validated['discount_type'] ?? null),
+                'discount_value' => $isTextMode ? null : ($validated['discount_value'] ?? null),
+                'total_after_discount' => $isTextMode ? null : $totalAfterDiscount,
+                'amount_in_words' => $isTextMode ? null : (ucwords(terbilang($totalAmount)) . ' rupiah'),
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
                 'division_id' => $validated['division_id'] ?? null,

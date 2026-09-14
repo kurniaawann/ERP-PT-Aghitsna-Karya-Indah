@@ -112,6 +112,15 @@
             line-height: 1.5;
         }
 
+        /* ── Free Text (mode Teks/Deskripsi) ─────────────────────── */
+        .free-text-block {
+            margin: 10px 0;
+            font-size: 12px;
+            text-align: justify;
+            line-height: 1.6;
+            white-space: normal;
+        }
+
         /* ── Items Table ────────────────────────────────────── */
         .items-table {
             width: 100%;
@@ -236,6 +245,7 @@
 
         @php
             $items = $q->items ?? [];
+            $itemsMode = $q->items_mode ?? 'items';
             $discountAmount = ($q->discount_type && (float) $q->discount_value > 0) ? (int) $q->getDiscountAmount() : 0;
             $grandTotal = (int) ($q->total_amount ?? 0) - $discountAmount;
         @endphp
@@ -300,7 +310,12 @@
             @endif
         </div>
 
-        {{-- ═══ TABEL ITEMS ══════════════════════════════════════════════════════════ --}}
+        {{-- ═══ ISI PENAWARAN (TABEL ITEMS ATAU TEKS) ═══════════════════════════════ --}}
+        @if ($itemsMode === 'text')
+            <div class="free-text-block">
+                {!! nl2br(e($q->free_text)) !!}
+            </div>
+        @else
         <table class="items-table">
             <thead>
                 <tr>
@@ -346,6 +361,7 @@
         <div class="terbilang">
             <em>Terbilang : {{ ucwords(terbilang($grandTotal)) . ' rupiah' }}</em>
         </div>
+        @endif
 
         {{-- ═══ PARAGRAF PENUTUP ═════════════════════════════════════════════════════ --}}
         <div class="closing-text">

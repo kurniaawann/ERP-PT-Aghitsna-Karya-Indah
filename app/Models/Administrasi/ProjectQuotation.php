@@ -44,6 +44,8 @@ class ProjectQuotation extends Model
         'proyek',
         'total_amount',
         'items',
+        'items_mode',
+        'free_text',
         'discount_type',
         'discount_value',
         'total_after_discount',

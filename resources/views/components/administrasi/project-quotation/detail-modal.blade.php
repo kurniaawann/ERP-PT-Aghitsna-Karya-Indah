@@ -60,9 +60,17 @@
 
     @php
         $detailItems = $quotation->items ?? [];
+        $detailItemsMode = $quotation->items_mode ?? 'items';
     @endphp
     <div class="mb-4">
-        <label class="block text-sm font-semibold text-text-primary mb-1">Detail Item</label>
+        <label class="block text-sm font-semibold text-text-primary mb-1">
+            {{ $detailItemsMode === 'text' ? 'Deskripsi / Teks Penawaran' : 'Detail Item' }}
+        </label>
+        @if ($detailItemsMode === 'text')
+            <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
+                {{ $quotation->free_text ?? '-' }}
+            </div>
+        @else
         <div class="overflow-x-auto border-2 border-gray-300 rounded-xl overflow-hidden">
             <table class="w-full border-collapse border border-border-strong">
                 <thead class="bg-surface-hover">
@@ -101,8 +109,10 @@
                 </tbody>
             </table>
         </div>
+        @endif
     </div>
 
+    @if ($detailItemsMode !== 'text')
     <div class="mb-4 border-t-2 border-gray-300 pt-4">
         @if ($quotation->discount_type && (float) $quotation->discount_value > 0)
             @php
@@ -139,5 +149,6 @@
             </p>
         </div>
     @endif
+@endif
 
 </x-modal>

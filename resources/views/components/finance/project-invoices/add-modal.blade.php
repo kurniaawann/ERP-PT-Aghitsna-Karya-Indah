@@ -56,34 +56,62 @@
         <label class="block text-text-primary font-semibold mb-2">Item-Item Invoice <span
                 class="text-error">*</span></label>
         <div id="items-list">
-            <div class="item-row mb-3 p-3 border rounded bg-surface-secondary">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                    <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *"
-                        required oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
-                    <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
-                        placeholder="Volume *" required oninput="calculateRowTotal(this)"
-                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
-                        oninput="calculateRowTotal(this); this.setCustomValidity('')">
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <input type="text" class="item-satuan border rounded p-2 w-full"
-                        placeholder="Satuan (m3, unit) *" required
-                        oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
-                    <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
-                        placeholder="Rp 0" required oninput="formatCurrencyInput(this); calculateRowTotal(this)"
-                        oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                        oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')">
-                    <div class="flex items-center">
-                        <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
+            @if (auth()->user()->isAdmin())
+                <div class="item-row mb-3 p-3 border rounded bg-surface-secondary">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                        <input type="text" class="item-deskripsi border rounded p-2 w-full"
+                            placeholder="Deskripsi *" required
+                            oninvalid="this.setCustomValidity('Deskripsi tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
+                        <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
+                            placeholder="Harga (Rp) *" required
+                            oninput="formatCurrencyInput(this); calculateRowTotal(this)"
+                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                     </div>
-                    <button type="button"
-                        class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <input type="text" inputmode="decimal" class="item-persentase border rounded p-2 w-full"
+                            placeholder="% *" required oninput="calculateRowTotal(this)"
+                            oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                        <div class="flex items-center">
+                            <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
+                        </div>
+                        <div></div>
+                        <button type="button"
+                            class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
+            @else
+                <div class="item-row mb-3 p-3 border rounded bg-surface-secondary">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                        <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *"
+                            required oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
+                        <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
+                            placeholder="Volume *" required
+                            oninput="calculateRowTotal(this); this.setCustomValidity('')"
+                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <input type="text" class="item-satuan border rounded p-2 w-full"
+                            placeholder="Satuan (m3, unit) *" required
+                            oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
+                            oninput="this.setCustomValidity('')">
+                        <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
+                            placeholder="Rp 0" required
+                            oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')"
+                            oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
+                        <div class="flex items-center">
+                            <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
+                        </div>
+                        <button type="button"
+                            class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            @endif
         </div>
         <button type="button" id="add-item" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover">
             <i class="fa-solid fa-plus"></i> Tambah Item
@@ -98,6 +126,7 @@
         </div>
     </div>
 
+    @if (!auth()->user()->isAdmin())
     {{-- Discount Section --}}
     <div class="mb-3 p-3 border rounded bg-yellow-50" id="discount-section">
         <label class="block text-text-primary font-semibold mb-2">Discount (Opsional)</label>
@@ -181,6 +210,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- PPN Section --}}
     <div class="mb-3 p-3 border rounded bg-purple-50" id="ppn-section">

@@ -101,6 +101,72 @@ window.formatCurrencyInput = formatCurrencyInput;
 window.formatDecimalInput = formatDecimalInput;
 
 // ==========================================
+// MODE ISI PENAWARAN (TABEL vs TEKS)
+// ==========================================
+
+/**
+ * Toggle antara format "Item-Item Penawaran" (tabel) dan "Teks/Deskripsi saja".
+ *
+ * Khusus role admin. Saat mode teks aktif, seluruh field pada container items
+ * & total (discount) dinonaktifkan agar tidak ikut ter-submit; saat kembali
+ * ke mode items, field diaktifkan ulang dan total dihitung ulang.
+ *
+ * @param {HTMLSelectElement} selectElement Elemen select items_mode
+ * @param {boolean} isEdit true untuk modal edit (suffix per penawaran)
+ */
+function toggleItemsMode(selectElement, isEdit) {
+    const isTextMode = selectElement.value === 'text';
+
+    let freeTextContainer = null;
+    let itemsContainer = null;
+    let totalsContainer = null;
+
+    if (isEdit) {
+        const quotationId = selectElement.getAttribute('data-quotation-id');
+        freeTextContainer = document.getElementById('free-text-container-edit-' + quotationId);
+        itemsContainer = document.getElementById('items-container-edit-' + quotationId);
+        totalsContainer = document.getElementById('items-totals-edit-' + quotationId);
+    } else {
+        freeTextContainer = document.getElementById('free-text-container-add');
+        itemsContainer = document.getElementById('items-container');
+        totalsContainer = document.getElementById('items-totals-add');
+    }
+
+    if (freeTextContainer) freeTextContainer.classList.toggle('hidden', !isTextMode);
+    if (itemsContainer) {
+        toggleItemsContainerFields(itemsContainer, isTextMode);
+        itemsContainer.classList.toggle('hidden', isTextMode);
+    }
+    if (totalsContainer) {
+        toggleItemsContainerFields(totalsContainer, isTextMode);
+        totalsContainer.classList.toggle('hidden', isTextMode);
+    }
+
+    if (!isTextMode) {
+        if (isEdit) {
+            const quotationId = selectElement.getAttribute('data-quotation-id');
+            const firstInput = document.querySelector('#items-container-edit-' + quotationId + ' .item-volume');
+            if (firstInput) updateEditInvoiceTotal(firstInput);
+        } else {
+            updateInvoiceTotal();
+        }
+    }
+}
+
+/**
+ * Menonaktifkan/mengaktifkan field form di dalam sebuah container.
+ * Dipakai agar field items/discount tidak ikut ter-submit saat mode teks.
+ */
+function toggleItemsContainerFields(container, disable) {
+    container.querySelectorAll('input, select, textarea').forEach(el => {
+        el.disabled = disable;
+        el.classList.toggle('opacity-50', disable);
+    });
+}
+
+window.toggleItemsMode = toggleItemsMode;
+
+// ==========================================
 // FUNGSI PERHITUNGAN LIVE
 // ==========================================
 
@@ -532,13 +598,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required
                         oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
-                    <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateRowTotal(this); this.setCustomValidity('')"
-                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                    <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full" placeholder="Volume (opsional)" oninput="calculateRowTotal(this)">
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <input type="text" class="item-satuan border rounded p-2 w-full" placeholder="Satuan (m3, unit) *" required
-                        oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
+                    <input type="text" class="item-satuan border rounded p-2 w-full" placeholder="Satuan (m3, unit) — opsional">
                     <input type="text" inputmode="numeric" min="0" class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')"
                         oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                     <div class="flex items-center">
@@ -596,14 +659,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
                     <input type="number" step="0.01" min="0" name="items[${newIndex}][volume]"
-                        class="item-volume border rounded p-2 w-full" placeholder="Volume *" required oninput="calculateEditRowTotal(this); this.setCustomValidity('')"
-                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                        class="item-volume border rounded p-2 w-full" placeholder="Volume (opsional)"
+                        oninput="calculateEditRowTotal(this)">
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <input type="text" name="items[${newIndex}][satuan]"
-                        class="item-satuan border rounded p-2 w-full" placeholder="Satuan *" required
-                        oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
+                        class="item-satuan border rounded p-2 w-full" placeholder="Satuan (opsional)">
                     <input type="text" inputmode="numeric" min="0" name="items[${newIndex}][harga]"
                         class="item-harga border rounded p-2 w-full" placeholder="Harga *" required oninput="formatCurrencyInput(this); calculateEditRowTotal(this); this.setCustomValidity('')"
                         oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
@@ -662,6 +723,23 @@ document.addEventListener('DOMContentLoaded', function () {
         if (addForm) {
             addForm.addEventListener('submit', function (e) {
                 const submitBtn = this.querySelector('button[type="submit"]');
+                const itemsMode = this.querySelector('[name="items_mode"]')?.value || 'items';
+
+                const itemsJsonField = this.querySelector('#items-json');
+                if (!itemsJsonField) {
+                    e.preventDefault();
+                    alert('Error: Field items tidak ditemukan');
+                    return false;
+                }
+
+                if (itemsMode === 'text') {
+                    itemsJsonField.value = '[]';
+                    if (!handleFormSubmit(submitBtn)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    return true;
+                }
 
                 const items = [];
                 const itemRows = this.querySelectorAll('.item-row');
@@ -672,12 +750,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     const satuanInput = row.querySelector('.item-satuan');
                     const hargaInput = row.querySelector('.item-harga');
 
-                    const volume = volumeInput ? parseFloat(volumeInput.value) : 0;
+                    const volume = volumeInput ? parseFloat(volumeInput.value.toString().replace(',', '.')) : 0;
                     const satuan = satuanInput ? satuanInput.value : '';
                     const harga = hargaInput ? parseCurrencyInput(hargaInput.value) : 0;
 
-                    if (keterangan && !isNaN(volume) && volume > 0 && satuan && !isNaN(harga) && harga > 0) {
-                        items.push({ keterangan, volume, satuan, harga });
+                    if (keterangan && !isNaN(harga) && harga > 0) {
+                        items.push({ keterangan, volume: isNaN(volume) ? 0 : volume, satuan, harga });
                     }
                 });
 
@@ -685,13 +763,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     e.preventDefault();
                     const itemsError = this.querySelector('#items-error');
                     if (itemsError) itemsError.classList.remove('hidden');
-                    return false;
-                }
-
-                const itemsJsonField = this.querySelector('#items-json');
-                if (!itemsJsonField) {
-                    e.preventDefault();
-                    alert('Error: Field items tidak ditemukan');
                     return false;
                 }
 
@@ -712,13 +783,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (form.querySelector('[name="_method"][value="PUT"]')) {
             form.addEventListener('submit', function (e) {
                 const submitBtn = this.querySelector('button[type="submit"]');
+                const itemsMode = this.querySelector('[name="items_mode"]')?.value || 'items';
 
-                const editItems = this.querySelectorAll('.item-row-edit');
-                if (editItems.length === 0) {
-                    e.preventDefault();
-                    const errorDiv = this.querySelector('.items-error-edit');
-                    if (errorDiv) errorDiv.classList.remove('hidden');
-                    return false;
+                if (itemsMode !== 'text') {
+                    const editItems = this.querySelectorAll('.item-row-edit');
+                    if (editItems.length === 0) {
+                        e.preventDefault();
+                        const errorDiv = this.querySelector('.items-error-edit');
+                        if (errorDiv) errorDiv.classList.remove('hidden');
+                        return false;
+                    }
                 }
 
                 normalizeInvoicePriceFields(this);
@@ -733,6 +807,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // INITIALIZE TOTALS
     updateInvoiceTotal();
+
+    // INITIALIZE MODE ISI PENAWARAN (tabel vs teks)
+    document.querySelectorAll('#items-mode').forEach(sel => toggleItemsMode(sel, false));
+    document.querySelectorAll('[id^="items-mode-edit-"]').forEach(sel => toggleItemsMode(sel, true));
 
     document.querySelectorAll('[id^="discount-type-edit-"]').forEach(el => {
         const quotationNumber = el.id.replace('discount-type-edit-', '');

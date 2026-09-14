@@ -110,6 +110,43 @@ window.formatCurrencyInput = formatCurrencyInput;
 window.formatDecimalInput = formatDecimalInput;
 
 // ==========================================
+// DETEKSI FORMAT ITEM (ADMIN vs SUPERADMIN)
+// ==========================================
+
+/**
+ * Deteksi apakah halaman ini memakai format item admin
+ * (deskripsi, harga, persentase) atau format standar superadmin
+ * (keterangan, volume, satuan, harga).
+ *
+ * @return {boolean} true bila format admin
+ */
+function isAdminItemFormat() {
+    return document.querySelector('.item-persentase') !== null;
+}
+
+/**
+ * Hitung jumlah (total) sebuah baris item.
+ *
+ * Format admin: harga x (persentase / 100)
+ * Format superadmin: volume x harga
+ *
+ * @param  {HTMLElement} row  Elemen baris (.item-row | .item-row-edit)
+ * @return {number} Total baris
+ */
+function getItemRowTotal(row) {
+    if (!row) return 0;
+    const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
+
+    if (isAdminItemFormat()) {
+        const persentase = parseDecimalInput(row.querySelector('.item-persentase'));
+        return (harga * persentase) / 100;
+    }
+
+    const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
+    return volume * harga;
+}
+
+// ==========================================
 // FUNGSI PERHITUNGAN LIVE
 // ==========================================
 
@@ -120,9 +157,7 @@ window.formatDecimalInput = formatDecimalInput;
  */
 function calculateRowTotal(input) {
     const row = input.closest('.item-row');
-    const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-    const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-    const total = volume * harga;
+    const total = getItemRowTotal(row);
 
     const totalSpan = row.querySelector('.item-total');
     if (totalSpan) {
@@ -140,9 +175,7 @@ function calculateRowTotal(input) {
  */
 function calculateRowTotalEdit(input, invoiceNumber) {
     const row = input.closest('.item-row-edit');
-    const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-    const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-    const total = volume * harga;
+    const total = getItemRowTotal(row);
 
     const totalSpan = row.querySelector('.item-total');
     if (totalSpan) {
@@ -158,9 +191,7 @@ function calculateRowTotalEdit(input, invoiceNumber) {
 function updateInvoiceTotal() {
     let grandTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
-        const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-        grandTotal += (volume * harga);
+        grandTotal += getItemRowTotal(row);
     });
 
     const totalPreview = document.getElementById('invoice-total-preview');
@@ -187,9 +218,7 @@ function updateEditInvoiceTotal(invoiceNumber) {
     let grandTotal = 0;
 
     modal.querySelectorAll('.item-row-edit').forEach(row => {
-        const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-        grandTotal += (volume * harga);
+        grandTotal += getItemRowTotal(row);
     });
 
     const totalPreview = document.getElementById('invoice-total-preview-edit-' + invoiceNumber);
@@ -296,9 +325,7 @@ function calculateDiscount() {
     // Ambil total dasar
     let baseTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
-        const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-        baseTotal += (volume * harga);
+        baseTotal += getItemRowTotal(row);
     });
     baseTotal = Math.round(baseTotal);
 
@@ -387,9 +414,7 @@ function calculateDP() {
     // Ambil total dasar
     let baseTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
-        const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-        baseTotal += (volume * harga);
+        baseTotal += getItemRowTotal(row);
     });
     baseTotal = Math.round(baseTotal);
 
@@ -461,9 +486,7 @@ function calculatePPN() {
 
     let baseTotal = 0;
     document.querySelectorAll('.item-row').forEach(row => {
-        const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-        baseTotal += (volume * harga);
+        baseTotal += getItemRowTotal(row);
     });
     baseTotal = Math.round(baseTotal);
 
@@ -534,9 +557,7 @@ function calculateDiscountEdit(invoiceNumber) {
     let baseTotal = 0;
     if (modal) {
         modal.querySelectorAll('.item-row-edit').forEach(row => {
-            const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-            baseTotal += (volume * harga);
+            baseTotal += getItemRowTotal(row);
         });
     }
     baseTotal = Math.round(baseTotal);
@@ -612,9 +633,7 @@ function calculateDPEdit(invoiceNumber) {
     let baseTotal = 0;
     if (modal) {
         modal.querySelectorAll('.item-row-edit').forEach(row => {
-            const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-            baseTotal += (volume * harga);
+            baseTotal += getItemRowTotal(row);
         });
     }
     baseTotal = Math.round(baseTotal);
@@ -682,9 +701,7 @@ function calculatePPNEdit(invoiceNumber) {
     let baseTotal = 0;
     if (modal) {
         modal.querySelectorAll('.item-row-edit').forEach(row => {
-            const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-            const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-            baseTotal += (volume * harga);
+            baseTotal += getItemRowTotal(row);
         });
     }
     baseTotal = Math.round(baseTotal);
@@ -890,11 +907,77 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
 
     /**
+     * Template baris item untuk modal ADD (tanpa atribut name).
+     *
+     * Menyesuaikan dengan format role: admin (deskripsi, harga, persentase)
+     * atau superadmin (keterangan, volume, satuan, harga).
+     *
+     * @return {string} HTML baris item
+     */
+    function itemRowHtml() {
+        if (isAdminItemFormat()) {
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                    <input type="text" class="item-deskripsi border rounded p-2 w-full" placeholder="Deskripsi *" required
+                        oninvalid="this.setCustomValidity('Deskripsi tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
+                    <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
+                        placeholder="Harga (Rp) *" required
+                        oninput="formatCurrencyInput(this); calculateRowTotal(this)"
+                        oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <input type="text" inputmode="decimal" class="item-persentase border rounded p-2 w-full"
+                        placeholder="% *" required oninput="calculateRowTotal(this)"
+                        oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                    <div class="flex items-center">
+                        <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
+                    </div>
+                    <div></div>
+                    <button type="button"
+                        class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required
+                    oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
+                <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
+                    placeholder="Volume *" required
+                    oninput="calculateRowTotal(this); this.setCustomValidity('')"
+                    oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <input type="text" class="item-satuan border rounded p-2 w-full"
+                    placeholder="Satuan (m3, unit) *" required
+                    oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
+                <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
+                    placeholder="Rp 0" required
+                    oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')"
+                    oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
+                <div class="flex items-center">
+                    <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
+                </div>
+                <button type="button"
+                    class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    /**
      * Listener tombol "Tambah Item" (modal ADD).
      *
-     * Membuat baris .item-row baru (keterangan, volume, satuan, harga),
-     * menempelkannya ke #items-list, memasang ulang listener hapus, dan
-     * menghitung ulang grand total.
+     * Membuat baris .item-row baru sesuai format role (admin: deskripsi/harga/%
+     * atau superadmin: keterangan/volume/satuan/harga), menempelkannya ke
+     * #items-list, memasang ulang listener hapus, dan menghitung ulang grand total.
      */
     const addItemBtn = document.getElementById('add-item');
     if (addItemBtn) {
@@ -905,34 +988,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const itemsContainer = document.getElementById('items-list');
             const newItem = document.createElement('div');
             newItem.className = 'item-row mb-3 p-3 border rounded bg-surface-secondary';
-            newItem.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                    <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required
-                        oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
-                    <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
-                        placeholder="Volume *" required oninput="calculateRowTotal(this)"
-                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')"
-                        oninput="calculateRowTotal(this); this.setCustomValidity('')">
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <input type="text" class="item-satuan border rounded p-2 w-full"
-                        placeholder="Satuan (m3, unit) *" required
-                        oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
-                    <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
-                        placeholder="Rp 0" required oninput="formatCurrencyInput(this); calculateRowTotal(this)"
-                        oninvalid="this.setCustomValidity('Harga tidak boleh kosong')"
-                        oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')">
-                    <div class="flex items-center">
-                        <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
-                    </div>
-                    <button type="button"
-                        class="remove-item bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-            `;
+            newItem.innerHTML = itemRowHtml();
             itemsContainer.appendChild(newItem);
             attachRemoveListener();
             updateInvoiceTotal();
@@ -972,10 +1028,82 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
 
     /**
+     * Template baris item untuk modal EDIT (memakai atribut name).
+     *
+     * Menyesuaikan dengan format role: admin (deskripsi, harga, persentase)
+     * atau superadmin (keterangan, volume, satuan, harga).
+     *
+     * @param  {number} index          Indeks untuk name items[index][...]
+     * @param  {string} invoiceNumber  Nomor invoice untuk memicu perhitungan edit
+     * @return {string} HTML baris item
+     */
+    function itemRowEditHtml(index, invoiceNumber) {
+        if (isAdminItemFormat()) {
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                    <input type="text" name="items[${index}][deskripsi]"
+                        class="item-deskripsi border rounded p-2 w-full" placeholder="Deskripsi *" required
+                        oninvalid="this.setCustomValidity('Deskripsi tidak boleh kosong')"
+                        oninput="this.setCustomValidity('')">
+                    <input type="text" inputmode="numeric" name="items[${index}][harga]"
+                        class="item-harga border rounded p-2 w-full" placeholder="Harga (Rp) *" required
+                        oninput="formatCurrencyInput(this); calculateRowTotalEdit(this, '${invoiceNumber}')"
+                        oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <input type="text" inputmode="decimal" name="items[${index}][persentase]"
+                        class="item-persentase border rounded p-2 w-full" placeholder="% *" required
+                        oninput="calculateRowTotalEdit(this, '${invoiceNumber}')"
+                        oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                    <div class="flex items-center">
+                        <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
+                    </div>
+                    <div></div>
+                    <button type="button"
+                        class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                <input type="text" name="items[${index}][keterangan]"
+                    class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required
+                    oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
+                <input type="number" step="0.01" min="0" name="items[${index}][volume]"
+                    class="item-volume border rounded p-2 w-full" placeholder="Volume *" required
+                    oninput="calculateRowTotalEdit(this, '${invoiceNumber}'); this.setCustomValidity('')"
+                    oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <input type="text" name="items[${index}][satuan]"
+                    class="item-satuan border rounded p-2 w-full" placeholder="Satuan *" required
+                    oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
+                    oninput="this.setCustomValidity('')">
+                <input type="text" inputmode="numeric" name="items[${index}][harga]"
+                    class="item-harga border rounded p-2 w-full" placeholder="Rp 0" required
+                    oninput="formatCurrencyInput(this); calculateRowTotalEdit(this, '${invoiceNumber}')"
+                    oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
+                <div class="flex items-center">
+                    <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
+                </div>
+                <button type="button"
+                    class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    /**
      * Listener tombol "Tambah Item" pada modal EDIT.
      *
-     * Membuat baris .item-row-edit baru dengan name field items[{index}][...]
-     * berdasarkan jumlah baris saat ini, lalu memasang listener hapus-edit.
+     * Membuat baris .item-row-edit baru sesuai format role dengan name field
+     * items[{index}][...] berdasarkan jumlah baris saat ini, lalu memasang
+     * listener hapus-edit.
      */
     document.querySelectorAll('[id^="add-item-edit-"]').forEach(btn => {
         btn.addEventListener('click', function (e) {
@@ -990,35 +1118,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const newItem = document.createElement('div');
             newItem.className = 'item-row-edit mb-3 p-3 border rounded bg-surface-secondary';
-            newItem.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                    <input type="text" name="items[${newIndex}][keterangan]"
-                        class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *" required
-                        oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
-                    <input type="number" step="0.01" min="0" name="items[${newIndex}][volume]"
-                        class="item-volume border rounded p-2 w-full" placeholder="Volume *" required
-                        oninput="calculateRowTotalEdit(this, '${invoiceNumber}')"
-                        oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <input type="text" name="items[${newIndex}][satuan]"
-                        class="item-satuan border rounded p-2 w-full" placeholder="Satuan *" required
-                        oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                        oninput="this.setCustomValidity('')">
-                    <input type="text" inputmode="numeric" name="items[${newIndex}][harga]"
-                        class="item-harga border rounded p-2 w-full" placeholder="Rp 0" required
-                        oninput="formatCurrencyInput(this); calculateRowTotalEdit(this, '${invoiceNumber}')"
-                        oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
-                    <div class="flex items-center">
-                        <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
-                    </div>
-                    <button type="button"
-                        class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-            `;
+            newItem.innerHTML = itemRowEditHtml(newIndex, invoiceNumber);
             itemsContainer.appendChild(newItem);
             attachRemoveListenerEdit();
         });
@@ -1106,6 +1206,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 const itemRows = this.querySelectorAll('.item-row');
 
                 itemRows.forEach(row => {
+                    if (isAdminItemFormat()) {
+                        const deskripsi = row.querySelector('.item-deskripsi')?.value || '';
+                        const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
+                        const persentase = parseDecimalInput(row.querySelector('.item-persentase'));
+
+                        if (deskripsi && !isNaN(harga) && harga > 0 && !isNaN(persentase) && persentase > 0) {
+                            items.push({ deskripsi, harga, persentase });
+                        }
+                        return;
+                    }
+
                     const keterangan = row.querySelector('.item-keterangan')?.value || '';
                     const volumeInput = row.querySelector('.item-volume');
                     const satuanInput = row.querySelector('.item-satuan');
@@ -1195,11 +1306,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateInvoiceTotal();
 
-    // Inisialisasi tampilan discount & DP untuk semua modal edit
-    document.querySelectorAll('[id^="discount-type-edit-"]').forEach(el => {
-        const invoiceNumber = el.id.replace('discount-type-edit-', '');
-        calculateDiscountEdit(invoiceNumber);
-        calculatePPNEdit(invoiceNumber);
+    // Inisialisasi total & tampilan PPN untuk semua modal edit
+    // (dilakukan di sini agar format admin -- yang tidak punya discount/DP --
+    //  tetap menghitung ulang total & PPN saat halaman dimuat)
+    document.querySelectorAll('[id^="editModal-"]').forEach(modal => {
+        const invoiceNumber = modal.id.replace('editModal-', '');
+        updateEditInvoiceTotal(invoiceNumber);
     });
 
     // ==========================================

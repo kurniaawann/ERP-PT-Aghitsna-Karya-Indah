@@ -38,8 +38,10 @@ class ProyekInvoiceController extends Controller
      */
     public function getNextInvoiceNumber()
     {
+        $isAdmin = auth()->check() && auth()->user()->isAdmin();
+
         return response()->json([
-            'invoice_number' => $this->service->generateInvoiceNumber(),
+            'invoice_number' => $this->service->generateInvoiceNumber($isAdmin),
         ]);
     }
 
@@ -76,7 +78,8 @@ class ProyekInvoiceController extends Controller
         $data = $request->validated();
 
         if (empty($data['invoice_number']) || str_contains($data['invoice_number'], 'Akan digenerate')) {
-            $data['invoice_number'] = $this->service->generateInvoiceNumber();
+            $isAdmin = auth()->check() && auth()->user()->isAdmin();
+            $data['invoice_number'] = $this->service->generateInvoiceNumber($isAdmin);
         }
 
         $this->service->createInvoice($data, $items);
