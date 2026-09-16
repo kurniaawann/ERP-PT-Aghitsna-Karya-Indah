@@ -51,12 +51,16 @@
 
         <div>
             <label class="block text-text-primary mb-1">Rekening Pembayaran</label>
-            <select name="payment_account_id" class="w-full border rounded p-2">
-                <option value="">-- Pilih Rekening --</option>
-                @foreach ($paymentAccounts as $account)
-                    <option value="{{ $account->id }}">{{ $account->bank_name }} - {{ $account->account_number }}</option>
-                @endforeach
-            </select>
+            <div class="flex items-center gap-2">
+                <select name="payment_account_id" class="flex-1 w-full border rounded p-2">
+                    <option value="">-- Pilih Rekening --</option>
+                    @foreach ($paymentAccounts as $account)
+                        <option value="{{ $account->id }}">{{ $account->bank_name }} - {{ $account->account_number }}</option>
+                    @endforeach
+                </select>
+                <x-finance.quick-add-payment-account mode="select"
+                    target-selector="select[name='payment_account_id']" id-suffix="{{ $no }}" />
+            </div>
         </div>
 
         <div>

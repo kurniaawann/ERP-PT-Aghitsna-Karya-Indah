@@ -59,9 +59,12 @@
 
     {{-- Pilih Rekening (Opsional) --}}
     <div class="mb-3 p-3 border rounded bg-green-50">
-        <label class="block text-text-primary font-semibold mb-2">
-            Pilih Rekening <span class="text-xs font-normal text-text-label">(Opsional, bisa lebih dari satu)</span>
-        </label>
+        <div class="flex items-center justify-between mb-2">
+            <label class="block text-text-primary font-semibold">
+                Pilih Rekening <span class="text-xs font-normal text-text-label">(Opsional, bisa lebih dari satu)</span>
+            </label>
+            <x-finance.quick-add-payment-account mode="checkbox" />
+        </div>
         <div class="space-y-2">
             @if (isset($paymentAccounts) && $paymentAccounts->count() > 0)
                 @foreach ($paymentAccounts as $account)

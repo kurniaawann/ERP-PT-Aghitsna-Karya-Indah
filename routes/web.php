@@ -236,6 +236,7 @@ Route::middleware('auth')->group(function () {
     // Route Payment Accounts
     Route::get('/payment-accounts', [PaymentAccountController::class, 'index'])->name('payment-accounts.index');
     Route::post('/payment-accounts', [PaymentAccountController::class, 'store'])->name('payment-accounts.store');
+    Route::post('/payment-accounts/ajax', [PaymentAccountController::class, 'storeAjax'])->name('payment-accounts.storeAjax');
     Route::put('/payment-accounts/{paymentAccount}', [PaymentAccountController::class, 'update'])->name('payment-accounts.update');
     Route::post('/payment-accounts/{paymentAccount}/toggle', [PaymentAccountController::class, 'toggleActive'])->name('payment-accounts.toggle');
     Route::delete('/payment-accounts/destroy-selected', [PaymentAccountController::class, 'destroySelected'])->name('payment-accounts.destroySelected');

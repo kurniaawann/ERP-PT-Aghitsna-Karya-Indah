@@ -8,6 +8,7 @@ use App\Http\Requests\Finance\UpdatePaymentAccountRequest;
 use App\Models\Finance\PaymentAccount;
 use App\Services\Finance\PaymentAccountService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 /**
  * Controller untuk sub modul Rekening Pembayaran (Finance).
@@ -48,6 +49,28 @@ class PaymentAccountController extends Controller
 
         return redirect()->route('payment-accounts.index')
             ->with('success', 'Rekening pembayaran berhasil ditambahkan!');
+    }
+
+    /**
+     * Simpan rekening pembayaran baru via AJAX (quick-add dari modal lain).
+     *
+     * @param  StorePaymentAccountRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeAjax(StorePaymentAccountRequest $request): JsonResponse
+    {
+        $account = $this->service->createAccount($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rekening pembayaran berhasil ditambahkan!',
+            'account' => [
+                'id'             => $account->id,
+                'bank_name'      => $account->bank_name,
+                'account_number' => $account->account_number,
+                'account_holder' => $account->account_holder,
+            ],
+        ]);
     }
 
     /**

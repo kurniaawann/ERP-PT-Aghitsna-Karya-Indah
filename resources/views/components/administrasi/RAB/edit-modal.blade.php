@@ -102,7 +102,10 @@
     @if (!auth()->user()->isAdmin())
         {{-- Rekening Pembayaran --}}
         <div class="mb-3">
-            <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
+            <div class="flex items-center justify-between mb-1">
+                <label class="block text-text-primary">Rekening Pembayaran <span class="text-error">*</span></label>
+                <x-finance.quick-add-payment-account mode="checkbox" checkbox-container="#paymentAccountsList" />
+            </div>
             <div id="paymentAccountsList" class="space-y-2" required>
                 <small class="text-text-secondary text-xs">Pilih minimal 1 rekening pembayaran</small>
                 @foreach ($paymentAccounts as $account)

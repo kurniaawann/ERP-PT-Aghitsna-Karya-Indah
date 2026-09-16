@@ -330,9 +330,12 @@
 
     {{-- Pilihan Rekening Pembayaran --}}
     <div class="mb-3 p-3 border border-success-light rounded-lg bg-success-light">
-        <label class="block text-text-primary font-semibold mb-2">
-            Pilih Rekening Pembayaran <span class="text-error">*</span>
-        </label>
+        <div class="flex items-center justify-between mb-2">
+            <label class="block text-text-primary font-semibold">
+                Pilih Rekening Pembayaran <span class="text-error">*</span>
+            </label>
+            <x-finance.quick-add-payment-account mode="checkbox" />
+        </div>
         <div class="space-y-2">
             @php
                 $selectedAccounts = is_string($invoice->selected_payment_accounts)

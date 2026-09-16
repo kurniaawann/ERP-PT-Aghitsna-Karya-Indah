@@ -247,10 +247,13 @@
 
     {{-- Payment Accounts Selection --}}
     <div class="mb-3 p-3 border rounded bg-green-50">
-        <label class="block text-text-primary font-semibold mb-2">
-            Pilih Rekening Pembayaran <span class="text-error">*</span>
-            <span class="text-xs font-normal text-text-label">(Minimal 1 rekening harus dipilih)</span>
-        </label>
+        <div class="flex items-center justify-between mb-2">
+            <label class="block text-text-primary font-semibold">
+                Pilih Rekening Pembayaran <span class="text-error">*</span>
+                <span class="text-xs font-normal text-text-label">(Minimal 1 rekening harus dipilih)</span>
+            </label>
+            <x-finance.quick-add-payment-account mode="checkbox" />
+        </div>
         <div class="space-y-2">
             @php
                 $selectedAccounts = $quotation->selected_payment_accounts ?? [];
