@@ -116,6 +116,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/do-semen', [CementDeliveryOrderController::class, 'index'])->name('cement-do.index');
         Route::post('/do-semen', [CementDeliveryOrderController::class, 'store'])->name('cement-do.store');
         Route::put('/do-semen/{no}', [CementDeliveryOrderController::class, 'update'])->name('cement-do.update');
+        Route::post('/do-semen/{no}/generate-invoice', [CementDeliveryOrderController::class, 'generateInvoice'])->name('cement-do.generateInvoice');
         Route::delete('/do-semens', [CementDeliveryOrderController::class, 'destroySelected'])->name('cement-does.destroySelected');
 
         Route::get('/do-semen/export/pdf', [CementDeliveryOrderController::class, 'exportPdf'])->name('cement-do.export.pdf');
@@ -182,16 +183,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/item-invoice/{invoice_number}/print/pdf', [ItemInvoiceController::class, 'printPdf'])->name('item-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/item-invoice/{invoice_number}/print/excel', [ItemInvoiceController::class, 'printExcel'])->name('item-invoice.print.excel')->where('invoice_number', '.*');
 
-    // Route Invoice Semen
-    Route::get('/semen-invoice', [SemenInvoiceController::class, 'index'])->name('semen-invoice.index');
-    Route::get('/semen-invoice/next-number', [SemenInvoiceController::class, 'getNextInvoiceNumber'])->name('semen-invoice.getNextNumber');
-    Route::get('/semen-invoice/cements-data', [SemenInvoiceController::class, 'cementsData'])->name('semen-invoice.cementsData');
-    Route::post('/semen-invoice', [SemenInvoiceController::class, 'store'])->name('semen-invoice.store');
-    Route::get('/semen-invoice/{invoice_number}/edit', [SemenInvoiceController::class, 'edit'])->name('semen-invoice.edit')->where('invoice_number', '.*');
-    Route::put('/semen-invoice/{invoice_number}', [SemenInvoiceController::class, 'update'])->name('semen-invoice.update')->where('invoice_number', '.*');
-    Route::delete('/semen-invoice/destroy-selected', [SemenInvoiceController::class, 'destroySelected'])->name('semen-invoice.destroySelected');
-
-    // Semen Invoice Print Routes
+    // Semen Invoice Print Routes (invoice dihasilkan dari DO Semen)
     Route::get('/semen-invoice/{invoice_number}/print/pdf', [SemenInvoiceController::class, 'printPdf'])->name('semen-invoice.print.pdf')->where('invoice_number', '.*');
     Route::get('/semen-invoice/{invoice_number}/print/excel', [SemenInvoiceController::class, 'printExcel'])->name('semen-invoice.print.excel')->where('invoice_number', '.*');
 

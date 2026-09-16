@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Finance\InvoiceSemen;
 
 /**
  * Model untuk entitas Data Semen (baris detail dari DO Semen).
@@ -50,6 +51,7 @@ class Cement extends Model
         'satuan',
         'harga',
         'tanggal_lunas',
+        'invoice_number',
     ];
 
     protected $casts = [
@@ -69,6 +71,16 @@ class Cement extends Model
     public function deliveryOrder(): BelongsTo
     {
         return $this->belongsTo(CementDeliveryOrder::class, 'do_no', 'no');
+    }
+
+    /**
+     * Invoice Semen yang memuat baris Data Semen ini.
+     *
+     * @return BelongsTo<InvoiceSemen, $this>
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceSemen::class, 'invoice_number', 'invoice_number');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 namespace App\Models\Finance;
 
+use App\Models\Inventory\CementDeliveryOrder;
 use App\Models\Sdm\Executive;
 use App\Services\Finance\SemenInvoiceService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +30,7 @@ class InvoiceSemen extends Model
 
     protected $fillable = [
         'invoice_number',
+        'do_no',
         'invoice_date',
         'projects',
         'total_amount',
@@ -45,6 +47,16 @@ class InvoiceSemen extends Model
     public function getRouteKeyName()
     {
         return 'invoice_number';
+    }
+
+    /**
+     * Relasi ke DO Semen (header) yang memicu pembuatan invoice ini.
+     *
+     * @return BelongsTo<CementDeliveryOrder, $this>
+     */
+    public function deliveryOrder(): BelongsTo
+    {
+        return $this->belongsTo(CementDeliveryOrder::class, 'do_no', 'no');
     }
 
     /**

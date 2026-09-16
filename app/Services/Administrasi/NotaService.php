@@ -128,6 +128,8 @@ class NotaService
 
         return Nota::create([
             'id_nota' => $notaCode,
+            'invoice_number' => $validated['invoice_number'] ?? null,
+            'do_no' => $validated['do_no'] ?? null,
             'tipe_nota' => $tipe,
             'nama_proyek' => $validated['nama_proyek'] ?? null,
             'location' => $location,
@@ -151,6 +153,44 @@ class NotaService
             'ppn_amount' => $ppnAmount,
             'total_with_ppn' => $totalWithPpn,
             'created_by' => auth()->id(),
+        ]);
+    }
+
+    /**
+     * Membuat satu nota proyek otomatis dari invoice semen.
+     *
+     * Dipanggil saat invoice semen dibuat dari DO Semen. Satu proyek dalam
+     * invoice = satu nota proyek. Setiap baris item nota memakai data semen
+     * (qty zak, satuan zak, nama SEMEN, harga per zak).
+     *
+     * @param  string  $doNo           Nomor DO Semen sumber.
+     * @param  string  $invoiceNumber  Nomor invoice semen.
+     * @param  array<string, mixed>  $project  Satu proyek dari projects invoice:
+     *                                  {nama_proyek, pengurus_proyek, payment_account_id, items}.
+     * @param  array<string, mixed>  $invoiceData  Data invoice: {invoice_date, signed_by_id, ...}.
+     * @return Nota Nota proyek yang dibuat.
+     */
+    public function createProyekNotaForInvoice(string $doNo, string $invoiceNumber, array $project, array $invoiceData): Nota
+    {
+        $items = collect($project['items'] ?? []);
+        $paymentAccountId = $project['payment_account_id'] ?? null;
+        $pengurus = $project['pengurus_proyek'] ?? null;
+
+        return $this->create([
+            'tipe_nota' => Nota::TIPE_PROYEK,
+            'nama_proyek' => $project['nama_proyek'] ?? '-',
+            'nota_date' => $invoiceData['invoice_date'],
+            'kepada' => $pengurus ?: ($project['nama_proyek'] ?? '-'),
+            'item_quantity' => $items->pluck('qty')->all(),
+            'item_satuan' => $items->map(fn () => 'zak')->all(),
+            'item_nama_barang' => $items->pluck('nama_barang')->all(),
+            'item_harga' => $items->pluck('harga')->all(),
+            'penerima' => $pengurus,
+            'petinggi_id' => $invoiceData['signed_by_id'] ?? null,
+            'divisi' => null,
+            'selected_payment_accounts' => $paymentAccountId ? [(int) $paymentAccountId] : [],
+            'invoice_number' => $invoiceNumber,
+            'do_no' => $doNo,
         ]);
     }
 

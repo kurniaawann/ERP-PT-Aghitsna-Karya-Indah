@@ -23,6 +23,64 @@
             padding: 7%;
         }
 
+        /* Header Perusahaan (logo + nama) */
+        .company-header {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        .company-header td {
+            border: none;
+            padding: 0;
+        }
+
+        .logo-cell {
+            width: 110px;
+            vertical-align: middle;
+        }
+
+        .logo-cell img {
+            display: block;
+            width: 90px;
+            height: auto;
+        }
+
+        .title-cell {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .company-name {
+            font-size: 19pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .company-address {
+            font-size: 9pt;
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        /* Versi Super Admin: header diperbesar */
+        .company-header-lg .logo-cell {
+            width: 140px;
+        }
+
+        .company-header-lg .logo-cell img {
+            width: 120px;
+        }
+
+        .company-header-lg .company-name {
+            font-size: 28pt;
+            letter-spacing: 1.5px;
+        }
+
+        .company-header-lg .company-address {
+            font-size: 11pt;
+        }
+
         .main-table {
             width: 100%;
             border-collapse: collapse;
@@ -163,12 +221,31 @@
         $projects = is_string($invoice->projects) ? json_decode($invoice->projects, true) : $invoice->projects;
         $grandTotal = 0;
         $totalProjects = count($projects);
+        $isSuperAdmin = $isSuperAdmin ?? false;
     @endphp
+
+    {{-- Header Perusahaan (logo + nama), diperbesar untuk Super Admin --}}
+    <table class="company-header {{ $isSuperAdmin ? 'company-header-lg' : '' }}">
+        <tr>
+            <td class="logo-cell">
+                <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo PT Aghitsna Karya Indah">
+            </td>
+            <td class="title-cell">
+                <div class="company-name">PT. AGHITSNA KARYA INDAH</div>
+                <div class="company-address">General Contruction - Engineering</div>
+            </td>
+        </tr>
+    </table>
 
     <table class="main-table">
         <!-- Judul Invoice Atas -->
         <tr>
             <td colspan="5" class="header-title">INVOICE</td>
+        </tr>
+        <tr>
+            <td style="width: 1%;">No. Invoice</td>
+            <td style="width: 1%; text-align: center;">:</td>
+            <td colspan="3">{{ $invoice->invoice_number }}</td>
         </tr>
         <tr>
             <td style="width: 1%;">Tanggal</td>

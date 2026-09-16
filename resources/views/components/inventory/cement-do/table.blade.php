@@ -63,13 +63,37 @@
                                     {{ 'Rp ' . number_format($cementDeliveryOrder->profit, 0, ',', '.') }}
                                 </td>
                                 <td class="p-2 text-center">
-                                    <button type="button"
-                                        onclick="openModal('editModal-{{ $cementDeliveryOrder->no }}')"
-                                        class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                        title="Edit Data">
-                                        <i class="fa-solid fa-pen w-3 h-3"></i>
-                                        Edit
-                                    </button>
+                                    <div class="flex flex-col gap-1.5 items-center">
+                                        {{-- Buat Invoice dari DO (superadmin) --}}
+                                        <button type="button"
+                                            onclick="openGenerateInvoiceModal('{{ $cementDeliveryOrder->no }}')"
+                                            class="flex items-center gap-1 bg-btn-add hover:bg-btn-add-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Buat Invoice Semen dari DO ini">
+                                            <i class="fa-solid fa-file-invoice w-3 h-3"></i>
+                                            Buat Invoice
+                                        </button>
+
+                                        <button type="button"
+                                            onclick="openModal('editModal-{{ $cementDeliveryOrder->no }}')"
+                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Edit Data">
+                                            <i class="fa-solid fa-pen w-3 h-3"></i>
+                                            Edit
+                                        </button>
+
+                                        {{-- Invoice yang pernah dibuat dari DO ini --}}
+                                        @forelse ($cementDeliveryOrder->invoices as $invoice)
+                                            <a href="{{ route('semen-invoice.print.pdf', $invoice->invoice_number) }}"
+                                                target="_blank"
+                                                class="flex items-center gap-1 bg-surface-secondary border border-border-strong hover:bg-primary-light text-text-primary px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                                title="Cetak Invoice {{ $invoice->invoice_number }}">
+                                                <i class="fa-solid fa-print w-3 h-3"></i>
+                                                {{ $invoice->invoice_number }}
+                                            </a>
+                                        @empty
+                                            <span class="text-[10px] text-text-secondary italic">Belum ada invoice</span>
+                                        @endforelse
+                                    </div>
                                 </td>
                             </tr>
 

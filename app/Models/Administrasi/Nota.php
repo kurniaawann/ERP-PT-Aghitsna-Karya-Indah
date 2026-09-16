@@ -51,6 +51,8 @@ class Nota extends Model
      */
     protected $fillable = [
         'id_nota',
+        'invoice_number',
+        'do_no',
         'tipe_nota',
         'nama_proyek',
         'location',

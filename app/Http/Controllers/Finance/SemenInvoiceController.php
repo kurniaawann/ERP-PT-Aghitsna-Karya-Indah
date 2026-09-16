@@ -4,194 +4,24 @@ namespace App\Http\Controllers\Finance;
 
 use App\Exports\Finance\SemenInvoiceExport;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Finance\StoreSemenInvoiceRequest;
-use App\Http\Requests\Finance\UpdateSemenInvoiceRequest;
 use App\Models\Finance\InvoiceSemen;
-use App\Models\Inventory\Cement;
-use App\Models\Sdm\Executive;
-use App\Services\Finance\PaymentAccountService;
 use App\Services\Finance\SemenInvoiceService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
- * Controller untuk modul Invoice Semen (Finance).
+ * Controller modul Invoice Semen (Finance).
  *
- * Menangani operasi CRUD, cetak PDF/Excel per invoice, dan export rekap
- * Invoice Semen. Logika bisnis didelegasikan ke SemenInvoiceService.
+ * Invoice Semen kini dibuat otomatis dari DO Semen (alur superadmin di
+ * modul DO Semen). Controller ini hanya menyisakan aksi cetak PDF/Excel
+ * untuk invoice yang sudah dibuat. Pembuatan/ubah/hapus manual tidak
+ * lagi tersedia (tab "Invoice Semen" telah dihapus).
  */
 class SemenInvoiceController extends Controller
 {
     public function __construct(
-        private SemenInvoiceService $service,
-        private PaymentAccountService $paymentAccountService
+        private readonly SemenInvoiceService $service
     ) {}
-
-    /**
-     * Menampilkan daftar Invoice Semen.
-     *
-     * Invoice Semen kini menjadi tab di halaman DO Semen
-     * (do-semen?tab=semen-invoice) sehingga tidak ada lagi sub-modul
-     * terpisah di sidebar. URL lama /semen-invoice diarahkan ke tab tersebut.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function index(Request $request)
-    {
-        return redirect()->route('cement-do.index', array_merge(
-            $request->all(),
-            ['tab' => 'semen-invoice']
-        ));
-    }
-
-    /**
-     * Menghasilkan nomor invoice berikutnya (AJAX response).
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getNextInvoiceNumber()
-    {
-        return response()->json([
-            'invoice_number' => $this->service->generateInvoiceNumber(),
-        ]);
-    }
-
-    /**
-     * Mengambil Data Semen (tabel `cements`) untuk dropdown Invoice Semen.
-     *
-     * Dipanggil JS saat membuka/mencari dropdown "Pilih Data Semen" agar
-     * daftar selalu mutakhir (dibaca langsung dari database). Mendukung
-     * filter kata kunci opsional (no, nama_proyek, name, tanggal).
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function cementsData(Request $request)
-    {
-        $cements = Cement::query()
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = trim((string) $request->input('search'));
-
-                $query->where(function ($q) use ($search) {
-                    $q->where('no', 'like', "%{$search}%")
-                        ->orWhere('nama_proyek', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%")
-                        ->orWhere('tanggal', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('no', 'desc')
-            ->get();
-
-        return response()->json(
-            $cements->map(fn ($c) => [
-                'no' => $c->no,
-                'tanggal' => optional($c->tanggal)->format('Y-m-d'),
-                'nama_proyek' => $c->nama_proyek,
-                'name' => $c->name,
-                'jumlah' => $c->jumlah,
-                'satuan' => $c->satuan,
-                'harga' => $c->harga,
-                'total' => $c->total,
-            ])->values()
-        );
-    }
-
-    /**
-     * Menyimpan Invoice Semen baru.
-     *
-     * @param  \App\Http\Requests\Finance\StoreSemenInvoiceRequest  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function store(StoreSemenInvoiceRequest $request)
-    {
-        $projects = $this->service->normalizeProjects($request->input('projects'));
-
-        if (empty($projects)) {
-            return back()->with('error', 'Minimal harus ada 1 proyek dengan data lengkap!')->withInput();
-        }
-
-        $data = $request->validated();
-
-        if (empty($data['invoice_number']) || str_contains($data['invoice_number'], 'Akan digenerate')) {
-            $data['invoice_number'] = $this->service->generateInvoiceNumber();
-        }
-
-        $this->service->createInvoice($data, $projects);
-
-        return redirect()->route('cement-do.index', ['tab' => 'semen-invoice'])
-            ->with('success', 'Invoice semen berhasil ditambahkan!');
-    }
-
-    /**
-     * Mengambil data invoice untuk modal edit (AJAX response).
-     *
-     * @param  string  $invoiceNumber
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function edit(string $invoiceNumber)
-    {
-        $invoice = InvoiceSemen::where('invoice_number', $invoiceNumber)->firstOrFail();
-
-        return response()->json([
-            'invoice' => $invoice,
-            'projects' => is_string($invoice->projects) ? json_decode($invoice->projects, true) : $invoice->projects,
-            'signed_by_id' => $invoice->signed_by_id,
-        ]);
-    }
-
-    /**
-     * Mengupdate Invoice Semen.
-     *
-     * @param  \App\Http\Requests\Finance\UpdateSemenInvoiceRequest  $request
-     * @param  string  $invoiceNumber
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update(UpdateSemenInvoiceRequest $request, string $invoiceNumber)
-    {
-        $invoice = InvoiceSemen::where('invoice_number', $invoiceNumber)->firstOrFail();
-
-        $projects = $this->service->normalizeProjects($request->input('projects'));
-
-        if (empty($projects)) {
-            return back()->with('error', 'Minimal harus ada 1 proyek dengan data lengkap!')->withInput();
-        }
-
-        $this->service->updateInvoice($invoice, $request->validated(), $projects);
-
-        return redirect()->route('cement-do.index', ['tab' => 'semen-invoice'])
-            ->with('success', 'Invoice semen berhasil diupdate!');
-    }
-
-    /**
-     * Menghapus beberapa Invoice Semen sekaligus.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function destroySelected(Request $request)
-    {
-        $selectedInvoiceNumbers = $request->input('selected_invoices', []);
-        $isAjax = $request->ajax();
-
-        if (empty($selectedInvoiceNumbers)) {
-            $msg = 'Tidak ada data yang dipilih untuk dihapus.';
-
-            return $isAjax
-                ? response()->json(['success' => false, 'message' => $msg])
-                : back()->with('error', $msg);
-        }
-
-        $deletedCount = $this->service->destroySelected($selectedInvoiceNumbers);
-
-        $msg = "{$deletedCount} invoice semen berhasil dihapus.";
-
-        return $isAjax
-            ? response()->json(['success' => true, 'message' => $msg])
-            : back()->with('success', $msg);
-    }
 
     /**
      * Mencetak Invoice Semen sebagai PDF.
@@ -203,7 +33,9 @@ class SemenInvoiceController extends Controller
     {
         $invoice = InvoiceSemen::where('invoice_number', $invoiceNumber)->firstOrFail();
 
-        $pdf = Pdf::loadView('exports.finance.semen-invoice-pdf', compact('invoice'));
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+
+        $pdf = Pdf::loadView('exports.finance.semen-invoice-pdf', compact('invoice', 'isSuperAdmin'));
         $pdf->setPaper('a4', 'portrait');
 
         $safeFileName = str_replace(['/', '\\'], '-', $invoice->invoice_number);

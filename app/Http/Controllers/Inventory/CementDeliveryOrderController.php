@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreCementDeliveryOrderRequest;
 use App\Http\Requests\Inventory\UpdateCementDeliveryOrderRequest;
+use App\Http\Requests\Inventory\GenerateSemenInvoiceRequest;
 use App\Models\Sdm\Executive;
 use App\Services\Finance\PaymentAccountService;
 use App\Services\Finance\SemenInvoiceService;
@@ -29,44 +30,29 @@ class CementDeliveryOrderController extends Controller
     ) {}
 
     /**
-     * Menampilkan halaman tab DO Semen / Invoice Semen dengan paginasi,
-     * pencarian, dan filter bulan/tahun pada tab yang aktif.
+     * Menampilkan halaman tab DO Semen dengan paginasi, pencarian,
+     * dan filter bulan/tahun.
      *
-     * Halaman memakai pola tab seperti Payroll/Slip Gaji:
-     * - tab `do-semen` (default): daftar DO Semen.
-     * - tab `semen-invoice`: daftar Invoice Semen (sub-modul digabung ke sini).
+     * Invoice Semen kini digenerate langsung dari baris DO Semen sehingga
+     * halaman hanya berisi satu tab: DO Semen. Data pendukung modal
+     * (executives & rekening pembayaran) ikut disiapkan untuk tombol
+     * "Buat Invoice" pada tiap baris DO.
      *
      * @param  Request  $request
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        $tab = $request->input('tab', 'do-semen');
-
-        if (! in_array($tab, ['do-semen', 'semen-invoice'], true)) {
-            $tab = 'do-semen';
-        }
-
-        // ─── Tab Invoice Semen ───
-        if ($tab === 'semen-invoice') {
-            $invoices = $this->semenInvoiceService->baseQuery($request)
-                ->paginate(15)
-                ->appends(array_merge($request->all(), ['tab' => 'semen-invoice']));
-
-            $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
-            $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
-
-            return view('pages.inventory.cement-do', compact('tab', 'invoices', 'paymentAccounts', 'executives'));
-        }
-
-        // ─── Tab DO Semen (default) ───
         $cementDeliveryOrders = $this->cementDeliveryOrderService->getPaginatedSearch(
             $request->input('search'),
             $request->input('month'),
             $request->input('year')
         );
 
-        return view('pages.inventory.cement-do', compact('tab', 'cementDeliveryOrders'));
+        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
+        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
+
+        return view('pages.inventory.cement-do', compact('cementDeliveryOrders', 'paymentAccounts', 'executives'));
     }
 
     /**
@@ -100,6 +86,39 @@ class CementDeliveryOrderController extends Controller
         $this->cementDeliveryOrderService->update($cementDeliveryOrder, $request->validated());
 
         return redirect()->back()->with('success', 'Data berhasil diupdate!');
+    }
+
+    /**
+     * Membuat Invoice Semen dari DO Semen (alur baru, superadmin only).
+     *
+     * Data semen terpilih menghasilkan satu invoice semen + satu nota
+     * proyek otomatis per proyek. Baris Data Semen yang sudah pernah
+     * masuk invoice lain otomatis dilewati.
+     *
+     * @param  GenerateSemenInvoiceRequest  $request
+     * @param  string                       $no  Nomor DO Semen.
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function generateInvoice(GenerateSemenInvoiceRequest $request, string $no)
+    {
+        $cementDeliveryOrder = $this->cementDeliveryOrderService->findById($no);
+
+        if (!$cementDeliveryOrder) {
+            abort(404);
+        }
+
+        $cements = $cementDeliveryOrder->cements
+            ->whereIn('no', $request->validated()['cement_nos'])
+            ->whereNull('invoice_number')
+            ->values();
+
+        if ($cements->isEmpty()) {
+            return back()->with('error', 'Pilih minimal satu data semen yang belum diinvois.');
+        }
+
+        $this->semenInvoiceService->createFromDo($cementDeliveryOrder, $request->validated(), $cements->all());
+
+        return back()->with('success', 'Invoice semen dan nota proyek berhasil dibuat dari DO ' . $cementDeliveryOrder->no . '!');
     }
 
     /**

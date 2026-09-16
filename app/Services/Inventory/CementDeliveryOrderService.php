@@ -28,7 +28,7 @@ class CementDeliveryOrderService
      */
     public function getPaginatedSearch(?string $search = null, ?string $month = null, ?string $year = null): LengthAwarePaginator
     {
-        return CementDeliveryOrder::with('cements')
+        return CementDeliveryOrder::with(['cements', 'invoices'])
             ->search($search)
             ->filterMonth($month)
             ->filterYear($year)
@@ -46,7 +46,7 @@ class CementDeliveryOrderService
      */
     public function getAll(?string $search = null): Collection
     {
-        return CementDeliveryOrder::with('cements')
+        return CementDeliveryOrder::with(['cements', 'invoices'])
             ->search($search)
             ->orderBy('no', 'asc')
             ->get();
@@ -86,7 +86,7 @@ class CementDeliveryOrderService
      */
     public function findById(string $no): ?CementDeliveryOrder
     {
-        return CementDeliveryOrder::with('cements')->whereKey($no)->first();
+        return CementDeliveryOrder::with(['cements', 'invoices'])->whereKey($no)->first();
     }
 
     /**

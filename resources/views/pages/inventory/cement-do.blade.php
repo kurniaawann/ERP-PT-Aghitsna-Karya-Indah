@@ -1,29 +1,27 @@
 {{-- =====================================================================
-     Halaman: DO Semen & Invoice Semen (Inventory)
-     Tujuan: Halaman utama pengelolaan data semen yang ber-tab:
-             1. "DO Semen" — CRUD delivery order semen (pencarian, filter
-                bulan/tahun, bulk hapus, export PDF/Excel).
-             2. "Invoice Semen" — invoice semen (di-include dari partial
-                pages.inventory.partials.semen-invoice-content), aktif saat
-                ?tab=semen-invoice.
+     Halaman: DO Semen (Inventory)
+     Tujuan: Halaman utama pengelolaan data semen. Invoice Semen kini
+             digenerate langsung dari baris DO Semen (tombol "Buat Invoice"
+             pada tiap baris DO) sehingga tidak ada lagi tab terpisah.
 
-     Data dari CementDeliveryOrderController@index (bergantung tab aktif):
-     - Tab do-semen: $cementDeliveryOrders (LengthAwarePaginator hasil
-                 CementDeliveryOrderService::getPaginatedSearch())
-     - Tab semen-invoice: $invoices (Paginator InvoiceSemen), $paymentAccounts,
-                 $executives
-     - $tab : tab aktif (do-semen|semen-invoice)
+     Data dari CementDeliveryOrderController@index:
+     - $cementDeliveryOrders : LengthAwarePaginator hasil
+                 CementDeliveryOrderService::getPaginatedSearch()
+     - $paymentAccounts      : Rekening pembayaran aktif (untuk modal
+                 "Buat Invoice").
+     - $executives           : Petinggi untuk dropdown penandatangan
+                 invoice (modal "Buat Invoice").
 
      Komponen yang di-include:
-     - components.inventory.cement-do.table       : tabel data DO semen
-     - components.inventory.cement-do.add-modal   : modal tambah data DO semen
-     - components.inventory.cement-do.edit-modal  : modal edit data DO semen
-     - pages.inventory.partials.semen-invoice-content : konten tab Invoice Semen
+     - components.inventory.cement-do.table         : tabel DO semen
+     - components.inventory.cement-do.add-modal     : modal tambah DO
+     - components.inventory.cement-do.edit-modal    : modal edit DO
+     - components.inventory.cement-do.generate-invoice-modal : modal
+                 "Buat Invoice" per DO
      - x-filters.search-input, x-buttons.*, x-pagination, x-modal
 
-     JS yang di-load (sesuai tab aktif):
-     - @vite('resources/js/pages/inventory/cement-do/index.js')          (tab do-semen)
-     - @vite('resources/js/pages/finance/semen-invoices/index.js')       (tab semen-invoice)
+     JS yang di-load:
+     - @vite('resources/js/pages/inventory/cement-do/index.js')
      ===================================================================== --}}
 @extends('layouts.app')
 
@@ -34,32 +32,11 @@
         <div>
             <h1 class="text-2xl font-semibold text-text-primary mb-1">DO Semen</h1>
             <p class="text-text-secondary text-sm">
-                Kelola delivery order semen dan invoice semen dalam satu halaman.
+                Kelola delivery order semen dan buat invoice semen langsung dari DO.
             </p>
         </div>
     </div>
 
-    {{-- ============================================================
-         SECTION: Tab Menu (DO Semen | Invoice Semen)
-         ============================================================ --}}
-    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 my-6">
-        <a href="{{ route('cement-do.index') }}"
-            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 text-sm font-semibold
-                {{ $tab === 'do-semen' ? 'bg-primary text-white border-primary' : 'bg-surface-base text-text-primary border-border-strong hover:bg-primary-light hover:text-primary' }}">
-            <i class="fa-solid fa-truck"></i>
-            <span>DO Semen</span>
-        </a>
-        <a href="{{ route('cement-do.index', ['tab' => 'semen-invoice']) }}"
-            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors duration-200 text-sm font-semibold
-                {{ $tab === 'semen-invoice' ? 'bg-primary text-white border-primary' : 'bg-surface-base text-text-primary border-border-strong hover:bg-primary-light hover:text-primary' }}">
-            <i class="fa-solid fa-file-invoice"></i>
-            <span>Invoice Semen</span>
-        </a>
-    </div>
-
-    @if ($tab === 'semen-invoice')
-        @include('pages.inventory.partials.semen-invoice-content')
-    @else
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
 
         {{-- SECTION: Filter & Toolbar Aksi --}}
@@ -119,9 +96,17 @@
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
 
+    {{-- SECTION: Modal "Buat Invoice" (satu modal per baris DO) --}}
+    @foreach ($cementDeliveryOrders as $cementDeliveryOrder)
+        @include('components.inventory.cement-do.generate-invoice-modal', [
+            'cementDeliveryOrder' => $cementDeliveryOrder,
+            'paymentAccounts' => $paymentAccounts,
+            'executives' => $executives,
+        ])
+    @endforeach
+
     {{-- SECTION: Scripts (JavaScript Modular) --}}
     @push('scripts')
         @vite('resources/js/pages/inventory/cement-do/index.js')
     @endpush
-    @endif
 @endsection

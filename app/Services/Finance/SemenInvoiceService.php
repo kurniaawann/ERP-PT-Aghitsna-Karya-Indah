@@ -3,6 +3,9 @@
 namespace App\Services\Finance;
 
 use App\Models\Finance\InvoiceSemen;
+use App\Models\Inventory\Cement;
+use App\Models\Inventory\CementDeliveryOrder;
+use App\Services\Administrasi\NotaService;
 use App\Services\InputNormalizer;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -197,12 +200,113 @@ class SemenInvoiceService
     {
         return InvoiceSemen::create([
             'invoice_number' => $data['invoice_number'],
+            'do_no' => $data['do_no'] ?? null,
             'invoice_date' => $data['invoice_date'],
             'projects' => $projects,
             'total_amount' => $this->calculateTotal($projects),
             'note' => $data['note'] ?? null,
             'signed_by_id' => $data['signed_by_id'] ?? null,
         ]);
+    }
+
+    /**
+     * Membuat Invoice Semen langsung dari DO Semen (alur superadmin).
+     *
+     * Data semen terpilih dikelompokkan per nama proyek menjadi satu proyek
+     * dalam invoice (berisi satu atau lebih baris SEMEN). Untuk tiap proyek
+     * dibuatkan satu nota proyek otomatis, lalu baris Data Semen ditandai
+     * `invoice_number` agar tidak diinvois dua kali.
+     *
+     * @param  CementDeliveryOrder  $deliveryOrder  DO Semen sumber.
+     * @param  array                $data           {invoice_date, note, signed_by_id, payment_account_id}
+     * @param  array<int, Cement>   $cements        Data semen yang dipilih.
+     * @return \App\Models\Finance\InvoiceSemen
+     */
+    public function createFromDo(CementDeliveryOrder $deliveryOrder, array $data, array $cements): InvoiceSemen
+    {
+        $invoice = $this->createInvoice([
+            'invoice_number' => $this->generateInvoiceNumber(),
+            'do_no' => $deliveryOrder->no,
+            'invoice_date' => $data['invoice_date'],
+            'note' => $data['note'] ?? null,
+            'signed_by_id' => $data['signed_by_id'] ?? null,
+        ], $this->buildProjectsFromCements($data, $cements));
+
+        // Buat nota proyek otomatis per proyek dalam invoice.
+        $notaService = app(NotaService::class);
+        foreach ($invoice->getProjectsCollectionAttribute() as $project) {
+            $notaService->createProyekNotaForInvoice(
+                $invoice->do_no,
+                $invoice->invoice_number,
+                $project,
+                $data
+            );
+        }
+
+        // Tandai Data Semen sudah masuk invoice (cegah double).
+        $cementNo = collect($cements)->pluck('no')->all();
+        if (!empty($cementNo)) {
+            Cement::whereIn('no', $cementNo)->update(['invoice_number' => $invoice->invoice_number]);
+        }
+
+        return $invoice;
+    }
+
+    /**
+     * Menyusun daftar proyek dari Data Semen terpilih.
+     *
+     * Data semen dikelompokkan berdasarkan nama_proyek. Tiap kelompok menjadi
+     * satu proyek dengan beberapa baris item SEMEN.
+     *
+     * @param  array               $data     Data invoice (untuk rekening).
+     * @param  array<int, Cement>  $cements  Data semen terpilih.
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildProjectsFromCements(array $data, array $cements): array
+    {
+        $projects = [];
+
+        foreach (collect($cements)->groupBy('nama_proyek') as $namaProyek => $group) {
+            $items = [];
+            $no = 1;
+
+            foreach ($group as $cement) {
+                $qty = (int) $cement->jumlah;
+                $harga = (int) $cement->harga;
+
+                if ($qty < 1 || $harga < 0) {
+                    continue;
+                }
+
+                $items[] = [
+                    'no' => $no++,
+                    'data_no' => $cement->no,
+                    'tanggal' => $cement->tanggal?->format('Y-m-d'),
+                    'nama_barang' => 'SEMEN',
+                    'qty' => $qty,
+                    'harga' => $harga,
+                    'jumlah' => $qty * $harga,
+                ];
+            }
+
+            if (empty($items)) {
+                continue;
+            }
+
+            $pengurus = trim((string) ($group->first()->name ?? ''));
+            $paymentAccountId = !empty($data['payment_account_id'])
+                ? (int) $data['payment_account_id']
+                : null;
+
+            $projects[] = [
+                'nama_proyek' => (string) $namaProyek,
+                'pengurus_proyek' => $pengurus !== '' ? $pengurus : null,
+                'payment_account_id' => $paymentAccountId,
+                'items' => $items,
+            ];
+        }
+
+        return array_values($projects);
     }
 
     /**

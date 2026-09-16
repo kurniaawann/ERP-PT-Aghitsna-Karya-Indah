@@ -2,6 +2,7 @@
 
 namespace App\Models\Inventory;
 
+use App\Models\Finance\InvoiceSemen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,6 +63,16 @@ class CementDeliveryOrder extends Model
     public function cements(): HasMany
     {
         return $this->hasMany(Cement::class, 'do_no', 'no');
+    }
+
+    /**
+     * Invoice Semen yang dibuat dari DO ini.
+     *
+     * @return HasMany<InvoiceSemen, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(InvoiceSemen::class, 'do_no', 'no');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────
