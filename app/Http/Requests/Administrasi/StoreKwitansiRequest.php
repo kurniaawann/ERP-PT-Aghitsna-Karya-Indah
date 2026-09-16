@@ -28,6 +28,7 @@ class StoreKwitansiRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'invoice_number' => 'nullable|string|max:255',
             'received_from' => 'required|string|max:255',
             'payment_for' => 'required|string',
             'amount' => 'required|min:0',
@@ -49,6 +50,7 @@ class StoreKwitansiRequest extends FormRequest
         return [
             'received_from.required' => 'Sudah terima dari tidak boleh kosong.',
             'received_from.max' => 'Sudah terima dari maksimal 255 karakter.',
+            'invoice_number.max' => 'Kwitansi No. maksimal 255 karakter.',
             'payment_for.required' => 'Keterangan tidak boleh kosong.',
             'amount.required' => 'Jumlah tidak boleh kosong.',
             'amount.min' => 'Jumlah minimal 0.',

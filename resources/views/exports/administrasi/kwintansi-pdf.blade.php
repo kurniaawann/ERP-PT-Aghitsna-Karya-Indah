@@ -59,6 +59,7 @@
         .meta-label {
             width: 90px;
             border: none; /* Tanpa garis pada label */
+            font-weight: bold;
         }
 
         .meta-colon {
@@ -244,17 +245,17 @@
                     <td style="vertical-align: top; text-align: right;">
                         <table class="meta-table">
                             <tr>
-                                <td class="meta-label">Kwitansi No.</td>
+                                <td class="meta-label"><strong>Kwitansi No.</strong></td>
                                 <td class="meta-colon">:</td>
                                 <td class="meta-value">{{ $kwintansi->invoice_number ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <td class="meta-label">No.</td>
+                                <td class="meta-label"><strong>No.</strong></td>
                                 <td class="meta-colon">:</td>
                                 <td class="meta-value">{{ $kwintansi->payment_sequence ? str_pad((string) $kwintansi->payment_sequence, 3, '0', STR_PAD_LEFT) : $kwintansi->id_kwintansi }}</td>
                             </tr>
                             <tr>
-                                <td class="meta-label">Tanggal</td>
+                                <td class="meta-label"><strong>Tanggal</strong></td>
                                 <td class="meta-colon">:</td>
                                 <td class="meta-value">{{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->translatedFormat('j F Y') }}</td>
                             </tr>
@@ -270,14 +271,14 @@
             <table class="form-table">
                 <!-- BARIS 1: TELAH TERIMA DARI -->
                 <tr>
-                    <td class="label-col">Telah Terima Dari</td>
+                    <td class="label-col"><strong>Telah Terima Dari</strong></td>
                     <td class="colon-col">:</td>
                     <td class="value-col">{{ $kwintansi->received_from }}</td>
                 </tr>
 
                 <!-- BARIS 2: JUMLAH DIBAYAR -->
                 <tr>
-                    <td class="label-col">Jumlah Dibayar</td>
+                    <td class="label-col"><strong>Jumlah Dibayar</strong></td>
                     <td class="colon-col">:</td>
                     <td class="value-col">
                         <div class="terbilang-box">
@@ -288,7 +289,7 @@
 
                 <!-- BARIS 3: KETERANGAN (PEMBAYARAN) -->
                 <tr>
-                    <td class="label-col">Keterangan</td>
+                    <td class="label-col"><strong>Keterangan</strong></td>
                     <td class="colon-col">:</td>
                     <td class="value-col">
                         {{ $kwintansi->invoice_type === 'proyek' && $kwintansi->payment_sequence ? 'Uang Masuk ke '.$kwintansi->payment_sequence : ($kwintansi->payment_for ?? '-') }}

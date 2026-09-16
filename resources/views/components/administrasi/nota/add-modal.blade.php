@@ -82,19 +82,17 @@
          ═══════════════════════════════════════════════════════════ --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
-            <label class="block text-text-primary mb-1">Faktur No <span class="text-error">*</span></label>
+            <label class="block text-text-primary mb-1">Faktur No</label>
             <input type="text" name="faktur_no"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="Masukkan faktur no" required maxlength="100"
-                oninvalid="this.setCustomValidity('Faktur No tidak boleh kosong')" oninput="this.setCustomValidity('')">
+                placeholder="Masukkan faktur no (opsional)" maxlength="100">
         </div>
 
         <div>
-            <label class="block text-text-primary mb-1">SJ.NO <span class="text-error">*</span></label>
+            <label class="block text-text-primary mb-1">SJ.NO</label>
             <input type="text" name="sj_no"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="Masukkan SJ No" required maxlength="100"
-                oninvalid="this.setCustomValidity('SJ No tidak boleh kosong')" oninput="this.setCustomValidity('')">
+                placeholder="Masukkan SJ No (opsional)" maxlength="100">
         </div>
     </div>
 

@@ -2,6 +2,12 @@
 <x-modal id="addModal" title="Tambah Kwintansi" action="{{ route('kwintansi.store') }}" method="POST" buttonText="Simpan">
 
     <div class="mb-3">
+        <label class="block text-text-primary mb-1">Kwitansi No. <span class="text-xs font-normal text-text-label">(Opsional, manual)</span></label>
+        <input type="text" name="invoice_number" class="w-full border rounded p-2"
+            placeholder="Masukkan nomor kwitansi (opsional)" maxlength="255">
+    </div>
+
+    <div class="mb-3">
         <label class="block text-text-primary mb-1">Sudah Terima Dari <span class="text-error">*</span></label>
         <input type="text" name="received_from" class="w-full border rounded p-2" placeholder="Masukkan nama pemberi"
             required maxlength="255" oninvalid="this.setCustomValidity('Sudah terima dari tidak boleh kosong')"

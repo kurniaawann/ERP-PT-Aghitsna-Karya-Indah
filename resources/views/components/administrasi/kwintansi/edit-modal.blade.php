@@ -10,9 +10,15 @@
 
     @if ($kwintansi->invoice_number)
         <div class="mb-3">
-            <label class="block text-text-primary mb-1">Kwitansi No.</label>
-            <input type="text" class="w-full border rounded p-2 bg-gray-100"
-                value="{{ $kwintansi->invoice_number }}" disabled>
+            <label class="block text-text-primary mb-1">Kwitansi No. <span class="text-xs font-normal text-text-label">(manual)</span></label>
+            <input type="text" name="invoice_number" class="w-full border rounded p-2"
+                value="{{ $kwintansi->invoice_number }}" maxlength="255">
+        </div>
+    @else
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">Kwitansi No. <span class="text-xs font-normal text-text-label">(Opsional, manual)</span></label>
+            <input type="text" name="invoice_number" class="w-full border rounded p-2"
+                placeholder="Masukkan nomor kwitansi (opsional)" maxlength="255">
         </div>
     @endif
 

@@ -17,7 +17,7 @@
     .nota-sewa-jual {
         font-family: 'Arial', 'Helvetica', sans-serif;
         font-size: 10px;
-        color: #0f386b;
+        color: #000;
         background: #fff;
         margin: 20px;
     }
@@ -47,7 +47,7 @@
     }
 
     .nota-sewa-jual .faktur-box td {
-        border: 1px solid #0f386b;
+        border: 1px solid #000;
         padding: 3px 6px;
         font-size: 10px;
         font-weight: bold;
@@ -83,7 +83,7 @@
     }
 
     .nota-sewa-jual .kepada-line {
-        border-bottom: 1px dotted #0f386b;
+        border-bottom: 1px dotted #000;
         min-height: 18px;
         font-size: 10px;
         font-weight: bold;
@@ -97,7 +97,7 @@
 
     .nota-sewa-jual .main-table th,
     .nota-sewa-jual .main-table td {
-        border: 1px solid #0f386b;
+        border: 1px solid #000;
         padding: 5px 6px;
         font-size: 10px;
         vertical-align: middle;
@@ -150,7 +150,7 @@
 
     .nota-sewa-jual .period-line {
         display: inline-block;
-        border-bottom: 1px dotted #0f386b;
+        border-bottom: 1px dotted #000;
         min-width: 100px;
         text-align: center;
     }
@@ -184,7 +184,7 @@
     }
 
     .nota-sewa-jual .summary-table td {
-        border: 1px solid #0f386b;
+        border: 1px solid #000;
         padding: 4px 6px;
         font-size: 9.5px;
         font-weight: bold;
@@ -217,14 +217,18 @@
                 <img src="{{ public_path('images/invoice_administrasi.jpeg') }}" alt="PT. Aghitsna Karya Indah" class="company-logo">
 
                 <table class="faktur-box">
-                    <tr>
-                        <td class="faktur-label">FAKTUR No.</td>
-                        <td>{{ $nota->faktur_no }}</td>
-                    </tr>
-                    <tr>
-                        <td class="faktur-label">SJ No.</td>
-                        <td>{{ $nota->sj_no }}</td>
-                    </tr>
+                    @if (trim((string) $nota->faktur_no) !== '')
+                        <tr>
+                            <td class="faktur-label">FAKTUR No.</td>
+                            <td>{{ $nota->faktur_no }}</td>
+                        </tr>
+                    @endif
+                    @if (trim((string) $nota->sj_no) !== '')
+                        <tr>
+                            <td class="faktur-label">SJ No.</td>
+                            <td>{{ $nota->sj_no }}</td>
+                        </tr>
+                    @endif
                 </table>
             </td>
 

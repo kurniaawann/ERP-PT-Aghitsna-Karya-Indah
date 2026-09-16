@@ -80,9 +80,8 @@
         }
 
         .standard .logo {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
+            width: 100px;
+            height: auto;
         }
 
         .standard .header-center {
@@ -159,9 +158,8 @@
         }
 
         .hollow .logo {
-            width: 55px;
-            height: 55px;
-            object-fit: contain;
+            width: 105px;
+            height: auto;
         }
 
         .hollow .company-info {
