@@ -60,7 +60,11 @@ class ReimburseController extends Controller
      */
     public function store(StoreReimburseRequest $request)
     {
-        $this->reimburseService->storeReimburse($request->validated());
+        $data = $request->validated();
+        $proofFile = $request->file('proof_file');
+        unset($data['proof_file']);
+
+        $this->reimburseService->storeReimburse($data, $proofFile);
 
         return redirect()
             ->route('reimburse.index')
@@ -79,7 +83,11 @@ class ReimburseController extends Controller
     public function update(UpdateReimburseRequest $request, Reimburse $reimburse)
     {
         try {
-            $this->reimburseService->updateReimburse($reimburse, $request->validated());
+            $data = $request->validated();
+            $proofFile = $request->file('proof_file');
+            unset($data['proof_file']);
+
+            $this->reimburseService->updateReimburse($reimburse, $data, $proofFile);
 
             return redirect()
                 ->route('reimburse.index')

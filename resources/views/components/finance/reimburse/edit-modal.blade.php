@@ -4,7 +4,8 @@
      Modal ini dirender per baris untuk setiap reimburse dengan status draft.
      ═══════════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="editModal-{{ $reimburse->reimburse_code }}" title="Edit Reimburse"
-    action="{{ route('reimburse.update', $reimburse->reimburse_code) }}" method="PUT" buttonText="Update">
+    action="{{ route('reimburse.update', $reimburse->reimburse_code) }}" method="PUT" buttonText="Update"
+    enctype="multipart/form-data">
 
     {{-- Field: Tanggal --}}
     <div class="mb-3">
@@ -62,5 +63,22 @@
         <label class="block text-text-primary mb-1">Catatan</label>
         <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
             placeholder="Catatan tambahan (opsional)" rows="2">{{ $reimburse->notes }}</textarea>
+    </div>
+
+    {{-- Field: Bukti (Opsional) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Lampiran Bukti (Foto/File)</label>
+        @if ($reimburse->proof_file)
+            <div class="mb-2 flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-paperclip text-text-secondary"></i>
+                <a href="{{ $reimburse->proof_url }}" target="_blank"
+                    class="text-primary underline hover:text-primary-hover">
+                    {{ $reimburse->proof_file_name ?: 'Lihat Lampiran' }}
+                </a>
+            </div>
+        @endif
+        <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.pdf,image/*"
+            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input">
+        <p class="text-xs text-text-secondary mt-1">Biarkan kosong jika tidak ingin mengubah lampiran</p>
     </div>
 </x-modal>

@@ -2,7 +2,8 @@
      KOMPONEN MODAL TAMBAH REIMBURSE
      Formulir untuk membuat pengajuan reimbursement baru (Admin only).
      ═══════════════════════════════════════════════════════════════════════════ --}}
-<x-modal id="addModal" title="Tambah Reimburse" action="{{ route('reimburse.store') }}" method="POST" buttonText="Simpan">
+<x-modal id="addModal" title="Tambah Reimburse" action="{{ route('reimburse.store') }}" method="POST" buttonText="Simpan"
+    enctype="multipart/form-data">
 
     {{-- Field: Tanggal --}}
     <div class="mb-3">
@@ -53,5 +54,13 @@
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
         <textarea name="notes" class="w-full border rounded p-2" placeholder="Catatan tambahan (opsional)" rows="2"></textarea>
+    </div>
+
+    {{-- Field: Bukti (Opsional) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Lampiran Bukti (Foto/File)</label>
+        <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.pdf,image/*"
+            class="w-full border rounded p-2 bg-surface-base text-text-input">
+        <p class="text-xs text-text-secondary mt-1">Lampiran bukti (struk, kwitansi, foto, dsb.) — opsional</p>
     </div>
 </x-modal>

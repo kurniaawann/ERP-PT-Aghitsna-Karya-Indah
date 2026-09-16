@@ -60,7 +60,7 @@
         .company-name {
             font-weight: bold;
             font-size: 14pt;
-            color: #ffb921;
+            color: #FF6600;
             margin-bottom: 2px;
         }
 

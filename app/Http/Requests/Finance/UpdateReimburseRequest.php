@@ -37,6 +37,7 @@ class UpdateReimburseRequest extends FormRequest
             'total_amount'        => 'required|integer|min:0',
             'due_date'            => 'required|date',
             'notes'               => 'nullable|string',
+            'proof_file'          => 'nullable|file|mimes:jpeg,jpg,png,webp,gif,bmp,pdf|max:5120',
         ];
     }
 
@@ -72,6 +73,8 @@ class UpdateReimburseRequest extends FormRequest
             'total_amount.min'             => 'Total amount minimal 0.',
             'due_date.required'            => 'Tanggal jatuh tempo wajib diisi.',
             'due_date.date'                => 'Format tanggal jatuh tempo tidak valid.',
+            'proof_file.mimes'                   => 'Lampiran harus berupa file gambar (JPG, PNG, WEBP, GIF, BMP) atau PDF.',
+            'proof_file.max'                     => 'Lampiran maksimal 5MB.',
         ];
     }
 }

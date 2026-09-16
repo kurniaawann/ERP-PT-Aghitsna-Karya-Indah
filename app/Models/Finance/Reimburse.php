@@ -46,6 +46,8 @@ class Reimburse extends Model
         'due_date',
         'status',
         'notes',
+        'proof_file',
+        'proof_file_name',
         'status_changed_at',
     ];
 
@@ -60,6 +62,16 @@ class Reimburse extends Model
         'total_amount' => 'integer',
         'status_changed_at' => 'datetime',
     ];
+
+    /**
+     * Accessor: URL absolut untuk mengakses file bukti.
+     *
+     * @return string|null  URL publik ke storage, null jika tidak ada file
+     */
+    public function getProofUrlAttribute(): ?string
+    {
+        return $this->proof_file ? asset('storage/'.$this->proof_file) : null;
+    }
 
     /**
      * Generate kode reimburse berikutnya.

@@ -27,6 +27,7 @@
                             <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Tgl Perubahan</th>
                             <th class="p-2 text-left">Catatan</th>
+                            <th class="p-2 text-center">Bukti</th>
                             @if (Auth::user()->role === 'superadmin')
                                 <th class="p-2 text-center">Aksi</th>
                             @endif
@@ -74,6 +75,20 @@
                                 {{-- Catatan --}}
                                 <td class="p-2 text-sm">{{ Str::limit($reimburse->notes ?? '-', 30) }}</td>
 
+                                {{-- Bukti --}}
+                                <td class="p-2 text-center">
+                                    @if ($reimburse->proof_file)
+                                        <a href="{{ $reimburse->proof_url }}" target="_blank"
+                                            class="inline-flex items-center gap-1 text-primary hover:text-primary-hover text-xs"
+                                            title="Lihat bukti">
+                                            <i class="fa-solid fa-paperclip"></i>
+                                            Lihat
+                                        </a>
+                                    @else
+                                        <span class="text-text-tertiary text-xs">-</span>
+                                    @endif
+                                </td>
+
                                 {{-- Tombol Aksi (Super Admin only, draft only) --}}
                                 @if (Auth::user()->role === 'superadmin')
                                     <td class="p-2 text-center">
@@ -97,7 +112,7 @@
 
                             {{-- ─── Empty State ─────────────────────────────────── --}}
                             <tr>
-                                <td colspan="{{ Auth::user()->role === 'superadmin' ? '11' : '10' }}"
+                                <td colspan="{{ Auth::user()->role === 'superadmin' ? '12' : '11' }}"
                                     class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>
