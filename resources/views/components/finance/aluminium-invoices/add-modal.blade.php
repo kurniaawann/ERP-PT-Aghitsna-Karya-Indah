@@ -234,8 +234,5 @@
         </div>
     </div>
 
-    {{-- Bukti Pembayaran: diupload setelah data tersimpan --}}
-    <x-finance.payment-proofs.add-note />
-
-    <input type="hidden" name="items" id="items-json" value="[]">
+<input type="hidden" name="items" id="items-json" value="[]">
 </x-modal>

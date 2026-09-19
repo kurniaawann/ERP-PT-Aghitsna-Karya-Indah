@@ -120,6 +120,11 @@
                                                         Edit
                                                     </button>
                                                     <button type="button"
+                                                        onclick="openPaymentProofUpload('rekap_penjualan', '{{ $sale->id_sales_recap }}', false)"
+                                                        class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition-colors duration-200">
+                                                        <i class="fa-solid fa-image w-4 h-4"></i> Bukti
+                                                    </button>
+                                                    <button type="button"
                                                         onclick="openModal('statusModal-{{ $sale->id_sales_recap }}')"
                                                         class="flex items-center justify-center gap-2 bg-success hover:bg-success/90 text-white px-3 py-1 rounded-lg transition-colors duration-200">
                                                         <i class="fa-solid fa-check-circle w-4 h-4"></i>

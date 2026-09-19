@@ -71,7 +71,7 @@
                                 </td>
 
                                 <td class="p-2 text-center pr-4 md:pr-6">
-                                    <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto min-[1436px]:grid-cols-[auto_auto_auto_auto] min-[1436px]:gap-[5px]">
+                                    <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto min-[1436px]:grid-cols-[auto_auto_auto_auto_auto] min-[1436px]:gap-[5px]">
                                         <button type="button"
                                             onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
                                             class="flex items-center gap-1 bg-info hover:bg-info/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
@@ -87,6 +87,15 @@
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
                                             Edit
                                         </button>
+
+                                        @if (!$isFullyPaid)
+                                        <button type="button"
+                                            onclick="openPaymentProofUpload('alumunium', '{{ $invoice->invoice_number }}', false)"
+                                            class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
+                                            title="Upload Bukti Pembayaran">
+                                            <i class="fa-solid fa-image w-3 h-3"></i> Bukti
+                                        </button>
+                                        @endif
 
                                         <a href="{{ route('alumunium-invoice.print.pdf', $invoice->invoice_number) }}"
                                             class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"

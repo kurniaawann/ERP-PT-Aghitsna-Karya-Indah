@@ -13,7 +13,7 @@
 </form>
 
 <x-modal id="paymentProofDeleteModal" title="Konfirmasi Hapus" :confirmDelete="true"
-    onConfirm="document.getElementById('payment-proof-delete-form').submit()"
+    onConfirm="submitPaymentProofDelete()"
     buttonText="Ya, Hapus">
     Apakah kamu yakin ingin menghapus bukti pembayaran ini?
 </x-modal>

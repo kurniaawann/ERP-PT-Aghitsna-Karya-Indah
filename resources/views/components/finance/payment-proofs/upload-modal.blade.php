@@ -16,6 +16,8 @@
     <input type="hidden" name="invoice_type" id="payment-proof-invoice-type" value="">
     <input type="hidden" name="invoice_number" id="payment-proof-invoice-number" value="">
 
+    <div id="payment-proof-feedback" class="hidden mb-3 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm"></div>
+
     {{-- Section: Info Invoice (read-only) --}}
     <div class="mb-3 p-3 bg-surface-secondary rounded border">
         <label class="block text-text-primary mb-1">Invoice</label>
@@ -25,8 +27,13 @@
     {{-- Section: Nominal Pembayaran (hanya proyek/recap) --}}
     <div class="mb-3 p-3 border rounded bg-amber-50 hidden" id="payment-proof-amount-wrap">
         <label class="block text-text-primary mb-1">Nominal Pembayaran <span class="text-error">*</span></label>
-        <input type="text" name="amount" id="payment-proof-amount" inputmode="numeric" value="Rp 0"
-            class="w-full border rounded p-2" placeholder="Rp 0">
+        <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-text-tertiary text-sm pointer-events-none">Rp</span>
+            <input type="text" name="amount" id="payment-proof-amount" inputmode="numeric"
+                oninput="formatCurrencyInput(this)" placeholder="0"
+                class="w-full border rounded p-2 pl-10">
+        </div>
+        <div id="payment-proof-amount-error" class="hidden mt-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm"></div>
         <p class="text-xs text-text-secondary mt-1">Nominal ini diisi manual untuk invoice proyek dan rekap proyek.</p>
     </div>
 

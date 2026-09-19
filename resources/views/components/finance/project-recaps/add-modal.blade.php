@@ -33,6 +33,4 @@
         <p class="text-xs text-text-secondary mt-1">Opsional. Format: JPG, PNG, GIF, WEBP, BMP. Maksimal 5 MB.</p>
     </div>
 
-    {{-- Bukti Pembayaran: diupload setelah data tersimpan --}}
-    <x-finance.payment-proofs.add-note />
 </x-modal>
