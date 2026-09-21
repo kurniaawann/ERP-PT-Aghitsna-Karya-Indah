@@ -41,7 +41,14 @@
                                 <td class="p-2 text-center">
                                     <div class="flex justify-center gap-1 flex-wrap">
                                         {{-- Buat Invoice dari Penawaran --}}
-                                        @if ($quotation->invoices->isEmpty())
+                                        @if (!$quotation->invoices->isEmpty())
+                                            <span
+                                                class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-lg text-xs"
+                                                title="Invoice sudah dibuat dari penawaran ini">
+                                                <i class="fa-solid fa-check w-3 h-3"></i>
+                                                Sudah dibuat
+                                            </span>
+                                        @elseif (auth()->user()->role === 'superadmin')
                                             <form method="POST"
                                                 action="{{ route('project-quotation.invoice.create', $quotation->quotation_number) }}"
                                                 class="inline"
@@ -54,13 +61,6 @@
                                                     Buat Invoice
                                                 </button>
                                             </form>
-                                        @else
-                                            <span
-                                                class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-lg text-xs"
-                                                title="Invoice sudah dibuat dari penawaran ini">
-                                                <i class="fa-solid fa-check w-3 h-3"></i>
-                                                Sudah dibuat
-                                            </span>
                                         @endif
 
                                         {{-- Detail --}}

@@ -137,6 +137,10 @@ class ProjectQuotationController extends Controller
      */
     public function createInvoiceFromQuotation(string $quotationNumber)
     {
+        if (auth()->user()->role !== 'superadmin') {
+            return back()->with('error', 'Hanya role Super Admin yang dapat membuat invoice dari penawaran.');
+        }
+
         $quotation = $this->service->findByNumber($quotationNumber);
 
         if (!$quotation) {
