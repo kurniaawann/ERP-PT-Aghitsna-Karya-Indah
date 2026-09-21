@@ -1,78 +1,40 @@
-{{-- ==================== Modal Tambah Faktur Pembelian ==================== --}}
+{{-- =====================================================================
+     Modal Tambah Faktur Pembelian (mendukung multiple record + collapse).
+
+     Mendukung penambahan banyak faktur sekaligus:
+     - Kartu faktur pertama dirender statis di Blade (index 0).
+     - Tombol "Tambah Faktur" menambah kartu baru dari template
+       purchaseInvoiceRowTemplate (placeholder '__INDEX__').
+     - Setiap kartu dapat ditutup (collapse) lewat klik pada header.
+     - Kartu ke-2 dst memiliki checkbox "Sama dengan Faktur ke-1" untuk
+       menyalin semua kolom dari faktur pertama.
+     - Data dikirim sebagai array `invoices[]` dan diproses massal oleh
+       PurchaseInvoiceService::createInvoices().
+     - JS: resources/js/pages/finance/purchase-invoices/index.js
+     ===================================================================== --}}
 <x-modal id="addModal" title="Tambah Faktur Pembelian" action="{{ route('purchase-invoice.store') }}" method="POST"
-    buttonText="Simpan">
+    buttonText="Simpan" size="4xl">
 
-    {{-- Tanggal --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="date" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
+    <p class="text-sm text-text-secondary mb-3">
+        Isi data faktur pembelian. Untuk menambahkan lebih dari satu faktur sekaligus klik
+        "Tambah Faktur". Setiap faktur dapat ditutup dengan mengklik header kartu agar hemat tempat.
+    </p>
+
+    {{-- Container Kartu Faktur --}}
+    <div id="purchaseInvoicesContainer" class="space-y-4">
+        @include('components.finance.purchase-invoices.row-form', ['index' => 0])
     </div>
 
-    {{-- Nama Material --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Material <span class="text-error">*</span></label>
-        <input type="text" name="material_name" class="w-full border rounded p-2"
-            placeholder="Contoh: PT. MANGGALA DIPO PRATAMA" required
-            oninvalid="this.setCustomValidity('Nama material tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- NPWP --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">NPWP <span class="text-error">*</span></label>
-        <input type="text" name="npwp" class="w-full border rounded p-2"
-            placeholder="Contoh: 80.948.827.3-047.000" required
-            oninvalid="this.setCustomValidity('NPWP tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- Kode Nomor Seri Pajak --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kode Nomor Seri Pajak <span class="text-error">*</span></label>
-        <input type="text" name="tax_number_code" class="w-full border rounded p-2"
-            placeholder="Contoh: 011.011-23.82258306" required
-            oninvalid="this.setCustomValidity('Kode nomor seri pajak tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- Nama Barang --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Barang <span class="text-error">*</span></label>
-        <input type="text" name="item_name" class="w-full border rounded p-2" placeholder="Contoh: SEMEN 40 KG"
-            required oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- Harga Jual --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Harga Jual (Rp) <span class="text-error">*</span></label>
-        <input type="text" id="addSellingPrice" name="selling_price" inputmode="numeric"
-            class="w-full border rounded p-2" placeholder="Rp 0" required
-            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
-
-    {{-- Persentase PPN --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Persentase PPN (%) <span class="text-error">*</span></label>
-        <input type="text" id="addPpnPercentage" name="ppn_percentage" inputmode="decimal"
-            class="w-full border rounded p-2" placeholder="11" value="11" required
-            oninvalid="this.setCustomValidity('Persentase PPN tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Default: 11%. Boleh pakai koma, contoh 11,5</p>
-    </div>
-
-    {{-- PPN Pengenaan Pajak (Auto-calculated) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">PPN Pengenaan Pajak (Rp) <span class="text-error">*</span></label>
-        <input type="text" id="addPpnTax" name="ppn_tax"
-            class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed" placeholder="Rp 0" readonly>
-        <p class="text-xs text-text-secondary mt-1">Dihitung otomatis dari harga jual × persentase PPN</p>
-    </div>
-
-    {{-- Keterangan --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="notes" class="w-full border rounded p-2" rows="2"
-            placeholder="Keterangan tambahan (opsional)"></textarea>
-    </div>
+    {{-- Tombol Tambah Faktur --}}
+    <button type="button" onclick="addInvoiceCard()"
+        class="mt-1 w-full flex items-center justify-center gap-2 border-2 border-dashed border-primary text-primary rounded-lg p-3 hover:bg-primary-light transition-colors">
+        <i class="fa-solid fa-plus"></i> Tambah Faktur
+    </button>
 
 </x-modal>
+
+{{-- Template kartu faktur untuk penambahan dinamis.
+     Placeholder '__INDEX__' diganti dengan nomor urut oleh JavaScript. --}}
+<template id="purchaseInvoiceRowTemplate">
+    @include('components.finance.purchase-invoices.row-form', ['index' => '__INDEX__'])
+</template>

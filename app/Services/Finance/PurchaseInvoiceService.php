@@ -70,6 +70,27 @@ class PurchaseInvoiceService
     }
 
     /**
+     * Membuat banyak faktur pembelian sekaligus.
+     *
+     * Setiap data faktur diproses satu per satu lewat createInvoice()
+     * agar PPN dihitung otomatis untuk masing-masing record.
+     *
+     * @param  array<int, array<string, mixed>> $invoices  Array data faktur yang sudah divalidasi
+     * @return int Jumlah faktur yang berhasil dibuat
+     */
+    public static function createInvoices(array $invoices): int
+    {
+        $created = 0;
+
+        foreach ($invoices as $invoiceData) {
+            self::createInvoice($invoiceData);
+            $created++;
+        }
+
+        return $created;
+    }
+
+    /**
      * Update faktur pembelian dari validated data.
      *
      * @param  PurchaseInvoice     $invoice   Model yang akan diupdate

@@ -36,19 +36,22 @@ class PurchaseInvoiceController extends Controller
     }
 
     /**
-     * Simpan faktur pembelian baru.
+     * Simpan faktur pembelian baru (mendukung multiple record sekaligus).
      *
      * @param  StorePurchaseInvoiceRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StorePurchaseInvoiceRequest $request)
     {
-        $validated = $request->validated();
+        $invoices = $request->validated()['invoices'];
 
-        PurchaseInvoiceService::createInvoice($validated);
+        $count = PurchaseInvoiceService::createInvoices($invoices);
 
-        return redirect()->route('purchase-invoice.index')
-            ->with('success', 'Faktur pembelian berhasil ditambahkan!');
+        $message = $count > 1
+            ? "{$count} faktur pembelian berhasil ditambahkan!"
+            : 'Faktur pembelian berhasil ditambahkan!';
+
+        return redirect()->route('purchase-invoice.index')->with('success', $message);
     }
 
     /**
