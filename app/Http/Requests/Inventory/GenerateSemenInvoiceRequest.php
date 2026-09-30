@@ -26,7 +26,7 @@ class GenerateSemenInvoiceRequest extends FormRequest
             'cement_nos.*' => ['required', 'string', 'exists:cements,no'],
             'note' => ['nullable', 'string', 'max:255'],
             'signed_by_id' => ['nullable', 'integer', 'exists:executives,id'],
-            'payment_account_id' => ['nullable', 'integer', 'exists:payment_accounts,id'],
+            'payment_account_id' => ['required', 'integer', 'exists:payment_accounts,id'],
         ];
     }
 
@@ -40,6 +40,7 @@ class GenerateSemenInvoiceRequest extends FormRequest
             'cement_nos.*.exists' => 'Data semen yang dipilih tidak valid.',
             'note.max' => 'Catatan maksimal 255 karakter.',
             'signed_by_id.exists' => 'Penandatangan yang dipilih tidak valid.',
+            'payment_account_id.required' => 'Rekening pembayaran wajib dipilih agar nomor rekening tercetak di invoice.',
             'payment_account_id.exists' => 'Rekening pembayaran yang dipilih tidak valid.',
         ];
     }

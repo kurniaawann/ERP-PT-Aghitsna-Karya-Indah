@@ -39,28 +39,36 @@
                                 </td>
                                 <td class="p-2 font-semibold text-primary">{{ $cementDeliveryOrder->no }}</td>
                                 <td class="p-2">
-                                    {{ $cementDeliveryOrder->tanggal?->format('d M Y') ?: '-' }}
-                                    <div class="text-xs text-text-secondary">
-                                        Datang: {{ $cementDeliveryOrder->tanggal_datang?->format('d M Y') ?: '-' }}
-                                        · Bayar: {{ $cementDeliveryOrder->tanggal_bayar?->format('d M Y') ?: '-' }}
-                                    </div>
+                                    {{ $cementDeliveryOrder->tanggal?->format('d M Y') }}
+                                    @php
+                                        $doDates = array_filter([
+                                            $cementDeliveryOrder->tanggal_datang ? 'Datang: ' . $cementDeliveryOrder->tanggal_datang->format('d M Y') : null,
+                                            $cementDeliveryOrder->tanggal_bayar ? 'Bayar: ' . $cementDeliveryOrder->tanggal_bayar->format('d M Y') : null,
+                                        ]);
+                                    @endphp
+                                    @if ($doDates)
+                                        <div class="text-xs text-text-secondary">{{ implode(' · ', $doDates) }}</div>
+                                    @endif
                                 </td>
                                 <td class="p-2 text-xs text-text-secondary">
                                     {{ $cementDeliveryOrder->jumlah_baris }} baris ·
                                     {{ number_format($cementDeliveryOrder->total_volume, 0, ',', '.') }} zak
                                 </td>
-                                <td class="p-2 text-center text-text-secondary">-</td>
-                                <td class="p-2 text-center text-text-secondary">-</td>
-                                <td class="p-2 text-right text-text-secondary">-</td>
+                                <td class="p-2 text-center text-text-secondary"></td>
+                                <td class="p-2 text-center text-text-secondary"></td>
+                                <td class="p-2 text-right text-text-secondary"></td>
                                 <td class="p-2 text-right font-medium">
                                     {{ 'Rp ' . number_format($cementDeliveryOrder->subtotal, 0, ',', '.') }}
                                 </td>
-                                <td class="p-2 text-text-secondary">-</td>
+                                <td class="p-2 text-text-secondary"></td>
                                 <td class="p-2 text-right">
                                     {{ 'Rp ' . number_format($cementDeliveryOrder->harga_modal, 0, ',', '.') }}
                                 </td>
                                 <td class="p-2 text-right font-medium">
-                                    {{ 'Rp ' . number_format($cementDeliveryOrder->profit, 0, ',', '.') }}
+                                    {{-- Profit minus (harga modal > penjualan) tidak ditampilkan --}}
+                                    @if ($cementDeliveryOrder->profit >= 0)
+                                        {{ 'Rp ' . number_format($cementDeliveryOrder->profit, 0, ',', '.') }}
+                                    @endif
                                 </td>
                                 <td class="p-2 text-center">
                                     <div class="flex flex-col gap-1.5 items-center">
@@ -102,7 +110,7 @@
                                 <tr class="border-t bg-white">
                                     <td class="p-2"></td>
                                     <td class="p-2 pl-6 text-xs text-text-secondary">{{ $cement->no }}</td>
-                                    <td class="p-2">{{ $cement->tanggal?->format('d M Y') ?: '-' }}</td>
+                                    <td class="p-2">{{ $cement->tanggal?->format('d M Y') ?: '' }}</td>
                                     <td class="p-2">{{ $cement->nama_proyek }}
                                         @if ($cement->name)
                                             <div class="text-xs text-text-secondary">{{ $cement->name }}</div>
@@ -114,9 +122,10 @@
                                     <td class="p-2 text-right font-medium">
                                         {{ 'Rp ' . number_format($cement->total, 0, ',', '.') }}
                                     </td>
-                                    <td class="p-2">{{ $cement->tanggal_lunas?->format('d M Y') ?: '-' }}</td>
-                                    <td class="p-2 text-center text-text-secondary">-</td>
-                                    <td class="p-2 text-right">{{ 'Rp ' . number_format($cement->profit, 0, ',', '.') }}</td>
+                                    <td class="p-2">{{ $cement->tanggal_lunas?->format('d M Y') ?: '' }}</td>
+                                    <td class="p-2 text-center text-text-secondary"></td>
+                                    {{-- Profit hanya dihitung per DO (harga modal milik DO), bukan per baris --}}
+                                    <td class="p-2 text-center text-text-secondary"></td>
                                     <td class="p-2"></td>
                                 </tr>
                             @empty

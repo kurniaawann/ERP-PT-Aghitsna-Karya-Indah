@@ -73,9 +73,9 @@ class CementDeliveryOrderExport implements FromCollection, WithHeadings, WithSty
                 foreach ($orders as $do) {
                     $rows->push([
                         $do->no_urutan,
-                        $do->tanggal ? $do->tanggal->format('d.m.Y') : '-',
-                        $do->tanggal_datang ? $do->tanggal_datang->format('d.m.Y') : '-',
-                        $do->tanggal_bayar ? $do->tanggal_bayar->format('d.m.Y') : '-',
+                        $do->tanggal ? $do->tanggal->format('d.m.Y') : '',
+                        $do->tanggal_datang ? $do->tanggal_datang->format('d.m.Y') : '',
+                        $do->tanggal_bayar ? $do->tanggal_bayar->format('d.m.Y') : '',
                     ]);
                     $currentRow++;
                 }

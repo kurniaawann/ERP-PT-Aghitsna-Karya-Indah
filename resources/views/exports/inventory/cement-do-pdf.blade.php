@@ -93,9 +93,9 @@
                 @forelse ($orders as $do)
                     <tr>
                         <td>{{ $do->no_urutan }}</td>
-                        <td>{{ $do->tanggal?->format('d.m.Y') ?: '-' }}</td>
-                        <td>{{ $do->tanggal_datang?->format('d.m.Y') ?: '-' }}</td>
-                        <td>{{ $do->tanggal_bayar?->format('d.m.Y') ?: '-' }}</td>
+                        <td>{{ $do->tanggal?->format('d.m.Y') }}</td>
+                        <td>{{ $do->tanggal_datang?->format('d.m.Y') }}</td>
+                        <td>{{ $do->tanggal_bayar?->format('d.m.Y') }}</td>
                     </tr>
                 @empty
                     <tr>

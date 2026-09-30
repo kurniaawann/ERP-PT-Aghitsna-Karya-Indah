@@ -50,12 +50,15 @@
         </div>
 
         <div>
-            <label class="block text-text-primary mb-1">Rekening Pembayaran</label>
+            {{-- Rekening wajib dipilih (default: rekening pertama) agar No. Rek selalu tercetak di invoice --}}
+            <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
             <div class="flex items-center gap-2">
-                <select name="payment_account_id" class="flex-1 w-full border rounded p-2">
+                <select name="payment_account_id" class="flex-1 w-full border rounded p-2" required
+                    oninvalid="this.setCustomValidity('Pilih rekening pembayaran (tambah lewat tombol Rekening Baru bila belum ada)')"
+                    onchange="this.setCustomValidity('')">
                     <option value="">-- Pilih Rekening --</option>
                     @foreach ($paymentAccounts as $account)
-                        <option value="{{ $account->id }}">{{ $account->bank_name }} - {{ $account->account_number }}</option>
+                        <option value="{{ $account->id }}" @selected($loop->first)>{{ $account->bank_name }} - {{ $account->account_number }}</option>
                     @endforeach
                 </select>
                 <x-finance.quick-add-payment-account mode="select"

@@ -51,11 +51,11 @@ class CementReportExport implements FromCollection, WithHeadings, WithStyles, Wi
 
             // 2. Baris Detail Items Semen
             $startItemRow = $currentRow;
-            $tanggalDatang = $do->tanggal_datang ? \Carbon\Carbon::parse($do->tanggal_datang)->format('d.m.y') : '-';
+            $tanggalDatang = $do->tanggal_datang ? \Carbon\Carbon::parse($do->tanggal_datang)->format('d.m.y') : '';
 
             foreach ($do->cements as $index => $cement) {
                 $tglLunas = $cement->tanggal_lunas ?? $cement->tgl_lunas ?? null;
-                $tglLunasFormatted = $tglLunas ? \Carbon\Carbon::parse($tglLunas)->format('d/m/Y') : '-';
+                $tglLunasFormatted = $tglLunas ? \Carbon\Carbon::parse($tglLunas)->format('d/m/Y') : '';
 
                 $rows->push([
                     $index + 1,
@@ -100,7 +100,8 @@ class CementReportExport implements FromCollection, WithHeadings, WithStyles, Wi
                 $subtotalJumlah,
                 '',
                 $do->harga_modal,
-                $do->profit
+                // Profit minus (harga modal > penjualan) tidak ditampilkan
+                $do->profit >= 0 ? $do->profit : ''
             ]);
 
             $this->subtotalRows[] = $currentRow;

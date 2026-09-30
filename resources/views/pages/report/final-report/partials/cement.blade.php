@@ -87,28 +87,36 @@
                                 <td class="px-4 py-3 text-center text-sm font-semibold text-primary">{{ $cementDeliveryOrder->no_urutan }}</td>
                                 <td class="px-4 py-3 text-sm font-semibold text-primary">{{ $cementDeliveryOrder->no }}</td>
                                 <td class="px-4 py-3 text-sm text-text-primary">
-                                    {{ $cementDeliveryOrder->tanggal?->format('d M Y') ?: '-' }}
-                                    <div class="text-xs text-text-secondary">
-                                        Datang: {{ $cementDeliveryOrder->tanggal_datang?->format('d M Y') ?: '-' }}
-                                        · Bayar: {{ $cementDeliveryOrder->tanggal_bayar?->format('d M Y') ?: '-' }}
-                                    </div>
+                                    {{ $cementDeliveryOrder->tanggal?->format('d M Y') }}
+                                    @php
+                                        $doDates = array_filter([
+                                            $cementDeliveryOrder->tanggal_datang ? 'Datang: ' . $cementDeliveryOrder->tanggal_datang->format('d M Y') : null,
+                                            $cementDeliveryOrder->tanggal_bayar ? 'Bayar: ' . $cementDeliveryOrder->tanggal_bayar->format('d M Y') : null,
+                                        ]);
+                                    @endphp
+                                    @if ($doDates)
+                                        <div class="text-xs text-text-secondary">{{ implode(' · ', $doDates) }}</div>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 text-xs text-text-secondary">
                                     {{ $cementDeliveryOrder->jumlah_baris }} baris ·
                                     {{ number_format($cementDeliveryOrder->total_volume, 0, ',', '.') }} zak
                                 </td>
-                                <td class="px-4 py-3 text-center text-text-secondary">-</td>
-                                <td class="px-4 py-3 text-center text-text-secondary">-</td>
-                                <td class="px-4 py-3 text-right text-text-secondary">-</td>
+                                <td class="px-4 py-3 text-center text-text-secondary"></td>
+                                <td class="px-4 py-3 text-center text-text-secondary"></td>
+                                <td class="px-4 py-3 text-right text-text-secondary"></td>
                                 <td class="px-4 py-3 text-right font-medium text-text-primary">
                                     Rp {{ number_format($cementDeliveryOrder->subtotal, 0, ',', '.') }}
                                 </td>
-                                <td class="px-4 py-3 text-text-secondary">-</td>
+                                <td class="px-4 py-3 text-text-secondary"></td>
                                 <td class="px-4 py-3 text-right text-text-primary">
                                     Rp {{ number_format($cementDeliveryOrder->harga_modal, 0, ',', '.') }}
                                 </td>
                                 <td class="px-4 py-3 text-right font-medium text-success">
-                                    Rp {{ number_format($cementDeliveryOrder->profit, 0, ',', '.') }}
+                                    {{-- Profit minus (harga modal > penjualan) tidak ditampilkan --}}
+                                    @if ($cementDeliveryOrder->profit >= 0)
+                                        Rp {{ number_format($cementDeliveryOrder->profit, 0, ',', '.') }}
+                                    @endif
                                 </td>
                             </tr>
 
@@ -117,15 +125,16 @@
                                 <tr class="bg-white hover:bg-surface-secondary transition-colors">
                                     <td class="px-4 py-3"></td>
                                     <td class="px-4 py-3 pl-8 text-xs text-text-secondary">{{ $cement->no }}</td>
-                                    <td class="px-4 py-3 text-sm text-text-primary">{{ $cement->tanggal?->format('d M Y') ?: '-' }}</td>
+                                    <td class="px-4 py-3 text-sm text-text-primary">{{ $cement->tanggal?->format('d M Y') ?: '' }}</td>
                                     <td class="px-4 py-3 text-sm text-text-primary">{{ $cement->nama_proyek }}</td>
                                     <td class="px-4 py-3 text-center text-sm text-text-primary">{{ number_format($cement->jumlah, 0, ',', '.') }}</td>
                                     <td class="px-4 py-3 text-center text-sm text-text-secondary">{{ $cement->satuan ?: 'zak' }}</td>
                                     <td class="px-4 py-3 text-right text-sm text-text-primary">Rp {{ number_format($cement->harga, 0, ',', '.') }}</td>
                                     <td class="px-4 py-3 text-right text-sm font-medium text-text-primary">Rp {{ number_format($cement->total, 0, ',', '.') }}</td>
-                                    <td class="px-4 py-3 text-sm text-text-primary">{{ $cement->tanggal_lunas?->format('d M Y') ?: '-' }}</td>
-                                    <td class="px-4 py-3 text-center text-sm text-text-secondary">-</td>
-                                    <td class="px-4 py-3 text-right text-sm text-success">Rp {{ number_format($cement->profit, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-sm text-text-primary">{{ $cement->tanggal_lunas?->format('d M Y') ?: '' }}</td>
+                                    <td class="px-4 py-3 text-center text-sm text-text-secondary"></td>
+                                    {{-- Profit hanya dihitung per DO (harga modal milik DO), bukan per baris --}}
+                                    <td class="px-4 py-3 text-center text-sm text-text-secondary"></td>
                                 </tr>
                             @empty
                                 <tr class="bg-white">

@@ -36,9 +36,9 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
     public function columnWidths(): array
     {
         return [
-            'A' => 12, // No. / Label Tanggal
+            'A' => 17, // No. / Label Tanggal & Total Pembayaran
             'B' => 16, // Tanggal / Titik dua
-            'C' => 45, // Nama Barang / Nilai Tanggal & Pembayaran
+            'C' => 40, // Nama Barang / Nilai Tanggal & Pembayaran
             'D' => 12, // QTY
             'E' => 22, // Jumlah
         ];
@@ -78,7 +78,7 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                 $sheet->setCellValue('A2', 'Tanggal');
                 $sheet->setCellValue('B2', ':');
                 $sheet->mergeCells('C2:E2');
-                $sheet->setCellValue('C2', Carbon::parse($invoice->invoice_date)->isoFormat('dddd, D MMMM YYYY'));
+                $sheet->setCellValue('C2', Carbon::parse($invoice->invoice_date)->locale('id')->isoFormat('dddd, D MMMM YYYY'));
 
                 // Baris Total Pembayaran
                 $sheet->setCellValue('A3', 'Total Pembayaran');
@@ -106,6 +106,10 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                 $grandTotal = 0;
                 $projects = $this->getProjects();
                 $totalProjects = count($projects);
+
+                // Fallback rekening untuk proyek yang tersimpan tanpa rekening (invoice lama):
+                // pakai rekening aktif, sama seperti invoice lain.
+                $fallbackAccounts = PaymentAccount::active()->get();
 
                 // 4. LOOPING PROYEK & BARANG
                 foreach ($projects as $project) {
@@ -203,29 +207,55 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                     ]);
                     $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-                    // Baris Rekening Bank
+                    // Baris Rekening Bank (satu baris per rekening)
                     $account = !empty($project['payment_account_id'])
                         ? PaymentAccount::find($project['payment_account_id'])
                         : null;
+                    $accounts = $account ? collect([$account]) : $fallbackAccounts;
 
-                    $currentRow++;
-                    $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
-                    
-                    $bankName = $this->sanitizeExcel($account->bank_name ?? 'BCA');
-                    $accountNumber = $this->sanitizeExcel($account->account_number ?? 'Nomor rekening');
-                    $accountHolder = strtoupper($this->sanitizeExcel($account->account_holder ?? 'PEMILIK'));
+                    $bankLines = $accounts->map(function ($acc) {
+                        // Prefix "Bank" hanya bila nama bank belum diawali "Bank" (hindari "Bank Bank Mandiri")
+                        $bankName = $this->sanitizeExcel($acc->bank_name);
+                        $bankLabel = str_starts_with(strtolower($bankName), 'bank') ? $bankName : "Bank {$bankName}";
+                        $accountNumber = $this->sanitizeExcel($acc->account_number);
+                        $accountHolder = strtoupper($this->sanitizeExcel($acc->account_holder));
 
-                    $sheet->setCellValue("A{$currentRow}", "Bank {$bankName} : {$accountNumber} / A/N {$accountHolder}");
+                        return "{$bankLabel} : {$accountNumber} / A/N {$accountHolder}";
+                    });
 
-                    $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
-                        'font' => ['italic' => true, 'size' => 8.5],
-                        'borders' => [
-                            'allBorders' => ['borderStyle' => Border::BORDER_THIN],
-                        ],
-                    ]);
+                    if ($bankLines->isEmpty()) {
+                        $bankLines = collect(['Rekening pembayaran belum diatur']);
+                    }
+
+                    foreach ($bankLines as $bankLine) {
+                        $currentRow++;
+                        $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
+                        $sheet->setCellValue("A{$currentRow}", $bankLine);
+
+                        $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
+                            'font' => ['italic' => true, 'size' => 8.5],
+                            'borders' => [
+                                'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                            ],
+                        ]);
+                    }
 
                     $currentRow++; // Jarak antar proyek
                 }
+
+                // Tinggikan baris info & tabel agar teks tidak menempel garis
+                // (baris jarak antar proyek dibiarkan tipis).
+                foreach (range(2, $currentRow - 1) as $row) {
+                    if ($row === 4) {
+                        continue;
+                    }
+                    $hasValue = trim((string) $sheet->getCell("A{$row}")->getValue()) !== ''
+                        || trim((string) $sheet->getCell("E{$row}")->getValue()) !== '';
+                    if ($hasValue) {
+                        $sheet->getRowDimension($row)->setRowHeight(20);
+                    }
+                }
+                $sheet->getStyle("A2:E" . ($currentRow - 1))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
                 // 5. CATATAN NB
                 $noteText = !empty($invoice->note) 

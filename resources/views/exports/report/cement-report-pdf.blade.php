@@ -136,7 +136,7 @@
                             {{-- Tanggal (Rowspan digabung vertikal per DO) --}}
                             @if ($index === 0)
                                 <td rowspan="{{ $do->cements->count() }}" class="text-center">
-                                    {{ $do->tanggal_datang ? \Carbon\Carbon::parse($do->tanggal_datang)->format('d.m.y') : '-' }}
+                                    {{ $do->tanggal_datang ? \Carbon\Carbon::parse($do->tanggal_datang)->format('d.m.y') : '' }}
                                 </td>
                             @endif
 
@@ -161,7 +161,7 @@
                                 @php
                                     $tglLunas = $cement->tanggal_lunas ?? $cement->tgl_lunas ?? null;
                                 @endphp
-                                {{ $tglLunas ? \Carbon\Carbon::parse($tglLunas)->format('d/m/Y') : '-' }}
+                                {{ $tglLunas ? \Carbon\Carbon::parse($tglLunas)->format('d/m/Y') : '' }}
                             </td>
 
                             {{-- Menggabungkan kolom HARGA MODAL & PROFIT (menghapus garis vertikal & horizontal) --}}
@@ -190,11 +190,13 @@
                                 <span>{{ number_format($do->harga_modal, 0, ',', '.') }}</span>
                             </div>
                         </td>
-                        <td> {{-- Col 10: PROFIT --}}
-                            <div class="currency">
-                                <span>Rp</span>
-                                <span>{{ number_format($do->profit, 0, ',', '.') }}</span>
-                            </div>
+                        <td> {{-- Col 10: PROFIT (profit minus tidak ditampilkan) --}}
+                            @if ($do->profit >= 0)
+                                <div class="currency">
+                                    <span>Rp</span>
+                                    <span>{{ number_format($do->profit, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         </td>
                     </tr>
                 @endif

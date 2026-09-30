@@ -19,8 +19,8 @@
             font-family: 'Times New Roman', Times, serif;
             font-size: 9.5pt;
             color: #000;
-            line-height: 1.1;
-            padding: 7%;
+            line-height: 1.3;
+            padding: 2% 7%;
         }
 
         /* Header Perusahaan (logo + nama) */
@@ -88,10 +88,11 @@
             table-layout: auto; /* Membiarkan lebar kolom menyesuaikan teks otomatis */
         }
 
-        /* Padding 10px kiri-kanan sesuai permintaan */
+        /* Padding 10px kiri-kanan; atas-bawah dilonggarkan agar teks tidak menempel garis */
         .main-table th, .main-table td {
             border: 1px solid #000;
-            padding: 2px 10px; 
+            padding: 4px 10px;
+            vertical-align: middle;
             font-size: 9pt;
             white-space: nowrap; /* Mencegah teks terpotong turun ke bawah */
         }
@@ -108,7 +109,7 @@
             font-weight: bold;
             font-size: 11pt;
             letter-spacing: 0.5px;
-            padding: 4px 10px;
+            padding: 6px 10px;
         }
 
         .table-header-row {
@@ -186,12 +187,14 @@
         }
 
         /* Tanda Tangan */
+        /* Blok tanda tangan di kanan & tidak terpotong ke halaman berikutnya */
         .signature-section {
-            float: right;
             width: 200px;
+            margin-left: auto;
             text-align: center;
-            margin-top: 50px;
+            padding-top: 20px;
             clear: both;
+            page-break-inside: avoid;
         }
 
         .signature-space {
@@ -222,6 +225,10 @@
         $grandTotal = 0;
         $totalProjects = count($projects);
         $isSuperAdmin = $isSuperAdmin ?? false;
+
+        // Fallback rekening untuk proyek yang tersimpan tanpa rekening (invoice lama):
+        // pakai rekening aktif, sama seperti invoice lain.
+        $fallbackAccounts = \App\Models\Finance\PaymentAccount::active()->get();
     @endphp
 
     {{-- Header Perusahaan (logo + nama), diperbesar untuk Super Admin --}}
@@ -251,7 +258,7 @@
             <td style="width: 1%;">Tanggal</td>
             <td style="width: 1%; text-align: center;">:</td>
             <td colspan="3">
-                {{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('dddd, D MMMM YYYY') }}
+                {{ \Carbon\Carbon::parse($invoice->invoice_date)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
             </td>
         </tr>
         <tr>
@@ -262,11 +269,11 @@
         
         <!-- Pemisah Spasi Tipis -->
         <tr style="height: 6px;">
-            <td style="border: none;"></td>
-            <td style="border: none;"></td>
-            <td style="border: none;"></td>
-            <td style="border: none;"></td>
-            <td style="border: none;"></td>
+            <td style="border: none; padding: 0;"></td>
+            <td style="border: none; padding: 0;"></td>
+            <td style="border: none; padding: 0;"></td>
+            <td style="border: none; padding: 0;"></td>
+            <td style="border: none; padding: 0;"></td>
         </tr>
 
         <!-- Loop Setiap Proyek -->
@@ -278,7 +285,10 @@
                     $subtotal += (int) ($item['jumlah'] ?? 0);
                 }
                 $grandTotal += $subtotal;
-                $account = \App\Models\Finance\PaymentAccount::find($project['payment_account_id'] ?? null);
+                $account = !empty($project['payment_account_id'])
+                    ? \App\Models\Finance\PaymentAccount::find($project['payment_account_id'])
+                    : null;
+                $accounts = $account ? collect([$account]) : $fallbackAccounts;
             @endphp
 
             <!-- Header Kolom (Ukuran Menyesuaikan Teks + 10px Kiri Kanan) -->
@@ -333,13 +343,22 @@
             </tr>
 
             <!-- Rekening Bank -->
-            <tr>
-                <td colspan="3" class="bank-info-cell col-nama-barang">
-                    Bank {{ $account->bank_name ?? 'BCA' }} : {{ $account->account_number ?? 'Nomor rekening' }} / A/N {{ strtoupper($account->account_holder ?? 'PEMILIK') }}
-                </td>
-                <td class="bank-info-cell"></td>
-                <td class="bank-info-cell"></td>
-            </tr>
+            @forelse ($accounts as $acc)
+                <tr>
+                    <td colspan="3" class="bank-info-cell col-nama-barang">
+                        {{-- Prefix "Bank" hanya ditambahkan bila nama bank belum diawali "Bank" (hindari "Bank Bank Mandiri") --}}
+                        {{ \Illuminate\Support\Str::startsWith(strtolower($acc->bank_name), 'bank') ? $acc->bank_name : 'Bank ' . $acc->bank_name }} : {{ $acc->account_number }} / A/N {{ strtoupper($acc->account_holder) }}
+                    </td>
+                    <td class="bank-info-cell"></td>
+                    <td class="bank-info-cell"></td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="3" class="bank-info-cell col-nama-barang">Rekening pembayaran belum diatur</td>
+                    <td class="bank-info-cell"></td>
+                    <td class="bank-info-cell"></td>
+                </tr>
+            @endforelse
         @endforeach
     </table>
 
