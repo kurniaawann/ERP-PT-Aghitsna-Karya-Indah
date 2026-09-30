@@ -57,8 +57,11 @@ class RecapSalesService
 
         return SalesRecap::query()->with('paymentProofs')
             ->when($search, function ($query, $search) {
-                $query->where('id_sales_recap', 'like', "%{$search}%")
-                    ->orWhere('name_proyek', 'like', "%{$search}%");
+                // Dikelompokkan agar OR pencarian tidak menembus filter bulan/tahun/status.
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('id_sales_recap', 'like', "%{$search}%")
+                        ->orWhere('name_proyek', 'like', "%{$search}%");
+                });
             })
             ->when($month, function ($query, $month) {
                 $query->whereMonth('date', $month);
