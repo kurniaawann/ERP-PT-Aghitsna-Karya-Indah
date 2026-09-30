@@ -76,8 +76,8 @@ class PageController extends Controller
                     if (!isset($paidMap[$employee->employee_code][$startStr])) {
                         $unpaidWeeks[] = [
                             'week_number' => $week['week_number'],
-                            'start_date' => $week['start']->format('d M'),
-                            'end_date' => $week['end']->format('d M'),
+                            'start_date' => $week['start']->locale('id')->translatedFormat('d M'),
+                            'end_date' => $week['end']->locale('id')->translatedFormat('d M'),
                         ];
                     }
                 }

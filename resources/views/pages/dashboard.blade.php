@@ -8,7 +8,8 @@
          Ditampilkan paling atas (memenuhi lebar halaman)
          ============================================================ --}}
     @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
-        <div class="bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden mt-6">
+        {{-- shrink-0: <main> adalah flex-col, tanpa ini kartu ber-overflow-hidden ikut menyusut & terpotong --}}
+        <div class="shrink-0 bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden mt-6">
             {{-- Header Seksi Reimbursement --}}
             <div class="bg-primary-light px-6 py-4 border-b border-primary-light">
                 <div class="flex items-center gap-3">
@@ -90,10 +91,10 @@
          ============================================================ --}}
     @if (!auth()->user()->isAdmin())
     <!-- Reminder Cards Section Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+    <div class="shrink-0 grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         
         <!-- SECTION: REMINDER GAJI KARYAWAN -->
-        <div class="bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden">
+        <div class="flex flex-col bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden">
             <div class="bg-warning-light px-6 py-4 border-b border-warning-light">
                 <div class="flex items-center gap-3">
                     <div class="bg-white p-2 rounded-lg">
@@ -110,7 +111,7 @@
                 </div>
             </div>
 
-            <div class="p-6">
+            <div class="p-6 flex-1 flex flex-col">
                 {{-- Info Periode Minggu Ini --}}
                 <div class="bg-info-light border border-info-light rounded-lg p-4 mb-4">
                     <div class="flex items-center gap-2 mb-2">
@@ -121,10 +122,10 @@
                         <span class="font-semibold text-text-heading">Periode Payroll: Minggu {{ $currentWeek }}</span>
                     </div>
                     <p class="text-sm text-text-primary">
-                        {{ $weekRange['start']->format('d M Y') }} - {{ $weekRange['end']->format('d M Y') }}
+                        {{ $weekRange['start']->locale('id')->translatedFormat('d M Y') }} - {{ $weekRange['end']->locale('id')->translatedFormat('d M Y') }}
                     </p>
                     <p class="text-xs text-info mt-1">
-                        Hari ini: {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
+                        Hari ini: {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('l, d F Y') }}
                     </p>
                 </div>
 
@@ -139,7 +140,9 @@
                         </div>
                     </div>
 
-                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                    {{-- Area scroll mengisi sisa tinggi kartu; kedua kartu reminder selalu sama tinggi --}}
+                    <div class="relative flex-1 min-h-64">
+                    <div class="absolute inset-0 space-y-2 overflow-y-auto pr-1">
                         @foreach ($employeesWithoutSalary as $item)
                             <div class="flex items-start justify-between p-3 bg-warning-light rounded-lg border border-warning-light hover:bg-white transition-colors">
                                 <div class="flex items-start gap-3 flex-1">
@@ -174,8 +177,9 @@
                             </div>
                         @endforeach
                     </div>
+                    </div>
                 @else
-                    <div class="text-center py-8">
+                    <div class="flex-1 flex flex-col items-center justify-center text-center py-8">
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-success-light rounded-full mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -183,14 +187,14 @@
                         </div>
                         <p class="text-text-heading font-medium text-lg">Semua Gaji Sudah Dibayarkan</p>
                         <p class="text-sm text-text-secondary mt-2">Seluruh karyawan telah menerima gaji minggu 1 - {{ $currentWeek }}</p>
-                        <p class="text-xs text-text-tertiary mt-1">Periode minggu {{ $currentWeek }}: {{ $weekRange['start']->format('d M') }} - {{ $weekRange['end']->format('d M Y') }}</p>
+                        <p class="text-xs text-text-tertiary mt-1">Periode minggu {{ $currentWeek }}: {{ $weekRange['start']->locale('id')->translatedFormat('d M') }} - {{ $weekRange['end']->locale('id')->translatedFormat('d M Y') }}</p>
                     </div>
                 @endif
             </div>
         </div>
 
         <!-- SECTION: REMINDER STOK MENIPIS -->
-        <div class="bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden">
+        <div class="flex flex-col bg-surface-base rounded-xl shadow-md border border-border-light overflow-hidden">
             <div class="bg-error-light px-6 py-4 border-b border-error-light">
                 <div class="flex items-center gap-3">
                     <div class="bg-white p-2 rounded-lg">
@@ -205,7 +209,7 @@
                 </div>
             </div>
 
-            <div class="p-6">
+            <div class="p-6 flex-1 flex flex-col">
                 @if ($lowStockItems->count() > 0)
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-3">
@@ -217,7 +221,9 @@
                         </div>
                     </div>
 
-                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                    {{-- Area scroll mengisi sisa tinggi kartu; kedua kartu reminder selalu sama tinggi --}}
+                    <div class="relative flex-1 min-h-64">
+                    <div class="absolute inset-0 space-y-2 overflow-y-auto pr-1">
                         @foreach ($lowStockItems as $item)
                             <div class="flex items-center justify-between p-3 bg-error-light rounded-lg border border-error-light hover:bg-white transition-colors">
                                 <div class="flex items-center gap-3">
@@ -239,8 +245,9 @@
                             </div>
                         @endforeach
                     </div>
+                    </div>
                 @else
-                    <div class="text-center py-8">
+                    <div class="flex-1 flex flex-col items-center justify-center text-center py-8">
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-success-light rounded-full mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
