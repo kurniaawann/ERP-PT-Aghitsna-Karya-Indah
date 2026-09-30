@@ -17,18 +17,31 @@
             box-sizing: border-box;
         }
 
+        /* Font dokumen: Times New Roman 12pt (kop/judul lebih besar) */
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             padding: 20px;
             background: #ffffff;
             color: #000000;
-            font-size: 11pt;
+            font-size: 12pt;
+            line-height: 1.3;
         }
 
         .container {
-            padding: 12px;
+            padding: 14px 16px;
             position: relative;
             border: 2px solid #000000;
+        }
+
+        /* WATERMARK LOGO: transparan di tengah kwitansi, di belakang konten */
+        .watermark {
+            position: absolute;
+            top: 150px;
+            left: 50%;
+            width: 400px;
+            margin-left: -200px;
+            opacity: 0.12;
+            z-index: -1;
         }
 
         /* HEADER */
@@ -39,7 +52,7 @@
         }
 
         .logo {
-            max-width: 160px;
+            max-width: 190px;
             height: auto;
         }
 
@@ -51,7 +64,7 @@
 
         .meta-table td {
             padding: 3px 4px;
-            font-size: 10pt;
+            font-size: 12pt;
             font-weight: bold;
             vertical-align: bottom;
         }
@@ -76,10 +89,10 @@
         /* JUDUL KWITANSI */
         .title-kwitansi {
             text-align: center;
-            font-size: 16pt;
+            font-size: 20pt;
             font-weight: bold;
-            letter-spacing: 2px;
-            margin: 15px 0 15px 0;
+            letter-spacing: 3px;
+            margin: 12px 0 16px 0;
         }
 
         /* FORM ISIAN UTAMA - Garis bawah dari : sampai ke value */
@@ -92,11 +105,11 @@
         .form-table td {
             padding: 6px 4px;
             vertical-align: bottom;
-            font-size: 11pt;
+            font-size: 12pt;
         }
 
         .label-col {
-            width: 140px;
+            width: 150px;
             font-weight: bold;
             border: none; /* Tanpa garis pada label */
         }
@@ -136,7 +149,7 @@
             background-color: #ffff00;
             font-weight: bold;
             font-style: italic;
-            font-size: 11pt;
+            font-size: 12pt;
             padding: 3px 6px;
             display: inline-block;
         }
@@ -144,7 +157,7 @@
         .amount-box {
             background-color: #ffffcc;
             border: 1px solid #000000;
-            font-size: 14pt;
+            font-size: 16pt;
             font-weight: bold;
             font-style: italic;
             text-align: center;
@@ -161,7 +174,7 @@
         }
 
         .bank-info {
-            font-size: 10pt;
+            font-size: 12pt;
             font-weight: bold;
             line-height: 1.6;
         }
@@ -169,7 +182,7 @@
         .disclaimer {
             color: #d90000;
             font-style: italic;
-            font-size: 9pt;
+            font-size: 12pt;
             margin-top: 15px;
             max-width: 90%;
         }
@@ -177,7 +190,7 @@
         .signature-cell {
             text-align: center;
             vertical-align: top;
-            width: 200px;
+            width: 220px;
         }
 
         /* Kwitansi manual: blok tanda tangan diturunkan 30px */
@@ -186,7 +199,7 @@
         }
 
         .signature-title {
-            font-size: 11pt;
+            font-size: 12pt;
             margin-bottom: 12px;
         }
 
@@ -197,7 +210,7 @@
 
         .signature-position {
             font-weight: bold;
-            font-size: 9.5pt;
+            font-size: 12pt;
             margin-top: 2px;
         }
 
@@ -233,6 +246,9 @@
                 };
             @endphp
 
+            <!-- WATERMARK LOGO PERUSAHAAN (transparan, di belakang konten) -->
+            <img src="{{ public_path('images/logo.jpeg') }}" alt="" class="watermark">
+
             <!-- HEADER (LOGO & META KWITANSI) -->
             <table class="header-table">
                 <tr>
@@ -257,7 +273,7 @@
                             <tr>
                                 <td class="meta-label"><strong>Tanggal</strong></td>
                                 <td class="meta-colon">:</td>
-                                <td class="meta-value">{{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->translatedFormat('j F Y') }}</td>
+                                <td class="meta-value">{{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->locale('id')->translatedFormat('j F Y') }}</td>
                             </tr>
                         </table>
                     </td>
@@ -320,7 +336,7 @@
                         @endphp
                         @if ($invoicePaidTotal > 0)
                             <span class="highlight-text">
-                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->translatedFormat('j F Y') }} = Rp. {{ number_format($invoicePaidTotal, 0, ',', '.') }},-
+                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->locale('id')->translatedFormat('j F Y') }} = Rp. {{ number_format($invoicePaidTotal, 0, ',', '.') }},-
                             </span>
                         @endif
                     </td>

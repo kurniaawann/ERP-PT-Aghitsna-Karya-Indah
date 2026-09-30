@@ -3,18 +3,18 @@
      ============================================================
 
      Template ini digunakan untuk export PDF bukti kas keluar.
-     Mendukung dua jenis template:
+     Mendukung jenis template:
 
-     1. STANDARD (template_type = 'standard')
+     1. STANDARD (template_type = 'standard' / 'bkc')
         - Header dengan logo perusahaan
-        - Judul "BUKTI KAS KELUAR"
+        - Judul "BUKTI KAS KELUAR" (atau "BUKTI CEK/GIRO KELUAR" untuk bkc)
         - Informasi BKK No, Cek No, Tanggal
         - Form fields: Dibayarkan Kepada, Jumlah Dibayar, Keterangan
         - Box jumlah dalam Rupiah
         - Tanda tangan: Direktur, Kabag Keuangan, Diterima Oleh
 
      2. HOLLOW (template_type = 'hollow')
-        - Header dengan logo + info perusahaan "DESIGN AND BUILD PT. AGHITSNA KARYA INDAH"
+        - Header dengan logo perusahaan
         - Label "HOLLOW" + Judul "BUKTI KAS KELUAR"
         - Informasi BKK No, Cek No, Tanggal
         - Form fields dalam box border: Dibayarkan Kepada, Jumlah Dibayar, Keterangan
@@ -22,10 +22,11 @@
         - Tanda tangan: Manager, Kabag Keuangan, Diterima Oleh
 
      Layout:
-     - 2 form per halaman (page break setiap 2 record)
+     - 1 form per halaman (page break sebelum setiap record berikutnya)
      - Ukuran kertas: A4 Portrait
-     - Margin: 5mm
-     - Font: Times New Roman
+     - Margin: 8mm
+     - Font: Times New Roman 12pt (kop/judul lebih besar)
+     - Watermark logo perusahaan transparan di tengah setiap form
 
      Variabel yang digunakan:
      - $cashOuts: Koleksi model CashOutProof yang akan dicetak
@@ -39,261 +40,207 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 5mm 5mm 5mm 5mm;
+            margin: 8mm 8mm 8mm 8mm;
         }
 
         body {
             font-family: 'Times New Roman', Times, serif;
             margin: 0;
             padding: 0;
-            font-size: 10px;
+            font-size: 12pt;
+            line-height: 1.3;
+            color: #000;
         }
 
         .container {
+            position: relative;
             border: 2px solid #000;
-            padding: 10px;
+            padding: 14px 16px;
             box-sizing: border-box;
-            margin-bottom: 20px;
+        }
+
+        {{-- Watermark logo: transparan, di tengah form, berada di belakang konten --}}
+        .watermark {
+            position: absolute;
+            top: 110px;
+            left: 50%;
+            width: 380px;
+            margin-left: -190px;
+            opacity: 0.12;
+            z-index: -1;
         }
 
         {{-- ==========================================
-             STYLE: Template Standard
+             STYLE: Header (Kop) - Dipakai Kedua Template
              ========================================== --}}
-        .standard .header {
-            display: table;
+        .header {
             width: 100%;
-            margin-bottom: 15px;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+
+        .header td {
+            padding: 0;
+        }
+
+        .header-left {
+            width: 21%;
+            vertical-align: middle;
+        }
+
+        .header-center {
+            width: 47%;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .header-right {
+            width: 32%;
+            vertical-align: top;
+        }
+
+        .logo {
+            width: 135px;
+            height: auto;
+        }
+
+        .doc-info {
+            border-collapse: collapse;
+            float: right;
+        }
+
+        .doc-info td {
+            padding: 1px 0;
+            vertical-align: top;
+            white-space: nowrap;
+        }
+
+        .doc-info .doc-info-label {
+            font-weight: bold;
+            padding-right: 6px;
+        }
+
+        .doc-info .doc-info-colon {
+            padding-right: 6px;
+        }
+
+        .standard .header {
             border-bottom: 2px solid #000;
             padding-bottom: 10px;
         }
 
-        .standard .header-left {
-            display: table-cell;
-            width: 25%;
-            vertical-align: middle;
-        }
-
-        .standard .logo-container {
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-
-        .standard .logo {
-            width: 100px;
-            height: auto;
-        }
-
-        .standard .header-center {
-            display: table-cell;
-            width: 50%;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .standard .header-right {
-            display: table-cell;
-            width: 25%;
-            vertical-align: top;
-            text-align: left;
-            font-size: 9px;
-        }
-
-        .standard .header-right table {
-            float: right;
-        }
-
         .standard .title {
-            font-size: 14px;
+            font-size: 17pt;
             font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .standard .signature-col {
-            display: table-cell;
-            width: 33.33%;
-            text-align: center;
-            vertical-align: bottom;
-        }
-
-        .standard .signature-title {
-            font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 10px;
-            margin-top: 25px;
-        }
-
-        .standard .signature-space {
-            min-height: 65px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        .standard .signature-space img {
-            max-height: 55px;
-            max-width: 140px;
-            object-fit: contain;
-        }
-
-        {{-- ==========================================
-             STYLE: Template Hollow
-             ========================================== --}}
-        .hollow .header {
-            display: table;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .hollow .header-left {
-            display: table-cell;
-            width: 40%;
-            vertical-align: top;
-        }
-
-        .hollow .logo-container {
-            display: inline-block;
-            vertical-align: top;
-            margin-right: 8px;
-        }
-
-        .hollow .logo {
-            width: 105px;
-            height: auto;
-        }
-
-        .hollow .company-info {
-            display: inline-block;
-            vertical-align: top;
-        }
-
-        .hollow .company-name {
-            font-size: 9px;
-            font-weight: bold;
-            line-height: 1.2;
-            margin-bottom: 2px;
-        }
-
-        .hollow .company-subtitle {
-            font-size: 7px;
-            line-height: 1.2;
-        }
-
-        .hollow .header-center {
-            display: table-cell;
-            width: 30%;
-            text-align: center;
-            vertical-align: middle;
-            padding-top: 10px;
+            letter-spacing: 0.5px;
         }
 
         .hollow .hollow-title {
-            font-size: 18px;
+            font-size: 22pt;
             font-weight: bold;
-            letter-spacing: 3px;
-            margin-bottom: 15px;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
         }
 
         .hollow .main-title {
-            font-size: 13px;
+            font-size: 16pt;
             font-weight: bold;
             letter-spacing: 1px;
         }
 
-        .hollow .header-right {
-            display: table-cell;
-            width: 30%;
-            vertical-align: top;
-            text-align: left;
-            font-size: 9px;
-        }
-
-        .hollow .header-right table {
-            float: right;
-        }
-
-        .hollow .signature-col {
-            display: table-cell;
-            width: 33.33%;
-            text-align: center;
-            vertical-align: bottom;
-        }
-
-        .hollow .signature-title {
-            font-size: 9px;
-            margin-bottom: 8px;
-            margin-top: 20px;
-        }
-
-        .hollow .signature-space {
-            min-height: 55px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        .hollow .signature-space img {
-            max-height: 55px;
-            max-width: 140px;
-            object-fit: contain;
+        .hollow .form-box {
+            border: 2px solid #000;
+            padding: 10px 12px;
         }
 
         {{-- ==========================================
              STYLE: Komponen Form (Digunakan Kedua Template)
              ========================================== --}}
         .form-row {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             width: 100%;
             border-collapse: collapse;
         }
 
         .form-label {
-            width: 22%;
-            padding: 3px 0;
+            width: 24%;
+            padding: 4px 0;
             vertical-align: bottom;
             white-space: nowrap;
         }
 
         .form-separator {
-            width: 1%;
+            width: 2%;
             text-align: center;
-            padding: 3px 5px;
+            padding: 4px 6px;
             vertical-align: bottom;
         }
 
         .form-value {
-            width: 77%;
+            width: 74%;
             border-bottom: 1px solid #000;
-            padding: 3px 0;
+            padding: 4px 2px;
             vertical-align: bottom;
         }
 
         .amount-section {
             text-align: right;
-            margin-top: 50px;
+            margin-top: 24px;
         }
 
         .amount-box {
             display: inline-block;
             border: 2px solid #000;
-            padding: 8px 15px;
-            min-width: 200px;
+            padding: 8px 18px;
+            min-width: 240px;
             text-align: left;
-            font-size: 11px;
+            font-size: 14pt;
+            font-weight: bold;
         }
 
+        {{-- ==========================================
+             STYLE: Tanda Tangan (Digunakan Kedua Template)
+             ========================================== --}}
         .signature-section {
-            display: table;
             width: 100%;
-            margin-top: 40px;
+            border-collapse: collapse;
+            margin-top: 28px;
+        }
+
+        .signature-section td {
+            width: 33.33%;
+            text-align: center;
+            padding: 0 8px;
+        }
+
+        .signature-title {
+            vertical-align: top;
+            font-size: 12pt;
+        }
+
+        .standard .signature-title {
+            font-weight: bold;
+        }
+
+        .signature-space {
+            height: 80px;
+            vertical-align: bottom;
+        }
+
+        .signature-space img {
+            max-height: 70px;
+            max-width: 150px;
         }
 
         .signature-name {
-            border-top: 1px solid #000;
+            vertical-align: top;
+        }
+
+        .signature-name span {
             display: inline-block;
-            padding-top: 25px;
-            min-width: 150px;
-            font-size: 9px;
+            min-width: 190px;
+            border-top: 1px solid #000;
+            padding-top: 4px;
         }
     </style>
 </head>
@@ -302,7 +249,7 @@
     {{-- Iterasi setiap data bukti kas keluar --}}
     @foreach ($cashOuts as $index => $cashOut)
 
-        {{-- Page break setiap 2 record (2 form per halaman) --}}
+        {{-- Page break sebelum setiap record berikutnya (1 form per halaman) --}}
         @if ($index > 0 && $index % 1 == 0)
             <div style="page-break-before: always;"></div>
         @endif
@@ -389,150 +336,58 @@
         : null;
 @endphp
 
+        @php
+            // Susunan kolom tanda tangan (urutan: Direktur/Manager, Kabag Keuangan, Diterima Oleh)
+            $signers = [
+                ['title' => $directorTitle, 'name' => $directorName, 'image' => $directorImage],
+                ['title' => $financeTitle, 'name' => $financeName, 'image' => $financeImage],
+                ['title' => $receivedTitle, 'name' => $receivedName, 'image' => $receivedImage],
+            ];
+        @endphp
+
         <div class="container {{ $containerClass }}">
 
-            {{-- ==========================================
-                 TEMPLATE: HOLLOW
-                 ========================================== --}}
-            @if (($cashOut->template_type ?? 'standard') == 'hollow')
+            {{-- Watermark logo perusahaan (transparan, di belakang konten) --}}
+            <img src="{{ public_path('images/logo.jpeg') }}" alt="" class="watermark">
 
-                {{-- Header: Logo + Info Perusahaan + Judul + Info BKK --}}
-                <div class="header">
-                    <div class="header-left">
-                        <div class="logo-container">
-                            <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
-                        </div>
-                    </div>
-                    <div class="header-center">
-                        <div class="hollow-title">HOLLOW</div>
-                        <div class="main-title">{{ $docTitle }}</div>
-                    </div>
-                    <div class="header-right">
-                        <table style="border-collapse: collapse;">
+            {{-- Header: Logo + Judul + Info BKK --}}
+            <table class="header">
+                <tr>
+                    <td class="header-left">
+                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
+                    </td>
+                    <td class="header-center">
+                        @if ($isHollow)
+                            <div class="hollow-title">HOLLOW</div>
+                            <div class="main-title">{{ $docTitle }}</div>
+                        @else
+                            <div class="title">{{ $docTitle }}</div>
+                        @endif
+                    </td>
+                    <td class="header-right">
+                        <table class="doc-info">
                             <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>{{ $docNoLabel }}</strong></td>
-                                <td style="padding-right: 5px;">:</td>
+                                <td class="doc-info-label">{{ $docNoLabel }}</td>
+                                <td class="doc-info-colon">:</td>
                                 <td>{{ $cashOut->bkk_no }}</td>
                             </tr>
                             <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Cek No.</strong></td>
-                                <td style="padding-right: 5px;">:</td>
+                                <td class="doc-info-label">Cek No.</td>
+                                <td class="doc-info-colon">:</td>
                                 <td>{{ $cashOut->cek_no }}</td>
                             </tr>
                             <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Tanggal</strong></td>
-                                <td style="padding-right: 5px;">:</td>
+                                <td class="doc-info-label">Tanggal</td>
+                                <td class="doc-info-colon">:</td>
                                 <td>{{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</td>
                             </tr>
                         </table>
-                    </div>
-                </div>
+                    </td>
+                </tr>
+            </table>
 
-                {{-- Form Fields --}}
-                <div style="border: 2px solid #000; padding: 8px; margin-top: 10px;">
-                    <table class="form-row">
-                        <tr>
-                            <td class="form-label">Dibayarkan Kepada</td>
-                            <td class="form-separator">:</td>
-                            <td class="form-value">{{ $cashOut->paid_to }}</td>
-                        </tr>
-                    </table>
-
-                    <table class="form-row">
-                        <tr>
-                            <td class="form-label">Jumlah Dibayar</td>
-                            <td class="form-separator">:</td>
-                            <td class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</td>
-                        </tr>
-                    </table>
-
-                    <table class="form-row">
-                        <tr>
-                            <td class="form-label" style="vertical-align: top;">Keterangan</td>
-                            <td class="form-separator" style="vertical-align: top;">:</td>
-                            <td class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</td>
-                        </tr>
-                    </table>
-
-                    {{-- Box Jumlah dalam Rupiah --}}
-                    <div class="amount-section">
-                        <div class="amount-box">
-                            <strong>Rp.</strong> {{ number_format($cashOut->amount, 0, ',', '.') }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tanda Tangan: Manager, Kabag Keuangan, Diterima Oleh --}}
-                <div class="signature-section">
-                    <div class="signature-col">
-                        <div class="signature-title">{!! $directorTitle !!}</div>
-                        <div class="signature-space">
-                            @if ($directorImage)
-                                <img src="{{ storage_path('app/public/' . $directorImage) }}"
-                                    alt="Tanda tangan {{ $directorName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
-                            @endif
-                        </div>
-                        <div class="signature-name">( {{ $directorName }} )</div>
-                    </div>
-                    <div class="signature-col">
-                        <div class="signature-title">{!! $financeTitle !!}</div>
-                        <div class="signature-space">
-                            @if ($financeImage)
-                                <img src="{{ storage_path('app/public/' . $financeImage) }}"
-                                    alt="Tanda tangan {{ $financeName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
-                            @endif
-                        </div>
-                        <div class="signature-name">( {{ $financeName }} )</div>
-                    </div>
-                    <div class="signature-col">
-                        <div class="signature-title">{!! $receivedTitle !!}</div>
-                        <div class="signature-space">
-                            @if ($receivedImage)
-                                <img src="{{ storage_path('app/public/' . $receivedImage) }}"
-                                    alt="Tanda tangan {{ $receivedName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
-                            @endif
-                        </div>
-                        <div class="signature-name">( {{ $receivedName }} )</div>
-                    </div>
-                </div>
-
-            {{-- ==========================================
-                 TEMPLATE: STANDARD
-                 ========================================== --}}
-            @else
-
-                {{-- Header: Logo + Judul + Info BKK --}}
-                <div class="header">
-                    <div class="header-left">
-                        <div class="logo-container">
-                            <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" class="logo">
-                        </div>
-                    </div>
-                    <div class="header-center">
-                        <div class="title">{{ $docTitle }}</div>
-                    </div>
-                    <div class="header-right">
-                        <table style="border-collapse: collapse;">
-                            <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>{{ $docNoLabel }}</strong></td>
-                                <td style="padding-right: 5px;">:</td>
-                                <td>{{ $cashOut->bkk_no }}</td>
-                            </tr>
-                            <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Cek No.</strong></td>
-                                <td style="padding-right: 5px;">:</td>
-                                <td>{{ $cashOut->cek_no }}</td>
-                            </tr>
-                            <tr>
-                                <td style="white-space: nowrap; padding-right: 5px;"><strong>Tanggal</strong></td>
-                                <td style="padding-right: 5px;">:</td>
-                                <td>{{ \Carbon\Carbon::parse($cashOut->date)->locale('id')->isoFormat('D MMMM Y') }}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-
-                {{-- Form Fields --}}
+            {{-- Form Fields (template hollow dibungkus box border) --}}
+            <div class="{{ $isHollow ? 'form-box' : '' }}">
                 <table class="form-row">
                     <tr>
                         <td class="form-label">Dibayarkan Kepada</td>
@@ -553,52 +408,41 @@
                     <tr>
                         <td class="form-label" style="vertical-align: top;">Keterangan</td>
                         <td class="form-separator" style="vertical-align: top;">:</td>
-                        <td class="form-value keterangan-box">{{ $cashOut->description ?? '-' }}</td>
+                        <td class="form-value">{{ $cashOut->description ?? '-' }}</td>
                     </tr>
                 </table>
 
                 {{-- Box Jumlah dalam Rupiah --}}
                 <div class="amount-section">
                     <div class="amount-box">
-                        <strong>Rp.</strong> {{ number_format($cashOut->amount, 0, ',', '.') }}
+                        Rp. {{ number_format($cashOut->amount, 0, ',', '.') }}
                     </div>
                 </div>
+            </div>
 
-                {{-- Tanda Tangan: Direktur, Kabag Keuangan, Diterima Oleh --}}
-                <div class="signature-section">
-                    <div class="signature-col">
-                        <div class="signature-title">{!! $directorTitle !!}</div>
-                        <div class="signature-space">
-                            @if ($directorImage)
-                                <img src="{{ storage_path('app/public/' . $directorImage) }}"
-                                    alt="Tanda tangan {{ $directorName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
+            {{-- Tanda Tangan: Direktur/Manager, Kabag Keuangan, Diterima Oleh --}}
+            <table class="signature-section">
+                <tr>
+                    @foreach ($signers as $signer)
+                        <td class="signature-title">{!! $signer['title'] !!}</td>
+                    @endforeach
+                </tr>
+                <tr>
+                    @foreach ($signers as $signer)
+                        <td class="signature-space">
+                            @if ($signer['image'])
+                                <img src="{{ storage_path('app/public/' . $signer['image']) }}"
+                                    alt="Tanda tangan {{ $signer['name'] }}">
                             @endif
-                        </div>
-                        <div class="signature-name">( {{ $directorName }} )</div>
-                    </div>
-                    <div class="signature-col">
-                        <div class="signature-title">{!! $financeTitle !!}</div>
-                        <div class="signature-space">
-                            @if ($financeImage)
-                                <img src="{{ storage_path('app/public/' . $financeImage) }}"
-                                    alt="Tanda tangan {{ $financeName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
-                            @endif
-                        </div>
-                        <div class="signature-name">( {{ $financeName }} )</div>
-                    </div>
-                    <div class="signature-col">
-                        <div class="signature-title">{!! $receivedTitle !!}</div>
-                        <div class="signature-space">
-                            @if ($receivedImage)
-                                <img src="{{ storage_path('app/public/' . $receivedImage) }}"
-                                    alt="Tanda tangan {{ $receivedName }}" style="max-height: 55px; max-width: 140px; object-fit: contain;">
-                            @endif
-                        </div>
-                        <div class="signature-name">( {{ $receivedName }} )</div>
-                    </div>
-                </div>
-
-            @endif
+                        </td>
+                    @endforeach
+                </tr>
+                <tr>
+                    @foreach ($signers as $signer)
+                        <td class="signature-name"><span>( {{ $signer['name'] }} )</span></td>
+                    @endforeach
+                </tr>
+            </table>
         </div>
     @endforeach
 </body>

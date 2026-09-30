@@ -1,348 +1,263 @@
 {{-- =====================================================================
-     NOTA PDF - LAYOUT SEWA/JUAL
+     NOTA PDF - LAYOUT SEWA/JUAL (tipe_nota = sewa_jual)
      PT Aghitsna Karya Indah
 
-     Design nota existing (tipe_nota = sewa_jual):
-     - Header: Logo + box FAKTUR/SJ di kiri, box tanggal & Kepada Yth di kanan
-     - Tabel utama: BANYAKNYA / NAMA BARANG / HARGA SATUAN / JUMLAH
-     - Bagian bawah kiri: Periode, Rekening, catatan, Penerima
-     - Bagian bawah kanan: summary Sewa/Jual, Ongkir, Bongkar, Lembur,
-       Uang Jaminan, PPN, Jumlah
+     - Kop: banner perusahaan (scaffolding & alat konstruksi), garis ganda
+     - Judul "NOTA"
+     - Info kiri: No. Nota, Faktur No. & SJ No. (opsional), Periode (opsional)
+     - Info kanan: tempat/tanggal + Kepada Yth.
+     - Tabel: NO / BANYAKNYA / NAMA BARANG / HARGA SATUAN / JUMLAH (minimal 7 baris)
+     - Bawah kiri: rekening pembayaran + catatan
+     - Bawah kanan: rincian Sewa/Jual, Ongkir, Bongkar, Lembur, Uang Jaminan,
+       PPN (bila ada) & Jumlah -- kolom nilai sejajar dengan kolom Jumlah tabel
+     - Tanda tangan: Penerima & Hormat Kami
 
-     Seluruh selector CSS di-scope di bawah wrapper .nota-sewa-jual agar
-     tidak bentrok dengan layout nota proyek pada dokumen yang sama.
+     Style bersama ada di nota-pdf.blade.php (scope .nota); style khusus
+     layout ini di-scope ke .nota-sewa-jual.
      ===================================================================== --}}
 
 <style>
-    .nota-sewa-jual {
-        font-family: 'Arial', 'Helvetica', sans-serif;
-        font-size: 10px;
-        color: #000;
-        background: #fff;
-        margin: 20px;
-    }
-
-    .nota-sewa-jual .header-table {
+    /* Bagian bawah dijaga tetap utuh (tidak terpotong antar halaman) */
+    .nota-sewa-jual .bottom {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 10px;
+        page-break-inside: avoid;
+        margin-top: -1px; /* Garis atas rincian menumpuk tepat di garis bawah tabel barang */
     }
 
-    .nota-sewa-jual .header-left {
+    .nota-sewa-jual .bottom > tbody > tr > td,
+    .nota-sewa-jual .bottom > tr > td {
         vertical-align: top;
-        width: 60%;
-    }
-
-    .nota-sewa-jual .company-logo {
-        max-width: 280px;
-        height: auto;
-        display: block;
-        margin-bottom: 8px;
-    }
-
-    .nota-sewa-jual .faktur-box {
-        border-collapse: collapse;
-        width: 220px;
-        margin-top: 4px;
-    }
-
-    .nota-sewa-jual .faktur-box td {
-        border: 1px solid #000;
-        padding: 3px 6px;
-        font-size: 10px;
-        font-weight: bold;
-    }
-
-    .nota-sewa-jual .faktur-label {
-        width: 85px;
-        background-color: #ffffff;
-    }
-
-    .nota-sewa-jual .header-right {
-        vertical-align: top;
-        width: 40%;
-        text-align: right;
-    }
-
-    .nota-sewa-jual .kepada-box-wrapper {
-        display: inline-block;
-        text-align: left;
-        width: 220px;
-    }
-
-    .nota-sewa-jual .location-date {
-        font-size: 10px;
-        font-weight: bold;
-        margin-bottom: 6px;
-    }
-
-    .nota-sewa-jual .kepada-title {
-        font-size: 10px;
-        font-weight: bold;
-        margin-bottom: 4px;
-    }
-
-    .nota-sewa-jual .kepada-line {
-        border-bottom: 1px dotted #000;
-        min-height: 18px;
-        font-size: 10px;
-        font-weight: bold;
-        padding-left: 2px;
-    }
-
-    .nota-sewa-jual .main-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .nota-sewa-jual .main-table th,
-    .nota-sewa-jual .main-table td {
-        border: 1px solid #000;
-        padding: 5px 6px;
-        font-size: 10px;
-        vertical-align: middle;
-    }
-
-    .nota-sewa-jual .main-table th {
-        font-weight: bold;
-        text-align: center;
-        text-transform: uppercase;
-        font-size: 10px;
-        letter-spacing: 0.5px;
-    }
-
-    .nota-sewa-jual .col-banyaknya { width: 12%; text-align: center; }
-    .nota-sewa-jual .col-nama { width: 48%; }
-    .nota-sewa-jual .col-harga { width: 20%; text-align: center; }
-    .nota-sewa-jual .col-jumlah { width: 20%; text-align: center; }
-
-    .nota-sewa-jual .text-center { text-align: center; }
-    .nota-sewa-jual .text-right { text-align: right; }
-
-    .nota-sewa-jual .item-row { height: 22px; }
-    .nota-sewa-jual .empty-row td { height: 22px; }
-
-    .nota-sewa-jual .bottom-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: -1px;
-    }
-
-    .nota-sewa-jual .bottom-left-cell {
-        vertical-align: top;
-        width: 60%;
-        border: none;
-        padding: 10px 10px 0 0;
-    }
-
-    .nota-sewa-jual .bottom-right-cell {
-        vertical-align: top;
-        width: 40%;
         padding: 0;
-        border: none;
     }
 
-    .nota-sewa-jual .period-text {
-        font-size: 10px;
-        font-weight: bold;
-        margin-bottom: 8px;
+    /* Lebar kiri = No + Banyaknya + Nama Barang (5% + 17% + 34%) */
+    .nota-sewa-jual .bottom-left {
+        width: 56%;
+        padding: 8px 14px 0 0 !important;
     }
 
-    .nota-sewa-jual .period-line {
-        display: inline-block;
-        border-bottom: 1px dotted #000;
-        min-width: 100px;
-        text-align: center;
+    /* Lebar kanan = Harga Satuan + Jumlah (24% + 20%) */
+    .nota-sewa-jual .bottom-right {
+        width: 44%;
     }
 
     .nota-sewa-jual .bank-info {
-        font-size: 8.5px;
         margin-bottom: 8px;
-        line-height: 1.3;
     }
 
     .nota-sewa-jual .footer-note {
-        font-size: 8.5px;
-        line-height: 1.3;
         font-style: italic;
-        margin-bottom: 25px;
     }
 
-    .nota-sewa-jual .penerima-box {
-        font-size: 10px;
-        font-weight: bold;
-        text-align: left;
-    }
-
-    .nota-sewa-jual .penerima-space {
-        height: 40px;
-    }
-
-    .nota-sewa-jual .summary-table {
+    .nota-sewa-jual .summary {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .nota-sewa-jual .summary-table td {
+    .nota-sewa-jual .summary td {
         border: 1px solid #000;
         padding: 4px 6px;
-        font-size: 9.5px;
-        font-weight: bold;
-        height: 22px;
+        height: 24px;
+        vertical-align: middle;
     }
 
+    /* Kolom sejajar dengan kolom Harga Satuan (24/44) & Jumlah (20/44) tabel barang */
     .nota-sewa-jual .summary-label {
-        width: 50%;
-        text-align: left;
+        width: 55.1%;
+        white-space: nowrap;
     }
 
     .nota-sewa-jual .summary-value {
-        width: 50%;
-        text-align: right;
+        width: 44.9%;
+        text-align: center;
+        white-space: nowrap;
     }
 
-    .nota-sewa-jual .total-row td {
-        font-size: 10.5px;
+    .nota-sewa-jual .summary .total-row td {
         font-weight: bold;
+        background: #e8e8e8;
     }
 </style>
 
-<div class="nota-sewa-jual">
+@php
+    $items = $nota->items ?? [];
+    $rupiah = fn ($value) => 'Rp ' . number_format((int) $value, 0, ',', '.');
+    $notaDate = \Carbon\Carbon::parse($nota->nota_date)->locale('id')->translatedFormat('d F Y');
+    $hasPeriode = $nota->periode_start || $nota->periode_end;
 
-    <!-- HEADER -->
-    <table class="header-table">
+    // Persentase PPN tanpa desimal nol berlebih (11.00 -> 11, 11.50 -> 11,5)
+    $ppnLabel = rtrim(rtrim(number_format((float) $nota->ppn_percentage, 2, ',', '.'), '0'), ',');
+
+    // Rincian biaya tambahan (kosong ditampilkan "-")
+    $summaryRows = [
+        'Sewa / Jual' => $nota->sewa_jual,
+        'Ongkos Kirim PP / 1x' => $nota->ongkos_kirim,
+        'Bongkar / Pasang' => $nota->bongkar_pasang,
+        'Lembur Antar / Ambil' => $nota->lembur,
+        'Uang Jaminan' => $nota->uang_jaminan,
+    ];
+@endphp
+
+<div class="nota nota-sewa-jual">
+
+    <!-- KOP SURAT -->
+    <table class="kop">
         <tr>
-            <!-- KIRI: Logo & Box Faktur/SJ -->
-            <td class="header-left">
-                <img src="{{ public_path('images/invoice_administrasi.jpeg') }}" alt="PT. Aghitsna Karya Indah" class="company-logo">
+            <td class="kop-banner-cell">
+                <img src="{{ public_path('images/invoice_administrasi.jpeg') }}" alt="PT. Aghitsna Karya Indah" class="kop-banner">
+            </td>
+        </tr>
+    </table>
+    <div class="kop-rule"></div>
 
-                <table class="faktur-box">
+    <!-- JUDUL -->
+    <div class="doc-title"><span>NOTA</span></div>
+
+    <!-- BLOK INFO -->
+    <table class="info">
+        <tr>
+            <!-- KIRI: Nomor referensi & periode -->
+            <td class="info-left">
+                <table class="meta">
+                    <tr>
+                        <td class="meta-label">No. Nota</td>
+                        <td class="meta-colon">:</td>
+                        <td>{{ $nota->id_nota ?? '-' }}</td>
+                    </tr>
                     @if (trim((string) $nota->faktur_no) !== '')
                         <tr>
-                            <td class="faktur-label">FAKTUR No.</td>
+                            <td class="meta-label">Faktur No.</td>
+                            <td class="meta-colon">:</td>
                             <td>{{ $nota->faktur_no }}</td>
                         </tr>
                     @endif
                     @if (trim((string) $nota->sj_no) !== '')
                         <tr>
-                            <td class="faktur-label">SJ No.</td>
+                            <td class="meta-label">SJ No.</td>
+                            <td class="meta-colon">:</td>
                             <td>{{ $nota->sj_no }}</td>
+                        </tr>
+                    @endif
+                    @if ($hasPeriode)
+                        <tr>
+                            <td class="meta-label">Periode</td>
+                            <td class="meta-colon">:</td>
+                            <td>
+                                {{ $nota->periode_start ? \Carbon\Carbon::parse($nota->periode_start)->format('d/m/Y') : '-' }}
+                                s/d
+                                {{ $nota->periode_end ? \Carbon\Carbon::parse($nota->periode_end)->format('d/m/Y') : '-' }}
+                            </td>
                         </tr>
                     @endif
                 </table>
             </td>
 
-            <!-- KANAN: Tanggal & Kepada Yth. -->
-            <td class="header-right">
-                <div class="kepada-box-wrapper">
-                    <div class="location-date">
-                        {{ $nota->location }}, {{ \Carbon\Carbon::parse($nota->nota_date)->format('d F Y') }}
-                    </div>
-                    <div class="kepada-title">Kepada Yth,</div>
-                    <div class="kepada-line">{{ $nota->kepada }}</div>
-                    <div class="kepada-line"></div>
-                    <div class="kepada-line"></div>
+            <!-- KANAN: Tempat/Tanggal & Kepada Yth. -->
+            <td class="info-right">
+                <div class="place-date">
+                    {{ trim((string) $nota->location) !== '' ? $nota->location . ', ' : '' }}{{ $notaDate }}
                 </div>
+                <div class="kepada-label">Kepada Yth.</div>
+                <div class="kepada-value">{{ $nota->kepada ?: '-' }}</div>
             </td>
         </tr>
     </table>
 
-    <!-- TABEL BARANG UTAMA -->
-    <table class="main-table">
+    <!-- TABEL BARANG -->
+    <table class="items">
         <thead>
             <tr>
-                <th class="col-banyaknya">BANYAKNYA</th>
-                <th class="col-nama">NAMA BARANG</th>
-                <th class="col-harga">HARGA SATUAN</th>
-                <th class="col-jumlah">JUMLAH</th>
+                <th style="width: 5%;">No</th>
+                <th style="width: 17%;">Banyaknya</th>
+                <th style="width: 34%;">Nama Barang</th>
+                <th style="width: 24%;">Harga Satuan</th>
+                <th style="width: 20%;">Jumlah</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($nota->items as $item)
-                <tr class="item-row">
-                    <td class="col-banyaknya text-center">{{ $item['banyaknya'] }}</td>
-                    <td class="col-nama">{{ $item['nama_barang'] }}</td>
-                    <td class="col-harga text-right">Rp {{ number_format($item['harga_satuan'], 0, ',', '.') }}</td>
-                    <td class="col-jumlah text-right">Rp {{ number_format($item['jumlah'], 0, ',', '.') }}</td>
+            @foreach ($items as $item)
+                <tr>
+                    <td class="text-center">{{ $loop->iteration }}</td>
+                    <td class="text-center">{{ $item['banyaknya'] ?? '' }}</td>
+                    <td>{{ $item['nama_barang'] ?? '' }}</td>
+                    <td class="text-center nowrap">{{ $rupiah($item['harga_satuan'] ?? 0) }}</td>
+                    <td class="text-center nowrap">{{ $rupiah($item['jumlah'] ?? 0) }}</td>
                 </tr>
             @endforeach
 
-            <!-- Baris Kosong Pelengkap Grid (Minimal 7 Baris) -->
-            @for ($i = count($nota->items); $i < 7; $i++)
-                <tr class="empty-row">
-                    <td class="col-banyaknya"></td>
-                    <td class="col-nama"></td>
-                    <td class="col-harga"></td>
-                    <td class="col-jumlah"></td>
+            <!-- Baris kosong pelengkap grid (minimal 7 baris) -->
+            @for ($i = count($items); $i < 7; $i++)
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>
             @endfor
+
         </tbody>
     </table>
 
-    <!-- BAGIAN BAWAH -->
-    <table class="bottom-table">
+    <!-- BAGIAN BAWAH: Rekening & catatan (kiri), rincian biaya (kanan) -->
+    <table class="bottom">
         <tr>
-            <!-- KIRI: Periode, Rekening, Catatan & Penerima (TANPA BORDER) -->
-            <td class="bottom-left-cell">
-                <div class="period-text">
-                    Periode : <span class="period-line">{{ $nota->periode_start ? \Carbon\Carbon::parse($nota->periode_start)->format('d/m/Y') : '' }}</span> s/d <span class="period-line">{{ $nota->periode_end ? \Carbon\Carbon::parse($nota->periode_end)->format('d/m/Y') : '' }}</span>
-                </div>
-
+            <td class="bottom-left">
                 @php $banks = $nota->paymentAccounts(); @endphp
                 @if ($banks && $banks->count() > 0)
                     <div class="bank-info">
                         @foreach ($banks as $bank)
-                            <div><strong>Rek. {{ $bank->bank_name }}:</strong> {{ $bank->account_number }} a/n {{ $bank->account_holder }}</div>
+                            <div>Rek. {{ $bank->bank_name }} : {{ $bank->account_number }} a/n {{ $bank->account_holder }}</div>
                         @endforeach
                     </div>
                 @endif
 
                 <div class="footer-note">
-                    *) Faktur dianggap lunas setelah dana kami terima<br>
+                    *) Faktur dianggap lunas setelah dana kami terima
                     tunai atau telah ditransfer ke rekening kami.
-                </div>
-
-                <div class="penerima-box">
-                    Penerima,
-                    <div class="penerima-space"></div>
                 </div>
             </td>
 
-            <!-- KANAN: Rincian Total / Summary (Sewa/Jual, Ongkir, dll) -->
-            <td class="bottom-right-cell">
-                <table class="summary-table">
-                    <tr>
-                        <td class="summary-label">Sewa / Jual</td>
-                        <td class="summary-value">{{ $nota->sewa_jual ? 'Rp ' . number_format($nota->sewa_jual, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="summary-label">Ongkos Kirim PP / 1x</td>
-                        <td class="summary-value">{{ $nota->ongkos_kirim ? 'Rp ' . number_format($nota->ongkos_kirim, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="summary-label">Bongkar / Pasang</td>
-                        <td class="summary-value">{{ $nota->bongkar_pasang ? 'Rp ' . number_format($nota->bongkar_pasang, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="summary-label">Lembur Antar / Ambil</td>
-                        <td class="summary-value">{{ $nota->lembur ? 'Rp ' . number_format($nota->lembur, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="summary-label">Uang Jaminan</td>
-                        <td class="summary-value">{{ $nota->uang_jaminan ? 'Rp ' . number_format($nota->uang_jaminan, 0, ',', '.') : '' }}</td>
-                    </tr>
+            <td class="bottom-right">
+                <table class="summary">
+                    @foreach ($summaryRows as $label => $value)
+                        <tr>
+                            <td class="summary-label">{{ $label }}</td>
+                            <td class="summary-value">{{ $value ? $rupiah($value) : '-' }}</td>
+                        </tr>
+                    @endforeach
                     @if ($nota->ppn_percentage > 0)
-                    <tr>
-                        <td class="summary-label">PPN ({{ $nota->ppn_percentage }}%)</td>
-                        <td class="summary-value">Rp {{ number_format($nota->ppn_amount, 0, ',', '.') }}</td>
-                    </tr>
+                        <tr>
+                            <td class="summary-label">PPN ({{ $ppnLabel }}%)</td>
+                            <td class="summary-value">{{ $rupiah($nota->ppn_amount) }}</td>
+                        </tr>
                     @endif
                     <tr class="total-row">
-                        <td class="summary-label">Jumlah</td>
-                        <td class="summary-value">Rp {{ number_format($nota->total_with_ppn, 0, ',', '.') }}</td>
+                        <td class="summary-label">JUMLAH</td>
+                        <td class="summary-value">{{ $rupiah($nota->total_with_ppn) }}</td>
                     </tr>
                 </table>
             </td>
+        </tr>
+    </table>
+
+    <!-- TANDA TANGAN -->
+    <table class="sign">
+        <tr>
+            <td class="sign-col">Penerima,</td>
+            <td class="sign-gap"></td>
+            <td class="sign-col">Hormat Kami,</td>
+        </tr>
+        <tr>
+            <td class="sign-col sign-space"></td>
+            <td class="sign-gap"></td>
+            <td class="sign-col sign-space"></td>
+        </tr>
+        <tr>
+            <td class="sign-col"><span class="sign-name">{{ $nota->penerima ?: "\u{00A0}" }}</span></td>
+            <td class="sign-gap"></td>
+            <td class="sign-col"><span class="sign-name">&nbsp;</span></td>
         </tr>
     </table>
 
