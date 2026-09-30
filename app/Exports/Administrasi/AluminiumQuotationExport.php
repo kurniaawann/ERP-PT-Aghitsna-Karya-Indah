@@ -10,9 +10,11 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use Carbon\Carbon;
 
 class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
@@ -37,14 +39,31 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
 
     public function columnWidths(): array
     {
+        // Lebar dalam satuan karakter font dasar (Times New Roman 12); total ±85 agar muat lebar A4
         return [
             'A' => 5,   // No
-            'B' => 35,  // Keterangan
-            'C' => 12,  // Volume
-            'D' => 10,  // Satuan
-            'E' => 18,  // Harga
-            'F' => 20,  // Jumlah
+            'B' => 30,  // Keterangan
+            'C' => 9,   // Volume
+            'D' => 9,   // Satuan
+            'E' => 16,  // Harga
+            'F' => 16,  // Jumlah
         ];
+    }
+
+    /**
+     * Estimasi tinggi baris (pt) untuk teks yang di-wrap selebar $widthChars (satuan lebar kolom).
+     * Dibutuhkan karena Excel tidak auto-fit tinggi baris untuk sel yang di-merge.
+     */
+    private function estimateRowHeight(?string $text, float $widthChars, float $lineHeight = 15.75): float
+    {
+        // Rata-rata lebar huruf Times New Roman 12 ≈ 0,95 lebar digit (acuan satuan lebar kolom)
+        $charsPerLine = max(1, (int) floor($widthChars / 0.95));
+        $lines = 0;
+        foreach (preg_split('/\r\n|\r|\n/', (string) $text) as $paragraph) {
+            $lines += max(1, (int) ceil(mb_strlen($paragraph) / $charsPerLine));
+        }
+
+        return $lines * $lineHeight;
     }
 
     public function registerEvents(): array
@@ -54,70 +73,87 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $sheet = $event->sheet->getDelegate();
                 $quotation = $this->quotation;
 
-                // Set row heights
-                $sheet->getRowDimension(1)->setRowHeight(60);
-                $sheet->getRowDimension(2)->setRowHeight(15);
+                // Font dasar seluruh dokumen: Times New Roman 12 (revisi klien). Kop surat diperbesar terpisah.
+                $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(12);
+                // Tinggi baris standar untuk TNR 12 (posisi gambar TTD konsisten di Excel & LibreOffice)
+                $sheet->getDefaultRowDimension()->setRowHeight(15.75);
 
-                // Add logo image
+                // Pengaturan cetak: A4 portrait, seluruh kolom muat dalam 1 halaman lebar
+                $sheet->getPageSetup()
+                    ->setPaperSize(PageSetup::PAPERSIZE_A4)
+                    ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
+                    ->setFitToWidth(1)
+                    ->setFitToHeight(0);
+                $sheet->getPageMargins()->setTop(0.5)->setBottom(0.5)->setLeft(0.4)->setRight(0.4);
+
+                // Lebar gabungan kolom (untuk estimasi wrap teks)
+                $fullWidth = 85;   // A:F
+                $infoWidth = 32;   // E:F
+
+                // ═══ KOP SURAT ═══════════════════════════════════════════════════════
+                // Baris 1: logo (kiri) + judul dokumen (tengah halaman)
+                $sheet->getRowDimension(1)->setRowHeight(58);
+
                 $drawing = new Drawing();
                 $drawing->setName('Logo');
                 $drawing->setDescription('Company Logo');
                 $drawing->setPath(public_path('images/logo.jpeg'));
-                $drawing->setHeight(55);
+                $drawing->setWidth(115);
                 $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(5);
-                $drawing->setOffsetY(3);
+                $drawing->setOffsetX(2);
+                $drawing->setOffsetY(5);
                 $drawing->setWorksheet($sheet);
 
-                // Title (centered)
-                $sheet->mergeCells('B1:F1');
-                $sheet->setCellValue('B1', 'PENAWARAN ALUMUNIUM');
-                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
-                $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->mergeCells('A1:F1');
+                $sheet->setCellValue('A1', 'PENAWARAN');
+                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(20);
+                $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Company Name & Info (Row 2-6)
-                $sheet->mergeCells('A2:D2');
+                // Baris 2: nama usaha
+                $sheet->getRowDimension(2)->setRowHeight(24);
+                $sheet->mergeCells('A2:F2');
                 $sheet->setCellValue('A2', 'AGHITSNA ALUMUNIUM DAN BAJA RINGAN');
-                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
+                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_BOTTOM);
 
-                $sheet->mergeCells('A3:D3');
-                $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT.01/05');
-                $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                // Baris 3-6: alamat perusahaan (kiri, A:C)
+                $companyLines = [
+                    3 => 'JL. CEMARA RT 02 RW 07, KEL. GROGOL,',
+                    4 => 'KEC. LIMO, KOTA DEPOK',
+                    5 => 'Telp : 0838 9004 1408 / 0818 0844 4519',
+                    6 => 'Email : Design@aghitsna.id',
+                ];
+                foreach ($companyLines as $row => $text) {
+                    $sheet->mergeCells("A{$row}:C{$row}");
+                    $sheet->setCellValue("A{$row}", $text);
+                    $sheet->getStyle("A{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                }
 
-                $sheet->mergeCells('A4:D4');
-                $sheet->setCellValue('A4', 'BEJI, DEPOK, JAWA BARAT');
-                $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->mergeCells('A5:D5');
-                $sheet->setCellValue('A5', 'Telp. 021-29034923 - 0812.9596.552');
-                $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->mergeCells('A6:D6');
-                $sheet->setCellValue('A6', 'Email : Design@aghitsna.id');
-                $sheet->getStyle('A6')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                // Quotation Information (right side)
+                // Baris 3-5: informasi penawaran (kanan: label di D, nilai di E:F)
                 $quotationDate = Carbon::parse($quotation->date)->isoFormat('DD MMMM YYYY');
+                $infoLines = [
+                    3 => ['No', $quotation->quotation_number],
+                    4 => ['Tanggal', $quotationDate],
+                    5 => ['Hal', $quotation->subject],
+                ];
+                foreach ($infoLines as $row => [$label, $value]) {
+                    $sheet->setCellValue("D{$row}", $label);
+                    // Nilai "Hal" di-merge sampai baris 6 agar perihal panjang bisa turun ke baris berikutnya
+                    $sheet->mergeCells($row === 5 ? 'E5:F6' : "E{$row}:F{$row}");
+                    $sheet->setCellValue("E{$row}", ': ' . $value);
+                    $sheet->getStyle("D{$row}:E{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+                }
+                // Perihal lebih dari 2 baris: baris 6 dipertinggi
+                $halHeight = $this->estimateRowHeight(': ' . $quotation->subject, $infoWidth);
+                if ($halHeight > 2 * 15.75) {
+                    $sheet->getRowDimension(6)->setRowHeight($halHeight - 15.75);
+                }
 
-                $sheet->setCellValue('E2', 'No');
-                $sheet->setCellValue('F2', ': ' . $quotation->quotation_number);
-                $sheet->getStyle('E2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->setCellValue('E3', 'Tanggal');
-                $sheet->setCellValue('F3', ': ' . $quotationDate);
-                $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->setCellValue('E4', 'Hal');
-                $sheet->setCellValue('F4', ': ' . $quotation->subject);
-                $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                // Recipient (Row 8)
+                // ═══ PENERIMA (tidak bold, revisi klien) ═════════════════════════════
+                // Jarak ±1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
+                $sheet->getRowDimension(7)->setRowHeight(20);
                 $currentRow = 8;
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
 
                 // Recipient Name (Row 9)
@@ -132,15 +168,22 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 }
 
-                // Opening text (Row 11)
+                // Opening text
                 $currentRow += 2;
+                // Jarak ±1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight(20);
+                $openingText = $quotation->project_description
+                    ? 'Dengan ini kami sampaikan penawaran untuk proyek ' . $quotation->project_description . ' sebagai berikut :'
+                    : 'Dengan ini kami sampaikan penawaran sebagai berikut :';
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}",
-                    $quotation->project_description
-                        ? 'Dengan ini kami sampaikan penawaran untuk proyek ' . $quotation->project_description . ' sebagai berikut :'
-                        : 'Dengan ini kami sampaikan penawaran sebagai berikut :');
+                $sheet->setCellValue("A{$currentRow}", $openingText);
+                $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                $openingHeight = $this->estimateRowHeight($openingText, $fullWidth);
+                if ($openingHeight > 15.75) {
+                    $sheet->getRowDimension($currentRow)->setRowHeight($openingHeight);
+                }
 
-                // Table Header (Row 14)
+                // ═══ TABEL ITEMS ═════════════════════════════════════════════════════
                 $currentRow += 2;
                 $tableHeaderRow = $currentRow;
 
@@ -152,6 +195,9 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->setCellValue("F{$currentRow}", 'Jumlah');
 
                 // Style table header
+                $sheet->getRowDimension($currentRow)->setRowHeight(20);
+                // Header tabel diulang di setiap halaman saat dicetak
+                $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd($currentRow, $currentRow);
                 $sheet->getStyle("A{$currentRow}:F{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
@@ -169,45 +215,62 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
 
                 // Items and financial summary
                 $items = $quotation->items ?? [];
-                $grandTotal = (int) ($quotation->total_amount ?? 0);
+                // Total akhir = setelah diskon (sama dengan total invoice yang dibuat dari penawaran)
+                $grandTotal = $quotation->getFinalTotal();
                 $discountAmount = ($quotation->discount_type && (float) $quotation->discount_value > 0) ? (int) $quotation->getDiscountAmount() : 0;
                 $itemStartRow = $currentRow + 1;
 
                 foreach ($items as $index => $item) {
                     $currentRow++;
-                    $sheet->setCellValue("A{$currentRow}", ($index + 1) . '.');
-                    $sheet->setCellValue("B{$currentRow}", '   ' . ($item['keterangan'] ?? ''));
+                    $sheet->setCellValueExplicit("A{$currentRow}", ($index + 1) . '.', DataType::TYPE_STRING);
+                    $sheet->setCellValue("B{$currentRow}", $item['keterangan'] ?? '');
+                    // Tinggi baris eksplisit (keterangan panjang di-wrap) + sedikit ruang atas-bawah;
+                    // juga menjaga posisi gambar TTD tetap benar saat dibuka di LibreOffice
+                    $sheet->getRowDimension($currentRow)->setRowHeight($this->estimateRowHeight($item['keterangan'] ?? '', 28) + 4);
                     $volume = $item['volume'] ?? 0;
                     $sheet->setCellValue("C{$currentRow}", ($volume !== null && $volume !== '') ? number_format((float) $volume, 2, ',', '.') : '-');
                     $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '-');
                     $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'] ?? 0, 0, ',', '.'));
                     $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.'));
-
-                    // Style alignment
-                    $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
                 $itemEndRow = $currentRow;
 
-                // Apply borders to all items
-                $sheet->getStyle("A{$itemStartRow}:F{$itemEndRow}")->applyFromArray([
-                    'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN]
-                    ]
-                ]);
+                if ($itemEndRow >= $itemStartRow) {
+                    // Border + perataan: No/Volume/Satuan/Harga/Jumlah rata tengah, Keterangan rata kiri (wrap)
+                    $sheet->getStyle("A{$itemStartRow}:F{$itemEndRow}")->applyFromArray([
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                        ],
+                    ]);
+                    $sheet->getStyle("B{$itemStartRow}:B{$itemEndRow}")->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                        ->setWrapText(true)
+                        ->setIndent(1);
+                }
 
                 // Discount row (optional)
                 if ($discountAmount > 0) {
                     $currentRow++;
-                    $sheet->setCellValue("E{$currentRow}", 'Discount' . ($quotation->discount_type === 'percentage' ? ' (' . number_format((float) $quotation->discount_value, 2, ',', '.') . '%)' : ''));
+                    // Persentase tanpa nol di belakang koma (sama seperti PDF), mis. "5%" bukan "5,00%"
+                    $discountPercent = rtrim(rtrim(number_format((float) $quotation->discount_value, 2, ',', '.'), '0'), ',');
+                    $sheet->setCellValue("E{$currentRow}", 'Discount' . ($quotation->discount_type === 'percentage' ? ' (' . $discountPercent . '%)' : ''));
                     $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($discountAmount, 0, ',', '.'));
-                    $sheet->getStyle("E{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getRowDimension($currentRow)->setRowHeight(20);
+                    $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
+                        'font' => ['bold' => true],
+                        'borders' => [
+                            'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_CENTER,
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                        ],
+                    ]);
                 }
 
                 // Grand Total row - match PDF layout: empty 4 cols + "Total" in E + amount in F
@@ -230,27 +293,36 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     ]
                 ]);
 
-                // Style yellow cells (E-F)
+                // Style yellow cells (E-F), label & nominal rata tengah
+                $sheet->getRowDimension($currentRow)->setRowHeight(20);
                 $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
-                    'font' => ['bold' => true, 'size' => 12],
+                    'font' => ['bold' => true],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'FFFF00']
                     ],
                     'borders' => [
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
-                    ]
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
                 ]);
 
-                $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
-                // Terbilang
+                // Terbilang (bold, revisi klien)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $amountInWords = $quotation->amount_in_words ?? ucwords(terbilang($grandTotal)) . ' rupiah';
-                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . $amountInWords);
-                $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
+                $amountInWords = ucwords(terbilang($grandTotal)) . ' rupiah';
+                $terbilangText = 'Terbilang : ' . $amountInWords;
+                $sheet->setCellValue("A{$currentRow}", $terbilangText);
+                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->setItalic(true);
+                $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                // Teks bold lebih lebar ±10% dari teks biasa
+                $terbilangHeight = $this->estimateRowHeight($terbilangText, $fullWidth / 1.1);
+                if ($terbilangHeight > 15.75) {
+                    $sheet->getRowDimension($currentRow)->setRowHeight($terbilangHeight);
+                }
 
                 // Payment Information
                 $currentRow += 2;
@@ -278,6 +350,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     return $value;
                 };
 
+                // Nama bank, nomor rekening & a/n tidak bold (revisi klien)
                 foreach ($paymentAccounts as $account) {
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
@@ -285,29 +358,34 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     $accountNumber = $sanitizeForExcel($account->account_number);
                     $accountHolder = $sanitizeForExcel($account->account_holder);
                     $sheet->setCellValue("A{$currentRow}", "Bank {$bankName} / No : {$accountNumber} a/n {$accountHolder}");
-                    $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
                 }
 
                 // Closing
                 $currentRow += 2;
+                $closingText = 'Demikian penawaran ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terimakasih';
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Demikian penawaran ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terimakasih');
-                $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
+                $sheet->setCellValue("A{$currentRow}", $closingText);
+                $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                $closingHeight = $this->estimateRowHeight($closingText, $fullWidth);
+                if ($closingHeight > 15.75) {
+                    $sheet->getRowDimension($currentRow)->setRowHeight($closingHeight);
+                }
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Hormat Kami,');
 
+                // Nama perusahaan tidak bold (revisi klien)
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'PT.AGHITSNA KARYA INDAH');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+                $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
 
                 // Signature space
                 if ($quotation->signedBy?->signature_image) {
                     $signaturePath = storage_path('app/public/' . $quotation->signedBy->signature_image);
                     if (is_file($signaturePath)) {
-                        $currentRow += 2;
+                        // Gambar TTD tepat di bawah nama perusahaan, nama penanda tangan tepat di bawahnya
+                        $currentRow++;
                         $signatureDrawing = new Drawing();
                         $signatureDrawing->setName('Tanda Tangan');
                         $signatureDrawing->setDescription('Tanda Tangan ' . $quotation->signedBy->name);
@@ -315,11 +393,11 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                         $signatureDrawing->setHeight(55);
                         $signatureDrawing->setCoordinates("A{$currentRow}");
                         $signatureDrawing->setOffsetX(10);
-                        $signatureDrawing->setOffsetY(2);
+                        $signatureDrawing->setOffsetY(4);
                         $signatureDrawing->setWorksheet($sheet);
 
-                        $sheet->getRowDimension($currentRow)->setRowHeight(45);
-                        $currentRow += 3;
+                        $sheet->getRowDimension($currentRow)->setRowHeight(48);
+                        $currentRow++;
                     } else {
                         $currentRow += 4;
                     }
@@ -327,9 +405,9 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     $currentRow += 4;
                 }
 
+                // Nama penanda tangan tidak bold (revisi klien)
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", $quotation->signedBy?->name ?? '');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");

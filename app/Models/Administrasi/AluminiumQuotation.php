@@ -113,6 +113,20 @@ class AluminiumQuotation extends Model
         );
     }
 
+    /**
+     * Total akhir penawaran (setelah diskon) untuk ditampilkan & diterbilangkan.
+     *
+     * Aturan sama dengan service saat menyimpan total_after_discount: diskon
+     * hanya dipotong bila > 0 dan lebih kecil dari total.
+     */
+    public function getFinalTotal(): int
+    {
+        $total = (int) ($this->total_amount ?? 0);
+        $discount = (int) $this->getDiscountAmount();
+
+        return ($discount > 0 && $discount < $total) ? $total - $discount : $total;
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**

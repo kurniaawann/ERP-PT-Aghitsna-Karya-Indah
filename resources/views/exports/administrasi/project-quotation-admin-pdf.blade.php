@@ -11,12 +11,19 @@
             box-sizing: border-box;
         }
 
+        /* Margin halaman A4. Di dompdf, @page diterapkan ke elemen root (html) sehingga ikut
+           tertimpa reset "*" di atas — karena itu margin halaman ditegaskan langsung di html
+           (berlaku di setiap halaman, termasuk cetak multi penawaran). */
+        html {
+            margin: 12mm 15mm;
+        }
+
+        /* Seluruh isi surat Times New Roman 12pt (kecuali kop surat yang lebih besar) */
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size:12px;
-            line-height: 1.5;
+            font-size: 12pt;
+            line-height: 1.35;
             color: #000;
-            padding: 15mm;
         }
 
         /* ── Kop Surat ────────────────────────────────────────── */
@@ -33,64 +40,63 @@
         }
 
         .logo-cell {
-            width: 90px;
+            width: 125px;
         }
 
         .logo-cell img {
             display: block;
-            width: 80px;
+            width: 115px;
             height: auto;
-            object-fit: contain;
         }
 
         .company-title {
             color: #e53935;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 20pt;
             letter-spacing: 0.5px;
             font-family: Arial, sans-serif;
+            line-height: 1.2;
             margin-bottom: 3px;
         }
 
         .company-address {
             color: #1565c0;
-            font-size: 9.5px;
+            font-size: 10pt;
             font-weight: bold;
-            line-height: 1.3;
+            line-height: 1.35;
             font-family: Arial, sans-serif;
         }
 
         .header-divider {
             border-bottom: 3px solid #1565c0;
-            margin-bottom: 15px;
+            margin-bottom: 14px;
         }
 
         /* ── Document Title ──────────────────────────────────── */
         .doc-title {
             text-align: center;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 16pt;
             text-decoration: underline;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             letter-spacing: 0.5px;
         }
 
         /* ── Document Meta Info ──────────────────────────────── */
-       .meta-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 10px; /* Jarak ke teks di bawahnya (Kepada Yth) */
-    font-size:12px;
-    line-height: 1.1;    /* Dipersingkat/dirapatkan (default body 1.5) */
-}
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px; /* Jarak ke teks di bawahnya (Kepada Yth) */
+            line-height: 1.25;   /* Dirapatkan dibanding body */
+        }
 
-.meta-table td {
-    padding: 0;          /* Mengeliminasi jarak padding atas-bawah sel */
-    vertical-align: top;
-}
+        .meta-table td {
+            padding: 0;          /* Mengeliminasi jarak padding atas-bawah sel */
+            vertical-align: top;
+        }
 
         .meta-table td.label {
-            width: 75px;
+            width: 80px;
         }
 
         .meta-table td.colon {
@@ -100,24 +106,19 @@
 
         /* ── Recipient & Opening ─────────────────────────────── */
         .recipient-block {
-            margin-bottom: 12px;
-            font-size:12px;
-            line-height: 1.4;
+            margin-bottom: 10px;
         }
 
         .opening-text {
-            margin-bottom: 12px;
-            font-size:12px;
+            margin-bottom: 8px;
             text-align: justify;
-            line-height: 1.5;
         }
 
         /* ── Free Text (mode Teks/Deskripsi) ─────────────────────── */
         .free-text-block {
-            margin: 10px 0;
-            font-size: 12px;
+            margin: 8px 0;
             text-align: justify;
-            line-height: 1.6;
+            line-height: 1.5;
             white-space: normal;
         }
 
@@ -125,14 +126,15 @@
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 10px;
+            margin: 8px 0 0 0;
         }
 
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 5px 5px;
+            padding: 4px 5px;
+            font-size: 12pt;
+            vertical-align: middle;
         }
 
         .items-table thead tr {
@@ -142,16 +144,10 @@
         .items-table thead th {
             font-weight: bold;
             text-align: center;
-            font-size: 10.5px;
         }
 
         .items-table tbody tr.row-grand-total {
             font-weight: bold;
-            font-size: 10.5px;
-        }
-
-        .items-table tbody tr.row-grand-total td {
-            padding: 6px 5px;
         }
 
         /* Menghilangkan garis/border pada area kosong Discount & Total */
@@ -160,7 +156,11 @@
             border: none !important;
         }
 
-       
+        /* Sel rata tengah (No, Volume, Satuan, Harga, Jumlah, ringkasan) tidak dipecah baris
+           agar "Rp" tidak terpisah dari nominal */
+        .items-table td.c {
+            white-space: nowrap;
+        }
 
         /* Alignment Helpers */
         .c { text-align: center; }
@@ -169,50 +169,41 @@
 
         /* ── Footer Info ────────────────────────────────────── */
         .terbilang {
-            margin: 8px 0;
-            font-size: 10px;
+            margin: 10px 0 8px 0;
             font-style: italic;
-        }
-
-        .payment-info {
-            margin: 10px 0;
-            font-size: 10px;
-            line-height: 1.5;
+            font-weight: bold;
         }
 
         .closing-text {
-            margin: 12px 0;
-            font-size:12px;
+            margin: 10px 0;
             text-align: justify;
-            line-height: 1.5;
         }
 
         /* ── Signature Section ──────────────────────────────── */
         .signature-container {
             width: 100%;
-            margin-top: 15px;
+            margin-top: 12px;
         }
 
         .signature-box {
             float: left;
-            width: 230px;
-            font-size:12px;
-            line-height: 1.4;
+            width: 260px;
+            line-height: 1.35;
         }
 
         .signature-img-wrapper {
-            height: 55px;
-            margin: 5px 0;
+            height: 60px;
+            margin: 4px 0;
         }
 
         .signature-img-wrapper img {
-            max-height: 55px;
-            max-width: 160px;
+            max-height: 60px;
+            max-width: 170px;
             object-fit: contain;
         }
 
+        /* Nama penanda tangan tidak bold (revisi klien), tetap bergaris bawah */
         .signature-name {
-            font-weight: bold;
             text-decoration: underline;
         }
 
@@ -247,22 +238,23 @@
             $items = $q->items ?? [];
             $itemsMode = $q->items_mode ?? 'items';
             $discountAmount = ($q->discount_type && (float) $q->discount_value > 0) ? (int) $q->getDiscountAmount() : 0;
-            $grandTotal = (int) ($q->total_amount ?? 0) - $discountAmount;
+            $grandTotal = $q->getFinalTotal();
         @endphp
 
         {{-- ═══ KOP SURAT ═════════════════════════════════════════════════════════════ --}}
         <table class="header-table">
             <tr>
-                <td>
-                    <div class="logo-cell">
-                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="auto">
+                <td class="logo-cell">
+                    <div>
+                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="115">
                     </div>
                 </td>
-                <td style="padding-left: 10px;">
+                <td>
                     <div class="company-title">PT. AGHITSNA KARYA INDAH</div>
                     <div class="company-address">
                         JL. PERTIWI NO.36 TANAH BARU RAYA RT.01/05, BEJI. DEPOK, JAWA BARAT<br>
-                        Telp. 021-29034923 – 0812.9596.552, Email : design@aghitsna.id / Zulkarnainmarzuki@yahoo.com
+                        Telp. 021-29034923 – 0812.9596.552<br>
+                        Email : design@aghitsna.id / Zulkarnainmarzuki@yahoo.com
                     </div>
                 </td>
             </tr>
@@ -319,9 +311,9 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width:4%">No</th>
-                    <th style="width:36%">Keterangan</th>
-                    <th style="width:9%">Volume</th>
+                    <th style="width:5%">No</th>
+                    <th style="width:34%">Keterangan</th>
+                    <th style="width:10%">Volume</th>
                     <th style="width:9%">Satuan</th>
                     <th style="width:21%">Harga</th>
                     <th style="width:21%">Jumlah</th>
@@ -335,7 +327,7 @@
                         <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
                         <td class="c">{{ $item['satuan'] ?? '-' }}</td>
                         <td class="c">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="r">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
+                        <td class="c">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
 
@@ -344,7 +336,7 @@
                     <tr>
                         <td colspan="4" class="empty-cell"></td>
                         <td class="c">Discount {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
-                        <td class="r">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
+                        <td class="c">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
                     </tr>
                 @endif
 
@@ -352,14 +344,14 @@
                 <tr class="row-grand-total">
                     <td colspan="4" class="empty-cell"></td>
                     <td class="c yellow-cell">Total</td>
-                    <td class="r yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
+                    <td class="c yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
                 </tr>
             </tbody>
         </table>
 
         {{-- ═══ TERBILANG ═══════════════════════════════════════════════════════════ --}}
         <div class="terbilang">
-            <em>Terbilang : {{ ucwords(terbilang($grandTotal)) . ' rupiah' }}</em>
+            Terbilang : {{ ucwords(terbilang($grandTotal)) . ' rupiah' }}
         </div>
         @endif
 

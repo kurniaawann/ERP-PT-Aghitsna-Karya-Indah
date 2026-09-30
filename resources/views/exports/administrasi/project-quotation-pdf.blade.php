@@ -11,15 +11,22 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 11px;
-            line-height: 1.5;
-            color: #000;
-            padding: 15mm;
+        /* Margin halaman A4. Di dompdf, @page diterapkan ke elemen root (html) sehingga ikut
+           tertimpa reset "*" di atas — karena itu margin halaman ditegaskan langsung di html
+           (berlaku di setiap halaman, termasuk cetak multi penawaran). */
+        html {
+            margin: 12mm 15mm;
         }
 
-        /* ── Header (Table Layout) ──────────────────────────── */
+        /* Seluruh isi dokumen Times New Roman 12pt (kecuali kop surat yang lebih besar) */
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.3;
+            color: #000;
+        }
+
+        /* ── Kop Surat ──────────────────────────────────────── */
         .header-table {
             width: 100%;
             border-collapse: collapse;
@@ -30,99 +37,65 @@
             padding: 0;
         }
 
-        .logo-cell {
-            width: 100px;
-            vertical-align: top;
-            padding-right: 10px;
-        }
-
         .logo-cell img {
             display: block;
-            width: 80px;
-            height: 60px;
-            object-fit: contain;
+            width: 115px;
+            height: auto;
         }
 
-        .invoice-title {
-            font-size: 24px;
+        .doc-title {
+            font-size: 20pt;
             font-weight: bold;
+            letter-spacing: 2px;
+            text-align: center;
         }
 
         .company-address {
-            font-size: 10px;
-            line-height: 1.8;
+            font-size: 12pt;
+            line-height: 1.3;
+            padding-top: 8px;
         }
 
         .invoice-info {
-            font-size: 11px;
-            line-height: 1.8;
-        }
-
-        .invoice-info table {
-            margin-left: 0;
+            margin-top: 8px;
         }
 
         .invoice-info td {
-            padding: 2px 0;
-        }
-
-        .invoice-info td:first-child {
-            width: 65px;
-        }
-
-        .invoice-info td:nth-child(2) {
-            width: 10px;
-        }
-
-        /* ── Recipient ──────────────────────────────────────── */
-        .recipient-section {
-            margin: 10px 0 8px 0;
-            font-size: 11px;
-        }
-
-        .recipient-label {
-            margin-bottom: 5px;
-        }
-
-        .recipient-name {
-            margin-left: 80px;
-        }
-
-        .recipient-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .recipient-table td {
-            border: none;
-            padding: 2px 0;
+            padding: 0 0 1px 0;
             vertical-align: top;
         }
 
-        .recipient-table .recipient-label-cell {
-            font-weight: bold;
-            width: 80px;
-            white-space: nowrap;
+        .invoice-info td.label {
+            width: 70px;
         }
 
-        .recipient-table .recipient-name-cell {
-            padding-left: 5px;
+        .invoice-info td.colon {
+            width: 12px;
         }
 
-        .ditempat {
-            margin: 8px 0;
-            font-size: 11px;
+        /* ── Recipient ──────────────────────────────────────── */
+        /* Jarak ±1 baris kosong: Email → Kepada Yth → "Dengan ini kami sampaikan" */
+        .recipient-section {
+            margin: 24px 0 0 0;
+        }
+
+        .recipient-label {
+            margin-bottom: 2px;
         }
 
         .opening {
-            margin: 8px 0 10px 0;
-            font-size: 11px;
+            margin: 20px 0 8px 0;
         }
 
+        /* Blok No/Tanggal/Hal rata ke tepi kanan (sejajar tepi kanan tabel item) */
+        table.invoice-info {
+            margin-left: auto;
+        }
+
+        /* ── Free Text (mode Teks/Deskripsi) ─────────────────── */
         .free-text-block {
-            margin: 10px 0;
-            font-size: 11px;
-            line-height: 1.7;
+            margin: 8px 0;
+            line-height: 1.5;
             text-align: justify;
             white-space: normal;
         }
@@ -131,14 +104,15 @@
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 10px;
+            margin: 8px 0 0 0;
         }
 
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 6px 5px;
+            padding: 4px 5px;
+            font-size: 12pt;
+            vertical-align: middle;
         }
 
         .items-table thead tr {
@@ -148,22 +122,22 @@
         .items-table thead th {
             font-weight: bold;
             text-align: center;
-            font-size: 11px;
         }
 
         .items-table tbody tr.row-grand-total {
             font-weight: bold;
-            font-size: 11px;
-        }
-
-        .items-table tbody tr.row-grand-total td {
-            padding: 8px 5px;
         }
 
         /* Menghilangkan border pada cell kosong (No, Keterangan, Volume, Satuan) */
         .items-table td.empty-cell {
             background-color: transparent !important;
             border: none !important;
+        }
+
+        /* Sel rata tengah (No, Volume, Satuan, Harga, Jumlah, ringkasan) tidak dipecah baris
+           agar "Rp" tidak terpisah dari nominal */
+        .items-table td.c {
+            white-space: nowrap;
         }
 
         .items-table td.yellow-cell {
@@ -185,35 +159,19 @@
 
         /* ── Footer sections ────────────────────────────────── */
         .terbilang {
-            margin: 12px 0;
-            font-size: 10px;
+            margin: 10px 0 8px 0;
             font-style: italic;
+            font-weight: bold;
         }
 
         .payment-info {
-            margin: 12px 0;
-            font-size: 10px;
-            line-height: 1.8;
+            margin: 8px 0;
+            line-height: 1.4;
         }
 
         .closing {
-            margin: 15px 0 10px 0;
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        .signature {
-            margin-top: 40px;
-            font-size: 11px;
-        }
-
-        .signature-line {
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-
-        .signature-division {
-            font-size: 10px;
+            margin: 8px 0 0 0;
+            line-height: 1.4;
         }
 
         .page-break {
@@ -239,7 +197,8 @@
         @php
             $items = $q->items ?? [];
             $itemsMode = $q->items_mode ?? 'items';
-            $grandTotal = $q->total_amount;
+            // Total akhir = setelah diskon (sama dengan total invoice yang dibuat dari penawaran)
+            $grandTotal = $q->getFinalTotal();
             $discountAmount = ($q->discount_type && (float) $q->discount_value > 0) ? $q->getDiscountAmount() : 0;
             $selectedIds = $q->selected_payment_accounts ?? [];
             if (!empty($selectedIds)) {
@@ -251,58 +210,56 @@
             }
         @endphp
 
-    {{-- ═══ HEADER (TABLE LAYOUT) ══════════════════════════════════════════════════ --}}
+    {{-- ═══ KOP SURAT ═══════════════════════════════════════════════════════════════ --}}
+    {{-- Baris 1: logo (kiri) + judul dokumen (tengah halaman) --}}
     <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
-            <td width="45%" valign="top" style="padding-bottom: 15px;">
-                <div class="logo-cell">
-                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
-                </div>
+            <td width="30%" valign="middle" class="logo-cell">
+                <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="115">
             </td>
-            <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
-                <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                    PENAWARAN
-                </div>
+            <td width="40%" valign="middle">
+                <div class="doc-title">PENAWARAN</div>
             </td>
-            <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
+            <td width="30%"></td>
         </tr>
+    </table>
+
+    {{-- Baris 2: alamat perusahaan (kiri) + info penawaran (kanan) --}}
+    <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
-            <td valign="top">
-                <div class="company-address" style="font-size: 12px; line-height: 1.4;">
+            <td width="55%" valign="top">
+                <div class="company-address">
                     JL. TANAH BARU RAYA PERTIWI RT.01/05<br>
                     BEJI, DEPOK, JAWA BARAT<br>
                     Telp. 021-29034923 - 0812.9596.552<br>
                     Email : Design@aghitsna.id
                 </div>
             </td>
-            <td valign="top"></td>
-            <td valign="top">
-                <div class="invoice-info" style="font-size: 12px;">
-                    <table cellpadding="0" cellspacing="0" border="0" align="right">
-                        <tr>
-                            <td style="padding-right: 5px;" valign="top">No</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top">{{ $q->quotation_number }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding-right: 5px;" valign="top">Tanggal</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top">{{ \Carbon\Carbon::parse($q->date)->isoFormat('DD MMMM YYYY') }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding-right: 5px;" valign="top">Hal</td>
-                            <td style="padding-right: 5px;" valign="top">:</td>
-                            <td valign="top">{{ $q->subject }}</td>
-                        </tr>
-                    </table>
-                </div>
+            <td width="45%" valign="top">
+                <table class="invoice-info" cellpadding="0" cellspacing="0" border="0" align="right">
+                    <tr>
+                        <td class="label">No</td>
+                        <td class="colon">:</td>
+                        <td>{{ $q->quotation_number }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Tanggal</td>
+                        <td class="colon">:</td>
+                        <td>{{ \Carbon\Carbon::parse($q->date)->isoFormat('DD MMMM YYYY') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Hal</td>
+                        <td class="colon">:</td>
+                        <td>{{ $q->subject }}</td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>
 
     {{-- ═══ RECIPIENT ══════════════════════════════════════════════════════════════ --}}
     <div class="recipient-section">
-        <div class="recipient-label"><strong>Kepada Yth :</strong></div>
+        <div class="recipient-label">Kepada Yth :</div>
         <div>
             <div>{{ $q->recipient }}</div>
             @if (!empty($q->proyek))
@@ -328,9 +285,9 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width:4%">No</th>
-                <th style="width:36%">Keterangan</th>
-                <th style="width:9%">Volume</th>
+                <th style="width:5%">No</th>
+                <th style="width:34%">Keterangan</th>
+                <th style="width:10%">Volume</th>
                 <th style="width:9%">Satuan</th>
                 <th style="width:21%">Harga</th>
                 <th style="width:21%">Jumlah</th>
@@ -344,7 +301,7 @@
                     <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
                     <td class="c">{{ $item['satuan'] ?? '-' }}</td>
                     <td class="c">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                    <td class="r">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
+                    <td class="c">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
                 </tr>
             @endforeach
 
@@ -353,7 +310,7 @@
                 <tr>
                     <td colspan="4" class="empty-cell"></td>
                     <td class="c">Discount {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
-                    <td class="r">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
+                    <td class="c">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
                 </tr>
             @endif
 
@@ -361,33 +318,32 @@
             <tr class="row-grand-total">
                 <td colspan="4" class="empty-cell"></td>
                 <td class="c yellow-cell">Total</td>
-                <td class="r yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
+                <td class="c yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
 
     {{-- ═══ TERBILANG ══════════════════════════════════════════════════════════════════ --}}
     <div class="terbilang">
-        <em>Terbilang : {{ $q->amount_in_words ?? ucwords(terbilang($q->total_amount)) . ' rupiah' }}</em>
+        Terbilang : {{ ucwords(terbilang($grandTotal)) . ' rupiah' }}
     </div>
     @endif
 
     {{-- ═══ FOOTER ══════════════════════════════════════════════════════════════════ --}}
     <div class="payment-info">
-        Pembayaran dapat di transfer melalui rekening<br><br>
+        Pembayaran dapat di transfer melalui rekening<br>
         @foreach ($paymentAccounts as $acc)
-            Bank <strong>{{ $acc->bank_name }}</strong> / No : <strong>{{ $acc->account_number }}</strong>
-            a/n <strong>{{ $acc->account_holder }}</strong><br>
+            Bank {{ $acc->bank_name }} / No : {{ $acc->account_number }} a/n {{ $acc->account_holder }}<br>
         @endforeach
     </div>
 
     <div class="closing">
-        Demikian penawaran ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terimakasih<br><br>
+        Demikian penawaran ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terimakasih<br>
         Hormat Kami,<br>
-        <strong>PT.AGHITSNA KARYA INDAH</strong>
+        PT. AGHITSNA KARYA INDAH
     </div>
 
-    <div class="signature" style="margin-top: {{ $q->signedBy?->signature_image ? '5px' : '40px' }};">
+    <div class="signature" style="margin-top: {{ $q->signedBy?->signature_image ? '5px' : '60px' }};">
         @if ($q->signedBy?->signature_image)
             <img src="{{ storage_path('app/public/' . $q->signedBy->signature_image) }}" alt="Tanda Tangan"
                 style="max-height: 55px; max-width: 160px;">
