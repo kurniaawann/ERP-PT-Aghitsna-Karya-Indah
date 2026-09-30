@@ -102,6 +102,7 @@ class ItemInvoiceService
             $normalized[] = [
                 'name_item' => trim((string) ($item['name_item'] ?? '')),
                 'quantity' => (int) ($item['quantity'] ?? 0),
+                'satuan' => mb_substr(trim((string) ($item['satuan'] ?? '')), 0, 50),
                 'capital_price' => InputNormalizer::normalizeCurrency($item['capital_price'] ?? 0),
                 'selling_price' => InputNormalizer::normalizeCurrency($item['selling_price'] ?? 0),
                 'from_stock' => filter_var($item['from_stock'] ?? false, FILTER_VALIDATE_BOOLEAN),
@@ -163,6 +164,7 @@ class ItemInvoiceService
             $processedItems[] = [
                 'name_item' => $nameItem,
                 'quantity' => $quantity,
+                'satuan' => mb_substr(trim((string) ($item['satuan'] ?? '')), 0, 50),
                 'capital_price' => $capitalPrice,
                 'selling_price' => $sellingPrice,
                 'from_stock' => $fromStock,

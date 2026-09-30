@@ -33,6 +33,7 @@
                         <th class="border border-border-strong px-2 py-2 text-left text-sm">No</th>
                         <th class="border border-border-strong px-2 py-2 text-left text-sm">Nama Barang</th>
                         <th class="border border-border-strong px-2 py-2 text-right text-sm">Qty</th>
+                        <th class="border border-border-strong px-2 py-2 text-left text-sm">Satuan</th>
                         <th class="border border-border-strong px-2 py-2 text-right text-sm">Harga Modal</th>
                         <th class="border border-border-strong px-2 py-2 text-right text-sm">Harga Jual</th>
                         <th class="border border-border-strong px-2 py-2 text-right text-sm">Jumlah</th>
@@ -50,6 +51,7 @@
                             </td>
                             <td class="border border-border-strong px-2 py-2 text-right text-sm">
                                 {{ $item['quantity'] ?? 0 }}</td>
+                            <td class="border border-border-strong px-2 py-2 text-sm">{{ $item['satuan'] ?? '' }}</td>
                             <td class="border border-border-strong px-2 py-2 text-right text-sm">Rp
                                 {{ number_format($item['capital_price'] ?? 0, 0, ',', '.') }}</td>
                             <td class="border border-border-strong px-2 py-2 text-right text-sm">Rp
@@ -62,7 +64,7 @@
                         </tr>
                     @endforeach
                     <tr class="bg-primary/10 font-bold">
-                        <td colspan="5" class="border border-border-strong px-2 py-2 text-right text-sm">TOTAL</td>
+                        <td colspan="6" class="border border-border-strong px-2 py-2 text-right text-sm">TOTAL</td>
                         <td class="border border-border-strong px-2 py-2 text-right text-sm text-primary">Rp
                             {{ number_format($invoice->total_selling, 0, ',', '.') }}</td>
                         <td class="border border-border-strong px-2 py-2 text-sm">{{ $invoice->status_label }}</td>

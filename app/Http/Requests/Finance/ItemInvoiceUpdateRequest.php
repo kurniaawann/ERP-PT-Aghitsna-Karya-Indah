@@ -35,6 +35,7 @@ class ItemInvoiceUpdateRequest extends FormRequest
             'project_description' => 'nullable|string|max:255',
             'proyek' => 'nullable|string|max:255',
             'items' => 'required|array|min:1',
+            'items.*.satuan' => 'nullable|string|max:50',
             'selected_payment_accounts' => 'nullable|array',
             'selected_payment_accounts.*' => 'integer|exists:payment_accounts,id',
             'signed_by_id' => 'nullable|exists:executives,id',

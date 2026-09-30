@@ -12,11 +12,12 @@
             box-sizing: border-box;
         }
 
+        /* Font dokumen: Times New Roman 12pt (termasuk isi tabel item) */
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 11px;
-            line-height: 1.4;
-            padding: 15mm 15mm 15mm 15mm;
+            font-size: 12pt;
+            line-height: 1.25;
+            padding: 10mm 15mm 10mm 15mm;
             position: relative;
         }
 
@@ -39,116 +40,81 @@
             margin: 0 auto;
         }
 
-        .header {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .header-table {
+        /* ── Kop Surat (lebih besar dari isi dokumen) ── */
+        .header-table,
+        .company-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .header-table td {
+        .header-table td,
+        .company-table td {
             border: none;
             padding: 0;
         }
 
-        .logo-cell {
-            width: 100px;
-            vertical-align: top;
-            padding-right: 10px;
-        }
-
         .logo-cell img {
             display: block;
-            width: 80px;
-            height: 60px;
-            object-fit: contain;
-        }
-
-        .title-cell {
-            text-align: center;
-            vertical-align: middle;
+            width: 118px;
+            height: 70px;
         }
 
         .invoice-title {
-            font-size: 24px;
+            font-size: 20pt;
             font-weight: bold;
+            letter-spacing: 2px;
         }
 
-        .company-address {
-            font-size: 10px;
-            line-height: 1.8;
+        .company-table {
+            margin-top: 6px;
         }
 
-        .invoice-info {
-            font-size: 11px;
-            line-height: 1.8;
+        .company-name {
+            font-size: 16pt;
+            font-weight: bold;
+            line-height: 1.2;
+            padding-bottom: 2px !important;
         }
 
         .invoice-info td {
-            padding: 2px 0;
-        }
-
-        .invoice-info td:first-child {
-            width: 65px;
-        }
-
-        .invoice-info td:nth-child(2) {
-            width: 10px;
-        }
-
-        .recipient {
-            margin: 5px 0;
-        }
-
-        .recipient-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 5px 0;
-        }
-
-        .recipient-table td {
-            border: none;
-            padding: 2px 0;
+            padding: 0 0 1px 0;
             vertical-align: top;
         }
 
-        .recipient-table .recipient-label-cell {
-            font-weight: bold;
-            width: 80px;
-            white-space: nowrap;
-        }
-
-        .recipient-table .recipient-name-cell {
-            padding-left: 5px;
+        /* Jarak ±1 baris kosong: Email → Kepada Yth → "Dengan ini kami sampaikan" */
+        .recipient {
+            margin: 24px 0 0 0;
         }
 
         .description {
-            margin: 5px 0;
+            margin: 20px 0 6px 0;
             text-align: justify;
+        }
+
+        /* Blok No/Tanggal/Hal rata ke tepi kanan (sejajar tepi kanan tabel item) */
+        .invoice-info table {
+            margin-left: auto;
         }
 
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 5px 0;
+            margin: 6px 0;
         }
 
         .items-table th {
             background-color: #f0f0f0;
             border: 1px solid #000;
-            padding: 8px 5px;
+            padding: 4px 6px;
             text-align: center;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 12pt;
         }
 
         .items-table td {
             border: 1px solid #000;
-            padding: 6px 5px;
-            font-size: 10px;
+            padding: 3px 6px;
+            font-size: 12pt;
         }
 
         .items-table td.center {
@@ -161,17 +127,17 @@
 
         .terbilang {
             font-style: italic;
-            margin: 5px 0;
-            font-size: 10px;
+            font-weight: bold;
+            margin: 6px 0;
         }
 
         .payment-info {
-            margin: 5px 0;
-            line-height: 1.8;
+            margin: 6px 0;
+            line-height: 1.4;
         }
 
         .closing {
-            margin: 5px 0;
+            margin: 6px 0;
             text-align: justify;
         }
     </style>
@@ -185,53 +151,48 @@
     @endif
 
     <div class="container">
-        <!-- Header -->
+        <!-- Header: Logo & Judul -->
         <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
             <tr>
-                <td width="45%" valign="top" style="padding-bottom: 15px;">
-                    <div class="logo-cell">
-                        <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo" width="80" height="80">
-                    </div>
+                <td class="logo-cell" width="30%" valign="middle">
+                    <img src="{{ public_path('images/logo.jpeg') }}" alt="Logo">
                 </td>
-                
-                <td width="20%" valign="middle" style="text-align: center; padding-bottom: 15px;">
-                    <div class="invoice-title" style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">
-                        INVOICE
-                    </div>
+                <td width="40%" valign="middle" style="text-align: center;">
+                    <div class="invoice-title">INVOICE</div>
                 </td>
-                
-                <td width="35%" valign="top" style="padding-bottom: 15px;"></td>
+                <td width="30%"></td>
             </tr>
+        </table>
 
+        <!-- Header: Perusahaan & Info Invoice -->
+        <table class="company-table" cellpadding="0" cellspacing="0" border="0" width="100%">
             <tr>
-                <td valign="top">
-                    <div class="company-info" style="white-space: pre-line">
-                        PT. AGHITSNA KARYA INDAH
-                        JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT
-                        Telp. 021 - 29034923 - 0812 9596 552
-                        Email : Design@aghitsna.id
-                    </div>
+                <td colspan="2" class="company-name">PT. AGHITSNA KARYA INDAH</td>
+            </tr>
+            <tr>
+                <td width="60%" valign="top">
+                    <div>JL. TANAH BARU RAYA PERTIWI RT. 01/05</div>
+                    <div>BEJI, DEPOK, JAWA BARAT</div>
+                    <div>Telp. 021 - 29034923 - 0812 9596 552</div>
+                    <div>Email : Design@aghitsna.id</div>
                 </td>
-
-                <td valign="top"></td>
-
-                <td valign="top">
-                    <div class="invoice-info" style="font-size: 12px;">
+                <td width="40%" valign="top">
+                    <div class="invoice-info">
                         <table cellpadding="0" cellspacing="0" border="0" align="right">
                             <tr>
-                                <td style="padding-right: 5px;" valign="top">No</td>
-                                <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ $invoice->invoice_number }}</td>
+                                <td style="padding-right: 8px; white-space: nowrap;">No</td>
+                                <td style="padding-right: 6px;">:</td>
+                                <td>{{ $invoice->invoice_number }}</td>
                             </tr>
                             <tr>
-                                <td style="padding-right: 5px;" valign="top">Tanggal</td>
-                                <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
+                                <td style="padding-right: 8px; white-space: nowrap;">Tanggal</td>
+                                <td style="padding-right: 6px;">:</td>
+                                <td>{{ \Carbon\Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY') }}</td>
                             </tr>
                             <tr>
-                                <td style="padding-right: 5px;" valign="top">Hal</td>
-                                <td style="padding-right: 5px;" valign="top">:</td>
-                                <td valign="top">{{ $invoice->regarding ?? '-' }}</td>
+                                <td style="padding-right: 8px; white-space: nowrap;">Hal</td>
+                                <td style="padding-right: 6px;">:</td>
+                                <td>{{ $invoice->regarding ?? '-' }}</td>
                             </tr>
                         </table>
                     </div>
@@ -239,7 +200,7 @@
             </tr>
         </table>
 
-        <!-- Recipient -->
+        <!-- Recipient (tidak di-bold) -->
         <div class="recipient">
             <div class="recipient-label">Kepada Yth :</div>
             <div>
@@ -259,15 +220,16 @@
             @endif
         </div>
 
-        <!-- Items Table -->
+        <!-- Items Table (kolom sama dengan Invoice Alumunium/Proyek; Volume, Satuan, Harga, Jumlah rata tengah) -->
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 5%">No</th>
-                    <th style="width: 45%">Nama Item</th>
-                    <th style="width: 10%">Qty</th>
-                    <th style="width: 20%">Harga</th>
-                    <th style="width: 20%">Jumlah</th>
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 36%;">Keterangan</th>
+                    <th style="width: 10%;">Volume</th>
+                    <th style="width: 9%;">Satuan</th>
+                    <th style="width: 20%;">Harga</th>
+                    <th style="width: 20%;">Jumlah</th>
                 </tr>
             </thead>
             <tbody>
@@ -287,22 +249,23 @@
                         <td class="center">{{ $index + 1 }}</td>
                         <td>{{ $item['name_item'] ?? '-' }}</td>
                         <td class="center">{{ $quantity }}</td>
-                        <td class="right">Rp {{ number_format($sellingPrice, 0, ',', '.') }}</td>
-                        <td class="right">Rp {{ number_format($jumlah, 0, ',', '.') }}</td>
+                        <td class="center">{{ $item['satuan'] ?? '' }}</td>
+                        <td class="center">Rp {{ number_format($sellingPrice, 0, ',', '.') }}</td>
+                        <td class="center">Rp {{ number_format($jumlah, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
 
                 <tr>
-                    <td colspan="3" style="border: none; background-color: #fff;"></td>
-                    <td class="right" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Jumlah</strong></td>
-                    <td class="right" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Rp {{ number_format($totalAmount, 0, ',', '.') }}</strong></td>
+                    <td colspan="4" style="border: none; background-color: #fff;"></td>
+                    <td class="center" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Jumlah</strong></td>
+                    <td class="center" style="background-color: #FFFF00; border: 1px solid #000;"><strong>Rp {{ number_format($totalAmount, 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>
 
         <div class="terbilang">Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</div>
 
-        <!-- Payment Information -->
+        <!-- Payment Information (nama bank, nomor & pemilik rekening tidak di-bold) -->
         <div class="payment-info">
             Pembayaran dapat ditransfer melalui nomor rekening<br>
             @php
@@ -319,8 +282,7 @@
                 }
             @endphp
             @foreach ($paymentAccounts as $account)
-                <strong>{{ $account->bank_name }}</strong> / No : <strong>{{ $account->account_number }}</strong> a/n
-                <strong>{{ $account->account_holder }}</strong><br>
+                {{ $account->bank_name }} / No : {{ $account->account_number }} a/n {{ $account->account_holder }}<br>
             @endforeach
             @if ($paymentAccounts->isEmpty())
                 <em>Tidak ada rekening pembayaran yang tersedia</em>
@@ -329,22 +291,23 @@
 
         <div class="closing">Demikian invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.</div>
 
-        <table style="width: 100%; border: none; margin-top: 5px;">
+        <!-- Signature (nama PT & penandatangan tidak di-bold) -->
+        <table cellpadding="0" cellspacing="0" style="width: 100%; border: none; margin-top: 8px;">
             <tr>
                 <td style="width: 50%; border: none; vertical-align: top; text-align: left;">
                     <div>Hormat Kami,</div>
                     <div>PT. AGHITSNA KARYA INDAH</div>
                     @if ($invoice->signedBy)
-                    <div style="margin-top: {{ $invoice->signedBy->signature_image ? '5px' : '60px' }};">
+                    <div style="margin-top: {{ $invoice->signedBy->signature_image ? '4px' : '60px' }};">
                         @if ($invoice->signedBy->signature_image)
                             <img src="{{ storage_path('app/public/' . $invoice->signedBy->signature_image) }}"
-                                alt="Tanda Tangan" style="max-height: 55px; max-width: 160px;">
+                                alt="Tanda Tangan" style="max-height: 60px; max-width: 170px;">
                         @endif
-                        <div style="font-weight: bold;">{{ $invoice->signedBy->name }}</div>
+                        <div>{{ $invoice->signedBy->name }}</div>
                     </div>
                     @endif
                     @if ($invoice->division)
-                    <div style="margin-top: 5px;">{{ $invoice->division->name }}</div>
+                    <div style="margin-top: 4px;">{{ $invoice->division->name }}</div>
                     @endif
                 </td>
             </tr>

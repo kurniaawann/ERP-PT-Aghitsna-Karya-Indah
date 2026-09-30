@@ -111,12 +111,15 @@
                         oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
 
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-4 gap-2">
                         <input type="number" name="items[{{ $index }}][quantity]"
                             value="{{ $item['quantity'] ?? 0 }}" class="barang-item-qty-edit border rounded p-2"
                             placeholder="Qty *" required min="1"
                             oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
+                        <input type="text" name="items[{{ $index }}][satuan]"
+                            value="{{ $item['satuan'] ?? '' }}" class="barang-item-satuan-edit border rounded p-2"
+                            placeholder="Satuan" maxlength="50" title="Satuan barang, contoh: zak, batang, pcs">
                         <input type="text" inputmode="numeric" name="items[{{ $index }}][capital_price]"
                             value="Rp {{ number_format($item['capital_price'] ?? 0, 0, ',', '.') }}"
                             class="barang-item-capital-edit border rounded p-2" placeholder="Rp 0"

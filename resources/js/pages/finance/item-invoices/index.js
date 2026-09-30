@@ -72,14 +72,133 @@ function buildBarangOptionsHtml(prefix) {
     const optionClass = prefix === '-edit' ? 'barang-option-edit' : 'barang-option';
 
     return items.map(function (item) {
+        const name = escapeHtml(item.name_item);
         return '<div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light ' + optionClass + '" ' +
-            'data-value="' + item.id_item + '" data-name="' + item.name_item + '" ' +
+            'data-value="' + escapeHtml(item.id_item) + '" data-name="' + name + '" ' +
             'data-capital="' + item.capital_price + '" data-selling="' + item.selling_price + '" ' +
-            'data-stock="' + item.quantity + '" data-search="' + String(item.name_item).toLowerCase() + '">' +
-            '<div class="font-medium text-text-heading">' + item.name_item + '</div>' +
+            'data-stock="' + item.quantity + '" data-search="' + escapeHtml(String(item.name_item).toLowerCase()) + '">' +
+            '<div class="font-medium text-text-heading">' + name + '</div>' +
             '<div class="text-xs text-text-secondary mt-1">Stok: <span class="font-semibold text-primary">' + item.quantity + '</span> unit</div>' +
         '</div>';
     }).join('');
+}
+
+/**
+ * Escape teks agar aman disisipkan ke HTML/atribut (mis. nama barang
+ * yang mengandung tanda kutip seperti: Semen "Tiga Roda").
+ *
+ * @param  {*} value
+ * @return {string}
+ */
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// ─── Status Tombol Simpan ────────────────────────────────────────────────────
+
+/**
+ * Cek apakah satu baris item valid untuk disubmit.
+ *
+ * - Baris "Dari Stok": harga diambil backend dari master barang (tidak bisa
+ *   diubah di form), jadi yang dicek hanya qty tidak melebihi stok.
+ * - Baris manual: harga modal harus lebih kecil dari harga jual (bila harga
+ *   jual sudah diisi).
+ *
+ * @param  {HTMLElement} row     Elemen .barang-item-row / .barang-item-row-edit
+ * @param  {string}      suffix  '' untuk modal tambah, '-edit' untuk modal edit
+ * @return {boolean}
+ */
+function isItemRowValid(row, suffix) {
+    const fromStock = row.querySelector('.barang-from-stock' + suffix)?.checked;
+
+    if (fromStock) {
+        const qty = parseInt(row.querySelector('.barang-item-qty' + suffix)?.value) || 0;
+        const stock = parseInt(row.dataset.stock) || 0;
+        return stock === 0 || qty <= stock;
+    }
+
+    const capital = parseCurrencyInput(row.querySelector('.barang-item-capital' + suffix)?.value) || 0;
+    const selling = parseCurrencyInput(row.querySelector('.barang-item-selling' + suffix)?.value) || 0;
+    return selling === 0 || capital < selling;
+}
+
+/**
+ * Tampilkan/sembunyikan peringatan harga pada satu baris. Baris "Dari Stok"
+ * tidak pernah menampilkan peringatan harga.
+ *
+ * @param  {HTMLElement} row
+ * @param  {string}      suffix  '' atau '-edit'
+ */
+function updatePriceWarning(row, suffix) {
+    const warning = row.querySelector('.barang-price-warning' + suffix);
+    if (!warning) return;
+
+    const fromStock = row.querySelector('.barang-from-stock' + suffix)?.checked;
+    const capital = parseCurrencyInput(row.querySelector('.barang-item-capital' + suffix)?.value) || 0;
+    const selling = parseCurrencyInput(row.querySelector('.barang-item-selling' + suffix)?.value) || 0;
+
+    warning.classList.toggle('hidden', fromStock || !(capital >= selling && selling > 0));
+}
+
+/**
+ * Aktif/nonaktifkan tombol submit beserta gaya visualnya.
+ *
+ * @param  {HTMLButtonElement|null} submitBtn
+ * @param  {boolean}                enabled
+ */
+function setSubmitEnabled(submitBtn, enabled) {
+    if (!submitBtn) return;
+    submitBtn.disabled = !enabled;
+    submitBtn.classList.toggle('opacity-50', !enabled);
+    submitBtn.classList.toggle('cursor-not-allowed', !enabled);
+}
+
+/**
+ * Hitung ulang status tombol Simpan modal ADD dari SELURUH baris item.
+ *
+ * Dipanggil setiap ada perubahan (input harga/qty, toggle Dari Stok, pilih
+ * barang, tambah/hapus baris) sehingga tombol tidak terkunci permanen
+ * setelah baris yang bermasalah diperbaiki atau dihapus.
+ */
+function refreshAddSubmitState() {
+    const rows = document.querySelectorAll('#barang-items-list-add .barang-item-row');
+    const allValid = Array.from(rows).every(function (row) { return isItemRowValid(row, ''); });
+    setSubmitEnabled(document.getElementById('submit-btn-addModal'), allValid);
+}
+
+/**
+ * Hitung ulang status tombol Simpan pada satu modal EDIT.
+ *
+ * @param  {string} invoiceNumber  Nomor invoice untuk identifikasi modal
+ */
+function refreshEditSubmitState(invoiceNumber) {
+    const container = document.getElementById('barang-items-list-edit-' + invoiceNumber);
+    if (!container) return;
+
+    const rows = container.querySelectorAll('.barang-item-row-edit');
+    const allValid = Array.from(rows).every(function (row) { return isItemRowValid(row, '-edit'); });
+    setSubmitEnabled(document.getElementById('submit-btn-editModal-' + invoiceNumber), allValid);
+}
+
+/**
+ * Pastikan minimal 1 rekening pembayaran dicentang di dalam modal.
+ *
+ * Bila belum ada rekening sama sekali, submit tidak diblok (PDF otomatis
+ * memakai rekening aktif). Rekening hasil "Rekening Baru" ikut terhitung
+ * karena pengecekan memakai name, bukan class.
+ *
+ * @param  {HTMLElement|null} modal
+ * @return {boolean}
+ */
+function hasPaymentAccountSelected(modal) {
+    const checkboxes = modal ? modal.querySelectorAll('[name="selected_payment_accounts[]"]') : [];
+    if (checkboxes.length === 0) return true;
+    return Array.from(checkboxes).some(function (cb) { return cb.checked; });
 }
 
 // ─── Submit Form Hapus ───────────────────────────────────────────────────────
@@ -178,6 +297,10 @@ function initSearchableDropdown(row) {
             }
 
             dropdown.classList.add('hidden');
+
+            // Cek ulang stok (qty vs stok barang terpilih) & status tombol Simpan.
+            row.querySelector('.barang-item-qty')?.dispatchEvent(new Event('input'));
+            refreshAddSubmitState();
         });
     });
 
@@ -225,6 +348,9 @@ function toggleStockHandler() {
         capitalInput.readOnly = false;
         sellingInput.readOnly = false;
     }
+
+    updatePriceWarning(row, '');
+    refreshAddSubmitState();
 }
 
 // ─── MODE TAMBAH: Hapus Item ─────────────────────────────────────────────────
@@ -248,6 +374,9 @@ function removeItemHandler(e) {
     }
 
     this.closest('.barang-item-row').remove();
+
+    // Baris bermasalah yang dihapus tidak boleh membuat tombol Simpan tetap terkunci.
+    refreshAddSubmitState();
 }
 
 // ─── MODE TAMBAH: Validasi Harga ─────────────────────────────────────────────
@@ -257,45 +386,22 @@ function removeItemHandler(e) {
  *
  * Alur:
  * - Setiap input harga modal/jual memicu validatePrices().
- * - Jika capital ≥ selling (dan selling > 0): tampilkan .barang-price-warning
- *   dan nonaktifkan tombol submit #submit-btn-addModal.
- * - Jika valid: cek ulang SEMUA baris item; submit diaktifkan kembali hanya
- *   bila seluruh baris valid.
+ * - Jika capital ≥ selling (dan selling > 0) pada baris manual: tampilkan
+ *   .barang-price-warning.
+ * - Status tombol submit dihitung ulang dari SEMUA baris lewat
+ *   refreshAddSubmitState().
  *
  * @param  {HTMLElement} row  Elemen .barang-item-row yang divalidasi
  */
 function initPriceValidation(row) {
     const capitalInput = row.querySelector('.barang-item-capital');
     const sellingInput = row.querySelector('.barang-item-selling');
-    const priceWarning = row.querySelector('.barang-price-warning');
-    const submitBtn = document.getElementById('submit-btn-addModal');
 
-    if (!capitalInput || !sellingInput || !priceWarning) return;
+    if (!capitalInput || !sellingInput) return;
 
     function validatePrices() {
-        const capital = parseCurrencyInput(capitalInput.value);
-        const selling = parseCurrencyInput(sellingInput.value);
-
-        if (capital >= selling && selling > 0) {
-            priceWarning.classList.remove('hidden');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            return false;
-        } else {
-            priceWarning.classList.add('hidden');
-            const allValid = Array.from(document.querySelectorAll('.barang-item-row')).every(function (r) {
-                const cap = parseCurrencyInput(r.querySelector('.barang-item-capital')?.value);
-                const sel = parseCurrencyInput(r.querySelector('.barang-item-selling')?.value);
-                return sel === 0 || cap < sel;
-            });
-            if (submitBtn && allValid) {
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            return true;
-        }
+        updatePriceWarning(row, '');
+        refreshAddSubmitState();
     }
 
     capitalInput.addEventListener('input', validatePrices);
@@ -312,9 +418,8 @@ function initPriceValidation(row) {
  * - Bila "Dari Stok" aktif dan stok tersedia (row.dataset.stock) > 0 dan
  *   qty > stok:
  *   - Tampilkan .barang-stock-warning dengan teks berisi sisa stok.
- *   - Nonaktifkan tombol submit agar form tidak terkirim.
- * - Bila aman: cek ulang stok DAN harga di semua baris; submit diaktifkan
- *   kembali hanya bila semuanya valid (mencegah konflik antar validasi).
+ * - Status tombol submit dihitung ulang dari SEMUA baris lewat
+ *   refreshAddSubmitState() (stok & harga sekaligus, tanpa konflik).
  *
  * @param  {HTMLElement} row  Elemen .barang-item-row yang divalidasi
  */
@@ -322,7 +427,6 @@ function initStockValidation(row) {
     const qtyInput = row.querySelector('.barang-item-qty');
     const fromStockCheckbox = row.querySelector('.barang-from-stock');
     const stockWarning = row.querySelector('.barang-stock-warning');
-    const submitBtn = document.getElementById('submit-btn-addModal');
 
     if (!qtyInput || !fromStockCheckbox || !stockWarning) return;
 
@@ -330,40 +434,18 @@ function initStockValidation(row) {
         const isFromStock = fromStockCheckbox.checked;
         const qty = parseInt(qtyInput.value) || 0;
         const availableStock = parseInt(row.dataset.stock) || 0;
+        const isOverStock = isFromStock && availableStock > 0 && qty > availableStock;
 
-        if (isFromStock && availableStock > 0 && qty > availableStock) {
-            stockWarning.classList.remove('hidden');
+        stockWarning.classList.toggle('hidden', !isOverStock);
+        if (isOverStock) {
             const warningText = stockWarning.querySelector('.barang-stock-warning-text');
             if (warningText) {
                 warningText.textContent =
                     'Stok tersedia: ' + availableStock + ' unit. Qty (' + qty + ') melebihi stok yang tersedia!';
             }
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            return false;
-        } else {
-            stockWarning.classList.add('hidden');
-            const allStockValid = Array.from(document.querySelectorAll('.barang-item-row')).every(function (r) {
-                const check = r.querySelector('.barang-from-stock')?.checked;
-                const q = parseInt(r.querySelector('.barang-item-qty')?.value) || 0;
-                const s = parseInt(r.dataset.stock) || 0;
-                return !check || s === 0 || q <= s;
-            });
-
-            const allPricesValid = Array.from(document.querySelectorAll('.barang-item-row')).every(function (r) {
-                const cap = parseCurrencyInput(r.querySelector('.barang-item-capital')?.value);
-                const sel = parseCurrencyInput(r.querySelector('.barang-item-selling')?.value);
-                return sel === 0 || cap < sel;
-            });
-
-            if (submitBtn && allStockValid && allPricesValid) {
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            return true;
         }
+
+        refreshAddSubmitState();
     }
 
     qtyInput.addEventListener('input', validateStock);
@@ -472,6 +554,10 @@ function initSearchableDropdownEdit(row) {
             }
 
             dropdown.classList.add('hidden');
+
+            // Cek ulang stok (qty vs stok barang terpilih) & status tombol Update.
+            row.querySelector('.barang-item-qty-edit')?.dispatchEvent(new Event('input'));
+            refreshEditSubmitStateForRow(row);
         });
     });
 
@@ -522,6 +608,21 @@ function toggleEditStockHandler() {
         fromStockHidden.value = 'false';
         if (idItemHidden) idItemHidden.value = '';
     }
+
+    updatePriceWarning(row, '-edit');
+    refreshEditSubmitStateForRow(row);
+}
+
+/**
+ * Hitung ulang status tombol Update pada modal EDIT tempat baris berada.
+ *
+ * @param  {HTMLElement} row  Elemen .barang-item-row-edit
+ */
+function refreshEditSubmitStateForRow(row) {
+    const container = row.closest('[id^="barang-items-list-edit-"]');
+    if (container) {
+        refreshEditSubmitState(container.id.replace('barang-items-list-edit-', ''));
+    }
 }
 
 // ─── MODE EDIT: Validasi Harga ───────────────────────────────────────────────
@@ -539,38 +640,12 @@ function toggleEditStockHandler() {
 function initPriceValidationEdit(row, invoiceNumber) {
     const capitalInput = row.querySelector('.barang-item-capital-edit');
     const sellingInput = row.querySelector('.barang-item-selling-edit');
-    const priceWarning = row.querySelector('.barang-price-warning-edit');
-    const submitBtn = document.getElementById('submit-btn-editModal-' + invoiceNumber);
 
-    if (!capitalInput || !sellingInput || !priceWarning) return;
+    if (!capitalInput || !sellingInput) return;
 
     function validatePrices() {
-        const capital = parseCurrencyInput(capitalInput.value) || 0;
-        const selling = parseCurrencyInput(sellingInput.value) || 0;
-
-        if (capital >= selling && selling > 0) {
-            priceWarning.classList.remove('hidden');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            return false;
-        } else {
-            priceWarning.classList.add('hidden');
-            const modalContainer = document.getElementById('barang-items-list-edit-' + invoiceNumber);
-            if (modalContainer) {
-                const allValid = Array.from(modalContainer.querySelectorAll('.barang-item-row-edit')).every(function (r) {
-                    const cap = parseCurrencyInput(r.querySelector('.barang-item-capital-edit')?.value) || 0;
-                    const sel = parseCurrencyInput(r.querySelector('.barang-item-selling-edit')?.value) || 0;
-                    return sel === 0 || cap < sel;
-                });
-                if (submitBtn && allValid) {
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
-            return true;
-        }
+        updatePriceWarning(row, '-edit');
+        refreshEditSubmitState(invoiceNumber);
     }
 
     capitalInput.addEventListener('input', validatePrices);
@@ -593,7 +668,6 @@ function initStockValidationEdit(row, invoiceNumber) {
     const qtyInput = row.querySelector('.barang-item-qty-edit');
     const fromStockCheckbox = row.querySelector('.barang-from-stock-edit');
     const stockWarning = row.querySelector('.barang-stock-warning-edit');
-    const submitBtn = document.getElementById('submit-btn-editModal-' + invoiceNumber);
 
     if (!qtyInput || !fromStockCheckbox || !stockWarning) return;
 
@@ -601,45 +675,18 @@ function initStockValidationEdit(row, invoiceNumber) {
         const isFromStock = fromStockCheckbox.checked;
         const qty = parseInt(qtyInput.value) || 0;
         const availableStock = parseInt(row.dataset.stock) || 0;
+        const isOverStock = isFromStock && availableStock > 0 && qty > availableStock;
 
-        if (isFromStock && availableStock > 0 && qty > availableStock) {
-            stockWarning.classList.remove('hidden');
+        stockWarning.classList.toggle('hidden', !isOverStock);
+        if (isOverStock) {
             const warningText = stockWarning.querySelector('.barang-stock-warning-text-edit');
             if (warningText) {
                 warningText.textContent =
                     'Stok tersedia: ' + availableStock + ' unit. Qty (' + qty + ') melebihi stok yang tersedia!';
             }
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            return false;
-        } else {
-            stockWarning.classList.add('hidden');
-            const modalContainer = document.getElementById('barang-items-list-edit-' + invoiceNumber);
-            if (modalContainer) {
-                const allStockValid = Array.from(modalContainer.querySelectorAll('.barang-item-row-edit'))
-                    .every(function (r) {
-                        const check = r.querySelector('.barang-from-stock-edit')?.checked;
-                        const q = parseInt(r.querySelector('.barang-item-qty-edit')?.value) || 0;
-                        const s = parseInt(r.dataset.stock) || 0;
-                        return !check || s === 0 || q <= s;
-                    });
-
-                const allPricesValid = Array.from(modalContainer.querySelectorAll('.barang-item-row-edit'))
-                    .every(function (r) {
-                        const cap = parseCurrencyInput(r.querySelector('.barang-item-capital-edit')?.value) || 0;
-                        const sel = parseCurrencyInput(r.querySelector('.barang-item-selling-edit')?.value) || 0;
-                        return sel === 0 || cap < sel;
-                    });
-
-                if (submitBtn && allStockValid && allPricesValid) {
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
-            return true;
         }
+
+        refreshEditSubmitState(invoiceNumber);
     }
 
     qtyInput.addEventListener('input', validateStock);
@@ -679,6 +726,9 @@ function removeEditItemHandler(e) {
             }
         });
     });
+
+    // Baris bermasalah yang dihapus tidak boleh membuat tombol Update tetap terkunci.
+    refreshEditSubmitState(itemsContainer.id.replace('barang-items-list-edit-', ''));
 }
 
 // ─── MODE EDIT: Pasang Listener ──────────────────────────────────────────────
@@ -750,9 +800,11 @@ function initAddItemButton() {
             '<input type="hidden" class="barang-select-hidden">' +
             '<input type="text" class="barang-item-name w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required ' +
                 'oninvalid="this.setCustomValidity(\'Nama barang tidak boleh kosong\')" oninput="this.setCustomValidity(\'\')">' +
-            '<div class="grid grid-cols-3 gap-2">' +
+            '<div class="grid grid-cols-4 gap-2">' +
                 '<input type="number" class="barang-item-qty border rounded p-2" placeholder="Qty *" required min="1" value="1" ' +
                     'oninvalid="this.setCustomValidity(\'Qty tidak boleh kosong\')" oninput="this.setCustomValidity(\'\')">' +
+                '<input type="text" class="barang-item-satuan border rounded p-2" placeholder="Satuan" maxlength="50" ' +
+                    'title="Satuan barang, contoh: zak, batang, pcs">' +
                 '<input type="text" inputmode="numeric" class="barang-item-capital border rounded p-2" placeholder="Rp 0" required ' +
                     'oninvalid="this.setCustomValidity(\'Harga modal tidak boleh kosong\')" oninput="formatCurrencyInput(this); this.setCustomValidity(\'\')">' +
                 '<input type="text" inputmode="numeric" class="barang-item-selling border rounded p-2" placeholder="Rp 0" required ' +
@@ -781,8 +833,11 @@ function initAddItemButton() {
  * Inisialisasi submit form modal ADD dengan validasi lengkap.
  *
  * Alur:
- * - Validasi harga: bila ada baris dengan capital ≥ selling (dan selling > 0),
- *   batalkan submit dan tampilkan alert.
+ * - Validasi baris: baris manual dengan capital ≥ selling (dan selling > 0)
+ *   atau baris stok dengan qty > stok → batalkan submit dan tampilkan alert.
+ *   Harga baris "Dari Stok" tidak divalidasi (backend memakai harga master).
+ * - Validasi rekening: bila ada rekening tapi belum ada yang dicentang,
+ *   batalkan submit, tampilkan pesan, dan scroll ke bagian rekening.
  * - Serialisasi tiap baris ke item JSON: name_item, quantity, capital_price,
  *   selling_price, from_stock, id_item (id_item hanya diisi bila dari stok).
  * - Bila tidak ada item valid, batalkan submit (minimal 1 item lengkap).
@@ -801,20 +856,22 @@ function initAddFormSubmission() {
 
     addForm.addEventListener('submit', function (e) {
         var items = [];
-        var itemRows = document.querySelectorAll('.barang-item-row');
+        var itemRows = document.querySelectorAll('#barang-items-list-add .barang-item-row');
 
-        var hasInvalidPrice = false;
-        itemRows.forEach(function (row) {
-            var capital = parseCurrencyInput(row.querySelector('.barang-item-capital')?.value);
-            var selling = parseCurrencyInput(row.querySelector('.barang-item-selling')?.value);
-            if (capital >= selling && selling > 0) {
-                hasInvalidPrice = true;
-            }
+        var hasInvalidRow = Array.from(itemRows).some(function (row) {
+            return !isItemRowValid(row, '');
         });
 
-        if (hasInvalidPrice) {
+        if (hasInvalidRow) {
             e.preventDefault();
-            alert('Harga modal tidak boleh lebih besar atau sama dengan harga jual!');
+            alert('Periksa kembali item: harga modal harus lebih kecil dari harga jual dan qty tidak boleh melebihi stok.');
+            return false;
+        }
+
+        if (!validatePaymentSelection()) {
+            e.preventDefault();
+            document.getElementById('payment-account-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            alert('Pilih minimal 1 rekening pembayaran.');
             return false;
         }
 
@@ -823,6 +880,7 @@ function initAddFormSubmission() {
             var hiddenSelect = row.querySelector('.barang-select-hidden');
             var itemName = row.querySelector('.barang-item-name').value;
             var qty = parseInt(row.querySelector('.barang-item-qty').value) || 0;
+            var satuan = (row.querySelector('.barang-item-satuan')?.value || '').trim();
             var capital = parseCurrencyInput(row.querySelector('.barang-item-capital').value);
             var selling = parseCurrencyInput(row.querySelector('.barang-item-selling').value);
 
@@ -830,6 +888,7 @@ function initAddFormSubmission() {
                 items.push({
                     name_item: itemName,
                     quantity: qty,
+                    satuan: satuan,
                     capital_price: capital,
                     selling_price: selling,
                     from_stock: fromStockCheck.checked,
@@ -900,9 +959,11 @@ function initEditItemButtons() {
                 '<input type="hidden" class="barang-select-hidden-edit">' +
                 '<input type="text" name="items[' + newIndex + '][name_item]" class="barang-item-name-edit w-full border rounded p-2 mb-2" placeholder="Nama Barang *" required ' +
                     'oninvalid="this.setCustomValidity(\'Nama barang tidak boleh kosong\')" oninput="this.setCustomValidity(\'\')">' +
-                '<div class="grid grid-cols-3 gap-2">' +
+                '<div class="grid grid-cols-4 gap-2">' +
                     '<input type="number" name="items[' + newIndex + '][quantity]" class="barang-item-qty-edit border rounded p-2" placeholder="Qty *" required min="1" value="1" ' +
                         'oninvalid="this.setCustomValidity(\'Qty tidak boleh kosong\')" oninput="this.setCustomValidity(\'\')">' +
+                    '<input type="text" name="items[' + newIndex + '][satuan]" class="barang-item-satuan-edit border rounded p-2" placeholder="Satuan" maxlength="50" ' +
+                        'title="Satuan barang, contoh: zak, batang, pcs">' +
                     '<input type="text" inputmode="numeric" name="items[' + newIndex + '][capital_price]" class="barang-item-capital-edit border rounded p-2" placeholder="Rp 0" required value="Rp 0" ' +
                         'oninvalid="this.setCustomValidity(\'Harga modal tidak boleh kosong\')" oninput="formatCurrencyInput(this); this.setCustomValidity(\'\')">' +
                     '<input type="text" inputmode="numeric" name="items[' + newIndex + '][selling_price]" class="barang-item-selling-edit border rounded p-2" placeholder="Rp 0" required value="Rp 0" ' +
@@ -931,13 +992,14 @@ function initEditItemButtons() {
 // ─── MODE EDIT: Submit Form ──────────────────────────────────────────────────
 
 /**
- * Inisialisasi submit form semua modal EDIT dengan validasi harga.
+ * Inisialisasi submit form semua modal EDIT dengan validasi item & rekening.
  *
  * Alur:
  * - Untuk tiap form di dalam [id^="editModal-"]:
- *   - Validasi harga semua baris .barang-item-row-edit pada container
- *     #barang-items-list-edit-{invoiceNumber}; bila ada yang invalid →
- *     tampilkan alert dan batalkan submit.
+ *   - Validasi semua baris .barang-item-row-edit pada container
+ *     #barang-items-list-edit-{invoiceNumber} (harga baris manual, stok baris
+ *     "Dari Stok"); bila ada yang invalid → tampilkan alert dan batalkan submit.
+ *   - Bila ada rekening tapi belum ada yang dicentang → alert & batalkan.
  *   - Panggil handleFormSubmit(submitBtn, ..., 'Update...') untuk proteksi
  *     submit ganda.
  *
@@ -952,20 +1014,21 @@ function initEditFormSubmissions() {
             var itemsContainer = document.getElementById('barang-items-list-edit-' + invoiceNumber);
 
             if (itemsContainer) {
-                var hasInvalidPrice = false;
-                itemsContainer.querySelectorAll('.barang-item-row-edit').forEach(function (row) {
-                    var capital = parseCurrencyInput(row.querySelector('.barang-item-capital-edit')?.value);
-                    var selling = parseCurrencyInput(row.querySelector('.barang-item-selling-edit')?.value);
-                    if (capital >= selling && selling > 0) {
-                        hasInvalidPrice = true;
-                    }
+                var hasInvalidRow = Array.from(itemsContainer.querySelectorAll('.barang-item-row-edit')).some(function (row) {
+                    return !isItemRowValid(row, '-edit');
                 });
 
-                if (hasInvalidPrice) {
+                if (hasInvalidRow) {
                     e.preventDefault();
-                    alert('Harga modal tidak boleh lebih besar atau sama dengan harga jual!');
+                    alert('Periksa kembali item: harga modal harus lebih kecil dari harga jual dan qty tidak boleh melebihi stok.');
                     return false;
                 }
+            }
+
+            if (!validatePaymentSelectionEdit(invoiceNumber)) {
+                e.preventDefault();
+                alert('Pilih minimal 1 rekening pembayaran.');
+                return false;
             }
 
             var submitBtn = this.querySelector('button[type="submit"]');
@@ -984,57 +1047,26 @@ function initEditFormSubmissions() {
 /**
  * Validasi pemilihan rekening pembayaran pada modal ADD.
  *
- * Bila tidak ada checkbox .payment-account-checkbox tercentang, tampilkan
- * error dan nonaktifkan tombol submit #submit-btn-addModal.
+ * Hanya menampilkan/menyembunyikan pesan error; tombol Simpan TIDAK
+ * dinonaktifkan (pengecekan akhir dilakukan saat submit agar pengguna
+ * mendapat pesan yang jelas, bukan tombol yang diam saja).
  *
- * @return {boolean} true bila minimal 1 rekening dipilih
+ * @return {boolean} true bila minimal 1 rekening dipilih (atau belum ada rekening)
  */
 function validatePaymentSelection() {
-    const addModal = document.getElementById('addModal');
-    const checkboxes = addModal?.querySelectorAll('.payment-account-checkbox') ?? [];
-    const errorDiv = document.getElementById('payment-account-error');
-    const submitBtn = document.getElementById('submit-btn-addModal');
-
-    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
-
-    if (!anyChecked) {
-        errorDiv?.classList.remove('hidden');
-    } else {
-        errorDiv?.classList.add('hidden');
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = !anyChecked;
-        submitBtn.classList.toggle('opacity-50', !anyChecked);
-        submitBtn.classList.toggle('cursor-not-allowed', !anyChecked);
-    }
-
-    return anyChecked;
+    const isValid = hasPaymentAccountSelected(document.getElementById('addModal'));
+    document.getElementById('payment-account-error')?.classList.toggle('hidden', isValid);
+    return isValid;
 }
 
 /**
  * Validasi pemilihan rekening pembayaran pada modal EDIT.
  *
- * Mirip validatePaymentSelection() tetapi per modal edit
- * (#submit-btn-editModal-{invoiceNumber}).
- *
  * @param  {string} invoiceNumber  Nomor invoice untuk identifikasi modal
- * @return {boolean} true bila minimal 1 rekening dipilih
+ * @return {boolean} true bila minimal 1 rekening dipilih (atau belum ada rekening)
  */
 function validatePaymentSelectionEdit(invoiceNumber) {
-    const modal = document.getElementById('editModal-' + invoiceNumber);
-    const checkboxes = modal?.querySelectorAll('.payment-account-checkbox') ?? [];
-    const submitBtn = document.getElementById('submit-btn-editModal-' + invoiceNumber);
-
-    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
-
-    if (submitBtn) {
-        submitBtn.disabled = !anyChecked;
-        submitBtn.classList.toggle('opacity-50', !anyChecked);
-        submitBtn.classList.toggle('cursor-not-allowed', !anyChecked);
-    }
-
-    return anyChecked;
+    return hasPaymentAccountSelected(document.getElementById('editModal-' + invoiceNumber));
 }
 
 window.validatePaymentSelection = validatePaymentSelection;
@@ -1127,25 +1159,24 @@ document.addEventListener('DOMContentLoaded', function () {
     initEditItemButtons();
     initEditFormSubmissions();
 
-    // Validasi akun pembayaran
+    // Validasi akun pembayaran (termasuk checkbox hasil "Rekening Baru")
     validatePaymentSelection();
-
-    document.querySelectorAll('[id^="editModal-"]').forEach(function (modal) {
-        var invoiceNumber = modal.id.replace('editModal-', '');
-        validatePaymentSelectionEdit(invoiceNumber);
-
-        modal.querySelectorAll('.payment-account-checkbox').forEach(function (cb) {
-            cb.addEventListener('change', function () {
-                validatePaymentSelectionEdit(invoiceNumber);
-            });
-        });
+    document.getElementById('addModal')?.addEventListener('change', function (e) {
+        if (e.target.matches('[name="selected_payment_accounts[]"]')) {
+            validatePaymentSelection();
+        }
     });
 
     // Umum
     initSelectAllCheckbox();
 
-    // Reset status submit form saat halaman ditampilkan (navigasi kembali/maju)
+    // Reset status submit form saat halaman ditampilkan (navigasi kembali/maju),
+    // lalu hitung ulang status tombol dari kondisi form yang sebenarnya.
     window.addEventListener('pageshow', function () {
         resetFormSubmitState();
+        refreshAddSubmitState();
+        document.querySelectorAll('[id^="barang-items-list-edit-"]').forEach(function (container) {
+            refreshEditSubmitState(container.id.replace('barang-items-list-edit-', ''));
+        });
     });
 });

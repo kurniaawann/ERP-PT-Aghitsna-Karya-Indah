@@ -88,11 +88,13 @@
                     oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
                     oninput="this.setCustomValidity('')">
 
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-4 gap-2">
                     <input type="number" class="barang-item-qty border rounded p-2" placeholder="Qty *" required
                         min="1" value="1"
                         oninvalid="this.setCustomValidity('Qty tidak boleh kosong')"
                         oninput="this.setCustomValidity('')">
+                    <input type="text" class="barang-item-satuan border rounded p-2" placeholder="Satuan"
+                        maxlength="50" title="Satuan barang, contoh: zak, batang, pcs">
                     <input type="text" inputmode="numeric" class="barang-item-capital border rounded p-2"
                         placeholder="Rp 0" required
                         oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
