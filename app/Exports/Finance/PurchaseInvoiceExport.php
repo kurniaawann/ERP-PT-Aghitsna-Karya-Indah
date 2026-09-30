@@ -8,9 +8,12 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithDefaultStyles;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Style;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -21,7 +24,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * Mendukung filter search, month, year jika $request diberikan.
  * Format: headers, styling, dan column widths sudah dikonfigurasi.
  */
-class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithEvents
+class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithEvents, WithDefaultStyles
 {
     /**
      * Request untuk filter data (opsional).
@@ -59,7 +62,10 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
                 ->filterByYear($year);
         }
 
-        return $query->orderBy('created_at', 'desc')
+        // Urut tanggal faktur (lama → baru); tanggal sama → urutan input.
+        return $query->orderBy('date')
+            ->orderBy('created_at')
+            ->orderBy('id')
             ->get()
             ->map(function ($invoice, $index) {
                 return [
@@ -109,14 +115,25 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
             'A' => 5,
             'B' => 12,
             'C' => 25,
-            'D' => 18,
-            'E' => 30,
-            'F' => 20,
-            'G' => 15,
-            'H' => 20,
-            'I' => 15,
+            'D' => 22,
+            'E' => 24,
+            'F' => 26,
+            'G' => 16,
+            'H' => 18,
+            'I' => 16,
             'J' => 35,
         ];
+    }
+
+    /**
+     * Font default workbook: Times New Roman 11pt (seragam dengan PDF).
+     *
+     * @param  Style $defaultStyle
+     * @return array
+     */
+    public function defaultStyles(Style $defaultStyle)
+    {
+        return ['font' => ['name' => 'Times New Roman', 'size' => 11]];
     }
 
     /**
@@ -163,8 +180,23 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
                 $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('B2:B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // Wrap text untuk kolom E, H, J
+                // Revisi klien: NAMA BARANG (F), HARGA JUAL (G), PPN PAJAK (H) rata tengah
+                $sheet->getStyle('F2:H' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                // Semua data rata tengah secara vertikal agar rapi saat ada teks yang wrap
+                $sheet->getStyle('A1:J' . $highestRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+                // Setup cetak: A4 landscape, muat 1 halaman lebar, header tabel berulang tiap halaman
+                $sheet->getPageSetup()
+                    ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+                    ->setPaperSize(PageSetup::PAPERSIZE_A4)
+                    ->setFitToWidth(1)
+                    ->setFitToHeight(0);
+                $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 1);
+
+                // Wrap text untuk kolom E, F, H, J
                 $sheet->getStyle('E1:E' . $highestRow)->getAlignment()->setWrapText(true);
+                $sheet->getStyle('F1:F' . $highestRow)->getAlignment()->setWrapText(true);
                 $sheet->getStyle('H1:H' . $highestRow)->getAlignment()->setWrapText(true);
                 $sheet->getStyle('J1:J' . $highestRow)->getAlignment()->setWrapText(true);
             },

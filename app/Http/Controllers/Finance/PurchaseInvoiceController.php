@@ -175,8 +175,11 @@ class PurchaseInvoiceController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        // Urut tanggal faktur (lama → baru); tanggal sama → urutan input.
         $invoices = PurchaseInvoiceService::buildFilteredQuery($request)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('date')
+            ->orderBy('created_at')
+            ->orderBy('id')
             ->get();
 
         $pdf = Pdf::loadView('exports.finance.purchase-invoice-pdf', compact('invoices'));
