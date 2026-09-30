@@ -14,6 +14,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -41,11 +42,11 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
     {
         return [
             'A' => 5,
-            'B' => 35,
-            'C' => 12,
-            'D' => 10,
-            'E' => 18,
-            'F' => 20,
+            'B' => 31,
+            'C' => 9,
+            'D' => 8,
+            'E' => 16,
+            'F' => 16,
         ];
     }
 
@@ -56,14 +57,44 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet = $event->sheet->getDelegate();
                 $invoice = $this->invoice;
 
-                $sheet->getRowDimension(1)->setRowHeight(60);
-                $sheet->getRowDimension(2)->setRowHeight(15);
+                // Font dasar seluruh dokumen: Times New Roman 12 (revisi klien). Kop surat diperbesar terpisah.
+                $sheet->getParent()->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(12);
+
+                // Pengaturan cetak: A4 portrait, seluruh kolom muat dalam 1 halaman lebar
+                $sheet->getPageSetup()
+                    ->setPaperSize(PageSetup::PAPERSIZE_A4)
+                    ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
+                    ->setFitToWidth(1)
+                    ->setFitToHeight(0);
+                $sheet->getPageMargins()->setTop(0.5)->setBottom(0.5)->setLeft(0.4)->setRight(0.4);
+
+                // Tinggi 1 baris teks Times New Roman 12pt. Semua baris diberi tinggi eksplisit agar posisi
+                // gambar (logo/tanda tangan) konsisten di Excel maupun LibreOffice.
+                $lineHeight = 16;
+
+                // Teks panjang di sel gabungan di-wrap; tinggi baris diperkirakan dari jumlah karakter
+                // (sel merge tidak bisa auto-fit). $charsPerLine = perkiraan karakter per baris A:F.
+                $fitWrappedRow = function (int $row, string $text, int $charsPerLine = 90, string $cell = 'A') use ($sheet, $lineHeight) {
+                    $sheet->getStyle("{$cell}{$row}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                    $lines = max(1, (int) ceil(mb_strlen($text) / $charsPerLine));
+                    $current = $sheet->getRowDimension($row)->getRowHeight();
+                    $sheet->getRowDimension($row)->setRowHeight(max($current, $lines * $lineHeight));
+                };
+
+                // Baris ringkasan (Jumlah/Discount/DP/PPN/Sisa/cicilan): label & nominal rata tengah
+                $summaryAlignment = [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                ];
+
+                // ═══ KOP SURAT: logo + judul (lebih besar dari isi) ═══
+                $sheet->getRowDimension(1)->setRowHeight(62);
 
                 $drawing = new Drawing();
                 $drawing->setName('Logo');
                 $drawing->setDescription('Company Logo');
                 $drawing->setPath(public_path('images/logo.jpeg'));
-                $drawing->setHeight(55);
+                $drawing->setHeight(76);
                 $drawing->setCoordinates('A1');
                 $drawing->setOffsetX(5);
                 $drawing->setOffsetY(3);
@@ -74,43 +105,51 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-                $sheet->mergeCells('A2:D2');
+                // Nama perusahaan 16pt selebar halaman, alamat di kiri & info invoice di kanan
+                $sheet->mergeCells('A2:F2');
                 $sheet->setCellValue('A2', 'AGHITSNA ALUMUNIUM DAN BAJA RINGAN');
-                $sheet->getStyle('A2')->getFont()->setBold(true);
-                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
+                $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getRowDimension(2)->setRowHeight(24);
 
-                $sheet->mergeCells('A3:D3');
-                $sheet->setCellValue('A3', 'JL. TANAH BARU RAYA PERTIWI RT. 01/05 BEJI, DEPOK, JAWA BARAT');
-                $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->mergeCells('A4:D4');
-                $sheet->setCellValue('A4', 'Telp. 021 - 29034923 - 0812 9596 552');
-                $sheet->getStyle('A4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->mergeCells('A5:D5');
-                $sheet->setCellValue('A5', 'Email : Design@aghitsna.id');
-                $sheet->getStyle('A5')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                // Alamat & telepon khusus Aghitsna Alumunium (revisi klien)
+                $companyLines = [
+                    3 => 'JL. CEMARA RT 02 RW 07, KEL. GROGOL,',
+                    4 => 'KEC. LIMO, KOTA DEPOK',
+                    5 => 'Telp : 0838 9004 1408 / 0818 0844 4519',
+                    6 => 'Email : Design@aghitsna.id',
+                ];
+                foreach ($companyLines as $row => $text) {
+                    $sheet->mergeCells("A{$row}:C{$row}");
+                    $sheet->setCellValue("A{$row}", $text);
+                    $sheet->getStyle("A{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                }
 
                 $invoiceDate = Carbon::parse($invoice->invoice_date)->isoFormat('DD MMMM YYYY');
 
-                $sheet->setCellValue('E2', 'No');
-                $sheet->setCellValue('F2', ': ' . $invoice->invoice_number);
-                $sheet->getStyle('E2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F2')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $metaLines = [
+                    3 => ['No', $invoice->invoice_number],
+                    4 => ['Tanggal', $invoiceDate],
+                    5 => ['Hal', $invoice->regarding ?? '-'],
+                ];
+                foreach ($metaLines as $row => [$label, $value]) {
+                    $sheet->setCellValue("D{$row}", $label);
+                    // Nilai "Hal" boleh 2 baris (merge ke baris bawahnya) agar baris alamat tidak ikut meninggi
+                    $sheet->mergeCells($row === 5 ? "E5:F6" : "E{$row}:F{$row}");
+                    $sheet->setCellValue("E{$row}", ': ' . $value);
+                    $sheet->getStyle("D{$row}:F{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                    $sheet->getStyle("E{$row}")->getAlignment()->setWrapText(true);
+                }
+                $halLines = (int) ceil(mb_strlen(': ' . ($invoice->regarding ?? '-')) / 32);
+                if ($halLines > 2) {
+                    $sheet->getRowDimension(6)->setRowHeight(($halLines - 1) * $lineHeight);
+                }
 
-                $sheet->setCellValue('E3', 'Tanggal');
-                $sheet->setCellValue('F3', ': ' . $invoiceDate);
-                $sheet->getStyle('E3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $sheet->setCellValue('E4', 'Hal');
-                $sheet->setCellValue('F4', ': ' . ($invoice->regarding ?? '-'));
-                $sheet->getStyle('E4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getStyle('F4')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-
-                $currentRow = 7;
+                // Jarak ±1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
+                $sheet->getRowDimension(7)->setRowHeight(20);
+                // Kepada Yth (tidak di-bold)
+                $currentRow = 8;
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
 
                 $currentRow++;
@@ -124,11 +163,14 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                 }
 
                 $currentRow += 2;
+                // Jarak ±1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight(20);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}",
-                    $invoice->project_description
-                        ? 'Dengan ini kami sampaikan invoice untuk proyek ' . $invoice->project_description . ' sebagai berikut :'
-                        : 'Dengan ini kami sampaikan invoice sebagai berikut :');
+                $descriptionText = $invoice->project_description
+                    ? 'Dengan ini kami sampaikan invoice untuk proyek ' . $invoice->project_description . ' sebagai berikut :'
+                    : 'Dengan ini kami sampaikan invoice sebagai berikut :';
+                $sheet->setCellValue("A{$currentRow}", $descriptionText);
+                $fitWrappedRow($currentRow, $descriptionText);
 
                 $currentRow += 2;
                 $tableHeaderRow = $currentRow;
@@ -166,16 +208,16 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                     $sheet->setCellValue("A{$currentRow}", $index + 1);
                     $sheet->setCellValue("B{$currentRow}", $item['keterangan']);
+                    $fitWrappedRow($currentRow, (string) $item['keterangan'], 32, 'B');
                     $sheet->setCellValue("C{$currentRow}", number_format($item['volume'], 2, ',', '.'));
                     $sheet->setCellValue("D{$currentRow}", $item['satuan']);
                     $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'], 0, ',', '.'));
                     $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
 
+                    // Volume, Satuan, Harga, Jumlah rata tengah; keterangan di-wrap bila panjang
+                    $sheet->getStyle("A{$currentRow}:F{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
                     $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("C{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle("C{$currentRow}:F{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
 
                 $itemEndRow = $currentRow;
@@ -208,9 +250,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     'borders' => [
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_RIGHT
-                    ]
+                    'alignment' => $summaryAlignment
                 ]);
 
                 if ($invoice->discount_value && $invoice->discount_value > 0) {
@@ -219,7 +259,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $currentRow++;
                     $discountLabel = 'Discount';
                     if ($invoice->discount_type === 'percentage') {
-                        $discountLabel .= ' (' . number_format((float) $invoice->discount_value, 0) . '%)';
+                        $discountLabel .= ' (' . format_persen($invoice->discount_value) . '%)';
                     }
                     $sheet->setCellValue("A{$currentRow}", '');
                     $sheet->setCellValue("B{$currentRow}", '');
@@ -242,9 +282,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],
-                        'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_RIGHT
-                        ]
+                        'alignment' => $summaryAlignment
                     ]);
                 }
 
@@ -254,7 +292,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $currentRow++;
                     $dpLabel = 'DP';
                     if ($invoice->dp_type === 'percentage') {
-                        $dpLabel .= ' (' . number_format((float) $invoice->dp_value, 0) . '%)';
+                        $dpLabel .= ' (' . format_persen($invoice->dp_value) . '%)';
                     }
                     $sheet->setCellValue("A{$currentRow}", '');
                     $sheet->setCellValue("B{$currentRow}", '');
@@ -277,9 +315,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],
-                        'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_RIGHT
-                        ]
+                        'alignment' => $summaryAlignment
                     ]);
                 }
 
@@ -317,16 +353,15 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                         ],
-                        'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_RIGHT
-                        ]
+                        'alignment' => $summaryAlignment
                     ]);
                 }
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($totalAmount)) . ' rupiah');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true);
+                $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setBold(true);
+                $fitWrappedRow($currentRow, (string) $sheet->getCell("A{$currentRow}")->getValue(), 80);
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
@@ -357,14 +392,15 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $bankName = $sanitizeForExcel($account->bank_name);
                     $accountNumber = $sanitizeForExcel($account->account_number);
                     $accountHolder = $sanitizeForExcel($account->account_holder);
+                    // Nama bank, nomor & pemilik rekening tidak di-bold
                     $sheet->setCellValue("A{$currentRow}", "{$bankName} / No : {$accountNumber} a/n {$accountHolder}");
-                    $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
                 }
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Demikian Invoice ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.');
-                $sheet->getStyle("A{$currentRow}")->getAlignment()->setWrapText(true);
+                $closingText = 'Demikian Invoice ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.';
+                $sheet->setCellValue("A{$currentRow}", $closingText);
+                $fitWrappedRow($currentRow, $closingText, 100);
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
@@ -372,13 +408,14 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
+                // Nama PT & penandatangan tidak di-bold
                 $sheet->setCellValue("A{$currentRow}", 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
 
                 if ($invoice->signedBy?->signature_image) {
                     $signaturePath = storage_path('app/public/' . $invoice->signedBy->signature_image);
                     if (is_file($signaturePath)) {
-                        $currentRow += 2;
+                        // Gambar tanda tangan tepat di bawah nama PT
+                        $currentRow++;
                         $signatureDrawing = new Drawing();
                         $signatureDrawing->setName('Tanda Tangan');
                         $signatureDrawing->setDescription('Tanda Tangan ' . $invoice->signedBy->name);
@@ -389,13 +426,17 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                         $signatureDrawing->setOffsetY(2);
                         $signatureDrawing->setWorksheet($sheet);
 
-                        $sheet->getRowDimension($currentRow)->setRowHeight(45);
-                        $currentRow += 3;
+                        $sheet->getRowDimension($currentRow)->setRowHeight(46);
+                        $currentRow++;
                     } else {
-                        $currentRow += 4;
+                        // Ruang tanda tangan basah
+                        $sheet->getRowDimension($currentRow + 1)->setRowHeight(48);
+                        $currentRow += 2;
                     }
                 } else {
-                    $currentRow += 4;
+                    // Ruang tanda tangan basah
+                    $sheet->getRowDimension($currentRow + 1)->setRowHeight(48);
+                    $currentRow += 2;
                 }
 
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
@@ -405,6 +446,21 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", $invoice->division->name);
+                }
+
+                // Baris tanpa tinggi khusus: baris kosong jadi spasi tipis, baris berisi setinggi 1 baris 12pt
+                for ($row = 1; $row <= $currentRow; $row++) {
+                    if ($sheet->getRowDimension($row)->getRowHeight() >= 0) {
+                        continue;
+                    }
+                    $isEmptyRow = true;
+                    foreach (['A', 'B', 'C', 'D', 'E', 'F'] as $col) {
+                        if ($sheet->cellExists("{$col}{$row}") && (string) $sheet->getCell("{$col}{$row}")->getValue() !== '') {
+                            $isEmptyRow = false;
+                            break;
+                        }
+                    }
+                    $sheet->getRowDimension($row)->setRowHeight($isEmptyRow ? 8 : $lineHeight);
                 }
             },
         ];

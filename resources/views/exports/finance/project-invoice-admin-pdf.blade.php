@@ -11,15 +11,16 @@
             box-sizing: border-box;
         }
 
+        /* Font dokumen: Times New Roman 12pt (termasuk isi tabel item) */
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 11px;
-            line-height: 1.4;
+            font-size: 12pt;
+            line-height: 1.25;
             color: #000;
-            padding: 12mm 15mm;
+            padding: 10mm 15mm;
         }
 
-        /* ── Kop Surat ────────────────────────────────────────── */
+        /* ── Kop Surat (lebih besar dari isi dokumen) ────────── */
         .header-top {
             width: 100%;
             border-collapse: collapse;
@@ -33,40 +34,38 @@
         }
 
         .logo-cell {
-            width: 25%;
+            width: 30%;
             text-align: left;
         }
 
         .logo-cell img {
             display: block;
-            height: 55px;
-            width: auto;
-            object-fit: contain;
+            width: 118px;
+            height: 70px;
         }
 
         .title-cell {
-            width: 50%;
+            width: 40%;
             text-align: center;
-            font-size: 18px;
+            font-size: 20pt;
             font-weight: bold;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
         }
 
         .dummy-cell {
-            width: 25%;
+            width: 30%;
         }
 
         .header-divider {
             border-bottom: 3px solid #000;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         /* ── Info Perusahaan & Meta Surat ────────────────────── */
         .info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
-            font-size: 11px;
+            margin-bottom: 10px;
         }
 
         .info-table td {
@@ -75,17 +74,19 @@
         }
 
         .company-info {
-            width: 55%;
+            width: 60%;
             line-height: 1.3;
         }
 
         .company-name {
+            font-size: 16pt;
             font-weight: bold;
+            line-height: 1.2;
             margin-bottom: 2px;
         }
 
         .meta-info {
-            width: 20%;
+            width: 40%;
         }
 
         .meta-table {
@@ -100,6 +101,7 @@
 
         .meta-table td.label {
             width: 70px;
+            white-space: nowrap;
         }
 
         .meta-table td.colon {
@@ -108,30 +110,28 @@
         }
 
         /* ── Recipient & Opening ─────────────────────────────── */
+        /* Kepada Yth tidak di-bold */
         .recipient-block {
-            margin-bottom: 12px;
-            font-size: 11px;
-            line-height: 1.4;
+            margin-bottom: 8px;
         }
 
         .opening-text {
-            margin-bottom: 12px;
-            font-size: 11px;
-            line-height: 1.4;
+            margin-bottom: 6px;
+            text-align: justify;
         }
 
         /* ── Items Table (Sesuai Asli) ───────────────────────── */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 10px;
+            margin: 6px 0;
+            font-size: 12pt;
         }
 
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 5px 5px;
+            padding: 3px 6px;
         }
 
         .items-table thead tr {
@@ -141,7 +141,7 @@
         .items-table thead th {
             font-weight: bold;
             text-align: center;
-            font-size: 10.5px;
+            padding: 4px 6px;
             color: #000;
         }
 
@@ -150,10 +150,11 @@
             border: none !important;
         }
 
+        /* Baris ringkasan: label & nominal rata tengah */
         .items-table tbody tr td.summary-cell {
             background-color: #a6a6a6 !important;
             font-weight: bold;
-            font-size: 10.5px;
+            text-align: center;
         }
 
         .c { text-align: center; }
@@ -162,15 +163,14 @@
 
         /* ── Footer Info ────────────────────────────────────── */
         .terbilang {
-            margin: 10px 0 15px 0;
-            font-size: 11px;
+            margin: 6px 0 8px 0;
             font-style: italic;
+            font-weight: bold;
         }
 
         .payment-info {
-            margin: 12px 0;
-            font-size: 11px;
-            line-height: 1.5;
+            margin: 8px 0;
+            line-height: 1.4;
         }
 
         .bank-table {
@@ -178,38 +178,36 @@
             border-collapse: collapse;
         }
 
+        /* Nama bank, nomor & pemilik rekening tidak di-bold */
         .bank-table td {
-            padding: 1px 15px 1px 0;
+            padding: 0 18px 1px 0;
             vertical-align: top;
-            font-size: 11px;
         }
 
         /* ── Signature Section ──────────────────────────────── */
         .signature-container {
             width: 100%;
-            margin-top: 20px;
+            margin-top: 12px;
         }
 
         .signature-box {
             float: left;
-            width: 250px;
-            font-size: 11px;
+            width: 300px;
             line-height: 1.3;
         }
 
         .signature-img-wrapper {
-            height: 50px;
+            height: 60px;
             margin: 4px 0;
         }
 
         .signature-img-wrapper img {
-            max-height: 50px;
-            max-width: 150px;
-            object-fit: contain;
+            max-height: 60px;
+            max-width: 170px;
         }
 
+        /* Nama penandatangan tidak di-bold (tetap bergaris bawah) */
         .signature-name {
-            font-weight: bold;
             text-decoration: underline;
         }
 
@@ -331,10 +329,10 @@
         <thead>
             <tr>
                 <th style="width:5%">No</th>
-                <th style="width:35%">Deskripsi</th>
-                <th style="width:20%">Harga</th>
-                <th style="width:10%">%</th>
-                <th style="width:30%">Jumlah</th>
+                <th style="width:43%">Deskripsi</th>
+                <th style="width:19%">Harga</th>
+                <th style="width:11%">%</th>
+                <th style="width:22%">Jumlah</th>
             </tr>
         </thead>
         <tbody>
@@ -347,33 +345,33 @@
                 <tr>
                     <td class="c">{{ $idx + 1 }}.</td>
                     <td class="l">{{ $item['deskripsi'] ?? '-' }}</td>
-                    <td class="r">Rp &nbsp;{{ number_format($harga, 0, ',', '.') }}</td>
+                    <td class="c">Rp {{ number_format($harga, 0, ',', '.') }}</td>
                     <td class="c">{{ number_format($persentase, 2, ',', '.') }}%</td>
-                    <td class="r">Rp &nbsp;{{ number_format($jumlah, 0, ',', '.') }}</td>
+                    <td class="c">Rp {{ number_format($jumlah, 0, ',', '.') }}</td>
                 </tr>
             @endforeach
 
             {{-- Baris Jumlah --}}
             <tr>
-                <td colspan="3" class="empty-cell"></td>
-                <td class="summary-cell c">Jumlah</td>
-                <td class="summary-cell r">Rp &nbsp;{{ number_format($totalAmount, 0, ',', '.') }}</td>
+                <td colspan="2" class="empty-cell"></td>
+                <td colspan="2" class="summary-cell">Jumlah</td>
+                <td class="summary-cell">Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
             </tr>
 
             {{-- Baris PPN --}}
             @if ($ppnAmount > 0)
                 <tr>
-                    <td colspan="3" class="empty-cell"></td>
-                    <td class="summary-cell c">PPN ({{ rtrim(rtrim(number_format((float) $invoice->ppn, 2, ',', '.'), '0'), ',') }}%)</td>
-                    <td class="summary-cell r">Rp &nbsp;{{ number_format($ppnAmount, 0, ',', '.') }}</td>
+                    <td colspan="2" class="empty-cell"></td>
+                    <td colspan="2" class="summary-cell">PPN ({{ rtrim(rtrim(number_format((float) $invoice->ppn, 2, ',', '.'), '0'), ',') }}%)</td>
+                    <td class="summary-cell">Rp {{ number_format($ppnAmount, 0, ',', '.') }}</td>
                 </tr>
             @endif
 
             {{-- Baris Total --}}
             <tr>
-                <td colspan="3" class="empty-cell"></td>
-                <td class="summary-cell c">Total</td>
-                <td class="summary-cell r">Rp &nbsp;{{ number_format($finalAmount, 0, ',', '.') }}</td>
+                <td colspan="2" class="empty-cell"></td>
+                <td colspan="2" class="summary-cell">Total</td>
+                <td class="summary-cell">Rp {{ number_format($finalAmount, 0, ',', '.') }}</td>
             </tr>
 
             {{-- Baris Cicilan --}}
@@ -386,9 +384,9 @@
                 @if (is_array($paymentInstallments) && count($paymentInstallments) > 0)
                     @foreach ($paymentInstallments as $index => $payment)
                         <tr>
-                            <td colspan="3" class="empty-cell"></td>
-                            <td class="summary-cell c">{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</td>
-                            <td class="summary-cell r">Rp &nbsp;{{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}</td>
+                            <td colspan="2" class="empty-cell"></td>
+                            <td colspan="2" class="summary-cell">{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</td>
+                            <td class="summary-cell">Rp {{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 @endif
@@ -418,7 +416,7 @@
     @endif
 
     {{-- ═══ PENUTUP ═════════════════════════════════════════════════════════════ --}}
-    <div class="closing" style="margin: 10px 0; font-size: 11px; text-align: justify;">
+    <div class="closing" style="margin: 8px 0; text-align: justify;">
         Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.
     </div>
 
