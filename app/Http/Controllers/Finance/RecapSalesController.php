@@ -275,13 +275,20 @@ class RecapSalesController extends Controller
     /**
      * Membangun query untuk export (Excel/PDF) dengan filter yang sama.
      *
+     * Urutan (revisi klien): data yang diinput lebih dulu tampil paling atas,
+     * yaitu tanggal menaik lalu urutan input (created_at, id_sales_recap) sebagai
+     * tiebreaker agar urutan stabil untuk data bertanggal sama.
+     * Hanya dipakai export — listing di layar (indexData) punya urutan sendiri.
+     *
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Database\Eloquent\Builder
      */
     private function buildExportQuery(Request $request)
     {
         return $this->service->buildFilteredQuery($request)
-            ->orderBy('date', 'desc');
+            ->orderBy('date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id_sales_recap', 'asc');
     }
 
     /**

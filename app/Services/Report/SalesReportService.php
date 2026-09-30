@@ -323,8 +323,12 @@ class SalesReportService
      */
     public function buildExportData(Request $request): array
     {
+        // Revisi klien: data yang diinput lebih dulu tampil paling atas
+        // (tanggal menaik, tiebreaker urutan input agar stabil).
         $salesRecaps = $this->buildFilteredQuery($request)
-            ->orderBy('date', 'desc')
+            ->orderBy('date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id_sales_recap', 'asc')
             ->get();
 
         $projectGroups = $salesRecaps->groupBy('name_proyek');

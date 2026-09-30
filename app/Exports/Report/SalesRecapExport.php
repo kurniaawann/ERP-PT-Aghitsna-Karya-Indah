@@ -2,30 +2,35 @@
 
 namespace App\Exports\Report;
 
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use Maatwebsite\Excel\Events\AfterSheet;
-use App\Models\Report\SalesRecap;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithDefaultStyles;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Style;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
- * Export class untuk Laporan Profit Penjualan ke Excel.
+ * Export class untuk Laporan Profit Penjualan (Rekap Penjualan) ke Excel.
  *
  * Fitur:
- * - Grouping by proyek dengan merged cells
- * - Subtotal per proyek
- * - Grand total
+ * - Grouping by proyek dengan merged cells (NO/TANGGAL per penjualan,
+ *   PROYEK/SUMBER UANG per proyek)
+ * - Kolom HPP dan HARGA JUAL dipecah menjadi SATUAN | JUMLAH
+ * - Subtotal per proyek dan grand total
  * - Footer info (Modal Aghitsna, Modal Divisi Holo, PROFIT)
+ *
+ * Urutan data mengikuti collection yang dikirim controller (tanggal menaik).
+ * Posisi setiap jenis baris dicatat saat membangun data sehingga styling
+ * tidak bergantung pada pencocokan isi sel.
  */
-class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
+class SalesRecapExport implements FromArray, WithColumnWidths, WithTitle, WithEvents, WithDefaultStyles
 {
     /**
      * Data rekap penjualan yang akan di-export.
@@ -42,16 +47,29 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
     protected $monthYear;
 
     /**
-     * Info merge cells untuk registerEvents.
+     * Info merge cells vertikal (NO/TANGGAL per penjualan, PROYEK/SUMBER UANG per proyek).
      *
      * @var array<int, array{col: string, start: int, end: int}>
      */
     protected $mergeInfo = [];
 
-    /**
-     * Baris awal data (setelah header).
-     */
-    private const DATA_START_ROW = 5;
+    /** @var array<int, int> Nomor baris subtotal proyek */
+    protected $subtotalRows = [];
+
+    /** @var int|null Nomor baris grand total */
+    protected $grandTotalRow = null;
+
+    /** @var array<int, int> Nomor baris footer info */
+    protected $footerRows = [];
+
+    /** Kolom terakhir tabel. */
+    private const LAST_COL = 'K';
+
+    /** Baris header tabel (2 baris: grup + sub kolom). */
+    private const HEADER_ROW = 4;
+
+    /** Baris awal data (setelah header 2 baris). */
+    private const DATA_START_ROW = 6;
 
     /**
      * @param  \Illuminate\Support\Collection $salesRecaps  Data rekap penjualan
@@ -61,44 +79,46 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
     public function __construct($salesRecaps, $month = null, $year = null)
     {
         $this->salesRecaps = $salesRecaps;
-        $this->monthYear = $this->buildMonthYearLabel($month, $year);
+        $this->monthYear = $this->buildMonthYearLabel($month ? (int) $month : null, $year ? (int) $year : null);
     }
 
     /**
-     * Membangun data collection untuk export.
+     * Membangun seluruh baris sheet (judul, header, data, total, footer).
      *
-     * @return \Illuminate\Support\Collection
+     * @return array<int, array<int, mixed>>
      */
-    public function collection()
+    public function array(): array
     {
-        $data = [];
-        $no = 1;
+        $this->mergeInfo = [];
+        $this->subtotalRows = [];
+        $this->footerRows = [];
 
+        $periodLabel = strtoupper($this->monthYear);
+        $periodLabel = str_starts_with($periodLabel, 'TAHUN') ? $periodLabel : 'BULAN ' . $periodLabel;
+
+        $data = [
+            ['LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI'],
+            [$periodLabel],
+            [''],
+            ['NO', 'TANGGAL', 'PROYEK', 'NAMA BARANG', 'QTY', 'HPP (HARGA MODAL)', '', 'HARGA JUAL', '', 'PROFIT', 'SUMBER UANG'],
+            ['', '', '', '', '', 'SATUAN', 'JUMLAH', 'SATUAN', 'JUMLAH', '', ''],
+        ];
+
+        $no = 1;
         $grandTotalCapital = 0;
         $grandTotalSelling = 0;
         $grandTotalProfit = 0;
-
-        $projectGroups = $this->salesRecaps->groupBy('name_proyek');
         $currentRow = self::DATA_START_ROW;
 
-        foreach ($projectGroups as $projectName => $projectSales) {
+        // groupBy mempertahankan urutan kemunculan pertama → proyek terurut dari transaksi paling awal
+        foreach ($this->salesRecaps->groupBy('name_proyek') as $projectName => $projectSales) {
             $projectTotalCapital = 0;
             $projectTotalSelling = 0;
             $projectTotalProfit = 0;
-
-            // Hitung total items dalam project
-            $totalItemsInProject = 0;
-            foreach ($projectSales as $saleTemp) {
-                $itemsTemp = is_string($saleTemp->items) ? json_decode($saleTemp->items, true) : $saleTemp->items;
-                $totalItemsInProject += count($itemsTemp);
-            }
-
             $projectStartRow = $currentRow;
 
             foreach ($projectSales as $sale) {
                 $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
-                $itemCount = count($items);
-
                 $saleStartRow = $currentRow;
 
                 foreach ($items as $index => $item) {
@@ -113,52 +133,45 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
                     $projectTotalSelling += $totalSelling;
                     $projectTotalProfit += $profit;
 
+                    $isFirstInProject = $currentRow === $projectStartRow;
+
                     $data[] = [
-                        'no' => $index === 0 ? $no : '',
-                        'date' => $index === 0 ? Carbon::parse($sale->date)->format('d/m/Y') : '',
-                        'project' => '',
-                        'item' => $item['name_item'] ?? '',
-                        'qty' => $qty,
-                        'hpp' => 'Rp ' . number_format($capital, 0, ',', '.') . ' | Rp ' . number_format($totalCapital, 0, ',', '.'),
-                        'selling' => 'Rp ' . number_format($selling, 0, ',', '.') . ' | Rp ' . number_format($totalSelling, 0, ',', '.'),
-                        'profit' => 'Rp ' . number_format($profit, 0, ',', '.'),
-                        'status' => '',
+                        $index === 0 ? $no : '',
+                        $index === 0 ? Carbon::parse($sale->date)->format('d/m/Y') : '',
+                        $isFirstInProject ? strtoupper($projectName ?: '-') : '',
+                        $item['name_item'] ?? '',
+                        $qty,
+                        $this->rupiah($capital),
+                        $this->rupiah($totalCapital),
+                        $this->rupiah($selling),
+                        $this->rupiah($totalSelling),
+                        $this->rupiah($profit),
+                        $isFirstInProject ? strtoupper($projectSales->first()->status) : '',
                     ];
 
                     $currentRow++;
                 }
 
-                // Merge info untuk NO dan TANGGAL
-                if ($itemCount > 1) {
-                    $this->mergeInfo[] = ['col' => 'A', 'start' => $saleStartRow, 'end' => $currentRow - 1];
-                    $this->mergeInfo[] = ['col' => 'B', 'start' => $saleStartRow, 'end' => $currentRow - 1];
-                }
+                // Merge NO dan TANGGAL per penjualan
+                $this->mergeInfo[] = ['col' => 'A', 'start' => $saleStartRow, 'end' => $currentRow - 1];
+                $this->mergeInfo[] = ['col' => 'B', 'start' => $saleStartRow, 'end' => $currentRow - 1];
 
                 $no++;
             }
 
-            // Merge info untuk PROYEK dan SUMBER UANG
-            if ($totalItemsInProject > 1) {
-                $this->mergeInfo[] = ['col' => 'C', 'start' => $projectStartRow, 'end' => $currentRow - 1];
-                $this->mergeInfo[] = ['col' => 'I', 'start' => $projectStartRow, 'end' => $currentRow - 1];
-            }
-
-            // Set PROJECT name dan STATUS di baris pertama
-            $data[$projectStartRow - self::DATA_START_ROW]['project'] = strtoupper($projectName ?: '-');
-            $data[$projectStartRow - self::DATA_START_ROW]['status'] = strtoupper($projectSales->first()->status);
+            // Merge PROYEK dan SUMBER UANG per proyek
+            $this->mergeInfo[] = ['col' => 'C', 'start' => $projectStartRow, 'end' => $currentRow - 1];
+            $this->mergeInfo[] = ['col' => 'K', 'start' => $projectStartRow, 'end' => $currentRow - 1];
 
             // Subtotal per proyek
             $data[] = [
-                'no' => '',
-                'date' => '',
-                'project' => '',
-                'item' => '',
-                'qty' => '',
-                'hpp' => 'Rp ' . number_format($projectTotalCapital, 0, ',', '.'),
-                'selling' => 'Rp ' . number_format($projectTotalSelling, 0, ',', '.'),
-                'profit' => 'Rp ' . number_format($projectTotalProfit, 0, ',', '.'),
-                'status' => '',
+                'SUB TOTAL', '', '', '', '',
+                $this->rupiah($projectTotalCapital), '',
+                $this->rupiah($projectTotalSelling), '',
+                $this->rupiah($projectTotalProfit),
+                '',
             ];
+            $this->subtotalRows[] = $currentRow;
             $currentRow++;
 
             $grandTotalCapital += $projectTotalCapital;
@@ -168,119 +181,46 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
 
         // Grand Total
         $data[] = [
-            'no' => 'TOTAL PENJUALAN PROFIT',
-            'date' => '',
-            'project' => '',
-            'item' => '',
-            'qty' => '',
-            'hpp' => 'Rp ' . number_format($grandTotalCapital, 0, ',', '.'),
-            'selling' => 'Rp ' . number_format($grandTotalSelling, 0, ',', '.'),
-            'profit' => 'Rp ' . number_format($grandTotalProfit, 0, ',', '.'),
-            'status' => '',
+            'TOTAL PENJUALAN PROFIT', '', '', '', '',
+            $this->rupiah($grandTotalCapital), '',
+            $this->rupiah($grandTotalSelling), '',
+            $this->rupiah($grandTotalProfit),
+            '',
         ];
+        $this->grandTotalRow = $currentRow;
+        $currentRow++;
 
-        // Empty rows
-        $data[] = $this->emptyRow();
-        $data[] = $this->emptyRow();
+        // Baris kosong pemisah
+        $data[] = [''];
+        $currentRow++;
 
         // Footer info
-        $data[] = $this->footerRow('Modal Aghitsna', 'Rp ' . number_format($grandTotalCapital, 0, ',', '.'));
-        $data[] = $this->footerRow('Modal Divisi Holo', 'Rp ' . number_format($grandTotalSelling, 0, ',', '.'));
-        $data[] = $this->footerRow('PROFIT', 'Rp ' . number_format($grandTotalProfit, 0, ',', '.'));
+        foreach ([
+            'Modal Aghitsna' => $grandTotalCapital,
+            'Modal Divisi Holo' => $grandTotalSelling,
+            'PROFIT' => $grandTotalProfit,
+        ] as $label => $value) {
+            $data[] = ['', '', $label, '', $this->rupiah($value)];
+            $this->footerRows[] = $currentRow;
+            $currentRow++;
+        }
 
-        return collect($data);
+        return $data;
     }
 
     /**
-     * Header untuk Excel.
+     * Font default workbook: Times New Roman 11pt (seragam dengan PDF).
      *
-     * @return array<int, array<int, string>>
-     */
-    public function headings(): array
-    {
-        return [
-            ['LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI'],
-            ['BULAN ' . strtoupper($this->monthYear)],
-            [''],
-            [
-                'NO',
-                'TANGGAL',
-                'PROYEK',
-                'NAMA BARANG',
-                'QTY',
-                'HPP (HARGA MODAL )',
-                'HARGA JUAL',
-                'PROFIT',
-                'SUMBER UANG',
-            ],
-        ];
-    }
-
-    /**
-     * Style untuk worksheet.
-     *
-     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @param  \PhpOffice\PhpSpreadsheet\Style\Style $defaultStyle
      * @return array
      */
-    public function styles(Worksheet $sheet): array
+    public function defaultStyles(Style $defaultStyle)
     {
-        $highestRow = $sheet->getHighestRow();
-
-        // Merge title
-        $sheet->mergeCells('A1:I1');
-        $sheet->getStyle('A1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 14],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        // Merge subtitle
-        $sheet->mergeCells('A2:I2');
-        $sheet->getStyle('A2')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 12],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        // Empty row
-        $sheet->getRowDimension(3)->setRowHeight(5);
-
-        // Header row styling
-        $sheet->getStyle('A4:I4')->applyFromArray([
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'FFFF00'],
-            ],
-            'font' => ['bold' => true, 'size' => 10],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-            'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
-            ],
-        ]);
-
-        $sheet->getRowDimension(1)->setRowHeight(20);
-        $sheet->getRowDimension(2)->setRowHeight(18);
-        $sheet->getRowDimension(4)->setRowHeight(30);
-
-        // Data rows border
-        $dataEndRow = $highestRow - 5;
-        $sheet->getStyle('A5:I' . $dataEndRow)->applyFromArray([
-            'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
-            ],
-            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        // Align columns
-        $sheet->getStyle('A5:A' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('B5:B' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('E5:E' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('F5:H' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-        return [];
+        return ['font' => ['name' => 'Times New Roman', 'size' => 11]];
     }
 
     /**
-     * Event handler untuk merge cells dan styling tambahan.
+     * Event handler untuk merge cells dan styling.
      *
      * @return array<string, callable>
      */
@@ -289,10 +229,13 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $highestRow = $sheet->getHighestRow();
 
-                $this->applyMergeStyles($sheet);
-                $this->applyRowStyles($sheet, $highestRow);
+                $this->applyHeaderStyles($sheet);
+                $this->applyDataStyles($sheet);
+                $this->applyMerges($sheet);
+                $this->applyTotalStyles($sheet);
+                $this->applyFooterStyles($sheet);
+                $this->applyPageSetup($sheet);
             },
         ];
     }
@@ -305,15 +248,17 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
     public function columnWidths(): array
     {
         return [
-            'A' => 22,
-            'B' => 18,
-            'C' => 20,
-            'D' => 25,
-            'E' => 8,
-            'F' => 25,
-            'G' => 25,
-            'H' => 18,
-            'I' => 20,
+            'A' => 5,
+            'B' => 12,
+            'C' => 26,
+            'D' => 28,
+            'E' => 7,
+            'F' => 15,
+            'G' => 16,
+            'H' => 15,
+            'I' => 16,
+            'J' => 16,
+            'K' => 17,
         ];
     }
 
@@ -330,6 +275,17 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
     // ============================================================
     // PRIVATE HELPERS
     // ============================================================
+
+    /**
+     * Format angka ke Rupiah (Rp 1.000.000).
+     *
+     * @param  int|float $value
+     * @return string
+     */
+    private function rupiah($value): string
+    {
+        return 'Rp ' . number_format($value, 0, ',', '.');
+    }
 
     /**
      * Membangun label bulan/tahun untuk header.
@@ -363,140 +319,160 @@ class SalesRecapExport implements FromCollection, WithHeadings, WithStyles, With
     }
 
     /**
-     * Membuat baris kosong untuk footer spacing.
-     *
-     * @return array<string, string>
-     */
-    private function emptyRow(): array
-    {
-        return array_fill_keys(['no', 'date', 'project', 'item', 'qty', 'hpp', 'selling', 'profit', 'status'], '');
-    }
-
-    /**
-     * Membuat baris footer info.
-     *
-     * @param  string $label  Label (Modal Aghitsna, Modal Divisi Holo, PROFIT)
-     * @param  string $value  Nilai formatted
-     * @return array<string, string>
-     */
-    private function footerRow(string $label, string $value): array
-    {
-        return [
-            'no' => '',
-            'date' => '',
-            'project' => $label,
-            'item' => '',
-            'qty' => $value,
-            'hpp' => '',
-            'selling' => '',
-            'profit' => '',
-            'status' => '',
-        ];
-    }
-
-    /**
-     * Apply merge styles untuk NO, TANGGAL, PROYEK, dan SUMBER UANG.
+     * Styling judul dan header tabel 2 baris.
      *
      * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
      * @return void
      */
-    private function applyMergeStyles($sheet): void
+    private function applyHeaderStyles(Worksheet $sheet): void
+    {
+        $last = self::LAST_COL;
+        $h1 = self::HEADER_ROW;
+        $h2 = self::HEADER_ROW + 1;
+
+        $sheet->mergeCells("A1:{$last}1");
+        $sheet->mergeCells("A2:{$last}2");
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle("A1:A2")->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getRowDimension(1)->setRowHeight(22);
+        $sheet->getRowDimension(2)->setRowHeight(18);
+        $sheet->getRowDimension(3)->setRowHeight(6);
+
+        // Kolom tunggal: merge vertikal 2 baris header
+        foreach (['A', 'B', 'C', 'D', 'E', 'J', 'K'] as $col) {
+            $sheet->mergeCells("{$col}{$h1}:{$col}{$h2}");
+        }
+        // Grup kolom HPP dan HARGA JUAL
+        $sheet->mergeCells("F{$h1}:G{$h1}");
+        $sheet->mergeCells("H{$h1}:I{$h1}");
+
+        $sheet->getStyle("A{$h1}:{$last}{$h2}")->applyFromArray([
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF00']],
+            'font' => ['bold' => true],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+        ]);
+        $sheet->getRowDimension($h1)->setRowHeight(20);
+        $sheet->getRowDimension($h2)->setRowHeight(18);
+    }
+
+    /**
+     * Border dan alignment baris data (sampai grand total).
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @return void
+     */
+    private function applyDataStyles(Worksheet $sheet): void
+    {
+        $start = self::DATA_START_ROW;
+        $end = $this->grandTotalRow;
+        $last = self::LAST_COL;
+
+        $sheet->getStyle("A{$start}:{$last}{$end}")->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        $sheet->getStyle("A{$start}:B{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("C{$start}:D{$end}")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("E{$start}:E{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("F{$start}:J{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("K{$start}:K{$end}")->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setWrapText(true);
+    }
+
+    /**
+     * Merge vertikal NO/TANGGAL per penjualan dan PROYEK/SUMBER UANG per proyek.
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @return void
+     */
+    private function applyMerges(Worksheet $sheet): void
     {
         foreach ($this->mergeInfo as $merge) {
-            if ($merge['start'] < $merge['end']) {
-                $range = $merge['col'] . $merge['start'] . ':' . $merge['col'] . $merge['end'];
-                $sheet->mergeCells($range);
-                $sheet->getStyle($range)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-
-                for ($row = $merge['start']; $row <= $merge['end']; $row++) {
-                    $cell = $merge['col'] . $row;
-
-                    $borderStyle = [
-                        'left' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
-                        'right' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
-                    ];
-
-                    $borderStyle['top'] = ($row === $merge['start'])
-                        ? ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]
-                        : ['borderStyle' => Border::BORDER_NONE];
-
-                    $borderStyle['bottom'] = ($row === $merge['end'])
-                        ? ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]
-                        : ['borderStyle' => Border::BORDER_NONE];
-
-                    $sheet->getStyle($cell)->applyFromArray(['borders' => $borderStyle]);
-                }
+            // Lewati kelompok tanpa item (tidak ada baris data)
+            if ($merge['end'] < $merge['start']) {
+                continue;
             }
+
+            $range = $merge['col'] . $merge['start'] . ':' . $merge['col'] . $merge['end'];
+
+            if ($merge['start'] < $merge['end']) {
+                $sheet->mergeCells($range);
+            }
+
+            $sheet->getStyle($range)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
         }
     }
 
     /**
-     * Apply row-level styles (subtotal, grand total, footer).
+     * Styling baris subtotal proyek dan grand total.
      *
      * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
-     * @param  int                                            $highestRow
      * @return void
      */
-    private function applyRowStyles($sheet, int $highestRow): void
+    private function applyTotalStyles(Worksheet $sheet): void
     {
-        for ($row = self::DATA_START_ROW; $row <= $highestRow; $row++) {
-            $cellA = $sheet->getCell('A' . $row)->getValue();
-            $cellC = $sheet->getCell('C' . $row)->getValue();
-            $cellD = $sheet->getCell('D' . $row)->getValue();
-            $cellF = $sheet->getCell('F' . $row)->getValue();
+        $rows = array_merge($this->subtotalRows, [$this->grandTotalRow]);
 
-            // Subtotal rows
-            if (empty($cellA) && empty($cellD) && !empty($cellF) && strpos($cellF, 'Rp') !== false) {
-                $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFC000']],
-                    'font' => ['bold' => true],
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
-                ]);
-            }
+        foreach ($rows as $row) {
+            $isGrandTotal = $row === $this->grandTotalRow;
 
-            // Grand Total row
-            if ($cellA === 'TOTAL PENJUALAN PROFIT') {
-                $sheet->mergeCells('A' . $row . ':E' . $row);
-                $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF00']],
-                    'font' => ['bold' => true],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
-                ]);
-                $sheet->getStyle('I' . $row)->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFFFF']],
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
-                ]);
-            }
+            $sheet->mergeCells("A{$row}:E{$row}");
+            $sheet->mergeCells("F{$row}:G{$row}");
+            $sheet->mergeCells("H{$row}:I{$row}");
 
-            // Footer info rows
-            if (in_array($cellC, ['Modal Aghitsna', 'Modal Divisi Holo', 'PROFIT'])) {
-                $sheet->getRowDimension($row)->setRowHeight(20);
-                $sheet->mergeCells('C' . $row . ':D' . $row);
-                $sheet->mergeCells('E' . $row . ':F' . $row);
-
-                $sheet->getStyle('C' . $row)->applyFromArray([
-                    'font' => ['bold' => true, 'size' => 10],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                        'vertical' => Alignment::VERTICAL_CENTER,
-                        'wrapText' => false,
-                    ],
-                ]);
-
-                $sheet->getStyle('E' . $row)->applyFromArray([
-                    'font' => ['bold' => true, 'size' => 10],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                        'vertical' => Alignment::VERTICAL_CENTER,
-                        'wrapText' => false,
-                    ],
-                ]);
-
-                $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
-                ]);
-            }
+            $sheet->getStyle("A{$row}:" . self::LAST_COL . $row)->applyFromArray([
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $isGrandTotal ? 'FFFF00' : 'FFC000']],
+                'font' => ['bold' => true],
+            ]);
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(
+                $isGrandTotal ? Alignment::HORIZONTAL_CENTER : Alignment::HORIZONTAL_RIGHT
+            );
+            $sheet->getRowDimension($row)->setRowHeight(18);
         }
+    }
+
+    /**
+     * Styling footer info (Modal Aghitsna, Modal Divisi Holo, PROFIT).
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @return void
+     */
+    private function applyFooterStyles(Worksheet $sheet): void
+    {
+        foreach ($this->footerRows as $row) {
+            $sheet->mergeCells("C{$row}:D{$row}");
+            $sheet->mergeCells("E{$row}:G{$row}");
+            $sheet->getStyle("C{$row}:G{$row}")->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getRowDimension($row)->setRowHeight(18);
+        }
+    }
+
+    /**
+     * Setup cetak: A4 landscape, muat 1 halaman lebar, header tabel berulang.
+     *
+     * @param  \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @return void
+     */
+    private function applyPageSetup(Worksheet $sheet): void
+    {
+        $sheet->getPageSetup()
+            ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+            ->setPaperSize(PageSetup::PAPERSIZE_A4)
+            ->setFitToWidth(1)
+            ->setFitToHeight(0);
+        $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(self::HEADER_ROW, self::HEADER_ROW + 1);
+        $sheet->getPageMargins()->setLeft(0.4)->setRight(0.4)->setTop(0.5)->setBottom(0.5);
     }
 }

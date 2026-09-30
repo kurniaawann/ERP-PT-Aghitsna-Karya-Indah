@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Profit Penjualan Divisi Produksi</title>
     <style>
+        /* Margin halaman diatur di @page; !important wajib karena reset "* { margin: 0 }" ikut menimpa margin halaman di dompdf */
+        @page {
+            margin: 12mm 10mm !important;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,50 +19,47 @@
 
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 9px;
-            padding: 15px;
+            font-size: 12pt;
+            color: #000;
         }
 
         .title {
             text-align: center;
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 5px;
+            font-size: 14pt;
+            margin-bottom: 2px;
         }
 
         .subtitle {
             text-align: center;
             font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 15px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
+            font-size: 12pt;
             margin-bottom: 10px;
         }
 
-        th,
-        td {
-            border: 1px solid black;
-            padding: 4px 6px;
-            text-align: left;
+        table.report {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 10px;
         }
 
-        th {
+        table.report th,
+        table.report td {
+            border: 1px solid #000;
+            padding: 3px 4px;
+            font-size: 10pt;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        table.report th {
             background-color: #FFFF00;
             font-weight: bold;
             text-align: center;
-            font-size: 10px;
-            vertical-align: middle;
         }
 
-        .vertical-center {
-            vertical-align: middle;
-        }
-
-        /* Ensure table headers repeat on each page */
+        /* Header tabel diulang di setiap halaman */
         thead {
             display: table-header-group;
         }
@@ -66,132 +68,122 @@
             display: table-row-group;
         }
 
-        /* Prevent page breaks inside table rows */
+        /* Satu baris tidak terpotong antar halaman */
         tr {
             page-break-inside: avoid;
         }
 
-        /* Style untuk merged cell - hide konten jika bukan first item */
-        .hide-content {
-            color: transparent;
-            font-size: 0;
-            line-height: 0;
+        /* Sel "gabungan" (NO/TANGGAL per penjualan, PROYEK/SUMBER UANG per proyek):
+           isi hanya di baris pertama, garis horizontal di tengah kelompok disembunyikan */
+        table.report td.merged {
+            vertical-align: top;
         }
 
-        /* Hide top border untuk merged cells (bukan first item) */
-        .border-top-none {
+        table.report td.border-top-none {
             border-top: none;
         }
 
-        /* Hide bottom border untuk merged cells (bukan last item) */
-        .border-bottom-none {
+        table.report td.border-bottom-none {
             border-bottom: none;
         }
 
         .text-center {
-            text-align: center;
+            text-align: center !important;
         }
 
         .text-right {
-            text-align: right;
+            text-align: right !important;
         }
 
-        .subtotal-row {
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .subtotal-row td {
             background-color: #FFC000;
             font-weight: bold;
         }
 
-        .total-row {
+        .total-row td {
             background-color: #FFFF00;
             font-weight: bold;
         }
 
-        .footer-info {
-            margin-top: 15px;
+        /* Ringkasan modal & profit di bawah tabel */
+        .summary {
+            margin: 14px auto 0 auto;
+            border-collapse: collapse;
+            page-break-inside: avoid;
+        }
+
+        .summary td {
+            border: none;
+            padding: 2px 8px;
+            font-size: 12pt;
             font-weight: bold;
-            text-align: center;
         }
 
-        .footer-info table {
-            width: auto;
-            border: none;
-            margin: 0 auto;
-        }
-
-        .footer-info td {
-            border: none;
-            padding: 2px 10px 2px 0;
-        }
-
-        .col-no {
-            width: 3%;
-            text-align: center;
-        }
-
-        .col-date {
-            width: 7%;
-            text-align: center;
-        }
-
-        .col-project {
-            width: 12%;
-            text-align: center;
-        }
-
-        .col-item {
-            width: 15%;
-            text-align: center;
-        }
-
-        .col-qty {
-            width: 4%;
-            text-align: center;
-        }
-
-        .col-hpp {
-            width: 13%;
-            text-align: center;
-        }
-
-        .col-selling {
-            width: 11%;
-            text-align: center;
-        }
-
-        .col-profit {
-            width: 11%;
-            text-align: center;
-        }
-
-        .col-status {
-            width: 13%;
-            text-align: center;
-        }
+        .col-no { width: 3%; }
+        .col-date { width: 7.5%; }
+        .col-project { width: 14%; }
+        .col-item { width: 16.5%; }
+        .col-qty { width: 4%; }
+        .col-unit { width: 9%; }
+        .col-amount { width: 10%; }
+        .col-profit { width: 9.5%; }
+        .col-status { width: 7.5%; }
     </style>
 </head>
 
 <body>
-    <div class="title">LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI</div>
-    <div class="subtitle">BULAN {{ strtoupper($monthYear) }}
-    </div>
+    @php
+        // Label periode: "TAHUN 2026" tidak diberi prefix "BULAN"
+        $periodLabel = strtoupper($monthYear);
+        $periodLabel = str_starts_with($periodLabel, 'TAHUN') ? $periodLabel : 'BULAN ' . $periodLabel;
+        $rp = fn ($value) => 'Rp ' . number_format($value, 0, ',', '.');
+    @endphp
 
-    <table>
+    <div class="title">LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI</div>
+    <div class="subtitle">{{ $periodLabel }}</div>
+
+    <table class="report">
+        <colgroup>
+            <col class="col-no">
+            <col class="col-date">
+            <col class="col-project">
+            <col class="col-item">
+            <col class="col-qty">
+            <col class="col-unit">
+            <col class="col-amount">
+            <col class="col-unit">
+            <col class="col-amount">
+            <col class="col-profit">
+            <col class="col-status">
+        </colgroup>
         <thead>
             <tr>
-                <th class="col-no">NO</th>
-                <th class="col-date">TANGGAL</th>
-                <th class="col-project">PROYEK</th>
-                <th class="col-item">NAMA BARANG</th>
-                <th class="col-qty">QTY</th>
-                <th class="col-hpp">HPP (HARGA MODAL )</th>
-                <th class="col-selling">HARGA JUAL</th>
-                <th class="col-profit">Jumlah & PROFIT</th>
-                <th class="col-status">SUMBER UANG</th>
+                <th rowspan="2" class="col-no">NO</th>
+                <th rowspan="2" class="col-date">TANGGAL</th>
+                <th rowspan="2" class="col-project">PROYEK</th>
+                <th rowspan="2" class="col-item">NAMA BARANG</th>
+                <th rowspan="2" class="col-qty">QTY</th>
+                <th colspan="2">HPP (HARGA MODAL)</th>
+                <th colspan="2">HARGA JUAL</th>
+                <th rowspan="2" class="col-profit">PROFIT</th>
+                <th rowspan="2" class="col-status">SUMBER UANG</th>
+            </tr>
+            <tr>
+                <th class="col-unit">SATUAN</th>
+                <th class="col-amount">JUMLAH</th>
+                <th class="col-unit">SATUAN</th>
+                <th class="col-amount">JUMLAH</th>
             </tr>
         </thead>
         <tbody>
             @php
                 $no = 1;
+                // Urutan data sudah tanggal menaik dari query export; groupBy mempertahankan
+                // urutan kemunculan pertama sehingga proyek terurut dari transaksi paling awal.
                 $projectGroups = $salesRecaps->groupBy('name_proyek');
                 $totalCapitalAll = 0;
                 $totalSellingAll = 0;
@@ -213,9 +205,10 @@
                             : $saleTemp->items;
                         $totalItemsInProject += count($itemsTemp);
                     }
+                    $projectStatus = strtoupper($projectSales->first()->status);
                 @endphp
 
-                @foreach ($projectSales as $saleIndex => $sale)
+                @foreach ($projectSales as $sale)
                     @php
                         $items = is_string($sale->items) ? json_decode($sale->items, true) : $sale->items;
                         $itemCount = count($items);
@@ -234,67 +227,44 @@
                             $projectTotalSelling += $totalSelling;
                             $projectTotalProfit += $profit;
 
-                            // Tentukan apakah ini first/last item dalam sale
+                            // Posisi baris dalam penjualan (untuk NO/TANGGAL)
                             $isFirstInSale = $itemIndex === 0;
                             $isLastInSale = $itemIndex === $itemCount - 1;
+                            $saleMerge = ($isFirstInSale ? '' : ' border-top-none') . ($isLastInSale ? '' : ' border-bottom-none');
 
-                            // Tentukan apakah ini first/last item dalam project
+                            // Posisi baris dalam proyek (untuk PROYEK/SUMBER UANG)
                             $isFirstInProject = $projectItemCounter === 0;
                             $isLastInProject = $projectItemCounter === $totalItemsInProject - 1;
+                            $projectMerge = ($isFirstInProject ? '' : ' border-top-none') . ($isLastInProject ? '' : ' border-bottom-none');
 
                             $projectItemCounter++;
                         @endphp
 
                         <tr>
-                            <!-- NO Column: Tampilkan hanya di first item dalam sale, sisanya hide dengan border manipulation -->
-                            <td
-                                class="text-center vertical-center {{ !$isFirstInSale ? 'border-top-none' : '' }} {{ !$isLastInSale ? 'border-bottom-none' : '' }}">
-                                <span class="{{ !$isFirstInSale ? 'hide-content' : '' }}">{{ $no }}</span>
+                            <td class="merged text-center{{ $saleMerge }}">{{ $isFirstInSale ? $no : '' }}</td>
+                            <td class="merged text-center{{ $saleMerge }}">
+                                {{ $isFirstInSale ? \Carbon\Carbon::parse($sale->date)->format('d/m/Y') : '' }}
                             </td>
-
-                            <!-- TANGGAL Column: Tampilkan hanya di first item dalam sale -->
-                            <td
-                                class="text-center vertical-center {{ !$isFirstInSale ? 'border-top-none' : '' }} {{ !$isLastInSale ? 'border-bottom-none' : '' }}">
-                                <span
-                                    class="{{ !$isFirstInSale ? 'hide-content' : '' }}">{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</span>
-                            </td>
-
-                            <!-- PROYEK Column: Tampilkan hanya di first item dalam project -->
-                            <td
-                                class="vertical-center {{ !$isFirstInProject ? 'border-top-none' : '' }} {{ !$isLastInProject ? 'border-bottom-none' : '' }}">
-                                <span
-                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($projectName ?: '-') }}</span>
-                            </td>
-
+                            <td class="merged{{ $projectMerge }}">{{ $isFirstInProject ? strtoupper($projectName ?: '-') : '' }}</td>
                             <td>{{ $item['name_item'] ?? '-' }}</td>
                             <td class="text-center">{{ $qty }}</td>
-                            <td class="text-right">Rp {{ number_format($capital, 0, ',', '.') }} | Rp
-                                {{ number_format($totalCapital, 0, ',', '.') }}</td>
-                            <td class="text-right">Rp {{ number_format($selling, 0, ',', '.') }} | Rp
-                                {{ number_format($totalSelling, 0, ',', '.') }}</td>
-                            <td class="text-right">Rp {{ number_format($profit, 0, ',', '.') }}</td>
-
-                            <!-- STATUS Column: Tampilkan hanya di first item dalam project -->
-                            <td
-                                class="text-center vertical-center {{ !$isFirstInProject ? 'border-top-none' : '' }} {{ !$isLastInProject ? 'border-bottom-none' : '' }}">
-                                <span
-                                    class="{{ !$isFirstInProject ? 'hide-content' : '' }}">{{ strtoupper($sale->status) }}</span>
-                            </td>
+                            <td class="text-right nowrap">{{ $rp($capital) }}</td>
+                            <td class="text-right nowrap">{{ $rp($totalCapital) }}</td>
+                            <td class="text-right nowrap">{{ $rp($selling) }}</td>
+                            <td class="text-right nowrap">{{ $rp($totalSelling) }}</td>
+                            <td class="text-right nowrap">{{ $rp($profit) }}</td>
+                            <td class="merged text-center{{ $projectMerge }}">{{ $isFirstInProject ? $projectStatus : '' }}</td>
                         </tr>
                     @endforeach
                     @php $no++; @endphp
                 @endforeach
 
-                <!-- Project Subtotal -->
+                {{-- Subtotal per proyek --}}
                 <tr class="subtotal-row">
-                    <td class="text-center"></td>
-                    <td class="text-center"></td>
-                    <td></td>
-                    <td></td>
-                    <td class="text-center"></td>
-                    <td class="text-right">Rp {{ number_format($projectTotalCapital, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($projectTotalSelling, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($projectTotalProfit, 0, ',', '.') }}</td>
+                    <td colspan="5" class="text-right">SUB TOTAL</td>
+                    <td colspan="2" class="text-right nowrap">{{ $rp($projectTotalCapital) }}</td>
+                    <td colspan="2" class="text-right nowrap">{{ $rp($projectTotalSelling) }}</td>
+                    <td class="text-right nowrap">{{ $rp($projectTotalProfit) }}</td>
                     <td></td>
                 </tr>
 
@@ -305,33 +275,31 @@
                 @endphp
             @endforeach
 
-            <!-- Grand Total -->
+            {{-- Grand Total --}}
             <tr class="total-row">
-                <td colspan="5" class="text-center" style="font-weight: bold;">TOTAL PENJUALAN PROFIT</td>
-                <td class="text-right">Rp {{ number_format($totalCapitalAll, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($totalSellingAll, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($totalProfitAll, 0, ',', '.') }}</td>
-                <td class="text-center" style="background-color: white; border: none;"></td>
+                <td colspan="5" class="text-center">TOTAL PENJUALAN PROFIT</td>
+                <td colspan="2" class="text-right nowrap">{{ $rp($totalCapitalAll) }}</td>
+                <td colspan="2" class="text-right nowrap">{{ $rp($totalSellingAll) }}</td>
+                <td class="text-right nowrap">{{ $rp($totalProfitAll) }}</td>
+                <td></td>
             </tr>
         </tbody>
     </table>
 
-    <div class="footer-info">
-        <table>
-            <tr>
-                <td>Modal Aghitsna</td>
-                <td>Rp {{ number_format($totalCapitalAll, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Modal Divisi Holo</td>
-                <td>Rp {{ number_format($totalSellingAll, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>PROFIT</td>
-                <td>Rp {{ number_format($totalProfitAll, 0, ',', '.') }}</td>
-            </tr>
-        </table>
-    </div>
+    <table class="summary">
+        <tr>
+            <td>Modal Aghitsna</td>
+            <td class="text-right">{{ $rp($totalCapitalAll) }}</td>
+        </tr>
+        <tr>
+            <td>Modal Divisi Holo</td>
+            <td class="text-right">{{ $rp($totalSellingAll) }}</td>
+        </tr>
+        <tr>
+            <td>PROFIT</td>
+            <td class="text-right">{{ $rp($totalProfitAll) }}</td>
+        </tr>
+    </table>
 </body>
 
 </html>
