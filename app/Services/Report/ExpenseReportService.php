@@ -423,18 +423,22 @@ class ExpenseReportService
      *
      * Logika:
      * - Data diambil memakai buildFilteredQuery + eager load category dan
-     *   diurutkan transaction_date menaik (kronologis untuk laporan).
+     *   diurutkan transaction_date menaik (kronologis untuk laporan), lalu
+     *   created_at menaik agar data bertanggal sama tampil sesuai urutan input.
      * - Totals dihitung dari Collection::sum() di sisi PHP (bukan SQL) karena
      *   sudah terlanjur dimuat semua record untuk export.
+     * - monthlySections: data dipecah per bulan (laporan bulanan) untuk PDF
+     *   yang mencakup lebih dari satu bulan (lihat ExpenseMonthlySections).
      *
      * @param  \Illuminate\Http\Request  $request  Request yang berisi parameter filter
-     * @return array{expenseRecaps: \Illuminate\Support\Collection, periodTitle: string, totals: object}
+     * @return array{expenseRecaps: \Illuminate\Support\Collection, periodTitle: string, totals: object, monthlySections: array}
      */
     public function buildExportData(Request $request): array
     {
         $expenseRecaps = $this->buildFilteredQuery($request)
             ->with(['category'])
             ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
             ->get();
 
         $totals = (object) [
@@ -449,6 +453,7 @@ class ExpenseReportService
             'expenseRecaps' => $expenseRecaps,
             'periodTitle' => $periodTitle,
             'totals' => $totals,
+            'monthlySections' => ExpenseMonthlySections::build($expenseRecaps),
         ];
     }
 

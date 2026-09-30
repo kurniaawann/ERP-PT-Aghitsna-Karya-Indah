@@ -7,6 +7,7 @@ use App\Http\Requests\Finance\StoreRecapExpenseRequest;
 use App\Http\Requests\Finance\UpdateRecapExpenseRequest;
 use App\Models\Report\ExpenseRecap;
 use App\Services\Finance\RecapExpenseService;
+use App\Services\Report\ExpenseMonthlySections;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -173,6 +174,9 @@ class RecapExpenseController extends Controller
     /**
      * Export rekap pengeluaran ke Excel.
      *
+     * Bila data mencakup lebih dari satu bulan, satu sheet per bulan
+     * (dipecah di dalam ExpenseRecapExport).
+     *
      * @param  \Illuminate\Http\Request $request
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
@@ -200,6 +204,9 @@ class RecapExpenseController extends Controller
     /**
      * Export rekap pengeluaran ke PDF.
      *
+     * Laporan bulanan: bila data mencakup lebih dari satu bulan, PDF dipecah
+     * per bulan (lihat ExpenseMonthlySections) + halaman rekap per bulan.
+     *
      * @param  \Illuminate\Http\Request $request
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
@@ -219,6 +226,7 @@ class RecapExpenseController extends Controller
             'expenseRecaps' => $expenseRecaps,
             'totals' => $totals,
             'periodTitle' => $periodTitle,
+            'monthlySections' => ExpenseMonthlySections::build($expenseRecaps),
         ])->setPaper('a4', 'landscape');
 
         $filename = 'Rekap_Pengeluaran_' . date('Y-m-d') . '.pdf';
