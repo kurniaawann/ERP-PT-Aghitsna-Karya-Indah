@@ -113,12 +113,15 @@
                                             Edit
                                         </button>
 
+                                        {{-- Sudah lunas: tombol Bukti disembunyikan (bukti tetap terlihat di Lihat Detail) --}}
+                                        @if (!$isFullyPaid)
                                         <button type="button"
                                             onclick="openPaymentProofUpload('proyek', '{{ $invoice->invoice_number }}', true)"
                                             class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Upload Bukti Pembayaran">
                                             <i class="fa-solid fa-image w-3 h-3"></i> Bukti
                                         </button>
+                                        @endif
 
                                         {{-- data-preview: dokumen dipratinjau di modal (tanpa tab baru) --}}
                                         <a href="{{ route('proyek-invoice.print.pdf', $invoice->invoice_number) }}" data-preview

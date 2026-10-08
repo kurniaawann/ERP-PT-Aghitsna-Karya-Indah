@@ -36,8 +36,9 @@
                                 $recapInvoicePaid = $recap->getInvoicePaidAmount();
                                 $recapRemaining = $recap->getRemainingAmount();
                                 $recapProgress = $recap->getProgressPercent();
+                                $recapFullyPaid = $recap->isFullyPaid();
 
-                                if ($recap->isFullyPaid()) {
+                                if ($recapFullyPaid) {
                                     $recapStatusLabel = 'Sudah Lunas';
                                     $recapStatusClass = 'bg-green-100 text-green-800';
                                     $recapProgressColor = 'bg-green-500';
@@ -124,12 +125,15 @@
                                             Edit
                                         </button>
 
+                                        {{-- Sudah lunas: tombol Bukti disembunyikan (bukti tetap terlihat di Lihat Detail) --}}
+                                        @if (!$recapFullyPaid)
                                         <button type="button"
                                             onclick="openPaymentProofUpload('recap', '{{ $recap->id }}', true)"
                                             class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Upload Bukti Pembayaran">
                                             <i class="fa-solid fa-image w-3 h-3"></i> Bukti
                                         </button>
+                                        @endif
 
                                         <a href="{{ route('project-financial-report.index') }}"
                                             class="flex items-center gap-1 bg-btn-search hover:bg-btn-search-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
