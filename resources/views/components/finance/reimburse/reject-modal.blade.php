@@ -1,7 +1,7 @@
 {{-- ═══════════════════════════════════════════════════════════════════════════
      KOMPONEN MODAL REJECT REIMBURSE
-     Konfirmasi penolakan reimbursement (Super Admin only).
-     Menampilkan jumlah dan total amount dari reimburse yang dipilih.
+     Konfirmasi penolakan reimbursement (Admin only).
+     Menampilkan jumlah dan total amount dari reimburse draft yang dipilih.
      ═══════════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="rejectModal" title="Tolak Reimbursement" action="{{ route('reimburse.reject') }}" method="POST"
     buttonText="Tolak">

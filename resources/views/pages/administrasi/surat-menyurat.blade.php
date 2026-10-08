@@ -8,6 +8,7 @@
      - nota             : Nota
      - surat-jalan      : Surat Jalan
      - spk              : Surat Perintah Kerja
+     - bkk              : Bukti Kas Keluar (dulu submenu sidebar)
 
      Data aktif per tab disiapkan oleh controller submodul (indexData()).
      Hanya partial untuk tab yang aktif yang di-include.
@@ -20,7 +21,7 @@
 @section('content')
     {{-- Tab Bar --}}
     <div class="bg-surface-base rounded-xl shadow-sm p-1.5 mb-4">
-        <div class="flex flex-wrap gap-1.5 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div class="flex flex-wrap gap-1.5 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             @foreach ($tabs as $key => $meta)
                 <a href="{{ route('surat-menyurat.index', ['tab' => $key]) }}"
                     class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border-2
@@ -45,5 +46,7 @@
         @include('pages.administrasi.partials.surat-jalan')
     @elseif ($tab === 'spk')
         @include('pages.administrasi.partials.spk')
+    @elseif ($tab === 'bkk')
+        @include('pages.administrasi.partials.bkk')
     @endif
 @endsection

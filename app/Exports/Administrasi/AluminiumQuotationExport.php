@@ -110,10 +110,11 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                 // Baris 2: nama usaha
-                $sheet->getRowDimension(2)->setRowHeight(24);
+                // Revisi klien: nama perusahaan 12pt, alamat/telp/email 11pt
+                $sheet->getRowDimension(2)->setRowHeight(20);
                 $sheet->mergeCells('A2:F2');
                 $sheet->setCellValue('A2', 'AGHITSNA ALUMUNIUM DAN BAJA RINGAN');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
+                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
                 $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_BOTTOM);
 
                 // Baris 3-6: alamat perusahaan (kiri, A:C)
@@ -126,6 +127,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 foreach ($companyLines as $row => $text) {
                     $sheet->mergeCells("A{$row}:C{$row}");
                     $sheet->setCellValue("A{$row}", $text);
+                    $sheet->getStyle("A{$row}")->getFont()->setSize(11);
                     $sheet->getStyle("A{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 }
 
@@ -150,8 +152,8 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 }
 
                 // ═══ PENERIMA (tidak bold, revisi klien) ═════════════════════════════
-                // Jarak ±1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
-                $sheet->getRowDimension(7)->setRowHeight(20);
+                // Jarak tepat 1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
+                $sheet->getRowDimension(7)->setRowHeight(15.75);
                 $currentRow = 8;
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
@@ -170,8 +172,8 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
 
                 // Opening text
                 $currentRow += 2;
-                // Jarak ±1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
-                $sheet->getRowDimension($currentRow - 1)->setRowHeight(20);
+                // Jarak tepat 1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight(15.75);
                 $openingText = $quotation->project_description
                     ? 'Dengan ini kami sampaikan penawaran untuk proyek ' . $quotation->project_description . ' sebagai berikut :'
                     : 'Dengan ini kami sampaikan penawaran sebagai berikut :';
@@ -230,8 +232,8 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     $volume = $item['volume'] ?? 0;
                     $sheet->setCellValue("C{$currentRow}", ($volume !== null && $volume !== '') ? number_format((float) $volume, 2, ',', '.') : '-');
                     $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '-');
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'] ?? 0, 0, ',', '.'));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.'));
+                    $sheet->setCellValue("E{$currentRow}", format_rupiah($item['harga'] ?? 0));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0)));
                 }
 
                 $itemEndRow = $currentRow;
@@ -257,9 +259,9 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 if ($discountAmount > 0) {
                     $currentRow++;
                     // Persentase tanpa nol di belakang koma (sama seperti PDF), mis. "5%" bukan "5,00%"
-                    $discountPercent = rtrim(rtrim(number_format((float) $quotation->discount_value, 2, ',', '.'), '0'), ',');
+                    $discountPercent = format_persen($quotation->discount_value);
                     $sheet->setCellValue("E{$currentRow}", 'Discount' . ($quotation->discount_type === 'percentage' ? ' (' . $discountPercent . '%)' : ''));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($discountAmount, 0, ',', '.'));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah(-$discountAmount));
                     $sheet->getRowDimension($currentRow)->setRowHeight(20);
                     $sheet->getStyle("E{$currentRow}:F{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
@@ -284,7 +286,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->setCellValue("E{$currentRow}", 'Total');
 
                 // Amount
-                $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($grandTotal, 0, ',', '.'));
+                $sheet->setCellValue("F{$currentRow}", format_rupiah($grandTotal));
 
                 // Style empty cells (no border)
                 $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([

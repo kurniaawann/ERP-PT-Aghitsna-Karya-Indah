@@ -29,12 +29,25 @@ class CashOutProofController extends Controller
     ) {}
 
     /**
-     * Menampilkan daftar bukti kas keluar dengan filter pencarian dan paginasi.
+     * Halaman lama Bukti Kas Keluar → dialihkan ke tab "bkk" di Surat Menyurat
+     * (revisi klien: BKK kini menjadi tab, bukan submenu sidebar). Filter
+     * pada query string ikut dibawa.
      *
-     * @param  Request  $request  Request HTTP (search parameter)
-     * @return \Illuminate\View\View Halaman daftar bukti kas keluar
+     * @param  Request  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
+    {
+        return redirect()->route('surat-menyurat.index', array_merge($request->query(), ['tab' => 'bkk']));
+    }
+
+    /**
+     * Data daftar bukti kas keluar untuk tab "bkk" di halaman Surat Menyurat.
+     *
+     * @param  Request  $request  Request HTTP (search, month, year)
+     * @return array{cashOuts: mixed, search: ?string, executives: mixed}
+     */
+    public function indexData(Request $request): array
     {
         $search = $request->input('search');
         $month = $request->integer('month') ?: null;
@@ -47,7 +60,7 @@ class CashOutProofController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('pages.administrasi.cash-out-proof', compact('cashOuts', 'search', 'executives'));
+        return compact('cashOuts', 'search', 'executives');
     }
 
     /**
@@ -61,7 +74,7 @@ class CashOutProofController extends Controller
         $this->service->create($request->validated());
 
         return redirect()
-            ->route('cash-out-proof.index')
+            ->route('surat-menyurat.index', ['tab' => 'bkk'])
             ->with('success', 'Bukti kas keluar berhasil ditambahkan!');
     }
 
@@ -77,7 +90,7 @@ class CashOutProofController extends Controller
         $this->service->update($cashOutProof, $request->validated());
 
         return redirect()
-            ->route('cash-out-proof.index')
+            ->route('surat-menyurat.index', ['tab' => 'bkk'])
             ->with('success', 'Bukti kas keluar berhasil diperbarui!');
     }
 
@@ -93,14 +106,14 @@ class CashOutProofController extends Controller
 
         if (empty($ids)) {
             return redirect()
-                ->route('cash-out-proof.index')
+                ->route('surat-menyurat.index', ['tab' => 'bkk'])
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 
         $deletedCount = $this->service->destroySelected($ids);
 
         return redirect()
-            ->route('cash-out-proof.index')
+            ->route('surat-menyurat.index', ['tab' => 'bkk'])
             ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
@@ -132,7 +145,7 @@ class CashOutProofController extends Controller
 
         if (empty($ids)) {
             return redirect()
-                ->route('cash-out-proof.index')
+                ->route('surat-menyurat.index', ['tab' => 'bkk'])
                 ->with('error', 'Tidak ada data yang dipilih!');
         }
 

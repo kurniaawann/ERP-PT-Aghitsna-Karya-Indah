@@ -1,7 +1,9 @@
 {{-- ═══════════════════════════════════════════════════════════════════════════
      KOMPONEN MODAL APPROVE REIMBURSE
-     Konfirmasi persetujuan reimbursement (Super Admin only).
-     Menampilkan jumlah dan total amount dari reimburse yang dipilih.
+     Konfirmasi persetujuan reimbursement (Admin only).
+     Menampilkan jumlah dan total amount dari reimburse draft yang dipilih.
+     Setelah disetujui, pratinjau PDF reimburse tersebut langsung dibuka
+     di dalam halaman.
      ═══════════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="approveModal" title="Setujui Reimbursement" action="{{ route('reimburse.approve') }}" method="POST"
     buttonText="Setujui">
@@ -38,6 +40,7 @@
         <p class="text-xs text-text-secondary">
             <i class="fa-solid fa-info-circle"></i>
             Reimburse yang disetujui akan langsung berubah status menjadi "Disetujui" dan tidak dapat diubah kembali.
+            Hanya reimburse berstatus Draft yang diproses. Setelah disetujui, dokumen PDF-nya langsung ditampilkan.
         </p>
     </div>
 

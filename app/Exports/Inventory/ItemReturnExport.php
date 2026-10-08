@@ -84,7 +84,7 @@ class ItemReturnExport implements FromCollection, WithHeadings, WithMapping, Wit
      */
     public function headings(): array
     {
-        $monthName = $this->month ? \DateTime::createFromFormat('!m', $this->month)->format('F') : '';
+        $monthName = $this->month ? \Carbon\Carbon::create(null, (int) $this->month, 1)->translatedFormat('F') : '';
         $yearName = $this->year ?? '';
         $period = $monthName || $yearName ? "Periode: {$monthName} {$yearName}" : 'Semua Data';
 

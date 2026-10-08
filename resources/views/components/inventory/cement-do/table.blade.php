@@ -92,7 +92,6 @@
                                         {{-- Invoice yang pernah dibuat dari DO ini --}}
                                         @forelse ($cementDeliveryOrder->invoices as $invoice)
                                             <a href="{{ route('semen-invoice.print.pdf', $invoice->invoice_number) }}"
-                                                target="_blank"
                                                 class="flex items-center gap-1 bg-surface-secondary border border-border-strong hover:bg-primary-light text-text-primary px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                                 title="Cetak Invoice {{ $invoice->invoice_number }}">
                                                 <i class="fa-solid fa-print w-3 h-3"></i>

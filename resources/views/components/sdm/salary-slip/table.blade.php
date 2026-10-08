@@ -139,7 +139,8 @@
                                         Detail
                                     </button>
 
-                                    <a href="{{ route('salary-slips.print.pdf', $slip->id) }}" target="_blank"
+                                    <a href="{{ route('salary-slips.print.pdf', $slip->id) }}" data-preview
+                                        data-preview-title="Slip Gaji {{ $slip->employee->name ?? $slip->employee_code }} - {{ $slip->formatted_period }}"
                                         class="flex items-center gap-1 bg-btn-print hover:bg-btn-print-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                         title="Cetak PDF Slip Gaji">
                                         <i class="fa-solid fa-file-pdf w-3 h-3"></i>

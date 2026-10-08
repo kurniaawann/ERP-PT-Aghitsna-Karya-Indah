@@ -123,14 +123,16 @@
             font-weight: bold;
         }
 
+        /* Kolom nominal diperlebar sedikit (Proyek & Nama Barang dikurangi)
+           agar format "Rp. 150.000.000" muat dalam satu baris tanpa meluber */
         .col-no { width: 3%; }
         .col-date { width: 7.5%; }
-        .col-project { width: 14%; }
-        .col-item { width: 16.5%; }
+        .col-project { width: 12.5%; }
+        .col-item { width: 14.5%; }
         .col-qty { width: 4%; }
-        .col-unit { width: 9%; }
-        .col-amount { width: 10%; }
-        .col-profit { width: 9.5%; }
+        .col-unit { width: 9.5%; }
+        .col-amount { width: 11%; }
+        .col-profit { width: 10%; }
         .col-status { width: 7.5%; }
     </style>
 </head>
@@ -140,7 +142,8 @@
         // Label periode: "TAHUN 2026" tidak diberi prefix "BULAN"
         $periodLabel = strtoupper($monthYear);
         $periodLabel = str_starts_with($periodLabel, 'TAHUN') ? $periodLabel : 'BULAN ' . $periodLabel;
-        $rp = fn ($value) => 'Rp ' . number_format($value, 0, ',', '.');
+        // Nominal ditulis "Rp. 50.000" (helper format_rupiah)
+        $rp = fn ($value) => format_rupiah($value);
     @endphp
 
     <div class="title">LAPORAN PROFIT PENJUALAN DIVISI PRODUKSI</div>

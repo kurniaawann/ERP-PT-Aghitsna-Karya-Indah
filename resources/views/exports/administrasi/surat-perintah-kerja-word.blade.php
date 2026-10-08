@@ -183,7 +183,7 @@
                 </tr>
                 <tr>
                     <td class="identitas-label">Tanggal</td>
-                    <td>: {{ \Carbon\Carbon::parse($spk->tanggal)->format('d F Y') }}</td>
+                    <td>: {{ \Carbon\Carbon::parse($spk->tanggal)->translatedFormat('d F Y') }}</td>
                 </tr>
             </table>
 
@@ -212,8 +212,8 @@
                                 <td>{{ $detail['keterangan'] ?? '-' }}</td>
                                 <td class="text-center">{{ $detail['volume'] }}</td>
                                 <td class="text-center">{{ $detail['satuan'] ?? '-' }}</td>
-                                <td class="text-right">{{ number_format($detail['harga'], 0, ',', '.') }}</td>
-                                <td class="text-right">{{ number_format($detail['jumlah'], 0, ',', '.') }}</td>
+                                <td class="text-right">{{ format_rupiah($detail['harga']) }}</td>
+                                <td class="text-right">{{ format_rupiah($detail['jumlah']) }}</td>
                             </tr>
                         @endforeach
                     @empty
@@ -223,7 +223,7 @@
                     @endforelse
                 <tr class="total-row">
                     <td colspan="6" class="text-right">TOTAL</td>
-                    <td class="text-right">{{ number_format($spk->total_amount, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah($spk->total_amount) }}</td>
                 </tr>
             </tbody>
         </table>

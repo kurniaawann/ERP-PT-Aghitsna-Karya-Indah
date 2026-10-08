@@ -277,14 +277,14 @@ class SalesRecapExport implements FromArray, WithColumnWidths, WithTitle, WithEv
     // ============================================================
 
     /**
-     * Format angka ke Rupiah (Rp 1.000.000).
+     * Format angka ke Rupiah ("Rp. 1.000.000") via helper format_rupiah().
      *
      * @param  int|float $value
      * @return string
      */
     private function rupiah($value): string
     {
-        return 'Rp ' . number_format($value, 0, ',', '.');
+        return format_rupiah($value);
     }
 
     /**

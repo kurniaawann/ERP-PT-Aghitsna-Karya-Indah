@@ -15,6 +15,8 @@
             {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('surat-menyurat.index', ['tab' => 'nota']) }}"
                 class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                {{-- Pertahankan tab aktif saat filter/pencarian dikirim (form GET membuang query di action) --}}
+                <input type="hidden" name="tab" value="nota">
                 <x-filters.tipe-nota-filter :value="request('tipe')" responsive="custom" />
                 <x-filters.month-filter :value="request('month')" responsive="custom" />
                 <x-filters.year-filter :value="request('year')" responsive="custom" />

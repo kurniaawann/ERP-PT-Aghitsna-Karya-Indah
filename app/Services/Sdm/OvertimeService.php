@@ -4,6 +4,7 @@ namespace App\Services\Sdm;
 
 use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Employee;
+use App\Models\Sdm\SalarySlip;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -21,11 +22,14 @@ use Illuminate\Support\Facades\Log;
  * Setiap perubahan data lembur (tambah/ubah/hapus) memicu penghitungan
  * ulang otomatis payroll draft yang periodenya memuat tanggal lembur,
  * sehingga snapshot payroll (overtime_total, gaji bersih) selalu sinkron.
+ * Slip gaji draft karyawan kantor (bulanan) pada bulan lembur ikut
+ * dihitung ulang karena lembur tampil sebagai penerimaan di slip gaji.
  */
 class OvertimeService
 {
     public function __construct(
-        private readonly PayrollService $payrollService
+        private readonly PayrollService $payrollService,
+        private readonly SalarySlipService $salarySlipService
     ) {}
     /**
      * Mendapatkan daftar data lembur dengan paginasi, pencarian, dan eager loading.
@@ -293,6 +297,9 @@ class OvertimeService
                 Carbon::parse(min($dates)),
                 Carbon::parse(max($dates))
             );
+
+            // Slip gaji draft (karyawan kantor) mulai bulan lembur terlama.
+            $this->salarySlipService->recalculateDraftSlipsForPeriod($employeeId, Carbon::parse(min($dates)));
         }
 
         return $deleted;
@@ -314,6 +321,9 @@ class OvertimeService
         $parsed = $date instanceof Carbon ? $date : Carbon::parse($date);
 
         $this->payrollService->recalculateForAttendanceRange($employeeId, $parsed, $parsed);
+
+        // Lembur juga tampil di slip gaji karyawan kantor → sinkronkan slip draft.
+        $this->salarySlipService->recalculateDraftSlipsForPeriod($employeeId, $parsed);
     }
 
     /**
@@ -344,6 +354,29 @@ class OvertimeService
                 $employeeCode,
                 $dateCarbon->format('d-m-Y'),
                 $locking->formatted_period
+            ));
+        }
+
+        // Lembur karyawan kantor terkunci bila slip gaji bulan tersebut sudah
+        // dibayar (lembur sudah masuk snapshot slip paid).
+        $lockingSlip = SalarySlip::where('created_by', auth()->id())
+            ->where('employee_code', $employeeCode)
+            ->where('period_year', $dateCarbon->year)
+            ->where('period_month', $dateCarbon->month)
+            ->where('status', 'paid')
+            ->first();
+
+        if ($lockingSlip) {
+            $employee = Employee::find($employeeCode);
+            $name = $employee?->name ?: $employeeCode;
+
+            throw new \DomainException(sprintf(
+                'Data lembur %s (%s) pada tanggal %s terkunci karena slip gaji periode %s sudah dibayar (status: paid). '
+                .'Hapus slip gaji paid terkait untuk membuka kunci dan mengubah data periode ini.',
+                $name,
+                $employeeCode,
+                $dateCarbon->format('d-m-Y'),
+                $lockingSlip->formatted_period
             ));
         }
     }

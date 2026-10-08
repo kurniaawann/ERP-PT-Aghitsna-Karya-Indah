@@ -1,19 +1,19 @@
 {{-- ============================================================
-     Modal Tambah Petinggi
-     Form untuk menambah data petinggi baru ke dalam sistem.
+     Modal Tambah Penandatangan
+     Form untuk menambah data penandatangan baru ke dalam sistem.
      Fields:
-       - name (required)    : Nama petinggi, maks 150 karakter
+       - name (required)    : Nama penandatangan, maks 150 karakter
        - position (opsional): Jabatan, maks 150 karakter
        - signature_image (opsional): Gambar tanda tangan
      ============================================================ --}}
-<x-modal id="addModal" title="Tambah Petinggi" action="{{ route('executive.store') }}" method="POST"
+<x-modal id="addModal" title="Tambah Penandatangan" action="{{ route('executive.store') }}" method="POST"
     buttonText="Simpan" enctype="multipart/form-data">
 
-    {{-- Nama Petinggi (wajib diisi) --}}
+    {{-- Nama Penandatangan (wajib diisi) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Petinggi <span class="text-error">*</span></label>
-        <input type="text" name="name" class="w-full border rounded p-2" placeholder="Masukkan nama petinggi" required
-            maxlength="150" oninvalid="this.setCustomValidity('Nama petinggi tidak boleh kosong')"
+        <label class="block text-text-primary mb-1">Nama Penandatangan <span class="text-error">*</span></label>
+        <input type="text" name="name" class="w-full border rounded p-2" placeholder="Masukkan nama penandatangan" required
+            maxlength="150" oninvalid="this.setCustomValidity('Nama penandatangan tidak boleh kosong')"
             oninput="this.setCustomValidity('')">
     </div>
 

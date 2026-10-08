@@ -129,17 +129,16 @@ document.addEventListener('DOMContentLoaded', function () {
      * Handler klik untuk elemen dengan atribut `data-export`.
      *
      * Alur:
-     * 1. Ambil URL dari `data-export-url` dan teks loading dari `data-export-loading`.
-     * 2. Jika URL tersedia, cegah navigasi default lalu delegasikan download
-     *    ke window.handleDownload (AJAX + download file dengan indikator loading).
+     * 1. Ambil URL dari `data-export-url`.
+     * 2. Jika URL tersedia, cegah navigasi default lalu tampilkan pratinjau
+     *    dokumen (window.openDocumentPreview) sebelum diunduh.
      */
     document.querySelectorAll('[data-export]').forEach(function (el) {
         el.addEventListener('click', function (e) {
             const url = this.getAttribute('data-export-url');
-            const loading = this.getAttribute('data-export-loading') || 'Downloading...';
-            if (url && window.handleDownload) {
+            if (url && window.openDocumentPreview) {
                 e.preventDefault();
-                window.handleDownload(url, this, loading);
+                window.openDocumentPreview(url, { title: (this.textContent || '').trim() || 'Pratinjau Dokumen' });
             }
         });
     });

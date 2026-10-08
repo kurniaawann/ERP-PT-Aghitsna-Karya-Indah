@@ -336,13 +336,13 @@
                         @endphp
                         @if ($invoicePaidTotal > 0)
                             <span class="highlight-text">
-                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->locale('id')->translatedFormat('j F Y') }} = Rp. {{ number_format($invoicePaidTotal, 0, ',', '.') }},-
+                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->locale('id')->translatedFormat('j F Y') }} = {{ format_rupiah($invoicePaidTotal) }}
                             </span>
                         @endif
                     </td>
                     <td style="vertical-align: middle; text-align: right; width: 40%;">
                         <div class="amount-box">
-                            Rp. {{ number_format($kwintansi->amount, 0, ',', '.') }},-
+                            {{ format_rupiah($kwintansi->amount) }}
                         </div>
                     </td>
                 </tr>

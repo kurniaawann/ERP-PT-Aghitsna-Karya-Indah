@@ -25,6 +25,9 @@ class StoreReimburseRequest extends FormRequest
     /**
      * Aturan validasi untuk store Reimburse.
      *
+     * Tgl Jatuh Tempo (due_date) tidak lagi dipakai (revisi klien) sehingga
+     * tidak divalidasi maupun disimpan.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -34,7 +37,6 @@ class StoreReimburseRequest extends FormRequest
             'project_name'        => 'required|string|max:255',
             'expense_description' => 'required|string',
             'total_amount'        => 'required|integer|min:0',
-            'due_date'            => 'required|date|after_or_equal:date',
             'notes'               => 'nullable|string',
             'proof_file'          => 'nullable|file|mimes:jpeg,jpg,png,webp,gif,bmp,pdf|max:5120',
         ];
@@ -70,9 +72,6 @@ class StoreReimburseRequest extends FormRequest
             'total_amount.required'        => 'Total amount wajib diisi.',
             'total_amount.integer'         => 'Total amount harus berupa angka.',
             'total_amount.min'             => 'Total amount minimal 0.',
-            'due_date.required'            => 'Tanggal jatuh tempo wajib diisi.',
-            'due_date.date'                => 'Format tanggal jatuh tempo tidak valid.',
-            'due_date.after_or_equal'      => 'Tanggal jatuh tempo harus hari ini atau setelahnya.',
             'proof_file.mimes'                   => 'Lampiran harus berupa file gambar (JPG, PNG, WEBP, GIF, BMP) atau PDF.',
             'proof_file.max'                     => 'Lampiran maksimal 5MB.',
         ];

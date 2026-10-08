@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string                    $project_name
  * @property string                    $expense_description
  * @property int                       $total_amount
- * @property \Carbon\Carbon            $due_date
+ * @property \Carbon\Carbon|null       $due_date         Tgl jatuh tempo (legacy — tidak lagi diisi, revisi klien)
  * @property string                    $status           draft|approved|rejected
  * @property string|null               $notes
  * @property \Carbon\Carbon|null       $status_changed_at
@@ -107,6 +107,9 @@ class Reimburse extends Model
 
     /**
      * Accessor untuk format due date Indonesia.
+     *
+     * Kolom due_date kini nullable dan tidak lagi ditampilkan (revisi klien);
+     * accessor dipertahankan untuk data lama.
      *
      * @return string  Format: d/m/Y
      */

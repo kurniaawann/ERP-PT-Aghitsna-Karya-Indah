@@ -297,8 +297,10 @@
                                     <td class="px-4 py-3 text-sm text-text-secondary">{{ $item->keterangan_bon ?: '-' }}</td>
                                     <td class="px-4 py-3 text-center text-sm">
                                         @if ($item->hasProof())
-                                            <a href="{{ asset('storage/' . $item->proof_file) }}" target="_blank"
-                                                rel="noopener noreferrer" title="{{ $item->proof_file_name }}"
+                                            {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
+                                            <a href="{{ asset('storage/' . $item->proof_file) }}"
+                                                onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti — ' . ($item->description ?: 'Transaksi')), downloadName: @js($item->proof_file_name ?: basename($item->proof_file)) })"
+                                                title="{{ $item->proof_file_name }}"
                                                 class="text-blue-600 hover:underline">
                                                 <i class="fa-solid fa-paperclip"></i> File
                                             </a>

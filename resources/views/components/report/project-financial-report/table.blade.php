@@ -11,13 +11,14 @@
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th class="p-2 text-center"><input type="checkbox" id="selectAll" class="w-4 h-4 accent-primary cursor-pointer"></th>
-                            <th class="p-2 text-center">No</th>
-                        <th class="p-2 text-left">Tanggal</th>
-                        <th class="p-2 text-left">Nama Proyek</th>
-                        <th class="p-2 text-left">Lokasi</th>
-                        <th class="p-2 text-right">Saldo</th>
-                        <th class="p-2 text-center">Status</th>
-                        <th class="p-2 text-center">Aksi</th>
+                            {{-- Nama kolom HURUF KAPITAL (revisi klien) --}}
+                            <th class="p-2 text-center">NO</th>
+                        <th class="p-2 text-left">TANGGAL</th>
+                        <th class="p-2 text-left">NAMA PROYEK</th>
+                        <th class="p-2 text-left">LOKASI</th>
+                        <th class="p-2 text-right">SALDO</th>
+                        <th class="p-2 text-center">STATUS</th>
+                        <th class="p-2 text-center">AKSI</th>
                     </tr>
                 </thead>
                 <tbody class="bg-surface-base divide-y divide-border-light">
@@ -84,13 +85,16 @@
                                         <i class="fa-solid fa-pen w-3 h-3"></i>
                                         Edit
                                     </button>
-                                    <a href="{{ route('project-financial-report.export.pdf', $recap) }}"
+                                    {{-- Export dibuka sebagai pratinjau di dalam halaman (data-preview) --}}
+                                    <a href="{{ route('project-financial-report.export.pdf', $recap) }}" data-preview
+                                        data-preview-title="Laporan Keuangan {{ $recap->project_name }} (PDF)"
                                         class="flex items-center gap-1 bg-error hover:bg-error text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                         title="Export PDF">
                                         <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                         PDF
                                     </a>
-                                    <a href="{{ route('project-financial-report.export.excel', $recap) }}"
+                                    <a href="{{ route('project-financial-report.export.excel', $recap) }}" data-preview
+                                        data-preview-title="Laporan Keuangan {{ $recap->project_name }} (Excel)"
                                         class="flex items-center gap-1 bg-success hover:bg-success text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                         title="Export Excel">
                                         <i class="fa-solid fa-file-excel w-3 h-3"></i>

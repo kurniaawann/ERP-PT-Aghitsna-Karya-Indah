@@ -114,14 +114,20 @@ class ReimburseController extends Controller
                 ->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
         }
 
-        $deletedCount = $this->reimburseService->bulkDelete($ids);
+        // Admin hanya boleh menghapus pengajuan berstatus draft
+        $deletedCount = $this->reimburseService->bulkDelete($ids, $request->user()?->isAdmin() ?? false);
 
         return redirect()->route('reimburse.index')
             ->with('success', "{$deletedCount} data terpilih berhasil dihapus.");
     }
 
     /**
-     * Approve reimburse yang dipilih (role super admin).
+     * Approve reimburse yang dipilih (role admin).
+     *
+     * Setelah disetujui, halaman index langsung membuka pratinjau dokumen
+     * (PDF) reimburse yang baru disetujui di dalam halaman — tanpa tab baru.
+     * Kode yang disetujui dikirim lewat flash `reimburse_preview_ids` dan
+     * dibaca oleh JS halaman (window.openDocumentPreview).
      *
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\RedirectResponse
@@ -136,11 +142,12 @@ class ReimburseController extends Controller
                 ->with('error', 'Tidak ada reimburse yang dipilih!');
         }
 
-        $this->reimburseService->bulkApprove($ids);
+        $approvedCodes = $this->reimburseService->bulkApprove((array) $ids);
 
         return redirect()
             ->route('reimburse.index')
-            ->with('success', 'Reimburse berhasil disetujui!');
+            ->with('success', 'Reimburse berhasil disetujui!')
+            ->with('reimburse_preview_ids', $approvedCodes);
     }
 
     /**
@@ -169,8 +176,12 @@ class ReimburseController extends Controller
     /**
      * Export reimburse ke PDF.
      *
+     * Tanpa `ids[]`: semua data sesuai filter (Export Semua). Dengan `ids[]`
+     * (query string): hanya reimburse terpilih — dipakai pratinjau otomatis
+     * setelah reimburse disetujui.
+     *
      * @param  \Illuminate\Http\Request $request
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     * @return \Illuminate\Http\Response
      */
     public function exportPdf(Request $request)
     {
@@ -184,6 +195,7 @@ class ReimburseController extends Controller
             'approvedCount'  => $summary['approved_count'],
             'rejectedCount'  => $summary['rejected_count'],
             'status'         => $request->input('status'),
+            'statusText'     => $this->reimburseService->buildStatusText($request, $reimburses),
         ]);
 
         $pdf->setPaper('a4', 'landscape');
@@ -194,6 +206,8 @@ class ReimburseController extends Controller
     /**
      * Export reimburse ke Excel.
      *
+     * Tanpa `ids[]`: semua data sesuai filter. Dengan `ids[]`: hanya data terpilih.
+     *
      * @param  \Illuminate\Http\Request $request
      */
     public function exportExcel(Request $request)
@@ -202,9 +216,41 @@ class ReimburseController extends Controller
         $status = $request->input('status');
 
         return Excel::download(
-            new ReimburseExport($reimburses, $status),
+            new ReimburseExport($reimburses, $status, $this->reimburseService->buildStatusText($request, $reimburses)),
             'Reimburse_' . date('Y-m-d') . '.xlsx'
         );
+    }
+
+    /**
+     * Export PDF reimburse yang dipilih (checkbox `ids[]`, POST).
+     *
+     * Dipanggil oleh tombol "Export Dipilih" pada print-dropdown-with-selected.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
+    public function exportPdfSelected(Request $request)
+    {
+        if (empty($this->reimburseService->selectedIds($request))) {
+            return redirect()->route('reimburse.index')->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        return $this->exportPdf($request);
+    }
+
+    /**
+     * Export Excel reimburse yang dipilih (checkbox `ids[]`, POST).
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function exportExcelSelected(Request $request)
+    {
+        if (empty($this->reimburseService->selectedIds($request))) {
+            return redirect()->route('reimburse.index')->with('error', 'Tidak ada data yang dipilih!');
+        }
+
+        return $this->exportExcel($request);
     }
 
     /**

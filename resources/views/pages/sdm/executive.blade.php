@@ -1,17 +1,17 @@
 {{-- =====================================================================
-     Halaman: Data Petinggi (executive)
-     Tujuan: Menampilkan daftar petinggi/pimpinan perusahaan beserta
+     Halaman: Data Penandatangan (executive)
+     Tujuan: Menampilkan daftar penandatangan (pimpinan perusahaan) beserta
              gambar tanda tangan, dengan fitur pencarian, tambah, edit,
              hapus massal, dan pagination.
 
      Data dari ExecutiveController@index:
-     - $executives : LengthAwarePaginator daftar petinggi (sudah dipaginasi)
+     - $executives : LengthAwarePaginator daftar penandatangan (sudah dipaginasi)
      - $search     : Kata kunci pencarian saat ini (nullable)
 
      Komponen yang di-include:
-     - components.sdm.executive.table      : tabel daftar petinggi
-     - components.sdm.executive.add-modal  : modal tambah petinggi
-     - components.sdm.executive.edit-modal : modal edit per petinggi (loop)
+     - components.sdm.executive.table      : tabel daftar penandatangan
+     - components.sdm.executive.add-modal  : modal tambah penandatangan
+     - components.sdm.executive.edit-modal : modal edit per penandatangan (loop)
      - x-pagination                        : kontrol pagination
      - x-modal (deleteModal)               : konfirmasi hapus massal
 
@@ -20,11 +20,11 @@
      ===================================================================== --}}
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Data Petinggi')
+@section('title', 'PT Aghitsna Karya Indah - Data Penandatangan')
 
 @section('content')
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Petinggi</h1>
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Penandatangan</h1>
 
         {{-- Pencarian & Tombol Aksi --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -42,17 +42,17 @@
             </div>
         </div>
 
-        {{-- Tabel Petinggi --}}
+        {{-- Tabel Penandatangan --}}
         @include('components.sdm.executive.table', ['executives' => $executives])
     </div>
 
     {{-- Paginasi --}}
     <x-pagination :paginator="$executives" />
 
-    {{-- Modal Tambah Petinggi --}}
+    {{-- Modal Tambah Penandatangan --}}
     @include('components.sdm.executive.add-modal')
 
-    {{-- Modal Edit Petinggi (satu per baris) --}}
+    {{-- Modal Edit Penandatangan (satu per baris) --}}
     @foreach ($executives as $executive)
         @include('components.sdm.executive.edit-modal', ['executive' => $executive])
     @endforeach

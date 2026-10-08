@@ -60,6 +60,12 @@
                                 <td class="p-2">{{ $invoice->recipient }}</td>
                                 <td class="p-2 text-sm text-text-label">
                                     {{ substr($invoice->project_description ?? '-', 0, 30) }}
+                                    @if ($invoice->projectRecap)
+                                        <span class="block text-[11px] text-primary whitespace-nowrap"
+                                            title="Rekap Proyek: {{ $invoice->projectRecap->project_name }}">
+                                            <i class="fa-solid fa-diagram-project"></i> {{ $invoice->projectRecap->id }}
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td class="p-2 text-right font-medium whitespace-nowrap">
@@ -114,14 +120,17 @@
                                             <i class="fa-solid fa-image w-3 h-3"></i> Bukti
                                         </button>
 
-                                        <a href="{{ route('proyek-invoice.print.pdf', $invoice->invoice_number) }}"
+                                        {{-- data-preview: dokumen dipratinjau di modal (tanpa tab baru) --}}
+                                        <a href="{{ route('proyek-invoice.print.pdf', $invoice->invoice_number) }}" data-preview
+                                            data-preview-title="Invoice {{ $invoice->invoice_number }} (PDF)"
                                             class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Print PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                             PDF
                                         </a>
 
-                                        <a href="{{ route('proyek-invoice.print.excel', $invoice->invoice_number) }}"
+                                        <a href="{{ route('proyek-invoice.print.excel', $invoice->invoice_number) }}" data-preview
+                                            data-preview-title="Invoice {{ $invoice->invoice_number }} (Excel)"
                                             class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Print Excel">
                                             <i class="fa-solid fa-file-excel w-3 h-3"></i>

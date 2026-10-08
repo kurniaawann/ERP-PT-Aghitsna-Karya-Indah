@@ -26,8 +26,8 @@
         <select name="employment_type" id="edit-employment-type-{{ $employee->employee_code }}"
             class="w-full border rounded p-2 edit-employment-type-select"
             data-employee-code="{{ $employee->employee_code }}">
-            <option value="harian" @selected($employee->employment_type === 'harian')>Harian (Tukang)</option>
-            <option value="bulanan" @selected($employee->employment_type === 'bulanan')>Bulanan (Slip Gaji)</option>
+            <option value="harian" @selected($employee->employment_type === 'harian')>TUKANG PROYEK</option>
+            <option value="bulanan" @selected($employee->employment_type === 'bulanan')>KARYAWAN KANTOR</option>
         </select>
     </div>
 

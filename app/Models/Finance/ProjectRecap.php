@@ -100,6 +100,19 @@ class ProjectRecap extends Model
     }
 
     /**
+     * Invoice Proyek yang ditautkan ke rekap proyek ini.
+     *
+     * Tautan bersifat opsional dan dipilih user saat membuat/mengedit
+     * invoice proyek (kolom proyek_invoices.project_recap_id).
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(InvoiceProyek::class, 'project_recap_id', 'id')
+            ->orderBy('invoice_date')
+            ->orderBy('created_at');
+    }
+
+    /**
      * Laporan Keuangan Proyek yang menautkan ke rekap proyek ini (relasi 1:1).
      *
      * Laporan dibuat otomatis saat dibuka pertama kali dari tombol
@@ -126,6 +139,39 @@ class ProjectRecap extends Model
     public function getTotalAmount(): int
     {
         return (int) ($this->total_rab ?? 0);
+    }
+
+    /**
+     * Total nilai yang sudah ditagih lewat invoice proyek yang ditautkan.
+     *
+     * Nilai tiap invoice = total item setelah diskon, sebelum PPN
+     * (InvoiceProyek::getBilledAmount) agar sebanding dengan Total RAB.
+     *
+     * @param  string|null  $excludeInvoiceNumber  Invoice yang tidak ikut dihitung (mis. invoice yang sedang diedit)
+     * @return int
+     */
+    public function getInvoicedAmount(?string $excludeInvoiceNumber = null): int
+    {
+        $invoices = $this->relationLoaded('invoices')
+            ? $this->invoices
+            : $this->invoices()->get();
+
+        return (int) $invoices
+            ->reject(fn ($invoice) => $excludeInvoiceNumber !== null && $invoice->invoice_number === $excludeInvoiceNumber)
+            ->sum(fn ($invoice) => $invoice->getBilledAmount());
+    }
+
+    /**
+     * Sisa nilai proyek yang belum ditagih: Total RAB - total invoice tertaut.
+     *
+     * Bisa bernilai negatif bila total invoice melebihi nilai proyek
+     * (ditampilkan sebagai peringatan "melebihi nilai proyek").
+     *
+     * @return int
+     */
+    public function getUninvoicedAmount(): int
+    {
+        return $this->getTotalAmount() - $this->getInvoicedAmount();
     }
 
     /**

@@ -1,7 +1,7 @@
 {{--
     Generate Slip Gaji Modal
 
-    Membuat slip gaji draft untuk karyawan bulanan (employment_type = bulanan)
+    Membuat slip gaji draft untuk karyawan kantor (employment_type = bulanan)
     yang BELUM memiliki slip pada periode terpilih. Setiap slip dibuat dengan
     matriks absensi default: hari Minggu otomatis ditandai "L" (Libur), dan
     tanggal yang dicentang pada bagian Hari Libur juga ditandai "L" — admin
@@ -11,12 +11,15 @@
     1. Pilih bulan + tahun periode.
     2. Daftar karyawan (multi-select searchable) otomatis dimuat sesuai periode
        via AJAX (SalarySlipController@eligibleEmployees).
-    3. Centang hari libur pada periode (opsional) — hari Minggu sudah otomatis.
-    4. Pilih penanda tangan (opsional) — snapshot disimpan per slip.
-    5. Submit → SalarySlipController@generate (POST).
+    3. Centang hari libur pada kalender periode (opsional) — kalender dimulai
+       hari Senin, kolom Minggu paling kanan berwarna merah & otomatis Libur.
+    4. Atur cicilan kasbon bulan ini per karyawan yang masih punya sisa
+       kasbon (default = seluruh sisa, maksimal = sisa) → kasbon_installments[kode].
+    5. Pilih penanda tangan (opsional) — snapshot disimpan per slip.
+    6. Submit → SalarySlipController@generate (POST).
 
     Frontend JS: resources/js/pages/sdm/salary-slip/index.js
-    (loadEligibleEmployees, renderHolidayDays, renderSignatorySections)
+    (loadEligibleEmployees, renderHolidayDays, renderKasbonInstallments)
 --}}
 
 <x-modal id="generateModal" title="Generate Slip Gaji" action="{{ route('salary-slips.generate') }}" method="POST"
@@ -28,10 +31,10 @@
             <div class="text-sm text-text-primary">
                 <p class="font-semibold mb-1">Informasi Slip Gaji Bulanan:</p>
                 <ul class="list-disc list-inside space-y-1">
-                    <li>Slip dibuat untuk <strong>karyawan bulanan</strong> (Data Karyawan → Jenis Karyawan = Bulanan)</li>
+                    <li>Slip dibuat untuk <strong>karyawan kantor</strong> (Data Karyawan → Jenis Karyawan = KARYAWAN KANTOR)</li>
                     <li>Satu slip per karyawan per bulan — karyawan yang sudah punya slip dilewati otomatis</li>
-                    <li>Perhitungan: <strong>gaji pokok + uang transport + uang makan − potongan</strong></li>
-                    <li>Potongan: BPJS Kesehatan 1% gaji pokok, JHT 2% UMP, JPN 1% UMP, PPh 21 (manual), dan kasbon pending</li>
+                    <li>Perhitungan: <strong>gaji pokok + uang transport + uang makan + lembur − potongan</strong></li>
+                    <li>Potongan: BPJS Kesehatan 1% gaji pokok, JHT 2% UMP, JPN 1% UMP, PPh 21 (manual), dan cicilan kasbon bulan ini</li>
                     <li>Hari Minggu otomatis berstatus <strong>L</strong> (Libur); centang hari libur lain pada periode ini di bagian <strong>Hari Libur</strong></li>
                     <li>Setelah generate, isi rekap absensi pada tombol <strong>Edit</strong> lalu bayar</li>
                 </ul>
@@ -66,24 +69,43 @@
     <x-forms.searchable-multi-select
         name="employee_codes"
         id="generate-eligible-employees"
-        label="Karyawan Bulanan"
+        label="Karyawan Kantor"
         :required="true"
-        placeholder="Cari karyawan bulanan..."
+        placeholder="Cari karyawan kantor..."
         :options="$eligibleEmployees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
 
-    {{-- Hari Libur — admin mencentang tanggal merah (di luar Minggu) pada
-         periode terpilih. Grid dibuat dinamis oleh renderHolidayDays() saat
-         bulan/tahun berubah. Nilai terkirim sebagai holidays[] (format Y-m-d). --}}
+    {{-- Cicilan Kasbon — satu baris per karyawan terpilih yang masih punya
+         sisa kasbon. Dibuat dinamis oleh renderKasbonInstallments() setiap
+         pilihan karyawan berubah. Nilai terkirim sebagai
+         kasbon_installments[kode karyawan]. --}}
+    <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-hand-holding-dollar text-primary"></i>
+            <p class="text-sm font-semibold text-text-primary">Cicilan Kasbon Bulan Ini</p>
+        </div>
+        <p class="text-xs text-text-secondary mb-3">Kasbon karyawan kantor bisa dicicil. Default cicilan = seluruh sisa
+            kasbon (maksimal sisa kasbon); sisanya terbawa ke slip bulan berikutnya. Masih bisa diubah lewat tombol
+            Edit slip sebelum dibayar.</p>
+
+        <div id="generate-kasbon-installments" class="space-y-2">
+            <p class="text-xs text-text-label">Pilih karyawan untuk melihat sisa kasbon.</p>
+        </div>
+    </div>
+
+    {{-- Hari Libur — kalender periode terpilih (minggu dimulai Senin, kolom
+         Minggu paling kanan & merah). Admin mencentang tanggal merah lain
+         (libur nasional, cuti bersama). Kalender dibuat dinamis oleh
+         renderHolidayDays() saat bulan/tahun berubah. Nilai terkirim sebagai
+         holidays[] (format Y-m-d). --}}
     <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
         <div class="flex items-center gap-2 mb-2">
             <i class="fa-solid fa-calendar-day text-primary"></i>
             <p class="text-sm font-semibold text-text-primary">Hari Libur (Opsional)</p>
         </div>
-        <p class="text-xs text-text-secondary mb-3">Hari Minggu sudah otomatis berstatus Libur. Centang tanggal lain pada
-            periode ini yang merupakan hari libur (mis. libur nasional, cuti bersama).</p>
+        <p class="text-xs text-text-secondary mb-3">Hari Minggu (merah) sudah otomatis berstatus Libur. Centang tanggal
+            lain pada periode ini yang merupakan hari libur (mis. libur nasional, cuti bersama).</p>
 
-        <div id="holiday-days-grid"
-            class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
+        <div id="holiday-days-grid" class="max-w-md">
             {{-- Diisi oleh renderHolidayDays() pada salary-slip/index.js --}}
         </div>
     </div>
@@ -96,15 +118,15 @@
             <p class="text-sm font-semibold text-text-primary">Penanda Tangan</p>
         </div>
         <p class="text-xs text-text-secondary mb-3">Opsional — tidak wajib diisi. Data diambil dari modul Data
-            Petinggi; jika dikosongkan, blok tanda tangan pada PDF ditampilkan sebagai garis putus-putus.</p>
+            Penandatangan; jika dikosongkan, blok tanda tangan pada PDF ditampilkan sebagai garis putus-putus.</p>
 
-        <x-forms.searchable-select name="signatures[disetujui]" label="Disetujui oleh" placeholder="Petinggi..."
+        <x-forms.searchable-select name="signatures[disetujui]" label="Disetujui oleh" placeholder="Penandatangan..."
             :options="$executives->map(fn($e) => ['value' => $e->id, 'label' => $e->name . ($e->position ? ' - ' . $e->position : '')])->values()" />
 
-        <x-forms.searchable-select name="signatures[diperiksa]" label="Diperiksa oleh" placeholder="Petinggi..."
+        <x-forms.searchable-select name="signatures[diperiksa]" label="Diperiksa oleh" placeholder="Penandatangan..."
             :options="$executives->map(fn($e) => ['value' => $e->id, 'label' => $e->name . ($e->position ? ' - ' . $e->position : '')])->values()" />
 
-        <x-forms.searchable-select name="signatures[dibuat]" label="Dibuat oleh" placeholder="Petinggi..."
+        <x-forms.searchable-select name="signatures[dibuat]" label="Dibuat oleh" placeholder="Penandatangan..."
             :options="$executives->map(fn($e) => ['value' => $e->id, 'label' => $e->name . ($e->position ? ' - ' . $e->position : '')])->values()" />
     </div>
 </x-modal>

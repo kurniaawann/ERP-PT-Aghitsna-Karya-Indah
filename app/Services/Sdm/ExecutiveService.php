@@ -13,15 +13,15 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Service untuk mengelola bisnis logika petinggi (executive).
+ * Service untuk mengelola bisnis logika penandatangan (executive).
  *
- * Menangani daftar petinggi, pembuatan, pembaruan, penghapusan,
+ * Menangani daftar penandatangan, pembuatan, pembaruan, penghapusan,
  * dan penyimpanan/penghapusan file gambar tanda tangan.
  */
 class ExecutiveService
 {
     /**
-     * Mendapatkan daftar petinggi dengan paginasi dan pencarian opsional.
+     * Mendapatkan daftar penandatangan dengan paginasi dan pencarian opsional.
      *
      * Logika:
      * - Hanya data milik user login (created_by) yang ditampilkan.
@@ -46,14 +46,14 @@ class ExecutiveService
     }
 
     /**
-     * Membuat petinggi baru beserta gambar tanda tangan (opsional).
+     * Membuat penandatangan baru beserta gambar tanda tangan (opsional).
      *
      * Logika:
      * - created_by selalu di-set dari user yang login.
      * - Jika gambar diunggah, file disimpan terlebih dahulu. Jika penyimpanan
      *   data gagal, file yang baru tersimpan ikut dihapus (cleanup).
      *
-     * @param  array<string, mixed>        $data  Data petinggi yang sudah divalidasi
+     * @param  array<string, mixed>        $data  Data penandatangan yang sudah divalidasi
      * @param  UploadedFile|null           $image File gambar tanda tangan
      * @return array{success: bool, message: string}
      */
@@ -76,14 +76,14 @@ class ExecutiveService
                 $this->deleteImage($storedImage['file_path']);
             }
 
-            return ['success' => false, 'message' => 'Gagal menyimpan data petinggi. Silakan coba lagi.'];
+            return ['success' => false, 'message' => 'Gagal menyimpan data penandatangan. Silakan coba lagi.'];
         }
 
-        return ['success' => true, 'message' => 'Data petinggi berhasil ditambahkan!'];
+        return ['success' => true, 'message' => 'Data penandatangan berhasil ditambahkan!'];
     }
 
     /**
-     * Memperbarui petinggi yang sudah ada.
+     * Memperbarui penandatangan yang sudah ada.
      *
      * Logika:
      * - Gambar tanda tangan hanya diganti jika ada file baru yang diunggah;
@@ -93,7 +93,7 @@ class ExecutiveService
      * - Jika penyimpanan gagal, file baru dihapus agar tidak ada file yatim.
      *
      * @param  Executive                    $executive
-     * @param  array<string, mixed>         $data     Data petinggi yang sudah divalidasi
+     * @param  array<string, mixed>         $data     Data penandatangan yang sudah divalidasi
      * @param  UploadedFile|null            $image    File gambar tanda tangan baru
      * @return array{success: bool, message: string}
      */
@@ -127,14 +127,14 @@ class ExecutiveService
                 $this->deleteImage($storedImage['file_path']);
             }
 
-            return ['success' => false, 'message' => 'Gagal memperbarui data petinggi. Silakan coba lagi.'];
+            return ['success' => false, 'message' => 'Gagal memperbarui data penandatangan. Silakan coba lagi.'];
         }
 
-        return ['success' => true, 'message' => 'Data petinggi berhasil diperbarui!'];
+        return ['success' => true, 'message' => 'Data penandatangan berhasil diperbarui!'];
     }
 
     /**
-     * Menghapus petinggi berdasarkan ID-nya beserta file tanda tangan.
+     * Menghapus penandatangan berdasarkan ID-nya beserta file tanda tangan.
      *
      * @param  array<int>  $ids
      * @return array{success: bool, message: string}
@@ -152,7 +152,7 @@ class ExecutiveService
             $this->deleteImage($executive->signature_image);
         }
 
-        return ['success' => true, 'message' => 'Data petinggi berhasil dihapus!'];
+        return ['success' => true, 'message' => 'Data penandatangan berhasil dihapus!'];
     }
 
     /**

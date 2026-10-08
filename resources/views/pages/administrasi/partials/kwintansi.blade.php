@@ -16,6 +16,8 @@
             {{-- Form Pencarian & Filter --}}
             <form method="GET" action="{{ route('surat-menyurat.index', ['tab' => 'kwintansi']) }}"
                 class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                {{-- Pertahankan tab aktif saat filter/pencarian dikirim (form GET membuang query di action) --}}
+                <input type="hidden" name="tab" value="kwintansi">
                 {{-- Filter Jenis Invoice: hanya untuk role superadmin (paling kiri) --}}
                 @if (auth()->user()?->role === 'superadmin')
                     <div class="w-full min-[1530px]:w-auto">

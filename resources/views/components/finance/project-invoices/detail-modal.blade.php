@@ -35,6 +35,14 @@
     }
 
     $dueDate = $invoice->getDueDate();
+
+    // Rekap Proyek yang ditautkan (opsional): ringkasan nilai proyek vs total
+    // tagihan seluruh invoice tertaut (setelah diskon, sebelum PPN).
+    $linkedRecap = $invoice->projectRecap;
+    $recapTotal = $linkedRecap ? $linkedRecap->getTotalAmount() : 0;
+    $recapInvoiced = $linkedRecap ? $linkedRecap->getInvoicedAmount() : 0;
+    $recapThisBilled = $linkedRecap ? $invoice->getBilledAmount() : 0;
+    $recapRemaining = $recapTotal - $recapInvoiced;
 @endphp
 
 <x-modal id="detailModal-{{ $invoice->invoice_number }}" title="{{ auth()->user()->isAdmin() ? 'Detail Invoice' : 'Detail Invoice Proyek' }}" :hideFooter="true" size="4xl">
@@ -72,8 +80,53 @@
                 <p class="text-xs text-gray-400 mb-0.5">Deskripsi Proyek</p>
                 <p class="text-gray-900">{{ $invoice->project_description }}</p>
             </div>
+            <div class="md:col-span-2">
+                <p class="text-xs text-gray-400 mb-0.5">Rekap Proyek</p>
+                @if ($linkedRecap)
+                    <p class="font-medium text-gray-900">{{ $linkedRecap->id }} — {{ $linkedRecap->project_name }}</p>
+                @else
+                    <p class="text-gray-400 italic">Tidak ditautkan ke Rekap Proyek</p>
+                @endif
+            </div>
         </div>
     </div>
+
+    {{-- Card A2: Rekap Proyek Tertaut (hanya bila invoice ditautkan ke rekap) --}}
+    @if ($linkedRecap)
+        <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500">Rekap Proyek Tertaut</h3>
+                <span class="text-xs font-semibold text-primary">{{ $linkedRecap->id }}</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <p class="text-xs text-gray-400 mb-1">Nilai Proyek</p>
+                    <p class="text-sm font-bold text-gray-900">Rp {{ number_format($recapTotal, 0, ',', '.') }}</p>
+                </div>
+                <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <p class="text-xs text-gray-400 mb-1">Invoice Ini</p>
+                    <p class="text-sm font-bold text-primary">Rp {{ number_format($recapThisBilled, 0, ',', '.') }}</p>
+                </div>
+                <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <p class="text-xs text-gray-400 mb-1">Total Ditagih ({{ $linkedRecap->invoices->count() }} invoice)</p>
+                    <p class="text-sm font-bold text-blue-600">Rp {{ number_format($recapInvoiced, 0, ',', '.') }}</p>
+                </div>
+                <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <p class="text-xs text-gray-400 mb-1">Sisa Tagihan</p>
+                    <p class="text-sm font-bold {{ $recapRemaining < 0 ? 'text-red-600' : 'text-green-600' }}">
+                        {{ $recapRemaining < 0 ? '-' : '' }}Rp {{ number_format(abs($recapRemaining), 0, ',', '.') }}
+                    </p>
+                </div>
+            </div>
+            @if ($recapRemaining < 0)
+                <p class="mt-2 text-xs text-red-600">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Total tagihan melebihi nilai proyek sebesar Rp {{ number_format(abs($recapRemaining), 0, ',', '.') }}.
+                </p>
+            @endif
+            <p class="mt-2 text-xs text-gray-400">Nilai tagihan dihitung dari total item setelah diskon (sebelum PPN).</p>
+        </div>
+    @endif
 
     {{-- Card B: Item-Item Invoice --}}
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
@@ -104,9 +157,16 @@
                             @if (auth()->user()->isAdmin())
                                 <td class="py-2 px-2 text-gray-900">{{ $item['deskripsi'] ?? '-' }}</td>
                                 <td class="py-2 px-2 text-right text-gray-900">Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                                <td class="py-2 px-2 text-right text-gray-900">{{ number_format($item['persentase'] ?? 0, 2, ',', '.') }}%</td>
+                                <td class="py-2 px-2 text-right text-gray-900">
+                                    {{-- Persentase opsional: kosong → "-" dan Jumlah = Harga --}}
+                                    @if (isset($item['persentase']) && $item['persentase'] !== '')
+                                        {{ rtrim(rtrim(number_format((float) $item['persentase'], 2, ',', '.'), '0'), ',') }}%
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td class="py-2 pl-2 text-right font-semibold text-gray-900">
-                                    Rp {{ number_format(($item['harga'] ?? 0) * (($item['persentase'] ?? 0) / 100), 0, ',', '.') }}
+                                    Rp {{ number_format(\App\Models\Finance\InvoiceProyek::itemAmount($item), 0, ',', '.') }}
                                 </td>
                             @else
                                 <td class="py-2 px-2 text-gray-900">{{ $item['keterangan'] ?? '-' }}</td>
@@ -349,8 +409,9 @@
                                         @endif
                                     </div>
                                     @if (!empty($proof->file_path))
-                                        <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank"
-                                            rel="noopener noreferrer" title="{{ $proof->file_name }}"
+                                        {{-- Bukti dibuka di modal pratinjau (tanpa tab baru) --}}
+                                        <a href="{{ asset('storage/' . $proof->file_path) }}" title="{{ $proof->file_name }}"
+                                            onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti Pembayaran ke-' . ($proof->payment_stage ?? $stageNumber)), downloadName: @js($proof->file_name) }); }"
                                             class="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline">
                                             <i class="fa-solid fa-paperclip"></i> Lihat Bukti
                                         </a>

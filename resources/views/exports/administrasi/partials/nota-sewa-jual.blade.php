@@ -2,15 +2,16 @@
      NOTA PDF - LAYOUT SEWA/JUAL (tipe_nota = sewa_jual)
      PT Aghitsna Karya Indah
 
-     - Kop: banner perusahaan (scaffolding & alat konstruksi), garis ganda
+     - Kop: partials/nota-kop (logo & kop yang sama dengan nota proyek)
      - Judul "NOTA"
      - Info kiri: No. Nota, Faktur No. & SJ No. (opsional), Periode (opsional)
-     - Info kanan: tempat/tanggal + Kepada Yth.
+     - Info kanan: tempat/tanggal + Kepada Yth. (rata kanan)
      - Tabel: NO / BANYAKNYA / NAMA BARANG / HARGA SATUAN / JUMLAH (minimal 7 baris)
      - Bawah kiri: rekening pembayaran + catatan
      - Bawah kanan: rincian Sewa/Jual, Ongkir, Bongkar, Lembur, Uang Jaminan,
        PPN (bila ada) & Jumlah -- kolom nilai sejajar dengan kolom Jumlah tabel
      - Tanda tangan: Penerima & Hormat Kami
+     - Nominal ditulis "Rp. 50.000" via helper format_rupiah()
 
      Style bersama ada di nota-pdf.blade.php (scope .nota); style khusus
      layout ini di-scope ke .nota-sewa-jual.
@@ -82,12 +83,11 @@
 
 @php
     $items = $nota->items ?? [];
-    $rupiah = fn ($value) => 'Rp ' . number_format((int) $value, 0, ',', '.');
     $notaDate = \Carbon\Carbon::parse($nota->nota_date)->locale('id')->translatedFormat('d F Y');
     $hasPeriode = $nota->periode_start || $nota->periode_end;
 
     // Persentase PPN tanpa desimal nol berlebih (11.00 -> 11, 11.50 -> 11,5)
-    $ppnLabel = rtrim(rtrim(number_format((float) $nota->ppn_percentage, 2, ',', '.'), '0'), ',');
+    $ppnLabel = format_persen($nota->ppn_percentage);
 
     // Rincian biaya tambahan (kosong ditampilkan "-")
     $summaryRows = [
@@ -102,14 +102,7 @@
 <div class="nota nota-sewa-jual">
 
     <!-- KOP SURAT -->
-    <table class="kop">
-        <tr>
-            <td class="kop-banner-cell">
-                <img src="{{ public_path('images/invoice_administrasi.jpeg') }}" alt="PT. Aghitsna Karya Indah" class="kop-banner">
-            </td>
-        </tr>
-    </table>
-    <div class="kop-rule"></div>
+    @include('exports.administrasi.partials.nota-kop')
 
     <!-- JUDUL -->
     <div class="doc-title"><span>NOTA</span></div>
@@ -181,8 +174,8 @@
                     <td class="text-center">{{ $loop->iteration }}</td>
                     <td class="text-center">{{ $item['banyaknya'] ?? '' }}</td>
                     <td>{{ $item['nama_barang'] ?? '' }}</td>
-                    <td class="text-center nowrap">{{ $rupiah($item['harga_satuan'] ?? 0) }}</td>
-                    <td class="text-center nowrap">{{ $rupiah($item['jumlah'] ?? 0) }}</td>
+                    <td class="text-center nowrap">{{ format_rupiah($item['harga_satuan'] ?? 0) }}</td>
+                    <td class="text-center nowrap">{{ format_rupiah($item['jumlah'] ?? 0) }}</td>
                 </tr>
             @endforeach
 
@@ -224,18 +217,18 @@
                     @foreach ($summaryRows as $label => $value)
                         <tr>
                             <td class="summary-label">{{ $label }}</td>
-                            <td class="summary-value">{{ $value ? $rupiah($value) : '-' }}</td>
+                            <td class="summary-value">{{ $value ? format_rupiah($value) : '-' }}</td>
                         </tr>
                     @endforeach
                     @if ($nota->ppn_percentage > 0)
                         <tr>
                             <td class="summary-label">PPN ({{ $ppnLabel }}%)</td>
-                            <td class="summary-value">{{ $rupiah($nota->ppn_amount) }}</td>
+                            <td class="summary-value">{{ format_rupiah($nota->ppn_amount) }}</td>
                         </tr>
                     @endif
                     <tr class="total-row">
                         <td class="summary-label">JUMLAH</td>
-                        <td class="summary-value">{{ $rupiah($nota->total_with_ppn) }}</td>
+                        <td class="summary-value">{{ format_rupiah($nota->total_with_ppn) }}</td>
                     </tr>
                 </table>
             </td>

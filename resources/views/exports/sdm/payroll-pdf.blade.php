@@ -202,7 +202,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
                         <td class="text-center">{{ $payroll->employee->position ?? '-' }}</td>
-                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ format_rupiah($payroll->base_salary) }}</td>
                         @foreach ($weekDays as $date)
                             @php
                                 $attendance = $payroll->attendances->first(
@@ -231,17 +231,17 @@
                             <td class="text-center symbol-cell" style="background-color: {{ $bg }}">{!! $symbol !!}</td>
                         @endforeach
                         <td class="text-center font-bold">{{ $payroll->present_days }}</td>
-                        <td class="text-right">{{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
-                        <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ format_rupiah($payroll->overtime_total) }}</td>
+                        <td class="text-right">{{ format_rupiah($payroll->kasbon_deduction) }}</td>
+                        <td class="text-right font-bold">{{ format_rupiah($payroll->net_salary) }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="{{ 6 + count($weekDays) }}" class="text-center">TOTAL</td>
-                    <td class="text-right">{{ number_format($payrolls->sum('kasbon_deduction'), 0, ',', '.') }}</td>
-                    <td class="text-right">{{ number_format($payrolls->sum('net_salary'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah($payrolls->sum('kasbon_deduction')) }}</td>
+                    <td class="text-right">{{ format_rupiah($payrolls->sum('net_salary')) }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -273,23 +273,23 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td class="font-bold">{{ $payroll->employee->name ?? '-' }}</td>
                         <td class="text-center">{{ $payroll->employee->position ?? '-' }}</td>
-                        <td class="text-right">{{ number_format($payroll->base_salary, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ format_rupiah($payroll->base_salary) }}</td>
                         <td class="text-center">{{ $payroll->present_days }}</td>
                         <td class="text-center">{{ $payroll->overtime_days }}</td>
                         <td class="text-center">{{ $payroll->permission_days }}</td>
                         <td class="text-center">{{ $payroll->sick_days }}</td>
                         <td class="text-center">{{ $payroll->leave_days }}</td>
-                        <td class="text-right">{{ number_format($payroll->overtime_total, 0, ',', '.') }}</td>
-                        <td class="text-right" style="color: #c0392b;">{{ number_format($payroll->kasbon_deduction, 0, ',', '.') }}</td>
-                        <td class="text-right font-bold">{{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ format_rupiah($payroll->overtime_total) }}</td>
+                        <td class="text-right" style="color: #c0392b;">{{ format_rupiah($payroll->kasbon_deduction) }}</td>
+                        <td class="text-right font-bold">{{ format_rupiah($payroll->net_salary) }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="10" class="text-center">TOTAL</td>
-                    <td class="text-right">{{ number_format($payrolls->sum('kasbon_deduction'), 0, ',', '.') }}</td>
-                    <td class="text-right">{{ number_format($payrolls->sum('net_salary'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah($payrolls->sum('kasbon_deduction')) }}</td>
+                    <td class="text-right">{{ format_rupiah($payrolls->sum('net_salary')) }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -319,33 +319,33 @@
         <tbody>
             <tr>
                 <td>Total Kerja</td>
-                <td class="text-right">{{ number_format($totalKerja, 0, ',', '.') }}</td>
+                <td class="text-right">{{ format_rupiah($totalKerja) }}</td>
             </tr>
             <tr>
                 <td>Total Lembur</td>
-                <td class="text-right">{{ number_format($totalLembur, 0, ',', '.') }}</td>
+                <td class="text-right">{{ format_rupiah($totalLembur) }}</td>
             </tr>
             @foreach ($teamKasbonRecap as $kasbonLabel => $amount)
                 <tr>
                     <td>{{ $kasbonLabel }}</td>
-                    <td class="text-right" style="color: #c0392b;">{{ number_format($amount, 0, ',', '.') }}</td>
+                    <td class="text-right" style="color: #c0392b;">{{ format_rupiah($amount) }}</td>
                 </tr>
             @endforeach
             @foreach ($additionalCosts ?? [] as $additionalCost)
                 @foreach ($additionalCost->items ?? [] as $item)
                     <tr>
                         <td>{{ $item['name'] ?? 'Biaya Lain-lain' }}</td>
-                        <td class="text-right">{{ number_format($item['amount'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ format_rupiah($item['amount'] ?? 0) }}</td>
                     </tr>
                 @endforeach
             @endforeach
             <tr>
                 <td>Total Upah Pekerja</td>
-                <td class="text-right font-bold">{{ number_format($totalUpahPekerja, 0, ',', '.') }}</td>
+                <td class="text-right font-bold">{{ format_rupiah($totalUpahPekerja) }}</td>
             </tr>
             <tr>
                 <td colspan="2" style="background-color: #E0E0E0; font-weight: bold; text-align: right; font-size: 10px;">
-                    TOTAL DIBAYARKAN: Rp {{ number_format($grandTotalDibayar, 0, ',', '.') }}
+                    TOTAL DIBAYARKAN: {{ format_rupiah($grandTotalDibayar) }}
                 </td>
             </tr>
         </tbody>

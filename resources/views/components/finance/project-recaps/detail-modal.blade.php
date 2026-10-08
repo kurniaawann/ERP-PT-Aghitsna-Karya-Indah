@@ -11,6 +11,14 @@
         : $recap->paymentProofs()->get();
 
     $incomePayments = $recap->getIncomePayments();
+
+    // Invoice Proyek yang ditautkan ke rekap ini. Nilai tagihan tiap invoice
+    // = total item setelah diskon, sebelum PPN (sebanding dengan Total RAB).
+    $linkedInvoices = $recap->relationLoaded('invoices')
+        ? $recap->invoices
+        : $recap->invoices()->with('paymentProofs')->get();
+    $recapInvoiced = (int) $linkedInvoices->sum(fn ($linkedInvoice) => $linkedInvoice->getBilledAmount());
+    $recapUninvoiced = $recapTotal - $recapInvoiced;
 @endphp
 
 <x-modal id="detailModal-{{ $recap->id }}" title="Detail Rekap Proyek" :hideFooter="true" size="4xl">
@@ -93,6 +101,92 @@
                 Rp {{ number_format($recapRemaining, 0, ',', '.') }}
             </span>
         </div>
+    </div>
+
+    {{-- Card B2: Invoice Proyek Tertaut --}}
+    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Invoice Proyek Tertaut</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p class="text-xs text-gray-400 mb-1">Nilai Proyek (Total RAB)</p>
+                <p class="text-base font-bold text-gray-900">Rp {{ number_format($recapTotal, 0, ',', '.') }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p class="text-xs text-gray-400 mb-1">Total Ditagih ({{ $linkedInvoices->count() }} invoice)</p>
+                <p class="text-base font-bold text-blue-600">Rp {{ number_format($recapInvoiced, 0, ',', '.') }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p class="text-xs text-gray-400 mb-1">Sisa Belum Ditagih</p>
+                <p class="text-base font-bold {{ $recapUninvoiced < 0 ? 'text-red-600' : 'text-green-600' }}">
+                    {{ $recapUninvoiced < 0 ? '-' : '' }}Rp {{ number_format(abs($recapUninvoiced), 0, ',', '.') }}
+                </p>
+            </div>
+        </div>
+
+        @if ($recapUninvoiced < 0)
+            <p class="mb-3 text-xs text-red-600">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Total tagihan invoice melebihi nilai proyek sebesar Rp {{ number_format(abs($recapUninvoiced), 0, ',', '.') }}.
+            </p>
+        @endif
+
+        @if ($linkedInvoices->isNotEmpty())
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="py-2 pr-2 text-left text-xs font-medium text-gray-500 uppercase">No Invoice</th>
+                            <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                            <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Kepada</th>
+                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Nilai Tagihan</th>
+                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Terbayar</th>
+                            <th class="py-2 pl-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($linkedInvoices as $linkedInvoice)
+                            <tr>
+                                <td class="py-2 pr-2 font-medium whitespace-nowrap">
+                                    <a href="{{ route('proyek-invoice.index', ['search' => $linkedInvoice->invoice_number]) }}"
+                                        class="text-primary hover:underline" title="Buka di menu Invoice">
+                                        {{ $linkedInvoice->invoice_number }}
+                                    </a>
+                                </td>
+                                <td class="py-2 px-2 text-gray-700 whitespace-nowrap">{{ $linkedInvoice->invoice_date?->format('d-m-Y') }}</td>
+                                <td class="py-2 px-2 text-gray-900">{{ $linkedInvoice->recipient }}</td>
+                                <td class="py-2 px-2 text-right font-semibold text-gray-900 whitespace-nowrap">
+                                    Rp {{ number_format($linkedInvoice->getBilledAmount(), 0, ',', '.') }}
+                                </td>
+                                <td class="py-2 px-2 text-right text-green-600 whitespace-nowrap">
+                                    Rp {{ number_format($linkedInvoice->getTotalPaidAmount(), 0, ',', '.') }}
+                                </td>
+                                <td class="py-2 pl-2 text-center">
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold {{ $linkedInvoice->payment_status_badge_class }}">
+                                        {{ $linkedInvoice->payment_status_label }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-gray-300 font-bold">
+                            <td colspan="3" class="pt-2 pr-2 text-right text-sm text-gray-700">Total Ditagih</td>
+                            <td class="pt-2 px-2 text-right text-sm text-gray-900 whitespace-nowrap">
+                                Rp {{ number_format($recapInvoiced, 0, ',', '.') }}
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <p class="mt-2 text-xs text-gray-400">Nilai tagihan dihitung dari total item invoice setelah diskon (sebelum PPN).</p>
+        @else
+            <div class="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <p class="text-sm text-gray-400 font-medium">Belum ada invoice proyek yang ditautkan</p>
+                <p class="text-xs text-gray-300 mt-1">Pilih rekap ini pada form tambah/edit Invoice Proyek.</p>
+            </div>
+        @endif
     </div>
 
     {{-- Card C: Progress Bar --}}
@@ -193,8 +287,9 @@
                                     @endif
                                 </div>
                                 @if (!empty($proof->file_path))
-                                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank"
-                                        rel="noopener noreferrer" title="{{ $proof->file_name }}"
+                                    {{-- Bukti dibuka di modal pratinjau (tanpa tab baru) --}}
+                                    <a href="{{ asset('storage/' . $proof->file_path) }}" title="{{ $proof->file_name }}"
+                                        onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti Pembayaran ke-' . ($proof->payment_stage ?? $stageNumber)), downloadName: @js($proof->file_name) }); }"
                                         class="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline">
                                         <i class="fa-solid fa-paperclip"></i> Lihat Bukti
                                     </a>
@@ -222,8 +317,8 @@
         @if ($paymentProofs->isNotEmpty())
             <div class="space-y-2">
                 @foreach ($paymentProofs as $proof)
-                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer"
-                        title="{{ $proof->file_name }}"
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" title="{{ $proof->file_name }}"
+                        onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'Bukti Pembayaran', downloadName: @js($proof->file_name) }); }"
                         class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 hover:border-blue-300 hover:bg-blue-50">
                         <span class="flex items-center gap-2 min-w-0">
                             <i class="fa-solid fa-file-invoice text-blue-500"></i>
@@ -285,8 +380,8 @@
                                 {{ optional($incomeDate)->format('d M Y') }}
                             </span>
                             @if (!empty($income->proof_file))
-                                <a href="{{ asset('storage/' . $income->proof_file) }}" target="_blank"
-                                    rel="noopener noreferrer" title="{{ $income->proof_file_name }}"
+                                <a href="{{ asset('storage/' . $income->proof_file) }}" title="{{ $income->proof_file_name }}"
+                                    onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'Bukti Uang Masuk', downloadName: @js($income->proof_file_name ?: basename($income->proof_file)) }); }"
                                     class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
                                     <i class="fa-solid fa-paperclip"></i> Lihat
                                 </a>
@@ -312,7 +407,8 @@
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">File Design</h3>
         @if ($recap->hasDesignFile())
-            <a href="{{ asset('storage/' . $recap->design_file) }}" target="_blank" rel="noopener noreferrer"
+            <a href="{{ asset('storage/' . $recap->design_file) }}"
+                onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'File Design', downloadName: @js($recap->design_file_name ?: basename($recap->design_file)) }); }"
                 class="inline-flex items-center gap-2 text-blue-600 hover:underline">
                 <i class="fa-solid fa-image"></i>
                 <span>{{ $recap->design_file_name }}</span>

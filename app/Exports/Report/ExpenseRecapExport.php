@@ -71,7 +71,11 @@ class ExpenseRecapExport implements WithMultipleSheets, WithDefaultStyles
     }
 
     /**
-     * Satu sheet per bulan (+ sheet rekap) bila data lintas bulan; selain itu satu sheet.
+     * Satu sheet per bulan (+ sheet rekap, kecuali role admin) bila data lintas
+     * bulan; selain itu satu sheet.
+     *
+     * Admin (Kas Kantor) tidak memakai rekapitulasi/saldo kumulatif, sehingga
+     * sheet "Rekap Per Bulan" tidak dibuat (revisi klien).
      *
      * @return array<int, object>
      */
@@ -101,6 +105,10 @@ class ExpenseRecapExport implements WithMultipleSheets, WithDefaultStyles
                 $section['label'],
                 $index > 0 ? $section : null
             );
+        }
+
+        if (auth()->user()?->isAdmin()) {
+            return $sheets;
         }
 
         $sheets[] = new ExpenseMonthlySummarySheet($sections, 'PERIODE ' . $this->periodTitle, $this->totals, 'FFFF00', 'FFCC00');

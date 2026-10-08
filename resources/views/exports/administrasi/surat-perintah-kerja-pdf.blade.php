@@ -365,9 +365,9 @@
                                 <td>{{ $detail['keterangan'] ?? '-' }}</td>
                                 <td class="text-center">{{ $detail['volume'] }}</td>
                                 <td class="text-center">{!! $detail['satuan'] ?? '-' !!}</td>
-                                <td class="currency-symbol">Rp</td>
+                                <td class="currency-symbol">Rp.</td>
                                 <td class="currency-amount">{{ number_format($detail['harga'], 0, ',', '.') }}</td>
-                                <td class="currency-symbol">Rp</td>
+                                <td class="currency-symbol">Rp.</td>
                                 <td class="currency-amount">{{ number_format($detail['jumlah'], 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
@@ -386,7 +386,7 @@
                         <td colspan="3" class="total-label">Jumlah</td>
                         
                         <!-- Kolom Nilai Total -->
-                        <td class="currency-symbol total-value-symbol">Rp</td>
+                        <td class="currency-symbol total-value-symbol">Rp.</td>
                         <td class="currency-amount total-value-amount">{{ number_format($spk->total_amount, 0, ',', '.') }}</td>
                     </tr>
                 </tbody>

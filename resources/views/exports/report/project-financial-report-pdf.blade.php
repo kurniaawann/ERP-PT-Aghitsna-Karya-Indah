@@ -88,6 +88,16 @@
             text-align: center;
             vertical-align: middle;
             height: 24px;
+            text-transform: uppercase;
+        }
+
+        /* Header tabel diulang di halaman lanjutan; baris tidak terbelah antar halaman */
+        table.data-table thead {
+            display: table-header-group;
+        }
+
+        table.data-table tr {
+            page-break-inside: avoid;
         }
 
         /* Category Header Row */
@@ -132,8 +142,9 @@
             font-style: italic;
         }
 
+        /* Baris subtotal & "Jumlah" tanpa garis bawah (revisi klien) */
         .subtotal-row td {
-            text-decoration: underline;
+            text-decoration: none;
         }
 
         /* Total Row */
@@ -144,7 +155,7 @@
         }
 
         .total-row td {
-            text-decoration: underline;
+            text-decoration: none;
             padding: 6px 5px;
         }
 
@@ -210,6 +221,11 @@
             text-decoration: underline;
             margin-top: 6px;
         }
+
+        /* Tanpa nama penanda tangan: ruang kosong tanpa garis bawah/underscore */
+        .signature-name.is-empty {
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -230,7 +246,7 @@
                 @endif
             </td>
             <td class="header-date-cell">
-                Tgl Edit Terakhir : {{ \Carbon\Carbon::now()->format('d F Y') }}
+                Tgl Edit Terakhir : {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
             </td>
         </tr>
     </table>
@@ -239,14 +255,15 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th class="col-no">No</th>
-                <th class="col-bon">Bon</th>
-                <th class="col-tanggal">Tanggal</th>
-                <th class="col-keterangan">Keterangan</th>
-                <th class="col-masuk">Uang Masuk</th>
-                <th class="col-keluar">Uang Keluar</th>
-                <th class="col-saldo">Saldo</th>
-                <th class="col-bon-ket">Keterangan Bon</th>
+                {{-- Nama kolom HURUF KAPITAL (revisi klien) --}}
+                <th class="col-no">NO</th>
+                <th class="col-bon">BON</th>
+                <th class="col-tanggal">TANGGAL</th>
+                <th class="col-keterangan">KETERANGAN</th>
+                <th class="col-masuk">UANG MASUK</th>
+                <th class="col-keluar">UANG KELUAR</th>
+                <th class="col-saldo">SALDO</th>
+                <th class="col-bon-ket">KETERANGAN BON</th>
             </tr>
         </thead>
         <tbody>
@@ -287,7 +304,7 @@
                         $runningBalance += ($inc - $exp);
 
                         // Saldo baris: '-' saat nol, merah saat negatif, kosong untuk baris info.
-                        $saldoText = $item->is_informational ? '' : ($runningBalance == 0 ? '-' : number_format($runningBalance, 0, ',', '.'));
+                        $saldoText = $item->is_informational ? '' : ($runningBalance == 0 ? '-' : format_rupiah($runningBalance));
                         $saldoStyle = (! $item->is_informational && $runningBalance < 0) ? 'color: red;' : '';
                     @endphp
                     <tr>
@@ -303,10 +320,10 @@
                             @endif
                         </td>
                         <td class="text-center text-green">
-                            {{ $inc ? number_format($inc, 0, ',', '.') : '' }}
+                            {{ $inc ? format_rupiah($inc) : '' }}
                         </td>
                         <td class="text-center text-brown">
-                            {{ $exp ? number_format($exp, 0, ',', '.') : '' }}
+                            {{ $exp ? format_rupiah($exp) : '' }}
                         </td>
                         <td class="text-center" style="{{ $saldoStyle }}">
                             {{ $saldoText }}
@@ -318,16 +335,16 @@
 
                 {{-- Subtotal Kategori (Warna Kuning) --}}
                 @php
-                    $subtotalSaldoText = $runningBalance == 0 ? '-' : number_format($runningBalance, 0, ',', '.');
+                    $subtotalSaldoText = $runningBalance == 0 ? '-' : format_rupiah($runningBalance);
                     $subtotalSaldoStyle = $runningBalance < 0 ? 'color: red;' : '';
                 @endphp
                 <tr class="subtotal-row">
                     <td colspan="4"></td>
                     <td class="text-center text-green">
-                        {{ $categoryIncome ? number_format($categoryIncome, 0, ',', '.') : '' }}
+                        {{ $categoryIncome ? format_rupiah($categoryIncome) : '' }}
                     </td>
                     <td class="text-center text-brown">
-                        {{ $categoryExpense ? number_format($categoryExpense, 0, ',', '.') : '' }}
+                        {{ $categoryExpense ? format_rupiah($categoryExpense) : '' }}
                     </td>
                     <td class="text-center" style="{{ $subtotalSaldoStyle }}">
                         {{ $subtotalSaldoText }}
@@ -341,17 +358,17 @@
             {{-- Grand Total (Warna Abu-abu) --}}
             @php
                 $grandBalance = $totals->balance ?? $runningBalance;
-                $grandBalanceText = $grandBalance == 0 ? '-' : 'Rp. '.number_format($grandBalance, 0, ',', '.');
+                $grandBalanceText = $grandBalance == 0 ? '-' : format_rupiah($grandBalance);
                 $grandBalanceStyle = $grandBalance < 0 ? 'color: red;' : '';
                 $grandBalanceLabel = $grandBalance <= 0 ? 'Defisit' : 'Sisa Saldo';
             @endphp
             <tr class="total-row">
                 <td colspan="4" class="text-center">Jumlah</td>
                 <td class="text-center">
-                    Rp. {{ number_format($totals->total_income ?? 0, 0, ',', '.') }}
+                    {{ format_rupiah($totals->total_income ?? 0) }}
                 </td>
                 <td class="text-center">
-                    Rp. {{ number_format($totals->total_expense ?? 0, 0, ',', '.') }}
+                    {{ format_rupiah($totals->total_expense ?? 0) }}
                 </td>
                 <td class="text-center" style="{{ $grandBalanceStyle }}">
                     {{ $grandBalanceText }}
@@ -388,7 +405,7 @@
                                 style="max-height: 50px; max-width: 140px; object-fit: contain;">
                         @endif
                     </div>
-                    <div class="signature-name">{{ $signatures['mandor']['name'] ?? '______________________' }}</div>
+                    <div class="signature-name{{ empty($signatures['mandor']['name']) ? ' is-empty' : '' }}">{!! e($signatures['mandor']['name'] ?? '') ?: '&nbsp;' !!}</div>
                 </td>
                 <td>
                     <div class="signature-title">KABAG KEUANGAN</div>
@@ -399,7 +416,7 @@
                                 style="max-height: 50px; max-width: 140px; object-fit: contain;">
                         @endif
                     </div>
-                    <div class="signature-name">{{ $signatures['kabag_keuangan']['name'] ?? '______________________' }}</div>
+                    <div class="signature-name{{ empty($signatures['kabag_keuangan']['name']) ? ' is-empty' : '' }}">{!! e($signatures['kabag_keuangan']['name'] ?? '') ?: '&nbsp;' !!}</div>
                 </td>
                 <td>
                     <div class="signature-title">DIREKTUR PT. AGHITSNA KARYA INDAH</div>
@@ -410,7 +427,7 @@
                                 style="max-height: 50px; max-width: 140px; object-fit: contain;">
                         @endif
                     </div>
-                    <div class="signature-name">{{ $signatures['direktur']['name'] ?? '______________________' }}</div>
+                    <div class="signature-name{{ empty($signatures['direktur']['name']) ? ' is-empty' : '' }}">{!! e($signatures['direktur']['name'] ?? '') ?: '&nbsp;' !!}</div>
                 </td>
             </tr>
         </table>

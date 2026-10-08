@@ -221,8 +221,8 @@
                     <td class="text-right">{{ number_format($item['stock_out']) }}</td>
                     <td class="text-right">{{ number_format($item['returns']) }}</td>
                     <td class="text-right font-bold">{{ number_format($item['ending_stock']) }}</td>
-                    <td class="text-right">Rp {{ number_format($item['capital_price'], 0, ',', '.') }}</td>
-                    <td class="text-right font-bold">Rp {{ number_format($item['stock_value'], 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah($item['capital_price']) }}</td>
+                    <td class="text-right font-bold">{{ format_rupiah($item['stock_value']) }}</td>
                 </tr>
             @empty
                 <tr>
@@ -264,7 +264,7 @@
             <tr>
                 <td></td>
                 <td><strong>Nilai Stok Total</strong></td>
-                <td style="text-align: right;"><strong>Rp {{ number_format($summary['total_stock_value'], 0, ',', '.') }}</strong></td>
+                <td style="text-align: right;"><strong>{{ format_rupiah($summary['total_stock_value']) }}</strong></td>
             </tr>
         </table>
     </div>

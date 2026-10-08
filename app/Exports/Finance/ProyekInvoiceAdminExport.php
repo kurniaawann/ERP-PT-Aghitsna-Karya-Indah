@@ -80,20 +80,15 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                     $sheet->getRowDimension($row)->setRowHeight(max($current, $lines * $lineHeight));
                 };
 
-                // Helper: trim trailing zero pada angka persentase (format PDF).
-                $trimNumber = function ($value) {
-                    return rtrim(rtrim(number_format((float) $value, 2, ',', '.'), '0'), ',');
-                };
-
-                // Gaya baris ringkasan keuangan (Jumlah/Discount/PPN/DP/Sisa) — sama dengan PDF admin:
+                // Gaya baris ringkasan keuangan (Discount/PPN/cicilan/Jumlah) — sama dengan PDF admin:
                 // label di bawah kolom Harga + %, nominal di bawah kolom Jumlah.
-                $applySummaryRow = function ($row, $label, $amount, $amountRaw = null) use ($sheet, $trimNumber) {
+                $applySummaryRow = function ($row, $label, $amount) use ($sheet) {
                     $sheet->mergeCells("A{$row}:B{$row}");
                     $sheet->mergeCells("C{$row}:D{$row}");
                     $sheet->mergeCells("E{$row}:F{$row}");
                     $sheet->setCellValue("A{$row}", '');
                     $sheet->setCellValue("C{$row}", $label);
-                    $sheet->setCellValue("E{$row}", $amountRaw ?? 'Rp ' . number_format((float) $amount, 0, ',', '.'));
+                    $sheet->setCellValue("E{$row}", format_rupiah($amount));
 
                     $sheet->getStyle("A{$row}:B{$row}")->applyFromArray([
                         'borders' => [
@@ -143,12 +138,12 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 // ═══ INFO PERUSAHAAN & META SURAT ════════════════════════════════════
                 $invoiceDate = Carbon::parse($invoice->invoice_date)->isoFormat('D MMMM YYYY');
 
-                // Nama perusahaan 16pt (kop), alamat 12pt
+                // Kop surat (revisi klien): nama perusahaan 12pt, alamat/telp/email 11pt
                 $sheet->mergeCells('A3:C3');
                 $sheet->setCellValue('A3', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A3')->getFont()->setBold(true)->setSize(16);
+                $sheet->getStyle('A3')->getFont()->setBold(true)->setSize(12);
                 $sheet->getStyle('A3')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-                $sheet->getRowDimension(3)->setRowHeight(24);
+                $sheet->getRowDimension(3)->setRowHeight($lineHeight);
 
                 $companyLines = [
                     4 => 'JL. TANAH BARU RAYA PERTIWI RT.01/05',
@@ -159,6 +154,7 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 foreach ($companyLines as $row => $text) {
                     $sheet->mergeCells("A{$row}:C{$row}");
                     $sheet->setCellValue("A{$row}", $text);
+                    $sheet->getStyle("A{$row}")->getFont()->setSize(11);
                     $sheet->getStyle("A{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 }
 
@@ -181,21 +177,26 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 }
 
                 // ═══ PENERIMA SURAT ═════════════════════════════════════════════════
+                // Tepat 1 baris kosong sebelum "Kepada Yth :" (revisi klien)
+                $sheet->getRowDimension(8)->setRowHeight($lineHeight);
                 $currentRow = 9;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 // Kepada Yth tidak di-bold
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
 
+                // Nama penerima ditulis apa adanya (tanpa awalan "Bpk.")
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Bpk. ' . $invoice->recipient);
+                $sheet->setCellValue("A{$currentRow}", $invoice->recipient);
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Di Tempat');
 
                 // ═══ PARAGRAF PEMBUKA ════════════════════════════════════════════════
+                // Tepat 1 baris kosong sebelum "Dengan Hormat," (revisi klien)
                 $currentRow += 2;
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight($lineHeight);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Dengan Hormat,');
 
@@ -203,7 +204,7 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $location = $invoice->location ?? $invoice->quotation?->location ?? '-';
                 $openingText = $invoice->project_description
-                    ? 'Dengan ini kami sampaikan Invoice untuk pekerjaan ' . $invoice->project_description . ', ' . $location . ', sebagai berikut :'
+                    ? 'Dengan ini kami sampaikan invoice untuk pekerjaan ' . $invoice->project_description . ', Lokasi ' . $location . ', sebagai berikut :'
                     : (($invoice->location ?? $invoice->quotation?->location)
                         ? 'Dengan ini kami sampaikan invoice sebagai berikut : Lokasi ' . ($invoice->location ?? $invoice->quotation?->location)
                         : 'Dengan ini kami sampaikan invoice sebagai berikut :');
@@ -243,16 +244,19 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 foreach ($items as $index => $item) {
                     $currentRow++;
                     $harga = (float) ($item['harga'] ?? 0);
-                    $persentase = (float) ($item['persentase'] ?? 0);
-                    $jumlah = $harga * ($persentase / 100);
+                    // % per item opsional (null bila kosong): sel % dikosongkan dan Jumlah = Harga.
+                    // Pakai InvoiceProyek::itemAmount() (bukan $item['jumlah']) karena item lama belum punya key itu.
+                    $hasPersentase = isset($item['persentase']) && $item['persentase'] !== '';
+                    $jumlah = InvoiceProyek::itemAmount(is_array($item) ? $item : []);
                     $totalAmount += $jumlah;
 
                     $sheet->setCellValueExplicit("A{$currentRow}", ($index + 1) . '.', DataType::TYPE_STRING);
                     $sheet->setCellValue("B{$currentRow}", '   ' . ($item['deskripsi'] ?? ''));
                     $fitWrappedRow($currentRow, '   ' . ($item['deskripsi'] ?? ''), 32, 'B');
-                    $sheet->setCellValue("C{$currentRow}", 'Rp ' . number_format($harga, 0, ',', '.'));
-                    $sheet->setCellValue("D{$currentRow}", number_format($persentase, 2, ',', '.') . '%');
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                    $sheet->setCellValue("C{$currentRow}", format_rupiah($harga));
+                    // % tanpa nol di belakang koma (25%, 12,5%)
+                    $sheet->setCellValueExplicit("D{$currentRow}", $hasPersentase ? format_persen($item['persentase']) . '%' : '', DataType::TYPE_STRING);
+                    $sheet->setCellValue("E{$currentRow}", format_rupiah($jumlah));
                     $sheet->mergeCells("E{$currentRow}:F{$currentRow}");
 
                     // Harga, %, Jumlah rata tengah
@@ -270,23 +274,25 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 ]);
 
                 // ═══ RINGKASAN KEUANGAN ══════════════════════════════════════════════
+                // Urutan (revisi klien): [Discount] → PPN → Pembayaran Ke-n → Jumlah (paling bawah).
+                // Jumlah = total item setelah discount + PPN; baris "Total" ditiadakan.
+                $discountAmount = ($invoice->discount_value && $invoice->discount_value > 0)
+                    ? $invoice->getDiscountAmount($totalAmount)
+                    : 0;
                 $ppnAmount = $invoice->getPpnAmount();
-                $finalAmount = $totalAmount + $ppnAmount;
+                $finalAmount = $totalAmount - $discountAmount + $ppnAmount;
 
-                // Jumlah
-                $currentRow++;
-                $applySummaryRow($currentRow, 'Jumlah', $totalAmount);
-
-                // PPN
-                if ($ppnAmount > 0) {
+                // Discount (bila ada)
+                if ($discountAmount > 0) {
                     $currentRow++;
-                    $ppnLabel = 'PPN (' . $trimNumber($invoice->ppn) . '%)';
-                    $applySummaryRow($currentRow, $ppnLabel, $ppnAmount);
+                    $discountLabel = 'Discount' . ($invoice->discount_type === 'percentage' ? ' (' . format_persen($invoice->discount_value) . '%)' : '');
+                    $applySummaryRow($currentRow, $discountLabel, $discountAmount);
                 }
 
-                // Total
+                // PPN selalu tampil, walau kosong
                 $currentRow++;
-                $applySummaryRow($currentRow, 'Total', $finalAmount);
+                $ppnLabel = $ppnAmount > 0 ? 'PPN (' . format_persen($invoice->ppn) . '%)' : 'PPN';
+                $applySummaryRow($currentRow, $ppnLabel, $ppnAmount);
 
                 // Cicilan (payment_installments)
                 if ($invoice->payment_installments) {
@@ -302,10 +308,14 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                     }
                 }
 
+                // Jumlah akhir
+                $currentRow++;
+                $applySummaryRow($currentRow, 'Jumlah', $finalAmount);
+
                 // ═══ TERBILANG ═══════════════════════════════════════════════════════
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $terbilangText = 'Terbilang : ' . ucwords(terbilang($finalAmount)) . ' Rupiah';
+                $terbilangText = 'Terbilang : ' . ucwords(terbilang(round($finalAmount))) . ' Rupiah';
                 $sheet->setCellValue("A{$currentRow}", $terbilangText);
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setBold(true);
                 $fitWrappedRow($currentRow, $terbilangText, 80);
@@ -345,9 +355,12 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 }
 
                 // ═══ PENUTUP ═════════════════════════════════════════════════════════
-                $currentRow += 2;
+                // 2 baris kosong di atas kalimat penutup (revisi klien)
+                $currentRow += 3;
+                $sheet->getRowDimension($currentRow - 2)->setRowHeight($lineHeight);
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight($lineHeight);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $closingText = 'Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.';
+                $closingText = 'Demikian invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.';
                 $sheet->setCellValue("A{$currentRow}", $closingText);
                 $fitWrappedRow($currentRow, $closingText, 100);
 
@@ -410,23 +423,86 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                     $sheet->getRowDimension($row)->setRowHeight($isEmptyRow ? 8 : $lineHeight);
                 }
 
-                // Stamp LUNAS jika invoice lunas
+                // Stamp LUNAS jika invoice lunas (gambar baru, transparan; rasio ±3:1)
                 if ($invoice->isFullyPaid()) {
-                    $stampPath = public_path('images/status_paid_proyek_and_item.jpeg');
-                    if (is_file($stampPath)) {
+                    $stampPath = $this->transparentStampPath(public_path('images/watermark_lunas.jpeg'));
+                    if ($stampPath) {
                         $currentRow -= 3;
                         $stampDrawing = new Drawing();
                         $stampDrawing->setName('LUNAS');
                         $stampDrawing->setDescription('Stamp Lunas');
                         $stampDrawing->setPath($stampPath);
-                        $stampDrawing->setHeight(75);
-                        $stampDrawing->setCoordinates("E{$currentRow}");
-                        $stampDrawing->setOffsetX(5);
+                        $stampDrawing->setWidth(220);
+                        $stampDrawing->setCoordinates("D{$currentRow}");
+                        $stampDrawing->setOffsetX(20);
                         $stampDrawing->setOffsetY(2);
                         $stampDrawing->setWorksheet($sheet);
                     }
                 }
             },
         ];
+    }
+
+    /**
+     * Membuat versi PNG transparan dari gambar stempel LUNAS (latar putih → transparan,
+     * tinta diberi opacity rendah) karena gambar di Excel tidak mendukung pengaturan opacity.
+     *
+     * Hasil disimpan sebagai cache di direktori temp sistem (dibuat ulang bila sumber berubah).
+     *
+     * @param  string  $sourcePath  Path gambar stempel (JPEG/PNG berlatar putih)
+     * @param  float  $opacity  Opacity tinta stempel (0-1)
+     * @return string|null  Path PNG transparan, atau path sumber bila GD tidak tersedia
+     */
+    private function transparentStampPath(string $sourcePath, float $opacity = 0.25): ?string
+    {
+        if (!is_file($sourcePath)) {
+            return null;
+        }
+
+        if (!function_exists('imagecreatefromstring')) {
+            return $sourcePath;
+        }
+
+        $cachePath = sys_get_temp_dir() . '/aghitsna_stamp_' . md5($sourcePath . filemtime($sourcePath) . $opacity) . '.png';
+        if (is_file($cachePath)) {
+            return $cachePath;
+        }
+
+        $source = @imagecreatefromstring((string) file_get_contents($sourcePath));
+        if (!$source) {
+            return $sourcePath;
+        }
+
+        // Diperkecil dulu agar proses per piksel ringan (lebar 800px cukup untuk stempel)
+        $width = min(800, imagesx($source));
+        $height = (int) round(imagesy($source) * $width / imagesx($source));
+        $resized = imagecreatetruecolor($width, $height);
+        imagecopyresampled($resized, $source, 0, 0, 0, 0, $width, $height, imagesx($source), imagesy($source));
+        imagedestroy($source);
+
+        $output = imagecreatetruecolor($width, $height);
+        imagealphablending($output, false);
+        imagesavealpha($output, true);
+
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                $rgb = imagecolorat($resized, $x, $y);
+                $r = ($rgb >> 16) & 0xFF;
+                $g = ($rgb >> 8) & 0xFF;
+                $b = $rgb & 0xFF;
+
+                // Kepekatan tinta = seberapa jauh dari putih (0 = putih/latar, 1 = tinta penuh)
+                $ink = (255 - min($r, $g, $b)) / 255;
+                // Alpha GD: 0 = opak, 127 = transparan penuh
+                $alpha = 127 - (int) round(127 * $ink * $opacity);
+                imagesetpixel($output, $x, $y, imagecolorallocatealpha($output, 3, 52, 195, $alpha));
+            }
+        }
+        imagedestroy($resized);
+
+        $saved = @imagepng($output, $cachePath);
+        imagedestroy($output);
+
+        return $saved ? $cachePath : $sourcePath;
     }
 }

@@ -101,7 +101,7 @@
             <td><strong>Filter Data</strong></td>
             <td>:
                 @if (request('month') && request('year'))
-                    Bulan {{ DateTime::createFromFormat('!m', request('month'))->format('F') }} {{ request('year') }}
+                    Bulan {{ \Carbon\Carbon::create(null, (int) request('month'), 1)->translatedFormat('F') }} {{ request('year') }}
                 @elseif (request('year'))
                     Tahun {{ request('year') }}
                 @else
@@ -133,7 +133,7 @@
                         <td>{{ $record->item->name_item ?? '-' }}</td>
                         <td class="text-center">{{ $record->quantity }}</td>
                         <td class="text-center">{{ $record->remaining_quantity ?? '-' }}</td>
-                        <td class="text-center">{{ $record->date->format('d M Y') }}</td>
+                        <td class="text-center">{{ $record->date->translatedFormat('d M Y') }}</td>
                         <td class="text-center">{{ $record->project_name ?? '-' }}</td>
                     </tr>
                 @empty

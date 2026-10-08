@@ -96,12 +96,13 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Nama perusahaan 16pt selebar halaman, alamat di kiri & info invoice di kanan
+                // Kop surat (revisi klien): nama perusahaan 12pt selebar halaman, alamat/telp/email 11pt
+                // di kiri & info invoice di kanan
                 $sheet->mergeCells('A2:F2');
                 $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
+                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
                 $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getRowDimension(2)->setRowHeight(24);
+                $sheet->getRowDimension(2)->setRowHeight(20);
 
                 $companyLines = [
                     3 => 'JL. TANAH BARU RAYA PERTIWI RT. 01/05',
@@ -112,6 +113,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 foreach ($companyLines as $row => $text) {
                     $sheet->mergeCells("A{$row}:C{$row}");
                     $sheet->setCellValue("A{$row}", $text);
+                    $sheet->getStyle("A{$row}")->getFont()->setSize(11);
                     $sheet->getStyle("A{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 }
 
@@ -133,8 +135,8 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                     $sheet->getRowDimension(6)->setRowHeight(($halLines - 1) * $lineHeight);
                 }
 
-                // Jarak ±1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
-                $sheet->getRowDimension(7)->setRowHeight(20);
+                // Jarak tepat 1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
+                $sheet->getRowDimension(7)->setRowHeight($lineHeight);
                 // Kepada Yth (tidak di-bold)
                 $currentRow = 8;
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
@@ -151,8 +153,8 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 }
 
                 $currentRow += 2;
-                // Jarak ±1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
-                $sheet->getRowDimension($currentRow - 1)->setRowHeight(20);
+                // Jarak tepat 1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight($lineHeight);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $descriptionText = $invoice->project_description
                     ? 'Dengan ini kami sampaikan invoice untuk proyek ' . $invoice->project_description . ' sebagai berikut :'
@@ -199,8 +201,8 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                     $fitWrappedRow($currentRow, (string) ($item['name_item'] ?? '-'), 32, 'B');
                     $sheet->setCellValue("C{$currentRow}", $quantity);
                     $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '');
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($sellingPrice, 0, ',', '.'));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                    $sheet->setCellValue("E{$currentRow}", format_rupiah($sellingPrice));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah($jumlah));
 
                     // Volume, Satuan, Harga, Jumlah rata tengah; keterangan di-wrap bila panjang
                     $sheet->getStyle("A{$currentRow}:F{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
@@ -222,7 +224,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 $sheet->setCellValue("C{$currentRow}", '');
                 $sheet->setCellValue("D{$currentRow}", '');
                 $sheet->setCellValue("E{$currentRow}", 'Jumlah');
-                $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($totalAmount, 0, ',', '.'));
+                $sheet->setCellValue("F{$currentRow}", format_rupiah($totalAmount));
 
                 $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                     'fill' => [
@@ -289,9 +291,12 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                     $sheet->setCellValue("A{$currentRow}", "{$bankName} / No : {$accountNumber} a/n {$accountHolder}");
                 }
 
-                $currentRow += 2;
+                // 2 baris kosong di atas kalimat penutup (revisi klien)
+                $currentRow += 3;
+                $sheet->getRowDimension($currentRow - 2)->setRowHeight($lineHeight);
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight($lineHeight);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $closingText = 'Demikian invoice item ini kami buat atas perhatian dan kerjasamanya kami ucapkan terima kasih.';
+                $closingText = 'Demikian invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.';
                 $sheet->setCellValue("A{$currentRow}", $closingText);
                 $fitWrappedRow($currentRow, $closingText, 100);
 

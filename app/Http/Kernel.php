@@ -61,6 +61,8 @@ class Kernel extends HttpKernel
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,
             SubstituteBindings::class,
+            // Pratinjau dokumen (?preview=1) sebelum diunduh
+            \App\Http\Middleware\PreviewDownload::class,
         ],
 
         'api' => [

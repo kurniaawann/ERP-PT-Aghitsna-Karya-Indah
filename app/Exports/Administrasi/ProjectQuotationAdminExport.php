@@ -91,15 +91,11 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                 // Lebar gabungan kolom A:F (untuk estimasi wrap teks)
                 $fullWidth = 85;
 
-                // Helper: trim trailing zero pada angka persentase (format PDF).
-                $trimNumber = function ($value) {
-                    return rtrim(rtrim(number_format((float) $value, 2, ',', '.'), '0'), ',');
-                };
-
                 // ═══ KOP SURAT (logo + nama & alamat perusahaan) ══════════════════════
-                $sheet->getRowDimension(1)->setRowHeight(30);
-                foreach ([2, 3, 4] as $row) {
-                    $sheet->getRowDimension($row)->setRowHeight(14);
+                // Revisi klien: nama perusahaan 12pt, alamat/telp/email 11pt
+                $sheet->getRowDimension(1)->setRowHeight(22);
+                foreach ([2, 3, 4, 5] as $row) {
+                    $sheet->getRowDimension($row)->setRowHeight(15);
                 }
 
                 $drawing = new Drawing();
@@ -117,36 +113,38 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
 
                 $sheet->mergeCells('B1:F1');
                 $sheet->setCellValue('B1', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('B1')->getFont()->setName('Arial')->setBold(true)->setSize(20)->setColor(new Color('E53935'));
+                $sheet->getStyle('B1')->getFont()->setName('Arial')->setBold(true)->setSize(12)->setColor(new Color('E53935'));
                 // Indent hanya berlaku bila perataan horizontal eksplisit LEFT
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_BOTTOM)->setIndent($kopIndent);
 
+                // Alamat 11pt terlalu panjang untuk 1 baris sel gabungan (terpotong) → dipecah 2 baris
                 $kopLines = [
-                    2 => 'JL. PERTIWI NO.36 TANAH BARU RAYA RT.01/05, BEJI. DEPOK, JAWA BARAT',
-                    3 => 'Telp. 021-29034923 – 0812.9596.552',
-                    4 => 'Email : design@aghitsna.id / Zulkarnainmarzuki@yahoo.com',
+                    2 => 'JL. PERTIWI NO.36 TANAH BARU RAYA RT.01/05,',
+                    3 => 'BEJI. DEPOK, JAWA BARAT',
+                    4 => 'Telp. 021-29034923 – 0812.9596.552',
+                    5 => 'Email : design@aghitsna.id / Zulkarnainmarzuki@yahoo.com',
                 ];
                 foreach ($kopLines as $row => $text) {
                     $sheet->mergeCells("B{$row}:F{$row}");
                     $sheet->setCellValue("B{$row}", $text);
-                    $sheet->getStyle("B{$row}")->getFont()->setName('Arial')->setBold(true)->setSize(10)->setColor(new Color('1565C0'));
+                    $sheet->getStyle("B{$row}")->getFont()->setName('Arial')->setBold(true)->setSize(11)->setColor(new Color('1565C0'));
                     $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent($kopIndent);
                 }
 
                 // Garis pemisah kop surat (biru tebal)
-                $sheet->getStyle('A4:F4')->getBorders()->getBottom()
+                $sheet->getStyle('A5:F5')->getBorders()->getBottom()
                     ->setBorderStyle(Border::BORDER_THICK)
                     ->getColor()->setARGB('FF1565C0');
 
                 // ═══ JUDUL SURAT ═════════════════════════════════════════════════════
-                $sheet->getRowDimension(6)->setRowHeight(26);
-                $sheet->mergeCells('A6:F6');
-                $sheet->setCellValue('A6', 'SURAT PENAWARAN HARGA PEMBANGUNAN');
-                $sheet->getStyle('A6')->getFont()->setBold(true)->setSize(16)->setUnderline(Font::UNDERLINE_SINGLE);
-                $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getRowDimension(7)->setRowHeight(26);
+                $sheet->mergeCells('A7:F7');
+                $sheet->setCellValue('A7', 'SURAT PENAWARAN HARGA PEMBANGUNAN');
+                $sheet->getStyle('A7')->getFont()->setBold(true)->setSize(16)->setUnderline(Font::UNDERLINE_SINGLE);
+                $sheet->getStyle('A7')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                 // ═══ METADATA SURAT (Nomor / Lampiran / Perihal) ═════════════════════
-                $currentRow = 8;
+                $currentRow = 9;
                 foreach ([
                     'Nomor' => $quotation->quotation_number,
                     'Lampiran' => $quotation->attachment ?? '-',
@@ -158,13 +156,15 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                 }
 
                 // ═══ PENERIMA SURAT (tidak bold, revisi klien) ═══════════════════════
+                // Tepat 1 baris kosong sebelum "Kepada Yth," dan sebelum "Dengan Hormat," (revisi klien)
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth,');
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Bapak ' . $quotation->recipient);
+                // Nama penerima ditulis apa adanya (tanpa awalan "Bapak")
+                $sheet->setCellValue("A{$currentRow}", $quotation->recipient);
 
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
@@ -236,8 +236,8 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                     $volume = $item['volume'] ?? 0;
                     $sheet->setCellValue("C{$currentRow}", ($volume !== null && $volume !== '') ? number_format((float) $volume, 2, ',', '.') : '-');
                     $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '-');
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'] ?? 0, 0, ',', '.'));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.'));
+                    $sheet->setCellValue("E{$currentRow}", format_rupiah($item['harga'] ?? 0));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0)));
                     // Tinggi baris eksplisit (keterangan panjang di-wrap) + sedikit ruang atas-bawah
                     $sheet->getRowDimension($currentRow)->setRowHeight($this->estimateRowHeight($item['keterangan'] ?? '', 28) + 4);
                 }
@@ -266,8 +266,8 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", '');
-                    $sheet->setCellValue("E{$currentRow}", 'Discount ' . ($quotation->discount_type === 'percentage' ? '(' . $trimNumber($quotation->discount_value) . '%)' : ''));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp -' . number_format($discountAmount, 0, ',', '.'));
+                    $sheet->setCellValue("E{$currentRow}", 'Discount' . ($quotation->discount_type === 'percentage' ? ' (' . format_persen($quotation->discount_value) . '%)' : ''));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah(-$discountAmount));
 
                     $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                         'borders' => [
@@ -292,7 +292,7 @@ class ProjectQuotationAdminExport implements FromCollection, WithEvents, WithTit
                 $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", '');
                 $sheet->setCellValue("E{$currentRow}", 'Total');
-                $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($grandTotal, 0, ',', '.'));
+                $sheet->setCellValue("F{$currentRow}", format_rupiah($grandTotal));
 
                 $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                     'borders' => [

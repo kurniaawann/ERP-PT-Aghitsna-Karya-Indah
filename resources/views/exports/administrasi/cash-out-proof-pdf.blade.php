@@ -8,9 +8,10 @@
      1. STANDARD (template_type = 'standard' / 'bkc')
         - Header dengan logo perusahaan
         - Judul "BUKTI KAS KELUAR" (atau "BUKTI CEK/GIRO KELUAR" untuk bkc)
-        - Informasi BKK No, Cek No, Tanggal
+        - Informasi BKK No, Cek No, Tanggal (ukuran kecil, pojok kanan atas)
         - Form fields: Dibayarkan Kepada, Jumlah Dibayar, Keterangan
-        - Box jumlah dalam Rupiah
+        - Box jumlah dalam Rupiah ("Rp. 50.000"), rata kanan, lebar
+          mengikuti nominal & sudut membulat
         - Tanda tangan: Direktur, Kabag Keuangan, Diterima Oleh
 
      2. HOLLOW (template_type = 'hollow')
@@ -104,24 +105,27 @@
             height: auto;
         }
 
+        {{-- Info BKK/Cek/Tanggal dibuat kecil agar tidak mendominasi kop --}}
         .doc-info {
             border-collapse: collapse;
             float: right;
+            font-size: 10pt;
+            line-height: 1.2;
         }
 
         .doc-info td {
-            padding: 1px 0;
+            padding: 0;
             vertical-align: top;
             white-space: nowrap;
         }
 
         .doc-info .doc-info-label {
             font-weight: bold;
-            padding-right: 6px;
+            padding-right: 4px;
         }
 
         .doc-info .doc-info-colon {
-            padding-right: 6px;
+            padding-right: 4px;
         }
 
         .standard .header {
@@ -188,14 +192,16 @@
             margin-top: 24px;
         }
 
+        {{-- Box jumlah: lebar mengikuti nominal (tanpa min-width), sudut membulat --}}
         .amount-box {
             display: inline-block;
             border: 2px solid #000;
-            padding: 8px 18px;
-            min-width: 240px;
-            text-align: left;
+            border-radius: 8px;
+            padding: 6px 14px;
+            text-align: center;
             font-size: 14pt;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         {{-- ==========================================
@@ -415,7 +421,7 @@
                 {{-- Box Jumlah dalam Rupiah --}}
                 <div class="amount-section">
                     <div class="amount-box">
-                        Rp. {{ number_format($cashOut->amount, 0, ',', '.') }}
+                        {{ format_rupiah($cashOut->amount) }}
                     </div>
                 </div>
             </div>

@@ -2,14 +2,22 @@
 <x-modal id="editModal-{{ $invoice->invoice_number }}" title="{{ auth()->user()->isAdmin() ? 'Edit Invoice' : 'Edit Invoice Proyek' }}"
     action="{{ route('proyek-invoice.update', $invoice->invoice_number) }}" method="PUT" buttonText="Update">
 
-    {{-- Nomor Invoice (Read-only) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">No Invoice</label>
-        <input type="text" value="{{ $invoice->invoice_number }}"
-            class="w-full border border-border-strong rounded-lg p-2 bg-surface-hover text-text-input cursor-not-allowed"
-            readonly>
-        <p class="text-xs text-text-secondary mt-1">No Invoice tidak dapat diubah</p>
-    </div>
+    {{-- Nomor Invoice
+         - Admin + nomor format baru ({nomor}/AKI/{bulan romawi}/{yyyy}):
+           nomor urut bisa diubah & nomor disusun ulang dari Tanggal Invoice.
+         - Nomor format lama (mis. 071/SPK/AKI/IX/26) & nomor superadmin:
+           read-only (nomor lama dipertahankan apa adanya). --}}
+    @if (auth()->user()->isAdmin() && \App\Models\Finance\InvoiceProyek::parseAdminInvoiceNumber($invoice->invoice_number))
+        <x-finance.project-invoices.admin-number-field :invoice="$invoice" />
+    @else
+        <div class="mb-3">
+            <label class="block text-text-primary mb-1">No Invoice</label>
+            <input type="text" value="{{ $invoice->invoice_number }}"
+                class="w-full border border-border-strong rounded-lg p-2 bg-surface-hover text-text-input cursor-not-allowed"
+                readonly>
+            <p class="text-xs text-text-secondary mt-1">No Invoice tidak dapat diubah</p>
+        </div>
+    @endif
 
     {{-- Informasi Invoice --}}
     <div class="mb-3">
@@ -58,6 +66,9 @@
         </div>
     @endif
 
+    {{-- Tautan Rekap Proyek (opsional) + ringkasan sisa tagihan --}}
+    <x-finance.project-invoices.recap-picker :projectRecaps="$projectRecaps ?? collect()" :invoice="$invoice" />
+
     {{-- Detail Item Invoice --}}
     <div id="items-container-edit-{{ $invoice->invoice_number }}" class="mb-4">
         <div id="items-error-edit-{{ $invoice->invoice_number }}"
@@ -89,15 +100,15 @@
                                 oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                            {{-- Persentase opsional: kosong → Jumlah = Harga --}}
                             <input type="text" inputmode="decimal" name="items[{{ $index }}][persentase]"
-                                value="{{ $item['persentase'] ?? '' }}"
+                                value="{{ isset($item['persentase']) && $item['persentase'] !== '' ? rtrim(rtrim(number_format((float) $item['persentase'], 2, '.', ''), '0'), '.') : '' }}"
                                 class="item-persentase border border-border-strong rounded-lg p-2 w-full text-text-input"
-                                placeholder="% *" required
-                                oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
-                                oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                                placeholder="% (opsional)" title="Kosongkan bila Jumlah = Harga"
+                                oninput="formatDecimalInput(this); calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}')">
                             <div class="flex items-center">
                                 <span class="item-total text-sm font-semibold text-primary">Rp
-                                    {{ number_format(($item['harga'] ?? 0) * (($item['persentase'] ?? 0) / 100), 0, ',', '.') }}</span>
+                                    {{ number_format(\App\Models\Finance\InvoiceProyek::itemAmount($item), 0, ',', '.') }}</span>
                             </div>
                             <div></div>
                             <button type="button"

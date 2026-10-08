@@ -22,7 +22,11 @@ class StockReportExport implements FromCollection, WithHeadings, WithStyles, Wit
     protected $startDate;
     protected $endDate;
 
-    private const DATA_START_ROW = 6;
+    /** Baris data pertama (baris 1-6 = judul, periode, tanggal cetak & header tabel). */
+    private const DATA_START_ROW = 7;
+
+    /** Format angka Rupiah di Excel: "Rp. 50.000" (pemisah ribuan mengikuti locale Excel). */
+    private const RUPIAH_FORMAT = '"Rp. "#,##0';
 
     public function __construct($reportData, $summary, $periodTitle, $startDate, $endDate)
     {
@@ -78,7 +82,7 @@ class StockReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             ['no' => '3.', 'id_item' => '', 'name_item' => 'Stok Keluar', 'beginning_stock' => '', 'stock_in' => '', 'stock_out' => '', 'returns' => '', 'ending_stock' => '', 'capital_price' => '', 'stock_value' => $this->summary['total_stock_out'] . ' unit'],
             ['no' => '4.', 'id_item' => '', 'name_item' => 'Retur Barang', 'beginning_stock' => '', 'stock_in' => '', 'stock_out' => '', 'returns' => '', 'ending_stock' => '', 'capital_price' => '', 'stock_value' => $this->summary['total_returns'] . ' unit'],
             ['no' => '', 'id_item' => '', 'name_item' => 'Stok Akhir', 'beginning_stock' => '', 'stock_in' => '', 'stock_out' => '', 'returns' => '', 'ending_stock' => '', 'capital_price' => '', 'stock_value' => $this->summary['total_ending_stock'] . ' unit'],
-            ['no' => '', 'id_item' => '', 'name_item' => 'Nilai Stok Total', 'beginning_stock' => '', 'stock_in' => '', 'stock_out' => '', 'returns' => '', 'ending_stock' => '', 'capital_price' => '', 'stock_value' => 'Rp ' . number_format($this->summary['total_stock_value'], 0, ',', '.')],
+            ['no' => '', 'id_item' => '', 'name_item' => 'Nilai Stok Total', 'beginning_stock' => '', 'stock_in' => '', 'stock_out' => '', 'returns' => '', 'ending_stock' => '', 'capital_price' => '', 'stock_value' => format_rupiah($this->summary['total_stock_value'])],
         ];
 
         foreach ($summaryItems as $item) {
@@ -209,6 +213,9 @@ class StockReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
+        // Harga Satuan & Nilai Stok (data + baris TOTAL) tampil "Rp. 50.000"
+        $sheet->getStyle('I' . self::DATA_START_ROW . ':J' . $totalRow)->getNumberFormat()->setFormatCode(self::RUPIAH_FORMAT);
+
         // Center align columns
         $sheet->getStyle('A' . self::DATA_START_ROW . ':A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('B' . self::DATA_START_ROW . ':B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -255,8 +262,8 @@ class StockReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                     'font' => ['bold' => true],
                 ]);
 
-                // Signature section
-                $sigRow = $summaryEndRow + 2;
+                // Signature section (setelah 2 baris kosong: judul s/d nama penanda tangan)
+                $sigRow = $summaryEndRow + 3;
                 $sheet->getStyle('A' . $sigRow . ':J' . ($sigRow + 4))->applyFromArray([
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
                     'font' => ['bold' => true],
@@ -277,8 +284,8 @@ class StockReportExport implements FromCollection, WithHeadings, WithStyles, Wit
             'F' => 10,
             'G' => 10,
             'H' => 12,
-            'I' => 15,
-            'J' => 15,
+            'I' => 16, // Harga Satuan "Rp. 1.450.000"
+            'J' => 18, // Nilai Stok "Rp. 126.425.000" (cukup agar tidak tampil ####)
         ];
     }
 

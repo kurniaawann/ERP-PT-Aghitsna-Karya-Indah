@@ -80,23 +80,10 @@
             font-weight: bold;
         }
 
-        /* Format Rata Kiri-Kanan untuk Nilai Mata Uang (Rp) */
+        /* Nilai mata uang ditulis utuh "Rp. 50.000" via format_rupiah()
+           (layout float Rp kiri/nominal kanan tidak dirender dompdf & menempel jadi "Rp50.000") */
         .currency {
-            width: 100%;
-        }
-
-        .currency span:first-child {
-            float: left;
-        }
-
-        .currency span:last-child {
-            float: right;
-        }
-
-        .currency::after {
-            content: "";
-            display: table;
-            clear: both;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -143,17 +130,11 @@
                             <td>{{ strtoupper($cement->nama_proyek) }}</td>
                             <td class="text-center">{{ number_format($cement->jumlah, 0, ',', '.') }}</td>
                             <td class="text-center">ZAK</td>
-                            <td>
-                                <div class="currency">
-                                    <span>Rp</span>
-                                    <span>{{ number_format($cement->harga, 0, ',', '.') }}</span>
-                                </div>
+                            <td class="currency">
+                                {{ format_rupiah($cement->harga) }}
                             </td>
-                            <td>
-                                <div class="currency">
-                                    <span>Rp</span>
-                                    <span>{{ number_format($cement->total, 0, ',', '.') }}</span>
-                                </div>
+                            <td class="currency">
+                                {{ format_rupiah($cement->total) }}
                             </td>
 
                             {{-- Tanggal Lunas per item --}}
@@ -178,24 +159,15 @@
                         <td></td> {{-- Col 3: PROYEK --}}
                         <td class="text-center text-red">{{ number_format($do->cements->sum('jumlah'), 0, ',', '.') }}</td> {{-- Col 4: VOLUME --}}
                         <td colspan="2"></td> {{-- Col 5 & 6: SATUAN & HARGA --}}
-                        <td colspan="2"> {{-- Col 7 & 8: JUMLAH & TGL LUNAS --}}
-                            <div class="currency">
-                                <span>Rp</span>
-                                <span>{{ number_format($do->subtotal ?? $do->cements->sum('total'), 0, ',', '.') }}</span>
-                            </div>
+                        <td colspan="2" class="currency"> {{-- Col 7 & 8: JUMLAH & TGL LUNAS --}}
+                            {{ format_rupiah($do->subtotal ?? $do->cements->sum('total')) }}
                         </td>
-                        <td> {{-- Col 9: HARGA MODAL --}}
-                            <div class="currency">
-                                <span>Rp</span>
-                                <span>{{ number_format($do->harga_modal, 0, ',', '.') }}</span>
-                            </div>
+                        <td class="currency"> {{-- Col 9: HARGA MODAL --}}
+                            {{ format_rupiah($do->harga_modal) }}
                         </td>
-                        <td> {{-- Col 10: PROFIT (profit minus tidak ditampilkan) --}}
+                        <td class="currency"> {{-- Col 10: PROFIT (profit minus tidak ditampilkan) --}}
                             @if ($do->profit >= 0)
-                                <div class="currency">
-                                    <span>Rp</span>
-                                    <span>{{ number_format($do->profit, 0, ',', '.') }}</span>
-                                </div>
+                                {{ format_rupiah($do->profit) }}
                             @endif
                         </td>
                     </tr>

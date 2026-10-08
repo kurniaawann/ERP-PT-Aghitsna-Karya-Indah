@@ -51,34 +51,26 @@
             vertical-align: middle;
         }
 
+        /* Kop surat (revisi klien, admin & super admin): nama perusahaan 12pt, baris di bawahnya 11pt */
         .company-name {
-            font-size: 19pt;
+            font-size: 12pt;
             font-weight: bold;
             letter-spacing: 1px;
         }
 
         .company-address {
-            font-size: 9pt;
+            font-size: 11pt;
             margin-top: 2px;
             line-height: 1.4;
         }
 
-        /* Versi Super Admin: header diperbesar */
+        /* Versi Super Admin: logo diperbesar */
         .company-header-lg .logo-cell {
             width: 140px;
         }
 
         .company-header-lg .logo-cell img {
             width: 120px;
-        }
-
-        .company-header-lg .company-name {
-            font-size: 28pt;
-            letter-spacing: 1.5px;
-        }
-
-        .company-header-lg .company-address {
-            font-size: 11pt;
         }
 
         .main-table {
@@ -140,7 +132,7 @@
         .right { text-align: right; }
         .bold { font-weight: bold; }
 
-        /* Format Currency */
+        /* Format Currency: "Rp." rata kiri, nominal rata kanan */
         .currency-cell {
             display: table;
             width: 100%;
@@ -264,7 +256,7 @@
         <tr>
             <td style="width: 1%;">Total Pembayaran</td>
             <td style="width: 1%; text-align: center;">:</td>
-            <td colspan="3">Rp. {{ number_format($invoice->total_amount ?? 0, 0, ',', '.') }}</td>
+            <td colspan="3">{{ format_rupiah($invoice->total_amount ?? 0) }}</td>
         </tr>
         
         <!-- Pemisah Spasi Tipis -->
@@ -316,12 +308,12 @@
             @foreach ($items as $item)
                 <tr>
                     <td class="center">{{ $item['no'] ?? $loop->iteration }}.</td>
-                    <td class="center">{{ $item['tanggal'] ? \Carbon\Carbon::parse($item['tanggal'])->format('d M Y') : '-' }}</td>
+                    <td class="center">{{ $item['tanggal'] ? \Carbon\Carbon::parse($item['tanggal'])->translatedFormat('d M Y') : '-' }}</td>
                     <td class="col-nama-barang">{{ $item['nama_barang'] ?? 'SEMEN' }}</td>
                     <td class="center">{{ $item['qty'] ?? 0 }} Zak</td>
                     <td>
                         <div class="currency-cell">
-                            <span class="currency-symbol">Rp</span>
+                            <span class="currency-symbol">Rp.</span>
                             <span class="currency-amount">{{ number_format((int)($item['jumlah'] ?? 0), 0, ',', '.') }}</span>
                         </div>
                     </td>
@@ -336,7 +328,7 @@
                 <td class="yellow-bg"></td>
                 <td>
                     <div class="currency-cell bold">
-                        <span class="currency-symbol">Rp</span>
+                        <span class="currency-symbol">Rp.</span>
                         <span class="currency-amount">{{ number_format($subtotal, 0, ',', '.') }}</span>
                     </div>
                 </td>
@@ -376,7 +368,7 @@
                 <td style="padding-right: 15px;">TOTAL {{ $totalProjects }} INVOICE:</td>
                 <td class="double-underline" style="min-width: 140px;">
                     <div class="currency-cell">
-                        <span class="currency-symbol">Rp</span>
+                        <span class="currency-symbol">Rp.</span>
                         <span class="currency-amount">{{ number_format($grandTotal, 0, ',', '.') }}</span>
                     </div>
                 </td>

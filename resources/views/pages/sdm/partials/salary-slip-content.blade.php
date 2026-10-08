@@ -8,7 +8,7 @@
      Data dari PayrollController@index (saat tab=salary-slip):
      - $slips     : LengthAwarePaginator daftar slip (dengan relasi employee)
      - $search, $month, $year : nilai filter aktif (nullable)
-     - $executives: daftar petinggi untuk pemilihan penanda tangan
+     - $executives: daftar penandatangan (Data Penandatangan) untuk blok tanda tangan
      - $eligibleEmployees, $filterMonth, $filterYear : data modal generate
 
      Komponen yang di-include:
@@ -111,7 +111,8 @@
 {{-- Modal Konfirmasi Bulk Pay --}}
 <x-modal id="bulkPayModal" title="Konfirmasi Bayar" onConfirm="submitBulkPayForm()" buttonText="Ya, Bayar">
     <p class="text-text-primary">Apakah kamu yakin ingin membayar slip gaji yang dipilih? Setelah dibayar, data
-        absensi slip terkunci dan tidak dapat diubah lagi.</p>
+        absensi slip terkunci dan tidak dapat diubah lagi. Cicilan kasbon bulan ini dicatat sebagai pembayaran kasbon;
+        sisa kasbon terbawa ke slip bulan berikutnya.</p>
 </x-modal>
 
 {{-- ============================================================

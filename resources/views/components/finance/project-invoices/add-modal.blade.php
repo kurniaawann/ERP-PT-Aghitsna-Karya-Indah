@@ -1,6 +1,14 @@
 {{-- Modal Tambah Invoice Proyek --}}
+{{-- Props tambahan: $projectRecaps (opsi tautan Rekap Proyek, lihat recap-picker). --}}
 <x-modal id="addModal" title="{{ auth()->user()->isAdmin() ? 'Tambah Invoice' : 'Tambah Invoice Proyek' }}" action="{{ route('proyek-invoice.store') }}" method="POST"
     buttonText="Simpan">
+
+    {{-- No Invoice (khusus admin): user mengetik nomor urut saja,
+         sisanya ({nomor}/AKI/{bulan romawi}/{yyyy}) disusun otomatis dari
+         Tanggal Invoice. Superadmin tetap digenerate otomatis oleh server. --}}
+    @if (auth()->user()->isAdmin())
+        <x-finance.project-invoices.admin-number-field />
+    @endif
 
     {{-- Informasi Invoice --}}
     <div class="mb-3">
@@ -46,6 +54,9 @@
         </div>
     @endif
 
+    {{-- Tautan Rekap Proyek (opsional) + ringkasan sisa tagihan --}}
+    <x-finance.project-invoices.recap-picker :projectRecaps="$projectRecaps ?? collect()" />
+
     {{-- Detail Item Invoice --}}
     <div id="items-container" class="mb-4">
         <div id="items-error"
@@ -69,9 +80,10 @@
                             oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        {{-- Persentase opsional: kosong → Jumlah = Harga --}}
                         <input type="text" inputmode="decimal" class="item-persentase border rounded p-2 w-full"
-                            placeholder="% *" required oninput="calculateRowTotal(this)"
-                            oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                            placeholder="% (opsional)" title="Kosongkan bila Jumlah = Harga"
+                            oninput="formatDecimalInput(this); calculateRowTotal(this)">
                         <div class="flex items-center">
                             <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                         </div>
@@ -292,10 +304,9 @@
             @else
                 <div class="p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
                     <i class="fa-solid fa-exclamation-triangle text-yellow-600"></i>
-                    Belum ada rekening pembayaran.
-                    <a href="{{ route('payment-accounts.index') }}" class="text-blue-600 hover:underline"
-                        target="_blank">
-                        Tambah rekening pembayaran
+                    Belum ada rekening pembayaran. Gunakan tombol <strong>Rekening Baru</strong> di atas, atau
+                    <a href="{{ route('payment-accounts.index') }}" class="text-blue-600 hover:underline">
+                        buka menu Rekening Pembayaran
                     </a>
                 </div>
             @endif

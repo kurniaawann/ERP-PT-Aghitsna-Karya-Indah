@@ -10,6 +10,10 @@
                          difilter oleh month, year, search.
      - $paymentAccounts: Rekening pembayaran aktif (PaymentAccountService)
                          untuk dropdown rekening di modal tambah/edit.
+     - $projectRecaps  : Opsi tautan Rekap Proyek (opsional) beserta nilai
+                         proyek & total yang sudah ditagih (recap-picker).
+     - $takenAdminNumbers: Nomor invoice admin format baru yang sudah dipakai
+                         (validasi live nomor dobel; khusus admin).
      Komponen yang di-include:
      - x-filters.month-filter / year-filter / search-input : toolbar filter & pencarian
      - x-buttons.delete-button / add-button               : tombol aksi
@@ -62,13 +66,15 @@
 
     {{-- ==================== Section: Modals ==================== --}}
     {{-- Modal Tambah Invoice --}}
-    <x-finance.project-invoices.add-modal :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
+    <x-finance.project-invoices.add-modal :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions"
+        :projectRecaps="$projectRecaps" />
 
     {{-- Modal Edit & Detail untuk setiap invoice --}}
     {{-- Modal Edit, Detail, & Delete untuk setiap invoice: satu set modal
          dibuat per baris agar data tiap invoice tetap terpisah. --}}
     @foreach ($invoices as $invoice)
-        <x-finance.project-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
+        <x-finance.project-invoices.edit-modal :invoice="$invoice" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions"
+            :projectRecaps="$projectRecaps" />
         <x-finance.project-invoices.detail-modal :invoice="$invoice" />
         <x-finance.project-invoices.delete-modal :invoice="$invoice" />
     @endforeach
@@ -83,6 +89,10 @@
         buttonText="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
     </x-modal>
+
+    {{-- Data nomor invoice admin yang sudah dipakai (cek nomor dobel live di
+         form tambah/edit; lihat initAdminNumberFields di index.js) --}}
+    <script type="application/json" id="proyek-invoice-taken-numbers">@json($takenAdminNumbers ?? [])</script>
 
     {{-- ==================== Section: JavaScript ==================== --}}
     {{-- JavaScript --}}

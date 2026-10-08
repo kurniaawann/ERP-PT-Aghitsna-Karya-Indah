@@ -29,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Nama hari & bulan berbahasa Indonesia untuk isoFormat()/translatedFormat()
+        // di dokumen cetak maupun tampilan (mis. "8 Oktober 2026", bukan "October").
+        \Carbon\Carbon::setLocale('id');
+
         // Register observer untuk auto-create expense recap when sales recap LUNAS
         SalesRecap::observe(SalesRecapObserver::class);
 

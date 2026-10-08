@@ -7,6 +7,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
@@ -14,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
@@ -21,8 +23,15 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  *
  * Kolom (8 Kolom):
  * A: NO | B: BON | C: TANGGAL | D: KETERANGAN | E: UANG MASUK | F: UANG KELUAR | G: SALDO | H: KETERANGAN BON
+ *
+ * Revisi klien: nama kolom HURUF KAPITAL, baris subtotal & "Jumlah" tanpa
+ * garis bawah, dan nominal berformat Rupiah "Rp. 50.000" (number format).
+ *
+ * WithStrictNullComparison wajib: sel A1 judul berisi string kosong. Tanpa
+ * perbandingan ketat, string kosong dianggap null sehingga A1 tidak dibuat
+ * dan data ikut ditulis mulai baris 1 (menimpa judul & header tabel).
  */
-class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, WithEvents, WithHeadings, WithStyles, WithTitle
+class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, WithEvents, WithHeadings, WithStrictNullComparison, WithStyles, WithTitle
 {
     protected $recap;
     protected $items;
@@ -31,6 +40,9 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
 
     /** @var array Menyimpan metadata tipe baris untuk styling dinamis di AfterSheet */
     protected $rowMetadata = [];
+
+    /** Format angka Rupiah dokumen cetak: "Rp. 50.000" (negatif: "Rp. -50.000"). */
+    private const RUPIAH_FORMAT = '"Rp. "#,##0;"Rp. -"#,##0';
 
     public function __construct($recap, $items, $totals, $signatures = [])
     {
@@ -57,12 +69,13 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
             $bonNo = 1;
             $isFirstItem = true;
 
-            // Baris Header Kategori (Hijau)
+            // Baris Header Kategori (Hijau). Nama kategori di kolom A karena A:D
+            // digabung (merge hanya mempertahankan nilai sel kiri-atas).
             $data[] = [
-                'no' => '',
+                'no' => $category->name ?? 'Lain - lain',
                 'bon' => '',
                 'date' => '',
-                'description' => $category->name ?? 'Lain - lain',
+                'description' => '',
                 'income' => '',
                 'expense' => '',
                 'balance' => '',
@@ -191,18 +204,18 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
         $locationLine = $this->recap->location ?? 'Jl. XYZ - Jakarta Selatan';
 
         return [
-            ['', '', '', 'LAPORAN KEUANGAN', '', '', '', 'Tgl Edit Terakhir : ' . Carbon::now()->format('d F Y')],
+            ['', '', '', 'LAPORAN KEUANGAN', '', '', '', 'Tgl Edit Terakhir : ' . Carbon::now()->translatedFormat('d F Y')],
             ['', '', '', $projectLine, '', '', '', ''],
             ['', '', '', $locationLine, '', '', '', ''],
             [
-                'No',
-                'Bon',
-                'Tanggal',
-                'Keterangan',
-                'Uang Masuk',
-                'Uang Keluar',
-                'Saldo',
-                'Keterangan Bon',
+                'NO',
+                'BON',
+                'TANGGAL',
+                'KETERANGAN',
+                'UANG MASUK',
+                'UANG KELUAR',
+                'SALDO',
+                'KETERANGAN BON',
             ],
         ];
     }
@@ -257,6 +270,15 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
+                // Setup cetak: A4 landscape (sama seperti PDF), muat 1 halaman lebar,
+                // header tabel (baris 4) berulang di setiap halaman.
+                $sheet->getPageSetup()
+                    ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+                    ->setPaperSize(PageSetup::PAPERSIZE_A4)
+                    ->setFitToWidth(1)
+                    ->setFitToHeight(0);
+                $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(4, 4);
+
                 foreach ($this->rowMetadata as $row => $meta) {
                     $type = $meta['type'];
 
@@ -301,8 +323,8 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                         $sheet->getStyle("E{$row}")->getFont()->getColor()->setRGB('548235'); // Hijau Uang Masuk
                         $sheet->getStyle("F{$row}")->getFont()->getColor()->setRGB('C65911'); // Cokelat Uang Keluar
 
-                        // Number Formatting
-                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                        // Number Formatting (Rupiah "Rp. 50.000")
+                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode(self::RUPIAH_FORMAT);
                     } elseif ($type === 'SUBTOTAL') {
                         // Background Kuning Subtotal
                         $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
@@ -310,7 +332,8 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                                 'fillType' => Fill::FILL_SOLID,
                                 'startColor' => ['rgb' => 'FFC000'],
                             ],
-                            'font' => ['bold' => true, 'italic' => true, 'underline' => true, 'size' => 9.5, 'name' => 'Arial'],
+                            // Tanpa garis bawah (revisi klien)
+                            'font' => ['bold' => true, 'italic' => true, 'size' => 9.5, 'name' => 'Arial'],
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '7F7F7F']],
                             ],
@@ -319,7 +342,7 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                         $sheet->getStyle("E{$row}:G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                         $sheet->getStyle("E{$row}")->getFont()->getColor()->setRGB('548235');
                         $sheet->getStyle("F{$row}")->getFont()->getColor()->setRGB('C65911');
-                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode(self::RUPIAH_FORMAT);
                     } elseif ($type === 'GRAND_TOTAL') {
                         // Merge A sampai D untuk teks "Jumlah"
                         $sheet->mergeCells("A{$row}:D{$row}");
@@ -330,7 +353,8 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                                 'fillType' => Fill::FILL_SOLID,
                                 'startColor' => ['rgb' => 'BFBFBF'],
                             ],
-                            'font' => ['bold' => true, 'italic' => true, 'underline' => true, 'size' => 10, 'name' => 'Arial'],
+                            // Tanpa garis bawah (revisi klien)
+                            'font' => ['bold' => true, 'italic' => true, 'size' => 10, 'name' => 'Arial'],
                             'borders' => [
                                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '7F7F7F']],
                             ],
@@ -340,7 +364,7 @@ class ProjectFinancialReportExport implements FromCollection, WithColumnWidths, 
                         $sheet->getStyle("E{$row}:G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                         
                         // Format Currency "Rp. #,##0"
-                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode('"Rp. "#,##0');
+                        $sheet->getStyle("E{$row}:G{$row}")->getNumberFormat()->setFormatCode(self::RUPIAH_FORMAT);
                     } elseif ($type === 'SUMMARY_LABEL') {
                         $sheet->getStyle("E{$row}:G{$row}")->applyFromArray([
                             'font' => ['bold' => true, 'italic' => true, 'size' => 9.5, 'name' => 'Arial'],

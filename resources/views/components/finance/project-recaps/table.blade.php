@@ -85,7 +85,9 @@
                                 </td>
                                 <td class="p-2 text-sm text-center">
                                     @if ($recap->hasDesignFile())
-                                        <a href="{{ asset('storage/' . $recap->design_file) }}" target="_blank"
+                                        {{-- File design dibuka di modal pratinjau (tanpa tab baru) --}}
+                                        <a href="{{ asset('storage/' . $recap->design_file) }}"
+                                            onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'File Design', downloadName: @js($recap->design_file_name ?: basename($recap->design_file)) }); }"
                                             class="inline-flex items-center gap-1 text-primary hover:underline"
                                             title="Lihat/unduh {{ $recap->design_file_name }}">
                                             <i class="fa-solid fa-image text-xs"></i>

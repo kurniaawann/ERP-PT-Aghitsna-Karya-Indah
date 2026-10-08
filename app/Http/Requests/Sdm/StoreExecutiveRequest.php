@@ -5,7 +5,7 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request untuk penyimpanan data petinggi baru.
+ * Form request untuk penyimpanan data penandatangan baru.
  *
  * Memastikan nama dan jabatan terisi, serta gambar tanda tangan berupa
  * file gambar yang valid bila diunggah.
@@ -46,7 +46,7 @@ class StoreExecutiveRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Nama petinggi harus diisi',
+            'name.required' => 'Nama penandatangan harus diisi',
             'position.max' => 'Jabatan maksimal 150 karakter.',
             'signature_image.image' => 'File harus berupa gambar.',
             'signature_image.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WEBP.',

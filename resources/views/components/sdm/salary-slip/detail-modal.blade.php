@@ -118,6 +118,10 @@
                 <span class="font-medium text-text-primary">Rp {{ number_format($slip->meal_total, 0, ',', '.') }}</span>
             </div>
             <div>
+                <span class="text-text-label block">Lembur</span>
+                <span class="font-medium text-text-primary">Rp {{ number_format($slip->overtime_total, 0, ',', '.') }}</span>
+            </div>
+            <div>
                 <span class="text-text-label block">Total Penerimaan</span>
                 <span class="font-medium text-text-primary">Rp {{ number_format($slip->total_income, 0, ',', '.') }}</span>
             </div>
@@ -142,8 +146,13 @@
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm border-t border-border pt-3">
             <div>
-                <span class="text-text-label block">Kasbon</span>
+                <span class="text-text-label block">Cicilan Kasbon</span>
                 <span class="font-medium text-error">- Rp {{ number_format($slip->kasbon_deduction, 0, ',', '.') }}</span>
+                @if ($slip->kasbon_total > 0)
+                    <span class="block text-xs text-text-label">
+                        Total Rp {{ number_format($slip->kasbon_total, 0, ',', '.') }} · sisa Rp {{ number_format($slip->kasbon_remaining, 0, ',', '.') }}
+                    </span>
+                @endif
             </div>
             <div>
                 <span class="text-text-label block">Total Potongan</span>

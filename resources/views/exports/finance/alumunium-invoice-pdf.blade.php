@@ -21,14 +21,14 @@
             position: relative;
         }
 
-        /* Stempel LUNAS di Paling Depan & Transparan */
+        /* Stempel LUNAS (watermark_lunas.jpeg, rasio ±3:1) di paling depan, miring & di tengah halaman.
+           Dibuat lebih transparan (revisi klien) agar teks di belakangnya mudah dibaca. */
         .stamp-lunas-overlay {
             position: fixed;
-            top: 28%;
-            left: 10%;
-            width: 80%;
-            max-width: 550px;
-            opacity: 0.35; /* Tingkat transparan (0.3 - 0.4 agar teks dibelakangnya tetap terbaca) */
+            top: 33%;
+            left: 12%;
+            width: 76%;
+            opacity: 0.18;
             transform: rotate(-25deg);
             -webkit-transform: rotate(-25deg);
             z-index: 9999; /* Memastikan berada di PALING DEPAN */
@@ -69,11 +69,17 @@
             margin-top: 6px;
         }
 
+        /* Kop surat (revisi klien): nama perusahaan 12pt, alamat/telp/email 11pt */
         .company-name {
-            font-size: 16pt;
+            font-size: 12pt;
             font-weight: bold;
-            line-height: 1.2;
+            line-height: 1.25;
             padding-bottom: 2px !important;
+        }
+
+        .company-address {
+            font-size: 11pt;
+            line-height: 1.3;
         }
 
         .invoice-info td {
@@ -81,13 +87,13 @@
             vertical-align: top;
         }
 
-        /* Kepada Yth tidak di-bold; jarak ±1 baris kosong: Email → Kepada Yth → "Dengan ini kami sampaikan" */
+        /* Kepada Yth tidak di-bold; jarak tepat 1 baris kosong (15pt): Email → Kepada Yth → "Dengan ini kami sampaikan" */
         .recipient {
-            margin: 24px 0 0 0;
+            margin: 15pt 0 0 0;
         }
 
         .description {
-            margin: 20px 0 6px 0;
+            margin: 15pt 0 6px 0;
             text-align: justify;
         }
 
@@ -148,12 +154,13 @@
         }
 
         .payment-info {
-            margin: 6px 0;
+            margin: 6px 0 0 0;
             line-height: 1.4;
         }
 
+        /* Kalimat penutup: 2 baris kosong di atasnya (2 x 15pt, revisi klien) */
         .closing {
-            margin: 6px 0;
+            margin: 30pt 0 6px 0;
             text-align: justify;
         }
     </style>
@@ -162,7 +169,7 @@
 <body>
     <!-- Gambar Stempel Lunas di Lapisan Paling Depan -->
     @if($invoice->isFullyPaid())
-        <img src="{{ public_path('images/status_paid_alumunium.jpeg') }}" class="stamp-lunas-overlay" alt="LUNAS">
+        <img src="{{ public_path('images/watermark_lunas.jpeg') }}" class="stamp-lunas-overlay" alt="LUNAS">
     @endif
 
     <div class="container">
@@ -185,7 +192,7 @@
                 <td colspan="2" class="company-name">AGHITSNA ALUMUNIUM DAN BAJA RINGAN</td>
             </tr>
             <tr>
-                <td width="60%" valign="top">
+                <td width="60%" valign="top" class="company-address">
                     <div>JL. CEMARA RT 02 RW 07, KEL. GROGOL,</div>
                     <div>KEC. LIMO, KOTA DEPOK</div>
                     <div>Telp : 0838 9004 1408 / 0818 0844 4519</div>
@@ -263,8 +270,8 @@
                         <td class="left">{{ $item['keterangan'] }}</td>
                         <td class="center">{{ number_format($item['volume'], 2, ',', '.') }}</td>
                         <td class="center">{{ $item['satuan'] }}</td>
-                        <td class="center">Rp {{ number_format($item['harga'], 0, ',', '.') }}</td>
-                        <td class="center">Rp {{ number_format($jumlah, 0, ',', '.') }}</td>
+                        <td class="center">{{ format_rupiah($item['harga']) }}</td>
+                        <td class="center">{{ format_rupiah($jumlah) }}</td>
                     </tr>
                 @endforeach
 
@@ -287,7 +294,7 @@
                     <!-- Teks masuk ke kolom Harga (Kolom 5) -->
                     <td class="summary-cell">Jumlah</td>
                     <!-- Nominal di kolom Jumlah (Kolom 6) -->
-                    <td class="summary-cell">Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
+                    <td class="summary-cell">{{ format_rupiah($totalAmount) }}</td>
                 </tr>
 
                 @if ($invoice->discount_value && $invoice->discount_value > 0)
@@ -303,7 +310,7 @@
                                 ({{ format_persen($invoice->discount_value) }}%)
                             @endif
                         </td>
-                        <td class="summary-cell">Rp {{ number_format($discountAmount, 0, ',', '.') }}</td>
+                        <td class="summary-cell">{{ format_rupiah($discountAmount) }}</td>
                     </tr>
                 @endif
 
@@ -320,7 +327,7 @@
                                 ({{ format_persen($invoice->dp_value) }}%)
                             @endif
                         </td>
-                        <td class="summary-cell">Rp {{ number_format($dpAmount, 0, ',', '.') }}</td>
+                        <td class="summary-cell">{{ format_rupiah($dpAmount) }}</td>
                     </tr>
                 @endif
 
@@ -328,7 +335,7 @@
                     <tr>
                         <td colspan="4" class="empty-cell"></td>
                         <td class="summary-cell">Sisa Pembayaran</td>
-                        <td class="summary-cell">Rp {{ number_format($remainingAmount, 0, ',', '.') }}</td>
+                        <td class="summary-cell">{{ format_rupiah($remainingAmount) }}</td>
                     </tr>
                 @endif
             </tbody>
@@ -365,7 +372,7 @@
 
         <!-- Closing -->
         <div class="closing">
-            Demikian Invoice ini kami sampaikan atas perhatian dan kerjasamanya kami ucapkan terima kasih.
+            Demikian invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.
         </div>
 
         <!-- Signature (nama PT & penandatangan tidak di-bold) -->

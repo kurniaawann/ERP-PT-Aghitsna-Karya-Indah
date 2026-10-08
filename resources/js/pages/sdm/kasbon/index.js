@@ -382,8 +382,8 @@ const projectRows = {
 // ==========================================
 
 /**
- * Menampilkan label jenis karyawan ("Harian (Tukang)" / "Bulanan (Slip
- * Gaji)") di samping label "Karyawan" pada modal Tambah/Edit kasbon
+ * Menampilkan label jenis karyawan ("TUKANG PROYEK" / "KARYAWAN KANTOR")
+ * di samping label "Karyawan" pada modal Tambah/Edit kasbon
  * berdasarkan karyawan yang dipilih.
  *
  * @param {string} prefix - Awalan id elemen ('add' atau 'edit_KSB001').
@@ -403,10 +403,10 @@ function updateEmployeeTypeLabel(prefix) {
     }
 
     if (type === 'harian') {
-        label.textContent = 'Harian (Tukang)';
+        label.textContent = 'TUKANG PROYEK';
         label.classList.remove('hidden');
     } else if (type === 'bulanan') {
-        label.textContent = 'Bulanan (Slip Gaji)';
+        label.textContent = 'KARYAWAN KANTOR';
         label.classList.remove('hidden');
     } else {
         label.textContent = '';

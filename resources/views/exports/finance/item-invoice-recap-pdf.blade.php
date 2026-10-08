@@ -111,6 +111,17 @@
 </head>
 
 <body>
+    @php
+        // Fallback bila pemanggil hanya mengirim $invoices (mis. ItemInvoiceController::exportPdf)
+        $periodTitle = $periodTitle ?? 'Semua Periode';
+        $totals = $totals ?? (object) [
+            'invoice_count' => $invoices->count(),
+            'total_invoice' => $invoices->sum(fn ($i) => (int) ($i->total_selling ?? 0)),
+            'total_profit' => $invoices->sum(fn ($i) => (int) ($i->total_profit ?? 0)),
+            'paid_count' => $invoices->filter(fn ($i) => ($i->salesRecap?->status ?? '') === 'Lunas')->count(),
+        ];
+    @endphp
+
     <div class="header">
         <h1>LAPORAN REKAP INVOICE BARANG</h1>
         <h2>PT AGHITSNA KARYA INDAH</h2>
@@ -140,9 +151,9 @@
                     <td class="text-center">{{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d/m/Y') }}</td>
                     <td class="text-left">{{ $invoice->recipient }}</td>
                     <td class="text-left">{{ $invoice->project_description ?? '-' }}</td>
-                    <td class="text-right">Rp {{ number_format((int) ($invoice->total_selling ?? 0), 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format((int) ($invoice->total_capital ?? 0), 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format((int) ($invoice->total_profit ?? 0), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah((int) ($invoice->total_selling ?? 0)) }}</td>
+                    <td class="text-right">{{ format_rupiah((int) ($invoice->total_capital ?? 0)) }}</td>
+                    <td class="text-right">{{ format_rupiah((int) ($invoice->total_profit ?? 0)) }}</td>
                     <td class="status-{{ ($invoice->salesRecap?->status ?? '') === 'Lunas' ? 'paid' : 'unpaid' }}">
                         {{ $invoice->salesRecap?->status ?? '-' }}</td>
                 </tr>
@@ -155,9 +166,9 @@
             @if ($invoices->count() > 0)
                 <tr class="total-row">
                     <td colspan="5" class="text-center">TOTAL</td>
-                    <td class="text-right">Rp {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($invoices->sum(fn($i) => (int) ($i->total_capital ?? 0)), 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($totals->total_profit ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah($totals->total_invoice ?? 0) }}</td>
+                    <td class="text-right">{{ format_rupiah($invoices->sum(fn($i) => (int) ($i->total_capital ?? 0))) }}</td>
+                    <td class="text-right">{{ format_rupiah($totals->total_profit ?? 0) }}</td>
                     <td></td>
                 </tr>
             @endif
@@ -167,8 +178,8 @@
     <div class="summary">
         <h3>Ringkasan:</h3>
         <p>Total Data: {{ $totals->invoice_count ?? 0 }} invoice</p>
-        <p>Total Invoice: Rp {{ number_format($totals->total_invoice ?? 0, 0, ',', '.') }}</p>
-        <p>Total Profit: Rp {{ number_format($totals->total_profit ?? 0, 0, ',', '.') }}</p>
+        <p>Total Invoice: {{ format_rupiah($totals->total_invoice ?? 0) }}</p>
+        <p>Total Profit: {{ format_rupiah($totals->total_profit ?? 0) }}</p>
         <p>Lunas: {{ $totals->paid_count ?? 0 }} | Belum Lunas: {{ ($totals->invoice_count ?? 0) - ($totals->paid_count ?? 0) }}</p>
     </div>
 </body>

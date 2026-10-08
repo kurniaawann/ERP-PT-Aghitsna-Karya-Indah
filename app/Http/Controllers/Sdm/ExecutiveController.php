@@ -12,16 +12,16 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Controller untuk mengelola data petinggi (executive).
+ * Controller untuk mengelola data penandatangan (executive).
  *
- * Menangani permintaan dan respons HTTP untuk operasi CRUD petinggi,
+ * Menangani permintaan dan respons HTTP untuk operasi CRUD penandatangan,
  * termasuk unggah gambar tanda tangan. Logika bisnis didelegasikan
  * ke ExecutiveService.
  */
 class ExecutiveController extends Controller
 {
     /**
-     * Instance layanan petinggi.
+     * Instance layanan penandatangan.
      *
      * @var ExecutiveService
      */
@@ -38,7 +38,7 @@ class ExecutiveController extends Controller
     }
 
     /**
-     * Menampilkan daftar petinggi dengan paginasi dan pencarian opsional.
+     * Menampilkan daftar penandatangan dengan paginasi dan pencarian opsional.
      *
      * @param  Request  $request
      * @return View
@@ -52,7 +52,7 @@ class ExecutiveController extends Controller
     }
 
     /**
-     * Menyimpan data petinggi baru.
+     * Menyimpan data penandatangan baru.
      *
      * @param  StoreExecutiveRequest  $request
      * @return RedirectResponse
@@ -69,7 +69,7 @@ class ExecutiveController extends Controller
     }
 
     /**
-     * Memperbarui data petinggi yang ditentukan.
+     * Memperbarui data penandatangan yang ditentukan.
      *
      * @param  UpdateExecutiveRequest  $request
      * @param  Executive               $executive
@@ -88,7 +88,7 @@ class ExecutiveController extends Controller
     }
 
     /**
-     * Menghapus data petinggi yang ditentukan secara massal.
+     * Menghapus data penandatangan yang ditentukan secara massal.
      *
      * @param  Request  $request
      * @return RedirectResponse

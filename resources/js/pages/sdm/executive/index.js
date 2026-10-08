@@ -1,13 +1,13 @@
 /**
- * Halaman Index Data Petinggi - Modul JavaScript
+ * Halaman Index Data Penandatangan - Modul JavaScript
  *
- * Menangani semua fungsionalitas interaktif untuk halaman Data Petinggi:
+ * Menangani semua fungsionalitas interaktif untuk halaman Data Penandatangan:
  * - Checkbox Pilih Semua / Batalkan Pilih Semua
  * - Manajemen status checkbox individu dan enable/disable tombol hapus
  * - Pengiriman form hapus massal dengan status memuat
  * - Penanganan submit form Tambah/Edit dengan pencegahan pengiriman ganda
  * - Pratinjau gambar tanda tangan sebelum diunggah
- * - Membuka gambar tanda tangan di tab baru
+ * - Menampilkan gambar tanda tangan lewat pratinjau dalam halaman
  *
  * Fungsi yang dipanggil dari atribut HTML inline diekspos ke window
  * karena Vite memuat JS sebagai ES module, bukan global.
@@ -43,14 +43,25 @@ window.previewSignature = function (input, previewId) {
 };
 
 /**
- * Membuka gambar tanda tangan di tab baru.
+ * Menampilkan gambar tanda tangan pada pratinjau di dalam halaman
+ * (window.openFilePreview), tanpa membuka tab baru.
  * Fungsi ini dipanggil dari tombol pratinjau di tabel.
  *
- * @param {string} url URL absolut gambar tanda tangan.
+ * @param {string} url  URL absolut gambar tanda tangan.
+ * @param {string} name Nama penandatangan (judul pratinjau, opsional).
  * @return {void}
  */
-window.openSignature = function (url) {
-    window.open(url, '_blank');
+window.openSignature = function (url, name) {
+    const title = name ? 'Tanda Tangan ' + name : 'Tanda Tangan';
+    const extension = (String(url).split('?')[0].split('.').pop() || 'png').toLowerCase();
+    const safeName = (name || 'penandatangan').replace(/[^A-Za-z0-9_-]+/g, '_');
+
+    if (typeof window.openFilePreview === 'function') {
+        window.openFilePreview(url, {
+            title: title,
+            downloadName: 'Tanda_Tangan_' + safeName + '.' + extension,
+        });
+    }
 };
 
 /**
@@ -64,7 +75,7 @@ window.openSignature = function (url) {
  *   input file kembali.
  *
  * @param {HTMLInputElement} checkbox  Elemen checkbox hapus tanda tangan.
- * @param {string|number}    id        ID petinggi (untuk prefix elemen).
+ * @param {string|number}    id        ID penandatangan (untuk prefix elemen).
  * @return {void}
  */
 window.toggleRemoveSignature = function (checkbox, id) {
@@ -136,7 +147,7 @@ window.submitDeleteForm = function () {
 
 /**
  * Menangani Submit Modal Tambah
- * Mencegah double submit pada form tambah petinggi.
+ * Mencegah double submit pada form tambah penandatangan.
  */
 function initAddFormHandler() {
     const addForm = document.querySelector('#addModal form');
@@ -152,7 +163,7 @@ function initAddFormHandler() {
 }
 
 /**
- * Menangani submit semua form modal Edit petinggi.
+ * Menangani submit semua form modal Edit penandatangan.
  */
 function initEditFormHandlers() {
     document.querySelectorAll('[id^="editModal-"] form').forEach(form => {
@@ -171,7 +182,7 @@ function initEditFormHandlers() {
 // ==========================================
 
 /**
- * Menginisialisasi seluruh fungsionalitas halaman petinggi saat DOM siap.
+ * Menginisialisasi seluruh fungsionalitas halaman penandatangan saat DOM siap.
  */
 document.addEventListener('DOMContentLoaded', function () {
     const selectAll = document.getElementById('selectAll');

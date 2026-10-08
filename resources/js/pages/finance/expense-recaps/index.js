@@ -32,14 +32,17 @@ window.formatCurrencyInput = formatCurrencyInput;
 
 /**
  * Sinkronkan form (tambah/edit) berdasarkan tipe kategori terpilih.
- * - INCOME: label "Jumlah Pemasukan", bagian No. Faktur disembunyikan (di-generate otomatis).
- * - EXPENSE: label "Jumlah Pengeluaran", bagian No. Faktur ditampilkan.
+ * - INCOME (uang masuk): label "Jumlah Pemasukan", bagian No. Faktur ditampilkan
+ *   (read-only, nomor di-generate otomatis oleh server).
+ * - EXPENSE (uang keluar): label "Jumlah Pengeluaran", bagian No. Faktur
+ *   disembunyikan — uang keluar tidak memiliki nomor faktur.
+ * Bagian No. Faktur hanya dirender untuk super admin (admin/Kas Kantor tanpa faktur).
  *
  * Alur:
  * 1. Baca <select name="transaction_category_id"> dari form dan ambil opsi terpilih.
  * 2. Tentukan isIncome dari dataset.type === 'INCOME'.
  * 3. Update label .amount-label sesuai tipe (Jumlah Pemasukan / Jumlah Pengeluaran).
- * 4. Toggle class 'hidden' pada .invoice-section — disembunyikan jika INCOME.
+ * 4. Toggle class 'hidden' pada .invoice-section — hanya tampil jika INCOME.
  *
  * @param {HTMLFormElement} form
  */
@@ -58,7 +61,7 @@ function syncCategoryFields(form) {
             ' <span class="text-error">*</span>';
     }
     if (invoiceSection) {
-        invoiceSection.classList.toggle('hidden', isIncome);
+        invoiceSection.classList.toggle('hidden', !isIncome);
     }
 }
 window.syncCategoryFields = syncCategoryFields;

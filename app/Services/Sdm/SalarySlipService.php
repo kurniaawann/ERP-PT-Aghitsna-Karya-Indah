@@ -2,6 +2,7 @@
 
 namespace App\Services\Sdm;
 
+use App\Models\Sdm\Attendance;
 use App\Models\Sdm\Employee;
 use App\Models\Sdm\Executive;
 use App\Models\Sdm\Kasbon;
@@ -19,9 +20,16 @@ use Illuminate\Support\Facades\Log;
  * attendance_detail). Hari Minggu dan hari libur yang dipilih saat generate
  * otomatis ditandai "L" (Libur). Sistem menghitung:
  *   Penerimaan = gaji pokok + (transport x hadir) + (makan x hadir)
+ *                + lembur (modul Lembur pada bulan slip)
  *   Potongan   = BPJS Kesehatan 1% gaji pokok + JHT 2% UMP + JPN 1% UMP
- *                + PPh 21 (manual) + kasbon pending
+ *                + PPh 21 (manual) + cicilan kasbon bulan ini
  *   THP        = Penerimaan - Potongan
+ *
+ * Kasbon karyawan kantor bisa dicicil: kasbon_total = seluruh sisa kasbon
+ * karyawan s.d. bulan slip, kasbon_installment = cicilan yang diinput admin
+ * (null = lunasi semua), kasbon_deduction = cicilan efektif yang dipotong.
+ * Saat slip dibayar, cicilan dicatat sebagai KasbonPayment (FIFO kasbon
+ * terlama) sehingga sisa kasbon terbawa ke slip bulan berikutnya.
  * Iuran perusahaan (BPJS 4%, JHT 3,7%, JKK 0,24%, JKM 0,30% x UMP) disimpan
  * sebagai informasi slip. Slip disimpan sebagai snapshot (bisa diedit
  * sebelum paid dan dicetak ulang kapan saja).
@@ -91,12 +99,17 @@ class SalarySlipService
      * tanggal pada $holidayDates ditandai "L" (Libur), sisanya "H" (Hadir).
      * Admin dapat mengubah status hari tertentu di modal absensi slip.
      *
+     * Cicilan kasbon bulan ini per karyawan bisa diisi dari modal Generate
+     * ($kasbonInstallments = [kode karyawan => nominal]); karyawan yang tidak
+     * diisi memakai default = seluruh sisa kasbon.
+     *
      * @param  array<int, string>  $employeeCodes
      * @param  array<string, mixed>  $signatureIds  Mapping peran => ID petinggi
      * @param  array<int, string>  $holidayDates  Tanggal libur "Y-m-d" pada periode
+     * @param  array<string, mixed>  $kasbonInstallments  Cicilan kasbon per kode karyawan
      * @return array{success: bool, message: string, count: int}
      */
-    public function generateSlips(array $employeeCodes, int $periodYear, int $periodMonth, array $signatureIds = [], array $holidayDates = []): array
+    public function generateSlips(array $employeeCodes, int $periodYear, int $periodMonth, array $signatureIds = [], array $holidayDates = [], array $kasbonInstallments = []): array
     {
         $employees = Employee::where('created_by', auth()->id())
             ->where('employment_type', 'bulanan')
@@ -125,7 +138,10 @@ class SalarySlipService
                 continue;
             }
 
-            $this->createSlip($employee, $periodYear, $periodMonth, $defaultAttendance, $signatures);
+            $installment = $kasbonInstallments[$employee->employee_code] ?? null;
+            $installment = ($installment === null || $installment === '') ? null : (int) $installment;
+
+            $this->createSlip($employee, $periodYear, $periodMonth, $defaultAttendance, $signatures, $installment);
             $created++;
         }
 
@@ -139,8 +155,10 @@ class SalarySlipService
 
     /**
      * Membuat satu slip draft lalu menghitung ulang nilainya.
+     *
+     * @param  int|null  $kasbonInstallment  Cicilan kasbon bulan ini (null = lunasi seluruh sisa)
      */
-    private function createSlip(Employee $employee, int $periodYear, int $periodMonth, array $attendance, array $signatures): SalarySlip
+    private function createSlip(Employee $employee, int $periodYear, int $periodMonth, array $attendance, array $signatures, ?int $kasbonInstallment = null): SalarySlip
     {
         $slip = SalarySlip::create([
             'employee_code' => $employee->employee_code,
@@ -155,6 +173,10 @@ class SalarySlipService
             'status' => 'draft',
             'created_by' => auth()->id(),
         ]);
+
+        if ($kasbonInstallment !== null) {
+            $this->applyKasbonInstallment($slip, $kasbonInstallment);
+        }
 
         $this->recalculate($slip);
 
@@ -196,8 +218,9 @@ class SalarySlipService
      *
      * @param  array<int, string>  $attendanceDetail  Kunci 1..hari-dalam-bulan
      * @param  int|null  $pph21  PPh 21 manual (dibayar karyawan)
+     * @param  int|null  $kasbonInstallment  Cicilan kasbon bulan ini (null = tidak diubah)
      */
-    public function updateAttendance(SalarySlip $slip, array $attendanceDetail, ?int $pph21 = null): bool
+    public function updateAttendance(SalarySlip $slip, array $attendanceDetail, ?int $pph21 = null, ?int $kasbonInstallment = null): bool
     {
         if ($slip->isPaid()) {
             throw new \DomainException('Slip gaji yang sudah dibayar tidak dapat diubah. Hapus slip paid terlebih dahulu untuk mengubah data periode ini.');
@@ -205,6 +228,10 @@ class SalarySlipService
 
         if ($pph21 !== null) {
             $slip->pph21 = max(0, (int) $pph21);
+        }
+
+        if ($kasbonInstallment !== null) {
+            $this->applyKasbonInstallment($slip, $kasbonInstallment);
         }
 
         $daysInMonth = $slip->days_in_month;
@@ -234,6 +261,23 @@ class SalarySlipService
     }
 
     /**
+     * Menyimpan nominal cicilan kasbon bulan ini pada slip (belum disimpan ke DB).
+     *
+     * - Nilai negatif dianggap 0 (tidak memotong kasbon bulan ini).
+     * - Nilai >= total sisa kasbon disimpan sebagai null = "lunasi semua",
+     *   sehingga bila kasbon bertambah sebelum slip dibayar potongannya ikut
+     *   menyesuaikan.
+     * - Nilai di antaranya disimpan apa adanya (dibatasi lagi oleh recalculate).
+     */
+    private function applyKasbonInstallment(SalarySlip $slip, int $amount): void
+    {
+        $amount = max(0, $amount);
+        $kasbonTotal = $this->getOutstandingKasbonTotal($slip);
+
+        $slip->kasbon_installment = $amount >= $kasbonTotal ? null : $amount;
+    }
+
+    /**
      * Memperbarui catatan slip (draft saja).
      */
     public function updateNotes(SalarySlip $slip, ?string $notes): bool
@@ -254,9 +298,13 @@ class SalarySlipService
      * - libur_days = jumlah status "L" (Minggu + hari libur terpilih)
      * - work_days  = hari kalender - libur_days
      * - transport/makan = tarif x jumlah hadir (H)
-     * - total_income = gaji pokok + transport + makan
+     * - overtime_total = total lembur karyawan (modul Lembur) pada bulan slip
+     * - total_income = gaji pokok + transport + makan + lembur
+     * - kasbon_total = sisa kasbon karyawan s.d. akhir bulan slip;
+     *   kasbon_deduction = cicilan (kasbon_installment, maks kasbon_total;
+     *   null = seluruh kasbon_total)
      * - Potongan = BPJS Kes 1% gaji pokok + JHT 2% UMP + JPN 1% UMP
-     *              + PPh 21 (manual) + kasbon pending
+     *              + PPh 21 (manual) + cicilan kasbon
      * - THP (net_salary) = total_income - total_deduction
      */
     public function recalculate(SalarySlip $slip): bool
@@ -302,14 +350,18 @@ class SalarySlipService
         // Penerimaan
         $transportTotal = $transportRate * $present;
         $mealTotal = $mealRate * $present;
-        $totalIncome = $baseSalary + $transportTotal + $mealTotal;
+        $overtimeTotal = $this->getOvertimeTotal($slip);
+        $totalIncome = $baseSalary + $transportTotal + $mealTotal + $overtimeTotal;
 
         // Potongan (dibayar karyawan)
         $bpjsKesehatanEmployee = (int) round($baseSalary * 0.01);
         $jhtEmployee = (int) round($ump * 0.02);
         $jpnEmployee = (int) round($ump * 0.01);
         $pph21 = max(0, (int) ($slip->pph21 ?? 0));
-        $kasbonDeduction = $this->getPendingKasbonTotal($slip);
+        $kasbonTotal = $this->getOutstandingKasbonTotal($slip);
+        $kasbonDeduction = $slip->kasbon_installment === null
+            ? $kasbonTotal
+            : min(max(0, (int) $slip->kasbon_installment), $kasbonTotal);
 
         // Iuran dibayar perusahaan (informasi pada slip)
         $bpjsKesehatanCompany = (int) round($ump * 0.04);
@@ -330,11 +382,13 @@ class SalarySlipService
         $slip->salary_deduction = 0;
         $slip->transport_total = $transportTotal;
         $slip->meal_total = $mealTotal;
+        $slip->overtime_total = $overtimeTotal;
         $slip->total_income = $totalIncome;
         $slip->bpjs_kesehatan_employee = $bpjsKesehatanEmployee;
         $slip->jht_employee = $jhtEmployee;
         $slip->jpn_employee = $jpnEmployee;
         $slip->pph21 = $pph21;
+        $slip->kasbon_total = $kasbonTotal;
         $slip->kasbon_deduction = $kasbonDeduction;
         $slip->total_deduction = $totalDeduction;
         $slip->bpjs_kesehatan_company = $bpjsKesehatanCompany;
@@ -347,30 +401,79 @@ class SalarySlipService
     }
 
     /**
-     * Total kasbon personal yang masih pending (belum dipotong payroll
-     * dan belum lunas) milik karyawan pada periode slip.
+     * Total lembur karyawan pada bulan slip.
+     *
+     * Lembur karyawan (harian maupun kantor) dicatat lewat modul Lembur dan
+     * tersimpan di tabel absensi berstatus 'lembur' dengan overtime_total
+     * (jam x tarif). Slip mengambil seluruh lembur pada bulan kalender slip.
      */
-    public function getPendingKasbonTotal(SalarySlip $slip): int
+    public function getOvertimeTotal(SalarySlip $slip): int
     {
-        return (int) Kasbon::personal()
-            ->pending()
-            ->notPaid()
-            ->forPeriod($slip->period_month, $slip->period_year)
-            ->where('employee_id', $slip->employee_code)
-            ->where('created_by', auth()->id())
-            ->sum('remaining_amount');
+        $periodStart = Carbon::createFromDate($slip->period_year, $slip->period_month, 1)->startOfDay();
+
+        return (int) Attendance::where('employee_id', $slip->employee_code)
+            ->where('status', 'lembur')
+            ->whereBetween('attendance_date', [
+                $periodStart->format('Y-m-d'),
+                $periodStart->copy()->endOfMonth()->format('Y-m-d'),
+            ])
+            ->sum('overtime_total');
     }
 
     /**
-     * Menghitung ulang seluruh slip gaji DRAFT milik seorang karyawan pada
-     * periode (bulan/tahun) tertentu dari data kasbon terkini.
+     * Query kasbon personal karyawan yang masih punya sisa dan bisa dipotong
+     * slip gaji pada periode slip, urut dari kasbon terlama (FIFO).
      *
-     * Dipanggil setiap kali data kasbon personal berubah (tambah/ubah/hapus/
-     * cicilan) agar potongan kasbon pada snapshot slip draft tetap sinkron
-     * dengan tabel kasbon. Slip yang sudah paid tidak disentuh.
+     * - Kasbon periode slip DAN bulan-bulan sebelumnya ikut dihitung, agar
+     *   sisa cicilan bulan lalu terbawa ke slip bulan berikutnya.
+     * - Kasbon yang pernah dipotong payroll harian dikecualikan (bukan
+     *   ranah slip gaji bulanan).
+     */
+    private function outstandingKasbonQuery(string $employeeCode, int $periodYear, int $periodMonth): Builder
+    {
+        $periodEnd = Carbon::createFromDate($periodYear, $periodMonth, 1)->endOfMonth();
+
+        return Kasbon::personal()
+            ->notPaid()
+            ->where('remaining_amount', '>', 0)
+            ->where('employee_id', $employeeCode)
+            ->where('created_by', auth()->id())
+            ->whereDate('period_start_date', '<=', $periodEnd->format('Y-m-d'))
+            ->whereNull('deducted_in_payroll_id')
+            ->whereDoesntHave('payments', fn ($query) => $query->whereNotNull('payroll_id'))
+            ->orderBy('period_start_date')
+            ->orderBy('kasbon_date')
+            ->orderBy('kasbon_code');
+    }
+
+    /**
+     * Total sisa kasbon personal karyawan (belum lunas) s.d. akhir bulan slip.
+     */
+    public function getOutstandingKasbonTotal(SalarySlip $slip): int
+    {
+        return $this->getOutstandingKasbonForEmployee($slip->employee_code, $slip->period_year, $slip->period_month);
+    }
+
+    /**
+     * Total sisa kasbon personal seorang karyawan s.d. akhir bulan periode
+     * (dipakai juga modal Generate untuk default cicilan kasbon).
+     */
+    public function getOutstandingKasbonForEmployee(string $employeeCode, int $periodYear, int $periodMonth): int
+    {
+        return (int) $this->outstandingKasbonQuery($employeeCode, $periodYear, $periodMonth)->sum('remaining_amount');
+    }
+
+    /**
+     * Menghitung ulang seluruh slip gaji DRAFT milik seorang karyawan mulai
+     * periode (bulan/tahun) tertentu dari data kasbon & lembur terkini.
+     *
+     * Dipanggil setiap kali data kasbon personal (tambah/ubah/hapus/cicilan)
+     * atau lembur berubah agar snapshot slip draft tetap sinkron. Karena sisa
+     * kasbon terbawa ke bulan berikutnya, slip draft bulan-bulan setelah
+     * periode tersebut ikut dihitung ulang. Slip yang sudah paid tidak disentuh.
      *
      * @param  string  $employeeCode  Kode karyawan
-     * @param  Carbon|string  $periodStartDate  Tanggal mulai periode (Y-m-d)
+     * @param  Carbon|string  $periodStartDate  Tanggal pada periode awal (Y-m-d)
      * @return int Jumlah slip draft yang berhasil dihitung ulang
      */
     public function recalculateDraftSlipsForPeriod(string $employeeCode, Carbon|string $periodStartDate): int
@@ -381,9 +484,16 @@ class SalarySlipService
 
         $slips = SalarySlip::where('created_by', auth()->id())
             ->where('employee_code', $employeeCode)
-            ->where('period_year', $periodStart->year)
-            ->where('period_month', $periodStart->month)
             ->where('status', 'draft')
+            ->where(function ($query) use ($periodStart) {
+                $query->where('period_year', '>', $periodStart->year)
+                    ->orWhere(function ($q) use ($periodStart) {
+                        $q->where('period_year', $periodStart->year)
+                            ->where('period_month', '>=', $periodStart->month);
+                    });
+            })
+            ->orderBy('period_year')
+            ->orderBy('period_month')
             ->get();
 
         $recalculated = 0;
@@ -395,6 +505,30 @@ class SalarySlipService
         }
 
         return $recalculated;
+    }
+
+    /**
+     * Menghitung ulang semua slip draft milik karyawan (semua periode).
+     * Dipakai setelah slip dibayar/dihapus karena sisa kasbon berubah.
+     *
+     * @param  array<int, string>  $employeeCodes
+     */
+    private function recalculateDraftSlipsForEmployees(array $employeeCodes): void
+    {
+        if (empty($employeeCodes)) {
+            return;
+        }
+
+        $slips = SalarySlip::where('created_by', auth()->id())
+            ->whereIn('employee_code', array_values(array_unique($employeeCodes)))
+            ->where('status', 'draft')
+            ->orderBy('period_year')
+            ->orderBy('period_month')
+            ->get();
+
+        foreach ($slips as $slip) {
+            $this->recalculate($slip);
+        }
     }
 
     /**
@@ -410,20 +544,33 @@ class SalarySlipService
 
         try {
             $count = DB::transaction(function () use ($ids, $paymentDate) {
+                // Diproses urut periode terlama agar cicilan kasbon bulan
+                // sebelumnya tercatat lebih dulu.
                 $slips = SalarySlip::where('created_by', auth()->id())
                     ->whereIn('id', $ids)
                     ->where('status', 'draft')
+                    ->orderBy('period_year')
+                    ->orderBy('period_month')
+                    ->orderBy('id')
                     ->get();
 
                 foreach ($slips as $slip) {
+                    // Segarkan snapshot (lembur & sisa kasbon terkini) sebelum
+                    // dikunci sebagai paid.
+                    $this->recalculate($slip);
+
                     $slip->status = 'paid';
                     $slip->payment_date = Carbon::parse($paymentDate);
                     $slip->save();
 
-                    // Potong kasbon personal pending milik karyawan pada periode
-                    // slip ini — lunas otomatis dari slip gaji.
+                    // Catat cicilan kasbon bulan ini (kasbon_deduction) sebagai
+                    // pembayaran kasbon karyawan.
                     $this->settleKasbonForSlip($slip, $paymentDate);
                 }
+
+                // Sisa kasbon berubah → slip draft lain milik karyawan yang
+                // sama ikut disinkronkan.
+                $this->recalculateDraftSlipsForEmployees($slips->pluck('employee_code')->all());
 
                 return $slips->count();
             });
@@ -437,45 +584,56 @@ class SalarySlipService
     }
 
     /**
-     * Mencatat pemotongan kasbon dari slip gaji.
+     * Mencatat pemotongan (cicilan) kasbon dari slip gaji.
      *
-     * Saat slip gaji dibayar, seluruh kasbon personal karyawan pada periode
-     * slip yang masih pending langsung lunas. Dibuat rekaman KasbonPayment
-     * bertanda salary_slip_id agar bisa dibatalkan bila slip dihapus.
+     * Saat slip gaji dibayar, nominal kasbon_deduction (cicilan bulan ini)
+     * dibagikan ke kasbon personal karyawan yang masih punya sisa, mulai
+     * dari kasbon terlama (FIFO). Setiap kasbon yang terpotong mendapat
+     * rekaman KasbonPayment bertanda salary_slip_id (agar bisa dibatalkan
+     * bila slip dihapus), lalu paid_amount/remaining_amount/payment_status
+     * diperbarui: lunas → 'paid', masih bersisa → 'partial'.
      */
     private function settleKasbonForSlip(SalarySlip $slip, string $paymentDate): void
     {
-        $kasbons = Kasbon::personal()
-            ->pending()
-            ->notPaid()
-            ->forPeriod($slip->period_month, $slip->period_year)
-            ->where('employee_id', $slip->employee_code)
-            ->where('created_by', auth()->id())
-            ->get();
+        $toDeduct = (int) $slip->kasbon_deduction;
+
+        if ($toDeduct <= 0) {
+            return;
+        }
+
+        $kasbons = $this->outstandingKasbonQuery($slip->employee_code, $slip->period_year, $slip->period_month)->get();
 
         foreach ($kasbons as $kasbon) {
+            if ($toDeduct <= 0) {
+                break;
+            }
+
             $remaining = (int) $kasbon->remaining_amount;
 
             if ($remaining <= 0) {
                 continue;
             }
 
+            $amount = min($remaining, $toDeduct);
+
             KasbonPayment::create([
                 'kasbon_code' => $kasbon->kasbon_code,
                 'payroll_id' => null,
                 'salary_slip_id' => $slip->id,
-                'amount' => $remaining,
+                'amount' => $amount,
                 'payment_method' => 'payroll_deduction',
                 'payment_date' => Carbon::parse($paymentDate),
-                'notes' => 'Pemotongan slip gaji '.$slip->formatted_period,
+                'notes' => ($amount < $remaining ? 'Cicilan kasbon slip gaji ' : 'Pelunasan kasbon slip gaji ').$slip->formatted_period,
                 'created_by' => auth()->id(),
             ]);
 
-            $kasbon->paid_amount = (int) ($kasbon->paid_amount ?? 0) + $remaining;
+            $kasbon->paid_amount = (int) ($kasbon->paid_amount ?? 0) + $amount;
             $kasbon->remaining_amount = max(0, (int) $kasbon->amount - (int) $kasbon->paid_amount);
             $kasbon->payment_status = $kasbon->remaining_amount <= 0 ? 'paid' : 'partial';
             $kasbon->status = 'deducted';
             $kasbon->save();
+
+            $toDeduct -= $amount;
         }
     }
 
@@ -504,7 +662,13 @@ class SalarySlipService
                     $this->revertKasbonForSlip($slip);
                 }
 
-                return SalarySlip::whereIn('id', $slips->pluck('id'))->delete();
+                $deletedCount = SalarySlip::whereIn('id', $slips->pluck('id'))->delete();
+
+                // Cicilan kasbon dikembalikan → sinkronkan slip draft lain
+                // milik karyawan yang sama.
+                $this->recalculateDraftSlipsForEmployees($slips->pluck('employee_code')->all());
+
+                return $deletedCount;
             });
 
             return ['success' => true, 'message' => "Berhasil menghapus {$deleted} slip gaji.", 'count' => $deleted];

@@ -255,8 +255,7 @@
                 <div class="p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
                     <i class="fa-solid fa-exclamation-triangle text-yellow-600"></i>
                     Belum ada rekening pembayaran.
-                    <a href="{{ route('payment-accounts.index') }}" class="text-blue-600 hover:underline"
-                        target="_blank">
+                    <a href="{{ route('payment-accounts.index') }}" class="text-blue-600 hover:underline">
                         Tambah rekening pembayaran
                     </a>
                 </div>

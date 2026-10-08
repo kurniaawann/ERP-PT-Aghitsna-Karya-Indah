@@ -41,6 +41,15 @@
             margin-top: 10px;
         }
 
+        /* Header tabel diulang di halaman lanjutan; baris tidak terbelah antar halaman */
+        thead {
+            display: table-header-group;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
         th {
             background-color: #4472C4;
             color: white;
@@ -126,11 +135,8 @@
     <div class="header">
         <h1>LAPORAN REIMBURSEMENT</h1>
         <h2>PT AGHITSNA KARYA INDAH</h2>
-        @if ($status)
-            <p>Status: <strong>{{ strtoupper($status) }}</strong></p>
-        @else
-            <p>Status: <strong>SEMUA</strong></p>
-        @endif
+        {{-- Status: rasio persetujuan, mis. "Disetujui 3 dari 4 yang diajukan" --}}
+        <p>Status: <strong>{{ $statusText ?? ($status ? strtoupper($status) : 'SEMUA') }}</strong></p>
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
     </div>
 
@@ -141,13 +147,12 @@
                 <th style="width: 4%;">No</th>
                 <th style="width: 8%;">Kode</th>
                 <th style="width: 8%;">Tanggal</th>
-                <th style="width: 15%;">Nama Proyek</th>
-                <th style="width: 20%;">Keterangan Belanja</th>
+                <th style="width: 16%;">Nama Proyek</th>
+                <th style="width: 24%;">Keterangan Belanja</th>
                 <th style="width: 12%;">Total</th>
-                <th style="width: 8%;">Tgl Jatuh Tempo</th>
                 <th style="width: 8%;">Status</th>
                 <th style="width: 10%;">Tgl Perubahan</th>
-                <th style="width: 12%;">Catatan</th>
+                <th style="width: 10%;">Catatan</th>
             </tr>
         </thead>
         <tbody>
@@ -161,23 +166,22 @@
                     <td class="text-center">{{ $reimburse->formatted_date }}</td>
                     <td class="text-left">{{ $reimburse->project_name }}</td>
                     <td class="text-left">{{ $reimburse->expense_description }}</td>
-                    <td class="text-right">{{ $reimburse->formatted_total_amount }}</td>
-                    <td class="text-center">{{ $reimburse->formatted_due_date }}</td>
+                    <td class="text-right">{{ format_rupiah($reimburse->total_amount) }}</td>
                     <td class="status-{{ $reimburse->status }}">{{ strtoupper($reimburse->status_label) }}</td>
                     <td class="text-center">{{ $reimburse->formatted_status_changed_at }}</td>
                     <td class="text-left">{{ $reimburse->notes ?? '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" class="text-center">Tidak ada data reimbursement</td>
+                    <td colspan="9" class="text-center">Tidak ada data reimbursement</td>
                 </tr>
             @endforelse
 
             @if ($reimburses->count() > 0)
                 <tr class="total-row">
                     <td colspan="5" class="text-center">TOTAL</td>
-                    <td class="text-right">Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
-                    <td colspan="4"></td>
+                    <td class="text-right">{{ format_rupiah($totalAmount) }}</td>
+                    <td colspan="3"></td>
                 </tr>
             @endif
         </tbody>
@@ -187,7 +191,7 @@
     <div class="summary-section">
         <h3>Ringkasan:</h3>
         <p>Total Data: {{ $reimburses->count() }} reimburse</p>
-        <p>Total Amount: Rp {{ number_format($totalAmount, 0, ',', '.') }}</p>
+        <p>Total Amount: {{ format_rupiah($totalAmount) }}</p>
         <p>Draft: {{ $draftCount }} | Disetujui: {{ $approvedCount }} | Ditolak: {{ $rejectedCount }}</p>
     </div>
 

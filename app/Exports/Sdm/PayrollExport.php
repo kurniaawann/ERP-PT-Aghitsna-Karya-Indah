@@ -27,6 +27,9 @@ use Maatwebsite\Excel\Events\AfterSheet;
  * - Summary section with fund recap
  * - Grand total row
  *
+ * Nominal rupiah ditulis sebagai teks berformat "Rp. 50.000" (helper
+ * format_rupiah) agar tampil sama persis di semua locale Excel (revisi klien).
+ *
  * Uses Maatwebsite Excel with PhpSpreadsheet for formatting.
  */
 class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
@@ -196,12 +199,12 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 'no' => $no++,
                 'name' => $payroll->employee->name ?? '-',
                 'position' => $payroll->employee->position ?? '-',
-                'base_salary' => $payroll->base_salary,
+                'base_salary' => format_rupiah($payroll->base_salary),
             ], $dayCells, [
                 'present_days' => $payroll->present_days,
-                'overtime_total' => $payroll->overtime_total,
-                'kasbon_deduction' => $payroll->kasbon_deduction,
-                'net_salary' => $payroll->net_salary,
+                'overtime_total' => format_rupiah($payroll->overtime_total),
+                'kasbon_deduction' => format_rupiah($payroll->kasbon_deduction),
+                'net_salary' => format_rupiah($payroll->net_salary),
             ]);
 
             $totalKerja += (int) $payroll->base_salary * (int) $payroll->present_days;
@@ -310,8 +313,9 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 $sheet->getStyle("A{$dataStartRow}:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("C{$dataStartRow}:C{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("E{$dataStartRow}:L{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("D{$dataStartRow}:D{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
-                $sheet->getStyle("M{$dataStartRow}:".self::LAST_COLUMN."{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+                // Kolom nominal (teks "Rp. 50.000") rata kanan
+                $sheet->getStyle("D{$dataStartRow}:D{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("M{$dataStartRow}:".self::LAST_COLUMN."{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 $sheet->getStyle("B{$dataStartRow}:B{$lastRow}")->getFont()->setBold(true);
 
@@ -328,49 +332,49 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
 
                 $rekapRow = $startSummaryRow + 1;
 
+                $rekapStartRow = $rekapRow;
+
                 $sheet->setCellValue("A{$rekapRow}", "Total Kerja");
-                $sheet->setCellValue("C{$rekapRow}", $this->totals['total_kerja']);
-                $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->setCellValue("C{$rekapRow}", format_rupiah($this->totals['total_kerja']));
                 $rekapRow++;
 
                 $sheet->setCellValue("A{$rekapRow}", "Total Lembur");
-                $sheet->setCellValue("C{$rekapRow}", $this->totals['overtime_total']);
-                $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('+#,##0;-#,##0');
+                $sheet->setCellValue("C{$rekapRow}", format_rupiah($this->totals['overtime_total']));
                 $rekapRow++;
 
                 foreach ($this->teamKasbon as $kasbonLabel => $amount) {
                     $sheet->setCellValue("A{$rekapRow}", $kasbonLabel);
-                    $sheet->setCellValue("C{$rekapRow}", $amount);
+                    $sheet->setCellValue("C{$rekapRow}", format_rupiah($amount));
                     $sheet->getStyle("A{$rekapRow}")->getFont()->setColor(
                         new Color(Color::COLOR_RED)
                     );
                     $sheet->getStyle("C{$rekapRow}")->getFont()->setColor(
                         new Color(Color::COLOR_RED)
                     );
-                    $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
                     $rekapRow++;
                 }
 
                 foreach ($this->additionalCosts as $additionalCost) {
                     foreach ($additionalCost->items ?? [] as $item) {
                         $sheet->setCellValue("A{$rekapRow}", ($item['name'] ?? 'Biaya Lain-lain'));
-                        $sheet->setCellValue("C{$rekapRow}", (int) ($item['amount'] ?? 0));
-                        $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+                        $sheet->setCellValue("C{$rekapRow}", format_rupiah((int) ($item['amount'] ?? 0)));
                         $rekapRow++;
                     }
                 }
 
                 $sheet->setCellValue("A{$rekapRow}", "Total Upah Pekerja");
-                $sheet->setCellValue("C{$rekapRow}", $this->totals['net_salary']);
+                $sheet->setCellValue("C{$rekapRow}", format_rupiah($this->totals['net_salary']));
                 $sheet->getStyle("A{$rekapRow}")->getFont()->setBold(true);
                 $sheet->getStyle("C{$rekapRow}")->getFont()->setBold(true);
-                $sheet->getStyle("C{$rekapRow}")->getNumberFormat()->setFormatCode('#,##0');
+
+                // Nominal rekap (teks "Rp. 50.000") rata kanan
+                $sheet->getStyle("C{$rekapStartRow}:C{$rekapRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 $rekapRow++;
 
                 // Grand Total
                 $grandTotalRow = $rekapRow + 1;
                 $sheet->mergeCells("A{$grandTotalRow}:".self::LAST_COLUMN."{$grandTotalRow}");
-                $sheet->setCellValue("A{$grandTotalRow}", "TOTAL DIBAYARKAN: Rp " . number_format($this->totals['grand_total'], 0, ',', '.'));
+                $sheet->setCellValue("A{$grandTotalRow}", "TOTAL DIBAYARKAN: " . format_rupiah($this->totals['grand_total']));
 
                 $sheet->getStyle("A{$grandTotalRow}")->applyFromArray([
                     'font' => ['bold' => true, 'size' => 14],
@@ -400,8 +404,8 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
         return [
             'A' => 6,    // NO
             'B' => 30,   // NAMA PEKERJA
-            'C' => 14,   // JABATAN
-            'D' => 14,   // UPAH/HARI
+            'C' => 16,   // JABATAN
+            'D' => 16,   // UPAH/HARI
             'E' => 8,    // MING
             'F' => 8,    // SEN
             'G' => 8,    // SEL
@@ -410,8 +414,8 @@ class PayrollExport implements FromCollection, WithHeadings, WithStyles, WithCol
             'J' => 8,    // JUM
             'K' => 8,    // SAB
             'L' => 12,   // JML HARI
-            'M' => 14,   // LEMBUR
-            'N' => 14,   // KASBON
+            'M' => 16,   // LEMBUR
+            'N' => 16,   // KASBON
             'O' => 22,   // DITERIMA
         ];
     }

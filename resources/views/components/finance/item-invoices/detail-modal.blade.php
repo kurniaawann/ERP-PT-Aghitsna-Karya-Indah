@@ -93,7 +93,7 @@
         @if ($proofs->isNotEmpty())
             <div class="space-y-2">
                 @foreach ($proofs as $proof)
-                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer"
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" data-file-preview data-preview-title="Bukti Pembayaran"
                         title="{{ $proof->file_name }}"
                         class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 hover:border-blue-300 hover:bg-blue-50">
                         <span class="flex items-center gap-2 min-w-0">

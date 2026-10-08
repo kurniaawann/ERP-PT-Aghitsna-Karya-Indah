@@ -70,7 +70,15 @@ class RecapExpenseController extends Controller
 
         $totals = $this->service->getGrandTotals($request);
 
-        return compact('expenseRecaps', 'categories', 'totals');
+        // Label menu: admin menyebut modul ini "Kas Kantor", super admin tetap "Rekap Pengeluaran"
+        $recapLabel = $this->service->getRecapLabel();
+
+        // Pratinjau nomor faktur uang masuk berikutnya (ditampilkan read-only di form super admin)
+        $nextIncomeInvoiceNumber = $this->service->usesInvoiceNumber()
+            ? $this->service->generateIncomeInvoiceNumber()
+            : null;
+
+        return compact('expenseRecaps', 'categories', 'totals', 'recapLabel', 'nextIncomeInvoiceNumber');
     }
 
     /**
@@ -88,7 +96,7 @@ class RecapExpenseController extends Controller
             DB::commit();
 
             return redirect()->route('recap-expense.index')
-                ->with('success', 'Data rekap pengeluaran berhasil ditambahkan!');
+                ->with('success', 'Data ' . strtolower($this->service->getRecapLabel()) . ' berhasil ditambahkan!');
         } catch (\RuntimeException $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage())->withInput();
@@ -121,7 +129,7 @@ class RecapExpenseController extends Controller
             DB::commit();
 
             return redirect()->route('recap-expense.index')
-                ->with('success', 'Data rekap pengeluaran berhasil diupdate!');
+                ->with('success', 'Data ' . strtolower($this->service->getRecapLabel()) . ' berhasil diupdate!');
         } catch (\RuntimeException $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage())->withInput();
@@ -158,8 +166,10 @@ class RecapExpenseController extends Controller
 
             DB::commit();
 
+            $label = strtolower($this->service->getRecapLabel());
+
             return redirect()->route('recap-expense.index')
-                ->with('success', "Berhasil menghapus {$deletedCount} data rekap pengeluaran.");
+                ->with('success', "Berhasil menghapus {$deletedCount} data {$label}.");
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Recap Expense destroySelected failed', [
@@ -193,7 +203,7 @@ class RecapExpenseController extends Controller
         $month = $request->get('month');
         $year = $request->get('year');
 
-        $filename = 'Rekap_Pengeluaran_' . date('Y-m-d') . '.xlsx';
+        $filename = $this->exportFilePrefix() . date('Y-m-d') . '.xlsx';
 
         return Excel::download(
             new ExpenseRecapExport($expenseRecaps, $month, $year, null, $totals),
@@ -205,7 +215,11 @@ class RecapExpenseController extends Controller
      * Export rekap pengeluaran ke PDF.
      *
      * Laporan bulanan: bila data mencakup lebih dari satu bulan, PDF dipecah
-     * per bulan (lihat ExpenseMonthlySections) + halaman rekap per bulan.
+     * per bulan (lihat ExpenseMonthlySections) + halaman rekap per bulan
+     * (khusus super admin).
+     *
+     * Dicetak A4 PORTRAIT untuk semua role (revisi klien); header tabel
+     * diulang di setiap halaman lanjutan.
      *
      * @param  \Illuminate\Http\Request $request
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
@@ -227,10 +241,21 @@ class RecapExpenseController extends Controller
             'totals' => $totals,
             'periodTitle' => $periodTitle,
             'monthlySections' => ExpenseMonthlySections::build($expenseRecaps),
-        ])->setPaper('a4', 'landscape');
+        ])->setPaper('a4', 'portrait');
 
-        $filename = 'Rekap_Pengeluaran_' . date('Y-m-d') . '.pdf';
+        $filename = $this->exportFilePrefix() . date('Y-m-d') . '.pdf';
 
         return $pdf->download($filename);
+    }
+
+    /**
+     * Prefix nama file export sesuai label menu role aktif
+     * ("Kas_Kantor_" untuk admin, "Rekap_Pengeluaran_" untuk super admin).
+     *
+     * @return string
+     */
+    private function exportFilePrefix(): string
+    {
+        return str_replace(' ', '_', $this->service->getRecapLabel()) . '_';
     }
 }

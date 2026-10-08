@@ -33,9 +33,9 @@ class ItemInvoiceIndexExport implements FromCollection, WithHeadings, WithStyles
                 'invoice_date' => Carbon::parse($invoice->invoice_date)->format('d/m/Y'),
                 'recipient' => $invoice->recipient,
                 'project_description' => $invoice->project_description,
-                'total_selling' => 'Rp ' . number_format((int) ($invoice->total_selling ?? 0), 0, ',', '.'),
-                'total_capital' => 'Rp ' . number_format((int) ($invoice->total_capital ?? 0), 0, ',', '.'),
-                'total_profit' => 'Rp ' . number_format((int) ($invoice->total_profit ?? 0), 0, ',', '.'),
+                'total_selling' => format_rupiah((int) ($invoice->total_selling ?? 0)),
+                'total_capital' => format_rupiah((int) ($invoice->total_capital ?? 0)),
+                'total_profit' => format_rupiah((int) ($invoice->total_profit ?? 0)),
                 'status' => $invoice->status_label,
             ];
         });

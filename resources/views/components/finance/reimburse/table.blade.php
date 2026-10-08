@@ -2,6 +2,9 @@
      KOMPONEN TABEL REIMBURSEMENT
      Menampilkan daftar reimbursement dalam tabel dengan checkbox,
      kolom data, badge status, dan tombol aksi.
+     Checkbox `ids[]` tersedia di semua baris untuk kedua role (dipakai
+     Export Dipilih PDF/Excel). Untuk admin, aksi Setujui/Tolak/Hapus hanya
+     berlaku pada baris berstatus draft (data-status).
      ═══════════════════════════════════════════════════════════════════════════ --}}
 
 {{-- ─── Form Hapus Bulk ────────────────────────────────────────────────────── --}}
@@ -23,7 +26,6 @@
                             <th class="p-2 text-left">Nama Proyek</th>
                             <th class="p-2 text-left">Keterangan Belanja</th>
                             <th class="p-2 text-right">Total</th>
-                            <th class="p-2 text-center">Tgl Jatuh Tempo</th>
                             <th class="p-2 text-center">Status</th>
                             <th class="p-2 text-center">Tgl Perubahan</th>
                             <th class="p-2 text-left">Catatan</th>
@@ -39,16 +41,13 @@
                         @forelse($reimburses as $reimburse)
                             <tr class="border-t hover:bg-surface-secondary">
 
-                                {{-- Checkbox: Super Admin hanya bisa pilih draft --}}
+                                {{-- Checkbox: semua baris bisa dipilih (cetak terpilih);
+                                     persetujuan admin hanya memproses yang berstatus draft --}}
                                 <td class="p-2 text-center">
-                                    @if (Auth::user()->role === 'admin' && $reimburse->status === 'draft')
-                                        <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
-                                            class="reimburse-checkbox w-4 h-4 accent-primary cursor-pointer"
-                                            data-amount="{{ $reimburse->total_amount }}">
-                                    @elseif (Auth::user()->role === 'superadmin')
-                                        <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
-                                            class="w-4 h-4 accent-primary cursor-pointer">
-                                    @endif
+                                    <input type="checkbox" name="ids[]" value="{{ $reimburse->reimburse_code }}"
+                                        class="reimburse-checkbox w-4 h-4 accent-primary cursor-pointer"
+                                        data-amount="{{ $reimburse->total_amount }}"
+                                        data-status="{{ $reimburse->status }}">
                                 </td>
 
                                 {{-- Kolom Data --}}
@@ -57,7 +56,6 @@
                                 <td class="p-2">{{ $reimburse->project_name }}</td>
                                 <td class="p-2 text-sm">{{ Str::limit($reimburse->expense_description, 50) }}</td>
                                 <td class="p-2 text-right font-semibold">{{ $reimburse->formatted_total_amount }}</td>
-                                <td class="p-2 text-center">{{ $reimburse->formatted_due_date }}</td>
 
                                 {{-- Badge Status --}}
                                 <td class="p-2 text-center">
@@ -78,7 +76,9 @@
                                 {{-- Bukti --}}
                                 <td class="p-2 text-center">
                                     @if ($reimburse->proof_file)
-                                        <a href="{{ $reimburse->proof_url }}" target="_blank"
+                                        {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
+                                        <a href="{{ $reimburse->proof_url }}"
+                                            onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti Reimburse ' . $reimburse->reimburse_code), downloadName: @js($reimburse->proof_file_name ?: basename($reimburse->proof_file)) })"
                                             class="inline-flex items-center gap-1 text-primary hover:text-primary-hover text-xs"
                                             title="Lihat bukti">
                                             <i class="fa-solid fa-paperclip"></i>
@@ -112,7 +112,7 @@
 
                             {{-- ─── Empty State ─────────────────────────────────── --}}
                             <tr>
-                                <td colspan="{{ Auth::user()->role === 'superadmin' ? '12' : '11' }}"
+                                <td colspan="{{ Auth::user()->role === 'superadmin' ? '11' : '10' }}"
                                     class="text-center p-4 text-text-secondary">
                                     Data tidak ditemukan.
                                 </td>

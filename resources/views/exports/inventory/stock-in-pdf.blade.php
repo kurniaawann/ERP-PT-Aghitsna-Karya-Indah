@@ -107,7 +107,7 @@
             <td><strong>Filter Data</strong></td>
             <td>:
                 @if (request('month') && request('year'))
-                    Bulan {{ DateTime::createFromFormat('!m', request('month'))->format('F') }} {{ request('year') }}
+                    Bulan {{ \Carbon\Carbon::create(null, (int) request('month'), 1)->translatedFormat('F') }} {{ request('year') }}
                 @elseif (request('year'))
                     Tahun {{ request('year') }}
                 @else
@@ -142,9 +142,9 @@
                         <td>{{ $record->id_stock_in }}</td>
                         <td>{{ $record->item->name_item ?? '-' }}</td>
                         <td class="text-center">{{ $record->quantity }}</td>
-                        <td class="text-right">Rp {{ number_format($record->capital_price, 0, ',', '.') }}</td>
-                        <td class="text-right">Rp {{ number_format($record->total_capital, 0, ',', '.') }}</td>
-                        <td class="text-center">{{ $record->date->format('d M Y') }}</td>
+                        <td class="text-right">{{ format_rupiah($record->capital_price) }}</td>
+                        <td class="text-right">{{ format_rupiah($record->total_capital) }}</td>
+                        <td class="text-center">{{ $record->date->translatedFormat('d M Y') }}</td>
                     </tr>
                     @php
                         $totalOverall += $record->total_capital;
@@ -163,7 +163,7 @@
                 </tr>
                 <tr>
                     <td colspan="6" class="text-right"><strong>Total Keseluruhan:</strong></td>
-                    <td class="text-center"><strong>Rp {{ number_format($totalOverall, 0, ',', '.') }}</strong></td>
+                    <td class="text-center"><strong>{{ format_rupiah($totalOverall) }}</strong></td>
                 </tr>
             </tfoot>
         </table>

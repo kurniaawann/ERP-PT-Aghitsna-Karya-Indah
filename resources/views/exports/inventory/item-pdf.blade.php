@@ -72,10 +72,10 @@
                 <tr>
                     <td>{{ $item->name_item }}</td>
                     <td class="text-center">{{ $item->quantity }}</td>
-                    <td class="text-right">Rp{{ number_format($item->capital_price, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp{{ number_format($item->quantity * $item->capital_price, 0, ',', '.') }}
+                    <td class="text-right">{{ format_rupiah($item->capital_price) }}</td>
+                    <td class="text-right">{{ format_rupiah($item->quantity * $item->capital_price) }}
                     </td>
-                    <td class="text-right">Rp{{ number_format($item->selling_price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah($item->selling_price) }}</td>
                 </tr>
             @endforeach
         </tbody>

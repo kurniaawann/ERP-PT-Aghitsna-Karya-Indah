@@ -107,12 +107,13 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(22)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('000000'));
                 $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Nama perusahaan 16pt selebar halaman, alamat di kiri & info invoice di kanan
+                // Kop surat (revisi klien): nama perusahaan 12pt selebar halaman, alamat/telp/email 11pt
+                // di kiri & info invoice di kanan
                 $sheet->mergeCells('A2:F2');
                 $sheet->setCellValue('A2', 'PT. AGHITSNA KARYA INDAH');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(16);
+                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
                 $sheet->getStyle('A2')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getRowDimension(2)->setRowHeight(24);
+                $sheet->getRowDimension(2)->setRowHeight(20);
 
                 $companyLines = [
                     3 => 'JL. TANAH BARU RAYA PERTIWI RT. 01/05',
@@ -123,6 +124,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 foreach ($companyLines as $row => $text) {
                     $sheet->mergeCells("A{$row}:C{$row}");
                     $sheet->setCellValue("A{$row}", $text);
+                    $sheet->getStyle("A{$row}")->getFont()->setSize(11);
                     $sheet->getStyle("A{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                 }
 
@@ -146,8 +148,8 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->getRowDimension(6)->setRowHeight(($halLines - 1) * $lineHeight);
                 }
 
-                // Jarak ±1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
-                $sheet->getRowDimension(7)->setRowHeight(20);
+                // Jarak tepat 1 baris kosong antara Email dan "Kepada Yth" (revisi klien)
+                $sheet->getRowDimension(7)->setRowHeight($lineHeight);
                 // Kepada Yth (tidak di-bold)
                 $currentRow = 8;
                 $sheet->setCellValue("A{$currentRow}", 'Kepada Yth :');
@@ -164,8 +166,8 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 }
 
                 $currentRow += 2;
-                // Jarak ±1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
-                $sheet->getRowDimension($currentRow - 1)->setRowHeight(20);
+                // Jarak tepat 1 baris kosong sebelum "Dengan ini kami sampaikan" (revisi klien)
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight($lineHeight);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $descriptionText = $invoice->project_description
                     ? 'Dengan ini kami sampaikan invoice untuk proyek ' . $invoice->project_description . ' sebagai berikut :'
@@ -212,8 +214,8 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $fitWrappedRow($currentRow, (string) $item['keterangan'], 32, 'B');
                     $sheet->setCellValue("C{$currentRow}", number_format($item['volume'], 2, ',', '.'));
                     $sheet->setCellValue("D{$currentRow}", $item['satuan']);
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($item['harga'], 0, ',', '.'));
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                    $sheet->setCellValue("E{$currentRow}", format_rupiah($item['harga']));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah($jumlah));
 
                     // Volume, Satuan, Harga, Jumlah rata tengah; keterangan di-wrap bila panjang
                     $sheet->getStyle("A{$currentRow}:F{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
@@ -235,7 +237,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $sheet->setCellValue("C{$currentRow}", '');
                 $sheet->setCellValue("D{$currentRow}", '');
                 $sheet->setCellValue("E{$currentRow}", 'Jumlah');
-                $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($totalAmount, 0, ',', '.'));
+                $sheet->setCellValue("F{$currentRow}", format_rupiah($totalAmount));
 
                 $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                     'fill' => [
@@ -267,7 +269,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->setCellValue("C{$currentRow}", '');
                     $sheet->setCellValue("D{$currentRow}", '');
                     $sheet->setCellValue("E{$currentRow}", $discountLabel);
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($discountAmount, 0, ',', '.'));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah($discountAmount));
 
                     $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                         'fill' => [
@@ -300,7 +302,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->setCellValue("C{$currentRow}", '');
                     $sheet->setCellValue("D{$currentRow}", '');
                     $sheet->setCellValue("E{$currentRow}", $dpLabel);
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($dpAmount, 0, ',', '.'));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah($dpAmount));
 
                     $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                         'fill' => [
@@ -328,7 +330,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->setCellValue("C{$currentRow}", '');
                     $sheet->setCellValue("D{$currentRow}", '');
                     $sheet->setCellValue("E{$currentRow}", 'PPN (' . format_persen($invoice->ppn) . '%)');
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($invoice->getPpnAmount(), 0, ',', '.'));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah($invoice->getPpnAmount()));
 
                     $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                         'fill' => [
@@ -367,7 +369,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->setCellValue("C{$currentRow}", '');
                     $sheet->setCellValue("D{$currentRow}", '');
                     $sheet->setCellValue("E{$currentRow}", 'Sisa Pembayaran');
-                    $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($remainingAmount, 0, ',', '.'));
+                    $sheet->setCellValue("F{$currentRow}", format_rupiah($remainingAmount));
 
                     $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                         'fill' => [
@@ -400,7 +402,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                             $sheet->setCellValue("C{$currentRow}", '');
                             $sheet->setCellValue("D{$currentRow}", '');
                             $sheet->setCellValue("E{$currentRow}", $installment['label'] ?? 'Pembayaran');
-                            $sheet->setCellValue("F{$currentRow}", 'Rp ' . number_format($installment['amount'] ?? 0, 0, ',', '.'));
+                            $sheet->setCellValue("F{$currentRow}", format_rupiah($installment['amount'] ?? 0));
 
                             $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
                                 'fill' => [
@@ -466,9 +468,12 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                     $sheet->setCellValue("A{$currentRow}", "{$bankName} / No : {$accountNumber} a/n {$accountHolder}");
                 }
 
-                $currentRow += 2;
+                // 2 baris kosong di atas kalimat penutup (revisi klien)
+                $currentRow += 3;
+                $sheet->getRowDimension($currentRow - 2)->setRowHeight($lineHeight);
+                $sheet->getRowDimension($currentRow - 1)->setRowHeight($lineHeight);
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $closingText = 'Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.';
+                $closingText = 'Demikian invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.';
                 $sheet->setCellValue("A{$currentRow}", $closingText);
                 $fitWrappedRow($currentRow, $closingText, 100);
 

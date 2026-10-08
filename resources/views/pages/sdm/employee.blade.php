@@ -57,8 +57,8 @@
                         onchange="this.form.requestSubmit()"
                         class="block w-full min-[1280px]:w-44 rounded-lg border border-border-strong bg-surface-secondary p-3 text-sm text-text-input focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-light">
                         <option value="">Semua Jenis</option>
-                        <option value="harian" @selected(request('employment_type') === 'harian')>Harian (Tukang)</option>
-                        <option value="bulanan" @selected(request('employment_type') === 'bulanan')>Bulanan (Slip Gaji)</option>
+                        <option value="harian" @selected(request('employment_type') === 'harian')>TUKANG PROYEK</option>
+                        <option value="bulanan" @selected(request('employment_type') === 'bulanan')>KARYAWAN KANTOR</option>
                     </select>
                 </div>
 

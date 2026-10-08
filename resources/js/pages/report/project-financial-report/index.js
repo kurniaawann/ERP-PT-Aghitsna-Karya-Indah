@@ -322,10 +322,11 @@ function bonBlockHtml(categories, data, index) {
         'name="items[' + index + '][transaction_category_id]" value="' + escapeHtml(data.transaction_category_id || '') + '" ' +
         'data-type="' + escapeHtml(data.category_type || '') + '">';
 
+    // Link bukti dibuka sebagai pratinjau di dalam halaman (window.openFilePreview), bukan tab baru
     const proofNotice = (data.proof_url && data.proof_file_name)
         ? '<p class="text-xs text-blue-600 mt-1">Bukti saat ini: <a href="' + escapeHtml(data.proof_url) +
-            '" target="_blank" rel="noopener noreferrer" class="underline">' + escapeHtml(data.proof_file_name) +
-            '</a></p>'
+            '" data-proof-preview data-download-name="' + escapeHtml(data.proof_file_name) + '" class="underline">' +
+            escapeHtml(data.proof_file_name) + '</a></p>'
         : '';
 
     // Petunjuk keterangan otomatis hanya relevan untuk transaksi yang benar-benar
@@ -809,6 +810,28 @@ function submitDeleteForm(modalId = 'deleteModal', formId = 'deleteForm') {
     }
 }
 window.submitDeleteForm = submitDeleteForm;
+
+// ============================================================
+// PRATINJAU BUKTI TRANSAKSI (TANPA TAB BARU)
+// ============================================================
+
+/**
+ * Link "Bukti saat ini" pada blok bon (dibuat dinamis oleh JS) dibuka sebagai
+ * pratinjau file di dalam halaman memakai window.openFilePreview
+ * (shared/document-preview.js), bukan tab baru.
+ *
+ * Memakai event delegation karena blok bon dirender ulang secara dinamis.
+ */
+document.addEventListener('click', function (e) {
+    const link = e.target.closest('a[data-proof-preview]');
+    if (!link || typeof window.openFilePreview !== 'function') return;
+
+    e.preventDefault();
+    window.openFilePreview(link.href, {
+        title: 'Bukti — ' + (link.dataset.downloadName || 'Transaksi'),
+        downloadName: link.dataset.downloadName || '',
+    });
+});
 
 // ============================================================
 // INISIALISASI

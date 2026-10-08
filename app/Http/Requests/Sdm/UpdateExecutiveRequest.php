@@ -5,9 +5,9 @@ namespace App\Http\Requests\Sdm;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request untuk pembaruan data petinggi.
+ * Form request untuk pembaruan data penandatangan.
  *
- * Petinggi diidentifikasi melalui route model binding.
+ * Penandatangan diidentifikasi melalui route model binding.
  * Gambar tanda tangan bersifat opsional; jika tidak diunggah,
  * gambar lama tetap dipertahankan.
  */
@@ -48,7 +48,7 @@ class UpdateExecutiveRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Nama petinggi harus diisi',
+            'name.required' => 'Nama penandatangan harus diisi',
             'position.max' => 'Jabatan maksimal 150 karakter.',
             'signature_image.image' => 'File harus berupa gambar.',
             'signature_image.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WEBP.',

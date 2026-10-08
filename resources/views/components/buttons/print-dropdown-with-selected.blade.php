@@ -1,4 +1,9 @@
-@props(['pdfRoute' => null, 'queryParams' => [], 'responsive' => 'xl', 'fill' => false])
+{{-- Props:
+     - pdfRoute / excelRoute           : export semua (GET, ikut queryParams)
+     - pdfSelectedRoute / excelSelectedRoute : export data terpilih (POST ids[]) via
+       sharedPrintSelected → pratinjau dulu baru download. Bila pdfSelectedRoute
+       kosong, tombol "Export Dipilih" memanggil printSelected(this) milik halaman. --}}
+@props(['pdfRoute' => null, 'excelRoute' => null, 'pdfSelectedRoute' => null, 'excelSelectedRoute' => null, 'queryParams' => [], 'responsive' => 'xl', 'fill' => false])
 
 @if($responsive === 'custom')
     @php
@@ -29,21 +34,44 @@
         class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-56 rounded-lg shadow-lg bg-surface-base border border-border-strong z-50">
     @endif
         <div class="py-1" role="menu">
+            {{-- Export All --}}
             @if ($pdfRoute)
-                {{-- Export All --}}
-                <a href="{{ $pdfRoute }}?{{ http_build_query(array_filter($queryParams)) }}"
+                <a href="{{ $pdfRoute }}?{{ http_build_query(array_filter($queryParams)) }}" data-preview
                     class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
                     <i class="fa-solid fa-file-pdf text-error w-4"></i>
                     <span>Export Semua (PDF)</span>
                 </a>
+            @endif
+            @if ($excelRoute)
+                <a href="{{ $excelRoute }}?{{ http_build_query(array_filter($queryParams)) }}" data-preview
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
+                    <i class="fa-solid fa-file-excel text-success w-4"></i>
+                    <span>Export Semua (Excel)</span>
+                </a>
+            @endif
 
-                {{-- Export Selected --}}
+            {{-- Export Selected (muncul saat ada data dicentang) --}}
+            @if ($pdfRoute || $pdfSelectedRoute || $excelSelectedRoute)
                 <div id="printSelectedItem" class="hidden">
-                    <button type="button" onclick="printSelected(this)"
-                        class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
-                        <i class="fa-solid fa-check-square text-primary w-4"></i>
-                        <span>Export Dipilih (<span id="selectedCountText">0</span>)</span>
-                    </button>
+                    @if ($pdfSelectedRoute || $pdfRoute)
+                        <button type="button"
+                            @if ($pdfSelectedRoute)
+                                onclick="sharedPrintSelected(@js($pdfSelectedRoute), this)"
+                            @else
+                                onclick="printSelected(this)"
+                            @endif
+                            class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
+                            <i class="fa-solid fa-check-square text-primary w-4"></i>
+                            <span>Export Dipilih{{ $excelSelectedRoute ? ' (PDF)' : '' }} (<span id="selectedCountText">0</span>)</span>
+                        </button>
+                    @endif
+                    @if ($excelSelectedRoute)
+                        <button type="button" onclick="sharedPrintSelected(@js($excelSelectedRoute), this)"
+                            class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
+                            <i class="fa-solid fa-file-excel text-success w-4"></i>
+                            <span>Export Dipilih (Excel)</span>
+                        </button>
+                    @endif
                 </div>
             @endif
         </div>

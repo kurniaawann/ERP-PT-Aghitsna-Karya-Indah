@@ -360,8 +360,10 @@
              DETAIL TRANSACTIONS TABLE
              Tabel detail transaksi dengan pagination.
              Menampilkan: tanggal, invoice, kategori, deskripsi,
-             pemasukan, pengeluaran.
+             pemasukan, pengeluaran. Kolom No. Invoice (faktur) tidak
+             ditampilkan untuk role admin (revisi klien).
              ============================================================ --}}
+        @php $showFaktur = !auth()->user()->isAdmin(); @endphp
         <div class="bg-surface-base rounded-xl shadow overflow-hidden">
             <div class="p-6 border-b border-border-light">
                 <h3 class="text-lg font-semibold text-text-primary">Detail Transaksi</h3>
@@ -373,10 +375,12 @@
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                 Tanggal</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                                No.
-                                Invoice</th>
+                            @if ($showFaktur)
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                                    No.
+                                    Invoice</th>
+                            @endif
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                 Kategori</th>
@@ -397,9 +401,11 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                                     {{ \Carbon\Carbon::parse($expense->transaction_date)->format('d M Y') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
-                                    {{ $expense->invoice_number }}
-                                </td>
+                                @if ($showFaktur)
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
+                                        {{ $expense->invoice_number }}
+                                    </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span
                                         class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-surface-secondary text-text-primary">
@@ -429,7 +435,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-8 text-center text-text-secondary">
+                                <td colspan="{{ $showFaktur ? 6 : 5 }}" class="px-6 py-8 text-center text-text-secondary">
                                     Tidak ada data transaksi
                                 </td>
                             </tr>

@@ -115,7 +115,7 @@
             </button>
         </div>
         <p class="text-xs text-text-secondary mb-3">Opsional — tidak wajib diisi. Setiap proyek bisa memiliki penanda
-            tangan yang berbeda. Data diambil dari modul Data Petinggi; jika dikosongkan, blok tanda tangan pada PDF
+            tangan yang berbeda. Data diambil dari modul Data Penandatangan; jika dikosongkan, blok tanda tangan pada PDF
             ditampilkan sebagai garis putus-putus. Gunakan tombol <strong>"Tanda Tangan Sama Semua"</strong> untuk
             menyalin penanda tangan proyek pertama ke seluruh proyek yang dipilih.</p>
         <div id="signatory-sections"></div>

@@ -68,11 +68,11 @@
                                     @endif
                                 </td>
 
-                                {{-- Jenis Karyawan (Harian/Bulanan) --}}
+                                {{-- Jenis Karyawan (TUKANG PROYEK / KARYAWAN KANTOR) --}}
                                 <td class="p-2 text-center">
                                     @if ($kasbon->kasbon_type === 'personal' && $kasbon->employee)
-                                        <span class="px-2 py-1 bg-primary-light text-primary text-xs font-semibold rounded-md">
-                                            {{ $kasbon->employee->employment_type === 'bulanan' ? 'Bulanan' : 'Harian' }}
+                                        <span class="px-2 py-1 bg-primary-light text-primary text-xs font-semibold rounded-md whitespace-nowrap">
+                                            {{ $kasbon->employee->employment_type === 'bulanan' ? 'KARYAWAN KANTOR' : 'TUKANG PROYEK' }}
                                         </span>
                                     @else
                                         <span class="text-text-label">-</span>
@@ -108,9 +108,9 @@
                                     {{ $kasbon->formatted_amount }}
                                 </td>
 
-                                {{-- Terbayar (akumulasi cicilan kasbon) --}}
+                                {{-- Terbayar (akumulasi cicilan kasbon; karyawan kantor dicicil lewat slip gaji) --}}
                                 <td class="p-2 text-center text-sm text-text-primary">
-                                    @if ($kasbon->kasbon_type === 'team' || $isBulananKasbon)
+                                    @if ($kasbon->kasbon_type === 'team')
                                         <span class="text-text-label">-</span>
                                     @else
                                         {{ $kasbon->formatted_paid_amount }}
@@ -119,7 +119,7 @@
 
                                 {{-- Sisa Pembayaran --}}
                                 <td class="p-2 text-center text-sm text-text-primary">
-                                    @if ($kasbon->kasbon_type === 'team' || $isBulananKasbon)
+                                    @if ($kasbon->kasbon_type === 'team')
                                         <span class="text-text-label">-</span>
                                     @elseif ($kasbon->payment_status === 'paid')
                                         <span class="text-success font-medium">Rp 0</span>
@@ -132,7 +132,7 @@
 
                                 {{-- Progress --}}
                                 <td class="p-2 text-center">
-                                    @if ($kasbon->kasbon_type === 'team' || $isBulananKasbon)
+                                    @if ($kasbon->kasbon_type === 'team')
                                         <span class="text-text-label">-</span>
                                     @else
                                         <div class="w-full max-w-[80px] mx-auto">
@@ -175,7 +175,7 @@
                                             </button>
                                         @elseif ($isBulananKasbon && $kasbon->payment_status !== 'paid')
                                             <span class="flex items-center gap-1 text-xs text-text-label"
-                                                title="Kasbon karyawan bulanan tidak bisa dicicil. Otomatis dipotong penuh dari slip gaji.">
+                                                title="Kasbon karyawan kantor dicicil lewat potongan slip gaji. Nominal cicilan per bulan diatur pada Generate/Edit slip gaji.">
                                                 <i class="fa-solid fa-file-invoice w-3 h-3"></i>
                                                 Potong Slip Gaji
                                             </span>

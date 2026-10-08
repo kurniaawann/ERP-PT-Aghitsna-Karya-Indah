@@ -32,7 +32,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             @foreach ($proofs as $proof)
                 <div class="overflow-hidden rounded-lg border bg-white">
-                    <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer">
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" data-file-preview data-preview-title="Bukti Pembayaran">
                         <img src="{{ asset('storage/' . $proof->file_path) }}" alt="Bukti pembayaran"
                             class="h-36 w-full object-cover">
                     </a>
@@ -48,7 +48,7 @@
                         </div>
 
                         <div class="flex items-center justify-between gap-2">
-                            <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank" rel="noopener noreferrer"
+                            <a href="{{ asset('storage/' . $proof->file_path) }}" data-file-preview data-preview-title="Bukti Pembayaran"
                                 class="text-sm text-blue-600 hover:underline">
                                 Lihat
                             </a>

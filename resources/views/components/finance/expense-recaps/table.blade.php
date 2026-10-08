@@ -1,4 +1,8 @@
-{{-- Tabel Rekap Pengeluaran --}}
+{{-- Tabel Rekap Pengeluaran (admin: "Kas Kantor") --}}
+@php
+    // Kolom Faktur tidak ditampilkan untuk role admin (Kas Kantor)
+    $showFaktur = !auth()->user()->isAdmin();
+@endphp
 <form id="deleteForm" method="POST" action="{{ route('recap-expense.destroySelected') }}">
     @csrf
     @method('DELETE')
@@ -12,7 +16,9 @@
                             <th class="p-2 text-center">ID</th>
                             <th class="p-2 text-left">Kategori</th>
                             <th class="p-2 text-left">Tanggal</th>
-                            <th class="p-2 text-left">Faktur</th>
+                            @if ($showFaktur)
+                                <th class="p-2 text-left">Faktur</th>
+                            @endif
                             <th class="p-2 text-left">Keterangan</th>
                             <th class="p-2 text-right">Pemasukan</th>
                             <th class="p-2 text-right">Pengeluaran</th>
@@ -51,10 +57,12 @@
                                     {{ $expense->transaction_date ? \Carbon\Carbon::parse($expense->transaction_date)->format('d/m/Y') : '-' }}
                                 </td>
 
-                                {{-- Nomor Faktur --}}
-                                <td class="p-2 text-text-label">
-                                    {{ $expense->invoice_number ?? '-' }}
-                                </td>
+                                {{-- Nomor Faktur (super admin saja) --}}
+                                @if ($showFaktur)
+                                    <td class="p-2 text-text-label">
+                                        {{ $expense->invoice_number ?? '-' }}
+                                    </td>
+                                @endif
 
                                 {{-- Keterangan --}}
                                 <td class="p-2 text-text-primary">
@@ -114,7 +122,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center p-4 text-text-secondary">Data tidak ditemukan.
+                                <td colspan="{{ $showFaktur ? 11 : 10 }}" class="text-center p-4 text-text-secondary">Data tidak ditemukan.
                                 </td>
                             </tr>
                         @endforelse
@@ -123,7 +131,7 @@
                         @if ($expenseRecaps->isNotEmpty())
                             <tr
                                 class="bg-gradient-to-r from-primary/20 to-primary/10 border-t-4 border-primary font-bold text-base">
-                                <td colspan="6" class="p-3 text-right text-text-heading">
+                                <td colspan="{{ $showFaktur ? 6 : 5 }}" class="p-3 text-right text-text-heading">
                                     TOTAL KESELURUHAN
                                 </td>
                                 <td class="p-3 text-right text-success font-bold text-lg">

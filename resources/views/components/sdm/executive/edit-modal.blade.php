@@ -1,18 +1,18 @@
 {{-- ============================================================
-     Modal Edit Petinggi
-     Form untuk memperbarui data petinggi yang sudah ada.
+     Modal Edit Penandatangan
+     Form untuk memperbarui data penandatangan yang sudah ada.
      Menggunakan method PUT untuk update.
      Fields:
-       - name (required)    : Nama petinggi, maks 150 karakter
+       - name (required)    : Nama penandatangan, maks 150 karakter
        - position (opsional): Jabatan, maks 150 karakter
        - signature_image (opsional): Gambar tanda tangan baru
      ============================================================ --}}
-<x-modal id="editModal-{{ $executive->id }}" title="Edit Petinggi" action="{{ route('executive.update', $executive->id) }}"
+<x-modal id="editModal-{{ $executive->id }}" title="Edit Penandatangan" action="{{ route('executive.update', $executive->id) }}"
     method="PUT" buttonText="Update" enctype="multipart/form-data">
 
-    {{-- Nama Petinggi (wajib diisi) --}}
+    {{-- Nama Penandatangan (wajib diisi) --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Petinggi <span class="text-error">*</span></label>
+        <label class="block text-text-primary mb-1">Nama Penandatangan <span class="text-error">*</span></label>
         <input type="text" name="name" class="w-full border rounded p-2" value="{{ $executive->name }}" required
             maxlength="150">
     </div>

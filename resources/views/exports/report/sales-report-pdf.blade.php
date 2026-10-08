@@ -107,15 +107,17 @@
         .font-bold { font-weight: bold; }
         .nowrap { white-space: nowrap; }
 
+        /* Kolom Jumlah & Total diperlebar sedikit (Faktur & Nama Barang dikurangi)
+           agar format "Rp. 150.000.000" muat dalam satu baris tanpa meluber */
         .col-no { width: 4%; }
         .col-date { width: 9%; }
-        .col-faktur { width: 21%; }
-        .col-item { width: 20%; }
+        .col-faktur { width: 19.5%; }
+        .col-item { width: 17.5%; }
         .col-qty { width: 5%; }
         .col-harga-modal { width: 10.5%; }
         .col-harga-jual { width: 10.5%; }
-        .col-jumlah { width: 10%; }
-        .col-total { width: 10%; }
+        .col-jumlah { width: 11%; }
+        .col-total { width: 13%; }
 
         .faktur-no {
             font-size: 10pt;
@@ -172,7 +174,8 @@
 
 <body>
     @php
-        $rp = fn ($value) => 'Rp ' . number_format($value, 0, ',', '.');
+        // Nominal ditulis "Rp. 50.000" (helper format_rupiah)
+        $rp = fn ($value) => format_rupiah($value);
     @endphp
 
     <div class="title-container">

@@ -136,18 +136,32 @@ class ReimburseService
      * Bulk approve reimburse.
      *
      * Mengubah status menjadi 'approved' untuk semua reimburse draft yang dipilih.
+     * Mengembalikan kode reimburse yang benar-benar disetujui (hanya yang
+     * sebelumnya berstatus draft) — dipakai untuk langsung menampilkan
+     * pratinjau dokumen reimburse yang disetujui.
      *
      * @param  array<int, string> $ids  Daftar reimburse_code yang akan di-approve
-     * @return int  Jumlah record yang diupdate
+     * @return array<int, string>  Daftar reimburse_code yang disetujui
      */
-    public function bulkApprove(array $ids): int
+    public function bulkApprove(array $ids): array
     {
-        return Reimburse::whereIn('reimburse_code', $ids)
+        $codes = Reimburse::whereIn('reimburse_code', $ids)
+            ->where('status', 'draft')
+            ->pluck('reimburse_code')
+            ->all();
+
+        if (empty($codes)) {
+            return [];
+        }
+
+        Reimburse::whereIn('reimburse_code', $codes)
             ->where('status', 'draft')
             ->update([
                 'status' => 'approved',
                 'status_changed_at' => now(),
             ]);
+
+        return $codes;
     }
 
     /**
@@ -174,18 +188,24 @@ class ReimburseService
      * Menghapus data sekaligus membersihkan file bukti milik data yang dihapus
      * agar tidak menjadi file yatim di storage.
      *
-     * @param  array<int, string> $ids  Daftar reimburse_code yang akan dihapus
+     * Checkbox kini tersedia di semua baris (untuk cetak data terpilih), sehingga
+     * role admin dibatasi hanya menghapus pengajuan berstatus draft — sama seperti
+     * perilaku sebelumnya ketika admin hanya bisa mencentang baris draft.
+     *
+     * @param  array<int, string> $ids        Daftar reimburse_code yang akan dihapus
+     * @param  bool               $onlyDraft  true = hanya hapus yang berstatus draft
      * @return int  Jumlah record yang dihapus
      */
-    public function bulkDelete(array $ids): int
+    public function bulkDelete(array $ids, bool $onlyDraft = false): int
     {
-        $reimburses = Reimburse::whereIn('reimburse_code', $ids)->get();
+        $query = fn () => Reimburse::whereIn('reimburse_code', $ids)
+            ->when($onlyDraft, fn ($builder) => $builder->where('status', 'draft'));
 
-        foreach ($reimburses as $reimburse) {
+        foreach ($query()->get() as $reimburse) {
             $this->deleteProofFile($reimburse->proof_file);
         }
 
-        return Reimburse::whereIn('reimburse_code', $ids)->delete();
+        return $query()->delete();
     }
 
     /**
@@ -207,14 +227,34 @@ class ReimburseService
     /**
      * Mengambil data reimburse untuk export (PDF/Excel).
      *
-     * Mengembalikan Collection semua data yang sesuai filter tanpa pagination.
+     * - Bila request membawa `ids[]` (Export Dipilih / pratinjau setelah
+     *   disetujui): hanya reimburse dengan kode tersebut, filter lain diabaikan.
+     * - Selain itu: semua data yang sesuai filter (search/status/bulan/tahun)
+     *   tanpa pagination.
      *
-     * @param  \Illuminate\Http\Request $request  Request yang berisi parameter filter
+     * @param  \Illuminate\Http\Request $request  Request yang berisi parameter filter / ids[]
      * @return \Illuminate\Support\Collection
      */
     public function getExportData(Request $request): Collection
     {
+        $ids = $this->selectedIds($request);
+
+        if (!empty($ids)) {
+            return Reimburse::whereIn('reimburse_code', $ids)->latest('date')->get();
+        }
+
         return $this->buildFilteredQuery($request)->get();
+    }
+
+    /**
+     * Ambil daftar kode reimburse terpilih (`ids[]`) dari request.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return array<int, string>
+     */
+    public function selectedIds(Request $request): array
+    {
+        return array_values(array_filter(array_map('strval', (array) $request->input('ids', []))));
     }
 
     /**
@@ -233,6 +273,35 @@ class ReimburseService
             'rejected_count' => $reimburses->where('status', 'rejected')->count(),
             'total_amount' => $reimburses->sum('total_amount'),
         ];
+    }
+
+    /**
+     * Teks status untuk header PDF/Excel (revisi klien: menggantikan "SEMUA").
+     *
+     * Menggambarkan rasio persetujuan, mis. "Disetujui 3 dari 4 yang diajukan".
+     * - Tanpa filter status / data terpilih: jumlah disetujui dari seluruh data export.
+     * - Filter satu status: "DISETUJUI (3 dari 4 yang diajukan)" — pembandingnya
+     *   seluruh pengajuan dengan filter lain yang sama (search/bulan/tahun).
+     *
+     * @param  \Illuminate\Http\Request        $request     Request export
+     * @param  \Illuminate\Support\Collection  $reimburses  Data yang di-export
+     * @return string
+     */
+    public function buildStatusText(Request $request, Collection $reimburses): string
+    {
+        $status = $request->input('status');
+        $labels = ['draft' => 'DRAFT', 'approved' => 'DISETUJUI', 'rejected' => 'DITOLAK'];
+
+        if (!empty($this->selectedIds($request)) || !isset($labels[$status])) {
+            $approved = $reimburses->where('status', 'approved')->count();
+
+            return "Disetujui {$approved} dari {$reimburses->count()} yang diajukan";
+        }
+
+        // Total pengajuan dengan filter yang sama, tanpa filter status
+        $submitted = $this->buildFilteredQuery(new Request($request->except('status')))->count();
+
+        return "{$labels[$status]} ({$reimburses->count()} dari {$submitted} yang diajukan)";
     }
 
     /**

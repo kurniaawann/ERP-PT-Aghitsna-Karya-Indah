@@ -2,12 +2,13 @@
      NOTA PDF - LAYOUT PROYEK (tipe_nota = proyek)
      PT Aghitsna Karya Indah
 
-     - Kop: logo + nama & alamat perusahaan, garis ganda
+     - Kop: partials/nota-kop (logo + nama & alamat perusahaan, garis ganda)
      - Judul "NOTA"
      - Info kiri: No. Nota, No. Invoice & No. DO (opsional), Proyek
-     - Info kanan: tanggal + Kepada Yth.
+     - Info kanan: tanggal + Kepada Yth. (rata kanan)
      - Tabel: NO / QTY / SATUAN / NAMA BARANG / HARGA / JUMLAH (minimal 9 baris)
      - Baris total "JUMLAH" di bawah kolom Harga/Jumlah
+     - Nominal ditulis "Rp. 50.000" via helper format_rupiah()
      - Tanda tangan: Tanda Terima (penerima) & Hormat Kami (penandatangan + divisi)
 
      Style bersama ada di nota-pdf.blade.php (scope .nota).
@@ -15,7 +16,6 @@
 
 @php
     $items = $nota->items ?? [];
-    $rupiah = fn ($value) => 'Rp ' . number_format((int) $value, 0, ',', '.');
     $notaDate = \Carbon\Carbon::parse($nota->nota_date)->locale('id')->translatedFormat('d F Y');
     $penandatangan = $nota->penandatangan ?? [];
 
@@ -28,24 +28,7 @@
 <div class="nota nota-proyek">
 
     <!-- KOP SURAT -->
-    <table class="kop">
-        <tr>
-            <td class="kop-side">
-                <img src="{{ public_path('images/logo.jpeg') }}" alt="PT. Aghitsna Karya Indah" class="kop-logo">
-            </td>
-            <td class="kop-text">
-                <div class="kop-name">PT. AGHITSNA KARYA INDAH</div>
-                <div class="kop-tagline">DESIGN AND BUILD</div>
-                <div class="kop-address">
-                    JL. TANAH BARU RAYA PERTIWI RT. 01/05<br>
-                    BEJI, DEPOK, JAWA BARAT<br>
-                    Telp. 021-29034923 - 0812.9596.552 &nbsp;|&nbsp; Email : Design@aghitsna.id
-                </div>
-            </td>
-            <td class="kop-side"></td>
-        </tr>
-    </table>
-    <div class="kop-rule"></div>
+    @include('exports.administrasi.partials.nota-kop')
 
     <!-- JUDUL -->
     <div class="doc-title"><span>NOTA</span></div>
@@ -113,8 +96,8 @@
                     <td class="text-center">{{ $item['quantity'] ?? '' }}</td>
                     <td class="text-center">{{ $item['satuan'] ?? '' }}</td>
                     <td>{{ $item['nama_barang'] ?? '' }}</td>
-                    <td class="text-center nowrap">{{ $rupiah($item['harga'] ?? 0) }}</td>
-                    <td class="text-center nowrap">{{ $rupiah($item['jumlah'] ?? 0) }}</td>
+                    <td class="text-center nowrap">{{ format_rupiah($item['harga'] ?? 0) }}</td>
+                    <td class="text-center nowrap">{{ format_rupiah($item['jumlah'] ?? 0) }}</td>
                 </tr>
             @endforeach
 
@@ -134,7 +117,7 @@
             <tr>
                 <td class="total-blank" colspan="4"></td>
                 <td class="total-label">JUMLAH</td>
-                <td class="total-value nowrap">{{ $rupiah($nota->jumlah_total) }}</td>
+                <td class="total-value nowrap">{{ format_rupiah($nota->jumlah_total) }}</td>
             </tr>
         </tbody>
     </table>

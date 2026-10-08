@@ -124,12 +124,41 @@ class RecapExpenseService
     }
 
     /**
+     * Label modul sesuai role yang login (revisi klien).
+     *
+     * Admin menyebut modul ini "Kas Kantor"; super admin (dan role lain)
+     * tetap "Rekap Pengeluaran". Dipakai untuk judul halaman, tombol, modal,
+     * pesan flash, dan nama file export.
+     *
+     * @return string
+     */
+    public function getRecapLabel(): string
+    {
+        return auth()->user()?->isAdmin() ? 'Kas Kantor' : 'Rekap Pengeluaran';
+    }
+
+    /**
+     * Apakah role yang login memakai nomor faktur.
+     *
+     * Admin (Kas Kantor) tidak memakai kolom FAKTUR sama sekali (layar maupun
+     * export), sehingga nomor faktur tidak di-generate untuk datanya.
+     *
+     * @return bool
+     */
+    public function usesInvoiceNumber(): bool
+    {
+        return !(auth()->user()?->isAdmin() ?? false);
+    }
+
+    /**
      * Membuat rekap pengeluaran baru dari input manual user.
      *
      * Logika INCOME vs EXPENSE (ditentukan dari tipe kategori transaksi):
-     * - Kategori INCOME: expense_amount dipindah ke income_amount, dan
-     *   invoice_number digenerate (format {333+n}/{590+n}/div.produksi/{146+n}).
-     * - Kategori selain INCOME (EXPENSE): income_amount null, expense_amount dipakai.
+     * - Kategori INCOME (uang masuk): expense_amount dipindah ke income_amount,
+     *   dan invoice_number digenerate (format {333+n}/{590+n}/div.produksi/{146+n}).
+     * - Kategori selain INCOME (uang keluar): income_amount null, expense_amount
+     *   dipakai, dan TIDAK punya nomor faktur (invoice_number null).
+     * - Role admin (Kas Kantor) tidak memakai nomor faktur sama sekali.
      *
      * @param  array<string, mixed> $data  Data yang sudah validasi dari FormRequest
      * @return \App\Models\Report\ExpenseRecap
@@ -141,10 +170,11 @@ class RecapExpenseService
         if ($category && $category->type === 'INCOME') {
             $data['income_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
             $data['expense_amount'] = null;
-            $data['invoice_number'] = $this->generateIncomeInvoiceNumber();
+            $data['invoice_number'] = $this->usesInvoiceNumber() ? $this->generateIncomeInvoiceNumber() : null;
         } else {
             $data['income_amount'] = null;
             $data['expense_amount'] = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
+            $data['invoice_number'] = null;
         }
 
         $data['created_by'] = auth()->id();
@@ -160,10 +190,13 @@ class RecapExpenseService
      * Mengupdate rekap pengeluaran yang sudah ada.
      *
      * Logika INCOME vs EXPENSE (ditentukan dari tipe kategori transaksi):
-     * - Kategori INCOME: expense_amount dipindah ke income_amount, dan jika record
-     *   sebelumnya bukan pemasukan maka invoice_number digenerate (format
-     *   {333+n}/{590+n}/div.produksi/{146+n}).
-     * - Kategori selain INCOME (EXPENSE): income_amount null, expense_amount dipakai.
+     * - Kategori INCOME (uang masuk): expense_amount dipindah ke income_amount.
+     *   Nomor faktur uang masuk yang sudah ada dipertahankan (tidak bisa diubah
+     *   dari form); bila record sebelumnya uang keluar atau belum punya nomor
+     *   faktur, invoice_number digenerate (format {333+n}/{590+n}/div.produksi/{146+n}).
+     * - Kategori selain INCOME (uang keluar): income_amount null, expense_amount
+     *   dipakai, dan nomor faktur dikosongkan.
+     * - Role admin (Kas Kantor) tidak memakai nomor faktur: nilai lama dibiarkan.
      *
      * @param  \App\Models\Report\ExpenseRecap $expenseRecap  Model yang akan diupdate
      * @param  array<string, mixed>            $data          Data yang sudah validasi dari FormRequest
@@ -180,16 +213,25 @@ class RecapExpenseService
         $category = TransactionCategory::find($data['transaction_category_id']);
         $amount = InputNormalizer::normalizeCurrency($data['expense_amount'] ?? null);
 
+        // Nomor faktur tidak pernah diambil dari input form (read-only / disembunyikan)
+        unset($data['invoice_number']);
+
         if ($category && $category->type === 'INCOME') {
             $data['income_amount'] = $amount;
             $data['expense_amount'] = null;
 
-            if ($expenseRecap->income_amount === null) {
+            // Generate bila sebelumnya bukan uang masuk atau belum punya nomor faktur
+            $wasIncome = (int) $expenseRecap->income_amount > 0;
+            if ($this->usesInvoiceNumber() && (!$wasIncome || blank($expenseRecap->invoice_number))) {
                 $data['invoice_number'] = $this->generateIncomeInvoiceNumber();
             }
         } else {
             $data['income_amount'] = null;
             $data['expense_amount'] = $amount;
+
+            if ($this->usesInvoiceNumber()) {
+                $data['invoice_number'] = null;
+            }
         }
 
         $updated = $expenseRecap->update($data);
@@ -264,7 +306,9 @@ class RecapExpenseService
      *
      * Format: {333+n}/{590+n}/div.produksi/{146+n} — tiga angka berjalan sekaligus.
      * n = urutan record uang masuk yang sudah ada. Mencari record income terakhir
-     * lalu parse ketiga angkanya via regex, increment semuanya.
+     * yang punya nomor faktur berformat tersebut (record tanpa faktur, mis. milik
+     * admin/Kas Kantor, dilewati agar urutan tidak kembali ke awal), lalu parse
+     * ketiga angkanya via regex dan increment semuanya.
      *
      * Contoh:
      * - Data ke-1: 333/590/div.produksi/146
@@ -277,6 +321,7 @@ class RecapExpenseService
     {
         $lastIncome = ExpenseRecap::whereNotNull('income_amount')
             ->where('income_amount', '>', 0)
+            ->where('invoice_number', 'like', '%/div.produksi/%')
             ->orderByDesc('created_at')
             ->first();
 

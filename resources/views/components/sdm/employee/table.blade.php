@@ -33,8 +33,8 @@
                                 <td class="p-2">{{ $employee->name }}</td>
                                 <td class="p-2">{{ $employee->position ?? '-' }}</td>
                                 <td class="p-2 text-center">
-                                    <span class="px-2 py-1 bg-primary-light text-primary text-xs rounded-md">
-                                        {{ $employee->employment_type === 'bulanan' ? 'Bulanan' : 'Harian' }}
+                                    <span class="px-2 py-1 bg-primary-light text-primary text-xs rounded-md whitespace-nowrap">
+                                        {{ $employee->employment_type === 'bulanan' ? 'KARYAWAN KANTOR' : 'TUKANG PROYEK' }}
                                     </span>
                                 </td>
                                 <td class="p-2 text-center">

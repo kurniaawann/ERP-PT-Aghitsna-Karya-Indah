@@ -65,7 +65,7 @@
         .info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 0;
         }
 
         .info-table td {
@@ -73,15 +73,17 @@
             padding: 0;
         }
 
+        /* Kop surat (revisi klien): nama perusahaan 12pt, alamat/telp/email 11pt */
         .company-info {
             width: 60%;
+            font-size: 11pt;
             line-height: 1.3;
         }
 
         .company-name {
-            font-size: 16pt;
+            font-size: 12pt;
             font-weight: bold;
-            line-height: 1.2;
+            line-height: 1.25;
             margin-bottom: 2px;
         }
 
@@ -110,12 +112,14 @@
         }
 
         /* ── Recipient & Opening ─────────────────────────────── */
-        /* Kepada Yth tidak di-bold */
+        /* Kepada Yth tidak di-bold. Tepat 1 baris kosong (= 1 baris teks 12pt x 1.25 = 15pt)
+           sebelum "Kepada Yth :" dan sebelum "Dengan Hormat," (revisi klien) */
         .recipient-block {
-            margin-bottom: 8px;
+            margin-top: 15pt;
         }
 
         .opening-text {
+            margin-top: 15pt;
             margin-bottom: 6px;
             text-align: justify;
         }
@@ -169,8 +173,14 @@
         }
 
         .payment-info {
-            margin: 8px 0;
+            margin: 8px 0 0 0;
             line-height: 1.4;
+        }
+
+        /* Kalimat penutup: 2 baris kosong di atasnya (2 x 15pt, revisi klien) */
+        .closing {
+            margin: 30pt 0 8px 0;
+            text-align: justify;
         }
 
         .bank-table {
@@ -217,14 +227,14 @@
             display: table;
         }
 
-         /* Stempel LUNAS di Paling Depan & Transparan */
+        /* Stempel LUNAS (watermark_lunas.jpeg, rasio ±3:1) di paling depan, miring & di tengah halaman.
+           Dibuat lebih transparan (revisi klien) agar teks di belakangnya mudah dibaca. */
         .stamp-lunas-overlay {
             position: fixed;
-            top: 28%;
-            left: 10%;
-            width: 80%;
-            max-width: 550px;
-            opacity: 0.35; /* Tingkat transparan (0.3 - 0.4 agar teks dibelakangnya tetap terbaca) */
+            top: 33%;
+            left: 12%;
+            width: 76%;
+            opacity: 0.18;
             transform: rotate(-25deg);
             -webkit-transform: rotate(-25deg);
             z-index: 9999; /* Memastikan berada di PALING DEPAN */
@@ -235,18 +245,28 @@
 
 <body>
     @if ($invoice->isFullyPaid())
-        <img src="{{ public_path('images/status_paid_proyek_and_item.jpeg') }}" class="stamp-lunas-overlay" alt="LUNAS">
+        <img src="{{ public_path('images/watermark_lunas.jpeg') }}" class="stamp-lunas-overlay" alt="LUNAS">
     @endif
 
     @php
         $items = is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items;
+
+        // % per item opsional (null bila kosong): Jumlah dihitung InvoiceProyek::itemAmount()
+        // (persentase kosong → Jumlah = Harga), sama dengan perhitungan total di service.
+        $hasPersentase = fn ($item) => isset($item['persentase']) && $item['persentase'] !== '';
+        $itemJumlah = fn ($item) => \App\Models\Finance\InvoiceProyek::itemAmount(is_array($item) ? $item : []);
+
         $totalAmount = 0;
         foreach ($items as $item) {
-            $totalAmount += floatval($item['harga'] ?? 0) * (floatval($item['persentase'] ?? 0) / 100);
+            $totalAmount += $itemJumlah($item);
         }
 
+        $discountAmount = ($invoice->discount_value && $invoice->discount_value > 0)
+            ? $invoice->getDiscountAmount($totalAmount)
+            : 0;
         $ppnAmount = $invoice->getPpnAmount();
-        $finalAmount = $totalAmount + $ppnAmount;
+        // Jumlah akhir (baris paling bawah & terbilang) = total item setelah discount + PPN
+        $finalAmount = $totalAmount - $discountAmount + $ppnAmount;
 
         $selectedAccountIds = is_string($invoice->selected_payment_accounts)
             ? json_decode($invoice->selected_payment_accounts, true)
@@ -306,7 +326,7 @@
     {{-- ═══ PENERIMA SURAT ═══════════════════════════════════════════════════════ --}}
     <div class="recipient-block">
         Kepada Yth :<br>
-        Bpk. {{ $invoice->recipient }}<br>
+        {{ $invoice->recipient }}<br>
         Di Tempat
     </div>
 
@@ -314,7 +334,7 @@
     <div class="opening-text">
         Dengan Hormat,<br>
         @if ($invoice->project_description)
-            Dengan ini kami sampaikan Invoice untuk pekerjaan {{ $invoice->project_description }}, Lokasi {{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}, sebagai berikut :
+            Dengan ini kami sampaikan invoice untuk pekerjaan {{ $invoice->project_description }}, Lokasi {{ $invoice->location ?? $invoice->quotation?->location ?? '-' }}, sebagai berikut :
         @else
             @if ($invoice->location ?? $invoice->quotation?->location)
                 Dengan ini kami sampaikan invoice sebagai berikut : Lokasi {{ $invoice->location ?? $invoice->quotation?->location }}
@@ -337,66 +357,60 @@
         </thead>
         <tbody>
             @foreach ($items as $idx => $item)
-                @php
-                    $harga = floatval($item['harga'] ?? 0);
-                    $persentase = floatval($item['persentase'] ?? 0);
-                    $jumlah = $harga * ($persentase / 100);
-                @endphp
                 <tr>
                     <td class="c">{{ $idx + 1 }}.</td>
                     <td class="l">{{ $item['deskripsi'] ?? '-' }}</td>
-                    <td class="c">Rp {{ number_format($harga, 0, ',', '.') }}</td>
-                    <td class="c">{{ number_format($persentase, 2, ',', '.') }}%</td>
-                    <td class="c">Rp {{ number_format($jumlah, 0, ',', '.') }}</td>
+                    <td class="c">{{ format_rupiah($item['harga'] ?? 0) }}</td>
+                    {{-- % tanpa nol di belakang koma (25%, 12,5%); kosong bila tidak diisi --}}
+                    <td class="c">{{ $hasPersentase($item) ? format_persen($item['persentase']) . '%' : '' }}</td>
+                    <td class="c">{{ format_rupiah($itemJumlah($item)) }}</td>
                 </tr>
             @endforeach
 
-            {{-- Baris Jumlah --}}
-            <tr>
-                <td colspan="2" class="empty-cell"></td>
-                <td colspan="2" class="summary-cell">Jumlah</td>
-                <td class="summary-cell">Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
-            </tr>
-
-            {{-- Baris PPN --}}
-            @if ($ppnAmount > 0)
+            {{-- Ringkasan (revisi klien): [Discount] → PPN → Pembayaran Ke-n → Jumlah (paling bawah) --}}
+            @if ($discountAmount > 0)
                 <tr>
                     <td colspan="2" class="empty-cell"></td>
-                    <td colspan="2" class="summary-cell">PPN ({{ rtrim(rtrim(number_format((float) $invoice->ppn, 2, ',', '.'), '0'), ',') }}%)</td>
-                    <td class="summary-cell">Rp {{ number_format($ppnAmount, 0, ',', '.') }}</td>
+                    <td colspan="2" class="summary-cell">Discount{{ $invoice->discount_type === 'percentage' ? ' (' . format_persen($invoice->discount_value) . '%)' : '' }}</td>
+                    <td class="summary-cell">{{ format_rupiah($discountAmount) }}</td>
                 </tr>
             @endif
 
-            {{-- Baris Total --}}
+            {{-- Baris PPN selalu tampil, walau PPN kosong --}}
             <tr>
                 <td colspan="2" class="empty-cell"></td>
-                <td colspan="2" class="summary-cell">Total</td>
-                <td class="summary-cell">Rp {{ number_format($finalAmount, 0, ',', '.') }}</td>
+                <td colspan="2" class="summary-cell">{{ $ppnAmount > 0 ? 'PPN (' . format_persen($invoice->ppn) . '%)' : 'PPN' }}</td>
+                <td class="summary-cell">{{ format_rupiah($ppnAmount) }}</td>
             </tr>
 
             {{-- Baris Cicilan --}}
-            @if ($invoice->payment_installments)
-                @php
-                    $paymentInstallments = is_string($invoice->payment_installments)
-                        ? json_decode($invoice->payment_installments, true)
-                        : $invoice->payment_installments;
-                @endphp
-                @if (is_array($paymentInstallments) && count($paymentInstallments) > 0)
-                    @foreach ($paymentInstallments as $index => $payment)
-                        <tr>
-                            <td colspan="2" class="empty-cell"></td>
-                            <td colspan="2" class="summary-cell">{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</td>
-                            <td class="summary-cell">Rp {{ number_format($payment['amount'] ?? 0, 0, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
-                @endif
+            @php
+                $paymentInstallments = is_string($invoice->payment_installments)
+                    ? json_decode($invoice->payment_installments, true)
+                    : $invoice->payment_installments;
+            @endphp
+            @if (is_array($paymentInstallments) && count($paymentInstallments) > 0)
+                @foreach ($paymentInstallments as $index => $payment)
+                    <tr>
+                        <td colspan="2" class="empty-cell"></td>
+                        <td colspan="2" class="summary-cell">{{ $payment['label'] ?? 'Pembayaran ' . ($index + 1) }}</td>
+                        <td class="summary-cell">{{ format_rupiah($payment['amount'] ?? 0) }}</td>
+                    </tr>
+                @endforeach
             @endif
+
+            {{-- Baris Jumlah (akhir): item setelah discount + PPN --}}
+            <tr>
+                <td colspan="2" class="empty-cell"></td>
+                <td colspan="2" class="summary-cell">Jumlah</td>
+                <td class="summary-cell">{{ format_rupiah($finalAmount) }}</td>
+            </tr>
         </tbody>
     </table>
 
     {{-- ═══ TERBILANG ═══════════════════════════════════════════════════════════ --}}
     <div class="terbilang">
-        Terbilang : <em>{{ ucwords(terbilang($finalAmount)) . ' Rupiah' }}</em>
+        Terbilang : <em>{{ ucwords(terbilang(round($finalAmount))) . ' Rupiah' }}</em>
     </div>
 
     {{-- ═══ INFO PEMBAYARAN ═══════════════════════════════════════════════════════ --}}
@@ -416,8 +430,8 @@
     @endif
 
     {{-- ═══ PENUTUP ═════════════════════════════════════════════════════════════ --}}
-    <div class="closing" style="margin: 8px 0; text-align: justify;">
-        Demikian Invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.
+    <div class="closing">
+        Demikian invoice ini kami sampaikan atas perhatian dan kerja samanya kami ucapkan terimakasih.
     </div>
 
     {{-- ═══ TANDA TANGAN ═════════════════════════════════════════════════════════ --}}

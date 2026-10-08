@@ -26,7 +26,7 @@
         @if ($rekapOptions->isEmpty())
             <p class="text-xs text-error mt-1">
                 Belum ada Rekap Proyek. Buat rekap terlebih dahulu melalui menu
-                <a href="{{ route('recap-proyek.index') }}" target="_blank" class="underline">Rekap Proyek</a>.
+                <a href="{{ route('recap-proyek.index') }}" class="underline">Rekap Proyek</a>.
             </p>
         @endif
     </div>

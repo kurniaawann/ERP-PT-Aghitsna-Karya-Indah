@@ -169,8 +169,8 @@ class CementReportExport implements FromCollection, WithHeadings, WithStyles, Wi
         $sheet->getStyle('E3:E' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('H3:H' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Format Angka & Mata Uang Rp (Menggunakan format bawaan Excel)
-        $currencyFormat = '"Rp"#,##0';
+        // Format Angka & Mata Uang "Rp. 50.000" (format bawaan Excel; profit minus -> "Rp. -50.000")
+        $currencyFormat = '"Rp. "#,##0;"Rp. "-#,##0';
         $numberFormat = '#,##0';
         $sheet->getStyle('D3:D' . $highestRow)->getNumberFormat()->setFormatCode($numberFormat);
         $sheet->getStyle('F3:G' . $highestRow)->getNumberFormat()->setFormatCode($currencyFormat);

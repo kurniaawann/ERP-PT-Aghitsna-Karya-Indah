@@ -86,7 +86,9 @@
     @if ($recap->hasDesignFile())
         <div class="mb-3 p-3 border rounded bg-blue-50">
             <label class="block text-text-primary mb-1">File Saat Ini</label>
-            <a href="{{ asset('storage/' . $recap->design_file) }}" target="_blank"
+            {{-- Pratinjau file design di dalam halaman (tanpa tab baru) --}}
+            <a href="{{ asset('storage/' . $recap->design_file) }}"
+                onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('File Design — ' . $recap->project_name), downloadName: @js($recap->design_file_name ?: basename($recap->design_file)) })"
                 class="text-blue-600 hover:underline text-sm">{{ $recap->design_file_name }}</a>
         </div>
     @endif

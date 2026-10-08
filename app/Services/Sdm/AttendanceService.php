@@ -19,12 +19,14 @@ use Illuminate\Support\Facades\Log;
  * Setiap perubahan data absensi (tambah/ubah/hapus) memicu penghitungan
  * ulang otomatis payroll draft yang periodenya menimpa tanggal yang berubah,
  * sehingga snapshot payroll (hari masuk, lembur, potongan, gaji bersih)
- * selalu sinkron dengan data absensi terkini.
+ * selalu sinkron dengan data absensi terkini. Slip gaji draft karyawan
+ * kantor ikut dihitung ulang karena lembur (status 'lembur') tampil di slip.
  */
 class AttendanceService
 {
     public function __construct(
-        private readonly PayrollService $payrollService
+        private readonly PayrollService $payrollService,
+        private readonly SalarySlipService $salarySlipService
     ) {}
     /**
      * Mendapatkan daftar absensi dengan paginasi, pencarian, dan eager loading.
@@ -373,6 +375,9 @@ class AttendanceService
                 Carbon::parse(min($dates)),
                 Carbon::parse(max($dates))
             );
+
+            // Lembur yang ikut terhapus mengubah penerimaan slip gaji draft.
+            $this->salarySlipService->recalculateDraftSlipsForPeriod($employeeId, Carbon::parse(min($dates)));
         }
 
         return $deleted;
@@ -470,6 +475,9 @@ class AttendanceService
         $date = Carbon::parse($attendanceDate);
 
         $this->payrollService->recalculateForAttendanceRange($employeeId, $date, $date);
+
+        // Perubahan status lembur mengubah penerimaan slip gaji draft.
+        $this->salarySlipService->recalculateDraftSlipsForPeriod($employeeId, $date);
     }
 
     /**

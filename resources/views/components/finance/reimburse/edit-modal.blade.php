@@ -48,16 +48,6 @@
         <p class="text-xs text-text-secondary mt-1">Total keseluruhan biaya yang akan direimbursement</p>
     </div>
 
-    {{-- Field: Tanggal Jatuh Tempo --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Jatuh Tempo <span class="text-error">*</span></label>
-        <input type="date" name="due_date"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-            oninvalid="this.setCustomValidity('Tanggal jatuh tempo tidak boleh kosong')"
-            oninput="this.setCustomValidity('')" value="{{ $reimburse->due_date->format('Y-m-d') }}">
-        <p class="text-xs text-text-secondary mt-1">Tanggal target pencairan/pembayaran reimburse</p>
-    </div>
-
     {{-- Field: Catatan (Opsional) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>
@@ -71,7 +61,9 @@
         @if ($reimburse->proof_file)
             <div class="mb-2 flex items-center gap-2 text-sm">
                 <i class="fa-solid fa-paperclip text-text-secondary"></i>
-                <a href="{{ $reimburse->proof_url }}" target="_blank"
+                {{-- Pratinjau lampiran di dalam halaman (tanpa tab baru) --}}
+                <a href="{{ $reimburse->proof_url }}"
+                    onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti Reimburse ' . $reimburse->reimburse_code), downloadName: @js($reimburse->proof_file_name ?: basename($reimburse->proof_file)) })"
                     class="text-primary underline hover:text-primary-hover">
                     {{ $reimburse->proof_file_name ?: 'Lihat Lampiran' }}
                 </a>

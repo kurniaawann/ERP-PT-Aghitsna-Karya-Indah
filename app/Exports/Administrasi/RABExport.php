@@ -103,7 +103,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                 $sheet->setCellValue('F3', ': ' . $rab->rab_number);
 
                 $sheet->setCellValue('E4', 'Tanggal');
-                $sheet->setCellValue('F4', ': ' . Carbon::parse($rab->date)->format('d F Y'));
+                $sheet->setCellValue('F4', ': ' . Carbon::parse($rab->date)->translatedFormat('d F Y'));
 
                 $sheet->getStyle('A1:G6')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THICK);
 
@@ -235,8 +235,8 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                             $sheet->setCellValue("B{$currentRow}", chr(96 + (int) $item->letter_order) . '. ' . $item->item_description);
                             $sheet->setCellValue("C{$currentRow}", $itemVolume !== null ? $itemVolume : '');
                             $sheet->setCellValue("D{$currentRow}", $itemUnit ?: '');
-                            $sheet->setCellValue("E{$currentRow}", $itemPrice > 0 ? 'Rp ' . number_format($itemPrice, 0, ',', '.') : '');
-                            $sheet->setCellValue("F{$currentRow}", $itemSubtotal > 0 ? 'Rp ' . number_format($itemSubtotal, 0, ',', '.') : '');
+                            $sheet->setCellValue("E{$currentRow}", $itemPrice > 0 ? format_rupiah($itemPrice) : '');
+                            $sheet->setCellValue("F{$currentRow}", $itemSubtotal > 0 ? format_rupiah($itemSubtotal) : '');
                             $sheet->setCellValue("G{$currentRow}", '');
 
                             $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
@@ -261,7 +261,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
 
                         $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                         $sheet->setCellValue("A{$currentRow}", 'Subtotal');
-                        $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($subcategoryTotal, 0, ',', '.'));
+                        $sheet->setCellValue("G{$currentRow}", format_rupiah($subcategoryTotal));
                         $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                             'font' => ['bold' => true],
                             'fill' => [
@@ -280,7 +280,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                     if ($category->subcategories->count() > 0) {
                         $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                         $sheet->setCellValue("A{$currentRow}", 'Subtotal Kategori');
-                        $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($categoryTotal, 0, ',', '.'));
+                        $sheet->setCellValue("G{$currentRow}", format_rupiah($categoryTotal));
                         $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                             'font' => ['bold' => true],
                             'fill' => [
@@ -304,7 +304,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'I. Jumlah Anggaran Bangunan');
-                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($grandTotal, 0, ',', '.'));
+                $sheet->setCellValue("G{$currentRow}", format_rupiah($grandTotal));
                 $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'borders' => [
@@ -316,7 +316,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'II. Biaya Lain-Lain');
-                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($miscCostsTotal, 0, ',', '.'));
+                $sheet->setCellValue("G{$currentRow}", format_rupiah($miscCostsTotal));
                 $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'borders' => [
@@ -329,7 +329,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", '    ' . $miscCost->item_order . '. ' . $miscCost->item_name);
-                    $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($miscCost->amount, 0, ',', '.'));
+                    $sheet->setCellValue("G{$currentRow}", format_rupiah($miscCost->amount));
                     $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                         'borders' => [
                             'allBorders' => ['borderStyle' => Border::BORDER_THIN],
@@ -341,7 +341,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                 $currentRow++;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $sheet->setCellValue("A{$currentRow}", 'TOTAL ANGGARAN BIAYA');
-                $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($totalAnggaranBiaya, 0, ',', '.'));
+                $sheet->setCellValue("G{$currentRow}", format_rupiah($totalAnggaranBiaya));
                 $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
@@ -375,7 +375,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", 'UANG MASUK (DP)');
-                    $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($incomingPayment, 0, ',', '.'));
+                    $sheet->setCellValue("G{$currentRow}", format_rupiah($incomingPayment));
                     $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => [
@@ -391,7 +391,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", 'SISA PEMBAYARAN');
-                    $sheet->setCellValue("G{$currentRow}", 'Rp ' . number_format($sisaPembayaran, 0, ',', '.'));
+                    $sheet->setCellValue("G{$currentRow}", format_rupiah($sisaPembayaran));
                     $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => [

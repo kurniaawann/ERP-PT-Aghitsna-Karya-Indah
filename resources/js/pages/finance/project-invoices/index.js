@@ -10,6 +10,11 @@
  * - Submit form dengan serialisasi item ke JSON + proteksi submit ganda
  * - Hapus massal & hapus tunggal
  * - Checkbox select all dan filter URL bulan/tahun
+ * - No Invoice admin: user mengetik nomor urut saja; preview nomor lengkap
+ *   {nomor}/AKI/{bulan romawi}/{yyyy} dari Tanggal Invoice + cek nomor dobel
+ * - Persentase item admin opsional (kosong → Jumlah = Harga)
+ * - Tautan Rekap Proyek (opsional): prefill field kosong + ringkasan nilai
+ *   proyek, sudah ditagih, invoice ini, dan sisa tagihan (live)
  *
  * Referensi backend: app/Services/Finance/ProyekInvoiceService.php
  */
@@ -125,10 +130,35 @@ function isAdminItemFormat() {
 }
 
 /**
+ * Ambil persentase item format admin (bersifat OPSIONAL).
+ *
+ * @param  {HTMLElement} row  Elemen baris (.item-row | .item-row-edit)
+ * @return {number|null} Nilai persentase, atau null bila field dikosongkan
+ */
+function getItemPercentage(row) {
+    const input = row?.querySelector('.item-persentase');
+    if (!input || String(input.value ?? '').trim() === '') return null;
+    return parseDecimalInput(input);
+}
+
+/**
+ * Cek persentase item admin: kosong (null) boleh; bila diisi harus > 0
+ * dan maksimal 100 (selaras validasi server).
+ *
+ * @param  {number|null} persentase
+ * @return {boolean}
+ */
+function isValidItemPercentage(persentase) {
+    return persentase === null || (persentase > 0 && persentase <= 100);
+}
+
+/**
  * Hitung jumlah (total) sebuah baris item.
  *
- * Format admin: harga x (persentase / 100)
+ * Format admin: harga x (persentase / 100); persentase kosong → harga
  * Format superadmin: volume x harga
+ *
+ * Referensi backend: InvoiceProyek::itemAmount().
  *
  * @param  {HTMLElement} row  Elemen baris (.item-row | .item-row-edit)
  * @return {number} Total baris
@@ -138,8 +168,8 @@ function getItemRowTotal(row) {
     const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
 
     if (isAdminItemFormat()) {
-        const persentase = parseDecimalInput(row.querySelector('.item-persentase'));
-        return (harga * persentase) / 100;
+        const persentase = getItemPercentage(row);
+        return persentase === null ? harga : (harga * persentase) / 100;
     }
 
     const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
@@ -373,6 +403,9 @@ function calculateDiscount() {
     // Hitung ulang DP berdasarkan total setelah discount
     calculateDP();
     calculatePPN();
+
+    // Perbarui ringkasan Rekap Proyek (nilai invoice ini berubah)
+    refreshRecapSummary(document.getElementById('addModal'));
 }
 
 /**
@@ -603,6 +636,9 @@ function calculateDiscountEdit(invoiceNumber) {
 
     calculateDPEdit(invoiceNumber);
     calculatePPNEdit(invoiceNumber);
+
+    // Perbarui ringkasan Rekap Proyek (nilai invoice ini berubah)
+    refreshRecapSummary(modal);
 }
 
 /**
@@ -740,6 +776,318 @@ function calculatePPNEdit(invoiceNumber) {
     if (ppnSummaryEl) ppnSummaryEl.classList.toggle('hidden', !(ppn > 0));
 }
 
+// ==========================================
+// NO INVOICE ADMIN ({nomor}/AKI/{bulan romawi}/{yyyy})
+// ==========================================
+
+/** Pola nomor invoice admin format baru (selaras InvoiceProyek::ADMIN_NUMBER_PATTERN). */
+const ADMIN_NUMBER_PATTERN = /^(\d+)\/AKI\/([IVXLCDM]+)\/(\d{4})$/;
+
+let takenAdminNumbersCache = null;
+
+/**
+ * Daftar nomor invoice admin format baru yang sudah dipakai.
+ *
+ * Sumber: <script type="application/json" id="proyek-invoice-taken-numbers">
+ * yang dirender halaman (ProyekInvoiceService::getTakenAdminInvoiceNumbers).
+ *
+ * @return {string[]}
+ */
+function getTakenAdminNumbers() {
+    if (takenAdminNumbersCache !== null) return takenAdminNumbersCache;
+
+    try {
+        const raw = document.getElementById('proyek-invoice-taken-numbers')?.textContent || '[]';
+        const parsed = JSON.parse(raw);
+        takenAdminNumbersCache = Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+        takenAdminNumbersCache = [];
+    }
+
+    return takenAdminNumbersCache;
+}
+
+/**
+ * Konversi angka 1-12 (bulan) ke numerals Romawi.
+ *
+ * @param  {number} number
+ * @return {string}
+ */
+function toRoman(number) {
+    const map = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
+        [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+    let result = '';
+    let rest = number;
+    map.forEach(([value, symbol]) => {
+        while (rest >= value) {
+            result += symbol;
+            rest -= value;
+        }
+    });
+    return result;
+}
+
+/**
+ * Pecah nilai input tanggal (YYYY-MM-DD) menjadi bulan romawi & tahun.
+ *
+ * @param  {string} dateValue
+ * @return {{roman: string, year: string}|null}
+ */
+function parseInvoiceDateParts(dateValue) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateValue || ''));
+    if (!match) return null;
+    const month = parseInt(match[2], 10);
+    if (month < 1 || month > 12) return null;
+    return { roman: toRoman(month), year: match[1] };
+}
+
+/**
+ * Perbarui satu field No Invoice admin: preview nomor lengkap, saran nomor
+ * berikutnya, dan cek nomor dobel.
+ *
+ * Alur:
+ * 1. Nomor lengkap = {nomor urut}/AKI/{bulan romawi tgl invoice}/{tahun}.
+ * 2. Hint: nomor terbesar yang sudah dipakai pada tahun tsb + saran
+ *    nomor berikutnya (placeholder input pada modal tambah).
+ * 3. Nomor dobel → setCustomValidity agar submit diblok browser dengan
+ *    pesan yang jelas; pesan juga tampil di bawah input.
+ *
+ * Referensi backend: ProyekInvoiceService::composeAdminInvoiceNumber().
+ *
+ * @param {HTMLElement} field  Elemen [data-admin-number-field]
+ */
+function refreshAdminNumberField(field) {
+    const form = field.closest('form');
+    const seqInput = field.querySelector('.invoice-seq-input');
+    const dateInput = form?.querySelector('input[name="invoice_date"]');
+    const preview = field.querySelector('.invoice-number-preview');
+    const hint = field.querySelector('.invoice-number-hint');
+    const errorBox = field.querySelector('.invoice-number-error');
+    const errorText = field.querySelector('.invoice-number-error-text');
+    if (!seqInput) return;
+
+    const currentNumber = field.dataset.currentNumber || '';
+    const sequence = String(seqInput.value ?? '').trim();
+    const dateParts = parseInvoiceDateParts(dateInput?.value);
+    const fullNumber = sequence && dateParts ? `${sequence}/AKI/${dateParts.roman}/${dateParts.year}` : null;
+
+    if (preview) {
+        preview.textContent = `${sequence || '___'}/AKI/${dateParts ? dateParts.roman : '{bulan}'}/${dateParts ? dateParts.year : '{tahun}'}`;
+    }
+
+    // Saran nomor berikutnya berdasarkan nomor terbesar pada tahun yang sama
+    const year = dateParts ? dateParts.year : String(new Date().getFullYear());
+    let maxSequence = null;
+    let maxNumber = '';
+    let width = 3;
+    getTakenAdminNumbers().forEach(number => {
+        const match = ADMIN_NUMBER_PATTERN.exec(number);
+        if (!match || match[3] !== year || number === currentNumber) return;
+        const value = parseInt(match[1], 10);
+        if (maxSequence === null || value > maxSequence) {
+            maxSequence = value;
+            maxNumber = number;
+            width = Math.max(3, match[1].length);
+        }
+    });
+
+    if (hint) {
+        if (maxSequence !== null) {
+            const suggestion = String(maxSequence + 1).padStart(width, '0');
+            hint.textContent = `Nomor terakhir tahun ${year}: ${maxNumber} — saran nomor berikutnya: ${suggestion}`;
+            hint.classList.remove('hidden');
+            if (!currentNumber) seqInput.placeholder = `Contoh: ${suggestion}`;
+        } else {
+            hint.classList.add('hidden');
+        }
+    }
+
+    let message = '';
+    if (sequence && !/^\d+$/.test(sequence)) {
+        message = 'No invoice hanya boleh berisi angka (contoh 060).';
+    } else if (fullNumber && fullNumber !== currentNumber && getTakenAdminNumbers().includes(fullNumber)) {
+        message = `No invoice ${fullNumber} sudah digunakan. Silakan gunakan nomor lain.`;
+    }
+
+    seqInput.setCustomValidity(message);
+    if (errorText) errorText.textContent = message;
+    if (errorBox) errorBox.classList.toggle('hidden', !message);
+}
+
+/**
+ * Pasang listener untuk semua field No Invoice admin (modal tambah & edit):
+ * input nomor urut & perubahan Tanggal Invoice memicu refresh preview.
+ */
+function initAdminNumberFields() {
+    document.querySelectorAll('[data-admin-number-field]').forEach(field => {
+        const form = field.closest('form');
+        const seqInput = field.querySelector('.invoice-seq-input');
+        const dateInput = form?.querySelector('input[name="invoice_date"]');
+        const refresh = () => refreshAdminNumberField(field);
+
+        seqInput?.addEventListener('input', refresh);
+        dateInput?.addEventListener('input', refresh);
+        dateInput?.addEventListener('change', refresh);
+        refresh();
+    });
+}
+
+// ==========================================
+// TAUTAN REKAP PROYEK (OPSIONAL)
+// ==========================================
+
+/**
+ * Format angka ke Rupiah (dengan tanda minus bila negatif).
+ *
+ * @param  {number} value
+ * @return {string}
+ */
+function formatRupiah(value) {
+    const rounded = Math.round(value || 0);
+    return (rounded < 0 ? '-' : '') + 'Rp ' + Math.abs(rounded).toLocaleString('id-ID');
+}
+
+/**
+ * Nilai tagihan invoice pada sebuah form: total item setelah diskon,
+ * sebelum PPN (selaras InvoiceProyek::getBilledAmount()).
+ *
+ * @param  {HTMLElement} scope  Form / modal yang memuat item & diskon
+ * @return {number}
+ */
+function getFormBilledAmount(scope) {
+    if (!scope) return 0;
+
+    let baseTotal = 0;
+    scope.querySelectorAll('.item-row, .item-row-edit').forEach(row => {
+        baseTotal += getItemRowTotal(row);
+    });
+    baseTotal = Math.round(baseTotal);
+
+    const discountType = scope.querySelector('select[name="discount_type"]')?.value;
+    let discountValue = parseDecimalInput(scope.querySelector('input[name="discount_value"]'));
+    if (discountType === 'percentage') discountValue = Math.min(discountValue, 100);
+
+    let discountAmount = 0;
+    if (discountType && discountValue > 0) {
+        discountAmount = discountType === 'percentage'
+            ? Math.round((baseTotal * discountValue) / 100)
+            : Math.round(discountValue);
+    }
+    discountAmount = Math.min(discountAmount, baseTotal);
+
+    return Math.max(0, baseTotal - discountAmount);
+}
+
+/**
+ * Perbarui panel ringkasan Rekap Proyek di dalam sebuah modal.
+ *
+ * Alur:
+ * - Tanpa rekap terpilih → panel disembunyikan.
+ * - Sudah Ditagih = total invoice tertaut (data-billed) dikurangi nilai
+ *   invoice ini yang tersimpan bila rekapnya sama (modal edit), agar tidak
+ *   terhitung dua kali.
+ * - Sisa = Nilai Proyek − Sudah Ditagih − Invoice Ini; negatif → peringatan.
+ *
+ * @param {HTMLElement|null} container  Modal tambah / edit
+ */
+function refreshRecapSummary(container) {
+    if (!container) return;
+
+    container.querySelectorAll('[data-recap-picker]').forEach(picker => {
+        const select = picker.querySelector('.recap-select');
+        const summary = picker.querySelector('.recap-summary');
+        const option = select?.selectedOptions?.[0];
+
+        if (!summary) return;
+        if (!option || !option.value) {
+            summary.classList.add('hidden');
+            return;
+        }
+
+        const total = parseInt(option.dataset.total, 10) || 0;
+        let billed = parseInt(option.dataset.billed, 10) || 0;
+        if (picker.dataset.currentRecap && picker.dataset.currentRecap === option.value) {
+            billed -= parseInt(picker.dataset.currentBilled, 10) || 0;
+        }
+        billed = Math.max(0, billed);
+
+        const current = getFormBilledAmount(picker.closest('form') || container);
+        const remaining = total - billed - current;
+
+        summary.querySelector('.recap-summary-total').textContent = formatRupiah(total);
+        summary.querySelector('.recap-summary-billed').textContent = formatRupiah(billed);
+        summary.querySelector('.recap-summary-current').textContent = formatRupiah(current);
+
+        const remainingEl = summary.querySelector('.recap-summary-remaining');
+        remainingEl.textContent = formatRupiah(remaining);
+        remainingEl.classList.toggle('text-success', remaining >= 0);
+        remainingEl.classList.toggle('text-error', remaining < 0);
+
+        const overBox = summary.querySelector('.recap-summary-over');
+        const overText = summary.querySelector('.recap-summary-over-text');
+        if (overText) overText.textContent = `Total tagihan melebihi nilai proyek sebesar ${formatRupiah(Math.abs(remaining))}.`;
+        if (overBox) overBox.classList.toggle('hidden', remaining >= 0);
+
+        summary.classList.remove('hidden');
+    });
+}
+
+/**
+ * Prefill field yang masih kosong dari data rekap terpilih (tanpa mengunci).
+ *
+ * Field yang sebelumnya diisi otomatis (dan belum diubah user) ikut
+ * diganti saat user berpindah rekap; field yang diketik user tidak disentuh.
+ * - Superadmin: Nama Proyek ← nama proyek rekap.
+ * - Admin (tanpa field Nama Proyek): Deskripsi Proyek ← nama proyek rekap.
+ * - Lokasi ← lokasi rekap; Kepada ← penerima RAB sumber (bila ada).
+ *
+ * @param {HTMLFormElement} form
+ * @param {HTMLOptionElement} option  Opsi rekap terpilih
+ */
+function applyRecapPrefill(form, option) {
+    if (!form || !option || !option.value) return;
+
+    const prefill = (field, value) => {
+        if (!field || !value) return;
+        const current = String(field.value ?? '').trim();
+        const wasAutofilled = field.dataset.recapAutofill !== undefined && current === field.dataset.recapAutofill;
+        if (current !== '' && !wasAutofilled) return;
+
+        field.value = value;
+        field.dataset.recapAutofill = value;
+        field.setCustomValidity?.('');
+    };
+
+    const projectName = option.dataset.projectName || '';
+    const proyekField = form.querySelector('[name="proyek"]');
+    if (proyekField) {
+        prefill(proyekField, projectName);
+    } else {
+        prefill(form.querySelector('[name="project_description"]'), projectName);
+    }
+    prefill(form.querySelector('[name="location"]'), option.dataset.location || '');
+    prefill(form.querySelector('[name="recipient"]'), option.dataset.recipient || '');
+}
+
+/**
+ * Pasang listener pilihan Rekap Proyek pada modal tambah & edit, lalu
+ * tampilkan ringkasan awal (modal edit yang sudah tertaut).
+ */
+function initRecapPickers() {
+    document.querySelectorAll('[data-recap-picker]').forEach(picker => {
+        const select = picker.querySelector('.recap-select');
+        const container = picker.closest('[id^="editModal-"], #addModal');
+        if (!select) return;
+
+        select.addEventListener('change', () => {
+            applyRecapPrefill(picker.closest('form'), select.selectedOptions?.[0]);
+            refreshRecapSummary(container);
+        });
+
+        refreshRecapSummary(container);
+    });
+}
+
 // Ekspos ke window untuk handler inline Blade
 window.calculateRowTotal = calculateRowTotal;
 window.calculateRowTotalEdit = calculateRowTotalEdit;
@@ -749,6 +1097,26 @@ window.calculatePPN = calculatePPN;
 window.calculateDiscountEdit = calculateDiscountEdit;
 window.calculateDPEdit = calculateDPEdit;
 window.calculatePPNEdit = calculatePPNEdit;
+
+// ==========================================
+// PESAN ERROR ITEM
+// ==========================================
+
+const DEFAULT_ITEMS_ERROR_MESSAGE = 'Minimal harus ada 1 item dalam invoice dengan data lengkap';
+const PERCENTAGE_ERROR_MESSAGE = 'Persentase item harus lebih dari 0 dan maksimal 100, atau dikosongkan (Jumlah = Harga)';
+
+/**
+ * Tampilkan kotak error item dengan pesan tertentu.
+ *
+ * @param {HTMLElement|null} errorBox  #items-error / .items-error-edit
+ * @param {string} message
+ */
+function showItemsError(errorBox, message) {
+    if (!errorBox) return;
+    const textEl = errorBox.querySelector('span');
+    if (textEl) textEl.textContent = message;
+    errorBox.classList.remove('hidden');
+}
 
 // ==========================================
 // VALIDASI REKENING PEMBAYARAN
@@ -928,8 +1296,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <input type="text" inputmode="decimal" class="item-persentase border rounded p-2 w-full"
-                        placeholder="% *" required oninput="calculateRowTotal(this)"
-                        oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                        placeholder="% (opsional)" title="Kosongkan bila Jumlah = Harga"
+                        oninput="formatDecimalInput(this); calculateRowTotal(this)">
                     <div class="flex items-center">
                         <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                     </div>
@@ -1052,9 +1420,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <input type="text" inputmode="decimal" name="items[${index}][persentase]"
-                        class="item-persentase border rounded p-2 w-full" placeholder="% *" required
-                        oninput="calculateRowTotalEdit(this, '${invoiceNumber}')"
-                        oninvalid="this.setCustomValidity('Persentase tidak boleh kosong')">
+                        class="item-persentase border rounded p-2 w-full" placeholder="% (opsional)"
+                        title="Kosongkan bila Jumlah = Harga"
+                        oninput="formatDecimalInput(this); calculateRowTotalEdit(this, '${invoiceNumber}')">
                     <div class="flex items-center">
                         <span class="item-total text-sm font-semibold text-primary">Rp 0</span>
                     </div>
@@ -1204,14 +1572,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Serialisasi items
                 const items = [];
                 const itemRows = this.querySelectorAll('.item-row');
+                let hasInvalidPercentage = false;
 
                 itemRows.forEach(row => {
                     if (isAdminItemFormat()) {
                         const deskripsi = row.querySelector('.item-deskripsi')?.value || '';
                         const harga = parseCurrencyInput(row.querySelector('.item-harga')?.value);
-                        const persentase = parseDecimalInput(row.querySelector('.item-persentase'));
+                        // Persentase opsional: kosong → null (Jumlah = Harga)
+                        const persentase = getItemPercentage(row);
 
-                        if (deskripsi && !isNaN(harga) && harga > 0 && !isNaN(persentase) && persentase > 0) {
+                        if (!isValidItemPercentage(persentase)) {
+                            hasInvalidPercentage = true;
+                            return;
+                        }
+
+                        if (deskripsi && !isNaN(harga) && harga > 0) {
                             items.push({ deskripsi, harga, persentase });
                         }
                         return;
@@ -1231,10 +1606,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
-                if (items.length === 0) {
+                if (hasInvalidPercentage || items.length === 0) {
                     e.preventDefault();
-                    const itemsError = this.querySelector('#items-error');
-                    if (itemsError) itemsError.classList.remove('hidden');
+                    showItemsError(this.querySelector('#items-error'), hasInvalidPercentage
+                        ? PERCENTAGE_ERROR_MESSAGE
+                        : DEFAULT_ITEMS_ERROR_MESSAGE);
                     return false;
                 }
 
@@ -1279,8 +1655,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 const editItems = this.querySelectorAll('.item-row-edit');
                 if (editItems.length === 0) {
                     e.preventDefault();
-                    const errorDiv = this.querySelector('.items-error-edit');
-                    if (errorDiv) errorDiv.classList.remove('hidden');
+                    showItemsError(this.querySelector('.items-error-edit'), DEFAULT_ITEMS_ERROR_MESSAGE);
+                    return false;
+                }
+
+                // Persentase item admin opsional, tapi bila diisi harus > 0 dan ≤ 100
+                const hasInvalidPercentage = isAdminItemFormat()
+                    && Array.from(editItems).some(row => !isValidItemPercentage(getItemPercentage(row)));
+                if (hasInvalidPercentage) {
+                    e.preventDefault();
+                    showItemsError(this.querySelector('.items-error-edit'), PERCENTAGE_ERROR_MESSAGE);
                     return false;
                 }
 
@@ -1305,6 +1689,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
 
     updateInvoiceTotal();
+
+    // No Invoice admin (preview nomor lengkap + cek nomor dobel) &
+    // pilihan Rekap Proyek (prefill + ringkasan sisa tagihan)
+    initAdminNumberFields();
+    initRecapPickers();
 
     // Inisialisasi total & tampilan PPN untuk semua modal edit
     // (dilakukan di sini agar format admin -- yang tidak punya discount/DP --

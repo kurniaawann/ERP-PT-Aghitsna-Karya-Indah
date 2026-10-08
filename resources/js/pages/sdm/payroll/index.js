@@ -349,13 +349,13 @@ function renderSignatorySections() {
             blockHTML += '<div class="relative">';
             blockHTML += '<input type="text" id="' + inputId + '-input" ' +
                 'class="searchable-select-input w-full border rounded p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" ' +
-                'placeholder="Cari petinggi..." autocomplete="off" ' +
+                'placeholder="Cari penandatangan..." autocomplete="off" ' +
                 'value="' + (saved ? escapeAttr(saved.label) : '') + '">';
             blockHTML += '<i class="fa-solid fa-chevron-down absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>';
             blockHTML += '<div class="searchable-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">';
             blockHTML += '<div class="searchable-options">';
             blockHTML += '<div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b border-border-light searchable-option" data-value="">' +
-                '-- Pilih Cari petinggi... --</div>';
+                '-- Pilih Cari penandatangan... --</div>';
 
             getExecutiveOptions().forEach(function (exec) {
                 const label = exec.name + (exec.position ? ' - ' + exec.position : '');

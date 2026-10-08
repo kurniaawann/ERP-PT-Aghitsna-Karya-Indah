@@ -84,7 +84,7 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                 $sheet->setCellValue('A3', 'Total Pembayaran');
                 $sheet->setCellValue('B3', ':');
                 $sheet->mergeCells('C3:E3');
-                $sheet->setCellValue('C3', 'Rp. ' . number_format($invoice->total_amount ?? 0, 0, ',', '.'));
+                $sheet->setCellValue('C3', format_rupiah($invoice->total_amount ?? 0));
 
                 // Styling Info Atas (A2:E3)
                 $sheet->getStyle('B2:B3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -171,10 +171,10 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                         $jumlah = (int) ($item['jumlah'] ?? 0);
 
                         $sheet->setCellValue("A{$currentRow}", ($item['no'] ?? ($index + 1)) . '.');
-                        $sheet->setCellValue("B{$currentRow}", $item['tanggal'] ? Carbon::parse($item['tanggal'])->format('d M Y') : '-');
+                        $sheet->setCellValue("B{$currentRow}", $item['tanggal'] ? Carbon::parse($item['tanggal'])->translatedFormat('d M Y') : '-');
                         $sheet->setCellValue("C{$currentRow}", $item['nama_barang'] ?? 'SEMEN');
                         $sheet->setCellValue("D{$currentRow}", $qty . ' Zak');
-                        $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($jumlah, 0, ',', '.'));
+                        $sheet->setCellValue("E{$currentRow}", format_rupiah($jumlah));
 
                         $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                         $sheet->getStyle("B{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -193,7 +193,7 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", 'TOTAL 1 BON PROYEK ' . strtoupper($project['nama_proyek'] ?? ''));
-                    $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($subtotal, 0, ',', '.'));
+                    $sheet->setCellValue("E{$currentRow}", format_rupiah($subtotal));
 
                     $sheet->getStyle("A{$currentRow}:E{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true],
@@ -272,7 +272,7 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
 
                 // 6. GRAND TOTAL (DOUBLE UNDERLINE)
                 $sheet->setCellValue("D{$currentRow}", "TOTAL {$totalProjects} INVOICE:");
-                $sheet->setCellValue("E{$currentRow}", 'Rp ' . number_format($grandTotal, 0, ',', '.'));
+                $sheet->setCellValue("E{$currentRow}", format_rupiah($grandTotal));
 
                 $sheet->getStyle("D{$currentRow}:E{$currentRow}")->getFont()->setBold(true);
                 $sheet->getStyle("D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);

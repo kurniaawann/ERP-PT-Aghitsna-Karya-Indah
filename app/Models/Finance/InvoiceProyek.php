@@ -23,6 +23,15 @@ class InvoiceProyek extends Model
 {
     use HasFactory;
 
+    /**
+     * Pola nomor invoice role admin (format baru): {nomor}/AKI/{bulan romawi}/{yyyy}.
+     *
+     * Contoh: 060/AKI/VI/2026. Nomor urut diketik user (leading zero
+     * dipertahankan), bulan & tahun diambil dari tanggal invoice.
+     * Nomor format lama (mis. 071/SPK/AKI/IX/26) tidak cocok dengan pola ini.
+     */
+    public const ADMIN_NUMBER_PATTERN = '/^(\d+)\/AKI\/([IVXLCDM]+)\/(\d{4})$/';
+
     protected $table = 'proyek_invoices';
     protected $primaryKey = 'invoice_number';
     public $incrementing = false;
@@ -32,6 +41,7 @@ class InvoiceProyek extends Model
     protected $fillable = [
         'invoice_number',
         'quotation_number',
+        'project_recap_id',
         'invoice_date',
         'recipient',
         'regarding',
@@ -112,6 +122,21 @@ class InvoiceProyek extends Model
     public function quotation()
     {
         return $this->belongsTo(\App\Models\Administrasi\ProjectQuotation::class, 'quotation_number', 'quotation_number');
+    }
+
+    /**
+     * Rekap Proyek yang ditautkan ke invoice ini (opsional).
+     *
+     * Dipakai untuk memantau total tagihan per proyek: nilai proyek (Total
+     * RAB), total yang sudah ditagih lewat invoice, dan sisa tagihan.
+     * Bernilai null bila tidak ditautkan atau rekap sudah dihapus
+     * (FK ON DELETE SET NULL).
+     *
+     * @return BelongsTo
+     */
+    public function projectRecap(): BelongsTo
+    {
+        return $this->belongsTo(ProjectRecap::class, 'project_recap_id', 'id');
     }
 
     /**
@@ -246,6 +271,79 @@ class InvoiceProyek extends Model
             : (float) ($this->total_amount ?? 0);
 
         return round(($base * (float) $this->ppn) / 100);
+    }
+
+    /**
+     * Nilai tagihan invoice terhadap nilai proyek (dipakai Rekap Proyek).
+     *
+     * Dihitung dari total item setelah diskon, SEBELUM PPN — sebanding dengan
+     * Total RAB rekap proyek yang juga tidak memuat PPN. DP tidak mengurangi
+     * nilai tagihan karena DP adalah bagian dari pembayaran.
+     *
+     * @return int  Nilai tagihan (tidak pernah negatif)
+     */
+    public function getBilledAmount(): int
+    {
+        $totalAmount = (int) ($this->total_amount ?? 0);
+
+        return (int) max(0, $totalAmount - (int) $this->getDiscountAmount());
+    }
+
+    /**
+     * Apakah item memakai format admin (deskripsi, harga, persentase).
+     *
+     * @param  array  $item
+     * @return bool
+     */
+    public static function isAdminItem(array $item): bool
+    {
+        return array_key_exists('persentase', $item) || array_key_exists('deskripsi', $item);
+    }
+
+    /**
+     * Menghitung jumlah (nilai) satu baris item invoice.
+     *
+     * - Format admin: harga x (persentase / 100). Persentase bersifat
+     *   opsional — bila kosong (null/''), jumlah = harga.
+     * - Format superadmin: volume x harga.
+     *
+     * @param  array  $item
+     * @return float
+     */
+    public static function itemAmount(array $item): float
+    {
+        $harga = (float) ($item['harga'] ?? 0);
+
+        if (self::isAdminItem($item)) {
+            $persentase = $item['persentase'] ?? null;
+
+            if ($persentase === null || $persentase === '') {
+                return $harga;
+            }
+
+            return $harga * ((float) $persentase / 100);
+        }
+
+        return (float) ($item['volume'] ?? 0) * $harga;
+    }
+
+    /**
+     * Memecah nomor invoice admin format baru menjadi bagiannya.
+     *
+     * @param  string|null  $invoiceNumber
+     * @return array{sequence: string, month: string, year: string}|null  null bila bukan format baru
+     */
+    public static function parseAdminInvoiceNumber(?string $invoiceNumber): ?array
+    {
+        if (! $invoiceNumber || ! preg_match(self::ADMIN_NUMBER_PATTERN, $invoiceNumber, $matches)) {
+            return null;
+        }
+
+        return [
+            'sequence' => $matches[1],
+            'month' => $matches[2],
+            'year' => $matches[3],
+        ];
     }
 
     /**

@@ -18,7 +18,9 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * satu bulan: total uang masuk/keluar & saldo tiap bulan, saldo kumulatif
  * (saldo dibawa ke bulan berikutnya), dan total keseluruhan periode.
  *
- * Diletakkan sebagai sheet terakhir setelah sheet per bulan.
+ * Diletakkan sebagai sheet terakhir setelah sheet per bulan. Tidak dipakai
+ * untuk role admin (Kas Kantor) — admin tidak menampilkan rekapitulasi/saldo
+ * kumulatif (revisi klien).
  */
 class ExpenseMonthlySummarySheet implements FromArray, WithTitle, WithColumnWidths, WithEvents
 {
@@ -147,10 +149,10 @@ class ExpenseMonthlySummarySheet implements FromArray, WithTitle, WithColumnWidt
     }
 
     /**
-     * Format angka ke Rupiah (Rp 1.000.000).
+     * Format angka ke Rupiah dokumen cetak (Rp. 1.000.000).
      */
     private function rupiah($value): string
     {
-        return 'Rp ' . number_format($value, 0, ',', '.');
+        return format_rupiah($value);
     }
 }

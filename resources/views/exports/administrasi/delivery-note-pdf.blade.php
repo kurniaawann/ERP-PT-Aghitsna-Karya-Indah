@@ -271,7 +271,7 @@
                             </tr>
                             <tr>
                                 <td class="meta-label">Tanggal</td>
-                                <td class="meta-value">: {{ \Carbon\Carbon::parse($deliveryNote->delivery_date)->format('d F Y') }}</td>
+                                <td class="meta-value">: {{ \Carbon\Carbon::parse($deliveryNote->delivery_date)->translatedFormat('d F Y') }}</td>
                             </tr>
                             @if ($deliveryNote->vehicle_number)
                             <tr>

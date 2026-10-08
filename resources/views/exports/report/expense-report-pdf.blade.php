@@ -55,12 +55,23 @@
             margin-bottom: 12px;
         }
 
+        /* Header tabel diulang di setiap halaman lanjutan (halaman 2 dst.) */
         thead {
             display: table-header-group;
         }
 
+        tbody {
+            display: table-row-group;
+        }
+
+        /* Satu baris tidak pernah terbelah di dua halaman */
         tr {
             page-break-inside: avoid;
+        }
+
+        /* Judul kategori tidak tertinggal sendirian di dasar halaman */
+        tr.category-row {
+            page-break-after: avoid;
         }
 
         table.report th,
@@ -91,6 +102,14 @@
         .col-pemasukan { width: 13%; }
         .col-pengeluaran { width: 13%; }
         .col-sumber { width: 16%; }
+
+        /* Tanpa kolom FAKTUR (role admin / Kas Kantor) */
+        .no-faktur .col-no { width: 4%; }
+        .no-faktur .col-tanggal { width: 10%; }
+        .no-faktur .col-keterangan { width: 40%; }
+        .no-faktur .col-pemasukan { width: 15%; }
+        .no-faktur .col-pengeluaran { width: 15%; }
+        .no-faktur .col-sumber { width: 16%; }
 
         /* Tabel rekap per bulan (halaman terakhir export multi-bulan) */
         .col-bulan { width: 24%; }
@@ -184,16 +203,34 @@
     </style>
 </head>
 
-<body>
+@php
+    // Aturan per role (revisi klien):
+    // - Admin (Kas Kantor): tanpa kolom FAKTUR, kategori tanpa transaksi tidak
+    //   ditampilkan, tanpa blok Rekapitulasi / halaman rekap per bulan.
+    // - Role lain: tampilan lengkap seperti sebelumnya.
+    $isAdmin = auth()->user()->isAdmin();
+    $showFaktur = !$isAdmin;
+    $showEmptyCategories = !$isAdmin;
+    $showRekapitulasi = !$isAdmin;
+
+    // Jumlah kolom label (NO s/d KETERANGAN) untuk colspan baris kategori / subtotal / total
+    $labelColspan = $showFaktur ? 4 : 3;
+    $columnCount = $labelColspan + 3;
+@endphp
+
+<body class="{{ $showFaktur ? '' : 'no-faktur' }}">
     @php
-        $rp = fn ($value) => 'Rp ' . number_format($value ?? 0, 0, ',', '.');
+        $rp = fn ($value) => format_rupiah($value ?? 0);
+
+        // Nominal subtotal: sisi yang nol dikosongkan bila sisi lainnya terisi
+        $rpSubtotal = fn ($value, $other) => ((int) $value === 0 && (int) $other !== 0) ? '' : format_rupiah($value ?? 0);
 
         $allCategories = \App\Models\Report\TransactionCategory::where('created_by', auth()->id())
             ->module(\App\Models\Report\TransactionCategory::MODULE_EXPENSE_RECAP)
             ->active()->orderBy('sort_order')->get();
 
-        // Laporan bulanan: export lintas bulan dipecah per bulan + halaman rekap per bulan.
-        // Export satu bulan (atau tanpa data) tetap satu bagian seperti sebelumnya.
+        // Laporan bulanan: export lintas bulan dipecah per bulan + halaman rekap per bulan
+        // (kecuali admin). Export satu bulan (atau tanpa data) tetap satu bagian.
         $monthlySections = $monthlySections ?? [];
         $isMultiMonth = count($monthlySections) > 1;
 
@@ -209,7 +246,9 @@
                     'carry' => $index > 0 ? $section : null,
                 ];
             }
-            $pages[] = ['type' => 'summary', 'periodTitle' => $periodTitle, 'totals' => $totals];
+            if ($showRekapitulasi) {
+                $pages[] = ['type' => 'summary', 'periodTitle' => $periodTitle, 'totals' => $totals];
+            }
         } else {
             $pages[] = [
                 'type' => 'month',
@@ -225,7 +264,7 @@
         <div class="{{ $pageIndex > 0 ? 'page-break' : '' }}">
             <div class="title-container">
                 <div class="company">PT. AGHITSNA KARYA INDAH</div>
-                <div class="title">LAPORAN PENGELUARAN DIVISI PRODUKSI</div>
+                <div class="title">{{ $isAdmin ? 'LAPORAN PENGELUARAN' : 'LAPORAN PENGELUARAN DIVISI PRODUKSI' }}</div>
                 @if ($page['type'] === 'summary')
                     <div class="subtitle">REKAPITULASI PER BULAN &mdash; {{ $page['periodTitle'] }}</div>
                 @else
@@ -238,7 +277,9 @@
                     <thead>
                         <tr>
                             <th class="col-no">NO</th>
-                            <th class="col-faktur">FAKTUR</th>
+                            @if ($showFaktur)
+                                <th class="col-faktur">FAKTUR</th>
+                            @endif
                             <th class="col-tanggal">TANGGAL</th>
                             <th class="col-keterangan">KETERANGAN</th>
                             <th class="col-pemasukan">PEMASUKAN</th>
@@ -259,9 +300,12 @@
                                 $categoryExpense = 0;
                             @endphp
 
+                            {{-- Admin: kategori tanpa transaksi tidak ditampilkan sama sekali --}}
+                            @continue($expenses->isEmpty() && !$showEmptyCategories)
+
                             {{-- Category Header Row --}}
                             <tr class="category-row">
-                                <td colspan="4">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
+                                <td colspan="{{ $labelColspan }}">{{ strtoupper($category->name ?? 'LAIN-LAIN') }}</td>
                                 <td class="empty-cell"></td>
                                 <td class="empty-cell"></td>
                                 <td class="empty-cell"></td>
@@ -276,7 +320,9 @@
                                 @endphp
                                 <tr>
                                     <td class="text-center">{{ $itemNo++ }}</td>
-                                    <td>{{ $expense->invoice_number ?? '' }}</td>
+                                    @if ($showFaktur)
+                                        <td>{{ $expense->invoice_number ?? '' }}</td>
+                                    @endif
                                     <td class="text-center nowrap">
                                         {{ $expense->transaction_date ? \Carbon\Carbon::parse($expense->transaction_date)->format('d/m/Y') : '' }}
                                     </td>
@@ -291,31 +337,27 @@
                                 </tr>
                             @endforeach
 
-                            {{-- Baris kosong putih jika tidak ada data --}}
+                            {{-- Baris kosong putih jika tidak ada data (selain admin) --}}
                             @if ($expenses->isEmpty())
                                 <tr>
-                                    <td>&nbsp;</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
+                                    @for ($i = 0; $i < $columnCount; $i++)
+                                        <td>{!! $i === 0 ? '&nbsp;' : '' !!}</td>
+                                    @endfor
                                 </tr>
                             @endif
 
                             {{-- Category Subtotal --}}
                             <tr class="subtotal-row">
-                                <td colspan="4" class="subtotal-label">SUB TOTAL</td>
-                                <td class="text-right nowrap">{{ $rp($categoryIncome) }}</td>
-                                <td class="text-right nowrap">{{ $rp($categoryExpense) }}</td>
+                                <td colspan="{{ $labelColspan }}" class="subtotal-label">SUB TOTAL</td>
+                                <td class="text-right nowrap">{{ $rpSubtotal($categoryIncome, $categoryExpense) }}</td>
+                                <td class="text-right nowrap">{{ $rpSubtotal($categoryExpense, $categoryIncome) }}</td>
                                 <td></td>
                             </tr>
                         @endforeach
 
                         {{-- Grand Total (per bulan untuk export multi-bulan) --}}
                         <tr class="grand-total-row">
-                            <td colspan="4" class="text-center">JUMLAH</td>
+                            <td colspan="{{ $labelColspan }}" class="text-center">JUMLAH</td>
                             <td class="text-right nowrap">{{ $rp($page['totals']->total_income) }}</td>
                             <td class="text-right nowrap">{{ $rp($page['totals']->total_expense) }}</td>
                             <td class="text-right nowrap">{{ $rp($page['totals']->balance) }}</td>
@@ -357,7 +399,8 @@
                 </table>
             @endif
 
-            {{-- Rekapitulasi --}}
+            {{-- Rekapitulasi (tidak ditampilkan untuk admin) --}}
+            @if ($showRekapitulasi)
             <div class="rekapitulasi">
                 <div class="rekapitulasi-title">Rekapitulasi Pengeluaran Divisi Produksi {{ $page['periodTitle'] }}</div>
                 <table>
@@ -391,6 +434,7 @@
                     @endif
                 </table>
             </div>
+            @endif
 
             <div class="footer-signatures">
                 <table>

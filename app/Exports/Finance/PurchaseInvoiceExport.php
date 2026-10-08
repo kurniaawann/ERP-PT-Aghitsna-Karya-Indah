@@ -75,9 +75,9 @@ class PurchaseInvoiceExport implements FromCollection, WithHeadings, WithStyles,
                     $invoice->npwp,
                     $invoice->tax_number_code,
                     $invoice->item_name,
-                    'Rp ' . number_format($invoice->selling_price, 0, ',', '.'),
-                    'Rp ' . number_format($invoice->ppn_tax, 0, ',', '.'),
-                    'Rp ' . number_format($invoice->selling_price + $invoice->ppn_tax, 0, ',', '.'),
+                    format_rupiah($invoice->selling_price),
+                    format_rupiah($invoice->ppn_tax),
+                    format_rupiah($invoice->selling_price + $invoice->ppn_tax),
                     $invoice->notes ?? '',
                 ];
             });

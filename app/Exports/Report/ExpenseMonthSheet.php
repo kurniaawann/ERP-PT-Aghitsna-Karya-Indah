@@ -24,9 +24,15 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * punya struktur sama — dikelompokkan per kategori dengan subtotal, total
  * (Jumlah), rekapitulasi, dan tanda tangan — hanya berbeda warna & label.
  *
+ * Aturan per role (revisi klien):
+ * - Admin (menu "Kas Kantor"): tanpa kolom FAKTUR, kategori tanpa transaksi
+ *   tidak ditampilkan, dan tanpa blok Rekapitulasi (uang masuk/keluar/saldo).
+ * - Super admin / role lain: kolom FAKTUR, semua kategori aktif, Rekapitulasi.
+ *
  * Posisi setiap jenis baris dicatat saat membangun data sehingga styling
  * tidak bergantung pada pencocokan isi sel (mis. keterangan huruf kapital
- * tidak lagi salah dianggap judul kategori).
+ * tidak lagi salah dianggap judul kategori). Huruf kolom dihitung dinamis
+ * karena kolom FAKTUR bisa tidak ada.
  */
 class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithEvents
 {
@@ -35,6 +41,7 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
 
     /**
      * Perbedaan tampilan antar varian (mengikuti format export sebelumnya).
+     * Baris "Jumlah" varian rekap berlatar kuning (revisi klien).
      */
     private const VARIANTS = [
         self::VARIANT_REKAP => [
@@ -43,11 +50,12 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
             'subtotal_fill' => 'FFCC00',
             'subtotal_label' => '',
             'subtotal_bold' => false,
-            'total_fill' => 'FFCC00',
+            'total_fill' => 'FFFF00',
             'total_label' => 'Jumlah',
             'signature_titles' => ['Dibuat / Diperiksa', 'Direktur PT. Aghitsna'],
             'signature_names' => ['( AKHMAD KHAIDIR )', '( Zulkarnain,ST.,MT )'],
-            'widths' => ['A' => 5, 'B' => 25, 'C' => 12, 'D' => 40, 'E' => 17, 'F' => 17, 'G' => 20],
+            'widths' => ['no' => 5, 'faktur' => 25, 'tanggal' => 12, 'keterangan' => 40, 'pemasukan' => 17, 'pengeluaran' => 17, 'sumber' => 20],
+            'orientation' => PageSetup::ORIENTATION_PORTRAIT,
         ],
         self::VARIANT_LAPORAN => [
             'period_prefix' => '',
@@ -59,8 +67,20 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
             'total_label' => 'JUMLAH',
             'signature_titles' => ['DIBUAT/DIPERIKSA', 'MENGETAHUI, DIREKTUR PT. AGHITSNA KARYA INDAH'],
             'signature_names' => ['( A. KHAIDIR )', '( Zulkarnain,ST.,MT )'],
-            'widths' => ['A' => 5, 'B' => 25, 'C' => 12, 'D' => 40, 'E' => 17, 'F' => 17, 'G' => 22],
+            'widths' => ['no' => 5, 'faktur' => 25, 'tanggal' => 12, 'keterangan' => 40, 'pemasukan' => 17, 'pengeluaran' => 17, 'sumber' => 22],
+            'orientation' => PageSetup::ORIENTATION_LANDSCAPE,
         ],
+    ];
+
+    /** Header kolom tabel per kunci kolom. */
+    private const COLUMN_HEADINGS = [
+        'no' => 'NO',
+        'faktur' => 'FAKTUR',
+        'tanggal' => 'TANGGAL',
+        'keterangan' => 'KETERANGAN',
+        'pemasukan' => 'PEMASUKAN',
+        'pengeluaran' => 'PENGELUARAN',
+        'sumber' => 'SUMBER UANG',
     ];
 
     /** Baris header tabel. */
@@ -71,6 +91,12 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
 
     /** @var array Konfigurasi varian aktif */
     protected $config;
+
+    /** @var bool Role admin (Kas Kantor): tanpa faktur, tanpa kategori kosong, tanpa rekapitulasi */
+    protected $isAdmin;
+
+    /** @var array<string, string> Huruf kolom per kunci kolom (no, faktur, tanggal, ...) */
+    protected $columns = [];
 
     /** @var array<string, array<int, int>> Nomor baris per jenis (category, item, subtotal, rekap, signature) */
     protected $rows = [];
@@ -99,6 +125,16 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         protected ?array $carry = null
     ) {
         $this->config = self::VARIANTS[$variant];
+        $this->isAdmin = auth()->user()?->isAdmin() ?? false;
+
+        // Susun huruf kolom: kolom FAKTUR hanya untuk non-admin
+        $keys = $this->isAdmin
+            ? ['no', 'tanggal', 'keterangan', 'pemasukan', 'pengeluaran', 'sumber']
+            : ['no', 'faktur', 'tanggal', 'keterangan', 'pemasukan', 'pengeluaran', 'sumber'];
+
+        foreach ($keys as $index => $key) {
+            $this->columns[$key] = chr(ord('A') + $index);
+        }
     }
 
     /**
@@ -112,9 +148,9 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
 
         $data = [
             ['PT. AGHITSNA KARYA INDAH'],
-            ['LAPORAN PENGELUARAN DIVISI PRODUKSI'],
+            [$this->isAdmin ? 'LAPORAN PENGELUARAN' : 'LAPORAN PENGELUARAN DIVISI PRODUKSI'],
             [$this->config['period_prefix'] . $this->periodTitle],
-            ['NO', 'FAKTUR', 'TANGGAL', 'KETERANGAN', 'PEMASUKAN', 'PENGELUARAN', 'SUMBER UANG'],
+            array_values(array_intersect_key(self::COLUMN_HEADINGS, $this->columns)),
         ];
         $currentRow = self::DATA_START_ROW;
 
@@ -127,6 +163,11 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         foreach ($allCategories as $category) {
             $expenses = $expenseRecapsById->get($category->id, collect());
 
+            // Admin: kategori tanpa transaksi tidak ditampilkan sama sekali
+            if ($expenses->isEmpty() && $this->isAdmin) {
+                continue;
+            }
+
             $data[] = [strtoupper($category->name ?? 'LAIN-LAIN')];
             $this->rows['category'][] = $currentRow++;
 
@@ -135,61 +176,69 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
             $itemNo = 1;
 
             foreach ($expenses as $expense) {
-                $data[] = [
-                    $itemNo++,
-                    $expense->invoice_number ?? '',
-                    $expense->transaction_date ? Carbon::parse($expense->transaction_date)->format('d/m/Y') : '',
-                    $expense->description ?? '',
-                    $expense->income_amount ? $this->rupiah($expense->income_amount) : '',
-                    $expense->expense_amount ? $this->rupiah($expense->expense_amount) : '',
-                    $expense->money_source ?? '',
-                ];
+                // Baris pemasukan: kolom pengeluaran kosong, dan sebaliknya (bukan "Rp. 0")
+                $data[] = $this->buildRow([
+                    'no' => $itemNo++,
+                    'faktur' => $expense->invoice_number ?? '',
+                    'tanggal' => $expense->transaction_date ? Carbon::parse($expense->transaction_date)->format('d/m/Y') : '',
+                    'keterangan' => $expense->description ?? '',
+                    'pemasukan' => (int) $expense->income_amount > 0 ? format_rupiah($expense->income_amount) : '',
+                    'pengeluaran' => (int) $expense->expense_amount > 0 ? format_rupiah($expense->expense_amount) : '',
+                    'sumber' => $expense->money_source ?? '',
+                ]);
                 $this->rows['item'][] = $currentRow++;
 
                 $categoryIncome += $expense->income_amount ?? 0;
                 $categoryExpense += $expense->expense_amount ?? 0;
             }
 
-            // Baris kosong putih jika tidak ada data
+            // Baris kosong putih jika tidak ada data (hanya non-admin)
             if ($expenses->isEmpty()) {
                 $data[] = [''];
                 $this->rows['empty'][] = $currentRow++;
             }
 
-            $data[] = ['', '', '', $this->config['subtotal_label'], $this->rupiah($categoryIncome), $this->rupiah($categoryExpense), ''];
+            $data[] = $this->buildRow([
+                'keterangan' => $this->config['subtotal_label'],
+                'pemasukan' => $this->subtotalRupiah($categoryIncome, $categoryExpense),
+                'pengeluaran' => $this->subtotalRupiah($categoryExpense, $categoryIncome),
+            ]);
             $this->rows['subtotal'][] = $currentRow++;
         }
 
         // Total (Jumlah)
-        $data[] = [
-            $this->config['total_label'], '', '', '',
-            $this->rupiah($this->totals->total_income ?? 0),
-            $this->rupiah($this->totals->total_expense ?? 0),
-            $this->rupiah($this->totals->balance ?? 0),
-        ];
+        $data[] = $this->buildRow([
+            'no' => $this->config['total_label'],
+            'pemasukan' => format_rupiah($this->totals->total_income ?? 0),
+            'pengeluaran' => format_rupiah($this->totals->total_expense ?? 0),
+            'sumber' => format_rupiah($this->totals->balance ?? 0),
+        ]);
         $this->totalRow = $currentRow++;
 
-        // Baris kosong sebelum rekapitulasi
-        $data[] = [''];
-        $data[] = [''];
-        $currentRow += 2;
+        // Rekapitulasi — tidak ditampilkan untuk admin (Kas Kantor)
+        if (!$this->isAdmin) {
+            // Baris kosong sebelum rekapitulasi
+            $data[] = [''];
+            $data[] = [''];
+            $currentRow += 2;
 
-        $data[] = ['Rekapitulasi Pengeluaran Divisi Produksi ' . $this->periodTitle];
-        $this->rekapTitleRow = $currentRow++;
+            $data[] = ['Rekapitulasi Pengeluaran Divisi Produksi ' . $this->periodTitle];
+            $this->rekapTitleRow = $currentRow++;
 
-        $rekapLines = [
-            ['1.  UANG MASUK', $this->totals->total_income ?? 0, false],
-            ['2.  UANG KELUAR', $this->totals->total_expense ?? 0, false],
-            ['SALDO', $this->totals->balance ?? 0, true],
-        ];
-        if ($this->carry) {
-            // Saldo dibawa dari bulan sebelumnya (dalam rentang export)
-            $rekapLines[] = ['SALDO BULAN SEBELUMNYA', $this->carry['opening_balance'], false];
-            $rekapLines[] = ['SALDO AKHIR (KUMULATIF)', $this->carry['closing_balance'], true];
-        }
-        foreach ($rekapLines as [$label, $value, $bold]) {
-            $data[] = [$label, '', '', '', $this->rupiah($value)];
-            $this->rows['rekap'][] = ['row' => $currentRow++, 'bold' => $bold];
+            $rekapLines = [
+                ['1.  UANG MASUK', $this->totals->total_income ?? 0, false],
+                ['2.  UANG KELUAR', $this->totals->total_expense ?? 0, false],
+                ['SALDO', $this->totals->balance ?? 0, true],
+            ];
+            if ($this->carry) {
+                // Saldo dibawa dari bulan sebelumnya (dalam rentang export)
+                $rekapLines[] = ['SALDO BULAN SEBELUMNYA', $this->carry['opening_balance'], false];
+                $rekapLines[] = ['SALDO AKHIR (KUMULATIF)', $this->carry['closing_balance'], true];
+            }
+            foreach ($rekapLines as [$label, $value, $bold]) {
+                $data[] = $this->buildRow(['no' => $label, 'pemasukan' => format_rupiah($value)]);
+                $this->rows['rekap'][] = ['row' => $currentRow++, 'bold' => $bold];
+            }
         }
 
         // Baris kosong sebelum tanda tangan
@@ -200,8 +249,10 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         [$leftTitle, $rightTitle] = $this->config['signature_titles'];
         [$leftName, $rightName] = $this->config['signature_names'];
 
-        // Tanda tangan kiri di kolom B, kanan di E:G (digabung agar judul panjang tidak terpotong)
-        $data[] = ['', $leftTitle, '', '', $rightTitle];
+        [$leftStart] = $this->signatureRanges()['left'];
+        [$rightStart] = $this->signatureRanges()['right'];
+
+        $data[] = $this->buildSignatureRow($leftStart, $leftTitle, $rightStart, $rightTitle);
         $this->rows['signature'][] = $currentRow++;
 
         // Ruang tanda tangan
@@ -210,7 +261,7 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         $data[] = [''];
         $currentRow += 3;
 
-        $data[] = ['', $leftName, '', '', $rightName];
+        $data[] = $this->buildSignatureRow($leftStart, $leftName, $rightStart, $rightName);
         $this->rows['signature'][] = $currentRow;
 
         return $data;
@@ -233,7 +284,12 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
 
     public function columnWidths(): array
     {
-        return $this->config['widths'];
+        $widths = [];
+        foreach ($this->columns as $key => $letter) {
+            $widths[$letter] = $this->config['widths'][$key];
+        }
+
+        return $widths;
     }
 
     public function title(): string
@@ -246,11 +302,71 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
     // ============================================================
 
     /**
-     * Format angka ke Rupiah (Rp 1.000.000) — sama seperti export sebelumnya.
+     * Susun satu baris berurutan sesuai kolom aktif dari array [kunci => nilai].
+     *
+     * @param  array<string, mixed> $values
+     * @return array<int, mixed>
      */
-    private function rupiah($value): string
+    private function buildRow(array $values): array
     {
-        return 'Rp ' . number_format($value, 0, ',', '.');
+        $row = [];
+        foreach (array_keys($this->columns) as $key) {
+            $row[] = $values[$key] ?? '';
+        }
+
+        return $row;
+    }
+
+    /**
+     * Baris tanda tangan: teks kiri & kanan pada kolom awal blok masing-masing.
+     */
+    private function buildSignatureRow(string $leftColumn, string $leftText, string $rightColumn, string $rightText): array
+    {
+        $row = array_fill(0, count($this->columns), '');
+        $row[ord($leftColumn) - ord('A')] = $leftText;
+        $row[ord($rightColumn) - ord('A')] = $rightText;
+
+        return $row;
+    }
+
+    /**
+     * Rentang kolom blok tanda tangan kiri & kanan.
+     *
+     * - Dengan faktur (7 kolom): kiri di B (seperti sebelumnya), kanan E:G.
+     * - Tanpa faktur (6 kolom): kiri A:C digabung, kanan D:F digabung.
+     *
+     * @return array{left: array{0: string, 1: string}, right: array{0: string, 1: string}}
+     */
+    private function signatureRanges(): array
+    {
+        if ($this->isAdmin) {
+            return [
+                'left' => [$this->columns['no'], $this->columns['keterangan']],
+                'right' => [$this->columns['pemasukan'], $this->columns['sumber']],
+            ];
+        }
+
+        return [
+            'left' => [$this->columns['faktur'], $this->columns['faktur']],
+            'right' => [$this->columns['pemasukan'], $this->columns['sumber']],
+        ];
+    }
+
+    /**
+     * Nominal subtotal: sisi yang nol dikosongkan bila sisi lainnya terisi
+     * (mis. kategori pemasukan tidak menampilkan "Rp. 0" di kolom pengeluaran).
+     */
+    private function subtotalRupiah($value, $other): string
+    {
+        return ((int) $value === 0 && (int) $other !== 0) ? '' : format_rupiah($value);
+    }
+
+    /**
+     * Huruf kolom terakhir tabel.
+     */
+    private function lastColumn(): string
+    {
+        return end($this->columns);
     }
 
     /**
@@ -259,9 +375,10 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
     private function applyHeaderStyles(Worksheet $sheet): void
     {
         $h = self::HEADER_ROW;
+        $last = $this->lastColumn();
 
         foreach ([1 => 15, 2 => 13, 3 => 12] as $row => $size) {
-            $sheet->mergeCells("A{$row}:G{$row}");
+            $sheet->mergeCells("A{$row}:{$last}{$row}");
             $sheet->getStyle("A{$row}")->applyFromArray([
                 'font' => ['bold' => true, 'size' => $size],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -271,7 +388,7 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         $sheet->getRowDimension(2)->setRowHeight(19);
         $sheet->getRowDimension(3)->setRowHeight(18);
 
-        $sheet->getStyle("A{$h}:G{$h}")->applyFromArray([
+        $sheet->getStyle("A{$h}:{$last}{$h}")->applyFromArray([
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $this->config['header_fill']]],
             'font' => ['bold' => true],
             'alignment' => [
@@ -291,24 +408,28 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
     {
         $start = self::DATA_START_ROW;
         $end = $this->totalRow;
+        $last = $this->lastColumn();
+        $c = $this->columns;
 
-        $sheet->getStyle("A{$start}:G{$end}")->applyFromArray([
+        $sheet->getStyle("A{$start}:{$last}{$end}")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
         // Kolom NO & TANGGAL rata tengah, nominal rata kanan, faktur/keterangan/sumber uang wrap
-        $sheet->getStyle("A{$start}:A{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle("C{$start}:C{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle("E{$start}:F{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle("B{$start}:B{$end}")->getAlignment()->setWrapText(true);
-        $sheet->getStyle("D{$start}:D{$end}")->getAlignment()->setWrapText(true);
-        $sheet->getStyle("G{$start}:G{$end}")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("{$c['no']}{$start}:{$c['no']}{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("{$c['tanggal']}{$start}:{$c['tanggal']}{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("{$c['pemasukan']}{$start}:{$c['pengeluaran']}{$end}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        if (isset($c['faktur'])) {
+            $sheet->getStyle("{$c['faktur']}{$start}:{$c['faktur']}{$end}")->getAlignment()->setWrapText(true);
+        }
+        $sheet->getStyle("{$c['keterangan']}{$start}:{$c['keterangan']}{$end}")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("{$c['sumber']}{$start}:{$c['sumber']}{$end}")->getAlignment()->setWrapText(true);
 
-        // Judul kategori: A:D digabung, hijau; E:G tetap putih
+        // Judul kategori: NO s/d KETERANGAN digabung, hijau; kolom nominal tetap putih
         foreach ($this->rows['category'] as $row) {
-            $sheet->mergeCells("A{$row}:D{$row}");
-            $sheet->getStyle("A{$row}:D{$row}")->applyFromArray([
+            $sheet->mergeCells("A{$row}:{$c['keterangan']}{$row}");
+            $sheet->getStyle("A{$row}:{$c['keterangan']}{$row}")->applyFromArray([
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'A9D08E']],
                 'font' => ['bold' => true],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
@@ -317,40 +438,46 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
 
         // Subtotal per kategori (italic)
         foreach ($this->rows['subtotal'] as $row) {
-            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:{$last}{$row}")->applyFromArray([
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $this->config['subtotal_fill']]],
                 'font' => ['italic' => true, 'bold' => $this->config['subtotal_bold']],
             ]);
-            $sheet->getStyle("D{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("{$c['keterangan']}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         }
 
-        // Total (Jumlah): A:D digabung
+        // Total (Jumlah): NO s/d KETERANGAN digabung
         $row = $this->totalRow;
-        $sheet->mergeCells("A{$row}:D{$row}");
-        $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
+        $sheet->mergeCells("A{$row}:{$c['keterangan']}{$row}");
+        $sheet->getStyle("A{$row}:{$last}{$row}")->applyFromArray([
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $this->config['total_fill']]],
             'font' => ['bold' => true],
         ]);
         $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("{$c['sumber']}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getRowDimension($row)->setRowHeight(18);
     }
 
     /**
      * Styling rekapitulasi (tanpa border, rata kiri, nominal tebal).
+     * Tidak ada untuk admin.
      */
     private function applyRekapStyles(Worksheet $sheet): void
     {
+        if ($this->rekapTitleRow === null) {
+            return;
+        }
+
+        $c = $this->columns;
         $row = $this->rekapTitleRow;
-        $sheet->mergeCells("A{$row}:G{$row}");
+        $sheet->mergeCells("A{$row}:{$this->lastColumn()}{$row}");
         $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(12);
 
         foreach ($this->rows['rekap'] as $line) {
             $row = $line['row'];
-            $sheet->mergeCells("A{$row}:D{$row}");
+            $sheet->mergeCells("A{$row}:{$c['keterangan']}{$row}");
             $sheet->getStyle("A{$row}")->getFont()->setBold($line['bold']);
-            $sheet->getStyle("E{$row}")->getFont()->setBold(true);
-            $sheet->getStyle("E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("{$c['pemasukan']}{$row}")->getFont()->setBold(true);
+            $sheet->getStyle("{$c['pemasukan']}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         }
     }
 
@@ -360,24 +487,32 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
     private function applySignatureStyles(Worksheet $sheet): void
     {
         [$titleRow, $nameRow] = $this->rows['signature'];
+        $ranges = $this->signatureRanges();
+        $last = $this->lastColumn();
 
-        $sheet->mergeCells("E{$titleRow}:G{$titleRow}");
-        $sheet->mergeCells("E{$nameRow}:G{$nameRow}");
+        foreach ([$titleRow, $nameRow] as $row) {
+            foreach ($ranges as [$from, $to]) {
+                if ($from !== $to) {
+                    $sheet->mergeCells("{$from}{$row}:{$to}{$row}");
+                }
+            }
+        }
 
-        $sheet->getStyle("A{$titleRow}:G{$titleRow}")->applyFromArray([
+        $sheet->getStyle("A{$titleRow}:{$last}{$titleRow}")->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
-        $sheet->getStyle("A{$nameRow}:G{$nameRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("A{$nameRow}:{$last}{$nameRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
     }
 
     /**
-     * Setup cetak: A4 landscape, muat 1 halaman lebar, header tabel berulang.
+     * Setup cetak: A4 (rekap: portrait, laporan: landscape), muat 1 halaman
+     * lebar, header tabel berulang di setiap halaman.
      */
     private function applyPageSetup(Worksheet $sheet): void
     {
         $sheet->getPageSetup()
-            ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+            ->setOrientation($this->config['orientation'])
             ->setPaperSize(PageSetup::PAPERSIZE_A4)
             ->setFitToWidth(1)
             ->setFitToHeight(0);

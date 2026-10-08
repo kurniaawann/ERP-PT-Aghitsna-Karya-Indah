@@ -171,13 +171,15 @@
                                         <i class="fa-solid fa-eye w-3 h-3"></i>
                                         Detail
                                     </button>
-                                    <a href="{{ route('project-financial-report.export.pdf', $recap) }}"
+                                    <a href="{{ route('project-financial-report.export.pdf', $recap) }}" data-preview
+                                        data-preview-title="Laporan Keuangan {{ $recap->project_name }} (PDF)"
                                         class="inline-flex items-center gap-1 bg-error hover:bg-error text-white px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200"
                                         title="Export Laporan Keuangan PDF">
                                         <i class="fa-solid fa-file-pdf w-3 h-3"></i>
                                         PDF
                                     </a>
-                                    <a href="{{ route('project-financial-report.export.excel', $recap) }}"
+                                    <a href="{{ route('project-financial-report.export.excel', $recap) }}" data-preview
+                                        data-preview-title="Laporan Keuangan {{ $recap->project_name }} (Excel)"
                                         class="inline-flex items-center gap-1 bg-success hover:bg-success text-white px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200"
                                         title="Export Laporan Keuangan Excel">
                                         <i class="fa-solid fa-file-excel w-3 h-3"></i>
@@ -237,11 +239,13 @@
                 <p class="text-sm text-text-secondary mt-1">Daftar bukti pembayaran (uang masuk) pada proyek ini.</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
-                <a href="{{ route('project-financial-report.export.pdf', $recap) }}"
+                <a href="{{ route('project-financial-report.export.pdf', $recap) }}" data-preview
+                    data-preview-title="Laporan Keuangan {{ $recap->project_name }} (PDF)"
                     class="inline-flex items-center gap-1 bg-error hover:bg-error text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200">
                     <i class="fa-solid fa-file-pdf w-3 h-3"></i> PDF
                 </a>
-                <a href="{{ route('project-financial-report.export.excel', $recap) }}"
+                <a href="{{ route('project-financial-report.export.excel', $recap) }}" data-preview
+                    data-preview-title="Laporan Keuangan {{ $recap->project_name }} (Excel)"
                     class="inline-flex items-center gap-1 bg-success hover:bg-success text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200">
                     <i class="fa-solid fa-file-excel w-3 h-3"></i> Excel
                 </a>
@@ -301,8 +305,10 @@
                                     </td>
                                     <td class="px-4 py-3 text-center text-sm">
                                         @if ($proof->file_path)
-                                            <a href="{{ asset('storage/' . $proof->file_path) }}" target="_blank"
-                                                rel="noopener noreferrer" title="{{ $proof->file_name }}"
+                                            {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
+                                            <a href="{{ asset('storage/' . $proof->file_path) }}"
+                                                onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti Pembayaran — ' . $recap->project_name), downloadName: @js($proof->file_name ?: basename($proof->file_path)) })"
+                                                title="{{ $proof->file_name }}"
                                                 class="text-blue-600 hover:underline">
                                                 <i class="fa-solid fa-paperclip"></i> File
                                             </a>
@@ -350,8 +356,10 @@
                                     </td>
                                     <td class="px-4 py-3 text-center text-sm">
                                         @if ($income->proof_file)
-                                            <a href="{{ asset('storage/' . $income->proof_file) }}" target="_blank"
-                                                rel="noopener noreferrer" title="{{ $income->proof_file_name }}"
+                                            {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
+                                            <a href="{{ asset('storage/' . $income->proof_file) }}"
+                                                onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti Uang Masuk — ' . $recap->project_name), downloadName: @js($income->proof_file_name ?: basename($income->proof_file)) })"
+                                                title="{{ $income->proof_file_name }}"
                                                 class="text-blue-600 hover:underline">
                                                 <i class="fa-solid fa-paperclip"></i> File
                                             </a>

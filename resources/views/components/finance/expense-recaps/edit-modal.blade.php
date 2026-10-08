@@ -1,6 +1,13 @@
-{{-- Modal Edit Rekap Pengeluaran --}}
-@php $safeId = str_replace('/', '-', $expense->id); @endphp
-<x-modal id="editModal-{{ $safeId }}" title="Edit Rekap Pengeluaran"
+{{-- Modal Edit Rekap Pengeluaran (admin: "Kas Kantor") --}}
+@php
+    $safeId = str_replace('/', '-', $expense->id);
+    $recapLabel = $recapLabel ?? 'Rekap Pengeluaran';
+    // Nomor faktur hanya dipakai super admin (admin/Kas Kantor tanpa kolom faktur)
+    $usesInvoiceNumber = !auth()->user()->isAdmin();
+    // Faktur yang ada hanya relevan untuk record uang masuk
+    $currentInvoiceNumber = (int) $expense->income_amount > 0 ? $expense->invoice_number : null;
+@endphp
+<x-modal id="editModal-{{ $safeId }}" title="Edit {{ $recapLabel }}"
     action="{{ route('recap-expense.update', $expense->id) }}" method="PUT" buttonText="Update">
 
     {{-- Kategori --}}
@@ -45,14 +52,18 @@
             oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
-    {{-- Nomor Faktur --}}
-    <div class="invoice-section mb-3">
-        <label class="block text-text-primary mb-1">No. Faktur (Opsional)</label>
-        <input type="text" name="invoice_number" class="w-full border rounded p-2"
-            value="{{ $expense->invoice_number }}" maxlength="100">
-        <p class="invoice-note text-xs text-text-secondary mt-1">Khusus pengeluaran. Untuk pemasukan, nomor faktur
-            di-generate otomatis.</p>
-    </div>
+    {{-- Nomor Faktur: hanya untuk kategori uang masuk (read-only). Uang keluar tidak
+         memiliki nomor faktur — bagian ini disembunyikan oleh JS. --}}
+    @if ($usesInvoiceNumber)
+        <div class="invoice-section hidden mb-3">
+            <label class="block text-text-primary mb-1">No. Faktur</label>
+            <input type="text" class="w-full border rounded p-2 bg-surface-secondary text-text-secondary"
+                value="{{ $currentInvoiceNumber }}" placeholder="Di-generate otomatis saat disimpan"
+                readonly tabindex="-1">
+            <p class="invoice-note text-xs text-text-secondary mt-1">Khusus uang masuk — nomor faktur di-generate
+                otomatis dan tidak dapat diubah.</p>
+        </div>
+    @endif
 
     {{-- Sumber Uang --}}
     <div class="mb-3">

@@ -107,3 +107,19 @@ if (!function_exists('generateExpenseRecapId')) {
         return app(\App\Services\Finance\RecapExpenseService::class)->generateId();
     }
 }
+
+if (!function_exists('format_rupiah')) {
+    /**
+     * Format nominal Rupiah untuk dokumen cetak (PDF/Excel): "Rp. 50.000".
+     *
+     * Dipakai seragam di semua export (revisi klien). Nilai negatif ditulis
+     * "Rp. -50.000". Tampilan layar aplikasi tetap memakai format lamanya.
+     *
+     * @param  float|int|string|null  $value
+     * @return string
+     */
+    function format_rupiah($value)
+    {
+        return 'Rp. ' . number_format((float) $value, 0, ',', '.');
+    }
+}

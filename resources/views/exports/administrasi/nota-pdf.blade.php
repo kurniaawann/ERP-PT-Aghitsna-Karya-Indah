@@ -7,14 +7,16 @@
      - sewa_jual -> partials/nota-sewa-jual
 
      Kedua layout memakai kerangka yang sama agar rapi & konsisten:
-     1. Kop surat (lebih besar dari isi) + garis ganda
+     1. Kop surat yang sama (partials/nota-kop): logo besar + nama perusahaan
+        12pt, tagline & alamat 11pt, garis ganda
      2. Judul "NOTA"
      3. Blok info: kiri = nomor referensi, kanan = tempat/tanggal + Kepada Yth.
+        (rata kanan, mepet ke tepi kanan)
      4. Tabel barang (Qty/Satuan/Harga/Jumlah rata tengah)
-     5. Total / rincian biaya
+     5. Total / rincian biaya (format "Rp. 50.000" via format_rupiah())
      6. Tanda tangan sejajar (Tanda Terima/Penerima & Hormat Kami)
 
-     Font: Times New Roman 12pt (kop & judul lebih besar).
+     Font: Times New Roman 12pt (judul lebih besar).
      Style bersama didefinisikan di sini dan di-scope ke wrapper .nota.
      ===================================================================== --}}
 <!DOCTYPE html>
@@ -65,45 +67,41 @@
             padding: 0;
         }
 
-        .nota .kop-side {
-            width: 18%;
+        /* Kolom logo dibuat lebih lebar agar logo tampil besar & jelas */
+        .nota .kop-logo-cell {
+            width: 27%;
         }
 
         .nota .kop-logo {
-            width: 118px;
+            width: 180px;
             height: auto;
         }
 
         .nota .kop-text {
-            width: 64%;
+            width: 66%;
             text-align: center;
+        }
+
+        .nota .kop-side {
+            width: 7%;
         }
 
         .nota .kop-name {
-            font-size: 20pt;
+            font-size: 12pt;
             font-weight: bold;
             letter-spacing: 1px;
-            line-height: 1.15;
-        }
-
-        .nota .kop-tagline {
-            font-size: 13pt;
-            letter-spacing: 3px;
-            margin-bottom: 4px;
-        }
-
-        .nota .kop-address {
-            font-size: 12pt;
             line-height: 1.3;
         }
 
-        .nota .kop-banner-cell {
-            text-align: center;
+        .nota .kop-tagline {
+            font-size: 11pt;
+            letter-spacing: 3px;
+            margin-bottom: 2px;
         }
 
-        .nota .kop-banner {
-            width: 380px;
-            height: auto;
+        .nota .kop-address {
+            font-size: 11pt;
+            line-height: 1.3;
         }
 
         /* Garis ganda di bawah kop */
@@ -152,8 +150,10 @@
             padding: 0 16px 0 0;
         }
 
+        /* Tanggal, "Kepada Yth." & penerima rata kanan (mepet tepi kanan) */
         .nota .info td.info-right {
             width: 42%;
+            text-align: right;
         }
 
         .nota .meta {

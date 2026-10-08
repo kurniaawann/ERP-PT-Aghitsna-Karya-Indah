@@ -2,7 +2,7 @@
  * Laporan Pengeluaran — Modular JavaScript
  *
  * Fitur:
- * - Search debounce (mengurangi request server)
+ * - Pencarian saat menekan Enter
  * - Chart.js: Trend Pemasukan & Pengeluaran Bulanan (line chart)
  * - Chart.js: Total Pengeluaran Per Kategori (horizontal bar chart)
  * - Chart.js: Perbandingan Pemasukan vs Pengeluaran (doughnut chart)
@@ -22,7 +22,7 @@
  * Inisialisasi halaman Laporan Pengeluaran setelah DOM selesai dimuat.
  *
  * Alur:
- * 1. Bind event 'input' pada kolom pencarian (name="search") dengan debounce
+ * 1. Bind tombol Enter pada kolom pencarian (name="search") untuk submit form
  *    500ms → form otomatis submit setelah user berhenti mengetik. Ini
  *    melengkapi filter periode (bulan/tahun) dan kategori yang di-submit lewat
  *    dropdown form sehingga halaman selalu menampilkan data terfilter
@@ -44,20 +44,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // ============================================================
 
     /**
-     * Filter periode & kategori dengan debounce auto-submit.
-     *
-     * Alur: setiap keystroke pada input pencarian di-debounce 500ms
-     * (debounce() dari shared module) lalu memanggil this.form.requestSubmit().
-     * Form memuat parameter search beserta filter bulan/tahun/kategori, sehingga
-     * reload terjadi hanya ketika user selesai mengetik (mengurangi request server).
+     * Pencarian dijalankan saat pengguna menekan Enter (tidak otomatis saat
+     * mengetik). Form memuat parameter search beserta filter bulan/tahun/kategori.
      *
      * @returns {void}
      */
     const searchInput = document.querySelector('input[name="search"]');
     if (searchInput && !searchInput.hasAttribute('data-search-debounce')) {
-        searchInput.addEventListener('input', debounce(function () {
-            this.form.requestSubmit();
-        }, 500));
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.form.requestSubmit();
+            }
+        });
     }
 
     // ============================================================

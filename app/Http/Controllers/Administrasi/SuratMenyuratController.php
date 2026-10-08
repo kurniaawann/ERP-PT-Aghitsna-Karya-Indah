@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
  * Controller untuk modul Surat Menyurat.
  *
  * Menyatukan beberapa submodul surat menyurat (Tanda Terima Dokumen,
- * Kwintansi, Nota, Surat Jalan, Surat Perintah Kerja) dalam satu halaman
+ * Kwintansi, Nota, Surat Jalan, Surat Perintah Kerja, Bukti Kas Keluar) dalam satu halaman
  * ber-tab. Setiap tab memuat daftar (list) submodul terkait beserta
  * pencariannya. CRUD/export tetap memakai route submodul masing-masing.
  */
@@ -46,6 +46,12 @@ class SuratMenyuratController extends Controller
             'icon'    => 'fa-file-contract',
             'controller' => SuratPerintahKerjaController::class,
         ],
+        // Bukti Kas Keluar: dulu submenu sidebar, kini tab Surat Menyurat (revisi klien)
+        'bkk' => [
+            'label'   => 'Bukti Kas Keluar',
+            'icon'    => 'fa-money-bill-wave',
+            'controller' => CashOutProofController::class,
+        ],
     ];
 
     public function __construct(
@@ -53,7 +59,8 @@ class SuratMenyuratController extends Controller
         private readonly KwintansiController $kwintansiController,
         private readonly NotaController $notaController,
         private readonly DeliveryNoteController $deliveryNoteController,
-        private readonly SuratPerintahKerjaController $suratPerintahKerjaController
+        private readonly SuratPerintahKerjaController $suratPerintahKerjaController,
+        private readonly CashOutProofController $cashOutProofController
     ) {}
 
     /**
@@ -99,6 +106,7 @@ class SuratMenyuratController extends Controller
             NotaController::class            => $this->notaController,
             DeliveryNoteController::class    => $this->deliveryNoteController,
             SuratPerintahKerjaController::class => $this->suratPerintahKerjaController,
+            CashOutProofController::class    => $this->cashOutProofController,
             default                           => abort(404),
         };
     }

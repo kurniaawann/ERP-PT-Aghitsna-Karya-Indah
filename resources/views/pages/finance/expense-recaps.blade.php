@@ -1,5 +1,6 @@
 {{-- =====================================================================
-     Halaman: Rekap Pengeluaran (Expense Recaps)
+     Halaman: Rekap Pengeluaran (Expense Recaps) — untuk role admin
+              ditampilkan dengan nama "Kas Kantor" (revisi klien)
      Tujuan: Menampilkan daftar & grand totals rekap pengeluaran (income,
              expense, balance) dengan filter kategori/bulan/tahun, search,
              CRUD manual, dan export Excel/PDF.
@@ -12,6 +13,10 @@
                         dipakai di filter select & dropdown modal.
      - $totals        : Grand totals (total_income, total_expense, balance)
                         hasil RecapExpenseService::getGrandTotals($request).
+     - $recapLabel    : "Kas Kantor" (admin) / "Rekap Pengeluaran" (lainnya),
+                        dari RecapExpenseService::getRecapLabel().
+     - $nextIncomeInvoiceNumber : pratinjau nomor faktur uang masuk berikutnya
+                        (null untuk admin — tanpa faktur).
      Komponen yang di-include:
      - x-filters.select-filter / month-filter / year-filter / search-input : toolbar filter
      - x-buttons.print-dropdown / delete-button / add-button               : tombol aksi
@@ -23,14 +28,13 @@
      ===================================================================== --}}
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Rekap Pengeluaran')
+@section('title', 'PT Aghitsna Karya Indah - ' . ($recapLabel ?? 'Rekap Pengeluaran'))
 
 @section('content')
     {{-- ==================== Kontainer Utama Halaman ==================== --}}
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        {{-- ==================== Section: Header Rekap Pengeluaran ==================== --}}
-        {{-- Header Rekap Pengeluaran --}}
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Rekap Pengeluaran</h1>
+        {{-- ==================== Section: Header Rekap Pengeluaran / Kas Kantor ==================== --}}
+        <h1 class="text-2xl font-semibold text-text-primary mb-4">{{ $recapLabel ?? 'Rekap Pengeluaran' }}</h1>
 
         {{-- Toolbar: Filter + Action Buttons --}}
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -66,7 +70,9 @@
                     <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
 
                     {{-- Tombol Tambah --}}
-                    <x-buttons.add-button modalId="addModal" text="Tambah Pengeluaran" responsive="custom" />
+                    <x-buttons.add-button modalId="addModal"
+                        :text="($recapLabel ?? '') === 'Kas Kantor' ? 'Tambah Kas Kantor' : 'Tambah Pengeluaran'"
+                        responsive="custom" />
                 </div>
             </div>
         </div>

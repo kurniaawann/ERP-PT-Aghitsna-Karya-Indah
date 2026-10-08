@@ -18,7 +18,7 @@
             margin: 12mm 15mm;
         }
 
-        /* Seluruh isi surat Times New Roman 12pt (kecuali kop surat yang lebih besar) */
+        /* Seluruh isi surat Times New Roman 12pt (kop surat: nama perusahaan 12pt, alamat 11pt) */
         body {
             font-family: 'Times New Roman', Times, serif;
             font-size: 12pt;
@@ -49,10 +49,11 @@
             height: auto;
         }
 
+        /* Kop surat (revisi klien): nama perusahaan 12pt, alamat/telp/email 11pt */
         .company-title {
             color: #e53935;
             font-weight: bold;
-            font-size: 20pt;
+            font-size: 12pt;
             letter-spacing: 0.5px;
             font-family: Arial, sans-serif;
             line-height: 1.2;
@@ -61,7 +62,7 @@
 
         .company-address {
             color: #1565c0;
-            font-size: 10pt;
+            font-size: 11pt;
             font-weight: bold;
             line-height: 1.35;
             font-family: Arial, sans-serif;
@@ -86,7 +87,7 @@
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px; /* Jarak ke teks di bawahnya (Kepada Yth) */
+            margin-bottom: 0;    /* Jarak ke "Kepada Yth" diatur di .recipient-block */
             line-height: 1.25;   /* Dirapatkan dibanding body */
         }
 
@@ -105,11 +106,14 @@
         }
 
         /* ── Recipient & Opening ─────────────────────────────── */
+        /* Tepat 1 baris kosong (1 baris 12pt x 1.35 = 16.2pt) sebelum "Kepada Yth," dan
+           sebelum "Dengan Hormat," (revisi klien) */
         .recipient-block {
-            margin-bottom: 10px;
+            margin-top: 16.2pt;
         }
 
         .opening-text {
+            margin-top: 16.2pt;
             margin-bottom: 8px;
             text-align: justify;
         }
@@ -286,7 +290,7 @@
         {{-- ═══ PENERIMA SURAT ═══════════════════════════════════════════════════════ --}}
         <div class="recipient-block">
             Kepada Yth,<br>
-            Bapak {{ $q->recipient }}<br>
+            {{ $q->recipient }}<br>
             Di Tempat
         </div>
 
@@ -326,8 +330,8 @@
                         <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
                         <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
                         <td class="c">{{ $item['satuan'] ?? '-' }}</td>
-                        <td class="c">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="c">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
+                        <td class="c">{{ format_rupiah($item['harga'] ?? 0) }}</td>
+                        <td class="c">{{ format_rupiah((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0)) }}</td>
                     </tr>
                 @endforeach
 
@@ -335,8 +339,8 @@
                 @if ($discountAmount > 0)
                     <tr>
                         <td colspan="4" class="empty-cell"></td>
-                        <td class="c">Discount {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
-                        <td class="c">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
+                        <td class="c">Discount {{ $q->discount_type === 'percentage' ? '(' . format_persen($q->discount_value) . '%)' : '' }}</td>
+                        <td class="c">{{ format_rupiah(-$discountAmount) }}</td>
                     </tr>
                 @endif
 
@@ -344,7 +348,7 @@
                 <tr class="row-grand-total">
                     <td colspan="4" class="empty-cell"></td>
                     <td class="c yellow-cell">Total</td>
-                    <td class="c yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
+                    <td class="c yellow-cell">{{ format_rupiah($grandTotal) }}</td>
                 </tr>
             </tbody>
         </table>

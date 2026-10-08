@@ -12,9 +12,13 @@
      Logika role:
      - superadmin: dapat menambah & mengedit reimburse (status draft).
      - admin     : dapat menyetujui/menolak reimburse (bulk approve/reject).
+                   Setelah "Setujui", pratinjau PDF reimburse yang disetujui
+                   langsung terbuka di dalam halaman (flash reimburse_preview_ids).
+     - semua     : cetak PDF/Excel semua data (sesuai filter) atau hanya baris
+                   yang dicentang (Export Dipilih).
      Komponen yang di-include:
      - x-filters.month-filter / year-filter / search-input : toolbar filter
-     - x-buttons.print-dropdown / add-button / delete-button : tombol aksi
+     - x-buttons.print-dropdown-with-selected / add-button / delete-button : tombol aksi
      - components.finance.reimburse.table                  : tabel reimburse
      - components.finance.reimburse.add-modal / edit-modal : modal CRUD (superadmin)
      - components.finance.reimburse.approve-modal / reject-modal : modal persetujuan (admin)
@@ -74,10 +78,12 @@
             <div class="flex items-center gap-2 mt-2 min-[1520px]:mt-0 w-full min-[1520px]:w-auto">
                 <div class="flex flex-col min-[1520px]:flex-row gap-2 w-full min-[1520px]:w-auto">
 
-                    {{-- Tombol Print/Export --}}
-                    <x-buttons.print-dropdown
-                        :excelRoute="route('reimburse.export.excel')"
+                    {{-- Tombol Print/Export: Export Semua (sesuai filter) + Export Dipilih (checkbox ids[]) --}}
+                    <x-buttons.print-dropdown-with-selected
                         :pdfRoute="route('reimburse.export.pdf')"
+                        :excelRoute="route('reimburse.export.excel')"
+                        :pdfSelectedRoute="route('reimburse.export.pdf.selected')"
+                        :excelSelectedRoute="route('reimburse.export.excel.selected')"
                         :queryParams="[
                             'search' => request('search'),
                             'status' => request('status'),
@@ -138,6 +144,7 @@
             <div id="selected-info" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p class="text-sm text-text-primary">
                     <span id="selected-count">0</span> reimburse terpilih | Total: <strong id="selected-total">Rp 0</strong>
+                    <span id="selected-draft-info" class="text-text-secondary"></span>
                 </p>
             </div>
         @endif
@@ -176,6 +183,15 @@
         buttonText="Ya, Hapus">
         Apakah Anda yakin ingin menghapus reimburse yang dipilih?
     </x-modal>
+
+    {{-- ─── Pratinjau Otomatis Setelah Disetujui ───────────────────────────── --}}
+    {{-- Setelah admin memilih "Setujui", dokumen PDF reimburse yang disetujui
+         langsung dipratinjau di dalam halaman (bukan tab baru). URL dibaca
+         oleh JS halaman lalu dibuka lewat window.openDocumentPreview(). --}}
+    @if (!empty(session('reimburse_preview_ids')))
+        <input type="hidden" id="reimburse-approved-preview-url"
+            value="{{ route('reimburse.export.pdf', ['ids' => session('reimburse_preview_ids')]) }}">
+    @endif
 
     {{-- ─── JavaScript Module ───────────────────────────────────────────────── --}}
     @vite('resources/js/pages/finance/reimburse/index.js')

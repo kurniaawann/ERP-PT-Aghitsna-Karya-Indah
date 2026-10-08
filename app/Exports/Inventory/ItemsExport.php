@@ -55,9 +55,9 @@ class ItemsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, W
     {
         $total = $item->quantity * $item->capital_price;
 
-        $capitalPrice = 'Rp' . number_format($item->capital_price, 0, ',', '.');
-        $sellingPrice = 'Rp' . number_format($item->selling_price, 0, ',', '.');
-        $totalFormatted = 'Rp' . number_format($total, 0, ',', '.');
+        $capitalPrice = format_rupiah($item->capital_price);
+        $sellingPrice = format_rupiah($item->selling_price);
+        $totalFormatted = format_rupiah($total);
 
         return [
             $item->name_item,

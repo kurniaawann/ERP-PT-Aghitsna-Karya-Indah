@@ -85,6 +85,11 @@
             text-align: right;
         }
 
+        /* Nominal "Rp. 50.000" tidak dipecah ke baris baru */
+        .nowrap {
+            white-space: nowrap;
+        }
+
         /* Footer */
         .footer {
             margin-top: 16px;
@@ -129,8 +134,8 @@
                     <td class="text-center">{{ $invoice->tax_number_code }}</td>
                     {{-- Revisi klien: Nama Barang, Harga Jual, PPN Pajak rata tengah --}}
                     <td class="text-center">{{ $invoice->item_name }}</td>
-                    <td class="text-center">Rp {{ number_format($invoice->selling_price, 0, ',', '.') }}</td>
-                    <td class="text-center">Rp {{ number_format($invoice->ppn_tax, 0, ',', '.') }}</td>
+                    <td class="text-center nowrap">{{ format_rupiah($invoice->selling_price) }}</td>
+                    <td class="text-center nowrap">{{ format_rupiah($invoice->ppn_tax) }}</td>
                     <td>{{ $invoice->notes ?? '' }}</td>
                 </tr>
             @empty

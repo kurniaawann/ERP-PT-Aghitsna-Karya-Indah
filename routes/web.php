@@ -293,6 +293,8 @@ Route::middleware('auth')->group(function () {
     // Route Reimburse - Export
     Route::get('/reimburse/export/pdf', [ReimburseController::class, 'exportPdf'])->name('reimburse.export.pdf');
     Route::get('/reimburse/export/excel', [ReimburseController::class, 'exportExcel'])->name('reimburse.export.excel');
+    Route::post('/reimburse/export/pdf-selected', [ReimburseController::class, 'exportPdfSelected'])->name('reimburse.export.pdf.selected');
+    Route::post('/reimburse/export/excel-selected', [ReimburseController::class, 'exportExcelSelected'])->name('reimburse.export.excel.selected');
 
     // Route Reimburse - API untuk get total selected
     Route::post('/reimburse/get-selected-total', [ReimburseController::class, 'getSelectedTotal'])->name('reimburse.getSelectedTotal');

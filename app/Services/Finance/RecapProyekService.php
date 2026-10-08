@@ -45,7 +45,9 @@ class RecapProyekService
             ->when($request->filled('status'), function (Builder $query) use ($request) {
                 $this->applyStatusFilter($query, $request->status);
             })
-            ->with(['creator', 'rab', 'paymentProofs', 'financialReport.items'])
+            // invoices: Invoice Proyek yang ditautkan ke rekap (ringkasan
+            // nilai yang sudah ditagih & sisa tagihan di modal detail).
+            ->with(['creator', 'rab', 'paymentProofs', 'financialReport.items', 'invoices.paymentProofs'])
             ->orderByDesc('created_at');
     }
 

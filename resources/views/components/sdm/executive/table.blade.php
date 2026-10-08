@@ -1,6 +1,6 @@
 {{-- =====================================================================
      Executive Table Component
-     Menampilkan daftar petinggi dalam format tabel dengan checkbox
+     Menampilkan daftar penandatangan dalam format tabel dengan checkbox
      untuk bulk delete, pratinjau tanda tangan, dan tombol edit per baris.
      ===================================================================== --}}
 <form id="deleteForm" method="POST" action="{{ route('executive.destroy') }}">
@@ -29,7 +29,7 @@
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
-                                {{-- Nama Petinggi --}}
+                                {{-- Nama Penandatangan --}}
                                 <td class="p-2 font-medium text-primary">{{ $executive->name }}</td>
 
                                 {{-- Jabatan --}}
@@ -39,7 +39,7 @@
                                 <td class="p-2 text-center">
                                     @if ($executive->signature_image)
                                         <button type="button"
-                                            onclick="openSignature('{{ asset('storage/' . $executive->signature_image) }}')"
+                                            onclick="openSignature(@js(asset('storage/' . $executive->signature_image)), @js($executive->name))"
                                             title="Klik untuk perbesar" class="inline-block">
                                             <img src="{{ asset('storage/' . $executive->signature_image) }}"
                                                 alt="Tanda tangan {{ $executive->name }}"
@@ -55,7 +55,7 @@
                                     <div class="flex justify-center gap-2">
                                         <button type="button" onclick="openModal('editModal-{{ $executive->id }}')"
                                             class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit Petinggi">
+                                            title="Edit Penandatangan">
                                             <i class="fa-solid fa-pen w-3 h-3"></i>
                                             Edit
                                         </button>

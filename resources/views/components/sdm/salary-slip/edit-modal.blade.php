@@ -10,9 +10,12 @@
     - Nilai disimpan pada hidden input attendance[hari].
     - Ringkasan perhitungan live oleh JS:
         Penerimaan = gaji pokok + (transport × hadir) + (makan × hadir)
+                     + lembur bulan ini (modul Lembur)
         Potongan   = BPJS 1% gaji pokok + JHT 2% UMP + JPN 1% UMP
-                     + PPh 21 (input manual) + kasbon pending
+                     + PPh 21 (input manual) + cicilan kasbon bulan ini
         THP        = Penerimaan − Potongan
+    - Cicilan kasbon (kasbon_installment): default = seluruh sisa kasbon,
+      maksimal = sisa kasbon. Dicatat sebagai pembayaran kasbon saat slip dibayar.
 
     Frontend JS: resources/js/pages/sdm/salary-slip/index.js
     (grid day toggle + ringkasan live).
@@ -31,6 +34,8 @@
         data-meal-rate="{{ $slip->meal_rate }}"
         data-ump="{{ $slip->ump }}"
         data-pph21="{{ $slip->pph21 }}"
+        data-overtime="{{ $slip->overtime_total }}"
+        data-kasbon-total="{{ $slip->kasbon_total }}"
         data-kasbon="{{ $slip->kasbon_deduction }}">
     <div class="mb-4 p-4 bg-warning-light border border-warning rounded-lg">
         <div class="flex gap-2">
@@ -90,9 +95,41 @@
         </div>
 
         <div>
-            <label class="block text-text-primary mb-1">Kasbon Pending</label>
-            <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-error"
-                value="Rp {{ number_format($slip->kasbon_deduction, 0, ',', '.') }}" disabled>
+            <label class="block text-text-primary mb-1">Lembur Bulan Ini</label>
+            <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
+                value="Rp {{ number_format($slip->overtime_total, 0, ',', '.') }}" disabled>
+            <p class="text-xs text-text-label mt-1">Otomatis dari modul Lembur.</p>
+        </div>
+    </div>
+
+    {{-- Kasbon (bisa dicicil): total sisa → cicilan bulan ini → sisa --}}
+    <div class="mb-4 p-3 bg-surface-secondary border border-border rounded-lg">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-hand-holding-dollar text-primary"></i>
+            <p class="text-sm font-semibold text-text-primary">Kasbon</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+                <label class="block text-text-primary mb-1 text-sm">Total Sisa Kasbon</label>
+                <input type="text" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-secondary"
+                    value="Rp {{ number_format($slip->kasbon_total, 0, ',', '.') }}" disabled>
+            </div>
+            <div>
+                <label class="block text-text-primary mb-1 text-sm">Cicilan Bulan Ini</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-label text-sm">Rp</span>
+                    <input type="number" name="kasbon_installment" min="0" max="{{ $slip->kasbon_total }}" step="1"
+                        class="kasbon-installment-input w-full border border-border-strong rounded p-2 pl-9 {{ $slip->kasbon_total > 0 ? 'bg-surface-base text-text-input' : 'bg-surface-secondary text-text-secondary cursor-not-allowed' }}"
+                        value="{{ $slip->kasbon_deduction }}" placeholder="0"
+                        @disabled($slip->kasbon_total <= 0)>
+                </div>
+                <p class="text-xs text-text-label mt-1">Default seluruh sisa kasbon, maksimal Rp {{ number_format($slip->kasbon_total, 0, ',', '.') }}.</p>
+            </div>
+            <div>
+                <label class="block text-text-primary mb-1 text-sm">Sisa Setelah Cicilan</label>
+                <input type="text" class="recap-kasbon-remaining-input w-full border border-border-strong rounded p-2 bg-surface-base text-text-secondary"
+                    value="Rp {{ number_format($slip->kasbon_remaining, 0, ',', '.') }}" disabled>
+            </div>
         </div>
     </div>
 
@@ -154,6 +191,7 @@
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm border-t border-border pt-2">
             <span>Transport: <strong class="text-text-primary recap-transport">Rp {{ number_format($slip->transport_total, 0, ',', '.') }}</strong></span>
             <span>Makan: <strong class="text-text-primary recap-meal">Rp {{ number_format($slip->meal_total, 0, ',', '.') }}</strong></span>
+            <span>Lembur: <strong class="text-text-primary recap-overtime">Rp {{ number_format($slip->overtime_total, 0, ',', '.') }}</strong></span>
             <span class="ml-auto">Penerimaan: <strong class="text-text-primary recap-income">Rp {{ number_format($slip->total_income, 0, ',', '.') }}</strong></span>
         </div>
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm border-t border-border pt-2">
@@ -161,7 +199,7 @@
             <span>JHT 2%: <strong class="text-error recap-jht">Rp {{ number_format($slip->jht_employee, 0, ',', '.') }}</strong></span>
             <span>JPN 1%: <strong class="text-error recap-jpn">Rp {{ number_format($slip->jpn_employee, 0, ',', '.') }}</strong></span>
             <span>PPh 21: <strong class="text-error recap-pph21">Rp {{ number_format($slip->pph21, 0, ',', '.') }}</strong></span>
-            <span>Kasbon: <strong class="text-error recap-kasbon">Rp {{ number_format($slip->kasbon_deduction, 0, ',', '.') }}</strong></span>
+            <span>Cicilan Kasbon: <strong class="text-error recap-kasbon">Rp {{ number_format($slip->kasbon_deduction, 0, ',', '.') }}</strong></span>
             <span class="ml-auto">Total Potongan: <strong class="text-error recap-total-deduction">Rp {{ number_format($slip->total_deduction, 0, ',', '.') }}</strong></span>
             <span>THP: <strong class="text-primary recap-net">Rp {{ number_format($slip->net_salary, 0, ',', '.') }}</strong></span>
         </div>

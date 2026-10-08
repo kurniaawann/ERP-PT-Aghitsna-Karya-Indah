@@ -13,6 +13,7 @@ use App\Exports\Finance\ProyekInvoiceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\Finance\ProyekInvoiceService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -32,7 +33,8 @@ class ProyekInvoiceController extends Controller
     /**
      * Mendapatkan nomor invoice proyek berikutnya secara otomatis.
      *
-     * Format: {n}/{n}/PT.AKI/{yy}
+     * Format superadmin: {n}/{n}/PT.AKI/{yy}
+     * Format admin (saran): {nomor}/AKI/{bulan romawi}/{yyyy}
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -48,6 +50,12 @@ class ProyekInvoiceController extends Controller
     /**
      * Menampilkan halaman daftar invoice proyek dengan filter dan pencarian.
      *
+     * Data tambahan untuk form:
+     * - $projectRecaps     : pilihan Rekap Proyek (tautan opsional) beserta
+     *                        ringkasan nilai proyek & total yang sudah ditagih.
+     * - $takenAdminNumbers : nomor invoice admin format baru yang sudah
+     *                        dipakai (validasi live nomor dobel; khusus admin).
+     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\View\View
      */
@@ -57,8 +65,17 @@ class ProyekInvoiceController extends Controller
         $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
         $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
         $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
+        $projectRecaps = $this->service->getProjectRecapOptions();
+        $takenAdminNumbers = auth()->user()->isAdmin() ? $this->service->getTakenAdminInvoiceNumbers() : [];
 
-        return view('pages.finance.project-invoices', compact('invoices', 'paymentAccounts', 'executives', 'divisions'));
+        return view('pages.finance.project-invoices', compact(
+            'invoices',
+            'paymentAccounts',
+            'executives',
+            'divisions',
+            'projectRecaps',
+            'takenAdminNumbers'
+        ));
     }
 
     /**
@@ -76,16 +93,24 @@ class ProyekInvoiceController extends Controller
         }
 
         $data = $request->validated();
+        $data['invoice_number'] = $this->service->resolveNewInvoiceNumber($data);
 
-        if (empty($data['invoice_number']) || str_contains($data['invoice_number'], 'Akan digenerate')) {
-            $isAdmin = auth()->check() && auth()->user()->isAdmin();
-            $data['invoice_number'] = $this->service->generateInvoiceNumber($isAdmin);
+        try {
+            $this->service->createInvoice($data, $items);
+        } catch (QueryException $e) {
+            // Nomor invoice adalah primary key: tabrakan nomor (mis. dua user
+            // menyimpan nomor yang sama bersamaan) ditolak database.
+            if (($e->errorInfo[0] ?? null) === '23000' && InvoiceProyek::whereKey($data['invoice_number'])->exists()) {
+                return back()
+                    ->with('error', "No invoice {$data['invoice_number']} sudah digunakan. Silakan gunakan nomor lain.")
+                    ->withInput();
+            }
+
+            throw $e;
         }
 
-        $this->service->createInvoice($data, $items);
-
         return redirect()->route('proyek-invoice.index')
-            ->with('success', 'Invoice proyek berhasil ditambahkan!');
+            ->with('success', "Invoice {$data['invoice_number']} berhasil ditambahkan!");
     }
 
     /**
@@ -104,10 +129,15 @@ class ProyekInvoiceController extends Controller
                 return back()->with('error', 'Data items tidak valid')->withInput();
             }
 
-            $this->service->updateInvoice($proyek_invoice, $request->validated(), $items);
+            $oldNumber = $proyek_invoice->invoice_number;
+            $newNumber = $this->service->updateInvoice($proyek_invoice, $request->validated(), $items);
+
+            $message = $newNumber !== $oldNumber
+                ? "Invoice berhasil diupdate! No invoice berubah dari {$oldNumber} menjadi {$newNumber}."
+                : 'Invoice proyek berhasil diupdate!';
 
             return redirect()->route('proyek-invoice.index')
-                ->with('success', 'Invoice proyek berhasil diupdate!');
+                ->with('success', $message);
         } catch (\Exception $e) {
             Log::error('Proyek Invoice update failed', [
                 'error' => $e->getMessage(),
@@ -127,7 +157,8 @@ class ProyekInvoiceController extends Controller
     {
         return response()->json([
             'invoice' => $proyek_invoice,
-            'items' => json_decode($proyek_invoice->items),
+            // items sudah di-cast 'json' → array oleh model
+            'items' => is_string($proyek_invoice->items) ? json_decode($proyek_invoice->items, true) : $proyek_invoice->items,
         ]);
     }
 

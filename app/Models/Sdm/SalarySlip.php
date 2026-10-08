@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model untuk tabel salary_slips (Slip Gaji Karyawan Bulanan).
@@ -34,12 +35,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int    $salary_deduction
  * @property int    $transport_total
  * @property int    $meal_total
+ * @property int    $overtime_total  Total lembur bulan slip (modul Lembur)
  * @property int    $total_income
  * @property int    $bpjs_kesehatan_employee
  * @property int    $jht_employee
  * @property int    $jpn_employee
  * @property int    $pph21
- * @property int    $kasbon_deduction
+ * @property int    $kasbon_total  Total sisa kasbon sebelum dipotong slip ini
+ * @property int|null $kasbon_installment  Cicilan kasbon input admin (null = lunasi seluruh sisa)
+ * @property int    $kasbon_deduction  Potongan kasbon efektif bulan ini (cicilan)
  * @property int    $total_deduction
  * @property int    $bpjs_kesehatan_company
  * @property int    $jht_company
@@ -50,6 +54,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $status  'draft' | 'paid'
  * @property string|null $notes
  * @property array|null $signatures
+ *
+ * @property-read int $kasbon_remaining  Sisa kasbon setelah dipotong slip ini
  */
 class SalarySlip extends Model
 {
@@ -85,11 +91,14 @@ class SalarySlip extends Model
         'salary_deduction',
         'transport_total',
         'meal_total',
+        'overtime_total',
         'total_income',
         'bpjs_kesehatan_employee',
         'jht_employee',
         'jpn_employee',
         'pph21',
+        'kasbon_total',
+        'kasbon_installment',
         'kasbon_deduction',
         'total_deduction',
         'bpjs_kesehatan_company',
@@ -123,11 +132,14 @@ class SalarySlip extends Model
         'salary_deduction' => 'integer',
         'transport_total' => 'integer',
         'meal_total' => 'integer',
+        'overtime_total' => 'integer',
         'total_income' => 'integer',
         'bpjs_kesehatan_employee' => 'integer',
         'jht_employee' => 'integer',
         'jpn_employee' => 'integer',
         'pph21' => 'integer',
+        'kasbon_total' => 'integer',
+        'kasbon_installment' => 'integer',
         'kasbon_deduction' => 'integer',
         'total_deduction' => 'integer',
         'bpjs_kesehatan_company' => 'integer',
@@ -145,6 +157,23 @@ class SalarySlip extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_code', 'employee_code');
+    }
+
+    /**
+     * Pembayaran (cicilan) kasbon yang dipotong oleh slip ini saat dibayar.
+     */
+    public function kasbonPayments(): HasMany
+    {
+        return $this->hasMany(KasbonPayment::class, 'salary_slip_id');
+    }
+
+    /**
+     * Sisa kasbon setelah dipotong cicilan slip ini
+     * (kasbon_total - kasbon_deduction, minimal 0).
+     */
+    public function getKasbonRemainingAttribute(): int
+    {
+        return max(0, (int) $this->kasbon_total - (int) $this->kasbon_deduction);
     }
 
     /**

@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use Maatwebsite\Excel\Events\AfterSheet;
 
 /**
@@ -20,7 +21,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
  *
  * Menghasilkan file Excel dengan:
  * - Header "LAPORAN REIMBURSEMENT"
- * - Sub-header status filter
+ * - Sub-header status: rasio persetujuan (mis. "Disetujui 3 dari 4 yang diajukan")
  * - Tabel data reimburse
  * - Baris total di akhir
  * - Styling: border, warna header biru, bold total
@@ -42,23 +43,32 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
     protected $statusFilter;
 
     /**
+     * Teks status untuk sub-header (dari ReimburseService::buildStatusText).
+     *
+     * @var string|null
+     */
+    protected $statusText;
+
+    /**
      * Constructor untuk menerima data reimburses dan filter status.
      *
      * @param  \Illuminate\Support\Collection $reimburses   Data reimburse
      * @param  string|null                    $statusFilter Filter status (draft/approved/rejected)
+     * @param  string|null                    $statusText   Teks status siap tampil (rasio persetujuan)
      */
-    public function __construct(Collection $reimburses, ?string $statusFilter = null)
+    public function __construct(Collection $reimburses, ?string $statusFilter = null, ?string $statusText = null)
     {
         $this->reimburses = $reimburses;
         $this->statusFilter = $statusFilter;
+        $this->statusText = $statusText;
     }
 
     /**
      * Return collection data untuk export.
      *
      * Setiap baris berisi: no, kode, tanggal, nama proyek, keterangan belanja,
-     * total, due date, status, tanggal perubahan status, catatan.
-     * Baris terakhir adalah total.
+     * total, status, tanggal perubahan status, catatan (Tgl Jatuh Tempo
+     * dihapus — revisi klien). Baris terakhir adalah total.
      *
      * @return \Illuminate\Support\Collection
      */
@@ -75,8 +85,7 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
                 'date' => $reimburse->formatted_date,
                 'project_name' => $reimburse->project_name,
                 'expense_description' => $reimburse->expense_description,
-                'total_amount' => 'Rp ' . number_format($reimburse->total_amount, 0, ',', '.'),
-                'due_date' => $reimburse->formatted_due_date,
+                'total_amount' => format_rupiah($reimburse->total_amount),
                 'status' => strtoupper($reimburse->status_label),
                 'status_changed_at' => $reimburse->formatted_status_changed_at,
                 'notes' => $reimburse->notes ?? '-',
@@ -92,8 +101,7 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
             'date' => '',
             'project_name' => '',
             'expense_description' => 'TOTAL',
-            'total_amount' => 'Rp ' . number_format($totalAmount, 0, ',', '.'),
-            'due_date' => '',
+            'total_amount' => format_rupiah($totalAmount),
             'status' => '',
             'status_changed_at' => '',
             'notes' => '',
@@ -112,7 +120,9 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
     public function headings(): array
     {
         $statusText = 'SEMUA STATUS';
-        if ($this->statusFilter) {
+        if ($this->statusText) {
+            $statusText = $this->statusText;
+        } elseif ($this->statusFilter) {
             $statusLabels = [
                 'draft' => 'DRAFT',
                 'approved' => 'DISETUJUI',
@@ -132,7 +142,6 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
                 'NAMA PROYEK',
                 'KETERANGAN BELANJA',
                 'TOTAL',
-                'TGL JATUH TEMPO',
                 'STATUS',
                 'TGL PERUBAHAN STATUS',
                 'CATATAN',
@@ -153,14 +162,14 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
         $highestRow = $sheet->getHighestRow();
 
         // Merge title
-        $sheet->mergeCells('A1:J1');
+        $sheet->mergeCells('A1:I1');
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
         // Merge subtitle
-        $sheet->mergeCells('A2:J2');
+        $sheet->mergeCells('A2:I2');
         $sheet->getStyle('A2')->applyFromArray([
             'font' => ['bold' => true, 'size' => 12],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -170,7 +179,7 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
         $sheet->getRowDimension(3)->setRowHeight(5);
 
         // Header row styling
-        $sheet->getStyle('A4:J4')->applyFromArray([
+        $sheet->getStyle('A4:I4')->applyFromArray([
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => '4472C4'],
@@ -189,7 +198,7 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
 
         // Data rows border
         $dataEndRow = $highestRow;
-        $sheet->getStyle('A5:J' . $dataEndRow)->applyFromArray([
+        $sheet->getStyle('A5:I' . $dataEndRow)->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
             ],
@@ -205,11 +214,10 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
         $sheet->getStyle('F5:F' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getStyle('G5:G' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('H5:H' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('J5:J' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('I5:I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
         // Bold + background untuk baris total (row terakhir)
-        $sheet->getStyle('A' . $highestRow . ':J' . $highestRow)->applyFromArray([
+        $sheet->getStyle('A' . $highestRow . ':I' . $highestRow)->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -234,10 +242,9 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
             'D' => 25,
             'E' => 40,
             'F' => 18,
-            'G' => 14,
-            'H' => 12,
-            'I' => 18,
-            'J' => 30,
+            'G' => 12,
+            'H' => 18,
+            'I' => 30,
         ];
     }
 
@@ -254,7 +261,8 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
     /**
      * Register events.
      *
-     * Mengatur auto-wrap text untuk kolom keterangan dan catatan.
+     * Mengatur auto-wrap text untuk kolom keterangan dan catatan, serta
+     * setup cetak (A4 landscape, muat 1 halaman lebar).
      *
      * @return array
      */
@@ -265,7 +273,15 @@ class ReimburseExport implements FromCollection, WithHeadings, WithStyles, WithC
                 $highestRow = $event->sheet->getDelegate()->getHighestRow();
 
                 $event->sheet->getDelegate()->getStyle('E5:E' . $highestRow)->getAlignment()->setWrapText(true);
-                $event->sheet->getDelegate()->getStyle('J5:J' . $highestRow)->getAlignment()->setWrapText(true);
+                $event->sheet->getDelegate()->getStyle('I5:I' . $highestRow)->getAlignment()->setWrapText(true);
+
+                // Setup cetak: A4 landscape, muat 1 halaman lebar, header tabel berulang
+                $event->sheet->getDelegate()->getPageSetup()
+                    ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+                    ->setPaperSize(PageSetup::PAPERSIZE_A4)
+                    ->setFitToWidth(1)
+                    ->setFitToHeight(0);
+                $event->sheet->getDelegate()->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(4, 4);
             },
         ];
     }

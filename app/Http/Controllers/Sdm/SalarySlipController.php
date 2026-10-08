@@ -48,7 +48,8 @@ class SalarySlipController extends Controller
 
     /**
      * Endpoint AJAX: karyawan bulanan yang belum punya slip pada periode
-     * tertentu (dipakai modal generate agar daftar selalu sesuai periode).
+     * tertentu (dipakai modal generate agar daftar selalu sesuai periode),
+     * lengkap dengan total sisa kasbon s.d. periode tsb (default cicilan).
      */
     public function eligibleEmployees(Request $request)
     {
@@ -61,6 +62,11 @@ class SalarySlipController extends Controller
             'data' => $employees->map(fn ($employee) => [
                 'value' => $employee->employee_code,
                 'label' => $employee->name.' - '.$employee->employee_code,
+                'kasbon_total' => $this->service->getOutstandingKasbonForEmployee(
+                    $employee->employee_code,
+                    $periodYear,
+                    $periodMonth
+                ),
             ])->values(),
         ]);
     }
@@ -87,7 +93,8 @@ class SalarySlipController extends Controller
             $periodYear,
             $periodMonth,
             $request->input('signatures', []),
-            $request->input('holidays', [])
+            $request->input('holidays', []),
+            (array) $request->input('kasbon_installments', [])
         );
 
         if (! $result['success']) {
@@ -108,15 +115,31 @@ class SalarySlipController extends Controller
     }
 
     /**
-     * Menyimpan matriks absensi, PPh 21 manual, dan catatan slip draft.
+     * Menyimpan matriks absensi, PPh 21 manual, cicilan kasbon bulan ini,
+     * dan catatan slip draft.
      */
     public function update(Request $request, SalarySlip $salarySlip)
     {
+        if ((int) $salarySlip->created_by !== (int) auth()->id()) {
+            abort(403, 'Anda tidak memiliki akses ke slip gaji ini.');
+        }
+
+        $request->validate([
+            'pph21' => 'nullable|integer|min:0',
+            'kasbon_installment' => 'nullable|integer|min:0',
+        ], [
+            'pph21.integer' => 'PPh 21 harus berupa angka.',
+            'pph21.min' => 'PPh 21 tidak boleh negatif.',
+            'kasbon_installment.integer' => 'Cicilan kasbon harus berupa angka.',
+            'kasbon_installment.min' => 'Cicilan kasbon tidak boleh negatif.',
+        ]);
+
         try {
             $this->service->updateAttendance(
                 $salarySlip,
                 $request->input('attendance', []),
-                $request->has('pph21') ? (int) $request->input('pph21') : null
+                $request->has('pph21') ? (int) $request->input('pph21') : null,
+                $request->has('kasbon_installment') ? (int) $request->input('kasbon_installment') : null
             );
             $this->service->updateNotes($salarySlip, $request->input('notes'));
         } catch (\DomainException $e) {

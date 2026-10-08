@@ -32,8 +32,8 @@
             <select name="employees[{{ $index }}][employment_type]"
                 class="w-full border rounded p-2 employment-type-select"
                 data-row-index="{{ $index }}">
-                <option value="harian">Harian (Tukang)</option>
-                <option value="bulanan">Bulanan (Slip Gaji)</option>
+                <option value="harian">TUKANG PROYEK</option>
+                <option value="bulanan">KARYAWAN KANTOR</option>
             </select>
         </div>
 

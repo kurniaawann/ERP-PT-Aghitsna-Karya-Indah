@@ -18,7 +18,7 @@
             margin: 12mm 15mm;
         }
 
-        /* Seluruh isi dokumen Times New Roman 12pt (kecuali kop surat yang lebih besar) */
+        /* Seluruh isi dokumen Times New Roman 12pt (kop surat: nama usaha 12pt, alamat 11pt) */
         body {
             font-family: 'Times New Roman', Times, serif;
             font-size: 12pt;
@@ -50,15 +50,16 @@
             text-align: center;
         }
 
+        /* Kop surat (revisi klien): nama usaha 12pt, alamat/telp/email 11pt */
         .company-name {
-            font-size: 16pt;
+            font-size: 12pt;
             font-weight: bold;
             padding-top: 6px !important;
             padding-bottom: 2px !important;
         }
 
         .company-address {
-            font-size: 12pt;
+            font-size: 11pt;
             line-height: 1.3;
         }
 
@@ -76,9 +77,9 @@
         }
 
         /* ── Recipient ──────────────────────────────────────── */
-        /* Jarak ±1 baris kosong: Email → Kepada Yth → "Dengan ini kami sampaikan" */
+        /* Jarak tepat 1 baris kosong (1 baris 12pt x 1.3 = 15.6pt): Email → Kepada Yth → "Dengan ini kami sampaikan" */
         .recipient-section {
-            margin: 24px 0 0 0;
+            margin: 15.6pt 0 0 0;
         }
 
         .recipient-label {
@@ -87,7 +88,7 @@
 
         /* ── Opening text ───────────────────────────────────── */
         .opening {
-            margin: 20px 0 8px 0;
+            margin: 15.6pt 0 8px 0;
         }
 
         /* Blok No/Tanggal/Hal rata ke tepi kanan (sejajar tepi kanan tabel item) */
@@ -291,8 +292,8 @@
                     <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
                     <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
                     <td class="c">{{ $item['satuan'] ?? '-' }}</td>
-                    <td class="c">Rp &nbsp;{{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
-                    <td class="c">Rp &nbsp;{{ number_format((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</td>
+                    <td class="c">{{ format_rupiah($item['harga'] ?? 0) }}</td>
+                    <td class="c">{{ format_rupiah((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0)) }}</td>
                 </tr>
             @endforeach
 
@@ -300,8 +301,8 @@
                 <tr>
                     <td colspan="4" class="empty-cell"></td>
                     <td class="c">Discount
-                        {{ $q->discount_type === 'percentage' ? '(' . rtrim(rtrim(number_format((float) $q->discount_value, 2, ',', '.'), '0'), ',') . '%)' : '' }}</td>
-                    <td class="c">Rp &nbsp;-{{ number_format($discountAmount, 0, ',', '.') }}</td>
+                        {{ $q->discount_type === 'percentage' ? '(' . format_persen($q->discount_value) . '%)' : '' }}</td>
+                    <td class="c">{{ format_rupiah(-$discountAmount) }}</td>
                 </tr>
             @endif
 
@@ -309,7 +310,7 @@
             <tr class="row-grand-total">
                 <td colspan="4" class="empty-cell"></td>
                 <td class="c yellow-cell">Total</td>
-                <td class="c yellow-cell">Rp &nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
+                <td class="c yellow-cell">{{ format_rupiah($grandTotal) }}</td>
             </tr>
         </tbody>
     </table>

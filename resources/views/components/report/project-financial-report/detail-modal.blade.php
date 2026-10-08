@@ -77,13 +77,14 @@
                         <table class="min-w-full divide-y divide-border-light">
                             <thead class="bg-surface-secondary">
                                 <tr>
-                                    <th class="p-2 text-center">No</th>
-                                    <th class="p-2 text-left">Tanggal</th>
-                                    <th class="p-2 text-left">Kategori</th>
-                                    <th class="p-2 text-left">Keterangan</th>
-                                    <th class="p-2 text-right">Jumlah</th>
-                                    <th class="p-2 text-left">Keterangan Bon</th>
-                                    <th class="p-2 text-center">Bukti</th>
+                                    {{-- Nama kolom HURUF KAPITAL (revisi klien) --}}
+                                    <th class="p-2 text-center">NO</th>
+                                    <th class="p-2 text-left">TANGGAL</th>
+                                    <th class="p-2 text-left">KATEGORI</th>
+                                    <th class="p-2 text-left">KETERANGAN</th>
+                                    <th class="p-2 text-right">JUMLAH</th>
+                                    <th class="p-2 text-left">KETERANGAN BON</th>
+                                    <th class="p-2 text-center">BUKTI</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-surface-base divide-y divide-border-light">
@@ -117,8 +118,10 @@
                                         <td class="p-2 text-text-secondary">{{ $item->keterangan_bon ?: '-' }}</td>
                                         <td class="p-2 text-center">
                                             @if ($item->hasProof())
-                                                <a href="{{ asset('storage/' . $item->proof_file) }}" target="_blank"
-                                                    rel="noopener noreferrer" title="{{ $item->proof_file_name }}"
+                                                {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
+                                                <a href="{{ asset('storage/' . $item->proof_file) }}"
+                                                    onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti — ' . ($item->description ?: 'Transaksi')), downloadName: @js($item->proof_file_name ?: basename($item->proof_file)) })"
+                                                    title="{{ $item->proof_file_name }}"
                                                     class="text-blue-600 hover:underline text-sm">
                                                     <i class="fa-solid fa-paperclip"></i> File
                                                 </a>

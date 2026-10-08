@@ -305,7 +305,7 @@
                     </tr>
                     <tr>
                         <td class="label">Tanggal</td>
-                        <td>: {{ $rab->date->format('d F Y') }}</td>
+                        <td>: {{ $rab->date->translatedFormat('d F Y') }}</td>
                     </tr>
                 </table>
             </div>
@@ -419,10 +419,10 @@
                                 <td class="text-center">{{ $itemVolume !== null ? $itemVolume : '' }}</td>
                                 <td class="text-center">{{ $itemUnit ?: '' }}</td>
                                 <td class="text-right">
-                                    {{ $itemPrice > 0 ? number_format($itemPrice, 0, ',', '.') : '' }}
+                                    {{ $itemPrice > 0 ? format_rupiah($itemPrice) : '' }}
                                 </td>
                                 <td class="text-right">
-                                    {{ $itemSubtotal > 0 ? number_format($itemSubtotal, 0, ',', '.') : '' }}
+                                    {{ $itemSubtotal > 0 ? format_rupiah($itemSubtotal) : '' }}
                                 </td>
                                 <td></td>
                             </tr>
@@ -442,7 +442,7 @@
                     @if ($category->subcategories->count() > 0)
                         <tr class="subtotal-row">
                             <td colspan="6" class="text-right"></td>
-                            <td class="text-right">{{ number_format($categoryTotal, 0, ',', '.') }}</td>
+                            <td class="text-right">{{ format_rupiah($categoryTotal) }}</td>
                         </tr>
                         @php
                             $grandTotal += $categoryTotal;
@@ -457,23 +457,22 @@
                 @endphp
                 <tr class="summary-row total-row">
                     <td colspan="6" class="label" style="width: 70%;">I. Jumlah Anggaran Bangunan</td>
-                    <td class="value" style="width: 30%;">Rp. {{ number_format($grandTotal, 0, ',', '.') }}</td>
+                    <td class="value" style="width: 30%;">{{ format_rupiah($grandTotal) }}</td>
                 </tr>
                 <tr class="summary-row total-row">
                     <td colspan="6" class="label" style="width: 70%;">II. Biaya Lain-Lain</td>
-                    <td class="value" style="width: 30%;">Rp.
-                        {{ number_format($rab->miscellaneousCosts->sum('amount'), 0, ',', '.') }}</td>
+                    <td class="value" style="width: 30%;">{{ format_rupiah($miscCostsTotal) }}</td>
                 </tr>
                 @foreach ($rab->miscellaneousCosts as $miscCost)
                     <tr class="summary-row total-row">
                         <td colspan="6" class="label" style="padding-left: 40px;">{{ $miscCost->item_order }}.
                             {{ $miscCost->item_name }}</td>
-                        <td class="value">Rp. {{ number_format($miscCost->amount, 0, ',', '.') }}</td>
+                        <td class="value">{{ format_rupiah($miscCost->amount) }}</td>
                     </tr>
                 @endforeach
                 <tr class="summary-row total-amount-row">
                     <td colspan="6" class="label">TOTAL ANGGARAN BIAYA</td>
-                    <td class="value">Rp. {{ number_format($totalAnggaranBiaya, 0, ',', '.') }}</td>
+                    <td class="value">{{ format_rupiah($totalAnggaranBiaya) }}</td>
                 </tr>
                 @if (!auth()->user()->isAdmin())
                     <tr class="summary-row terbilang-row">
@@ -489,11 +488,11 @@
                     @if ($incomingPayment > 0)
                         <tr class="summary-row" style="background-color: #edbcbc;">
                             <td colspan="6" class="label">UANG MASUK (DP)</td>
-                            <td class="value">Rp. {{ number_format($incomingPayment, 0, ',', '.') }}</td>
+                            <td class="value">{{ format_rupiah($incomingPayment) }}</td>
                         </tr>
                         <tr class="summary-row total-amount-row" style="background-color: #FFE0B2;">
                             <td colspan="6" class="label">SISA PEMBAYARAN</td>
-                            <td class="value">Rp. {{ number_format($sisaPembayaran, 0, ',', '.') }}</td>
+                            <td class="value">{{ format_rupiah($sisaPembayaran) }}</td>
                         </tr>
                         <tr class="summary-row terbilang-row">
                             <td colspan="6" class="label">TERBILANG</td>

@@ -27,7 +27,7 @@
         </label>
         <x-forms.searchable-select name="employee_id" id="edit_{{ $kasbon->kasbon_code }}_employee_id" :label="''"
             invalidMessage="Karyawan" placeholder="Cari karyawan..."
-            :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' (' . $e->employee_code . ') - ' . ($e->employment_type === 'bulanan' ? 'Gaji Bulanan' : 'Gaji Harian'), 'type' => $e->employment_type])->values()"
+            :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' (' . $e->employee_code . ') - ' . ($e->employment_type === 'bulanan' ? 'KARYAWAN KANTOR' : 'TUKANG PROYEK'), 'type' => $e->employment_type])->values()"
             :extraData="['type']"
             :selected="$kasbon->employee_id" />
     </div>

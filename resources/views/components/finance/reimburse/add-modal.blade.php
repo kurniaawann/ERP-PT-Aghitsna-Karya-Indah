@@ -41,15 +41,6 @@
         <p class="text-xs text-text-secondary mt-1">Total keseluruhan biaya yang akan direimbursement</p>
     </div>
 
-    {{-- Field: Tanggal Jatuh Tempo --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Jatuh Tempo <span class="text-red-600">*</span></label>
-        <input type="date" name="due_date" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Tanggal jatuh tempo tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Tanggal target pencairan/pembayaran reimburse</p>
-    </div>
-
     {{-- Field: Catatan (Opsional) --}}
     <div class="mb-3">
         <label class="block text-text-primary mb-1">Catatan</label>

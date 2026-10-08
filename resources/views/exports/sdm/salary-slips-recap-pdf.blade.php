@@ -131,7 +131,7 @@
                 <div class="doc-sub">Periode: {{ $periodText }}</div>
             </td>
             <td style="width: 24%; text-align: right; font-size: 8px;">
-                Dicetak: {{ $printedAt->format('d M Y H:i') }}
+                Dicetak: {{ $printedAt->translatedFormat('d M Y H:i') }}
             </td>
         </tr>
     </table>
@@ -164,15 +164,15 @@
                         <span style="font-weight: normal; color: #666;">({{ $slip->employee_code }})</span>
                     </td>
                     <td class="text-center">{{ $slip->employee->position ?? '-' }}</td>
-                    <td class="text-right">{{ number_format($slip->base_salary, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ format_rupiah($slip->base_salary) }}</td>
                     <td class="text-center">{{ $slip->present_days }}</td>
                     <td class="text-center">{{ $slip->permission_days }}</td>
                     <td class="text-center">{{ $slip->sick_days }}</td>
                     <td class="text-center">{{ $slip->leave_days }}</td>
                     <td class="text-center">{{ $slip->absent_days }}</td>
                     <td class="text-center">{{ $slip->libur_days }}</td>
-                    <td class="text-right" style="color: #c0392b;">{{ number_format($slip->total_deduction, 0, ',', '.') }}</td>
-                    <td class="text-right font-bold">{{ number_format($slip->net_salary, 0, ',', '.') }}</td>
+                    <td class="text-right" style="color: #c0392b;">{{ format_rupiah($slip->total_deduction) }}</td>
+                    <td class="text-right font-bold">{{ format_rupiah($slip->net_salary) }}</td>
                     <td class="text-center">
                         {{ $slip->status === 'paid' ? 'LUNAS' : 'DRAFT' }}
                     </td>
@@ -182,10 +182,10 @@
         <tfoot>
             <tr>
                 <td colspan="3" class="text-center">TOTAL</td>
-                <td class="text-right">{{ number_format($slips->sum('base_salary'), 0, ',', '.') }}</td>
+                <td class="text-right">{{ format_rupiah($slips->sum('base_salary')) }}</td>
                 <td colspan="6"></td>
-                <td class="text-right">{{ number_format($slips->sum('total_deduction'), 0, ',', '.') }}</td>
-                <td class="text-right">{{ number_format($slips->sum('net_salary'), 0, ',', '.') }}</td>
+                <td class="text-right">{{ format_rupiah($slips->sum('total_deduction')) }}</td>
+                <td class="text-right">{{ format_rupiah($slips->sum('net_salary')) }}</td>
                 <td></td>
             </tr>
         </tfoot>

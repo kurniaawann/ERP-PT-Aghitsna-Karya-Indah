@@ -7,11 +7,62 @@
  *
  * Menangani semua interaktivitas halaman Reimbursement:
  * - Select All checkbox
- * - Update state tombol (delete & approval)
+ * - Update state tombol (delete, approval, Export Dipilih)
  * - Perhitungan total dari data terpilih
  * - Submit form (add, edit, approve, reject, delete)
  * - Dropdown persetujuan
+ * - Pratinjau otomatis PDF reimburse yang baru disetujui (tanpa tab baru)
+ *
+ * Checkbox `ids[]` tersedia di semua baris (untuk Export Dipilih). Bagi admin
+ * (penyetuju), aksi Setujui/Tolak/Hapus hanya memproses baris berstatus draft
+ * (atribut data-status).
  */
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPER SELEKSI
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Apakah user saat ini adalah penyetuju (admin) — ditandai dengan adanya
+ * tombol dropdown persetujuan di halaman.
+ *
+ * @returns {boolean}
+ */
+function isApprover() {
+    return !!document.getElementById('approval-dropdown-button');
+}
+
+/**
+ * Checkbox `ids[]` yang sedang dicentang.
+ *
+ * @returns {HTMLInputElement[]}
+ */
+function getCheckedBoxes() {
+    return Array.from(document.querySelectorAll('input[name="ids[]"]:checked'));
+}
+
+/**
+ * Checkbox tercentang yang berstatus draft (bisa disetujui/ditolak).
+ *
+ * @returns {HTMLInputElement[]}
+ */
+function getCheckedDraftBoxes() {
+    return getCheckedBoxes().filter(function (checkbox) {
+        return checkbox.dataset.status === 'draft';
+    });
+}
+
+/**
+ * Jumlahkan data-amount dari daftar checkbox.
+ *
+ * @param  {HTMLInputElement[]} checkboxes
+ * @returns {number}
+ */
+function sumAmount(checkboxes) {
+    return checkboxes.reduce(function (total, checkbox) {
+        return total + (parseInt(checkbox.getAttribute('data-amount'), 10) || 0);
+    }, 0);
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // CHECKBOX PILIH SEMUA
@@ -68,23 +119,26 @@ function initIndividualCheckboxes() {
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
- * Update state tombol Delete dan Approval berdasarkan checkbox yang dipilih.
- * Tombol akan aktif jika ada minimal 1 checkbox yang dicentang.
+ * Update state tombol Delete, Approval, dan Export Dipilih berdasarkan
+ * checkbox yang dipilih.
  *
  * Alur:
- * 1. Hitung jumlah checkbox #ids[] yang dicentang.
- * 2. Tombol Delete: aktif + tampilkan hover bila checkedCount > 0,
- *    nonaktif + opacity + cursor-not-allowed bila 0.
- * 3. Tombol dropdown persetujuan (Super Admin): aktif bila checkedCount > 0,
- *    nonaktif bila 0.
+ * 1. Hitung jumlah checkbox #ids[] yang dicentang (dan yang berstatus draft).
+ * 2. Tombol Delete: aktif bila ada pilihan (admin: bila ada pilihan draft,
+ *    karena admin hanya boleh menghapus draft).
+ * 3. Tombol dropdown persetujuan (admin): aktif bila ada pilihan draft.
+ * 4. Menu "Export Dipilih" pada dropdown Print: tampil bila ada pilihan,
+ *    beserta jumlah data terpilih.
  */
 function updateButtonStates() {
-    var checkedCount = document.querySelectorAll('input[name="ids[]"]:checked').length;
+    var checkedCount = getCheckedBoxes().length;
+    var draftCount = getCheckedDraftBoxes().length;
+    var deletableCount = isApprover() ? draftCount : checkedCount;
 
     // Tombol Hapus
     var deleteButton = document.getElementById('delete-button');
     if (deleteButton) {
-        if (checkedCount > 0) {
+        if (deletableCount > 0) {
             deleteButton.disabled = false;
             deleteButton.classList.remove('opacity-50', 'cursor-not-allowed');
             deleteButton.classList.add('hover:bg-btn-delete-hover');
@@ -95,16 +149,28 @@ function updateButtonStates() {
         }
     }
 
-    // Tombol Dropdown Persetujuan (Super Admin)
+    // Tombol Dropdown Persetujuan (Admin) — hanya untuk pilihan berstatus draft
     var approvalButton = document.getElementById('approval-dropdown-button');
     if (approvalButton) {
-        if (checkedCount > 0) {
+        if (draftCount > 0) {
             approvalButton.disabled = false;
             approvalButton.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
             approvalButton.disabled = true;
             approvalButton.classList.add('opacity-50', 'cursor-not-allowed');
+            var approvalMenu = document.getElementById('approval-dropdown-menu');
+            if (approvalMenu) approvalMenu.classList.add('hidden');
         }
+    }
+
+    // Menu Export Dipilih (PDF/Excel) pada dropdown Print
+    var printSelectedItem = document.getElementById('printSelectedItem');
+    if (printSelectedItem) {
+        printSelectedItem.classList.toggle('hidden', checkedCount === 0);
+    }
+    var selectedCountText = document.getElementById('selectedCountText');
+    if (selectedCountText) {
+        selectedCountText.textContent = checkedCount;
     }
 }
 
@@ -136,56 +202,58 @@ function initAmountFormatting() {
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
- * Menghitung dan menampilkan ringkasan data terpilih.
- * Info mencakup jumlah item dan total amount.
- * Juga mengupdate total di modal approve/reject.
+ * Menghitung dan menampilkan ringkasan data terpilih (panel admin).
+ * Info mencakup jumlah item dan total amount seluruh pilihan, plus jumlah
+ * draft yang bisa disetujui bila pilihan bercampur status.
+ * Juga mengupdate jumlah & total di modal approve/reject (hanya draft).
  */
 function updateSelectedInfo() {
     var selectedInfo = document.getElementById('selected-info');
     var selectedCount = document.getElementById('selected-count');
     var selectedTotal = document.getElementById('selected-total');
+    var selectedDraftInfo = document.getElementById('selected-draft-info');
 
     if (!selectedInfo) return;
 
-    var checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+    var checkedCheckboxes = getCheckedBoxes();
+    var draftCheckboxes = getCheckedDraftBoxes();
     var count = checkedCheckboxes.length;
 
     if (count > 0) {
-        var total = 0;
-        checkedCheckboxes.forEach(function (checkbox) {
-            var amount = parseInt(checkbox.getAttribute('data-amount')) || 0;
-            total += amount;
-        });
-
-        var formattedTotal = 'Rp ' + total.toLocaleString('id-ID');
+        var formattedTotal = 'Rp ' + sumAmount(checkedCheckboxes).toLocaleString('id-ID');
+        var formattedDraftTotal = 'Rp ' + sumAmount(draftCheckboxes).toLocaleString('id-ID');
 
         // Tampilkan panel info
         selectedInfo.classList.remove('hidden');
         selectedCount.textContent = count;
         selectedTotal.textContent = formattedTotal;
 
-        // Update total di modal approve
+        if (selectedDraftInfo) {
+            selectedDraftInfo.textContent = draftCheckboxes.length !== count
+                ? '(' + draftCheckboxes.length + ' draft dapat disetujui/ditolak)'
+                : '';
+        }
+
+        // Update total di modal approve & reject (hanya draft)
         var approveTotalModal = document.getElementById('approve-total-modal');
         if (approveTotalModal) {
-            approveTotalModal.textContent = formattedTotal;
+            approveTotalModal.textContent = formattedDraftTotal;
         }
 
-        // Update total di modal reject
         var rejectTotalModal = document.getElementById('reject-total-modal');
         if (rejectTotalModal) {
-            rejectTotalModal.textContent = formattedTotal;
+            rejectTotalModal.textContent = formattedDraftTotal;
         }
 
-        // Update teks jumlah di modal approve
+        // Update teks jumlah di modal approve & reject (hanya draft)
         var approveCountText = document.getElementById('approve-count-text');
         if (approveCountText) {
-            approveCountText.textContent = count;
+            approveCountText.textContent = draftCheckboxes.length;
         }
 
-        // Update teks jumlah di modal reject
         var rejectCountText = document.getElementById('reject-count-text');
         if (rejectCountText) {
-            rejectCountText.textContent = count;
+            rejectCountText.textContent = draftCheckboxes.length;
         }
     } else {
         selectedInfo.classList.add('hidden');
@@ -254,13 +322,15 @@ function initEditFormSubmit() {
 
 /**
  * Injeksikan hidden inputs ke form approve/reject sebelum submit.
- * Hidden inputs berisi `ids[]` dari checkbox yang dipilih.
+ * Hidden inputs berisi `ids[]` dari checkbox terpilih yang berstatus draft.
  *
  * Alur persetujuan level 1 (submit form):
  * 1. Saat form disubmit, kosongkan container hidden inputs.
- * 2. Loop semua checkbox terpilih, buat <input type="hidden" name="ids[]">
+ * 2. Loop checkbox terpilih berstatus draft, buat <input type="hidden" name="ids[]">
  *    untuk masing-masing, lalu masukkan ke container.
  * 3. Panggil handleFormSubmit untuk menampilkan loading & mencegah double submit.
+ *    Setelah disetujui, server mengembalikan halaman dengan pratinjau PDF
+ *    reimburse yang disetujui (lihat openApprovedPreview).
  *
  * @param  {string} formSelector  CSS selector form target
  * @param  {string} containerId   ID container untuk hidden inputs
@@ -272,8 +342,8 @@ function initApprovalFormSubmit(formSelector, containerId, submitBtnId, original
     if (!form) return;
 
     form.addEventListener('submit', function (e) {
-        // Injiksi hidden inputs dari checkbox terpilih
-        var checkedCheckboxes = document.querySelectorAll('input[name="ids[]"]:checked');
+        // Injeksi hidden inputs dari checkbox terpilih (hanya draft)
+        var checkedCheckboxes = getCheckedDraftBoxes();
         var container = document.getElementById(containerId);
 
         if (container) {
@@ -333,6 +403,36 @@ function initApprovalDropdown() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// PRATINJAU SETELAH DISETUJUI
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Buka pratinjau PDF reimburse yang baru disetujui di dalam halaman.
+ *
+ * Alur:
+ * 1. Server menaruh URL export PDF (ids[] reimburse yang disetujui) pada
+ *    input tersembunyi #reimburse-approved-preview-url setelah approve.
+ * 2. Bila ada, panggil window.openDocumentPreview (shared/document-preview.js)
+ *    — tidak membuka tab baru. Bila modul pratinjau belum siap, tunggu
+ *    event load lalu coba lagi.
+ */
+function openApprovedPreview() {
+    var input = document.getElementById('reimburse-approved-preview-url');
+    if (!input || !input.value) return;
+
+    var open = function () {
+        if (typeof window.openDocumentPreview !== 'function') return false;
+        window.openDocumentPreview(input.value, { title: 'Reimburse Disetujui' });
+        input.remove();
+        return true;
+    };
+
+    if (!open()) {
+        window.addEventListener('load', open, { once: true });
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // INISIALISASI
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -345,7 +445,8 @@ function initApprovalDropdown() {
  * 3. Inisialisasi submit form Tambah, Edit, dan form persetujuan
  *    (approve/reject — 2 level: submit form + dropdown).
  * 4. Inisialisasi dropdown persetujuan.
- * 5. Reset status submit saat halaman dimuat ulang (pageshow).
+ * 5. Buka pratinjau PDF reimburse yang baru disetujui (bila ada).
+ * 6. Reset status submit saat halaman dimuat ulang (pageshow).
  */
 document.addEventListener('DOMContentLoaded', function () {
     // Checkbox
@@ -367,6 +468,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Dropdown
     initApprovalDropdown();
+
+    // Pratinjau PDF reimburse yang baru disetujui (bila ada)
+    openApprovedPreview();
 
     // Reset submit state saat halaman dimuat ulang
     window.addEventListener('pageshow', function () {

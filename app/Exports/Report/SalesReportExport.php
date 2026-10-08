@@ -53,7 +53,7 @@ class SalesReportExport implements FromArray, WithColumnWidths, WithTitle, WithE
     private const DATA_START_ROW = 5;
 
     /** Format angka rupiah (pemisah ribuan mengikuti locale Excel). */
-    private const RUPIAH_FORMAT = '"Rp "#,##0';
+    private const RUPIAH_FORMAT = '"Rp. "#,##0';
 
     public function __construct($projects, $periodTitle, $grandTotal)
     {

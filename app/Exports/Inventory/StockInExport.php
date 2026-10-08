@@ -25,6 +25,9 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  */
 class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths, WithEvents
 {
+    /** Format angka Rupiah di Excel: "Rp. 50.000" (pemisah ribuan mengikuti locale Excel). */
+    private const RUPIAH_FORMAT = '"Rp. "#,##0';
+
     /**
      * @var string|null Kata kunci pencarian
      */
@@ -111,7 +114,7 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
      */
     public function headings(): array
     {
-        $monthName = $this->month ? \DateTime::createFromFormat('!m', $this->month)->format('F') : '';
+        $monthName = $this->month ? \Carbon\Carbon::create(null, (int) $this->month, 1)->translatedFormat('F') : '';
         $yearName = $this->year ?? '';
         $period = $monthName || $yearName ? "Periode: {$monthName} {$yearName}" : 'Semua Data';
 
@@ -193,8 +196,8 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
         $sheet->getStyle('D:G')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Format Rupiah
-        $sheet->getStyle('E6:F' . $lastRow)->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"??_);_(@_)');
+        // Format Rupiah "Rp. 50.000"
+        $sheet->getStyle('E6:F' . $lastRow)->getNumberFormat()->setFormatCode(self::RUPIAH_FORMAT);
     }
 
     /**
@@ -224,7 +227,7 @@ class StockInExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
 
                 // Style summary
                 $sheet->getStyle("F{$summaryStartRow}:G" . ($summaryStartRow + 1))->getFont()->setBold(true);
-                $sheet->getStyle("G" . ($summaryStartRow + 1))->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"??_);_(@_)');
+                $sheet->getStyle("G" . ($summaryStartRow + 1))->getNumberFormat()->setFormatCode(self::RUPIAH_FORMAT);
                 $sheet->getStyle("F{$summaryStartRow}:F" . ($summaryStartRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 $sheet->getStyle("G{$summaryStartRow}:G" . ($summaryStartRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             },

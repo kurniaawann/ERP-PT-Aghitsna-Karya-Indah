@@ -3,8 +3,12 @@
  *
  * Menangani semua fungsionalitas interaktif untuk halaman Slip Gaji:
  * - Grid rekap absensi pada modal Edit (toggle H/I/S/C/A/L) + ringkasan live
- * - Pemuatan dinamis daftar karyawan bulanan pada modal Generate (sesuai periode)
- * - Grid centang Hari Libur pada modal Generate (renderHolidayDays)
+ * - Pemuatan dinamis daftar karyawan kantor (bulanan) pada modal Generate (sesuai periode)
+ * - Kalender centang Hari Libur pada modal Generate (renderHolidayDays,
+ *   minggu dimulai Senin, kolom Minggu paling kanan & merah)
+ * - Input cicilan kasbon per karyawan pada modal Generate
+ *   (renderKasbonInstallments)
+ * - Input cicilan kasbon bulan ini pada modal Edit (ringkasan live)
  * - Checkbox Pilih Semua & aksi massal (hapus, bayar)
  * - Handler submit form Generate/Edit dengan pencegahan double submit
  *
@@ -47,14 +51,15 @@ const ALL_STATUS_CLASSES = Object.values(STATUS_CLASSES).flat()
  * Membaca hidden input attendance[hari] yang ada di dalam modal, menghitung
  * jumlah H/I/S/C/A/L, lalu memperbarui elemen .recap-* serta menghitung
  * semua angka slip live:
- *   Penerimaan = gaji pokok + (transport × hadir) + (makan × hadir)
+ *   Penerimaan = gaji pokok + (transport × hadir) + (makan × hadir) + lembur
  *   Potongan   = BPJS Kes 1% × gaji pokok + JHT 2% × UMP + JPN 1% × UMP
- *                + PPh 21 (input manual) + kasbon pending
+ *                + PPh 21 (input manual) + cicilan kasbon bulan ini
  *   THP        = Penerimaan − Potongan (min 0)
  *
- * Data dasar (base-salary, transport-rate, meal-rate, ump, pph21, kasbon)
- * dibaca dari elemen .slip-calc-data pada modal. PPh 21 selalu dibaca live
- * dari input .pph21-input (fallback ke nilai awal).
+ * Data dasar (base-salary, transport-rate, meal-rate, ump, pph21, overtime,
+ * kasbon-total, kasbon) dibaca dari elemen .slip-calc-data pada modal.
+ * PPh 21 dan cicilan kasbon selalu dibaca live dari input .pph21-input dan
+ * .kasbon-installment-input (cicilan dibatasi 0..total sisa kasbon).
  *
  * @param {HTMLElement} modal Modal Edit yang sedang aktif.
  */
@@ -68,7 +73,9 @@ function updateRecapSummary(modal) {
     const transportRate = parseInt(calcData.dataset.transportRate || '0', 10);
     const mealRate = parseInt(calcData.dataset.mealRate || '0', 10);
     const ump = parseInt(calcData.dataset.ump || '0', 10);
-    const kasbon = parseInt(calcData.dataset.kasbon || '0', 10);
+    const overtime = parseInt(calcData.dataset.overtime || '0', 10);
+    const kasbonTotal = parseInt(calcData.dataset.kasbonTotal || '0', 10);
+    let kasbon = parseInt(calcData.dataset.kasbon || '0', 10);
 
     let present = 0;
     let permission = 0;
@@ -94,9 +101,17 @@ function updateRecapSummary(modal) {
         pph21 = parseInt(pph21Input.value, 10) || 0;
     }
 
+    // Cicilan kasbon bulan ini: kosong = 0, dibatasi 0..total sisa kasbon
+    const kasbonInput = modal.querySelector('.kasbon-installment-input');
+    if (kasbonInput && !kasbonInput.disabled) {
+        kasbon = parseInt(kasbonInput.value, 10) || 0;
+    }
+    kasbon = Math.min(Math.max(0, kasbon), kasbonTotal);
+    const kasbonRemaining = Math.max(0, kasbonTotal - kasbon);
+
     const transportTotal = transportRate * present;
     const mealTotal = mealRate * present;
-    const totalIncome = baseSalary + transportTotal + mealTotal;
+    const totalIncome = baseSalary + transportTotal + mealTotal + overtime;
 
     const bpjsKesehatan = Math.round(baseSalary * 0.01);
     const jht = Math.round(ump * 0.02);
@@ -117,14 +132,37 @@ function updateRecapSummary(modal) {
     setText('.recap-libur', libur);
     setText('.recap-transport', formatIDR(transportTotal));
     setText('.recap-meal', formatIDR(mealTotal));
+    setText('.recap-overtime', formatIDR(overtime));
     setText('.recap-income', formatIDR(totalIncome));
     setText('.recap-bpjs', formatIDR(bpjsKesehatan));
     setText('.recap-jht', formatIDR(jht));
     setText('.recap-jpn', formatIDR(jpn));
     setText('.recap-pph21', formatIDR(pph21));
     setText('.recap-kasbon', formatIDR(kasbon));
+
+    const remainingInput = modal.querySelector('.recap-kasbon-remaining-input');
+    if (remainingInput) remainingInput.value = formatIDR(kasbonRemaining);
     setText('.recap-total-deduction', formatIDR(totalDeduction));
     setText('.recap-net', formatIDR(net));
+}
+
+/**
+ * Membatasi nilai input angka ke rentang atribut min..max (bila ada).
+ * Nilai kosong dibiarkan (diperlakukan 0 oleh perhitungan).
+ *
+ * @param {HTMLInputElement} input
+ */
+function clampNumberInput(input) {
+    if (!input || input.value === '') return;
+
+    const min = input.min !== '' ? parseInt(input.min, 10) : null;
+    const max = input.max !== '' ? parseInt(input.max, 10) : null;
+    let value = parseInt(input.value, 10) || 0;
+
+    if (min !== null && value < min) value = min;
+    if (max !== null && value > max) value = max;
+
+    input.value = value;
 }
 
 /**
@@ -190,6 +228,18 @@ function initAttendanceGrid(modal) {
         });
     }
 
+    // Cicilan kasbon: ringkasan live + batasi nilai ke 0..total sisa kasbon
+    const kasbonInput = modal.querySelector('.kasbon-installment-input');
+    if (kasbonInput) {
+        kasbonInput.addEventListener('input', function () {
+            updateRecapSummary(modal);
+        });
+        kasbonInput.addEventListener('change', function () {
+            clampNumberInput(this);
+            updateRecapSummary(modal);
+        });
+    }
+
     updateRecapSummary(modal);
 }
 
@@ -197,10 +247,43 @@ function initAttendanceGrid(modal) {
 // PEMUATAN DINAMIS KARYAWAN (Modal Generate)
 // ==========================================
 
+/** Nama kolom kalender Hari Libur (minggu dimulai Senin, Minggu paling kanan). */
+const CALENDAR_DAY_NAMES = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+/** Kelas sel tanggal kalender Hari Libur per kondisi. */
+const HOLIDAY_CELL_CLASSES = {
+    sunday: ['border-error', 'bg-error-light', 'text-error'],
+    checked: ['border-primary', 'bg-primary-light', 'text-primary'],
+    normal: ['border-border', 'bg-surface-base', 'text-text-input'],
+};
+
 /**
- * Merender grid centang "Hari Libur" pada modal Generate sesuai bulan/tahun
- * yang dipilih. Hari Minggu otomatis tercentang (sudah pasti Libur); admin
- * bisa mencentang tanggal libur lainnya (libur nasional, cuti bersama, dll).
+ * Menyelaraskan warna sel tanggal kalender Hari Libur dengan status
+ * centangnya. Sel hari Minggu selalu merah; tanggal lain yang dicentang
+ * ditandai warna primer.
+ *
+ * @param {HTMLElement} cell Elemen label .holiday-day-btn.
+ */
+function syncHolidayCell(cell) {
+    if (!cell) return;
+
+    const checkbox = cell.querySelector('input[type="checkbox"]');
+    const isSunday = cell.dataset.sunday === '1';
+    const state = isSunday ? 'sunday' : (checkbox && checkbox.checked ? 'checked' : 'normal');
+
+    Object.values(HOLIDAY_CELL_CLASSES).flat().forEach(function (cls) { cell.classList.remove(cls); });
+    HOLIDAY_CELL_CLASSES[state].forEach(function (cls) { cell.classList.add(cls); });
+}
+
+/**
+ * Merender kalender centang "Hari Libur" pada modal Generate sesuai
+ * bulan/tahun yang dipilih.
+ *
+ * - Tampilan kalender 7 kolom, minggu dimulai hari Senin sehingga kolom
+ *   Minggu berada paling kanan; tanggal 1 diberi offset sel kosong sesuai
+ *   harinya.
+ * - Setiap hari Minggu berwarna merah dan otomatis tercentang (pasti Libur);
+ *   admin bisa mencentang tanggal libur lain (libur nasional, cuti bersama).
  *
  * Nilai terkirim sebagai holidays[] berformat Y-m-d, lalu dipakai service
  * untuk menandai "L" pada matriks absensi default saat generate.
@@ -216,32 +299,141 @@ function renderHolidayDays() {
     const year = parseInt(yearInput.value, 10);
 
     if (!month || !year) {
-        grid.innerHTML = '<p class="text-xs text-text-secondary col-span-full">Pilih bulan dan tahun untuk menampilkan tanggal.</p>';
+        grid.innerHTML = '<p class="text-xs text-text-secondary">Pilih bulan dan tahun untuk menampilkan kalender.</p>';
         return;
     }
 
     const daysInMonth = new Date(year, month, 0).getDate();
+    // getDay(): 0 = Minggu … 6 = Sabtu → offset kolom kalender Senin-pertama.
+    const leadingBlanks = (new Date(year, month - 1, 1).getDay() + 6) % 7;
     const cells = [];
+
+    CALENDAR_DAY_NAMES.forEach(function (name, index) {
+        const isSundayColumn = index === 6;
+        cells.push(
+            '<div class="text-center text-[11px] font-semibold py-1 ' +
+            (isSundayColumn ? 'text-error' : 'text-text-secondary') + '">' + name + '</div>'
+        );
+    });
+
+    for (let blank = 0; blank < leadingBlanks; blank++) {
+        cells.push('<div></div>');
+    }
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
         const isSunday = date.getDay() === 0;
         const iso = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const stateClasses = HOLIDAY_CELL_CLASSES[isSunday ? 'sunday' : 'normal'].join(' ');
 
         cells.push(
-            '<label class="holiday-day-btn flex flex-col items-center justify-center py-1.5 rounded-lg border cursor-pointer transition-colors duration-150 select-none ' +
-            (isSunday
-                ? 'border-primary bg-primary-light text-primary'
-                : 'border-border bg-surface-base text-text-input hover:border-primary-light') + '">' +
+            '<label class="holiday-day-btn flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg border cursor-pointer transition-colors duration-150 select-none ' +
+            stateClasses + '" data-sunday="' + (isSunday ? '1' : '0') + '" title="' + escapeAttr(iso) + '">' +
             '<input type="checkbox" name="holidays[]" value="' + escapeAttr(iso) + '" ' +
             'class="w-3.5 h-3.5 accent-primary"' + (isSunday ? ' checked' : '') + '>' +
-            '<span class="text-[10px] leading-none mt-0.5">' + day + '</span>' +
-            (isSunday ? '<span class="text-[8px] leading-none font-semibold">Min</span>' : '') +
+            '<span class="text-xs leading-none font-semibold">' + day + '</span>' +
             '</label>'
         );
     }
 
-    grid.innerHTML = cells.join('');
+    grid.innerHTML = '<div class="grid grid-cols-7 gap-1.5">' + cells.join('') + '</div>';
+
+    grid.querySelectorAll('.holiday-day-btn').forEach(function (cell) {
+        const checkbox = cell.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+            checkbox.addEventListener('change', function () {
+                syncHolidayCell(cell);
+            });
+        }
+    });
+}
+
+// ==========================================
+// CICILAN KASBON (Modal Generate)
+// ==========================================
+
+/**
+ * Sisa kasbon per karyawan eligible pada periode modal Generate.
+ * Struktur: { 'EMP001': { label: 'Nama - EMP001', kasbonTotal: 500000 }, ... }
+ * Diisi dari respons loadEligibleEmployees().
+ *
+ * @type {Object<string, {label: string, kasbonTotal: number}>}
+ */
+let eligibleKasbon = {};
+
+/**
+ * Merender daftar input cicilan kasbon bulan ini untuk karyawan terpilih
+ * yang masih punya sisa kasbon (modal Generate).
+ *
+ * - Nilai default = seluruh sisa kasbon, maksimal = sisa kasbon.
+ * - Nilai yang sudah diketik admin dipertahankan saat daftar dirender ulang.
+ * - Terkirim sebagai kasbon_installments[kode karyawan].
+ */
+function renderKasbonInstallments() {
+    const container = document.getElementById('generate-kasbon-installments');
+    const wrapper = document.querySelector('#generateModal .searchable-multi-select-wrapper');
+
+    if (!container || !wrapper) return;
+
+    const previous = {};
+    container.querySelectorAll('input[data-employee-code]').forEach(function (input) {
+        previous[input.dataset.employeeCode] = input.value;
+    });
+
+    const selected = Array.from(wrapper.querySelectorAll('.searchable-multi-hidden-inputs input'))
+        .map(function (input) { return input.value; });
+
+    if (selected.length === 0) {
+        container.innerHTML = '<p class="text-xs text-text-label">Pilih karyawan untuk melihat sisa kasbon.</p>';
+        return;
+    }
+
+    const rows = selected
+        .filter(function (code) { return eligibleKasbon[code] && eligibleKasbon[code].kasbonTotal > 0; })
+        .map(function (code) {
+            const info = eligibleKasbon[code];
+            const value = Object.prototype.hasOwnProperty.call(previous, code) ? previous[code] : info.kasbonTotal;
+
+            return '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center p-2 bg-surface-base border border-border rounded-lg">' +
+                '<div class="text-sm font-medium text-text-primary">' + escapeAttr(info.label) + '</div>' +
+                '<div class="text-xs text-text-secondary">Sisa kasbon: <strong class="text-error">' + formatIDR(info.kasbonTotal) + '</strong></div>' +
+                '<div class="relative">' +
+                '<span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-label text-sm">Rp</span>' +
+                '<input type="number" name="kasbon_installments[' + escapeAttr(code) + ']" ' +
+                'data-employee-code="' + escapeAttr(code) + '" min="0" max="' + info.kasbonTotal + '" step="1" ' +
+                'value="' + escapeAttr(value) + '" ' +
+                'class="generate-kasbon-installment w-full border border-border-strong rounded p-2 pl-9 bg-surface-base text-text-input" ' +
+                'title="Cicilan kasbon bulan ini (maks ' + escapeAttr(formatIDR(info.kasbonTotal)) + ')">' +
+                '</div>' +
+                '</div>';
+        });
+
+    container.innerHTML = rows.length > 0
+        ? rows.join('')
+        : '<p class="text-xs text-text-label">Karyawan terpilih tidak memiliki sisa kasbon.</p>';
+
+    container.querySelectorAll('.generate-kasbon-installment').forEach(function (input) {
+        input.addEventListener('change', function () {
+            clampNumberInput(this);
+        });
+    });
+}
+
+/**
+ * Mengamati perubahan pilihan karyawan pada multi-select modal Generate
+ * (hidden input employee_codes[] dirender ulang komponen) lalu merender
+ * ulang daftar cicilan kasbon.
+ */
+function observeEmployeeSelection() {
+    const hiddenInputs = document.querySelector('#generateModal .searchable-multi-hidden-inputs');
+
+    if (!hiddenInputs || typeof MutationObserver === 'undefined') return;
+
+    const observer = new MutationObserver(function () {
+        renderKasbonInstallments();
+    });
+
+    observer.observe(hiddenInputs, { childList: true });
 }
 
 /**
@@ -296,6 +488,15 @@ async function loadEligibleEmployees() {
         // Respons dari permintaan lama (periode sudah berubah) diabaikan.
         if (sequence !== employeeLoadSequence) return;
 
+        // Simpan sisa kasbon per karyawan untuk daftar cicilan kasbon.
+        eligibleKasbon = {};
+        (data.data || []).forEach(function (employee) {
+            eligibleKasbon[employee.value] = {
+                label: employee.label,
+                kasbonTotal: parseInt(employee.kasbon_total || 0, 10) || 0,
+            };
+        });
+
         const optionsContainer = wrapper.querySelector('.searchable-multi-options');
         if (!optionsContainer) return;
 
@@ -321,6 +522,8 @@ async function loadEligibleEmployees() {
         if (typeof window.initSearchableMultiSelects === 'function') {
             window.initSearchableMultiSelects(wrapper);
         }
+
+        renderKasbonInstallments();
     } catch (error) {
         console.error('Error loading eligible employees:', error);
     }
@@ -561,6 +764,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Grid hari libur awal + daftar karyawan pada modal Generate
     renderHolidayDays();
     loadEligibleEmployees();
+
+    // Daftar cicilan kasbon mengikuti pilihan karyawan
+    observeEmployeeSelection();
 
     // Checkbox Pilih Semua
     const selectAll = document.getElementById('selectAll');
