@@ -28,7 +28,7 @@
                         'category' => request('category'),
                         'month' => request('month'),
                         'year' => request('year'),
-                    ]" responsive="custom" />
+                    ]" :requireSigner="app(\App\Services\Report\ReportSignerService::class)->isRequired()" responsive="custom" />
 
                     <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
                     <x-buttons.add-button modalId="addModal" text="Tambah Pengeluaran" responsive="custom" />

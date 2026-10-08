@@ -2,10 +2,26 @@
      KOMPONEN MODAL EDIT REIMBURSE
      Formulir untuk memperbarui data reimbursement (Admin only, draft only).
      Modal ini dirender per baris untuk setiap reimburse dengan status draft.
+     Pengajuan otomatis dari Nota menampilkan info nota sumber (badge
+     "Dari Nota" + link pratinjau PDF nota).
      ═══════════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="editModal-{{ $reimburse->reimburse_code }}" title="Edit Reimburse"
     action="{{ route('reimburse.update', $reimburse->reimburse_code) }}" method="PUT" buttonText="Update"
     enctype="multipart/form-data">
+
+    {{-- Info Nota Sumber (pengajuan otomatis dari Nota Super Admin) --}}
+    @if ($reimburse->is_from_nota)
+        <div class="mb-4 p-3 rounded-lg border border-blue-200 bg-blue-50 text-sm text-text-primary">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800">Dari Nota</span>
+                @include('components.finance.reimburse.nota-link', ['reimburse' => $reimburse])
+            </div>
+            <p class="text-xs text-text-secondary">
+                Pengajuan ini dibuat otomatis dari nota. Selama masih Draft, perubahan nota akan
+                memperbarui tanggal, nama proyek, keterangan belanja, dan total di sini.
+            </p>
+        </div>
+    @endif
 
     {{-- Field: Tanggal --}}
     <div class="mb-3">

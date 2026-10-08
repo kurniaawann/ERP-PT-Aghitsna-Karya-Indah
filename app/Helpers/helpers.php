@@ -92,6 +92,33 @@ if (!function_exists('format_persen')) {
     }
 }
 
+if (!function_exists('format_angka')) {
+    /**
+     * Format angka (volume, kuantitas, jam, persen) tanpa desimal yang tidak berguna.
+     *
+     * Pemisah ribuan titik, desimal koma, maksimal 2 digit desimal; nol di
+     * belakang koma dibuang (revisi klien): 1 → "1", 245.00 → "245",
+     * 32.50 → "32,5", 18.25 → "18,25", 1500 → "1.500".
+     * Nilai kosong (null / string kosong) dikembalikan sebagai string kosong.
+     *
+     * @param  float|int|string|null  $value
+     * @return string
+     */
+    function format_angka($value)
+    {
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            return '';
+        }
+
+        $formatted = number_format((float) $value, 2, ',', '.');
+
+        // Buang nol desimal di belakang ("32,50" → "32,5", "245,00" → "245")
+        $formatted = rtrim(rtrim($formatted, '0'), ',');
+
+        return $formatted === '-0' ? '0' : $formatted;
+    }
+}
+
 if (!function_exists('generateExpenseRecapId')) {
     /**
      * Generate unique Expense Recap ID.
@@ -121,5 +148,21 @@ if (!function_exists('format_rupiah')) {
     function format_rupiah($value)
     {
         return 'Rp. ' . number_format((float) $value, 0, ',', '.');
+    }
+}
+
+if (!function_exists('label_bank')) {
+    /**
+     * Label nama bank untuk dokumen: tambahkan prefix "Bank " hanya bila nama
+     * belum diawali "Bank" (hindari "Bank Bank Mandiri").
+     *
+     * @param  string|null  $bankName
+     * @return string
+     */
+    function label_bank($bankName)
+    {
+        $bankName = trim((string) $bankName);
+
+        return str_starts_with(strtolower($bankName), 'bank') ? $bankName : 'Bank ' . $bankName;
     }
 }

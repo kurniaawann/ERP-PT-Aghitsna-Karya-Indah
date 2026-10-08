@@ -2,8 +2,10 @@
 
 namespace App\Models\Finance;
 
+use App\Models\Administrasi\Nota;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Model untuk tabel reimburses.
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string                    $status           draft|approved|rejected
  * @property string|null               $notes
  * @property \Carbon\Carbon|null       $status_changed_at
+ * @property string|null               $id_nota          Nota sumber (pengajuan otomatis dari Nota Super Admin)
  */
 class Reimburse extends Model
 {
@@ -49,6 +52,7 @@ class Reimburse extends Model
         'proof_file',
         'proof_file_name',
         'status_changed_at',
+        'id_nota',
     ];
 
     /**
@@ -62,6 +66,29 @@ class Reimburse extends Model
         'total_amount' => 'integer',
         'status_changed_at' => 'datetime',
     ];
+
+    /**
+     * Relasi ke Nota sumber (pengajuan otomatis dari Nota Super Admin).
+     *
+     * Bernilai null untuk pengajuan manual, atau bila notanya sudah dihapus
+     * (FK ON DELETE SET NULL — reimburse disetujui/ditolak tetap disimpan).
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function nota(): BelongsTo
+    {
+        return $this->belongsTo(Nota::class, 'id_nota', 'id_nota');
+    }
+
+    /**
+     * Accessor: apakah pengajuan dibuat otomatis dari Nota (badge "Dari Nota").
+     *
+     * @return bool
+     */
+    public function getIsFromNotaAttribute(): bool
+    {
+        return !empty($this->id_nota);
+    }
 
     /**
      * Accessor: URL absolut untuk mengakses file bukti.

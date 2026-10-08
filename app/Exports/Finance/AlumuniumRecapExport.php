@@ -135,10 +135,10 @@ class AlumuniumRecapExport implements FromCollection, WithHeadings, WithStyles, 
     {
         $highestRow = $sheet->getHighestRow();
 
-        // Header perusahaan
+        // Header perusahaan (revisi klien: nama perusahaan 12pt di semua invoice & penawaran)
         $sheet->mergeCells('A1:I1');
         $sheet->getStyle('A1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 14],
+            'font' => ['bold' => true, 'size' => 12],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 

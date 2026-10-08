@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Pengeluaran</title>
+    <title>{{ auth()->user()->isAdmin() ? 'Kas Kantor' : 'Laporan Pengeluaran' }}</title>
     <style>
         /* Margin halaman diatur di @page; !important wajib karena reset "* { margin: 0 }" ikut menimpa margin halaman di dompdf */
         @page {
@@ -192,14 +192,6 @@
             font-size: 12pt;
         }
 
-        /* Tinggi judul tanda tangan disamakan (2 baris) agar nama sejajar */
-        .signature-title {
-            height: 29pt;
-        }
-
-        .signature-space {
-            height: 40px;
-        }
     </style>
 </head>
 
@@ -264,7 +256,7 @@
         <div class="{{ $pageIndex > 0 ? 'page-break' : '' }}">
             <div class="title-container">
                 <div class="company">PT. AGHITSNA KARYA INDAH</div>
-                <div class="title">{{ $isAdmin ? 'LAPORAN PENGELUARAN' : 'LAPORAN PENGELUARAN DIVISI PRODUKSI' }}</div>
+                <div class="title">{{ $isAdmin ? 'KAS KANTOR' : 'LAPORAN PENGELUARAN DIVISI PRODUKSI' }}</div>
                 @if ($page['type'] === 'summary')
                     <div class="subtitle">REKAPITULASI PER BULAN &mdash; {{ $page['periodTitle'] }}</div>
                 @else
@@ -284,7 +276,8 @@
                             <th class="col-keterangan">KETERANGAN</th>
                             <th class="col-pemasukan">PEMASUKAN</th>
                             <th class="col-pengeluaran">PENGELUARAN</th>
-                            <th class="col-sumber">SUMBER UANG</th>
+                            {{-- Admin: "Sumber Uang" tampil sebagai "Keterangan" (hanya teks) --}}
+                            <th class="col-sumber">{{ $isAdmin ? 'KETERANGAN' : 'SUMBER UANG' }}</th>
                         </tr>
                     </thead>
 
@@ -436,26 +429,9 @@
             </div>
             @endif
 
+            {{-- Tanda tangan: satu penandatangan di kanan (dipilih saat cetak) --}}
             <div class="footer-signatures">
-                <table>
-                    <tr>
-                        <td style="width: 30%;">
-                            <div class="signature-title">DIBUAT/DIPERIKSA</div>
-                            <div class="signature-space"></div>
-                            <div>( A. KHAIDIR )</div>
-                        </td>
-                        <td style="width: 30%;">
-                            <div class="signature-title">KAB. KEUANGAN</div>
-                            <div class="signature-space"></div>
-                            <div>( Kamila,AMK )</div>
-                        </td>
-                        <td style="width: 40%;">
-                            <div class="signature-title">MENGETAHUI,<br>DIREKTUR PT. AGHITSNA KARYA INDAH</div>
-                            <div class="signature-space"></div>
-                            <div>( Zulkarnain,ST.,MT )</div>
-                        </td>
-                    </tr>
-                </table>
+                @include('exports.partials.report-signer', ['signer' => $signer ?? null, 'uppercase' => true])
             </div>
         </div>
     @endforeach

@@ -1,4 +1,15 @@
-@props(['excelRoute' => null, 'pdfRoute' => null, 'queryParams' => [], 'size' => 'default', 'responsive' => 'xl', 'fill' => false, 'disabled' => false])
+@props(['excelRoute' => null, 'pdfRoute' => null, 'queryParams' => [], 'size' => 'default', 'responsive' => 'xl', 'fill' => false, 'disabled' => false, 'requireSigner' => false])
+
+{{-- requireSigner: link export meminta Penandatangan Laporan (wajib) dulu
+     sebelum pratinjau/unduh — lihat components/print-signer-modal dan
+     resources/js/shared/print-signer.js. --}}
+@if ($requireSigner)
+    @once
+        @push('modals')
+            <x-print-signer-modal />
+        @endpush
+    @endonce
+@endif
 
 @if($responsive === 'custom')
     @php
@@ -46,6 +57,7 @@
         <div class="py-1" role="menu">
             @if ($excelRoute)
                 <a href="{{ $excelRoute }}?{{ http_build_query(array_filter($queryParams)) }}" data-preview
+                    @if ($requireSigner) data-require-signer data-signer-format="Excel" @endif
                     class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
                     <i class="fa-solid fa-file-excel text-success w-4"></i>
                     <span>Export Excel</span>
@@ -54,6 +66,7 @@
 
             @if ($pdfRoute)
                 <a href="{{ $pdfRoute }}?{{ http_build_query(array_filter($queryParams)) }}" data-preview
+                    @if ($requireSigner) data-require-signer data-signer-format="PDF" @endif
                     class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
                     <i class="fa-solid fa-file-pdf text-error w-4"></i>
                     <span>Export PDF</span>

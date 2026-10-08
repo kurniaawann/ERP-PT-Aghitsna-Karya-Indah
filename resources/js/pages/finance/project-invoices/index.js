@@ -13,6 +13,8 @@
  * - No Invoice admin: user mengetik nomor urut saja; preview nomor lengkap
  *   {nomor}/AKI/{bulan romawi}/{yyyy} dari Tanggal Invoice + cek nomor dobel
  * - Persentase item admin opsional (kosong → Jumlah = Harga)
+ * - Volume & satuan item superadmin opsional (volume kosong → item borongan,
+ *   Jumlah = Harga)
  * - Tautan Rekap Proyek (opsional): prefill field kosong + ringkasan nilai
  *   proyek, sudah ditagih, invoice ini, dan sisa tagihan (live)
  *
@@ -153,10 +155,22 @@ function isValidItemPercentage(persentase) {
 }
 
 /**
+ * Ambil volume item format superadmin (bersifat OPSIONAL).
+ *
+ * @param  {HTMLElement} row  Elemen baris (.item-row | .item-row-edit)
+ * @return {number|null} Nilai volume, atau null bila field dikosongkan (borongan)
+ */
+function getItemVolume(row) {
+    const input = row?.querySelector('.item-volume');
+    if (!input || String(input.value ?? '').trim() === '') return null;
+    return parseDecimalInput(input);
+}
+
+/**
  * Hitung jumlah (total) sebuah baris item.
  *
  * Format admin: harga x (persentase / 100); persentase kosong → harga
- * Format superadmin: volume x harga
+ * Format superadmin: volume x harga; volume kosong → harga (borongan)
  *
  * Referensi backend: InvoiceProyek::itemAmount().
  *
@@ -172,8 +186,8 @@ function getItemRowTotal(row) {
         return persentase === null ? harga : (harga * persentase) / 100;
     }
 
-    const volume = parseFloat(row.querySelector('.item-volume')?.value) || 0;
-    return volume * harga;
+    const volume = getItemVolume(row);
+    return volume === null ? harga : volume * harga;
 }
 
 // ==========================================
@@ -323,7 +337,7 @@ function setEditDependentSections(invoiceNumber, hasTotal) {
  *
  * Alur:
  * 1. Ambil tipe discount (percentage | amount) dan nilai; reset bila tipe kosong.
- * 2. baseTotal = Σ(volume × harga) dari semua baris item.
+ * 2. baseTotal = Σ jumlah baris item (lihat getItemRowTotal).
  * 3. Guard diskon melebihi total:
  *    - percentage ≥ 100% → tampilkan #discount-error, nilai di-cap ke 100.
  *    - amount ≥ baseTotal → tampilkan #discount-amount-error.
@@ -413,7 +427,7 @@ function calculateDiscount() {
  *
  * Alur:
  * 1. Ambil tipe DP (percentage | amount) dan nilai; reset bila tipe kosong.
- * 2. baseTotal = Σ(volume × harga) dari semua baris item.
+ * 2. baseTotal = Σ jumlah baris item (lihat getItemRowTotal).
  * 3. Hitung ulang discountAmount (identik dengan calculateDiscount), lalu
  *    totalAfterDiscount = baseTotal − discountAmount.
  * 4. calculationBase = totalAfterDiscount bila > 0, else baseTotal.
@@ -503,7 +517,7 @@ function calculateDP() {
  * Hitung PPN untuk ADD modal.
  *
  * Alur:
- * - baseTotal = Σ(volume × harga) dari semua baris item.
+ * - baseTotal = Σ jumlah baris item (lihat getItemRowTotal).
  * - Hitung ulang discountAmount & totalAfterDiscount (identik dengan
  *   calculateDiscount) sebagai dasar pengenaan PPN.
  * - PPN amount = round(totalAfterDiscount × ppn / 100).
@@ -1316,15 +1330,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                     oninput="this.setCustomValidity('')">
                 <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
-                    placeholder="Volume *" required
-                    oninput="calculateRowTotal(this); this.setCustomValidity('')"
-                    oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                    placeholder="Volume (opsional)" title="Kosongkan bila Jumlah = Harga (borongan)"
+                    oninput="calculateRowTotal(this); this.setCustomValidity('')">
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <input type="text" class="item-satuan border rounded p-2 w-full"
-                    placeholder="Satuan (m3, unit) *" required
-                    oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                    oninput="this.setCustomValidity('')">
+                    placeholder="Satuan (opsional)">
                 <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
                     placeholder="Rp 0" required
                     oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')"
@@ -1442,15 +1453,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                     oninput="this.setCustomValidity('')">
                 <input type="number" step="0.01" min="0" name="items[${index}][volume]"
-                    class="item-volume border rounded p-2 w-full" placeholder="Volume *" required
-                    oninput="calculateRowTotalEdit(this, '${invoiceNumber}'); this.setCustomValidity('')"
-                    oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                    class="item-volume border rounded p-2 w-full" placeholder="Volume (opsional)"
+                    title="Kosongkan bila Jumlah = Harga (borongan)"
+                    oninput="calculateRowTotalEdit(this, '${invoiceNumber}'); this.setCustomValidity('')">
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <input type="text" name="items[${index}][satuan]"
-                    class="item-satuan border rounded p-2 w-full" placeholder="Satuan *" required
-                    oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                    oninput="this.setCustomValidity('')">
+                    class="item-satuan border rounded p-2 w-full" placeholder="Satuan (opsional)">
                 <input type="text" inputmode="numeric" name="items[${index}][harga]"
                     class="item-harga border rounded p-2 w-full" placeholder="Rp 0" required
                     oninput="formatCurrencyInput(this); calculateRowTotalEdit(this, '${invoiceNumber}')"
@@ -1557,7 +1566,8 @@ document.addEventListener('DOMContentLoaded', function () {
      *
      * Alur:
      * - Serialisasi setiap baris .item-row menjadi { keterangan, volume,
-     *   satuan, harga }; baris yang tidak lengkap dilewati.
+     *   satuan, harga }; baris yang tidak lengkap dilewati. Volume & satuan
+     *   opsional: kosong → null (volume kosong = borongan, Jumlah = Harga).
      * - Bila tidak ada item valid, tampilkan #items-error dan batalkan submit.
      * - Tulis JSON ke field hidden #items-json.
      * - Panggil handleFormSubmit() untuk proteksi submit ganda.
@@ -1593,15 +1603,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     const keterangan = row.querySelector('.item-keterangan')?.value || '';
-                    const volumeInput = row.querySelector('.item-volume');
-                    const satuanInput = row.querySelector('.item-satuan');
                     const hargaInput = row.querySelector('.item-harga');
 
-                    const volume = volumeInput ? parseFloat(volumeInput.value) : 0;
-                    const satuan = satuanInput ? satuanInput.value : '';
+                    // Volume & satuan opsional: kosong → null (volume kosong = borongan)
+                    const volume = getItemVolume(row);
+                    const satuan = String(row.querySelector('.item-satuan')?.value ?? '').trim() || null;
                     const harga = hargaInput ? parseCurrencyInput(hargaInput.value) : 0;
+                    const isVolumeValid = volume === null || (!isNaN(volume) && volume > 0);
 
-                    if (keterangan && !isNaN(volume) && volume > 0 && satuan && !isNaN(harga) && harga > 0) {
+                    if (keterangan && isVolumeValid && !isNaN(harga) && harga > 0) {
                         items.push({ keterangan, volume, satuan, harga });
                     }
                 });

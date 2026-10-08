@@ -13,6 +13,8 @@ use Illuminate\Contracts\Validation\Validator;
  *   error Bahasa Indonesia.
  * - Persentase item admin bersifat opsional: kosong → null (jumlah = harga);
  *   bila diisi harus angka > 0 dan maksimal 100.
+ * - Volume & satuan item superadmin bersifat opsional: volume kosong → null
+ *   (item borongan, jumlah = harga); bila diisi harus angka tidak negatif.
  * - Pesan error validasi pertama di-flash ke session 'error' agar tampil
  *   sebagai toast (halaman invoice tidak merender $errors per field).
  */
@@ -85,6 +87,42 @@ trait ValidatesProyekInvoiceInput
                     'Persentase item ke-' . ($index + 1) . ' harus berupa angka lebih dari 0 dan maksimal 100, atau dikosongkan.'
                 );
             }
+        }
+    }
+
+    /**
+     * Validasi volume setiap item format superadmin.
+     *
+     * Volume dan satuan bersifat OPSIONAL: volume kosong → item borongan
+     * (Jumlah = Harga). Bila volume diisi harus berupa angka dan tidak
+     * negatif.
+     *
+     * @param  \Illuminate\Contracts\Validation\Validator  $validator
+     * @param  mixed  $items  Array item (hasil decode JSON / input array)
+     */
+    protected function validateItemVolumes(Validator $validator, $items): void
+    {
+        if (! is_array($items)) {
+            return;
+        }
+
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item) || InvoiceProyek::isAdminItem($item)) {
+                continue;
+            }
+
+            if (! InvoiceProyek::hasEmptyVolume($item)) {
+                $raw = $item['volume'];
+                $normalized = is_string($raw) ? str_replace(',', '.', trim($raw)) : $raw;
+
+                if (! is_numeric($normalized) || (float) $normalized < 0) {
+                    $validator->errors()->add(
+                        "items.{$index}.volume",
+                        'Volume item ke-' . ($index + 1) . ' harus berupa angka (tidak negatif), atau dikosongkan.'
+                    );
+                }
+            }
+
         }
     }
 

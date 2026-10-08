@@ -248,7 +248,7 @@ class FinalReportService
         $user = auth()->user();
 
         return ProjectRecap::query()
-            ->with(['creator', 'rab', 'paymentProofs', 'financialReport.items'])
+            ->with(['creator', 'rab', 'paymentProofs', 'invoices.paymentProofs', 'financialReport.items'])
             ->when($user && $user->role !== 'superadmin', fn ($query) => $query->where('created_by', $user->id))
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;

@@ -442,7 +442,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                         foreach ($accounts as $account) {
                             $currentRow++;
                             $sheet->mergeCells("A{$currentRow}:G{$currentRow}");
-                            $sheet->setCellValue("A{$currentRow}", "Bank {$account->bank_name} / No : {$account->account_number} a/n {$account->account_holder}");
+                            $sheet->setCellValue("A{$currentRow}", label_bank($account->bank_name) . " / No : {$account->account_number} a/n {$account->account_holder}");
                             $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                                 'borders' => [
                                     'allBorders' => ['borderStyle' => Border::BORDER_THIN],

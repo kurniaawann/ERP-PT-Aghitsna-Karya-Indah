@@ -180,6 +180,20 @@ class Employee extends Model
     }
 
     /**
+     * Scope karyawan harian (tukang proyek) — yang wajib Absensi Harian dan
+     * digaji lewat Payroll mingguan. Karyawan kantor (bulanan) tidak perlu
+     * absensi; kehadirannya direkap langsung di Slip Gaji. Data lama tanpa
+     * employment_type dianggap harian.
+     */
+    public function scopeHarian($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('employment_type')
+                ->orWhere('employment_type', '!=', 'bulanan');
+        });
+    }
+
+    /**
      * Menghitung total upah berdasarkan jumlah hari kerja.
      *
      * @param  int  $daysWorked

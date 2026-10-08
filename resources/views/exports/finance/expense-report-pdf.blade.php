@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Pengeluaran{{ auth()->user()->isAdmin() ? '' : ' Divisi Produksi' }}</title>
+    <title>{{ auth()->user()->isAdmin() ? 'Kas Kantor' : 'Laporan Pengeluaran Divisi Produksi' }}</title>
     <style>
         /* Kertas A4 PORTRAIT (diatur di controller). Margin halaman diatur di @page;
            !important wajib karena reset "* { margin: 0 }" ikut menimpa margin halaman di dompdf */
@@ -220,9 +220,6 @@
             font-size: 12pt;
         }
 
-        .signature-line {
-            margin-top: 50px;
-        }
     </style>
 </head>
 
@@ -289,7 +286,7 @@
             <div class="header-title">PT. AGHITSNA KARYA INDAH</div>
             <div class="header-subtitle">
                 @if ($isAdmin)
-                    LAPORAN PENGELUARAN
+                    KAS KANTOR
                 @else
                     LAPORAN PENGELUARAN DIVISI PRODUKSI
                 @endif
@@ -312,7 +309,8 @@
                             <th class="col-keterangan">KETERANGAN</th>
                             <th class="col-pemasukan">PEMASUKAN</th>
                             <th class="col-pengeluaran">PENGELUARAN</th>
-                            <th class="col-sumber">SUMBER UANG</th>
+                            {{-- Admin: "Sumber Uang" tampil sebagai "Keterangan" (hanya teks) --}}
+                            <th class="col-sumber">{{ $isAdmin ? 'KETERANGAN' : 'SUMBER UANG' }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -464,24 +462,9 @@
                 </div>
             @endif
 
-            {{-- Footer Signatures --}}
+            {{-- Footer Signatures: satu penandatangan di kanan (dipilih saat cetak) --}}
             <div class="footer-signatures">
-                <table>
-                    <tr>
-                        <td>
-                            <div>Dibuat / Diperiksa</div>
-                            <div class="signature-line">( AKHMAD KHAIDIR )</div>
-                        </td>
-                        <td>
-                            <div>&nbsp;</div>
-                            <div class="signature-line"></div>
-                        </td>
-                        <td>
-                            <div>Direktur PT. Aghitsna</div>
-                            <div class="signature-line">( Zulkarnain,ST.,MT )</div>
-                        </td>
-                    </tr>
-                </table>
+                @include('exports.partials.report-signer', ['signer' => $signer ?? null])
             </div>
             </div>
         </div>

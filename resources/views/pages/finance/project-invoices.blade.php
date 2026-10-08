@@ -27,6 +27,10 @@
 @section('title', 'PT Aghitsna Karya Indah - ' . (auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek'))
 
 @section('content')
+    {{-- Tab Super Admin (satu menu sidebar → beberapa tab, seperti Surat Menyurat) --}}
+    @if (auth()->user()->isSuperAdmin())
+        <x-finance.invoice-tabs active="proyek" />
+    @endif
     {{-- Header Invoice Proyek --}}
     {{-- Alur auth()->user()->isAdmin(): jika admin tampilkan label
          "Invoice", selain admin tampilkan "Invoice Proyek". --}}

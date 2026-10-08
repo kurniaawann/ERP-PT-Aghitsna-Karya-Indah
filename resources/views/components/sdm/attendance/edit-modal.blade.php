@@ -6,6 +6,12 @@
 --}}
 @php
     $employeesForEdit = $employees ?? collect();
+
+    // $employees hanya karyawan harian; absensi lama milik karyawan kantor
+    // (gaji bulanan) tetap menampilkan karyawannya agar pilihan tidak kosong.
+    if ($attendance->employee && ! $employeesForEdit->contains('employee_code', $attendance->employee_id)) {
+        $employeesForEdit = $employeesForEdit->concat([$attendance->employee]);
+    }
 @endphp
 
 <x-modal id="editModal-{{ $attendance->id }}" title="Edit Absensi"

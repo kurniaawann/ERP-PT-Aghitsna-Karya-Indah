@@ -30,7 +30,10 @@
                             @php
                                 $recapTotal = $recap->getTotalAmount();
                                 $recapDp = $recap->getDpAmount();
+                                // Terbayar = bukti rekap + pembayaran invoice tertaut
+                                // (tanpa PPN) + uang masuk manual Laporan Keuangan.
                                 $recapPaid = $recap->getTotalPaidAmount();
+                                $recapInvoicePaid = $recap->getInvoicePaidAmount();
                                 $recapRemaining = $recap->getRemainingAmount();
                                 $recapProgress = $recap->getProgressPercent();
 
@@ -64,6 +67,12 @@
                                 @endif
                                 <td class="p-2 text-right font-medium text-green-600">
                                     Rp {{ number_format($recapPaid, 0, ',', '.') }}
+                                    @if ($recapInvoicePaid > 0)
+                                        <span class="block text-[10px] font-normal text-text-tertiary"
+                                            title="Pembayaran lewat invoice tertaut (tanpa PPN)">
+                                            via invoice Rp {{ number_format($recapInvoicePaid, 0, ',', '.') }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="p-2 text-right font-semibold {{ $recapRemaining > 0 ? 'text-red-600' : 'text-green-600' }}">
                                     Rp {{ number_format($recapRemaining, 0, ',', '.') }}

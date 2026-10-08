@@ -107,10 +107,12 @@ class PaymentProofService
      *
      * Khusus ProjectRecap (rekap proyek), sisa dihitung konsisten dengan
      * getRemainingAmount() milik model: Total RAB - DP (Uang Masuk dari RAB)
-     * - terbayar. Terbayar mencakup bukti pembayaran (yang sedang diedit
-     * dikecualikan saat update) DAN baris "uang masuk" (kategori INCOME) pada
-     * Laporan Keuangan Proyek, sehingga nominal bukti pembayaran tidak bisa
-     * melebihi sisa setelah memperhitungkan income yang sudah tercatat.
+     * - terbayar. Terbayar mencakup bukti pembayaran rekap (yang sedang
+     * diedit dikecualikan saat update), pembayaran pada Invoice Proyek yang
+     * ditautkan ke rekap (tanpa PPN), DAN baris "uang masuk" manual
+     * (kategori INCOME) pada Laporan Keuangan Proyek, sehingga nominal bukti
+     * pembayaran rekap tidak bisa melebihi sisa setelah memperhitungkan
+     * pembayaran yang sudah masuk lewat invoice maupun laporan.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $invoice
      * @param  int|null  $excludePaymentProofId  ID yang dikecualikan (untuk update)
@@ -121,7 +123,12 @@ class PaymentProofService
         if ($invoice instanceof ProjectRecap) {
             $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
             $incomeAmount = (int) $invoice->getIncomePayments()->sum('income_amount');
-            $remainingAmount = max(0, (int) $invoice->getTotalAmount() - (int) $invoice->getDpAmount() - $paidAmount - $incomeAmount);
+            // Bukti yang sedang diedit juga dikecualikan dari pembayaran invoice
+            // (kasus bukti dipindah dari invoice tertaut ke rekap).
+            $invoicePaidAmount = (int) $invoice->getInvoicePayments()
+                ->reject(fn ($payment) => $excludePaymentProofId !== null && (int) $payment->proof->id === $excludePaymentProofId)
+                ->sum('project_amount');
+            $remainingAmount = max(0, (int) $invoice->getTotalAmount() - (int) $invoice->getDpAmount() - $paidAmount - $invoicePaidAmount - $incomeAmount);
         } else {
             $paidAmount = $this->calculator->getPaidAmountForInvoice($invoice, $excludePaymentProofId);
             $ppnAmount = (int) (method_exists($invoice, 'getPpnAmount') ? $invoice->getPpnAmount() : 0);

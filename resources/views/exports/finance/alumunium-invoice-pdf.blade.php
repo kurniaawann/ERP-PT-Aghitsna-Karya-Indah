@@ -268,7 +268,7 @@
                     <tr>
                         <td class="center">{{ $index + 1 }}</td>
                         <td class="left">{{ $item['keterangan'] }}</td>
-                        <td class="center">{{ number_format($item['volume'], 2, ',', '.') }}</td>
+                        <td class="center">{{ format_angka($item['volume'] ?? 0) }}</td>
                         <td class="center">{{ $item['satuan'] }}</td>
                         <td class="center">{{ format_rupiah($item['harga']) }}</td>
                         <td class="center">{{ format_rupiah($jumlah) }}</td>

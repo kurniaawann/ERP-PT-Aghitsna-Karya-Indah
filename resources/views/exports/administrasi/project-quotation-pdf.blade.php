@@ -50,15 +50,17 @@
             text-align: center;
         }
 
-        /* Kop surat (revisi klien): alamat/telp/email 11pt */
+        /* Kop surat (revisi klien): nama perusahaan 12pt bold, alamat/telp/email 11pt */
+        .company-name {
+            font-size: 12pt;
+            font-weight: bold;
+            padding-top: 6px !important;
+            padding-bottom: 2px !important;
+        }
+
         .company-address {
             font-size: 11pt;
             line-height: 1.3;
-            padding-top: 8px;
-        }
-
-        .invoice-info {
-            margin-top: 8px;
         }
 
         .invoice-info td {
@@ -225,8 +227,11 @@
         </tr>
     </table>
 
-    {{-- Baris 2: alamat perusahaan (kiri) + info penawaran (kanan) --}}
+    {{-- Baris 2: nama & alamat perusahaan (kiri) + info penawaran (kanan) --}}
     <table class="header-table" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+            <td colspan="2" class="company-name">PT. AGHITSNA KARYA INDAH</td>
+        </tr>
         <tr>
             <td width="55%" valign="top">
                 <div class="company-address">
@@ -299,7 +304,7 @@
                 <tr>
                     <td class="c">{{ $idx + 1 }}.</td>
                     <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
-                    <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
+                    <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? format_angka($item['volume']) : '-' }}</td>
                     <td class="c">{{ $item['satuan'] ?? '-' }}</td>
                     <td class="c">{{ format_rupiah($item['harga'] ?? 0) }}</td>
                     <td class="c">{{ format_rupiah((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0)) }}</td>
@@ -334,7 +339,7 @@
     <div class="payment-info">
         Pembayaran dapat di transfer melalui rekening<br>
         @foreach ($paymentAccounts as $acc)
-            Bank {{ $acc->bank_name }} / No : {{ $acc->account_number }} a/n {{ $acc->account_holder }}<br>
+            {{ label_bank($acc->bank_name) }} / No : {{ $acc->account_number }} a/n {{ $acc->account_holder }}<br>
         @endforeach
     </div>
 

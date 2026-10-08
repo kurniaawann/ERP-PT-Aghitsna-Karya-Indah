@@ -16,7 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Style;
  * - Data: Grouped by kategori dengan subtotal per kategori
  * - Grand Total: Jumlah keseluruhan
  * - Rekapitulasi: Ringkasan uang masuk, uang keluar, saldo
- * - Tanda tangan: Dibuat/Diperiksa & Direktur
+ * - Tanda tangan: satu penandatangan di kanan (dipilih saat cetak)
  *
  * Laporan bulanan: bila data mencakup lebih dari satu bulan, dibuat satu sheet
  * per bulan (nama sheet mis. "September 2026", total per bulan, saldo dibawa
@@ -38,16 +38,21 @@ class ExpenseRecapExport implements WithMultipleSheets, WithDefaultStyles
     /** @var object Total income, expense, dan balance */
     protected $totals;
 
+    /** @var array|null Penandatangan terpilih (name, position, signature_image) */
+    protected $signer;
+
     /**
      * @param  \Illuminate\Database\Eloquent\Collection $expenseRecaps  Data rekap pengeluaran (urut tanggal menaik)
      * @param  int|null                                 $month           Filter bulan
      * @param  int|null                                 $year            Filter tahun
      * @param  string|null                              $categoryName    Nama kategori (unused)
      * @param  object|null                              $totals          Total income, expense, balance
+     * @param  array|null                               $signer          Penandatangan terpilih (ReportSignerService)
      */
-    public function __construct($expenseRecaps, $month = null, $year = null, $categoryName = null, $totals = null)
+    public function __construct($expenseRecaps, $month = null, $year = null, $categoryName = null, $totals = null, ?array $signer = null)
     {
         $this->expenseRecaps = $expenseRecaps;
+        $this->signer = $signer;
         $this->totals = $totals ?? (object) [
             'total_income' => $expenseRecaps->sum('income_amount'),
             'total_expense' => $expenseRecaps->sum('expense_amount'),
@@ -90,7 +95,9 @@ class ExpenseRecapExport implements WithMultipleSheets, WithDefaultStyles
                     $this->periodTitle,
                     $this->totals,
                     ExpenseMonthSheet::VARIANT_REKAP,
-                    'Laporan_Pengeluaran'
+                    'Laporan_Pengeluaran',
+                    null,
+                    $this->signer
                 ),
             ];
         }
@@ -103,7 +110,8 @@ class ExpenseRecapExport implements WithMultipleSheets, WithDefaultStyles
                 $section['totals'],
                 ExpenseMonthSheet::VARIANT_REKAP,
                 $section['label'],
-                $index > 0 ? $section : null
+                $index > 0 ? $section : null,
+                $this->signer
             );
         }
 

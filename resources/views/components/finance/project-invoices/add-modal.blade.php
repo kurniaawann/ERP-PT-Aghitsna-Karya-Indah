@@ -100,16 +100,14 @@
                         <input type="text" class="item-keterangan border rounded p-2 w-full" placeholder="Keterangan *"
                             required oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                             oninput="this.setCustomValidity('')">
+                        {{-- Volume & satuan opsional: volume kosong → item borongan (Jumlah = Harga) --}}
                         <input type="number" step="0.01" min="0" class="item-volume border rounded p-2 w-full"
-                            placeholder="Volume *" required
-                            oninput="calculateRowTotal(this); this.setCustomValidity('')"
-                            oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                            placeholder="Volume (opsional)" title="Kosongkan bila Jumlah = Harga (borongan)"
+                            oninput="calculateRowTotal(this); this.setCustomValidity('')">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <input type="text" class="item-satuan border rounded p-2 w-full"
-                            placeholder="Satuan (m3, unit) *" required
-                            oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                            oninput="this.setCustomValidity('')">
+                            placeholder="Satuan (opsional)">
                         <input type="text" inputmode="numeric" class="item-harga border rounded p-2 w-full"
                             placeholder="Rp 0" required
                             oninput="formatCurrencyInput(this); calculateRowTotal(this); this.setCustomValidity('')"

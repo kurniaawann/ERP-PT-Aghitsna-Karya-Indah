@@ -16,9 +16,10 @@ use Illuminate\Support\Facades\Log;
 /**
  * Service untuk mengelola Slip Gaji Karyawan Bulanan.
  *
- * Alur: admin mengisi rekap absensi 1 bulan per karyawan (matriks
- * attendance_detail). Hari Minggu dan hari libur yang dipilih saat generate
- * otomatis ditandai "L" (Libur). Sistem menghitung:
+ * Alur: admin mengisi rekap absensi 1 bulan seluruh karyawan terpilih
+ * sekaligus saat generate (matriks attendance_detail per slip; bisa diubah
+ * per slip lewat Edit). Hari Minggu dan hari libur yang dipilih saat
+ * generate otomatis ditandai "L" (Libur). Sistem menghitung:
  *   Penerimaan = gaji pokok + (transport x hadir) + (makan x hadir)
  *                + lembur (modul Lembur pada bulan slip)
  *   Potongan   = BPJS Kesehatan 1% gaji pokok + JHT 2% UMP + JPN 1% UMP
@@ -95,9 +96,12 @@ class SalarySlipService
     /**
      * Membuat slip gaji draft untuk karyawan bulanan terpilih pada periode.
      *
-     * Setiap slip dibuat dengan matriks absensi default: hari Minggu dan
-     * tanggal pada $holidayDates ditandai "L" (Libur), sisanya "H" (Hadir).
-     * Admin dapat mengubah status hari tertentu di modal absensi slip.
+     * Matriks absensi default: hari Minggu dan tanggal pada $holidayDates
+     * ditandai "L" (Libur), sisanya "H" (Hadir). Rekap absensi seluruh
+     * karyawan terpilih diisi sekaligus di langkah 2 modal Generate
+     * ($attendanceByEmployee = [kode karyawan => "HHLHC..." / [hari => status]]);
+     * karyawan tanpa rekap memakai matriks default. Masih bisa diubah per
+     * slip lewat modal Edit sebelum dibayar.
      *
      * Cicilan kasbon bulan ini per karyawan bisa diisi dari modal Generate
      * ($kasbonInstallments = [kode karyawan => nominal]); karyawan yang tidak
@@ -107,9 +111,10 @@ class SalarySlipService
      * @param  array<string, mixed>  $signatureIds  Mapping peran => ID petinggi
      * @param  array<int, string>  $holidayDates  Tanggal libur "Y-m-d" pada periode
      * @param  array<string, mixed>  $kasbonInstallments  Cicilan kasbon per kode karyawan
+     * @param  array<string, mixed>  $attendanceByEmployee  Rekap absensi per kode karyawan
      * @return array{success: bool, message: string, count: int}
      */
-    public function generateSlips(array $employeeCodes, int $periodYear, int $periodMonth, array $signatureIds = [], array $holidayDates = [], array $kasbonInstallments = []): array
+    public function generateSlips(array $employeeCodes, int $periodYear, int $periodMonth, array $signatureIds = [], array $holidayDates = [], array $kasbonInstallments = [], array $attendanceByEmployee = []): array
     {
         $employees = Employee::where('created_by', auth()->id())
             ->where('employment_type', 'bulanan')
@@ -141,7 +146,12 @@ class SalarySlipService
             $installment = $kasbonInstallments[$employee->employee_code] ?? null;
             $installment = ($installment === null || $installment === '') ? null : (int) $installment;
 
-            $this->createSlip($employee, $periodYear, $periodMonth, $defaultAttendance, $signatures, $installment);
+            $attendance = $this->resolveGeneratedAttendance(
+                $attendanceByEmployee[$employee->employee_code] ?? null,
+                $defaultAttendance
+            );
+
+            $this->createSlip($employee, $periodYear, $periodMonth, $attendance, $signatures, $installment);
             $created++;
         }
 
@@ -208,6 +218,50 @@ class SalarySlipService
             $attendance[$day] = ($isSunday || $isHoliday)
                 ? SalarySlip::DAY_LIBUR
                 : SalarySlip::DAY_PRESENT;
+        }
+
+        return $attendance;
+    }
+
+    /**
+     * Matriks absensi satu karyawan dari langkah 2 modal Generate.
+     *
+     * Menerima string huruf status per hari ("HHLHC...", karakter ke-n = hari
+     * ke-n — dipakai form agar input tetap sedikit walau karyawan banyak) atau
+     * array [hari => status]. Hari yang kosong/tidak valid memakai status
+     * default (Minggu & tanggal merah = L, lainnya H).
+     *
+     * @param  string|array<int|string, mixed>|null  $input
+     * @param  array<int, string>  $defaultAttendance  Matriks default periode
+     * @return array<int, string>
+     */
+    private function resolveGeneratedAttendance(string|array|null $input, array $defaultAttendance): array
+    {
+        if (is_string($input)) {
+            $letters = str_split(strtoupper(trim($input)));
+            $input = [];
+            foreach ($letters as $index => $letter) {
+                $input[$index + 1] = $letter;
+            }
+        }
+
+        if (! is_array($input) || empty($input)) {
+            return $defaultAttendance;
+        }
+
+        $validStatuses = [
+            SalarySlip::DAY_PRESENT,
+            SalarySlip::DAY_PERMISSION,
+            SalarySlip::DAY_SICK,
+            SalarySlip::DAY_LEAVE,
+            SalarySlip::DAY_ABSENT,
+            SalarySlip::DAY_LIBUR,
+        ];
+
+        $attendance = [];
+        foreach ($defaultAttendance as $day => $defaultStatus) {
+            $status = $input[$day] ?? null;
+            $attendance[$day] = in_array($status, $validStatuses, true) ? $status : $defaultStatus;
         }
 
         return $attendance;

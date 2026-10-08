@@ -15,9 +15,10 @@
     $isFullyPaid = $remaining <= 0;
     $progressPercent = $grandTotal > 0 ? min(100, (int) round((($totalPaid + $dpAmount) / $grandTotal) * 100)) : 0;
 
-    $discountValueDisplay = rtrim(rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'), ',');
-    $dpValueDisplay = rtrim(rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'), ',');
-    $ppnValueDisplay = rtrim(rtrim(number_format((float) $invoice->ppn, 2, ',', '.'), '0'), ',');
+    // Angka persen tanpa desimal tak berguna (12,50 → 12,5; 10,00 → 10)
+    $discountValueDisplay = format_angka((float) $invoice->discount_value);
+    $dpValueDisplay = format_angka((float) $invoice->dp_value);
+    $ppnValueDisplay = format_angka((float) $invoice->ppn);
 
     $paymentProofs = $invoice->relationLoaded('paymentProofs')
         ? $invoice->paymentProofs
@@ -160,7 +161,7 @@
                                 <td class="py-2 px-2 text-right text-gray-900">
                                     {{-- Persentase opsional: kosong → "-" dan Jumlah = Harga --}}
                                     @if (isset($item['persentase']) && $item['persentase'] !== '')
-                                        {{ rtrim(rtrim(number_format((float) $item['persentase'], 2, ',', '.'), '0'), ',') }}%
+                                        {{ format_angka($item['persentase']) }}%
                                     @else
                                         -
                                     @endif
@@ -170,11 +171,14 @@
                                 </td>
                             @else
                                 <td class="py-2 px-2 text-gray-900">{{ $item['keterangan'] ?? '-' }}</td>
-                                <td class="py-2 px-2 text-right text-gray-900">{{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
-                                <td class="py-2 px-2 text-gray-900">{{ $item['satuan'] ?? '-' }}</td>
+                                {{-- Volume & satuan opsional: kosong → "-" dan Jumlah = Harga (borongan) --}}
+                                <td class="py-2 px-2 text-right text-gray-900">
+                                    {{ \App\Models\Finance\InvoiceProyek::hasEmptyVolume($item) ? '-' : format_angka($item['volume']) }}
+                                </td>
+                                <td class="py-2 px-2 text-gray-900">{{ filled($item['satuan'] ?? null) ? $item['satuan'] : '-' }}</td>
                                 <td class="py-2 px-2 text-right text-gray-900">Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
                                 <td class="py-2 pl-2 text-right font-semibold text-gray-900">
-                                    Rp {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}
+                                    Rp {{ number_format(\App\Models\Finance\InvoiceProyek::itemAmount($item), 0, ',', '.') }}
                                 </td>
                             @endif
                         </tr>

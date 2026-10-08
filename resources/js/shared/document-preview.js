@@ -292,7 +292,11 @@ document.addEventListener('click', function (e) {
     }
     if (url.origin !== window.location.origin) return;
 
-    const title = (link.getAttribute('data-preview-title') || link.textContent || '').trim().replace(/\s+/g, ' ');
+    // Judul modal: data-preview-title, atau teks link (teks pendek seperti "PDF"
+    // menjadi "Pratinjau PDF").
+    const linkText = (link.textContent || '').trim().replace(/\s+/g, ' ');
+    const title = link.getAttribute('data-preview-title')
+        || (linkText && linkText.length <= 15 ? 'Pratinjau ' + linkText : linkText);
 
     if (link.hasAttribute('data-preview') || EXPORT_URL_PATTERN.test(url.pathname)) {
         e.preventDefault();

@@ -103,7 +103,9 @@ class ProjectRecap extends Model
      * Invoice Proyek yang ditautkan ke rekap proyek ini.
      *
      * Tautan bersifat opsional dan dipilih user saat membuat/mengedit
-     * invoice proyek (kolom proyek_invoices.project_recap_id).
+     * invoice proyek (kolom proyek_invoices.project_recap_id). Pembayaran
+     * pada invoice tertaut ikut dihitung sebagai Terbayar rekap
+     * (getInvoicePaidAmount) dan sebagai uang masuk Laporan Keuangan Proyek.
      */
     public function invoices(): HasMany
     {
@@ -208,9 +210,10 @@ class ProjectRecap extends Model
      * income_amount > 0 (bukan lewat kode kategori) sehingga kategori uang
      * masuk dengan kode apa pun tetap terhitung, tidak hanya UANG_MASUK.
      *
-     * Item yang berasal dari bukti pembayaran (payment_proof_id terisi)
-     * dikecualikan karena sudah dihitung lewat getTotalPaidAmount() dari
-     * payment_proofs — menghindari hitung ganda.
+     * Item yang berasal dari bukti pembayaran (payment_proof_id terisi) —
+     * baik bukti rekap maupun bukti invoice tertaut — dikecualikan karena
+     * sudah dihitung lewat getDirectPaidAmount() / getInvoicePaidAmount()
+     * dari payment_proofs — menghindari hitung ganda.
      *
      * @return \Illuminate\Support\Collection<int, \App\Models\Report\ProjectFinancialReportItem>
      */
@@ -234,30 +237,121 @@ class ProjectRecap extends Model
     }
 
     /**
-     * Total pembayaran yang sudah masuk.
+     * Total bukti pembayaran yang diupload langsung ke rekap ini
+     * (payment_proofs dengan invoice_type 'recap').
      *
-     * Terdiri dari dua sumber:
-     * - Bukti pembayaran (payment_proofs) yang ditautkan ke rekap.
-     * - Baris "uang masuk" (kategori INCOME) pada Laporan Keuangan Proyek
-     *   yang tidak berasal dari bukti pembayaran.
-     *
-     * @return int Total nominal yang sudah dibayar
+     * @param  int|null  $excludePaymentProofId  Bukti yang tidak ikut dihitung (mis. bukti yang sedang diedit)
+     * @return int
      */
-    public function getTotalPaidAmount(): int
+    public function getDirectPaidAmount(?int $excludePaymentProofId = null): int
     {
         $paymentProofs = $this->relationLoaded('paymentProofs')
             ? $this->paymentProofs
             : $this->paymentProofs()->get();
 
-        $proofTotal = (int) max(0, $paymentProofs->sum(fn ($proof) => (int) ($proof->amount ?? 0)));
-
-        $incomeTotal = (int) $this->getIncomePayments()->sum('income_amount');
-
-        return $proofTotal + $incomeTotal;
+        return (int) max(0, $paymentProofs
+            ->reject(fn ($proof) => $excludePaymentProofId !== null && (int) $proof->id === $excludePaymentProofId)
+            ->sum(fn ($proof) => (int) ($proof->amount ?? 0)));
     }
 
     /**
-     * Sisa pembayaran: Total RAB - DP - total terbayar.
+     * Bagian pembayaran invoice yang dihitung ke nilai proyek (tanpa PPN).
+     *
+     * Total RAB rekap & nilai tagihan invoice (getBilledAmount) sama-sama
+     * SEBELUM PPN, sedangkan bukti pembayaran invoice dibayar termasuk PPN.
+     * Agar sebanding dengan Total RAB, setiap pembayaran invoice dihitung
+     * proporsional: nominal × nilai tagihan / (nilai tagihan + PPN).
+     * Contoh: tagihan 200.000 + PPN 22.000, dibayar 222.000 → 200.000.
+     *
+     * Rumus yang sama dipakai untuk baris "uang masuk" Laporan Keuangan
+     * Proyek (ProjectFinancialReportService) sehingga Terbayar rekap dan
+     * pemasukan laporan selalu sama.
+     *
+     * @param  \App\Models\Finance\InvoiceProyek  $invoice  Invoice tempat bukti pembayaran diupload
+     * @param  int  $amount  Nominal bukti pembayaran (termasuk PPN)
+     * @return int
+     */
+    public static function invoicePaymentProjectPortion(InvoiceProyek $invoice, int $amount): int
+    {
+        if ($amount <= 0) {
+            return 0;
+        }
+
+        $ppnAmount = (int) $invoice->getPpnAmount();
+        $billedAmount = (int) $invoice->getBilledAmount();
+
+        if ($ppnAmount <= 0 || $billedAmount <= 0) {
+            return $amount;
+        }
+
+        return (int) round($amount * $billedAmount / ($billedAmount + $ppnAmount));
+    }
+
+    /**
+     * Daftar pembayaran (bukti pembayaran) pada invoice proyek yang
+     * ditautkan ke rekap ini.
+     *
+     * Setiap baris berisi bukti, invoice-nya, nominal yang dibayar (termasuk
+     * PPN), bagian yang dihitung ke rekap (tanpa PPN) dan porsi PPN-nya.
+     * DP invoice tidak ikut dihitung: uang masuk/DP rekap diambil dari RAB
+     * (getDpAmount) sehingga DP tidak terhitung dua kali.
+     *
+     * @return \Illuminate\Support\Collection<int, object{proof: \App\Models\Finance\PaymentProof, invoice: \App\Models\Finance\InvoiceProyek, amount: int, project_amount: int, ppn_amount: int}>
+     */
+    public function getInvoicePayments()
+    {
+        $this->loadMissing('invoices.paymentProofs');
+
+        return $this->invoices
+            ->flatMap(fn (InvoiceProyek $invoice) => $invoice->paymentProofs->map(function ($proof) use ($invoice) {
+                $amount = (int) ($proof->amount ?? 0);
+                $projectAmount = static::invoicePaymentProjectPortion($invoice, $amount);
+
+                return (object) [
+                    'proof' => $proof,
+                    'invoice' => $invoice,
+                    'amount' => $amount,
+                    'project_amount' => $projectAmount,
+                    'ppn_amount' => max(0, $amount - $projectAmount),
+                ];
+            }))
+            ->values();
+    }
+
+    /**
+     * Total pembayaran lewat invoice tertaut yang dihitung ke rekap
+     * (tanpa PPN, lihat invoicePaymentProjectPortion()).
+     *
+     * @return int
+     */
+    public function getInvoicePaidAmount(): int
+    {
+        return (int) $this->getInvoicePayments()->sum('project_amount');
+    }
+
+    /**
+     * Total pembayaran yang sudah masuk.
+     *
+     * Terdiri dari tiga sumber (masing-masing bukti/baris hanya dihitung
+     * sekali):
+     * - Bukti pembayaran yang diupload langsung ke rekap (invoice_type 'recap').
+     * - Bukti pembayaran pada Invoice Proyek yang ditautkan ke rekap
+     *   (proyek_invoices.project_recap_id), dihitung tanpa PPN.
+     * - Baris "uang masuk" (kategori INCOME) pada Laporan Keuangan Proyek
+     *   yang diinput manual (tidak berasal dari bukti pembayaran).
+     *
+     * @return int Total nominal yang sudah dibayar
+     */
+    public function getTotalPaidAmount(): int
+    {
+        $incomeTotal = (int) $this->getIncomePayments()->sum('income_amount');
+
+        return $this->getDirectPaidAmount() + $this->getInvoicePaidAmount() + $incomeTotal;
+    }
+
+    /**
+     * Sisa pembayaran: Total RAB - DP - total terbayar (bukti rekap +
+     * pembayaran invoice tertaut tanpa PPN + uang masuk manual laporan).
      */
     public function getRemainingAmount(): int
     {

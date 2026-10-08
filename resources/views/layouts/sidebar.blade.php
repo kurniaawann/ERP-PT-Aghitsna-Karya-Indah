@@ -211,60 +211,17 @@
                 {{-- Super Admin: Full Finance menu --}}
                 <ul id="invoiceDropdown"
                     class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('rekap*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') ? '' : 'hidden' }}">
+                    {{-- Invoice: satu menu → halaman bertab (Barang | Alumunium | Proyek), seperti Surat Menyurat --}}
                     <li>
-                        <button onclick="toggleDropdown('invoiceMasterDropdown')"
-                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
+                        <a href="{{ route('item-invoice.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <div class="flex items-center">
-                                <i
-                                    class="fas fa-file-invoice w-4
-                                    {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                </i>
-                                <span class="ml-3 text-sm font-medium">Invoice</span>
-                            </div>
-
-                            <i id="invoiceMasterDropdownIcon"
-                                class="fas fa-chevron-down text-xs transition-transform duration-200
+                            <i
+                                class="fas fa-file-invoice w-4
                                 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                        </button>
-
-                        <ul id="invoiceMasterDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? '' : 'hidden' }}">
-                            <li>
-                                <a href="{{ url('/item-invoice') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('item-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-file-contract w-4 
-                                        {{ request()->is('item-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Invoice Barang</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/alumunium-invoice') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('alumunium-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-file-contract w-4 
-                                        {{ request()->is('alumunium-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Invoice Alumunium</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/proyek-invoice') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-file-contract w-4 
-                                        {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">{{ auth()->user()->isAdmin() ? 'Invoice' : 'Invoice Proyek' }}</span>
-                                </a>
-                            </li>
-                            </ul>
+                            <span class="ml-3 text-sm font-medium">Invoice</span>
+                        </a>
                     </li>
                     <li>
                         <a href="{{ url('/purchase-invoice') }}"
@@ -498,49 +455,17 @@
                             <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
                         </a>
                     </li>
+                    {{-- Penawaran Harga: satu menu → halaman bertab (Alumunium | Proyek), seperti Surat Menyurat --}}
                     <li>
-                        <button onclick="toggleDropdown('penawaranHargaDropdown')"
-                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group
+                        <a href="{{ route('aluminium-quotation.index') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
                                 {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <div class="flex items-center">
-                                <i
-                                    class="fas fa-file-contract w-4
-                                    {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                </i>
-                                <span class="ml-3 text-sm font-medium">Penawaran Harga</span>
-                            </div>
-
-                            <i id="penawaranHargaDropdownIcon"
-                                class="fas fa-chevron-down text-xs transition-transform duration-200
+                            <i
+                                class="fas fa-file-contract w-4
                                 {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
                             </i>
-                        </button>
-
-                        <ul id="penawaranHargaDropdown"
-                            class="ml-6 mt-1 space-y-1 {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? '' : 'hidden' }}">
-                            <li>
-                                <a href="{{ url('/aluminium-quotation') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('aluminium-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-file-contract w-4
-                                        {{ request()->is('aluminium-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Penawaran Alumunium</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/project-quotation') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-clipboard-list w-4
-                                        {{ request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Penawaran Proyek</span>
-                                </a>
-                            </li>
-                        </ul>
+                            <span class="ml-3 text-sm font-medium">Penawaran Harga</span>
+                        </a>
                     </li>
                     <li>
                         <a href="{{ url('/rab') }}"

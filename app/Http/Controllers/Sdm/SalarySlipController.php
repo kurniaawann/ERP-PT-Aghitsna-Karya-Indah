@@ -72,7 +72,9 @@ class SalarySlipController extends Controller
     }
 
     /**
-     * Membuat slip gaji draft dari karyawan bulanan terpilih.
+     * Membuat slip gaji draft dari karyawan bulanan terpilih, lengkap dengan
+     * rekap absensi tiap karyawan dari langkah 2 modal Generate
+     * (attendance[kode karyawan] = "HHLHC...").
      */
     public function generate(Request $request)
     {
@@ -94,7 +96,8 @@ class SalarySlipController extends Controller
             $periodMonth,
             $request->input('signatures', []),
             $request->input('holidays', []),
-            (array) $request->input('kasbon_installments', [])
+            (array) $request->input('kasbon_installments', []),
+            (array) $request->input('attendance', [])
         );
 
         if (! $result['success']) {

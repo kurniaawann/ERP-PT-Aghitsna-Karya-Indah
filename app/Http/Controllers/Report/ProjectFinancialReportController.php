@@ -46,6 +46,26 @@ class ProjectFinancialReportController extends Controller
     }
 
     /**
+     * Sinkronkan baris "Uang Masuk" otomatis (dari bukti pembayaran rekap &
+     * invoice tertaut) untuk rekap yang tampil, lalu muat ulang item laporan
+     * bila ada perubahan.
+     *
+     * @param  \Illuminate\Support\Collection<int, ProjectRecap>  $recaps
+     */
+    private function syncPaymentProofItems($recaps): void
+    {
+        $changed = $recaps->reduce(
+            fn (bool $carry, ProjectRecap $recap) => $this->service->syncPaymentProofItems($recap) || $carry,
+            false
+        );
+
+        if ($changed) {
+            $recaps->each(fn (ProjectRecap $recap) => $recap->unsetRelation('financialReport'));
+            $recaps->load('financialReport.items.category');
+        }
+    }
+
+    /**
      * Menampilkan halaman daftar Laporan Keuangan Proyek.
      *
      * Menampilkan seluruh Rekap Proyek beserta status laporannya. Superadmin
@@ -59,7 +79,9 @@ class ProjectFinancialReportController extends Controller
     public function index(Request $request)
     {
         $recaps = ProjectRecap::query()
-            ->with(['financialReport.items.category'])
+            // rab, paymentProofs, invoices.paymentProofs: dipakai perhitungan
+            // Terbayar/status rekap pada tabel (hindari N+1).
+            ->with(['financialReport.items.category', 'rab', 'paymentProofs', 'invoices.paymentProofs'])
             ->when(auth()->user()->role !== 'superadmin', function ($query) {
                 $query->where('created_by', auth()->id());
             })
@@ -76,6 +98,12 @@ class ProjectFinancialReportController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        // Sinkronkan baris "Uang Masuk" otomatis dari bukti pembayaran (bukti
+        // rekap + bukti invoice yang ditautkan) agar pemasukan laporan selalu
+        // sama dengan Terbayar pada Rekap Proyek. Baris dimuat ulang bila ada
+        // perubahan.
+        $this->syncPaymentProofItems($recaps->getCollection());
+
         // Pastikan kategori UANG_MASUK (modul project_finance) tersedia untuk
         // user yang login, sehingga muncul di dropdown modal tambah/edit.
         $this->service->resolveIncomeCategory();
@@ -86,7 +114,7 @@ class ProjectFinancialReportController extends Controller
             ->when(auth()->user()->role !== 'superadmin', function ($query) {
                 $query->where('created_by', auth()->id());
             })
-            ->with(['rab', 'paymentProofs', 'financialReport.items'])
+            ->with(['rab', 'paymentProofs', 'financialReport.items', 'invoices.paymentProofs'])
             ->orderByDesc('created_at')
             ->get()
             ->map(function (ProjectRecap $rekap) {
@@ -249,6 +277,8 @@ class ProjectFinancialReportController extends Controller
     {
         $this->authorizeRecap($projectRecap);
 
+        $this->service->syncPaymentProofItems($projectRecap);
+
         $report = $this->service->getOrCreateForRecap($projectRecap);
         $items = $this->service->getItems($report);
         $totals = $this->service->getGrandTotals($items);
@@ -275,6 +305,8 @@ class ProjectFinancialReportController extends Controller
     public function exportExcel(ProjectRecap $projectRecap)
     {
         $this->authorizeRecap($projectRecap);
+
+        $this->service->syncPaymentProofItems($projectRecap);
 
         $report = $this->service->getOrCreateForRecap($projectRecap);
         $items = $this->service->getItems($report);

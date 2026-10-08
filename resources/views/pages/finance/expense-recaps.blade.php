@@ -64,7 +64,7 @@
                         'category' => request('category'),
                         'month' => request('month'),
                         'year' => request('year'),
-                    ]" responsive="custom" />
+                    ]" :requireSigner="app(\App\Services\Report\ReportSignerService::class)->isRequired()" responsive="custom" />
 
                     {{-- Tombol Hapus --}}
                     <x-buttons.delete-button modalId="deleteModal" responsive="custom" />

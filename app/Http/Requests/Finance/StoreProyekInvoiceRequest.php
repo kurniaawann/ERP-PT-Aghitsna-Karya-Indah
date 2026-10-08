@@ -20,6 +20,9 @@ use Illuminate\Validation\Rule;
  *   dan harus unik.
  * - Persentase item bersifat opsional (kosong → jumlah = harga).
  *
+ * Khusus role superadmin: volume & satuan item bersifat opsional (volume
+ * kosong → item borongan, jumlah = harga).
+ *
  * Tautan Rekap Proyek (project_recap_id) opsional untuk semua role dan
  * hanya boleh menunjuk rekap milik user login.
  */
@@ -84,6 +87,8 @@ class StoreProyekInvoiceRequest extends FormRequest
      * 1. Admin: susun nomor lengkap dari nomor urut + tanggal invoice; tolak
      *    bila nomor sudah dipakai invoice lain (primary key).
      * 2. Item admin: persentase boleh kosong; bila diisi harus > 0 dan ≤ 100.
+     * 3. Item superadmin: volume & satuan boleh kosong (borongan); volume
+     *    yang diisi harus angka tidak negatif.
      */
     public function withValidator(Validator $validator): void
     {
@@ -102,7 +107,9 @@ class StoreProyekInvoiceRequest extends FormRequest
             }
 
             if (! $errors->has('items')) {
-                $this->validateItemPercentages($validator, json_decode((string) $this->input('items'), true));
+                $decodedItems = json_decode((string) $this->input('items'), true);
+                $this->validateItemPercentages($validator, $decodedItems);
+                $this->validateItemVolumes($validator, $decodedItems);
             }
         });
     }

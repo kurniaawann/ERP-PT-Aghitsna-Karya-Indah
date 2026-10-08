@@ -64,8 +64,9 @@
             margin-left: 90px;
         }
 
+        /* Nama perusahaan 12pt (revisi klien; template lama, tidak dipakai controller) */
         .company-name {
-            font-size: 14px;
+            font-size: 12pt;
             font-weight: bold;
             color: #FF6600;
             margin-bottom: 5px;
@@ -285,7 +286,7 @@
                     <tr>
                         <td class="center">{{ $index + 1 }}</td>
                         <td class="left">{{ $item['keterangan'] }}</td>
-                        <td class="right">{{ number_format($item['volume'], 2, ',', '.') }}</td>
+                        <td class="right">{{ format_angka($item['volume'] ?? 0) }}</td>
                         <td class="center">{{ $item['satuan'] }}</td>
                         <td class="right">Rp {{ number_format($item['harga'], 0, ',', '.') }}</td>
                         <td class="right">Rp {{ number_format($jumlah, 0, ',', '.') }}</td>
@@ -307,7 +308,7 @@
                     <tr style="background-color: #FFE6E6;">
                         <td colspan="5" class="center"><strong>Discount
                                 @if ($invoice->discount_type === 'percentage')
-                                    ({{ number_format($invoice->discount_value, 0) }}%)
+                                    ({{ format_persen($invoice->discount_value) }}%)
                                 @endif
                             </strong></td>
                         <td class="right"><strong>Rp {{ number_format($discountAmount, 0, ',', '.') }}</strong></td>
@@ -323,7 +324,7 @@
                     <tr style="background-color: #ADD8E6;">
                         <td colspan="5" class="center"><strong>DP
                                 @if ($invoice->dp_type === 'percentage')
-                                    ({{ number_format($invoice->dp_value, 0) }}%)
+                                    ({{ format_persen($invoice->dp_value) }}%)
                                 @endif
                             </strong></td>
                         <td class="right"><strong>Rp {{ number_format($dpAmount, 0, ',', '.') }}</strong></td>

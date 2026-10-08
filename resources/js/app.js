@@ -6,6 +6,7 @@ import './shared/searchable-multi-select';
 import './shared/currency';
 import './shared/print';
 import './shared/document-preview';
+import './shared/print-signer';
 import './shared/delete-form';
 import './shared/quick-add-payment-account';
 

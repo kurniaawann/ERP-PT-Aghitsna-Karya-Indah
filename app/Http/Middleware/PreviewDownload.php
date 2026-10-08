@@ -89,6 +89,13 @@ class PreviewDownload
             StringHelper::setDecimalSeparator(',');
 
             $spreadsheet = IOFactory::load($path);
+
+            // Sembunyikan gridline bantu Excel agar pratinjau mirip hasil cetak
+            // (hanya border tabel yang memang di-set export yang tampil).
+            foreach ($spreadsheet->getAllSheets() as $sheet) {
+                $sheet->setShowGridlines(false);
+            }
+
             $writer = new HtmlWriter($spreadsheet);
             $writer->writeAllSheets();
             $writer->setEmbedImages(true);

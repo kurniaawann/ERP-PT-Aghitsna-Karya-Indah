@@ -26,7 +26,7 @@
      ===================================================================== --}}
 @extends('layouts.app')
 
-@section('title', 'PT Aghitsna Karya Indah - Laporan Rekap Pengeluaran')
+@section('title', 'PT Aghitsna Karya Indah - ' . (auth()->user()?->isAdmin() ? 'Kas Kantor' : 'Laporan Rekap Pengeluaran'))
 
 @section('content')
     <div class="space-y-6">
@@ -114,6 +114,7 @@
                             :pdfRoute="route('report.expense.export.pdf')"
                             :excelRoute="route('report.expense.export.excel')"
                             :queryParams="request()->except([])"
+                            :requireSigner="app(\App\Services\Report\ReportSignerService::class)->isRequired()"
                             size="sm"
                         />
                     </div>

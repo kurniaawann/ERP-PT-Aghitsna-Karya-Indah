@@ -301,11 +301,29 @@ class InvoiceProyek extends Model
     }
 
     /**
+     * Apakah volume item superadmin dikosongkan (item borongan / lump-sum).
+     *
+     * Volume kosong = key tidak ada, null, atau string kosong/spasi. Volume
+     * 0 yang diisi eksplisit (mis. data lama hasil konversi penawaran) TIDAK
+     * dianggap kosong agar total invoice lama tidak berubah.
+     *
+     * @param  array  $item
+     * @return bool
+     */
+    public static function hasEmptyVolume(array $item): bool
+    {
+        $volume = $item['volume'] ?? null;
+
+        return $volume === null || (is_string($volume) && trim($volume) === '');
+    }
+
+    /**
      * Menghitung jumlah (nilai) satu baris item invoice.
      *
      * - Format admin: harga x (persentase / 100). Persentase bersifat
      *   opsional — bila kosong (null/''), jumlah = harga.
-     * - Format superadmin: volume x harga.
+     * - Format superadmin: volume x harga. Volume bersifat opsional —
+     *   bila kosong (null/''), item dianggap borongan: jumlah = harga.
      *
      * @param  array  $item
      * @return float
@@ -324,7 +342,11 @@ class InvoiceProyek extends Model
             return $harga * ((float) $persentase / 100);
         }
 
-        return (float) ($item['volume'] ?? 0) * $harga;
+        if (self::hasEmptyVolume($item)) {
+            return $harga;
+        }
+
+        return (float) $item['volume'] * $harga;
     }
 
     /**

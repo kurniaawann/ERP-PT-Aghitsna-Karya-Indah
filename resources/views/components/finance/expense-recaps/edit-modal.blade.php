@@ -67,7 +67,8 @@
 
     {{-- Sumber Uang --}}
     <div class="mb-3">
-        <label class="block text-text-primary mb-1">Sumber Uang (Opsional)</label>
+        {{-- Role admin: label "Sumber Uang" tampil sebagai "Keterangan" (hanya teks UI, kolom DB tetap money_source) --}}
+        <label class="block text-text-primary mb-1">{{ auth()->user()?->isAdmin() ? 'Keterangan' : 'Sumber Uang' }} (Opsional)</label>
         <input type="text" name="money_source" class="w-full border rounded p-2" value="{{ $expense->money_source }}"
             maxlength="255">
     </div>

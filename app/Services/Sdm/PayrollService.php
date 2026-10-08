@@ -366,7 +366,10 @@ class PayrollService
  */
     public function validateAttendanceCompleteness(Carbon $periodStartDate, Carbon $periodEndDate, ?array $projectNames = null): array
     {
+        // Hanya karyawan harian: karyawan kantor (gaji bulanan) tidak diabsen
+        // dan digaji lewat Slip Gaji, bukan payroll mingguan.
         $employees = Employee::where('created_by', auth()->id())
+            ->harian()
             ->when($projectNames, fn ($query) => $query->whereIn('project_name', $projectNames))
             ->get();
 
@@ -554,7 +557,9 @@ class PayrollService
         }
 
         // === VALIDASI ABSENSI ===
+        // Hanya karyawan harian (karyawan kantor digaji lewat Slip Gaji).
         $employees = Employee::where('created_by', auth()->id())
+            ->harian()
             ->when($projectNames, fn ($query) => $query->whereIn('project_name', $projectNames))
             ->get();
         $incompleteEmployees = [];

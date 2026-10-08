@@ -109,6 +109,9 @@
             <p class="mt-1 text-warning"><i class="fa-solid fa-lock"></i> Transaksi otomatis dari Bukti Pembayaran, Upah
                 Kerja (Payroll), dan Kasbon Divisi tidak dapat dihapus di sini — hapus lewat modul sumbernya (Bukti
                 Pembayaran, Payroll, atau Kasbon).</p>
+            <p class="mt-1 text-warning"><i class="fa-solid fa-lock"></i> Uang masuk dari Bukti Pembayaran (rekap maupun
+                Invoice Proyek yang ditautkan ke rekap ini) hanya bisa diubah keterangannya — nominal, tanggal, dan file
+                buktinya selalu mengikuti bukti pembayaran. Pembayaran invoice dicatat tanpa PPN (sebanding Total RAB).</p>
         </div>
     </div>
 

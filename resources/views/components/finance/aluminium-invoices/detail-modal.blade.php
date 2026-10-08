@@ -10,8 +10,8 @@
     $dpAmount = (int) $invoice->getDpAmount();
 
     // Clean display values
-    $discountValueDisplay = rtrim(rtrim(number_format((float) $invoice->discount_value, 2, ',', '.'), '0'), ',');
-    $dpValueDisplay = rtrim(rtrim(number_format((float) $invoice->dp_value, 2, ',', '.'), '0'), ',');
+    $discountValueDisplay = format_angka((float) $invoice->discount_value);
+    $dpValueDisplay = format_angka((float) $invoice->dp_value);
 @endphp
 
 <x-modal id="detailModal-{{ $invoice->invoice_number }}" title="Detail Invoice" :hideFooter="true" size="4xl">
@@ -68,7 +68,7 @@
                         <tr>
                             <td class="py-2 pr-2 text-gray-500">{{ $index + 1 }}</td>
                             <td class="py-2 px-2 text-gray-900">{{ $item['keterangan'] ?? '-' }}</td>
-                            <td class="py-2 px-2 text-right text-gray-900">{{ number_format($item['volume'] ?? 0, 2, ',', '.') }}</td>
+                            <td class="py-2 px-2 text-right text-gray-900">{{ format_angka($item['volume'] ?? 0) }}</td>
                             <td class="py-2 px-2 text-gray-900">{{ $item['satuan'] ?? '-' }}</td>
                             <td class="py-2 px-2 text-right text-gray-900">Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}</td>
                             <td class="py-2 pl-2 text-right font-semibold text-gray-900">

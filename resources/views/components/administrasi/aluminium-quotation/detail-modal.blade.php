@@ -49,7 +49,7 @@
                             <td class="border border-border-strong px-2 py-2 text-sm">{{ $item['keterangan'] ?? '-' }}</td>
                             <td class="border border-border-strong px-2 py-2 text-right text-sm">
                                 {{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== ''
-                                    ? number_format((float) $item['volume'], 2, ',', '.')
+                                    ? format_angka($item['volume'])
                                     : '-' }}
                             </td>
                             <td class="border border-border-strong px-2 py-2 text-sm">{{ $item['satuan'] ?? '-' }}</td>
@@ -79,7 +79,7 @@
             @endphp
             <div class="flex justify-between items-center py-1">
                 <span class="text-sm text-text-label">Discount
-                    ({{ $quotation->discount_type === 'percentage' ? $quotation->discount_value . '%' : 'Nominal' }}):</span>
+                    ({{ $quotation->discount_type === 'percentage' ? format_angka($quotation->discount_value) . '%' : 'Nominal' }}):</span>
                 <span class="text-sm font-semibold text-red-600">Rp
                     {{ number_format($discountAmount, 0, ',', '.') }}</span>
             </div>

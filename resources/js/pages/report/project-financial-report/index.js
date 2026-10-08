@@ -301,7 +301,7 @@ function bonBlockHtml(categories, data, index) {
             : (data.auto_source === 'kasbon' ? 'Dari Kasbon Divisi' : ''));
 
     const protectedHint = isProofProtected
-        ? 'Transaksi otomatis dari Bukti Pembayaran. Hapus bukti pembayarannya di modul Bukti Pembayaran untuk menghapus transaksi ini.'
+        ? 'Transaksi otomatis dari Bukti Pembayaran (tanggal, jumlah & file mengikuti bukti pembayaran). Hapus bukti pembayarannya di modul Bukti Pembayaran untuk menghapus transaksi ini.'
         : (data.auto_source === 'payroll'
             ? 'Transaksi otomatis dari payroll. Hapus payrollnya di modul Payroll untuk menghapus transaksi ini.'
             : 'Transaksi otomatis dari kasbon divisi. Hapus kasbonnya di modul Kasbon untuk menghapus transaksi ini.');
@@ -355,6 +355,7 @@ function bonBlockHtml(categories, data, index) {
                 <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
                 <input type="date" name="items[${index}][transaction_date]" class="w-full border rounded p-2"
                     value="${escapeHtml(data.transaction_date || '')}" required
+                    ${isProofProtected ? 'readonly' : ''}
                     oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')"
                     oninput="this.setCustomValidity('')">
             </div>
@@ -373,7 +374,7 @@ function bonBlockHtml(categories, data, index) {
                 <input type="text" inputmode="numeric" name="items[${index}][expense_amount]"
                     class="w-full border rounded p-2 expense-amount-input" placeholder="Contoh: 50000"
                     value="${escapeHtml(formatNumber(data.amount))}" required min="0"
-                    ${isInformational ? 'readonly' : ''}
+                    ${isInformational || isProofProtected ? 'readonly' : ''}
                     oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
                 ${isInformational
                     ? '<p class="text-xs text-text-secondary mt-1">Jumlah ini otomatis dari kasbon divisi dan hanya bersifat informasi (tidak memengaruhi total laporan).</p>'
@@ -391,7 +392,7 @@ function bonBlockHtml(categories, data, index) {
                 <label class="block text-text-primary mb-1">Bukti Pembayaran</label>
                 <input type="file" name="items[${index}][proof_file]"
                     accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
-                    class="w-full border rounded p-2">
+                    class="w-full border rounded p-2" ${isProofProtected ? 'disabled' : ''}>
                 <p class="text-xs text-text-secondary mt-1">Opsional. Format gambar: JPG, PNG, GIF, WEBP, BMP. Maksimal 5 MB.
                     Kosongkan jika tidak ingin mengubah file.</p>
                 ${proofNotice}

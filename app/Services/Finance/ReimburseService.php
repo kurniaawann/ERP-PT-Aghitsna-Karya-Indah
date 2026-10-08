@@ -2,6 +2,7 @@
 
 namespace App\Services\Finance;
 
+use App\Models\Administrasi\Nota;
 use App\Models\Finance\Reimburse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -19,6 +20,7 @@ use Illuminate\Support\Str;
  * - Operasi CRUD
  * - Persetujuan dan penolakan
  * - Ekspor data
+ * - Pengajuan otomatis dari Nota Super Admin (buat, sinkron, hapus draft)
  */
 class ReimburseService
 {
@@ -26,6 +28,24 @@ class ReimburseService
      * Direktori penyimpanan file bukti reimburse di Storage::disk('public').
      */
     private const PROOF_DIRECTORY = 'reimburses';
+
+    /**
+     * Label biaya tambahan nota sewa/jual untuk ringkasan keterangan belanja
+     * reimburse otomatis (urutan sama dengan rincian biaya pada PDF nota).
+     */
+    private const NOTA_FEE_LABELS = [
+        'sewa_jual' => 'Sewa/Jual',
+        'ongkos_kirim' => 'Ongkos Kirim',
+        'bongkar_pasang' => 'Bongkar/Pasang',
+        'lembur' => 'Lembur Antar/Ambil',
+        'uang_jaminan' => 'Uang Jaminan',
+    ];
+
+    /**
+     * Jumlah maksimal jenis barang yang dirinci pada keterangan belanja
+     * reimburse otomatis; sisanya diringkas menjadi "dan N item lainnya".
+     */
+    private const NOTA_DESCRIPTION_MAX_ITEMS = 10;
 
     /**
      * Membangun query dasar untuk listing reimburse.
@@ -57,7 +77,8 @@ class ReimburseService
             ->when($search, function ($builder) use ($search) {
                 $builder->where(function ($q) use ($search) {
                     $q->where('project_name', 'like', "%{$search}%")
-                        ->orWhere('reimburse_code', 'like', "%{$search}%");
+                        ->orWhere('reimburse_code', 'like', "%{$search}%")
+                        ->orWhere('id_nota', 'like', "%{$search}%");
                 });
             })
             ->when($status, fn ($builder) => $builder->where('status', $status))
@@ -101,6 +122,92 @@ class ReimburseService
         }
 
         return Reimburse::create($validated);
+    }
+
+    /**
+     * Membuat pengajuan reimburse otomatis dari Nota (revisi klien).
+     *
+     * Hanya untuk nota yang dibuat oleh Super Admin (termasuk nota proyek
+     * otomatis dari Invoice Semen); nota buatan admin diabaikan.
+     * Pengajuan berstatus draft, tanpa tanggal jatuh tempo, dan tertaut ke
+     * nota lewat kolom id_nota.
+     *
+     * Idempoten: bila nota sudah punya reimburse, data yang ada dikembalikan
+     * (unique index id_nota juga mencegah duplikat di level database).
+     *
+     * @param  \App\Models\Administrasi\Nota  $nota  Nota sumber
+     * @return \App\Models\Finance\Reimburse|null  null bila nota bukan buatan Super Admin
+     */
+    public function createFromNota(Nota $nota): ?Reimburse
+    {
+        if (!$nota->creator?->isSuperAdmin()) {
+            return null;
+        }
+
+        $existing = Reimburse::where('id_nota', $nota->id_nota)->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return Reimburse::create(array_merge($this->buildNotaPayload($nota), [
+            'reimburse_code' => $this->generateReimburseCode(),
+            'status' => 'draft',
+            'notes' => $this->buildNotaNotes($nota),
+            'id_nota' => $nota->id_nota,
+        ]));
+    }
+
+    /**
+     * Menyinkronkan reimburse tertaut setelah nota diubah.
+     *
+     * Hanya pengajuan yang masih draft yang diperbarui (tanggal, nama proyek,
+     * keterangan belanja, total). Pengajuan yang sudah disetujui/ditolak
+     * tidak pernah diubah. Catatan & lampiran bukti tidak disentuh.
+     * Nota tanpa reimburse tertaut (mis. nota lama, atau draft-nya sudah
+     * dihapus manual) tidak dibuatkan pengajuan baru.
+     *
+     * @param  \App\Models\Administrasi\Nota  $nota  Nota yang baru diubah
+     * @return \App\Models\Finance\Reimburse|null  Reimburse tertaut (bila ada)
+     */
+    public function syncFromNota(Nota $nota): ?Reimburse
+    {
+        $reimburse = Reimburse::where('id_nota', $nota->id_nota)->first();
+
+        if (!$reimburse || $reimburse->status !== 'draft') {
+            return $reimburse;
+        }
+
+        $reimburse->fill($this->buildNotaPayload($nota))->save();
+
+        return $reimburse;
+    }
+
+    /**
+     * Menghapus pengajuan reimburse draft milik nota yang akan dihapus.
+     *
+     * Dipanggil oleh NotaBuilder::delete() SEBELUM nota dihapus (setelah nota
+     * terhapus, FK sudah mengosongkan id_nota). Pengajuan yang sudah
+     * disetujui/ditolak tetap disimpan; tautannya dikosongkan oleh FK
+     * ON DELETE SET NULL.
+     *
+     * @param  array<int, string>  $notaIds  Daftar id_nota
+     * @return int  Jumlah reimburse draft yang dihapus
+     */
+    public function deleteDraftsForNotas(array $notaIds): int
+    {
+        $notaIds = array_values(array_filter(array_map('strval', $notaIds)));
+
+        if (empty($notaIds)) {
+            return 0;
+        }
+
+        $codes = Reimburse::whereIn('id_nota', $notaIds)
+            ->where('status', 'draft')
+            ->pluck('reimburse_code')
+            ->all();
+
+        return empty($codes) ? 0 : $this->bulkDelete($codes, true);
     }
 
     /**
@@ -302,6 +409,130 @@ class ReimburseService
         $submitted = $this->buildFilteredQuery(new Request($request->except('status')))->count();
 
         return "{$labels[$status]} ({$reimburses->count()} dari {$submitted} yang diajukan)";
+    }
+
+    /**
+     * Data reimburse yang mengikuti nota (dipakai saat buat & sinkron).
+     *
+     * - date               : tanggal nota
+     * - project_name       : nama proyek nota (fallback ke "Kepada")
+     * - expense_description: ringkasan item nota + kode nota
+     * - total_amount       : total akhir yang tercetak di nota
+     *                        (sewa/jual: termasuk PPN; proyek: tanpa PPN)
+     *
+     * @param  \App\Models\Administrasi\Nota  $nota
+     * @return array<string, mixed>
+     */
+    private function buildNotaPayload(Nota $nota): array
+    {
+        return [
+            'date' => $nota->nota_date?->format('Y-m-d'),
+            'project_name' => $this->resolveNotaProjectName($nota),
+            'expense_description' => $this->buildNotaDescription($nota),
+            'total_amount' => (int) ($nota->total_with_ppn ?? $nota->jumlah_total ?? 0),
+        ];
+    }
+
+    /**
+     * Nama proyek reimburse dari nota.
+     *
+     * Nota proyek memakai nama_proyek; nota sewa/jual (tanpa nama proyek)
+     * memakai label "Sewa/Jual - {Kepada}".
+     *
+     * @param  \App\Models\Administrasi\Nota  $nota
+     * @return string
+     */
+    private function resolveNotaProjectName(Nota $nota): string
+    {
+        $namaProyek = trim((string) $nota->nama_proyek);
+        $kepada = trim((string) $nota->kepada);
+
+        if ($namaProyek !== '' && $namaProyek !== '-') {
+            $label = $namaProyek;
+        } elseif ($nota->tipe_nota === Nota::TIPE_PROYEK) {
+            $label = $kepada !== '' ? $kepada : 'Nota Proyek';
+        } else {
+            $label = $kepada !== '' ? "Sewa/Jual - {$kepada}" : 'Nota Sewa/Jual';
+        }
+
+        return Str::substr($label, 0, 255);
+    }
+
+    /**
+     * Ringkasan keterangan belanja dari item nota.
+     *
+     * Item dengan nama & satuan sama dijumlahkan, mis. tiga baris SEMEN zak
+     * menjadi "SEMEN 30 zak (Nota NTP-012/AKI/26)". Untuk nota sewa/jual,
+     * biaya tambahan yang terisi ikut disebut (mis. "Ongkos Kirim").
+     *
+     * @param  \App\Models\Administrasi\Nota  $nota
+     * @return string
+     */
+    private function buildNotaDescription(Nota $nota): string
+    {
+        $groups = [];
+
+        foreach ((array) $nota->items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $nama = trim((string) ($item['nama_barang'] ?? $item['name'] ?? ''));
+
+            if ($nama === '') {
+                continue;
+            }
+
+            $satuan = trim((string) ($item['satuan'] ?? ''));
+            $key = mb_strtolower($nama.'|'.$satuan);
+
+            $groups[$key] ??= ['nama' => $nama, 'satuan' => $satuan, 'qty' => 0];
+            $groups[$key]['qty'] += (int) ($item['quantity'] ?? $item['banyaknya'] ?? 0);
+        }
+
+        $parts = array_map(function (array $group) {
+            $qty = $group['qty'] > 0 ? number_format($group['qty'], 0, ',', '.') : '';
+
+            return implode(' ', array_filter([$group['nama'], $qty, $group['satuan']], fn ($part) => $part !== ''));
+        }, array_values($groups));
+
+        if (count($parts) > self::NOTA_DESCRIPTION_MAX_ITEMS) {
+            $remaining = count($parts) - self::NOTA_DESCRIPTION_MAX_ITEMS;
+            $parts = array_slice($parts, 0, self::NOTA_DESCRIPTION_MAX_ITEMS);
+            $parts[] = "dan {$remaining} item lainnya";
+        }
+
+        if ($nota->tipe_nota !== Nota::TIPE_PROYEK) {
+            foreach (self::NOTA_FEE_LABELS as $field => $label) {
+                if ((int) $nota->{$field} > 0) {
+                    $parts[] = $label;
+                }
+            }
+        }
+
+        return empty($parts)
+            ? "Nota {$nota->id_nota}"
+            : implode(', ', $parts)." (Nota {$nota->id_nota})";
+    }
+
+    /**
+     * Catatan penanda bahwa pengajuan dibuat otomatis dari nota.
+     *
+     * Nota proyek dari Invoice Semen ikut mencantumkan nomor invoice & DO.
+     *
+     * @param  \App\Models\Administrasi\Nota  $nota
+     * @return string
+     */
+    private function buildNotaNotes(Nota $nota): string
+    {
+        $sources = array_filter([
+            $nota->invoice_number ? "Invoice Semen {$nota->invoice_number}" : null,
+            $nota->do_no ? "DO {$nota->do_no}" : null,
+        ]);
+
+        return "Dibuat otomatis dari Nota {$nota->id_nota}"
+            .(empty($sources) ? '' : ' ('.implode(', ', $sources).')')
+            .'.';
     }
 
     /**

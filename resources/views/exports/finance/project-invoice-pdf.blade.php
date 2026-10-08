@@ -281,14 +281,15 @@
 
                 @foreach ($items as $index => $item)
                     @php
-                        $jumlah = floatval($item['volume']) * floatval($item['harga']);
+                        // Volume kosong = item borongan: sel Volume & Satuan kosong, Jumlah = Harga
+                        $jumlah = \App\Models\Finance\InvoiceProyek::itemAmount($item);
                         $totalAmount += $jumlah;
                     @endphp
                     <tr>
                         <td class="center">{{ $index + 1 }}</td>
-                        <td class="left">{{ $item['keterangan'] }}</td>
-                        <td class="center">{{ number_format($item['volume'], 2, ',', '.') }}</td>
-                        <td class="center">{{ $item['satuan'] }}</td>
+                        <td class="left">{{ $item['keterangan'] ?? '' }}</td>
+                        <td class="center">{{ \App\Models\Finance\InvoiceProyek::hasEmptyVolume($item) ? '' : format_angka($item['volume']) }}</td>
+                        <td class="center">{{ $item['satuan'] ?? '' }}</td>
                         <td class="center">{{ format_rupiah($item['harga']) }}</td>
                         <td class="center">{{ format_rupiah($jumlah) }}</td>
                     </tr>

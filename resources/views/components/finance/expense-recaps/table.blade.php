@@ -22,7 +22,8 @@
                             <th class="p-2 text-left">Keterangan</th>
                             <th class="p-2 text-right">Pemasukan</th>
                             <th class="p-2 text-right">Pengeluaran</th>
-                            <th class="p-2 text-left">Sumber Uang</th>
+                            {{-- Role admin: "Sumber Uang" tampil sebagai "Keterangan" (hanya teks UI) --}}
+                            <th class="p-2 text-left">{{ auth()->user()?->isAdmin() ? 'Keterangan' : 'Sumber Uang' }}</th>
                             <th class="p-2 text-center">Sumber Data</th>
                             <th class="p-2 text-center">Aksi</th>
                         </tr>

@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
 class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithColumnWidths
 {
@@ -297,6 +298,36 @@ class SemenInvoiceExport implements FromCollection, WithEvents, WithTitle, WithC
                 $sheet->setCellValue("E{$currentRow}", $signedBy?->name ?? '................');
                 $sheet->getStyle("E{$currentRow}")->getFont()->setUnderline(true);
                 $sheet->getStyle("E{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                // 8. KOP SURAT (revisi klien): logo + "PT. AGHITSNA KARYA INDAH" 12pt (rata tengah)
+                // di atas judul INVOICE, selaras PDF. Disisipkan paling akhir (3 baris di atas) agar
+                // penomoran baris isi di atas tidak berubah; merge, style & tinggi baris ikut bergeser.
+                $sheet->insertNewRowBefore(1, 3);
+
+                $drawing = new Drawing();
+                $drawing->setName('Logo');
+                $drawing->setDescription('Company Logo');
+                $drawing->setPath(public_path('images/logo.jpeg'));
+                $drawing->setHeight(44);
+                $drawing->setCoordinates('A1');
+                $drawing->setOffsetX(4);
+                $drawing->setOffsetY(2);
+                $drawing->setWorksheet($sheet);
+
+                $sheet->mergeCells('B1:E1');
+                $sheet->setCellValue('B1', 'PT. AGHITSNA KARYA INDAH');
+                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(12);
+                $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_BOTTOM);
+                $sheet->getRowDimension(1)->setRowHeight(22);
+
+                $sheet->mergeCells('B2:E2');
+                $sheet->setCellValue('B2', 'General Contruction - Engineering');
+                $sheet->getStyle('B2')->getFont()->setSize(11);
+                $sheet->getStyle('B2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getRowDimension(2)->setRowHeight(18);
+
+                // Baris 3: jarak tipis antara kop dan judul INVOICE
+                $sheet->getRowDimension(3)->setRowHeight(8);
             },
         ];
     }

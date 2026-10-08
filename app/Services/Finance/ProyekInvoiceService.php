@@ -93,7 +93,9 @@ class ProyekInvoiceService
      * - Admin: deskripsi, harga, persentase
      *
      * Persentase item admin bersifat OPSIONAL: bila kosong disimpan sebagai
-     * null (bukan 0) dan jumlah item = harga. Setiap item juga diberi field
+     * null (bukan 0) dan jumlah item = harga. Volume & satuan item superadmin
+     * juga OPSIONAL: bila kosong disimpan sebagai null (bukan 0 / '') dan
+     * item dianggap borongan (jumlah = harga). Setiap item juga diberi field
      * turunan "jumlah" (hasil InvoiceProyek::itemAmount) agar template
      * PDF/Excel dapat memakai nilai yang sama dengan perhitungan total.
      *
@@ -117,7 +119,10 @@ class ProyekInvoiceService
             if (InvoiceProyek::isAdminItem($item)) {
                 $item['persentase'] = self::normalizeOptionalPercentage($item['persentase'] ?? null);
             } else {
-                $item['volume'] = InputNormalizer::normalizeDecimal($item['volume'] ?? 0);
+                // Volume kosong → null (borongan: Jumlah = Harga), bukan 0
+                $item['volume'] = self::normalizeOptionalDecimal($item['volume'] ?? null);
+                $satuan = trim((string) ($item['satuan'] ?? ''));
+                $item['satuan'] = $satuan === '' ? null : $satuan;
             }
 
             $item['jumlah'] = (int) round(InvoiceProyek::itemAmount($item));
@@ -137,6 +142,20 @@ class ProyekInvoiceService
      */
     public static function normalizeOptionalPercentage($value): ?float
     {
+        return self::normalizeOptionalDecimal($value);
+    }
+
+    /**
+     * Normalisasi angka desimal opsional (persentase admin / volume superadmin).
+     *
+     * Nilai kosong (null / string kosong / spasi) dikembalikan sebagai null
+     * agar dibedakan dari angka 0. Koma desimal ("12,5") didukung.
+     *
+     * @param  mixed  $value
+     * @return float|null
+     */
+    public static function normalizeOptionalDecimal($value): ?float
+    {
         if ($value === null || (is_string($value) && trim($value) === '')) {
             return null;
         }
@@ -147,7 +166,7 @@ class ProyekInvoiceService
     /**
      * Menghitung total_amount dari array items.
      *
-     * Format superadmin: volume x harga
+     * Format superadmin: volume x harga; volume kosong → harga (borongan)
      * Format admin: harga x (persentase / 100); persentase kosong → harga
      *
      * @param  array  $items  Item yang sudah dinormalisasi
@@ -426,6 +445,7 @@ class ProyekInvoiceService
         );
 
         $oldNumber = $invoice->invoice_number;
+        $oldRecapId = $invoice->project_recap_id;
         $newNumber = $this->resolveUpdatedInvoiceNumber($invoice, $data);
 
         DB::transaction(function () use ($data, $items, $totalAmount, $calculations, $oldNumber, $newNumber) {
@@ -461,6 +481,16 @@ class ProyekInvoiceService
                 $this->renameInvoiceReferences($oldNumber, $newNumber);
             }
         });
+
+        // Tautan Rekap Proyek berubah → pindahkan baris "Uang Masuk" Laporan
+        // Keuangan Proyek dari pembayaran invoice ini ke rekap yang baru
+        // (atau hapus bila tautan dilepas) tanpa menunggu halaman rekap dibuka.
+        if (($data['project_recap_id'] ?? null) != $oldRecapId) {
+            $updated = InvoiceProyek::find($newNumber);
+            if ($updated) {
+                app(\App\Services\Report\ProjectFinancialReportService::class)->syncInvoicePayments($updated);
+            }
+        }
 
         return $newNumber;
     }

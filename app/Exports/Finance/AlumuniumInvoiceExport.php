@@ -12,6 +12,7 @@ use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
@@ -211,7 +212,9 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
                     $sheet->setCellValue("A{$currentRow}", $index + 1);
                     $sheet->setCellValue("B{$currentRow}", $item['keterangan']);
                     $fitWrappedRow($currentRow, (string) $item['keterangan'], 32, 'B');
-                    $sheet->setCellValue("C{$currentRow}", number_format($item['volume'], 2, ',', '.'));
+                    // Volume ditulis sebagai teks tanpa desimal tak berguna (1 / 32,5); teks eksplisit
+                    // agar "1.500" tidak dibaca Excel sebagai 1,5
+                    $sheet->setCellValueExplicit("C{$currentRow}", format_angka($item['volume'] ?? 0), DataType::TYPE_STRING);
                     $sheet->setCellValue("D{$currentRow}", $item['satuan']);
                     $sheet->setCellValue("E{$currentRow}", format_rupiah($item['harga']));
                     $sheet->setCellValue("F{$currentRow}", format_rupiah($jumlah));

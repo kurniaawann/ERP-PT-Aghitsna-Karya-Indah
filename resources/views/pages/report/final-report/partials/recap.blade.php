@@ -7,7 +7,9 @@
      Laporan Keuangan Proyek.
      Data dari FinalReportService::buildRecapData:
      - $recaps : paginator Rekap Proyek (dengan relasi rab, paymentProofs,
-                financialReport.items)
+                financialReport.items). Terbayar = bukti rekap + pembayaran
+                invoice tertaut (tanpa PPN) + uang masuk manual laporan
+                (ProjectRecap::getTotalPaidAmount).
      - $summary: ringkasan seluruh data yang lolos filter
      ===================================================================== --}}
 <div class="space-y-6">
@@ -61,7 +63,7 @@
         <div class="bg-surface-base p-5 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
             <p class="text-sm font-medium text-text-secondary">Total Terbayar</p>
             <h3 class="text-xl font-bold text-success mt-1 truncate">Rp {{ number_format($summary['total_paid'], 0, ',', '.') }}</h3>
-            <p class="text-xs text-text-secondary mt-1">Pembayaran yang sudah masuk</p>
+            <p class="text-xs text-text-secondary mt-1">Bukti rekap + invoice tertaut (tanpa PPN)</p>
         </div>
 
         {{-- Total Sisa --}}

@@ -17,7 +17,8 @@
             box-sizing: border-box;
         }
 
-        /* Font dokumen: Times New Roman 12pt (kop/judul lebih besar) */
+        /* Font dokumen: Times New Roman 12pt (kop/judul lebih besar).
+           Revisi klien: seluruh isi kwitansi TIDAK di-bold — hanya judul "KWITANSI" yang tebal. */
         body {
             font-family: 'Times New Roman', Times, serif;
             padding: 20px;
@@ -65,14 +66,13 @@
         .meta-table td {
             padding: 3px 4px;
             font-size: 12pt;
-            font-weight: bold;
+            font-weight: normal;
             vertical-align: bottom;
         }
 
         .meta-label {
             width: 90px;
             border: none; /* Tanpa garis pada label */
-            font-weight: bold;
         }
 
         .meta-colon {
@@ -110,14 +110,12 @@
 
         .label-col {
             width: 150px;
-            font-weight: bold;
             border: none; /* Tanpa garis pada label */
         }
 
         .colon-col {
             width: 15px;
             text-align: center;
-            font-weight: bold;
             border-bottom: 1px solid #000000; /* Garis bawah mulai dari : */
         }
 
@@ -130,7 +128,7 @@
         .terbilang-box {
             background-color: #e6e6e6;
             font-style: italic;
-            font-weight: bold;
+            font-weight: normal;
             padding: 2px 6px;
             display: inline-block;
             width: 98%;
@@ -147,7 +145,7 @@
 
         .highlight-text {
             background-color: #ffff00;
-            font-weight: bold;
+            font-weight: normal;
             font-style: italic;
             font-size: 12pt;
             padding: 3px 6px;
@@ -158,7 +156,7 @@
             background-color: #ffffcc;
             border: 1px solid #000000;
             font-size: 16pt;
-            font-weight: bold;
+            font-weight: normal;
             font-style: italic;
             text-align: center;
             padding: 8px 15px;
@@ -175,7 +173,7 @@
 
         .bank-info {
             font-size: 12pt;
-            font-weight: bold;
+            font-weight: normal;
             line-height: 1.6;
         }
 
@@ -204,12 +202,10 @@
         }
 
         .signature-name {
-            font-weight: bold;
             margin-top: 5px;
         }
 
         .signature-position {
-            font-weight: bold;
             font-size: 12pt;
             margin-top: 2px;
         }
@@ -261,17 +257,17 @@
                     <td style="vertical-align: top; text-align: right;">
                         <table class="meta-table">
                             <tr>
-                                <td class="meta-label"><strong>Kwitansi No.</strong></td>
+                                <td class="meta-label">Kwitansi No.</td>
                                 <td class="meta-colon">:</td>
                                 <td class="meta-value">{{ $kwintansi->invoice_number ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <td class="meta-label"><strong>No.</strong></td>
+                                <td class="meta-label">No.</td>
                                 <td class="meta-colon">:</td>
                                 <td class="meta-value">{{ $kwintansi->payment_sequence ? str_pad((string) $kwintansi->payment_sequence, 3, '0', STR_PAD_LEFT) : $kwintansi->id_kwintansi }}</td>
                             </tr>
                             <tr>
-                                <td class="meta-label"><strong>Tanggal</strong></td>
+                                <td class="meta-label">Tanggal</td>
                                 <td class="meta-colon">:</td>
                                 <td class="meta-value">{{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->locale('id')->translatedFormat('j F Y') }}</td>
                             </tr>
@@ -287,14 +283,14 @@
             <table class="form-table">
                 <!-- BARIS 1: TELAH TERIMA DARI -->
                 <tr>
-                    <td class="label-col"><strong>Telah Terima Dari</strong></td>
+                    <td class="label-col">Telah Terima Dari</td>
                     <td class="colon-col">:</td>
                     <td class="value-col">{{ $kwintansi->received_from }}</td>
                 </tr>
 
                 <!-- BARIS 2: JUMLAH DIBAYAR -->
                 <tr>
-                    <td class="label-col"><strong>Jumlah Dibayar</strong></td>
+                    <td class="label-col">Jumlah Dibayar</td>
                     <td class="colon-col">:</td>
                     <td class="value-col">
                         <div class="terbilang-box">
@@ -305,7 +301,7 @@
 
                 <!-- BARIS 3: KETERANGAN (PEMBAYARAN) -->
                 <tr>
-                    <td class="label-col"><strong>Keterangan</strong></td>
+                    <td class="label-col">Keterangan</td>
                     <td class="colon-col">:</td>
                     <td class="value-col">
                         {{ $kwintansi->invoice_type === 'proyek' && $kwintansi->payment_sequence ? 'Uang Masuk ke '.$kwintansi->payment_sequence : ($kwintansi->payment_for ?? '-') }}

@@ -38,7 +38,8 @@
     <div class="mb-3 rounded-lg bg-surface-secondary border border-border p-3 text-sm text-text-secondary">
         <i class="fa-solid fa-circle-info text-primary mr-1"></i>
         Setiap hari untuk karyawan terpilih <strong>default Hadir</strong>. Ubah sesuai kebutuhan:
-        Izin, Sakit, atau Cuti.
+        Izin, Sakit, atau Cuti. Karyawan kantor (gaji bulanan) tidak perlu absensi &mdash; kehadirannya
+        direkap di <strong>Slip Gaji</strong>.
     </div>
 
     {{-- Grid Absensi per karyawan × tanggal --}}

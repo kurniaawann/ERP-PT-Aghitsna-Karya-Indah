@@ -26,6 +26,10 @@ JS: @vite('resources/js/pages/finance/item-invoices/index.js')
 @section('title', 'PT Aghitsna Karya Indah - Invoice Barang')
 
 @section('content')
+    {{-- Tab Super Admin (satu menu sidebar → beberapa tab, seperti Surat Menyurat) --}}
+    @if (auth()->user()->isSuperAdmin())
+        <x-finance.invoice-tabs active="barang" />
+    @endif
     {{-- ==================== Kontainer Utama Halaman ==================== --}}
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
         <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Barang</h1>

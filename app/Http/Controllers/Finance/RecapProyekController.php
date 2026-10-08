@@ -61,6 +61,17 @@ class RecapProyekController extends Controller
             ->paginate(10)
             ->appends($request->all());
 
+        // Terbayar rekap = bukti rekap + pembayaran invoice tertaut + uang
+        // masuk manual laporan. Baris "Uang Masuk" otomatis pada Laporan
+        // Keuangan Proyek ikut disinkronkan agar pemasukan laporan sama dengan
+        // Terbayar rekap (mis. invoice yang baru ditautkan setelah dibayar).
+        $reportService = app(ProjectFinancialReportService::class);
+        $recaps->getCollection()->each(fn (ProjectRecap $recap) => $reportService->syncPaymentProofItems($recap));
+
+        // Saran invoice lama dengan nama proyek sama yang belum ditautkan
+        // (hanya ditampilkan, tidak dihitung).
+        $this->service->attachUnlinkedInvoiceCandidates($recaps->getCollection());
+
         return compact('recaps');
     }
 

@@ -5,7 +5,9 @@ namespace App\Models\Administrasi;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\Finance\PaymentAccount;
+use App\Models\Finance\Reimburse;
 use App\Models\User;
 
 /**
@@ -23,6 +25,10 @@ use App\Models\User;
  * - Biaya tambahan opsional (sewa, ongkos kirim, dll)
  * - Perhitungan PPN
  * - Total keseluruhan
+ *
+ * Nota buatan Super Admin otomatis membuat pengajuan Reimbursement draft
+ * (NotaObserver); penghapusan nota ikut membersihkan draft tersebut
+ * (NotaBuilder).
  */
 class Nota extends Model
 {
@@ -219,6 +225,28 @@ class Nota extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke pengajuan reimburse yang dibuat otomatis dari nota ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function reimburse(): HasOne
+    {
+        return $this->hasOne(Reimburse::class, 'id_nota', 'id_nota');
+    }
+
+    /**
+     * Pakai NotaBuilder agar setiap penghapusan nota (per model maupun massal)
+     * ikut menghapus pengajuan reimburse draft yang tertaut.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return \App\Models\Administrasi\NotaBuilder
+     */
+    public function newEloquentBuilder($query): NotaBuilder
+    {
+        return new NotaBuilder($query);
     }
 
     /**

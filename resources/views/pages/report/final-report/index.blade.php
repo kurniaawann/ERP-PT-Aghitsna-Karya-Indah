@@ -41,6 +41,12 @@
         ],
     ];
 
+    // Role admin: "Laporan Pengeluaran" disebut "Kas Kantor" (revisi klien)
+    if (auth()->user()?->isAdmin()) {
+        $tabMeta['expense']['label'] = 'Kas Kantor';
+        $tabMeta['expense']['desc'] = 'Rekap pemasukan & pengeluaran kas kantor';
+    }
+
     $exportRoutes = [
         'stock' => [
             'pdf'   => route('stock-report.export.pdf'),
@@ -95,10 +101,12 @@
                 {{-- Tombol Print Laporan: menyesuaikan tab aktif --}}
                 @if ($activeExport && ($activeExport['pdf'] || $activeExport['excel']))
                 <div class="w-full sm:w-56 lg:w-auto">
+                    {{-- Laporan Pengeluaran / Kas Kantor: wajib pilih penandatangan --}}
                     <x-buttons.print-dropdown
                         :pdfRoute="$activeExport['pdf']"
                         :excelRoute="$activeExport['excel']"
                         :queryParams="$exportQuery"
+                        :requireSigner="$tab === 'expense' && app(\App\Services\Report\ReportSignerService::class)->isRequired()"
                         size="sm"
                     />
                 </div>

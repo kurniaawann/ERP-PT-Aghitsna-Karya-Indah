@@ -3,12 +3,15 @@
 namespace App\Http\Requests\Sdm;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Form request untuk penyimpanan data absensi secara bulk.
  *
  * Memvalidasi pemilihan karyawan, rentang tanggal, status, dan catatan
- * sebelum data absensi disimpan ke basis data.
+ * sebelum data absensi disimpan ke basis data. Hanya karyawan harian
+ * (tukang proyek) yang diabsen — karyawan kantor (gaji bulanan) direkap
+ * kehadirannya langsung di Slip Gaji.
  */
 class StoreAttendanceRequest extends FormRequest
 {
@@ -33,7 +36,17 @@ class StoreAttendanceRequest extends FormRequest
     {
         return [
             'employee_ids' => 'required|array|min:1',
-            'employee_ids.*' => 'required|string|exists:employees,employee_code',
+            'employee_ids.*' => [
+                'required',
+                'string',
+                'exists:employees,employee_code',
+                Rule::exists('employees', 'employee_code')->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->whereNull('employment_type')
+                            ->orWhere('employment_type', '!=', 'bulanan');
+                    });
+                }),
+            ],
             'start_date' => 'required|date|before_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date|before_or_equal:today',
             'status' => 'nullable|string|in:hadir,izin,sakit,cuti',
@@ -54,7 +67,7 @@ class StoreAttendanceRequest extends FormRequest
         return [
             'employee_ids.required' => 'Silakan pilih minimal 1 karyawan.',
             'employee_ids.min' => 'Silakan pilih minimal 1 karyawan.',
-            'employee_ids.*.exists' => 'Karyawan yang dipilih tidak valid.',
+            'employee_ids.*.exists' => 'Karyawan yang dipilih tidak valid. Karyawan kantor (gaji bulanan) tidak perlu absensi.',
             'start_date.required' => 'Tanggal mulai tidak boleh kosong.',
             'start_date.before_or_equal' => 'Tanggal mulai tidak boleh lebih dari hari ini.',
             'end_date.required' => 'Tanggal akhir tidak boleh kosong.',

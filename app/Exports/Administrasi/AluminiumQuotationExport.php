@@ -230,7 +230,9 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     // juga menjaga posisi gambar TTD tetap benar saat dibuka di LibreOffice
                     $sheet->getRowDimension($currentRow)->setRowHeight($this->estimateRowHeight($item['keterangan'] ?? '', 28) + 4);
                     $volume = $item['volume'] ?? 0;
-                    $sheet->setCellValue("C{$currentRow}", ($volume !== null && $volume !== '') ? number_format((float) $volume, 2, ',', '.') : '-');
+                    // Volume ditulis sebagai teks tanpa desimal tak berguna (1 / 32,5); teks eksplisit
+                    // agar "1.500" tidak dibaca Excel sebagai 1,5
+                    $sheet->setCellValueExplicit("C{$currentRow}", ($volume !== null && $volume !== '') ? format_angka($volume) : '-', DataType::TYPE_STRING);
                     $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '-');
                     $sheet->setCellValue("E{$currentRow}", format_rupiah($item['harga'] ?? 0));
                     $sheet->setCellValue("F{$currentRow}", format_rupiah((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0)));
@@ -359,7 +361,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                     $bankName = $sanitizeForExcel($account->bank_name);
                     $accountNumber = $sanitizeForExcel($account->account_number);
                     $accountHolder = $sanitizeForExcel($account->account_holder);
-                    $sheet->setCellValue("A{$currentRow}", "Bank {$bankName} / No : {$accountNumber} a/n {$accountHolder}");
+                    $sheet->setCellValue("A{$currentRow}", label_bank($bankName) . " / No : {$accountNumber} a/n {$accountHolder}");
                 }
 
                 // Closing

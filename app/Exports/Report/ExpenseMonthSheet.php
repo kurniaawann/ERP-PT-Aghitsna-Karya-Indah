@@ -12,6 +12,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -23,6 +24,10 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * ExpenseReportExport (Laporan Pengeluaran, varian "laporan"). Kedua varian
  * punya struktur sama — dikelompokkan per kategori dengan subtotal, total
  * (Jumlah), rekapitulasi, dan tanda tangan — hanya berbeda warna & label.
+ *
+ * Tanda tangan: SATU penandatangan di kanan, dipilih saat cetak dari Data
+ * Penandatangan (wajib untuk super admin & admin): jabatan, gambar tanda
+ * tangan (bila ada), lalu "( Nama )".
  *
  * Aturan per role (revisi klien):
  * - Admin (menu "Kas Kantor"): tanpa kolom FAKTUR, kategori tanpa transaksi
@@ -52,8 +57,7 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
             'subtotal_bold' => false,
             'total_fill' => 'FFFF00',
             'total_label' => 'Jumlah',
-            'signature_titles' => ['Dibuat / Diperiksa', 'Direktur PT. Aghitsna'],
-            'signature_names' => ['( AKHMAD KHAIDIR )', '( Zulkarnain,ST.,MT )'],
+            'signature_uppercase' => false,
             'widths' => ['no' => 5, 'faktur' => 25, 'tanggal' => 12, 'keterangan' => 40, 'pemasukan' => 17, 'pengeluaran' => 17, 'sumber' => 20],
             'orientation' => PageSetup::ORIENTATION_PORTRAIT,
         ],
@@ -65,8 +69,7 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
             'subtotal_bold' => true,
             'total_fill' => 'E5C327',
             'total_label' => 'JUMLAH',
-            'signature_titles' => ['DIBUAT/DIPERIKSA', 'MENGETAHUI, DIREKTUR PT. AGHITSNA KARYA INDAH'],
-            'signature_names' => ['( A. KHAIDIR )', '( Zulkarnain,ST.,MT )'],
+            'signature_uppercase' => true,
             'widths' => ['no' => 5, 'faktur' => 25, 'tanggal' => 12, 'keterangan' => 40, 'pemasukan' => 17, 'pengeluaran' => 17, 'sumber' => 22],
             'orientation' => PageSetup::ORIENTATION_LANDSCAPE,
         ],
@@ -82,6 +85,19 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         'pengeluaran' => 'PENGELUARAN',
         'sumber' => 'SUMBER UANG',
     ];
+
+    /**
+     * Judul kolom sesuai role: untuk admin "SUMBER UANG" tampil sebagai
+     * "KETERANGAN" (hanya teks, kolom DB tetap money_source).
+     *
+     * @return array<string, string>
+     */
+    private function columnHeadings(): array
+    {
+        return $this->isAdmin
+            ? array_merge(self::COLUMN_HEADINGS, ['sumber' => 'KETERANGAN'])
+            : self::COLUMN_HEADINGS;
+    }
 
     /** Baris header tabel. */
     private const HEADER_ROW = 4;
@@ -115,6 +131,7 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
      * @param  string                         $sheetTitle     Nama sheet (≤ 31 karakter)
      * @param  array|null                     $carry          ['opening_balance' => int, 'closing_balance' => int]
      *                                                        untuk bulan ke-2 dst. pada export multi-bulan
+     * @param  array|null                     $signer         Penandatangan terpilih (name, position, signature_image)
      */
     public function __construct(
         protected $expenseRecaps,
@@ -122,7 +139,8 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         protected $totals,
         protected string $variant,
         protected string $sheetTitle,
-        protected ?array $carry = null
+        protected ?array $carry = null,
+        protected ?array $signer = null
     ) {
         $this->config = self::VARIANTS[$variant];
         $this->isAdmin = auth()->user()?->isAdmin() ?? false;
@@ -148,9 +166,9 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
 
         $data = [
             ['PT. AGHITSNA KARYA INDAH'],
-            [$this->isAdmin ? 'LAPORAN PENGELUARAN' : 'LAPORAN PENGELUARAN DIVISI PRODUKSI'],
+            [$this->isAdmin ? 'KAS KANTOR' : 'LAPORAN PENGELUARAN DIVISI PRODUKSI'],
             [$this->config['period_prefix'] . $this->periodTitle],
-            array_values(array_intersect_key(self::COLUMN_HEADINGS, $this->columns)),
+            array_values(array_intersect_key($this->columnHeadings(), $this->columns)),
         ];
         $currentRow = self::DATA_START_ROW;
 
@@ -246,22 +264,18 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
         $data[] = [''];
         $currentRow += 2;
 
-        [$leftTitle, $rightTitle] = $this->config['signature_titles'];
-        [$leftName, $rightName] = $this->config['signature_names'];
-
-        [$leftStart] = $this->signatureRanges()['left'];
-        [$rightStart] = $this->signatureRanges()['right'];
-
-        $data[] = $this->buildSignatureRow($leftStart, $leftTitle, $rightStart, $rightTitle);
+        // Satu blok tanda tangan di kanan: jabatan → ruang/gambar TTD → ( Nama )
+        $data[] = $this->buildSignatureRow($this->signatureTitle());
         $this->rows['signature'][] = $currentRow++;
 
-        // Ruang tanda tangan
+        // Ruang tanda tangan (gambar TTD disisipkan di sini, lihat applySignatureStyles)
         $data[] = [''];
         $data[] = [''];
         $data[] = [''];
         $currentRow += 3;
 
-        $data[] = $this->buildSignatureRow($leftStart, $leftName, $rightStart, $rightName);
+        $name = trim($this->signer['name'] ?? '');
+        $data[] = $this->buildSignatureRow('( ' . ($name !== '' ? $name : str_repeat('.', 30)) . ' )');
         $this->rows['signature'][] = $currentRow;
 
         return $data;
@@ -318,38 +332,37 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
     }
 
     /**
-     * Baris tanda tangan: teks kiri & kanan pada kolom awal blok masing-masing.
+     * Baris tanda tangan: teks pada kolom awal blok tanda tangan kanan.
      */
-    private function buildSignatureRow(string $leftColumn, string $leftText, string $rightColumn, string $rightText): array
+    private function buildSignatureRow(string $text): array
     {
+        [$from] = $this->signatureRange();
+
         $row = array_fill(0, count($this->columns), '');
-        $row[ord($leftColumn) - ord('A')] = $leftText;
-        $row[ord($rightColumn) - ord('A')] = $rightText;
+        $row[ord($from) - ord('A')] = $text;
 
         return $row;
     }
 
     /**
-     * Rentang kolom blok tanda tangan kiri & kanan.
+     * Rentang kolom blok tanda tangan (kanan): PEMASUKAN s/d SUMBER UANG.
      *
-     * - Dengan faktur (7 kolom): kiri di B (seperti sebelumnya), kanan E:G.
-     * - Tanpa faktur (6 kolom): kiri A:C digabung, kanan D:F digabung.
-     *
-     * @return array{left: array{0: string, 1: string}, right: array{0: string, 1: string}}
+     * @return array{0: string, 1: string}
      */
-    private function signatureRanges(): array
+    private function signatureRange(): array
     {
-        if ($this->isAdmin) {
-            return [
-                'left' => [$this->columns['no'], $this->columns['keterangan']],
-                'right' => [$this->columns['pemasukan'], $this->columns['sumber']],
-            ];
-        }
+        return [$this->columns['pemasukan'], $this->columns['sumber']];
+    }
 
-        return [
-            'left' => [$this->columns['faktur'], $this->columns['faktur']],
-            'right' => [$this->columns['pemasukan'], $this->columns['sumber']],
-        ];
+    /**
+     * Judul blok tanda tangan = jabatan penandatangan (varian laporan huruf
+     * kapital); tanpa jabatan → "Dibuat / Diperiksa".
+     */
+    private function signatureTitle(): string
+    {
+        $title = trim($this->signer['position'] ?? '') ?: 'Dibuat / Diperiksa';
+
+        return $this->config['signature_uppercase'] ? mb_strtoupper($title) : $title;
     }
 
     /**
@@ -482,27 +495,45 @@ class ExpenseMonthSheet implements FromArray, WithTitle, WithColumnWidths, WithE
     }
 
     /**
-     * Styling blok tanda tangan (tebal & rata tengah untuk judul).
+     * Styling blok tanda tangan kanan (judul tebal, rata tengah) dan gambar
+     * tanda tangan penandatangan (bila ada) di ruang tanda tangan.
      */
     private function applySignatureStyles(Worksheet $sheet): void
     {
         [$titleRow, $nameRow] = $this->rows['signature'];
-        $ranges = $this->signatureRanges();
-        $last = $this->lastColumn();
+        [$from, $to] = $this->signatureRange();
 
         foreach ([$titleRow, $nameRow] as $row) {
-            foreach ($ranges as [$from, $to]) {
-                if ($from !== $to) {
-                    $sheet->mergeCells("{$from}{$row}:{$to}{$row}");
-                }
-            }
+            $sheet->mergeCells("{$from}{$row}:{$to}{$row}");
         }
 
-        $sheet->getStyle("A{$titleRow}:{$last}{$titleRow}")->applyFromArray([
+        $sheet->getStyle("{$from}{$titleRow}")->applyFromArray([
             'font' => ['bold' => true],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'wrapText' => true],
         ]);
-        $sheet->getStyle("A{$nameRow}:{$last}{$nameRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("{$from}{$nameRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $image = $this->signer['signature_image'] ?? null;
+        $path = $image ? storage_path('app/public/' . $image) : null;
+
+        if ($path && is_file($path)) {
+            $drawing = new Drawing();
+            $drawing->setName('Tanda Tangan');
+            $drawing->setPath($path);
+            $drawing->setHeight(55);
+            $drawing->setCoordinates($from . ($titleRow + 1));
+
+            // Rata tengah pada blok kanan (lebar kolom Excel ≈ 7px per satuan)
+            $blockWidth = 0;
+            foreach ($this->columns as $key => $letter) {
+                if ($letter >= $from && $letter <= $to) {
+                    $blockWidth += (int) round($this->config['widths'][$key] * 7 + 5);
+                }
+            }
+            $drawing->setOffsetX(max(0, (int) (($blockWidth - $drawing->getWidth()) / 2)));
+            $drawing->setOffsetY(2);
+            $drawing->setWorksheet($sheet);
+        }
     }
 
     /**

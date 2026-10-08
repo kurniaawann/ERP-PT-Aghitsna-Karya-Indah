@@ -5,6 +5,8 @@
      Checkbox `ids[]` tersedia di semua baris untuk kedua role (dipakai
      Export Dipilih PDF/Excel). Untuk admin, aksi Setujui/Tolak/Hapus hanya
      berlaku pada baris berstatus draft (data-status).
+     Pengajuan otomatis dari Nota Super Admin ditandai badge "Dari Nota" +
+     link nota (pratinjau PDF di dalam halaman via data-preview).
      ═══════════════════════════════════════════════════════════════════════════ --}}
 
 {{-- ─── Form Hapus Bulk ────────────────────────────────────────────────────── --}}
@@ -50,11 +52,23 @@
                                         data-status="{{ $reimburse->status }}">
                                 </td>
 
+                                {{-- Kolom Kode + penanda pengajuan otomatis dari Nota --}}
+                                <td class="p-2">
+                                    <div class="font-medium text-primary whitespace-nowrap">{{ $reimburse->reimburse_code }}</div>
+                                    @if ($reimburse->is_from_nota)
+                                        <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 whitespace-nowrap">
+                                            Dari Nota
+                                        </span>
+                                        <div class="mt-1">
+                                            @include('components.finance.reimburse.nota-link', ['reimburse' => $reimburse])
+                                        </div>
+                                    @endif
+                                </td>
+
                                 {{-- Kolom Data --}}
-                                <td class="p-2 font-medium text-primary">{{ $reimburse->reimburse_code }}</td>
                                 <td class="p-2">{{ $reimburse->formatted_date }}</td>
                                 <td class="p-2">{{ $reimburse->project_name }}</td>
-                                <td class="p-2 text-sm">{{ Str::limit($reimburse->expense_description, 50) }}</td>
+                                <td class="p-2 text-sm" title="{{ $reimburse->expense_description }}">{{ Str::limit($reimburse->expense_description, 50) }}</td>
                                 <td class="p-2 text-right font-semibold">{{ $reimburse->formatted_total_amount }}</td>
 
                                 {{-- Badge Status --}}

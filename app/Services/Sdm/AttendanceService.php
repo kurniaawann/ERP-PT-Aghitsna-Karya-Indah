@@ -89,14 +89,18 @@ class AttendanceService
     }
 
     /**
-     * Mendapatkan semua karyawan yang diurutkan berdasarkan nama untuk pilihan formulir.
+     * Mendapatkan karyawan harian (tukang proyek) yang diurutkan berdasarkan
+     * nama untuk pilihan formulir absensi.
      *
      * Logika:
+     * - Karyawan kantor (gaji bulanan) tidak perlu absensi — kehadirannya
+     *   direkap di Slip Gaji — sehingga tidak ikut ditampilkan (scope harian).
      * - Hanya mengambil kolom employee_code + name (data lengkap tidak dibutuhkan
      *   untuk dropdown) agar payload ringan.
-     * - Hasil di-cache 24 jam di key 'sdm:employees:dropdown'; cache di-flush
-     *   saat CRUD karyawan (lihat EmployeeService::flushCache). Fallback ke
-     *   query langsung jika cache bermasalah.
+     * - Hasil di-cache 24 jam di key 'sdm:employees:attendance-dropdown'
+     *   (terpisah dari dropdown semua karyawan milik Lembur/Kasbon); cache
+     *   di-flush saat CRUD karyawan (lihat EmployeeService::flushCache).
+     *   Fallback ke query langsung jika cache bermasalah.
      *
      * @return Collection<int, Employee>
      */
@@ -106,21 +110,23 @@ class AttendanceService
 
         try {
             return Cache::remember(
-                'sdm:employees:dropdown:' . $userId,
+                'sdm:employees:attendance-dropdown:' . $userId,
                 now()->addHours(24),
                 function () use ($userId) {
                     return Employee::where('created_by', $userId)
+                        ->harian()
                         ->orderBy('name')
                         ->get(['employee_code', 'name']);
                 }
             );
         } catch (\Exception $e) {
             Log::warning(
-                'Cache read failed for sdm:employees:dropdown:' . $userId . ': ' .
+                'Cache read failed for sdm:employees:attendance-dropdown:' . $userId . ': ' .
                 $e->getMessage()
             );
 
             return Employee::where('created_by', $userId)
+                ->harian()
                 ->orderBy('name')
                 ->get(['employee_code', 'name']);
         }

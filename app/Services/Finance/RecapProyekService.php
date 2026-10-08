@@ -2,6 +2,7 @@
 
 namespace App\Services\Finance;
 
+use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\ProjectRecap;
 use App\Services\InputNormalizer;
 use Illuminate\Database\Eloquent\Builder;
@@ -56,10 +57,14 @@ class RecapProyekService
      *
      * Status "lunas" mengikuti isFullyPaid() dari model: sisa tagihan
      * = total_rab - dp (incoming_payment RAB) - total_paid <= 0, dengan
-     * total_paid = sum bukti pembayaran + sum baris "uang masuk" pada
-     * Laporan Keuangan Proyek (income_amount > 0, bukan dari bukti bayar,
-     * dan bukan informasional). Karena sisa dipastikan non-negatif
-     * (max(0, ...)), lunas berarti ekspresi di bawah <= 0.
+     * total_paid = bukti pembayaran rekap + pembayaran invoice tertaut
+     * (tanpa PPN, proporsional per invoice) + baris "uang masuk" manual
+     * Laporan Keuangan Proyek.
+     *
+     * Karena porsi tanpa PPN dihitung per bukti invoice, filter memakai
+     * perhitungan model yang sama (bukan SQL terpisah) agar status pada
+     * filter selalu sama dengan status yang tampil di tabel. Data rekap per
+     * user relatif sedikit sehingga aman dihitung di PHP.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @param  string  $status  'lunas' atau 'belum'
@@ -67,21 +72,61 @@ class RecapProyekService
      */
     private function applyStatusFilter(Builder $query, string $status): void
     {
-        $incomeItems = 'COALESCE((SELECT COALESCE(SUM(pfri.income_amount), 0)
-            FROM project_financial_report_items pfri
-            INNER JOIN project_financial_reports pfr ON pfr.id = pfri.project_financial_report_id
-            WHERE pfr.project_recap_id = project_recaps.id
-              AND pfri.income_amount > 0
-              AND pfri.payment_proof_id IS NULL
-              AND pfri.is_informational = 0), 0)';
-        $paid = 'COALESCE((SELECT COALESCE(SUM(pp.amount), 0) FROM payment_proofs pp
-            WHERE pp.invoice_type = \'recap\'
-              AND pp.invoice_number = project_recaps.id), 0)';
-        $dp = 'COALESCE((SELECT COALESCE(r.incoming_payment, 0) FROM rabs r
-            WHERE r.rab_number = project_recaps.rab_number), 0)';
-        $remaining = '(COALESCE(project_recaps.total_rab, 0) - ' . $dp . ' - ' . $paid . ' - ' . $incomeItems . ')';
+        $matchingIds = ProjectRecap::query()
+            ->where('created_by', auth()->id())
+            ->with(['rab', 'paymentProofs', 'financialReport.items', 'invoices.paymentProofs'])
+            ->get()
+            ->filter(fn (ProjectRecap $recap) => $status === 'lunas' ? $recap->isFullyPaid() : ! $recap->isFullyPaid())
+            ->pluck('id')
+            ->all();
 
-        $query->whereRaw($remaining . ($status === 'lunas' ? ' <= 0' : ' > 0'));
+        $query->whereIn('id', $matchingIds);
+    }
+
+    /**
+     * Mencari Invoice Proyek yang kemungkinan milik rekap namun BELUM
+     * ditautkan (project_recap_id kosong).
+     *
+     * Invoice lama dibuat sebelum ada tautan rekap, sehingga hubungannya
+     * hanya tersirat lewat nama proyek. Pencocokan dibuat ketat agar aman:
+     * pemilik sama (created_by) dan nama proyek invoice (kolom proyek atau
+     * project_description) sama persis dengan nama rekap (abaikan huruf
+     * besar/kecil & spasi di tepi). Hasilnya HANYA ditampilkan sebagai
+     * saran di modal detail — tidak dihitung ke Terbayar dan tidak ada data
+     * yang diubah otomatis; user menautkannya sendiri lewat Edit Invoice.
+     *
+     * Hasil dipasang sebagai relasi non-database 'unlinkedInvoiceCandidates'
+     * pada setiap rekap.
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\Finance\ProjectRecap>  $recaps
+     * @return void
+     */
+    public function attachUnlinkedInvoiceCandidates($recaps): void
+    {
+        if ($recaps->isEmpty()) {
+            return;
+        }
+
+        $normalize = fn ($value) => mb_strtolower(trim((string) $value));
+
+        $invoices = InvoiceProyek::query()
+            ->whereNull('project_recap_id')
+            ->whereIn('created_by', $recaps->pluck('created_by')->filter()->unique()->values())
+            ->with('paymentProofs')
+            ->orderBy('invoice_date')
+            ->get();
+
+        foreach ($recaps as $recap) {
+            $recapName = $normalize($recap->project_name);
+
+            $candidates = $recapName === ''
+                ? collect()
+                : $invoices->filter(fn (InvoiceProyek $invoice) => $invoice->created_by === $recap->created_by
+                    && ($normalize($invoice->proyek) === $recapName || $normalize($invoice->project_description) === $recapName))
+                    ->values();
+
+            $recap->setRelation('unlinkedInvoiceCandidates', $candidates);
+        }
     }
 
     /**
@@ -226,7 +271,11 @@ class RecapProyekService
                 $report = $recap->financialReport;
 
                 if ($report) {
-                    $report->items()->each(function ($item) {
+                    // File bukti item dari bukti pembayaran (payment_proof_id
+                    // terisi) milik modul Bukti Pembayaran — mis. bukti invoice
+                    // tertaut yang tetap ada walau rekap dihapus — jadi tidak
+                    // ikut dihapus di sini.
+                    $report->items()->whereNull('payment_proof_id')->each(function ($item) {
                         $this->deleteProofFile($item->proof_file);
                     });
                     $report->items()->delete();

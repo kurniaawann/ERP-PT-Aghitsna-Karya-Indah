@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Administrasi\Nota;
 use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Finance\ProjectRecap;
@@ -9,6 +10,7 @@ use App\Models\Inventory\Items;
 use App\Models\Report\SalesRecap;
 use App\Observers\InvoiceProyekObserver;
 use App\Observers\ItemsObserver;
+use App\Observers\NotaObserver;
 use App\Observers\PaymentProofObserver;
 use App\Observers\ProjectRecapObserver;
 use App\Observers\SalesRecapObserver;
@@ -47,5 +49,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Register observer untuk auto-create opening stock saat item dibuat
         Items::observe(ItemsObserver::class);
+
+        // Register observer untuk auto-create/sinkron reimburse draft dari nota Super Admin
+        Nota::observe(NotaObserver::class);
     }
 }

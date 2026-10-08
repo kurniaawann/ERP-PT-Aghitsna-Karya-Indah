@@ -11,7 +11,7 @@ use PhpOffice\PhpSpreadsheet\Style\Style;
  * Export class untuk Laporan Pengeluaran (Laporan Akhir) ke Excel.
  *
  * Format per sheet mengikuti ExpenseMonthSheet varian "laporan" (per kategori,
- * SUB TOTAL, JUMLAH, rekapitulasi, tanda tangan).
+ * SUB TOTAL, JUMLAH, rekapitulasi, satu penandatangan di kanan).
  *
  * Laporan bulanan: bila data mencakup lebih dari satu bulan, dibuat satu sheet
  * per bulan (nama sheet mis. "September 2026", total per bulan, saldo dibawa
@@ -23,17 +23,20 @@ class ExpenseReportExport implements WithMultipleSheets, WithDefaultStyles
     protected $expenseRecaps;
     protected $periodTitle;
     protected $totals;
+    protected $signer;
 
     /**
      * @param  \Illuminate\Support\Collection $expenseRecaps  Data export (urut tanggal menaik)
      * @param  string                         $periodTitle    Label periode (mis. "BULAN SEPTEMBER 2026", "TAHUN 2026")
      * @param  object                         $totals         total_income, total_expense, balance
+     * @param  array|null                     $signer         Penandatangan terpilih (ReportSignerService)
      */
-    public function __construct($expenseRecaps, $periodTitle, $totals)
+    public function __construct($expenseRecaps, $periodTitle, $totals, ?array $signer = null)
     {
         $this->expenseRecaps = $expenseRecaps;
         $this->periodTitle = $periodTitle;
         $this->totals = $totals;
+        $this->signer = $signer;
     }
 
     /**
@@ -56,7 +59,9 @@ class ExpenseReportExport implements WithMultipleSheets, WithDefaultStyles
                     $this->periodTitle,
                     $this->totals,
                     ExpenseMonthSheet::VARIANT_LAPORAN,
-                    'Laporan_Pengeluaran'
+                    'Laporan_Pengeluaran',
+                    null,
+                    $this->signer
                 ),
             ];
         }
@@ -69,7 +74,8 @@ class ExpenseReportExport implements WithMultipleSheets, WithDefaultStyles
                 $section['totals'],
                 ExpenseMonthSheet::VARIANT_LAPORAN,
                 $section['label'],
-                $index > 0 ? $section : null
+                $index > 0 ? $section : null,
+                $this->signer
             );
         }
 

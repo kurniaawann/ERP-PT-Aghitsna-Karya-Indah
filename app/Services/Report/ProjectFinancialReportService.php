@@ -2,6 +2,7 @@
 
 namespace App\Services\Report;
 
+use App\Models\Finance\InvoiceProyek;
 use App\Models\Finance\PaymentProof;
 use App\Models\Finance\ProjectRecap;
 use App\Models\Report\ProjectFinancialReport;
@@ -307,54 +308,54 @@ class ProjectFinancialReportService
     }
 
     /**
-     * Sinkronkan item Laporan Keuangan Proyek dari bukti pembayaran (recap).
+     * Sinkronkan item Laporan Keuangan Proyek dari bukti pembayaran.
      *
-     * Setiap bukti pembayaran dengan invoice_type 'recap' otomatis menjadi
-     * satu baris "Uang Masuk" pada laporan keuangan proyek rekap terkait:
-     * - Keterangan: "Pembayaran ke {stage} proyek {nama}"
-     * - Nominal: amount bukti pembayaran → income_amount
-     * - Tanggal: payment_date bukti pembayaran
-     * - Bukti: file bukti pembayaran (dipakai ulang, tidak disalin)
+     * Bukti pembayaran yang menjadi pemasukan proyek otomatis menjadi satu
+     * baris "Uang Masuk" pada laporan keuangan proyek rekap terkait:
+     * - Bukti rekap (invoice_type 'recap'): rekap = invoice_number.
+     *   Keterangan "Pembayaran ke {stage} proyek {nama}", nominal = amount.
+     * - Bukti invoice proyek (invoice_type 'proyek') yang invoice-nya
+     *   ditautkan ke rekap (project_recap_id). Keterangan "Pembayaran ke
+     *   {stage} invoice {nomor} proyek {nama}", nominal = bagian nilai proyek
+     *   tanpa PPN (ProjectRecap::invoicePaymentProjectPortion) — sama dengan
+     *   yang dihitung sebagai Terbayar pada Rekap Proyek.
+     * - Tanggal: payment_date bukti; Bukti: file bukti pembayaran (dipakai
+     *   ulang, tidak disalin).
      *
      * Dipanggil dari observer PaymentProof saat bukti dibuat/diubah. Idempotent:
-     * jika item dengan payment_proof_id sudah ada, diperbarui; bila tidak, dibuat.
-     * Bila invoice_type bukan 'recap' (bukti dipindah ke invoice lain), item
-     * terkait dihapus.
+     * item dicari lewat payment_proof_id (unik); bila sudah ada diperbarui
+     * (termasuk dipindah ke laporan rekap lain bila tautannya berubah), bila
+     * belum dibuat. Bila bukti tidak lagi menjadi pemasukan rekap mana pun
+     * (dipindah ke invoice lain / invoice tidak ditautkan), item dihapus.
      */
     public function syncFromPaymentProof(PaymentProof $proof): ?ProjectFinancialReportItem
     {
-        if ($proof->invoice_type !== 'recap') {
+        $target = $this->resolvePaymentProofTarget($proof);
+
+        if (! $target) {
             $this->deleteFromPaymentProof($proof);
 
             return null;
         }
 
-        $recap = ProjectRecap::where('id', $proof->invoice_number)->first();
-
-        if (! $recap) {
-            return null;
-        }
-
-        $incomeCategory = $this->resolveIncomeCategory($proof->created_by);
+        $incomeCategory = $this->resolveIncomeCategory($proof->created_by ?? $target['recap']->created_by);
 
         if (! $incomeCategory) {
             return null;
         }
 
-        $report = $this->getOrCreateForRecap($recap);
+        $report = $this->getOrCreateForRecap($target['recap']);
 
         $item = ProjectFinancialReportItem::where('payment_proof_id', $proof->id)->first();
 
-        $recapName = trim((string) $recap->project_name);
-        $recapName = preg_replace('/^proyek\s+/i', '', $recapName) ?: $recapName;
-
-        $stage = (int) ($proof->payment_stage ?? 1);
         $data = [
+            'project_financial_report_id' => $report->id,
             'transaction_category_id' => $incomeCategory->id,
             'transaction_date' => $proof->payment_date?->toDateString() ?? now()->toDateString(),
-            'description' => 'Pembayaran ke '.$stage.' proyek '.$recapName,
-            'income_amount' => (int) $proof->amount,
+            'description' => $target['description'],
+            'income_amount' => $target['amount'],
             'expense_amount' => null,
+            'is_informational' => false,
             'proof_file' => $proof->file_path,
             'proof_file_name' => $proof->file_name,
         ];
@@ -367,7 +368,6 @@ class ProjectFinancialReportService
         }
 
         $created = ProjectFinancialReportItem::create(array_merge($data, [
-            'project_financial_report_id' => $report->id,
             'payment_proof_id' => $proof->id,
             'created_by' => $proof->created_by ?? auth()->id(),
         ]));
@@ -375,6 +375,193 @@ class ProjectFinancialReportService
         $this->flushUsedCategoryCache($proof->created_by ?? auth()->id());
 
         return $created;
+    }
+
+    /**
+     * Menentukan rekap tujuan, nominal, dan keterangan baris "Uang Masuk"
+     * Laporan Keuangan Proyek untuk sebuah bukti pembayaran.
+     *
+     * @return array{recap: ProjectRecap, amount: int, description: string}|null
+     *         null bila bukti tidak menjadi pemasukan rekap mana pun.
+     */
+    private function resolvePaymentProofTarget(PaymentProof $proof): ?array
+    {
+        $stage = (int) ($proof->payment_stage ?? 1);
+
+        if ($proof->invoice_type === 'recap') {
+            $recap = ProjectRecap::where('id', $proof->invoice_number)->first();
+
+            if (! $recap) {
+                return null;
+            }
+
+            return [
+                'recap' => $recap,
+                'amount' => (int) $proof->amount,
+                'description' => 'Pembayaran ke '.$stage.' proyek '.$this->shortProjectName($recap),
+            ];
+        }
+
+        if ($proof->invoice_type === 'proyek') {
+            $invoice = InvoiceProyek::where('invoice_number', $proof->invoice_number)->first();
+            $recap = $invoice?->project_recap_id
+                ? ProjectRecap::where('id', $invoice->project_recap_id)->first()
+                : null;
+
+            if (! $recap) {
+                return null;
+            }
+
+            return [
+                'recap' => $recap,
+                'amount' => ProjectRecap::invoicePaymentProjectPortion($invoice, (int) $proof->amount),
+                'description' => $this->invoicePaymentDescription($proof, $invoice, $recap),
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Keterangan baris "Uang Masuk" dari bukti pembayaran invoice proyek.
+     *
+     * Bila invoice ber-PPN, nominal yang dicatat hanya bagian nilai proyek
+     * sehingga keterangan memuat nominal dibayar & PPN-nya sebagai penjelas.
+     */
+    private function invoicePaymentDescription(PaymentProof $proof, InvoiceProyek $invoice, ProjectRecap $recap): string
+    {
+        $stage = (int) ($proof->payment_stage ?? 1);
+        $amount = (int) $proof->amount;
+        $ppnAmount = max(0, $amount - ProjectRecap::invoicePaymentProjectPortion($invoice, $amount));
+
+        $description = 'Pembayaran ke '.$stage.' invoice '.$invoice->invoice_number
+            .' proyek '.$this->shortProjectName($recap);
+
+        if ($ppnAmount > 0) {
+            $description .= ' (dibayar Rp '.number_format($amount, 0, ',', '.')
+                .' termasuk PPN Rp '.number_format($ppnAmount, 0, ',', '.').')';
+        }
+
+        return $description;
+    }
+
+    /**
+     * Nama proyek tanpa awalan "Proyek " untuk keterangan otomatis.
+     */
+    private function shortProjectName(ProjectRecap $recap): string
+    {
+        $recapName = trim((string) $recap->project_name);
+
+        return preg_replace('/^proyek\s+/i', '', $recapName) ?: $recapName;
+    }
+
+    /**
+     * Sinkronkan ulang baris "Uang Masuk" dari seluruh bukti pembayaran
+     * sebuah invoice proyek.
+     *
+     * Dipanggil setelah tautan Rekap Proyek pada invoice berubah (dipilih,
+     * diganti, atau dilepas) agar baris pemasukan ikut pindah ke laporan
+     * rekap yang baru atau dihapus bila invoice tidak lagi ditautkan.
+     */
+    public function syncInvoicePayments(InvoiceProyek $invoice): void
+    {
+        $invoice->paymentProofs()->get()->each(fn (PaymentProof $proof) => $this->syncFromPaymentProof($proof));
+    }
+
+    /**
+     * Rekonsiliasi baris "Uang Masuk" otomatis pada laporan sebuah rekap
+     * dengan bukti pembayarannya (bukti rekap + bukti invoice tertaut).
+     *
+     * Menjaga Laporan Keuangan Proyek tetap sama dengan Terbayar pada Rekap
+     * Proyek walau bukti dibuat sebelum sinkronisasi invoice ada, atau
+     * invoice ditautkan/dilepas setelah dibayar:
+     * - Bukti yang barisnya belum ada / nominal, tanggal, laporan atau
+     *   file-nya berbeda → disinkronkan (syncFromPaymentProof). Keterangan
+     *   tidak dibandingkan karena boleh diubah user di form edit laporan.
+     * - Baris dari bukti invoice yang invoice-nya tidak lagi ditautkan ke
+     *   rekap ini → disinkronkan ulang (dipindah ke rekap barunya / dihapus).
+     *
+     * Hanya menulis bila ada perbedaan sehingga aman dipanggil saat halaman
+     * dibuka. Kegagalan dicatat ke log dan tidak menggagalkan halaman.
+     *
+     * @return bool true bila ada baris yang dibuat/diubah/dihapus
+     */
+    public function syncPaymentProofItems(ProjectRecap $recap): bool
+    {
+        try {
+            $recap->loadMissing(['paymentProofs', 'invoices.paymentProofs']);
+
+            $expected = $recap->paymentProofs
+                ->map(fn (PaymentProof $proof) => [
+                    'proof' => $proof,
+                    'amount' => (int) $proof->amount,
+                ])
+                ->concat($recap->getInvoicePayments()->map(fn ($payment) => [
+                    'proof' => $payment->proof,
+                    'amount' => $payment->project_amount,
+                ]))
+                ->keyBy(fn ($row) => (int) $row['proof']->id);
+
+            $report = $recap->financialReport;
+
+            $existingItems = $expected->isEmpty()
+                ? collect()
+                : ProjectFinancialReportItem::whereIn('payment_proof_id', $expected->keys())->get()->keyBy('payment_proof_id');
+
+            $changed = false;
+
+            foreach ($expected as $proofId => $row) {
+                $proof = $row['proof'];
+                $item = $existingItems->get($proofId);
+
+                $isSynced = $item
+                    && $report
+                    && $item->project_financial_report_id === $report->id
+                    && (int) $item->income_amount === $row['amount']
+                    && $item->expense_amount === null
+                    && ! $item->is_informational
+                    && $item->transaction_date?->toDateString() === ($proof->payment_date?->toDateString() ?? $item->transaction_date?->toDateString())
+                    && $item->proof_file === $proof->file_path;
+
+                if (! $isSynced) {
+                    $this->syncFromPaymentProof($proof);
+                    $changed = true;
+                }
+            }
+
+            // Baris bukti invoice yang masih tercatat di laporan rekap ini
+            // padahal invoice-nya sudah tidak ditautkan ke rekap ini.
+            if ($report) {
+                ProjectFinancialReportItem::where('project_financial_report_id', $report->id)
+                    ->whereNotNull('payment_proof_id')
+                    ->when($expected->isNotEmpty(), fn ($query) => $query->whereNotIn('payment_proof_id', $expected->keys()))
+                    ->pluck('payment_proof_id')
+                    ->each(function ($proofId) use (&$changed) {
+                        $proof = PaymentProof::find($proofId);
+
+                        if ($proof) {
+                            $this->syncFromPaymentProof($proof);
+                        } else {
+                            ProjectFinancialReportItem::where('payment_proof_id', $proofId)->delete();
+                        }
+
+                        $changed = true;
+                    });
+            }
+
+            if ($changed) {
+                $recap->unsetRelation('financialReport');
+            }
+
+            return $changed;
+        } catch (\Throwable $throwable) {
+            Log::error('Project Financial Report payment proof sync failed', [
+                'project_recap_id' => $recap->id,
+                'error' => $throwable->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**
@@ -930,7 +1117,9 @@ class ProjectFinancialReportService
      * Menyinkronkan seluruh transaksi "Bon" hasil edit laporan keuangan proyek.
      *
      * Dipakai oleh modal edit dengan struktur dinamis (mirip tambah):
-     * - item yang mengirim `id` diupdate (bukti diganti jika ada file baru)
+     * - item yang mengirim `id` diupdate (bukti diganti jika ada file baru);
+     *   item dari bukti pembayaran hanya bisa diubah keterangannya — nominal,
+     *   tanggal, kategori, dan file mengikuti bukti pembayarannya
      * - item tanpa `id` dianggap transaksi baru (dibuat)
      * - item existing yang tidak lagi dikirim (blok dihapus user) dihapus,
      *   KECUALI item yang dibuat otomatis dari bukti pembayaran
@@ -957,6 +1146,23 @@ class ProjectFinancialReportService
                 $submittedIds[] = $itemId;
 
                 $existingItem = $existingItems->firstWhere('id', (int) $itemId);
+
+                if ($existingItem && $existingItem->payment_proof_id) {
+                    // Transaksi dari bukti pembayaran (rekap / invoice tertaut):
+                    // kategori, tanggal, nominal, dan file bukti selalu mengikuti
+                    // bukti pembayarannya agar pemasukan laporan = Terbayar rekap.
+                    // File bukti juga milik modul Bukti Pembayaran sehingga tidak
+                    // boleh diganti/dihapus dari sini. Hanya keterangan yang
+                    // boleh diubah.
+                    $existingItem->update([
+                        'description' => trim((string) ($itemData['description'] ?? '')) !== ''
+                            ? $itemData['description']
+                            : $existingItem->description,
+                        'keterangan_bon' => $itemData['keterangan_bon'] ?? null,
+                    ]);
+
+                    continue;
+                }
 
                 if ($existingItem) {
                     $this->updateItem($existingItem, $itemData, $proofFile);
@@ -1050,6 +1256,11 @@ class ProjectFinancialReportService
      *
      * File bukti pembayaran milik item yang dihapus ikut dibersihkan.
      *
+     * Item dari bukti pembayaran (payment_proof_id terisi) dilewati: item
+     * tersebut hanya bisa hilang lewat modul Bukti Pembayaran, dan file
+     * buktinya milik bukti pembayaran (bukan milik laporan) sehingga tidak
+     * boleh ikut terhapus.
+     *
      * @param  array<int>  $ids  Daftar ID item
      * @return int Jumlah item yang dihapus
      */
@@ -1057,7 +1268,7 @@ class ProjectFinancialReportService
     {
         $deletedCount = 0;
 
-        ProjectFinancialReportItem::whereIn('id', $ids)->each(function ($item) use (&$deletedCount) {
+        ProjectFinancialReportItem::whereIn('id', $ids)->whereNull('payment_proof_id')->each(function ($item) use (&$deletedCount) {
             $this->deleteProofFile($item->proof_file);
             $item->delete();
             $deletedCount++;

@@ -290,7 +290,7 @@
                 <tr>
                     <td class="c">{{ $index + 1 }}.</td>
                     <td class="l">{{ $item['keterangan'] ?? '-' }}</td>
-                    <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? number_format((float) $item['volume'], 2, ',', '.') : '-' }}</td>
+                    <td class="c">{{ isset($item['volume']) && $item['volume'] !== null && $item['volume'] !== '' ? format_angka($item['volume']) : '-' }}</td>
                     <td class="c">{{ $item['satuan'] ?? '-' }}</td>
                     <td class="c">{{ format_rupiah($item['harga'] ?? 0) }}</td>
                     <td class="c">{{ format_rupiah((float) ($item['volume'] ?? 0) * ($item['harga'] ?? 0)) }}</td>
@@ -323,7 +323,7 @@
     <div class="payment-info">
         Pembayaran dapat di transfer melalui rekening<br>
         @foreach ($payAccounts as $acc)
-            Bank {{ $acc->bank_name }} / No : {{ $acc->account_number }} a/n {{ $acc->account_holder }}<br>
+            {{ label_bank($acc->bank_name) }} / No : {{ $acc->account_number }} a/n {{ $acc->account_holder }}<br>
         @endforeach
     </div>
 

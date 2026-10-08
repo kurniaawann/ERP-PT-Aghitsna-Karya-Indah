@@ -8,6 +8,9 @@
  *   minggu dimulai Senin, kolom Minggu paling kanan & merah)
  * - Input cicilan kasbon per karyawan pada modal Generate
  *   (renderKasbonInstallments)
+ * - Modal Generate 2 langkah (goToGenerateStep): langkah 2 = grid rekap
+ *   absensi semua karyawan terpilih sekaligus (renderGenerateAttendanceGrid),
+ *   tombol hari seperti modal Edit + Reset semua ke Hadir
  * - Input cicilan kasbon bulan ini pada modal Edit (ringkasan live)
  * - Checkbox Pilih Semua & aksi massal (hapus, bayar)
  * - Handler submit form Generate/Edit dengan pencegahan double submit
@@ -431,6 +434,11 @@ function observeEmployeeSelection() {
 
     const observer = new MutationObserver(function () {
         renderKasbonInstallments();
+
+        // Pilihan berubah → hapus pesan "pilih minimal satu karyawan" agar
+        // tidak menahan submit form.
+        const search = document.querySelector('#generateModal .searchable-multi-select-input');
+        if (search) search.setCustomValidity('');
     });
 
     observer.observe(hiddenInputs, { childList: true });
@@ -540,6 +548,457 @@ function escapeAttr(value) {
         .replace(/"/g, '&quot;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+// ==========================================
+// LANGKAH 2: REKAP ABSENSI MASSAL (Modal Generate)
+// ==========================================
+
+/** Langkah aktif modal Generate (1 = Data Slip & Tanggal Merah, 2 = Rekap Absensi). */
+let generateStep = 1;
+
+/**
+ * Status hari yang diubah admin dari default, per karyawan:
+ * { 'EMP001': { 5: 'C' }, ... }. Disimpan terpisah dari default agar
+ * perubahan tetap ada saat admin kembali ke langkah 1 (mis. menambah
+ * tanggal merah atau karyawan) lalu Lanjut lagi.
+ *
+ * @type {Object<string, Object<number, string>>}
+ */
+let generateOverrides = {};
+
+/** Periode ("tahun-bulan") pemilik generateOverrides; periode berubah → direset. */
+let generateOverridesPeriod = '';
+
+/** Default status per hari periode aktif (indeks 1..jumlah hari; L = Minggu/tanggal merah). */
+let generateDefaultDays = [];
+
+/** Nama hari singkat sesuai Date.getDay() (0 = Minggu). */
+const WEEKDAY_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+/** Kelas penanda langkah aktif / tidak aktif pada header modal Generate. */
+const STEP_INDICATOR_CLASSES = {
+    active: ['font-semibold', 'text-primary'],
+    inactive: ['text-text-secondary'],
+};
+const STEP_BADGE_CLASSES = {
+    active: ['bg-primary', 'text-white'],
+    done: ['bg-success', 'text-white'],
+    inactive: ['bg-surface-hover', 'text-text-label'],
+};
+
+/**
+ * Karyawan terpilih pada multi-select modal Generate (urutan sesuai pilihan).
+ *
+ * @returns {Array<{code: string, name: string}>}
+ */
+function getSelectedGenerateEmployees() {
+    const wrapper = document.querySelector('#generateModal .searchable-multi-select-wrapper');
+    if (!wrapper) return [];
+
+    return Array.from(wrapper.querySelectorAll('.searchable-multi-hidden-inputs input')).map(function (input) {
+        const code = input.value;
+        const option = wrapper.querySelector('.searchable-multi-option[data-value="' + CSS.escape(code) + '"]');
+        const label = (eligibleKasbon[code] && eligibleKasbon[code].label) || (option ? option.dataset.label : '') || code;
+        const suffix = ' - ' + code;
+        const name = label.endsWith(suffix) ? label.slice(0, -suffix.length) : label;
+
+        return { code: code, name: name };
+    });
+}
+
+/**
+ * Status default tiap hari periode: Minggu dan tanggal merah yang dicentang
+ * di langkah 1 = L (Libur), lainnya H (Hadir) — sama dengan
+ * SalarySlipService::buildDefaultAttendance.
+ *
+ * @param {number} year
+ * @param {number} month 1..12
+ * @returns {Array<string>} Indeks 1..jumlah hari
+ */
+function buildGenerateDefaultDays(year, month) {
+    const holidays = new Set();
+    document.querySelectorAll('#holiday-days-grid input[name="holidays[]"]:checked').forEach(function (checkbox) {
+        const day = parseInt(String(checkbox.value).split('-')[2], 10);
+        if (day) holidays.add(day);
+    });
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const days = [null];
+    for (let day = 1; day <= daysInMonth; day++) {
+        const isSunday = new Date(year, month - 1, day).getDay() === 0;
+        days.push(isSunday || holidays.has(day) ? 'L' : 'H');
+    }
+
+    return days;
+}
+
+/**
+ * Status efektif satu karyawan pada satu hari (perubahan admin atau default).
+ *
+ * @param {string} code
+ * @param {number} day
+ * @returns {string}
+ */
+function getGenerateDayStatus(code, day) {
+    const overrides = generateOverrides[code];
+    return (overrides && overrides[day]) || generateDefaultDays[day] || 'H';
+}
+
+/**
+ * Menyegarkan hidden input attendance[kode] ("HHLHC...") dan ringkasan
+ * baris satu karyawan pada grid rekap absensi.
+ *
+ * @param {HTMLTableRowElement} row Baris karyawan (tr[data-code]).
+ */
+function syncGenerateAttendanceRow(row) {
+    if (!row) return;
+
+    const code = row.dataset.code;
+    const counts = { H: 0, I: 0, S: 0, C: 0, A: 0, L: 0 };
+    let letters = '';
+
+    for (let day = 1; day < generateDefaultDays.length; day++) {
+        const status = getGenerateDayStatus(code, day);
+        letters += status;
+        counts[status] = (counts[status] || 0) + 1;
+    }
+
+    const hidden = row.querySelector('input[type="hidden"]');
+    if (hidden) hidden.value = letters;
+
+    const summary = row.querySelector('.gen-row-summary');
+    if (summary) {
+        const parts = ['<span class="text-success font-semibold">H ' + counts.H + '</span>'];
+        [['I', 'text-warning'], ['S', 'text-error'], ['C', 'text-purple-700'], ['A', 'text-text-label']].forEach(function (item) {
+            if (counts[item[0]] > 0) {
+                parts.push('<span class="' + item[1] + ' font-semibold">' + item[0] + ' ' + counts[item[0]] + '</span>');
+            }
+        });
+        summary.innerHTML = parts.join(' · ');
+    }
+}
+
+/**
+ * Memasang warna & huruf status pada tombol hari grid rekap absensi
+ * (warna sama dengan grid modal Edit / STATUS_CLASSES).
+ *
+ * @param {HTMLButtonElement} btn
+ * @param {string} status
+ */
+function paintGenerateDayButton(btn, status) {
+    btn.dataset.status = status;
+    ALL_STATUS_CLASSES.forEach(function (cls) { btn.classList.remove(cls); });
+    (STATUS_CLASSES[status] || []).forEach(function (cls) { btn.classList.add(cls); });
+    btn.textContent = status;
+    btn.title = 'Tanggal ' + btn.dataset.day + ' — ' + status;
+}
+
+/**
+ * Merender grid rekap absensi langkah 2: baris = karyawan terpilih,
+ * kolom = tanggal periode, sel = tombol status seperti modal Edit.
+ *
+ * - Header tanggal Minggu/tanggal merah berwarna merah dan default L.
+ * - Perubahan admin (generateOverrides) dipertahankan selama periode sama.
+ * - Setiap baris punya hidden input attendance[kode] = "HHLHC..." yang
+ *   dikirim ke SalarySlipController@generate.
+ */
+function renderGenerateAttendanceGrid() {
+    const container = document.getElementById('generate-attendance-grid');
+    const monthSelect = document.getElementById('period_month');
+    const yearInput = document.getElementById('period_year');
+    if (!container || !monthSelect || !yearInput) return;
+
+    const month = parseInt(monthSelect.value, 10);
+    const year = parseInt(yearInput.value, 10);
+    const periodKey = year + '-' + month;
+
+    if (periodKey !== generateOverridesPeriod) {
+        generateOverrides = {};
+        generateOverridesPeriod = periodKey;
+    }
+
+    generateDefaultDays = buildGenerateDefaultDays(year, month);
+    const employees = getSelectedGenerateEmployees();
+    const monthLabel = monthSelect.options[monthSelect.selectedIndex]
+        ? monthSelect.options[monthSelect.selectedIndex].text
+        : '';
+
+    let head = '<th class="sticky left-0 z-10 bg-surface-secondary px-3 py-2 text-left font-medium whitespace-nowrap">Karyawan</th>';
+    for (let day = 1; day < generateDefaultDays.length; day++) {
+        const isRed = generateDefaultDays[day] === 'L';
+        head += '<th class="px-0.5 py-1.5 text-center font-medium ' + (isRed ? 'text-error' : 'text-text-secondary') + '">' +
+            '<div class="leading-none">' + day + '</div>' +
+            '<div class="text-[10px] font-normal leading-none mt-0.5">' + WEEKDAY_SHORT[new Date(year, month - 1, day).getDay()] + '</div>' +
+            '</th>';
+    }
+    head += '<th class="px-3 py-2 text-left font-medium whitespace-nowrap">Rekap</th><th class="px-2"></th>';
+
+    const rows = employees.map(function (employee) {
+        let cells = '';
+        for (let day = 1; day < generateDefaultDays.length; day++) {
+            cells += '<td class="px-0.5 py-1">' +
+                '<button type="button" class="gen-day-btn w-7 h-7 inline-flex items-center justify-center rounded border text-xs font-semibold transition-colors duration-150 select-none" ' +
+                'data-day="' + day + '"></button></td>';
+        }
+
+        return '<tr class="border-t border-border" data-code="' + escapeAttr(employee.code) + '">' +
+            '<td class="sticky left-0 z-10 bg-surface-base px-3 py-1.5 whitespace-nowrap">' +
+            '<div class="font-medium text-text-primary">' + escapeAttr(employee.name) + '</div>' +
+            '<div class="text-[11px] text-text-tertiary">' + escapeAttr(employee.code) + '</div>' +
+            '<input type="hidden" name="attendance[' + escapeAttr(employee.code) + ']" value="">' +
+            '</td>' +
+            cells +
+            '<td class="gen-row-summary px-3 py-1.5 whitespace-nowrap text-xs"></td>' +
+            '<td class="px-2 py-1.5"><button type="button" class="gen-row-reset text-text-tertiary hover:text-primary" ' +
+            'title="Reset baris ini ke Hadir"><i class="fa-solid fa-rotate-left"></i></button></td>' +
+            '</tr>';
+    }).join('');
+
+    container.innerHTML =
+        '<div class="rounded-lg border border-border">' +
+        '<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-surface-secondary rounded-t-lg">' +
+        '<span class="text-sm font-medium text-text-primary">Rekap Absensi ' + escapeAttr(monthLabel + ' ' + year) +
+        ' &middot; ' + employees.length + ' karyawan</span>' +
+        '<button type="button" id="generate-reset-attendance" class="text-xs text-primary hover:underline">Reset semua ke Hadir</button>' +
+        '</div>' +
+        '<div class="overflow-x-auto">' +
+        '<table class="min-w-full text-xs">' +
+        '<thead><tr class="bg-surface-secondary">' + head + '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '</table></div></div>';
+
+    container.querySelectorAll('tr[data-code]').forEach(function (row) {
+        row.querySelectorAll('.gen-day-btn').forEach(function (btn) {
+            paintGenerateDayButton(btn, getGenerateDayStatus(row.dataset.code, parseInt(btn.dataset.day, 10)));
+        });
+        syncGenerateAttendanceRow(row);
+    });
+}
+
+/**
+ * Mengganti status satu hari pada grid rekap absensi.
+ * Klik kiri maju (H → I → S → C → A → L → H), klik kanan mundur.
+ *
+ * @param {HTMLButtonElement} btn
+ * @param {number} step +1 maju, -1 mundur
+ */
+function cycleGenerateDay(btn, step) {
+    const row = btn.closest('tr[data-code]');
+    if (!row) return;
+
+    const code = row.dataset.code;
+    const day = parseInt(btn.dataset.day, 10);
+    const current = getGenerateDayStatus(code, day);
+    const next = STATUS_ORDER[(STATUS_ORDER.indexOf(current) + step + STATUS_ORDER.length) % STATUS_ORDER.length];
+
+    generateOverrides[code] = generateOverrides[code] || {};
+    if (next === generateDefaultDays[day]) {
+        delete generateOverrides[code][day];
+    } else {
+        generateOverrides[code][day] = next;
+    }
+
+    paintGenerateDayButton(btn, next);
+    syncGenerateAttendanceRow(row);
+}
+
+/**
+ * Mengembalikan baris karyawan (atau seluruh grid bila row null) ke status
+ * default: Hadir, kecuali Minggu & tanggal merah tetap Libur.
+ *
+ * @param {HTMLTableRowElement|null} row
+ */
+function resetGenerateAttendance(row) {
+    const rows = row ? [row] : Array.from(document.querySelectorAll('#generate-attendance-grid tr[data-code]'));
+
+    rows.forEach(function (tr) {
+        delete generateOverrides[tr.dataset.code];
+        tr.querySelectorAll('.gen-day-btn').forEach(function (btn) {
+            paintGenerateDayButton(btn, getGenerateDayStatus(tr.dataset.code, parseInt(btn.dataset.day, 10)));
+        });
+        syncGenerateAttendanceRow(tr);
+    });
+}
+
+/**
+ * Event delegation grid rekap absensi (tombol hari, reset baris, reset semua).
+ */
+function initGenerateAttendanceGrid() {
+    const container = document.getElementById('generate-attendance-grid');
+    if (!container) return;
+
+    container.addEventListener('click', function (e) {
+        const dayBtn = e.target.closest('.gen-day-btn');
+        if (dayBtn) {
+            cycleGenerateDay(dayBtn, 1);
+            return;
+        }
+
+        const rowReset = e.target.closest('.gen-row-reset');
+        if (rowReset) {
+            resetGenerateAttendance(rowReset.closest('tr[data-code]'));
+            return;
+        }
+
+        if (e.target.closest('#generate-reset-attendance')) {
+            resetGenerateAttendance(null);
+        }
+    });
+
+    container.addEventListener('contextmenu', function (e) {
+        const dayBtn = e.target.closest('.gen-day-btn');
+        if (dayBtn) {
+            e.preventDefault();
+            cycleGenerateDay(dayBtn, -1);
+        }
+    });
+}
+
+/**
+ * Memeriksa isian langkah 1 sebelum lanjut ke rekap absensi: periode valid
+ * dan minimal satu karyawan dipilih.
+ *
+ * @returns {boolean}
+ */
+function validateGenerateStepOne() {
+    const monthSelect = document.getElementById('period_month');
+    const yearInput = document.getElementById('period_year');
+
+    if (monthSelect && !monthSelect.reportValidity()) return false;
+    if (yearInput && !yearInput.reportValidity()) return false;
+
+    const search = document.querySelector('#generateModal .searchable-multi-select-input');
+    if (search) search.setCustomValidity('');
+
+    if (getSelectedGenerateEmployees().length === 0) {
+        if (search) {
+            search.setCustomValidity('Pilih minimal satu karyawan kantor terlebih dahulu');
+            search.reportValidity();
+        }
+        return false;
+    }
+
+    const invalidInstallment = Array.from(document.querySelectorAll('#generate-kasbon-installments input'))
+        .find(function (input) { return !input.checkValidity(); });
+    if (invalidInstallment) {
+        invalidInstallment.reportValidity();
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Pindah langkah modal Generate dengan tampilan bergeser.
+ *
+ * - Langkah 2: validasi langkah 1, render grid rekap absensi, modal
+ *   dilebarkan (max-w-6xl) agar seluruh tanggal muat.
+ * - Langkah 1: kembali ke isian awal (modal kembali max-w-lg).
+ * Tombol footer: langkah 1 = Batal + Lanjut; langkah 2 = Batal + Kembali + Generate.
+ *
+ * @param {number} step 1 | 2
+ * @param {{skipValidation?: boolean, instant?: boolean}} [options]
+ * @returns {boolean} true bila langkah berpindah
+ */
+function goToGenerateStep(step, options) {
+    const opts = options || {};
+    const modal = document.getElementById('generateModal');
+    if (!modal) return false;
+
+    if (step === 2 && !opts.skipValidation && !validateGenerateStepOne()) {
+        return false;
+    }
+
+    if (step === 2) {
+        renderGenerateAttendanceGrid();
+    }
+
+    const forward = step > generateStep;
+    generateStep = step;
+
+    const panel = modal.firstElementChild;
+    if (panel) {
+        panel.classList.add('transition-[max-width]', 'duration-300');
+        panel.classList.toggle('max-w-lg', step === 1);
+        panel.classList.toggle('max-w-6xl', step === 2);
+        panel.scrollTop = 0;
+    }
+
+    [1, 2].forEach(function (number) {
+        const section = document.getElementById('generate-step-' + number);
+        if (!section) return;
+
+        if (number !== step) {
+            section.classList.add('hidden');
+            return;
+        }
+
+        section.classList.remove('hidden');
+        if (opts.instant) return;
+
+        // Animasi geser: mulai dari samping (kanan saat maju, kiri saat mundur)
+        section.classList.add('opacity-0', forward ? 'translate-x-8' : '-translate-x-8');
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                section.classList.remove('opacity-0', 'translate-x-8', '-translate-x-8');
+            });
+        });
+    });
+
+    modal.querySelectorAll('.generate-step-indicator').forEach(function (indicator) {
+        const number = parseInt(indicator.dataset.step, 10);
+        const badge = indicator.querySelector('.generate-step-badge');
+        const isActive = number === step;
+
+        Object.values(STEP_INDICATOR_CLASSES).flat().forEach(function (cls) { indicator.classList.remove(cls); });
+        STEP_INDICATOR_CLASSES[isActive ? 'active' : 'inactive'].forEach(function (cls) { indicator.classList.add(cls); });
+
+        if (badge) {
+            Object.values(STEP_BADGE_CLASSES).flat().forEach(function (cls) { badge.classList.remove(cls); });
+            const state = isActive ? 'active' : (number < step ? 'done' : 'inactive');
+            STEP_BADGE_CLASSES[state].forEach(function (cls) { badge.classList.add(cls); });
+            badge.innerHTML = state === 'done' ? '<i class="fa-solid fa-check"></i>' : String(number);
+        }
+    });
+
+    const submitBtn = document.getElementById('submit-btn-generateModal');
+    const nextBtn = document.getElementById('generate-next-btn');
+    const backBtn = document.getElementById('generate-back-btn');
+    if (submitBtn) submitBtn.classList.toggle('hidden', step !== 2);
+    if (nextBtn) nextBtn.classList.toggle('hidden', step !== 1);
+    if (backBtn) backBtn.classList.toggle('hidden', step !== 2);
+
+    return true;
+}
+
+/**
+ * Menambahkan tombol Lanjut & Kembali pada footer modal Generate (sebelum
+ * tombol Generate bawaan x-modal) lalu menampilkan langkah 1.
+ */
+function initGenerateSteps() {
+    const submitBtn = document.getElementById('submit-btn-generateModal');
+    if (!submitBtn) return;
+
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.id = 'generate-back-btn';
+    backBtn.className = 'hidden border border-border-strong text-text-primary px-4 py-2 rounded hover:bg-surface-secondary';
+    backBtn.innerHTML = '<i class="fa-solid fa-arrow-left mr-1"></i> Kembali';
+    backBtn.addEventListener('click', function () { goToGenerateStep(1); });
+
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.id = 'generate-next-btn';
+    nextBtn.className = 'bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded';
+    nextBtn.innerHTML = 'Lanjut: Rekap Absensi <i class="fa-solid fa-arrow-right ml-1"></i>';
+    nextBtn.addEventListener('click', function () { goToGenerateStep(2); });
+
+    submitBtn.parentNode.insertBefore(backBtn, submitBtn);
+    submitBtn.parentNode.insertBefore(nextBtn, submitBtn);
+
+    initGenerateAttendanceGrid();
+    goToGenerateStep(1, { skipValidation: true, instant: true });
 }
 
 // ==========================================
@@ -699,6 +1158,13 @@ function initFormSubmitHandlers() {
     const generateForm = document.querySelector('#generateModal form');
     if (generateForm) {
         generateForm.addEventListener('submit', function (e) {
+            // Langkah 1: Enter / submit berarti "Lanjut" ke rekap absensi.
+            if (generateStep !== 2) {
+                e.preventDefault();
+                goToGenerateStep(2);
+                return false;
+            }
+
             const submitBtn = this.querySelector('button[type="submit"]');
             if (!window.handleFormSubmit(submitBtn, undefined, 'Memproses...')) {
                 e.preventDefault();
@@ -744,9 +1210,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Reset modal Generate saat ditutup
+    // Reset modal Generate saat ditutup (kembali ke langkah 1, rekap
+    // absensi yang belum di-generate dibuang)
     window.addEventListener('modalClosed', function (e) {
         if (e.detail === 'generateModal') {
+            generateOverrides = {};
+            generateOverridesPeriod = '';
+            goToGenerateStep(1, { skipValidation: true, instant: true });
             loadEligibleEmployees();
             renderHolidayDays();
         }
@@ -767,6 +1237,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Daftar cicilan kasbon mengikuti pilihan karyawan
     observeEmployeeSelection();
+
+    // Modal Generate 2 langkah (Lanjut → rekap absensi massal)
+    initGenerateSteps();
 
     // Checkbox Pilih Semua
     const selectAll = document.getElementById('selectAll');

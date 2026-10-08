@@ -27,6 +27,10 @@
 @section('title', 'PT Aghitsna Karya Indah - ' . (auth()->user()->isAdmin() ? 'Penawaran' : 'Penawaran Proyek'))
 
 @section('content')
+    {{-- Tab Super Admin (satu menu sidebar → beberapa tab, seperti Surat Menyurat) --}}
+    @if (auth()->user()->isSuperAdmin())
+        <x-administrasi.quotation-tabs active="proyek" />
+    @endif
     <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
 
         {{-- Judul halaman dinamis sesuai peran user (sama seperti judul tab). --}}

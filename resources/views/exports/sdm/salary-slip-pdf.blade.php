@@ -16,6 +16,8 @@
     - Kotak luar lebih ringkas (lebar & jarak dalam dikurangi), tanda tangan
       "Payroll," dan "Diterima Oleh," berdekatan di tengah.
     - Nominal memakai format "Rp. 50.000" (helper format_rupiah).
+    - Label & titik dua data karyawan (ID, NAMA, ...) sejajar dengan label &
+      titik dua kolom Penerimaan (lebar kolom label/titik dua disamakan).
 --}}
 <style>
 @page {
@@ -91,6 +93,16 @@ body {
     margin: 0 0 6px 10px;
 }
 
+/* Lebar kolom label & titik dua dipakai bersama oleh .info-table dan
+   .inner-table agar teks dan ":" sejajar satu garis vertikal. */
+.col-label {
+    width: 130px;
+}
+
+.col-colon {
+    width: 12px;
+}
+
 .info-table td {
     padding: 1px 0;
     font-size: 11px;
@@ -147,6 +159,11 @@ body {
     width: 100%;
     border-collapse: collapse;
     border-spacing: 0;
+}
+
+/* Jangan ikut padding-left kolom pertama .main-table (label jadi menjorok) */
+.main-table .inner-table tr td {
+    padding: 0 !important;
 }
 
 /* Judul "Dibayar Perusahaan": teks biru, latar kuning */
@@ -315,9 +332,9 @@ body {
     <!-- Data Karyawan -->
     <table class="info-table" cellspacing="0" cellpadding="0">
         <tr>
-            <td width="30%">ID</td>
-            <td width="4%">:</td>
-            <td width="66%">{{ $slip->employee_code }}</td>
+            <td class="col-label">ID</td>
+            <td class="col-colon">:</td>
+            <td>{{ $slip->employee_code }}</td>
         </tr>
         <tr>
             <td>NAMA</td>
@@ -351,9 +368,9 @@ body {
                 <td>
                     <table class="inner-table" cellspacing="0" cellpadding="0">
                         <tr>
-                            <td width="56%">Gaji Pokok</td>
-                            <td width="4%">:</td>
-                            <td width="40%">{{ format_rupiah($slip->base_salary) }}</td>
+                            <td class="col-label">Gaji Pokok</td>
+                            <td class="col-colon">:</td>
+                            <td>{{ format_rupiah($slip->base_salary) }}</td>
                         </tr>
                     </table>
                 </td>
@@ -375,9 +392,9 @@ body {
                 <td>
                     <table class="inner-table" cellspacing="0" cellpadding="0">
                         <tr>
-                            <td width="56%">Transport / {{ $slip->present_days }} Hari</td>
-                            <td width="4%">:</td>
-                            <td width="40%" class="value-italic">{{ format_rupiah($slip->transport_total) }}</td>
+                            <td class="col-label">Transport / {{ $slip->present_days }} Hari</td>
+                            <td class="col-colon">:</td>
+                            <td class="value-italic">{{ format_rupiah($slip->transport_total) }}</td>
                         </tr>
                     </table>
                 </td>
@@ -389,9 +406,9 @@ body {
                 <td>
                     <table class="inner-table" cellspacing="0" cellpadding="0">
                         <tr>
-                            <td width="56%">Uang Makan / {{ $slip->present_days }} Hari</td>
-                            <td width="4%">:</td>
-                            <td width="40%" class="value-italic">{{ format_rupiah($slip->meal_total) }}</td>
+                            <td class="col-label">Uang Makan / {{ $slip->present_days }} Hari</td>
+                            <td class="col-colon">:</td>
+                            <td class="value-italic">{{ format_rupiah($slip->meal_total) }}</td>
                         </tr>
                     </table>
                 </td>
@@ -404,9 +421,9 @@ body {
                     {{-- Lembur (modul Lembur) tepat di bawah Uang Makan --}}
                     <table class="inner-table" cellspacing="0" cellpadding="0">
                         <tr>
-                            <td width="56%">Lembur</td>
-                            <td width="4%">:</td>
-                            <td width="40%" class="value-italic">{{ format_rupiah($slip->overtime_total ?? 0) }}</td>
+                            <td class="col-label">Lembur</td>
+                            <td class="col-colon">:</td>
+                            <td class="value-italic">{{ format_rupiah($slip->overtime_total ?? 0) }}</td>
                         </tr>
                     </table>
                 </td>

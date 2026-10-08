@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
@@ -206,14 +207,20 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
 
                 foreach ($items as $index => $item) {
                     $currentRow++;
-                    $jumlah = floatval($item['volume']) * floatval($item['harga']);
+                    // Volume kosong = item borongan: sel Volume & Satuan kosong, Jumlah = Harga
+                    $jumlah = InvoiceProyek::itemAmount($item);
                     $totalAmount += $jumlah;
 
                     $sheet->setCellValue("A{$currentRow}", $index + 1);
-                    $sheet->setCellValue("B{$currentRow}", $item['keterangan']);
-                    $fitWrappedRow($currentRow, (string) $item['keterangan'], 32, 'B');
-                    $sheet->setCellValue("C{$currentRow}", number_format($item['volume'], 2, ',', '.'));
-                    $sheet->setCellValue("D{$currentRow}", $item['satuan']);
+                    $sheet->setCellValue("B{$currentRow}", $item['keterangan'] ?? '');
+                    $fitWrappedRow($currentRow, (string) ($item['keterangan'] ?? ''), 32, 'B');
+                    // Volume ditulis sebagai teks tanpa desimal tak berguna (1 / 32,5)
+                    $sheet->setCellValueExplicit(
+                        "C{$currentRow}",
+                        InvoiceProyek::hasEmptyVolume($item) ? '' : format_angka($item['volume']),
+                        DataType::TYPE_STRING
+                    );
+                    $sheet->setCellValue("D{$currentRow}", $item['satuan'] ?? '');
                     $sheet->setCellValue("E{$currentRow}", format_rupiah($item['harga']));
                     $sheet->setCellValue("F{$currentRow}", format_rupiah($jumlah));
 

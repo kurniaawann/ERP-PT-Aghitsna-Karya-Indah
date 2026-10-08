@@ -14,11 +14,43 @@
 
     // Invoice Proyek yang ditautkan ke rekap ini. Nilai tagihan tiap invoice
     // = total item setelah diskon, sebelum PPN (sebanding dengan Total RAB).
-    $linkedInvoices = $recap->relationLoaded('invoices')
-        ? $recap->invoices
-        : $recap->invoices()->with('paymentProofs')->get();
+    $recap->loadMissing('invoices.paymentProofs');
+    $linkedInvoices = $recap->invoices;
     $recapInvoiced = (int) $linkedInvoices->sum(fn ($linkedInvoice) => $linkedInvoice->getBilledAmount());
     $recapUninvoiced = $recapTotal - $recapInvoiced;
+
+    // Rincian Terbayar (setiap bukti/baris hanya dihitung sekali):
+    // - bukti pembayaran yang diupload langsung ke rekap
+    // - pembayaran invoice tertaut, dihitung tanpa PPN (sebanding Total RAB)
+    // - uang masuk manual pada Laporan Keuangan Proyek
+    $invoicePayments = $recap->getInvoicePayments();
+    $recapDirectPaid = $recap->getDirectPaidAmount();
+    $recapInvoicePaid = (int) $invoicePayments->sum('project_amount');
+    $recapInvoicePpn = (int) $invoicePayments->sum('ppn_amount');
+    $recapIncomePaid = (int) $incomePayments->sum('income_amount');
+    $invoicePaymentsByInvoice = $invoicePayments->groupBy(fn ($payment) => $payment->invoice->invoice_number);
+
+    // Invoice lama dengan nama proyek sama yang belum ditautkan (saran saja).
+    $unlinkedCandidates = $recap->relationLoaded('unlinkedInvoiceCandidates')
+        ? $recap->getRelation('unlinkedInvoiceCandidates')
+        : collect();
+
+    // Linimasa pembayaran: bukti rekap + bukti invoice tertaut.
+    $paymentTimeline = $paymentProofs
+        ->map(fn ($proof) => (object) [
+            'proof' => $proof,
+            'invoice' => null,
+            'amount' => (int) ($proof->amount ?? 0),
+            'project_amount' => (int) ($proof->amount ?? 0),
+            'ppn_amount' => 0,
+        ])
+        ->concat($invoicePayments)
+        ->sortBy(fn ($payment) => sprintf(
+            '%010d-%06d',
+            (int) (($payment->proof->payment_date ?? $payment->proof->created_at)?->timestamp ?? 0),
+            (int) ($payment->proof->payment_stage ?? 0)
+        ))
+        ->values();
 @endphp
 
 <x-modal id="detailModal-{{ $recap->id }}" title="Detail Rekap Proyek" :hideFooter="true" size="4xl">
@@ -86,6 +118,38 @@
             </div>
         </div>
 
+        {{-- Rincian Total Terbayar --}}
+        <div class="rounded-lg border border-gray-100 p-3 mb-2 space-y-1.5">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Rincian Terbayar</p>
+            <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-600"><i class="fa-solid fa-file-invoice mr-1 text-blue-500"></i>Bukti pembayaran rekap</span>
+                <span class="font-semibold text-gray-900">Rp {{ number_format($recapDirectPaid, 0, ',', '.') }}</span>
+            </div>
+            <div class="flex justify-between items-start gap-3 text-sm">
+                <span class="text-gray-600">
+                    <i class="fa-solid fa-file-invoice-dollar mr-1 text-blue-500"></i>Pembayaran invoice tertaut
+                    <span class="block text-xs text-gray-400">Tanpa PPN agar sebanding dengan Total RAB</span>
+                </span>
+                <span class="text-right">
+                    <span class="block font-semibold text-gray-900">Rp {{ number_format($recapInvoicePaid, 0, ',', '.') }}</span>
+                    @if ($recapInvoicePpn > 0)
+                        <span class="block text-xs text-gray-400">
+                            dibayar Rp {{ number_format($recapInvoicePaid + $recapInvoicePpn, 0, ',', '.') }}
+                            (PPN Rp {{ number_format($recapInvoicePpn, 0, ',', '.') }})
+                        </span>
+                    @endif
+                </span>
+            </div>
+            <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-600"><i class="fa-solid fa-arrow-down mr-1 text-green-500"></i>Uang masuk manual (Laporan Keuangan)</span>
+                <span class="font-semibold text-gray-900">Rp {{ number_format($recapIncomePaid, 0, ',', '.') }}</span>
+            </div>
+            <div class="flex justify-between items-center text-sm border-t border-gray-100 pt-1.5">
+                <span class="font-semibold text-gray-700">Total Terbayar</span>
+                <span class="font-bold text-green-600">Rp {{ number_format($recapPaid, 0, ',', '.') }}</span>
+            </div>
+        </div>
+
         @if (auth()->user()->role === 'superadmin')
             <div class="flex justify-between items-center py-1.5 px-3 bg-blue-50 rounded-lg">
                 <span class="text-sm text-blue-700">
@@ -141,11 +205,15 @@
                             <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Kepada</th>
                             <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Nilai Tagihan</th>
                             <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Terbayar</th>
+                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Masuk ke Rekap</th>
                             <th class="py-2 pl-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach ($linkedInvoices as $linkedInvoice)
+                            @php
+                                $linkedInvoicePayments = $invoicePaymentsByInvoice->get($linkedInvoice->invoice_number, collect());
+                            @endphp
                             <tr>
                                 <td class="py-2 pr-2 font-medium whitespace-nowrap">
                                     <a href="{{ route('proyek-invoice.index', ['search' => $linkedInvoice->invoice_number]) }}"
@@ -161,6 +229,9 @@
                                 <td class="py-2 px-2 text-right text-green-600 whitespace-nowrap">
                                     Rp {{ number_format($linkedInvoice->getTotalPaidAmount(), 0, ',', '.') }}
                                 </td>
+                                <td class="py-2 px-2 text-right font-semibold text-green-600 whitespace-nowrap">
+                                    Rp {{ number_format((int) $linkedInvoicePayments->sum('project_amount'), 0, ',', '.') }}
+                                </td>
                                 <td class="py-2 pl-2 text-center">
                                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold {{ $linkedInvoice->payment_status_badge_class }}">
                                         {{ $linkedInvoice->payment_status_label }}
@@ -171,20 +242,59 @@
                     </tbody>
                     <tfoot>
                         <tr class="border-t-2 border-gray-300 font-bold">
-                            <td colspan="3" class="pt-2 pr-2 text-right text-sm text-gray-700">Total Ditagih</td>
+                            <td colspan="3" class="pt-2 pr-2 text-right text-sm text-gray-700">Total</td>
                             <td class="pt-2 px-2 text-right text-sm text-gray-900 whitespace-nowrap">
                                 Rp {{ number_format($recapInvoiced, 0, ',', '.') }}
                             </td>
-                            <td colspan="2"></td>
+                            <td class="pt-2 px-2 text-right text-sm text-green-600 whitespace-nowrap">
+                                Rp {{ number_format($recapInvoicePaid + $recapInvoicePpn, 0, ',', '.') }}
+                            </td>
+                            <td class="pt-2 px-2 text-right text-sm text-green-600 whitespace-nowrap">
+                                Rp {{ number_format($recapInvoicePaid, 0, ',', '.') }}
+                            </td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-            <p class="mt-2 text-xs text-gray-400">Nilai tagihan dihitung dari total item invoice setelah diskon (sebelum PPN).</p>
+            <p class="mt-2 text-xs text-gray-400">
+                Nilai tagihan dihitung dari total item invoice setelah diskon (sebelum PPN). Kolom
+                <strong>Terbayar</strong> adalah nominal bukti pembayaran invoice (termasuk PPN); kolom
+                <strong>Masuk ke Rekap</strong> adalah bagian nilai proyek tanpa PPN yang dihitung ke Total Terbayar rekap
+                dan ke uang masuk Laporan Keuangan Proyek.
+            </p>
         @else
             <div class="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                 <p class="text-sm text-gray-400 font-medium">Belum ada invoice proyek yang ditautkan</p>
                 <p class="text-xs text-gray-300 mt-1">Pilih rekap ini pada form tambah/edit Invoice Proyek.</p>
+            </div>
+        @endif
+
+        @if ($unlinkedCandidates->isNotEmpty())
+            {{-- Invoice lama dengan nama proyek sama yang belum ditautkan (saran, tidak dihitung) --}}
+            <div class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+                <p class="text-sm font-semibold text-yellow-800">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    {{ $unlinkedCandidates->count() }} invoice dengan nama proyek sama belum ditautkan
+                </p>
+                <p class="text-xs text-yellow-700 mt-0.5 mb-2">
+                    Pembayaran invoice berikut <strong>belum</strong> dihitung ke rekap ini. Bila memang milik proyek ini,
+                    pilih rekap ini pada form Edit Invoice Proyek.
+                </p>
+                <ul class="space-y-1">
+                    @foreach ($unlinkedCandidates as $candidate)
+                        <li class="flex items-center justify-between gap-3 text-sm">
+                            <a href="{{ route('proyek-invoice.index', ['search' => $candidate->invoice_number]) }}"
+                                class="text-primary hover:underline font-medium" title="Buka di menu Invoice">
+                                {{ $candidate->invoice_number }}
+                            </a>
+                            <span class="text-xs text-gray-600 whitespace-nowrap">
+                                Tagihan Rp {{ number_format($candidate->getBilledAmount(), 0, ',', '.') }}
+                                &middot; Terbayar Rp {{ number_format($candidate->getTotalPaidAmount(), 0, ',', '.') }}
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
             </div>
         @endif
     </div>
@@ -221,11 +331,10 @@
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Pembayaran Bertahap</h3>
 
-        @if ($paymentProofs->isNotEmpty())
+        @if ($paymentTimeline->isNotEmpty())
             @php
-                $sortedProofs = $paymentProofs
-                    ->sortBy(fn ($p) => sprintf('%06d', (int) ($p->payment_stage ?? 999999)))
-                    ->values();
+                // Bukti rekap + bukti invoice tertaut, urut tanggal bayar.
+                $sortedProofs = $paymentTimeline;
             @endphp
 
             <div class="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
@@ -247,14 +356,18 @@
                 <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200"></div>
 
                 <div class="space-y-0">
-                    @foreach ($sortedProofs as $proofIndex => $proof)
+                    @foreach ($sortedProofs as $proofIndex => $payment)
                         @php
+                            $proof = $payment->proof;
                             $stageNumber = $proofIndex + 1;
                             $isLast = $proofIndex === $sortedProofs->count() - 1;
-                            $proofAmount = (int) ($proof->amount ?? 0);
+                            // Nominal yang dihitung ke rekap (bukti invoice: tanpa PPN).
+                            $proofAmount = (int) $payment->project_amount;
                             $proofDate = $proof->payment_date ?? $proof->created_at;
                             $proofDateLabel = $proofDate ? $proofDate->format('d M Y') : '-';
                             $isInstallmentPaid = $proofAmount > 0;
+                            $stageLabel = ($payment->invoice ? 'Invoice ' . $payment->invoice->invoice_number . ' — ' : '')
+                                . 'Pembayaran ke-' . ($proof->payment_stage ?? $stageNumber);
                         @endphp
                         <div class="relative flex items-start gap-4 pb-6">
                             <div class="relative z-10 flex-shrink-0 w-[30px] h-[30px] rounded-full flex items-center justify-center text-xs font-bold
@@ -268,12 +381,17 @@
                             <div class="flex-1 min-w-0 pt-0.5">
                                 <div class="flex items-center justify-between">
                                     <p class="text-sm font-semibold {{ $isInstallmentPaid ? 'text-gray-900' : 'text-gray-500' }}">
-                                        Pembayaran ke-{{ $proof->payment_stage ?? $stageNumber }}
+                                        {{ $stageLabel }}
                                     </p>
                                     <span class="text-sm font-semibold {{ $isInstallmentPaid ? 'text-green-600' : 'text-gray-400' }}">
                                         Rp {{ number_format($proofAmount, 0, ',', '.') }}
                                     </span>
                                 </div>
+                                @if ($payment->ppn_amount > 0)
+                                    <p class="text-xs text-gray-400 text-right">
+                                        dibayar Rp {{ number_format($payment->amount, 0, ',', '.') }}, PPN Rp {{ number_format($payment->ppn_amount, 0, ',', '.') }} tidak dihitung
+                                    </p>
+                                @endif
                                 <div class="flex items-center justify-between mt-0.5">
                                     <p class="text-xs text-gray-400">{{ $proofDateLabel }}</p>
                                     @if ($isInstallmentPaid)
@@ -289,7 +407,7 @@
                                 @if (!empty($proof->file_path))
                                     {{-- Bukti dibuka di modal pratinjau (tanpa tab baru) --}}
                                     <a href="{{ asset('storage/' . $proof->file_path) }}" title="{{ $proof->file_name }}"
-                                        onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti Pembayaran ke-' . ($proof->payment_stage ?? $stageNumber)), downloadName: @js($proof->file_name) }); }"
+                                        onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti ' . $stageLabel), downloadName: @js($proof->file_name) }); }"
                                         class="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline">
                                         <i class="fa-solid fa-paperclip"></i> Lihat Bukti
                                     </a>
@@ -312,7 +430,11 @@
 
     {{-- Card E: Bukti Pembayaran --}}
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Bukti Pembayaran</h3>
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-1">Bukti Pembayaran Rekap</h3>
+        <p class="text-xs text-gray-400 mb-3">
+            Bukti yang diupload langsung ke rekap ini. Pembayaran lewat invoice tertaut sudah otomatis terhitung
+            (lihat Pembayaran Bertahap) — jangan diupload ulang di rekap agar tidak terhitung dua kali.
+        </p>
 
         @if ($paymentProofs->isNotEmpty())
             <div class="space-y-2">
@@ -352,7 +474,7 @@
     {{-- Card E2: Uang Masuk (Laporan Keuangan Proyek) --}}
     <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Uang Masuk (Laporan Keuangan)</h3>
-        <p class="text-xs text-gray-400 mb-3">Pembayaran dari transaksi kategori pemasukan pada Laporan Keuangan Proyek.</p>
+        <p class="text-xs text-gray-400 mb-3">Pembayaran dari transaksi kategori pemasukan yang diinput manual pada Laporan Keuangan Proyek (baris otomatis dari bukti pembayaran tidak dihitung dua kali).</p>
 
         @if ($incomePayments->isNotEmpty())
             <div class="space-y-2">

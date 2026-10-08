@@ -8,6 +8,7 @@ use App\Http\Requests\Finance\UpdateRecapExpenseRequest;
 use App\Models\Report\ExpenseRecap;
 use App\Services\Finance\RecapExpenseService;
 use App\Services\Report\ExpenseMonthlySections;
+use App\Services\Report\ReportSignerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +32,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class RecapExpenseController extends Controller
 {
     public function __construct(
-        private RecapExpenseService $service
+        private RecapExpenseService $service,
+        private ReportSignerService $signerService
     ) {}
 
     /**
@@ -185,13 +187,15 @@ class RecapExpenseController extends Controller
      * Export rekap pengeluaran ke Excel.
      *
      * Bila data mencakup lebih dari satu bulan, satu sheet per bulan
-     * (dipecah di dalam ExpenseRecapExport).
+     * (dipecah di dalam ExpenseRecapExport). Penandatangan (signer_id) wajib
+     * untuk super admin & admin — satu blok tanda tangan di kanan.
      *
      * @param  \Illuminate\Http\Request $request
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function exportExcel(Request $request)
     {
+        $signer = $this->signerService->resolve($request);
         $expenseRecaps = $this->service->buildExportQuery($request)->get();
 
         $totals = (object) [
@@ -206,7 +210,7 @@ class RecapExpenseController extends Controller
         $filename = $this->exportFilePrefix() . date('Y-m-d') . '.xlsx';
 
         return Excel::download(
-            new ExpenseRecapExport($expenseRecaps, $month, $year, null, $totals),
+            new ExpenseRecapExport($expenseRecaps, $month, $year, null, $totals, $signer),
             $filename
         );
     }
@@ -219,13 +223,15 @@ class RecapExpenseController extends Controller
      * (khusus super admin).
      *
      * Dicetak A4 PORTRAIT untuk semua role (revisi klien); header tabel
-     * diulang di setiap halaman lanjutan.
+     * diulang di setiap halaman lanjutan. Penandatangan (signer_id) wajib
+     * untuk super admin & admin — satu blok tanda tangan di kanan.
      *
      * @param  \Illuminate\Http\Request $request
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function exportPdf(Request $request)
     {
+        $signer = $this->signerService->resolve($request);
         $expenseRecaps = $this->service->buildExportQuery($request)->get();
 
         $totals = (object) [
@@ -241,6 +247,7 @@ class RecapExpenseController extends Controller
             'totals' => $totals,
             'periodTitle' => $periodTitle,
             'monthlySections' => ExpenseMonthlySections::build($expenseRecaps),
+            'signer' => $signer,
         ])->setPaper('a4', 'portrait');
 
         $filename = $this->exportFilePrefix() . date('Y-m-d') . '.pdf';

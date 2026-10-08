@@ -7,6 +7,7 @@ use App\Models\Sdm\Executive;
 use App\Services\InputNormalizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Service layer untuk modul Nota Administrasi.
@@ -102,6 +103,8 @@ class NotaService
      * 5. Hitung grand total (items + biaya tambahan)
      * 6. Hitung PPN (khusus tipe sewa_jual)
      * 7. Simpan ke database
+     * 8. Nota buatan Super Admin otomatis membuat pengajuan reimburse draft
+     *    (NotaObserver) — disimpan dalam satu transaksi bersama nota
      *
      * @param  array<string, mixed>  $validated  Data yang sudah divalidasi dari StoreNotaRequest
      * @return Nota Model nota yang baru dibuat
@@ -126,7 +129,7 @@ class NotaService
         $totalWithPpn = $jumlahTotal + $ppnAmount;
         $penandatangan = $isProyek ? $this->resolvePenandatangan($validated) : null;
 
-        return Nota::create([
+        return DB::transaction(fn () => Nota::create([
             'id_nota' => $notaCode,
             'invoice_number' => $validated['invoice_number'] ?? null,
             'do_no' => $validated['do_no'] ?? null,
@@ -153,7 +156,7 @@ class NotaService
             'ppn_amount' => $ppnAmount,
             'total_with_ppn' => $totalWithPpn,
             'created_by' => auth()->id(),
-        ]);
+        ]));
     }
 
     /**
@@ -198,6 +201,8 @@ class NotaService
      * Memperbarui data nota yang sudah ada.
      *
      * Proses sama dengan create, tetapi memperbarui data existing.
+     * Reimburse otomatis yang tertaut ikut disinkronkan selama masih draft
+     * (NotaObserver) dalam transaksi yang sama.
      *
      * @param  Nota  $nota  Model nota yang akan diperbarui
      * @param  array<string, mixed>  $validated  Data yang sudah divalidasi dari UpdateNotaRequest
@@ -222,7 +227,7 @@ class NotaService
         $totalWithPpn = $jumlahTotal + $ppnAmount;
         $penandatangan = $isProyek ? $this->resolvePenandatangan($validated) : null;
 
-        $nota->update([
+        DB::transaction(fn () => $nota->update([
             'tipe_nota' => $tipe,
             'nama_proyek' => $validated['nama_proyek'] ?? $nota->nama_proyek,
             'location' => $location,
@@ -245,7 +250,7 @@ class NotaService
             'ppn_percentage' => $ppnPercentage,
             'ppn_amount' => $ppnAmount,
             'total_with_ppn' => $totalWithPpn,
-        ]);
+        ]));
 
         return $nota;
     }
@@ -440,6 +445,9 @@ class NotaService
 
     /**
      * Menghapus beberapa nota sekaligus (bulk delete).
+     *
+     * Reimburse otomatis tertaut yang masih draft ikut dihapus oleh
+     * NotaBuilder::delete(); yang sudah disetujui/ditolak tetap disimpan.
      *
      * @param  array  $ids  Daftar id_nota yang akan dihapus
      * @return int  Jumlah record yang dihapus

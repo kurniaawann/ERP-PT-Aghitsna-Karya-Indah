@@ -73,7 +73,8 @@ class UpdateProyekInvoiceRequest extends FormRequest
     }
 
     /**
-     * Validasi lanjutan: keunikan nomor invoice hasil edit & persentase item.
+     * Validasi lanjutan: keunikan nomor invoice hasil edit, persentase item
+     * (admin), serta volume/satuan opsional item (superadmin).
      */
     public function withValidator(Validator $validator): void
     {
@@ -94,6 +95,7 @@ class UpdateProyekInvoiceRequest extends FormRequest
 
             if (! $errors->has('items')) {
                 $this->validateItemPercentages($validator, $this->input('items'));
+                $this->validateItemVolumes($validator, $this->input('items'));
             }
         });
     }

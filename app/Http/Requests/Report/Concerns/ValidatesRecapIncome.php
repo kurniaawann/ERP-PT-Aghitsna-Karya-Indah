@@ -63,7 +63,8 @@ trait ValidatesRecapIncome
 
     /**
      * Sisa yang boleh dibayar lewat "uang masuk" Laporan Keuangan:
-     * Total RAB - DP (uang masuk RAB) - bukti pembayaran.
+     * Total RAB - DP (uang masuk RAB) - bukti pembayaran rekap
+     * - pembayaran lewat invoice proyek yang tertaut ke rekap (tanpa PPN).
      */
     protected function recapAllowedIncome(ProjectRecap $recap, ?int $submittedTotal = null): int
     {
@@ -74,7 +75,8 @@ trait ValidatesRecapIncome
         }
 
         $proofTotal = (int) max(0, $recap->paymentProofs()->sum('amount'));
+        $invoicePaid = $recap->getInvoicePaidAmount();
 
-        return max(0, $total - $recap->getDpAmount() - $proofTotal);
+        return max(0, $total - $recap->getDpAmount() - $proofTotal - $invoicePaid);
     }
 }

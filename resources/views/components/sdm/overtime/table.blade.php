@@ -51,7 +51,7 @@
 
                                 {{-- Jam Lembur --}}
                                 <td class="p-2 text-center">
-                                    {{ number_format($overtime->overtime_hours, 2) }} jam
+                                    {{ format_angka($overtime->overtime_hours) }} jam
                                 </td>
 
                                 {{-- Tarif/Jam --}}

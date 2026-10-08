@@ -16,6 +16,9 @@
                    langsung terbuka di dalam halaman (flash reimburse_preview_ids).
      - semua     : cetak PDF/Excel semua data (sesuai filter) atau hanya baris
                    yang dicentang (Export Dipilih).
+     Pengajuan otomatis: setiap Nota buatan superadmin (termasuk nota proyek
+     dari Invoice Semen) otomatis membuat reimburse draft yang tertaut
+     (kolom id_nota, badge "Dari Nota" + link pratinjau PDF nota).
      Komponen yang di-include:
      - x-filters.month-filter / year-filter / search-input : toolbar filter
      - x-buttons.print-dropdown-with-selected / add-button / delete-button : tombol aksi
@@ -71,7 +74,7 @@
                 <x-filters.year-filter name="year" :value="request('year')" responsive="custom" />
 
                 {{-- Input Pencarian --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari proyek atau kode reimburse..." responsive="custom" />
+                <x-filters.search-input :value="request('search')" placeholder="Cari proyek, kode reimburse, atau nota..." responsive="custom" />
             </form>
 
             {{-- Tombol Aksi (Kanan) --}}

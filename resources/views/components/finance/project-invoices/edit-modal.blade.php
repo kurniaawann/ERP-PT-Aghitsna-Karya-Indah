@@ -126,20 +126,18 @@
                                 placeholder="Keterangan *" required
                                 oninvalid="this.setCustomValidity('Keterangan tidak boleh kosong')"
                                 oninput="this.setCustomValidity('')">
+                            {{-- Volume & satuan opsional: volume kosong → item borongan (Jumlah = Harga) --}}
                             <input type="number" step="0.01" min="0" name="items[{{ $index }}][volume]"
-                                value="{{ $item['volume'] ?? 0 }}"
+                                value="{{ \App\Models\Finance\InvoiceProyek::hasEmptyVolume($item) ? '' : (float) $item['volume'] }}"
                                 class="item-volume border border-border-strong rounded-lg p-2 w-full text-text-input"
-                                placeholder="Volume *" required
-                                oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')"
-                                oninvalid="this.setCustomValidity('Volume tidak boleh kosong')">
+                                placeholder="Volume (opsional)" title="Kosongkan bila Jumlah = Harga (borongan)"
+                                oninput="calculateRowTotalEdit(this, '{{ $invoice->invoice_number }}'); this.setCustomValidity('')">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                             <input type="text" name="items[{{ $index }}][satuan]"
                                 value="{{ $item['satuan'] ?? '' }}"
                                 class="item-satuan border border-border-strong rounded-lg p-2 w-full text-text-input"
-                                placeholder="Satuan *" required
-                                oninvalid="this.setCustomValidity('Satuan tidak boleh kosong')"
-                                oninput="this.setCustomValidity('')">
+                                placeholder="Satuan (opsional)">
                             <input type="text" inputmode="numeric" name="items[{{ $index }}][harga]"
                                 value="Rp {{ number_format($item['harga'] ?? 0, 0, ',', '.') }}"
                                 class="item-harga border border-border-strong rounded-lg p-2 w-full text-text-input"
@@ -148,7 +146,7 @@
                                 oninvalid="this.setCustomValidity('Harga tidak boleh kosong')">
                             <div class="flex items-center">
                                 <span class="item-total text-sm font-semibold text-primary">Rp
-                                    {{ number_format(($item['volume'] ?? 0) * ($item['harga'] ?? 0), 0, ',', '.') }}</span>
+                                    {{ number_format(\App\Models\Finance\InvoiceProyek::itemAmount($item), 0, ',', '.') }}</span>
                             </div>
                             <button type="button"
                                 class="remove-item-edit bg-btn-delete text-white px-2 py-2 rounded hover:bg-btn-delete-hover">

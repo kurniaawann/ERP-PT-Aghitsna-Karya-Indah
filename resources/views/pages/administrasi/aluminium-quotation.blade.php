@@ -33,6 +33,10 @@
 @section('title', 'PT Aghitsna Karya Indah - Penawaran Aluminium')
 
 @section('content')
+    {{-- Tab Super Admin (satu menu sidebar → beberapa tab, seperti Surat Menyurat) --}}
+    @if (auth()->user()->isSuperAdmin())
+        <x-administrasi.quotation-tabs active="alumunium" />
+    @endif
     {{-- ═══════════════════════════════════════════════════════════════
          HEADER: Container utama dengan background surface
          ═══════════════════════════════════════════════════════════════ --}}

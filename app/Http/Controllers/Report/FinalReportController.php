@@ -57,7 +57,10 @@ class FinalReportController extends Controller
         return view('pages.report.final-report.index', array_merge($data, [
             'allowedTabs' => $allowedTabs,
             'tab' => $tab,
-            'tabLabels' => self::TAB_LABELS,
+            // Role admin: "Laporan Pengeluaran" disebut "Kas Kantor" (revisi klien)
+            'tabLabels' => auth()->user()?->isAdmin()
+                ? array_merge(self::TAB_LABELS, ['expense' => 'Kas Kantor'])
+                : self::TAB_LABELS,
         ]));
     }
 }

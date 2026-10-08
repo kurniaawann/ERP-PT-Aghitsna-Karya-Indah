@@ -27,8 +27,9 @@
             margin-bottom: 5px;
         }
 
+        /* Nama perusahaan 12pt (revisi klien: seragam di semua invoice & penawaran) */
         .header h2 {
-            font-size: 13px;
+            font-size: 12pt;
             font-weight: normal;
             margin-bottom: 5px;
         }
@@ -113,7 +114,7 @@
 <body>
     <div class="header">
         <h1>LAPORAN REKAP INVOICE ALUMUNIUM</h1>
-        <h2>PT AGHITSNA KARYA INDAH</h2>
+        <h2>PT. AGHITSNA KARYA INDAH</h2>
         <p>Periode: <strong>{{ strtoupper($periodTitle) }}</strong></p>
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
     </div>
