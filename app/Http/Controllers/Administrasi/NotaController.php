@@ -69,7 +69,11 @@ class NotaController extends Controller
             ->orderBy('name')
             ->get();
 
-        return compact('notas', 'search', 'tipe', 'executives', 'divisions');
+        // Nota yang tanda tangannya belum lengkap pada filter aktif → "Export
+        // Semua (PDF)" meminta dilengkapi dulu (modal x-nota-sign-modal).
+        $unsignedCount = $this->notaService->countUnsigned($search, $month, $year, $tipe);
+
+        return compact('notas', 'search', 'tipe', 'executives', 'divisions', 'unsignedCount');
     }
 
     /**
@@ -124,6 +128,109 @@ class NotaController extends Controller
     }
 
     /**
+     * Nota sesuai cakupan permintaan tanda tangan: `ids[]` (nota tertentu)
+     * atau `scope=all` + filter halaman (search/month/year/tipe). Hanya nota
+     * milik user login.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Nota>
+     */
+    private function notasForSigning(Request $request)
+    {
+        if ($request->input('scope') === 'all') {
+            return $this->notaService->getAllForExport(
+                $request->input('search'),
+                $request->integer('month') ?: null,
+                $request->integer('year') ?: null,
+                $request->input('tipe')
+            );
+        }
+
+        return $this->notaService->getByIds(array_values(array_filter((array) $request->input('ids', []), 'is_string')));
+    }
+
+    /**
+     * Rincian nota yang tanda tangannya belum lengkap (Penerima / Hormat Kami)
+     * untuk modal "Lengkapi Tanda Tangan Nota" (resources/js/shared/nota-sign.js).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function unsigned(Request $request)
+    {
+        return response()->json([
+            'data' => $this->notaService->unsignedDetails($this->notasForSigning($request)),
+        ]);
+    }
+
+    /**
+     * Melengkapi tanda tangan nota sebelum download.
+     *
+     * Revisi klien (Super Admin & Admin): nota punya DUA tanda tangan seperti
+     * di PDF — Penerima/Tanda Terima dan Hormat Kami (petinggi). Keduanya
+     * opsional saat nota dibuat, tetapi WAJIB lengkap sebelum nota di-download.
+     * Dipanggil modal dari tombol PDF, Export Dipilih, atau Export Semua —
+     * lalu pratinjau/download dibuka.
+     *
+     * Input per nota: signatures[id_nota][penerima|petinggi_id|divisi] — hanya
+     * bagian yang masih kosong yang disimpan.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sign(Request $request)
+    {
+        $validated = $request->validate([
+            'signatures' => 'required|array',
+            'signatures.*.penerima' => 'nullable|string|max:255',
+            'signatures.*.petinggi_id' => 'nullable|integer',
+            'signatures.*.divisi' => 'nullable|string|max:100',
+            'ids' => 'nullable|array',
+            'ids.*' => 'string',
+            'scope' => 'nullable|in:all',
+        ], [
+            'signatures.required' => 'Tanda tangan nota wajib diisi.',
+            'signatures.*.penerima.max' => 'Nama penerima maksimal 255 karakter.',
+        ]);
+
+        // Petinggi yang bukan milik user login diabaikan resolvePenandatangan
+        // (dianggap kosong → ditolak sebagai belum lengkap).
+        $result = $this->notaService->completeSignatures(
+            $this->notasForSigning($request),
+            $validated['signatures']
+        );
+
+        if (! empty($result['incomplete'])) {
+            return response()->json([
+                'message' => 'Tanda tangan belum lengkap untuk nota ' . implode(', ', array_unique($result['incomplete']))
+                    . '. Isi nama Penerima dan pilih Penanda Tangan (Hormat Kami).',
+            ], 422);
+        }
+
+        return response()->json([
+            'signed' => $result['signed'],
+            'message' => "{$result['signed']} nota berhasil ditandatangani.",
+        ]);
+    }
+
+    /**
+     * Tolak download bila masih ada nota (milik user login) yang tanda
+     * tangannya belum lengkap — tombol di UI selalu meminta dilengkapi dulu.
+     *
+     * @param  \Illuminate\Support\Collection<int, Nota>  $notas
+     */
+    private function ensureSigned($notas): void
+    {
+        $unsigned = $notas
+            ->filter(fn (Nota $nota) => (string) $nota->created_by === (string) auth()->id() && ! $nota->isSigned())
+            ->pluck('id_nota');
+
+        abort_if(
+            $unsigned->isNotEmpty(),
+            422,
+            'Nota ' . $unsigned->take(5)->implode(', ') . ($unsigned->count() > 5 ? ', dst.' : '')
+                . ' belum lengkap tanda tangannya (Penerima & Hormat Kami). Lengkapi terlebih dahulu sebelum download.'
+        );
+    }
+
+    /**
      * Export seluruh data nota ke PDF.
      *
      * @param  Request  $request  Request dengan parameter search (opsional)
@@ -136,6 +243,7 @@ class NotaController extends Controller
         $year = $request->integer('year') ?: null;
         $tipe = $request->input('tipe');
         $notas = $this->notaService->getAllForExport($search, $month, $year, $tipe);
+        $this->ensureSigned($notas);
 
         $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 
@@ -158,6 +266,7 @@ class NotaController extends Controller
         }
 
         $notas = $this->notaService->getByIds($ids);
+        $this->ensureSigned($notas);
 
         $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 
@@ -183,6 +292,8 @@ class NotaController extends Controller
         $nota = Nota::findOrFail($id);
 
         $notas = collect([$nota]);
+        $this->ensureSigned($notas);
+
         $pdf = Pdf::loadView('exports.administrasi.nota-pdf', compact('notas'));
 
         $safeId = str_replace(['/', '\\'], '-', $nota->id_nota);

@@ -34,6 +34,9 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Kasbon')
 
 @section('content')
+    @if (auth()->user()->isAdmin())
+        <x-sdm.allowance-tabs active="kasbon" />
+    @endif
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
         {{-- ============================================================
              SECTION: Header

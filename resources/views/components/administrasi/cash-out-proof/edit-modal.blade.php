@@ -22,7 +22,7 @@
 <x-modal id="editModal-{{ $cashOut->bkk_no }}" title="Edit Bukti Kas Keluar"
     action="{{ route('cash-out-proof.update', $cashOut->bkk_no) }}" method="PUT" buttonText="Update">
 
-    {{-- Options petinggi (dari modul Data Petinggi) untuk dropdown
+    {{-- Options petinggi (dari modul Data Penandatangan) untuk dropdown
          Direktur/Manager, Kabag Keuangan, & Diterima Oleh. Nilai yang
          dikirim adalah ID petinggi; disimpan sebagai snapshot signatures.
          Untuk data lama tanpa snapshot, nilai saat ini (nama) dicocokkan
@@ -123,28 +123,28 @@
             placeholder="Masukkan keterangan (opsional)">{{ $cashOut->description }}</textarea>
     </div>
 
-    {{-- Field: Direktur / Manager (dari Data Petinggi, label berubah sesuai tipe template) --}}
+    {{-- Field: Direktur / Manager (dari Data Penandatangan, label berubah sesuai tipe template) --}}
     <div class="mb-3">
         <x-forms.searchable-select name="signatures[direktur]" id="editDirector-{{ $cashOut->bkk_no }}"
             label="{{ $cashOut->template_type == 'hollow' ? 'Manager' : 'Direktur' }}"
-            placeholder="Cari petinggi..." :options="$executiveOptions"
+            placeholder="Cari penanda tangan..." :options="$executiveOptions"
             :selected="$selectedDirektur" />
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
 
-    {{-- Field: Kabag Keuangan (dari Data Petinggi) --}}
+    {{-- Field: Kabag Keuangan (dari Data Penandatangan) --}}
     <div class="mb-3">
         <x-forms.searchable-select name="signatures[kabag_keuangan]" id="editFinanceHead-{{ $cashOut->bkk_no }}"
-            label="Kabag Keuangan" placeholder="Cari petinggi..." :options="$executiveOptions"
+            label="Kabag Keuangan" placeholder="Cari penanda tangan..." :options="$executiveOptions"
             :selected="$selectedFinanceHead" />
         <small class="text-gray-500 text-xs">Kosongkan untuk menggunakan nama default</small>
     </div>
 
-    {{-- Field: Diterima Oleh (dari Data Petinggi) --}}
+    {{-- Field: Diterima Oleh (dari Data Penandatangan) --}}
     <div class="mb-3">
         <x-forms.searchable-select name="signatures[diterima_oleh]" id="editReceivedBy-{{ $cashOut->bkk_no }}"
-            label="Diterima Oleh" placeholder="Cari petinggi..." :options="$executiveOptions"
+            label="Diterima Oleh" placeholder="Cari penanda tangan..." :options="$executiveOptions"
             :selected="$selectedReceivedBy" />
-        <small class="text-gray-500 text-xs">Pilih petinggi yang menerima uang (opsional)</small>
+        <small class="text-gray-500 text-xs">Pilih penanda tangan yang menerima uang (opsional)</small>
     </div>
 </x-modal>

@@ -417,7 +417,9 @@ function setButtonLoading(submitBtn, loading, loadingText = 'Menyimpan...') {
  *
  * Alur:
  * 1. Baca route print terpilih dari hidden input #nota-print-selected-route.
- * 2. Delegasikan proses ke sharedPrintSelected() (dari shared/print.js)
+ * 2. Nota terpilih tanpa penandatangan (checkbox data-unsigned) → modal
+ *    Tandatangani Nota dulu (wajib sebelum download).
+ * 3. Delegasikan proses ke sharedPrintSelected() (dari shared/print.js)
  *    yang menangani pengumpulan checkbox, request AJAX, dan download PDF.
  *
  * @param {HTMLButtonElement} btn - Tombol yang diklik
@@ -428,6 +430,24 @@ function printSelected(btn) {
     var route = printRoute ? printRoute.value : '';
 
     if (!route) return false;
+
+    // Nota terpilih yang belum punya penandatangan wajib ditandatangani dulu
+    // (modal Tandatangani Nota, shared/nota-sign.js) sebelum pratinjau/download.
+    var unsigned = Array.prototype.map.call(
+        document.querySelectorAll('input[name="ids[]"][data-unsigned]:checked'),
+        function (checkbox) { return checkbox.value; }
+    );
+
+    if (unsigned.length > 0 && typeof window.requireNotaSignature === 'function') {
+        var dropdown = btn ? btn.closest('#printDropdownMenu') : null;
+        if (dropdown) dropdown.classList.add('hidden');
+
+        window.requireNotaSignature({
+            ids: unsigned,
+            onSigned: function () { sharedPrintSelected(route, btn); }
+        });
+        return true;
+    }
 
     return sharedPrintSelected(route, btn);
 }

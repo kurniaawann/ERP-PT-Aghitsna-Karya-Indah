@@ -10,7 +10,8 @@
      - Bawah kiri: rekening pembayaran + catatan
      - Bawah kanan: rincian Sewa/Jual, Ongkir, Bongkar, Lembur, Uang Jaminan,
        PPN (bila ada) & Jumlah -- kolom nilai sejajar dengan kolom Jumlah tabel
-     - Tanda tangan: Penerima & Hormat Kami
+     - Tanda tangan: Penerima & Hormat Kami (penandatangan + divisi; wajib
+       dipilih sebelum download — NotaController::ensureSigned)
      - Nominal ditulis "Rp. 50.000" via helper format_rupiah()
 
      Style bersama ada di nota-pdf.blade.php (scope .nota); style khusus
@@ -236,6 +237,9 @@
     </table>
 
     <!-- TANDA TANGAN -->
+    @php
+        $penandatangan = $nota->penandatangan ?? [];
+    @endphp
     <table class="sign">
         <tr>
             <td class="sign-col">Penerima,</td>
@@ -245,12 +249,22 @@
         <tr>
             <td class="sign-col sign-space"></td>
             <td class="sign-gap"></td>
-            <td class="sign-col sign-space"></td>
+            <td class="sign-col sign-space">
+                @if (!empty($penandatangan['signature_image']))
+                    <img src="{{ storage_path('app/public/' . $penandatangan['signature_image']) }}"
+                        alt="Tanda Tangan" class="sign-image">
+                @endif
+            </td>
         </tr>
         <tr>
             <td class="sign-col"><span class="sign-name">{{ $nota->penerima ?: "\u{00A0}" }}</span></td>
             <td class="sign-gap"></td>
-            <td class="sign-col"><span class="sign-name">&nbsp;</span></td>
+            <td class="sign-col">
+                <span class="sign-name">{{ ($penandatangan['name'] ?? null) ?: "\u{00A0}" }}</span>
+                @if (!empty($penandatangan['divisi']))
+                    <div>{{ $penandatangan['divisi'] }}</div>
+                @endif
+            </td>
         </tr>
     </table>
 

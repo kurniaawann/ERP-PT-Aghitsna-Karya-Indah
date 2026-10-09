@@ -8,9 +8,10 @@ use App\Services\Finance\ReimburseService;
 /**
  * Observer untuk model Nota (revisi klien: Nota → Reimbursement otomatis).
  *
- * - created: nota buatan Super Admin (input manual Surat Menyurat maupun
- *            nota proyek otomatis dari Invoice Semen) membuat satu pengajuan
- *            reimburse draft yang tertaut ke nota.
+ * - created: nota proyek otomatis dari Invoice Semen (buatan Super Admin)
+ *            membuat satu pengajuan reimburse draft yang tertaut ke nota.
+ *            Nota dari "Tambah Nota" TIDAK otomatis masuk reimbursement —
+ *            dipilih manual lewat "Ambil dari Nota" di modal Tambah Reimburse.
  * - updated: reimburse tertaut yang masih draft disinkronkan (tanggal,
  *            proyek, keterangan, total). Disetujui/ditolak tidak diubah.
  *

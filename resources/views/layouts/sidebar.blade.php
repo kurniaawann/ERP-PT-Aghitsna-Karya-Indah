@@ -342,6 +342,20 @@
                         </a>
                     </li>
 
+                    @if ($isAdmin)
+                    {{-- Admin: satu menu → halaman bertab Lembur | Kasbon (x-sdm.allowance-tabs) --}}
+                    <li>
+                        <a href="{{ url('/overtime') }}"
+                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
+                                {{ request()->is('overtime*') || request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
+                            <i
+                                class="fas fa-money-bill-wave w-4
+                                {{ request()->is('overtime*') || request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
+                            </i>
+                            <span class="ml-3 text-sm font-medium">Tunjangan & Potongan</span>
+                        </a>
+                    </li>
+                    @else
                     <!-- Tunjangan dan Potongan Dropdown -->
                     <li>
                         <button onclick="toggleDropdown('tunjanganDropdown')"
@@ -381,6 +395,7 @@
                             </li>
                         </ul>
                     </li>
+                    @endif
                 </ul>
             </li>
             @endif

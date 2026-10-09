@@ -1,9 +1,36 @@
 {{-- ═══════════════════════════════════════════════════════════════════════════
      KOMPONEN MODAL TAMBAH REIMBURSE
-     Formulir untuk membuat pengajuan reimbursement baru (Admin only).
+     Formulir untuk membuat pengajuan reimbursement baru (Super Admin only).
+
+     "Ambil dari Nota" (opsional): pilih nota yang belum punya pengajuan →
+     tanggal, nama proyek, keterangan belanja, total, dan catatan terisi
+     otomatis (masih bisa diubah) dan pengajuan tertaut ke nota (id_nota).
+     Data opsi: $notaOptions (ReimburseService::getNotaOptionsForReimburse),
+     JS: initNotaPicker() di resources/js/pages/finance/reimburse/index.js.
      ═══════════════════════════════════════════════════════════════════════════ --}}
 <x-modal id="addModal" title="Tambah Reimburse" action="{{ route('reimburse.store') }}" method="POST" buttonText="Simpan"
     enctype="multipart/form-data">
+
+    {{-- Field: Ambil dari Nota (opsional) --}}
+    <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
+        @if (!empty($notaOptions))
+            <x-forms.searchable-select name="id_nota" id="addModal-id_nota" label="Ambil dari Nota (Opsional)"
+                placeholder="Cari nomor nota / proyek..."
+                :options="collect($notaOptions)->map(fn($o) => ['value' => $o['value'], 'label' => $o['label']])->values()" />
+            <script type="application/json" id="reimburse-nota-options">@json($notaOptions)</script>
+            <div id="reimburse-nota-picked" class="hidden -mt-1 flex items-center justify-between gap-2 text-xs text-success">
+                <span><i class="fa-solid fa-circle-check mr-1"></i><span class="reimburse-nota-picked-text"></span></span>
+                <button type="button" id="reimburse-nota-clear" class="text-error hover:underline">Batal ambil dari nota</button>
+            </div>
+            <p class="text-xs text-text-secondary mt-1">Pilih nota → tanggal, nama proyek, keterangan belanja, total, dan catatan
+                terisi otomatis (masih bisa diubah). Nota dari "Tambah Nota" tidak otomatis masuk reimbursement — pilih di
+                sini. Hanya nota yang belum punya pengajuan reimbursement.</p>
+        @else
+            <p class="text-sm text-text-primary font-medium mb-1"><i class="fa-solid fa-file-invoice mr-1 text-primary"></i> Ambil dari Nota</p>
+            <p class="text-xs text-text-secondary">Belum ada nota yang bisa diambil — semua nota sudah memiliki pengajuan
+                reimbursement. Isi form di bawah secara manual.</p>
+        @endif
+    </div>
 
     {{-- Field: Tanggal --}}
     <div class="mb-3">

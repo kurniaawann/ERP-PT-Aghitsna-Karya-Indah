@@ -26,9 +26,10 @@ use App\Models\User;
  * - Perhitungan PPN
  * - Total keseluruhan
  *
- * Nota buatan Super Admin otomatis membuat pengajuan Reimbursement draft
- * (NotaObserver); penghapusan nota ikut membersihkan draft tersebut
- * (NotaBuilder).
+ * Nota proyek dari Invoice Semen (Super Admin) otomatis membuat pengajuan
+ * Reimbursement draft (NotaObserver); nota dari "Tambah Nota" tidak — dipilih
+ * manual lewat "Ambil dari Nota" di Reimbursement. Penghapusan nota ikut
+ * membersihkan draft tertaut (NotaBuilder).
  */
 class Nota extends Model
 {
@@ -170,6 +171,42 @@ class Nota extends Model
         }
 
         return sprintf('NTP-%03d/AKI/%s', $nextNumber, $year);
+    }
+
+    /**
+     * Nota proyek yang dibuat otomatis dari Invoice Semen (DO Semen) — selalu
+     * menyimpan nomor invoice semen. Nota dari "Tambah Nota" tidak.
+     */
+    public function isFromSemenInvoice(): bool
+    {
+        return trim((string) $this->invoice_number) !== '';
+    }
+
+    /**
+     * Apakah blok "Hormat Kami" sudah punya penandatangan (petinggi).
+     */
+    public function hasSigner(): bool
+    {
+        return trim((string) ($this->penandatangan['name'] ?? '')) !== '';
+    }
+
+    /**
+     * Apakah blok "Penerima" (sewa/jual) / "Tanda Terima" (proyek) sudah
+     * berisi nama penerima.
+     */
+    public function hasReceiver(): bool
+    {
+        return trim((string) $this->penerima) !== '';
+    }
+
+    /**
+     * Nota sudah lengkap kedua tanda tangannya (Penerima & Hormat Kami),
+     * sesuai dua blok tanda tangan di PDF. Nota yang belum lengkap wajib
+     * dilengkapi dulu sebelum di-download (NotaController::ensureSigned).
+     */
+    public function isSigned(): bool
+    {
+        return $this->hasSigner() && $this->hasReceiver();
     }
 
     /**

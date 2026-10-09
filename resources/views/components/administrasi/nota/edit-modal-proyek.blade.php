@@ -186,35 +186,7 @@
             </div>
         </div>
 
-        {{-- ═══════════════════════════════════════════════════════
-             FIELD: Tanda Terima (Penerima)
-             ═══════════════════════════════════════════════════════ --}}
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Tanda Terima</label>
-            <input type="text" name="penerima"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="Nama yang menerima" maxlength="255" value="{{ $nota->penerima }}">
-        </div>
-
-    {{-- ═══════════════════════════════════════════════════════
-         FIELD: Penanda Tangan (Petinggi) & Divisi
-         ═══════════════════════════════════════════════════════ --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-        <x-forms.searchable-select
-            name="petinggi_id"
-            id="editModal-{{ $nota->id_nota }}-petinggi_id"
-            label="Penanda Tangan (Petinggi)"
-            placeholder="Cari petinggi..."
-            :options="$executives->map(fn($e) => ['value' => (string) $e->id, 'label' => $e->name . ($e->position ? ' — ' . $e->position : '')])->values()"
-            selected="{{ $nota->penandatangan['id'] ?? '' }}" />
-
-        <x-forms.searchable-select
-            name="divisi"
-            id="editModal-{{ $nota->id_nota }}-divisi"
-            label="Divisi"
-            placeholder="Cari divisi..."
-            :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
-            selected="{{ $nota->penandatangan['divisi'] ?? '' }}" />
-    </div>
+        {{-- Tanda Tangan Nota: Tanda Terima (kiri) & Hormat Kami (kanan) --}}
+        @include('components.administrasi.nota.signature-fields', ['idPrefix' => 'editModal-' . $nota->id_nota, 'receiverLabel' => 'Tanda Terima', 'nota' => $nota])
 
     </x-modal>

@@ -93,6 +93,11 @@
                             'month'  => request('month'),
                             'year'   => request('year'),
                         ]"
+                        :selectedQueryParams="[
+                            'search' => request('search'),
+                            'month'  => request('month'),
+                            'year'   => request('year'),
+                        ]"
                         responsive="custom" />
 
                     {{-- Tombol Tambah (Super Admin only) --}}

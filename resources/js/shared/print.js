@@ -42,9 +42,11 @@ function getCsrfToken() {
  * @param  {HTMLElement} [triggerBtn]      Tombol pemicu (menutup dropdown bila ada).
  * @param  {string}      [checkboxSelector] Selector checkbox yang dipakai untuk mengumpulkan ids[].
  * @param  {string}      [emptyMessage]    Pesan alert bila tidak ada data terpilih.
+ * @param  {Object}      [extraParams]     Parameter tambahan ikut dikirim (mis. filter
+ *                                         halaman untuk teks "x dari y yang diajukan").
  * @returns {boolean}  true bila pratinjau dibuka, false bila dibatalkan.
  */
-function sharedPrintSelected(route, triggerBtn = null, checkboxSelector = 'input[name="ids[]"]:checked', emptyMessage = 'Tidak ada data yang dipilih!') {
+function sharedPrintSelected(route, triggerBtn = null, checkboxSelector = 'input[name="ids[]"]:checked', emptyMessage = 'Tidak ada data yang dipilih!', extraParams = {}) {
     const checkedCheckboxes = document.querySelectorAll(checkboxSelector);
 
     if (checkedCheckboxes.length === 0) {
@@ -54,6 +56,12 @@ function sharedPrintSelected(route, triggerBtn = null, checkboxSelector = 'input
 
     const formData = new FormData();
     formData.append('_token', getCsrfToken());
+
+    Object.entries(extraParams || {}).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+            formData.append(key, value);
+        }
+    });
 
     Array.from(checkedCheckboxes).forEach(checkbox => {
         formData.append('ids[]', checkbox.value);

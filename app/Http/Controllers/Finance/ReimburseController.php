@@ -41,6 +41,7 @@ class ReimburseController extends Controller
 
         $reimburses = $this->reimburseService
             ->buildFilteredQuery($request, 'created_at')
+            ->with('nota:id_nota,penerima,penandatangan,created_by')
             ->paginate(15)
             ->appends($request->query());
 
@@ -49,7 +50,12 @@ class ReimburseController extends Controller
         $month = $request->input('month');
         $year = $request->input('year');
 
-        return view('pages.finance.reimburse', compact('reimburses', 'search', 'status', 'month', 'year'));
+        // "Ambil dari Nota" pada modal Tambah (Super Admin): nota tanpa reimburse
+        $notaOptions = $request->user()?->isSuperAdmin()
+            ? $this->reimburseService->getNotaOptionsForReimburse()
+            : [];
+
+        return view('pages.finance.reimburse', compact('reimburses', 'search', 'status', 'month', 'year', 'notaOptions'));
     }
 
     /**
@@ -187,6 +193,7 @@ class ReimburseController extends Controller
     {
         $reimburses = $this->reimburseService->getExportData($request);
         $summary = $this->reimburseService->getStatusSummary($reimburses);
+        $submission = $this->reimburseService->getSubmissionSummary($request);
 
         $pdf = Pdf::loadView('exports.finance.reimburse-pdf', [
             'reimburses'     => $reimburses,
@@ -194,8 +201,9 @@ class ReimburseController extends Controller
             'draftCount'     => $summary['draft_count'],
             'approvedCount'  => $summary['approved_count'],
             'rejectedCount'  => $summary['rejected_count'],
+            'submission'     => $submission,
             'status'         => $request->input('status'),
-            'statusText'     => $this->reimburseService->buildStatusText($request, $reimburses),
+            'statusText'     => $this->reimburseService->buildStatusText($request, $reimburses, $submission),
         ]);
 
         $pdf->setPaper('a4', 'landscape');

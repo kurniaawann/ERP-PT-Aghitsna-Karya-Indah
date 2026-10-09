@@ -155,9 +155,9 @@ class UpdateProjectFinancialReportRequest extends FormRequest
             'items.*.proof_file.max' => 'File bukti maksimal 5 MB!',
             'items.*.proof_file.mimes' => 'Format file bukti tidak didukung (khusus gambar JPG, PNG, GIF, WEBP, BMP)!',
             'signatures.array' => 'Format penanda tangan tidak valid!',
-            'signatures.mandor.exists' => 'Petinggi Mandor yang dipilih tidak ditemukan!',
-            'signatures.kabag_keuangan.exists' => 'Petinggi Kabag Keuangan yang dipilih tidak ditemukan!',
-            'signatures.direktur.exists' => 'Petinggi Direktur yang dipilih tidak ditemukan!',
+            'signatures.mandor.exists' => 'Penanda tangan Mandor yang dipilih tidak ditemukan!',
+            'signatures.kabag_keuangan.exists' => 'Penanda tangan Kabag Keuangan yang dipilih tidak ditemukan!',
+            'signatures.direktur.exists' => 'Penanda tangan Direktur yang dipilih tidak ditemukan!',
         ];
     }
 }

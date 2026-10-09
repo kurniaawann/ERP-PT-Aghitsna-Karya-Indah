@@ -190,9 +190,13 @@
     {{-- ─── Ringkasan Status ────────────────────────────────────────────────── --}}
     <div class="summary-section">
         <h3>Ringkasan:</h3>
-        <p>Total Data: {{ $reimburses->count() }} reimburse</p>
+        <p>Total Data Dicetak: {{ $reimburses->count() }} reimburse</p>
         <p>Total Amount: {{ format_rupiah($totalAmount) }}</p>
-        <p>Draft: {{ $draftCount }} | Disetujui: {{ $approvedCount }} | Ditolak: {{ $rejectedCount }}</p>
+        <p>Data Dicetak &mdash; Draft: {{ $draftCount }} | Disetujui: {{ $approvedCount }} | Ditolak: {{ $rejectedCount }}</p>
+        @isset($submission)
+            {{-- Seluruh pengajuan sesuai filter (pembanding "x dari y yang diajukan") --}}
+            <p>Seluruh Pengajuan ({{ $submission['submitted'] }}) &mdash; Draft: {{ $submission['draft_count'] }} | Disetujui: {{ $submission['approved_count'] }} | Ditolak: {{ $submission['rejected_count'] }}</p>
+        @endisset
     </div>
 
     {{-- ─── Footer ───────────────────────────────────────────────────────────── --}}

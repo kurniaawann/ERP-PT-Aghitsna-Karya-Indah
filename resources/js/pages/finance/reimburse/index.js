@@ -198,6 +198,76 @@ function initAmountFormatting() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// AMBIL DARI NOTA (Modal Tambah, Super Admin)
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * "Ambil dari Nota": saat nota dipilih pada searchable-select #addModal-id_nota,
+ * field form Tambah Reimburse diisi otomatis dari data nota (tanggal, nama
+ * proyek, keterangan belanja, total, catatan). Data opsi dibaca dari
+ * <script type="application/json" id="reimburse-nota-options">.
+ * Tombol "Batal ambil dari nota" melepas tautan (id_nota kosong) tanpa
+ * menghapus isian yang sudah terisi.
+ */
+function initNotaPicker() {
+    var hidden = document.getElementById('addModal-id_nota');
+    var dataEl = document.getElementById('reimburse-nota-options');
+    if (!hidden || !dataEl) return;
+
+    var options = {};
+    try {
+        JSON.parse(dataEl.textContent || '[]').forEach(function (option) {
+            options[option.value] = option;
+        });
+    } catch (e) {
+        return;
+    }
+
+    var form = hidden.closest('form');
+    var picked = document.getElementById('reimburse-nota-picked');
+    var pickedText = picked ? picked.querySelector('.reimburse-nota-picked-text') : null;
+
+    function setField(name, value) {
+        var field = form ? form.querySelector('[name="' + name + '"]') : null;
+        if (!field) return;
+        field.value = value == null ? '' : value;
+        field.setCustomValidity('');
+    }
+
+    hidden.addEventListener('change', function () {
+        var nota = options[this.value];
+
+        if (!nota) {
+            if (picked) picked.classList.add('hidden');
+            return;
+        }
+
+        setField('date', nota.date);
+        setField('project_name', nota.project_name);
+        setField('expense_description', nota.expense_description);
+        setField('total_amount', nota.total_amount);
+        setField('notes', nota.notes);
+
+        var amount = form.querySelector('[name="total_amount"]');
+        if (amount && typeof formatCurrencyInput === 'function') formatCurrencyInput(amount);
+
+        if (pickedText) pickedText.textContent = 'Field diisi dari Nota ' + nota.value + ' — masih bisa diubah.';
+        if (picked) picked.classList.remove('hidden');
+    });
+
+    var clearBtn = document.getElementById('reimburse-nota-clear');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            hidden.value = '';
+            var wrapper = hidden.closest('.searchable-select-wrapper');
+            var search = wrapper ? wrapper.querySelector('.searchable-select-input') : null;
+            if (search) search.value = '';
+            if (picked) picked.classList.add('hidden');
+        });
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // UPDATE INFO TERPILIH (Super Admin)
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -459,6 +529,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Format input Total Amount menjadi format Rupiah
     initAmountFormatting();
+    initNotaPicker();
 
     // Handler submit form
     initAddFormSubmit();

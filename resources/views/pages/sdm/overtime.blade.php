@@ -30,6 +30,9 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Lembur')
 
 @section('content')
+    @if (auth()->user()->isAdmin())
+        <x-sdm.allowance-tabs active="overtime" />
+    @endif
     {{-- ============================================================
          SECTION: Header
          Judul halaman + toolbar aksi.

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Finance;
 
 use App\Services\InputNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Form Request untuk validasi pembuatan Reimburse baru.
@@ -39,6 +40,13 @@ class StoreReimburseRequest extends FormRequest
             'total_amount'        => 'required|integer|min:0',
             'notes'               => 'nullable|string',
             'proof_file'          => 'nullable|file|mimes:jpeg,jpg,png,webp,gif,bmp,pdf|max:5120',
+            // "Ambil dari Nota": nota milik user login yang belum punya reimburse
+            'id_nota'             => [
+                'nullable',
+                'string',
+                Rule::exists('notas_administrasi', 'id_nota')->where('created_by', auth()->id()),
+                Rule::unique('reimburses', 'id_nota'),
+            ],
         ];
     }
 
@@ -74,6 +82,8 @@ class StoreReimburseRequest extends FormRequest
             'total_amount.min'             => 'Total amount minimal 0.',
             'proof_file.mimes'                   => 'Lampiran harus berupa file gambar (JPG, PNG, WEBP, GIF, BMP) atau PDF.',
             'proof_file.max'                     => 'Lampiran maksimal 5MB.',
+            'id_nota.exists'                     => 'Nota yang dipilih tidak ditemukan.',
+            'id_nota.unique'                     => 'Nota yang dipilih sudah memiliki pengajuan reimbursement.',
         ];
     }
 }

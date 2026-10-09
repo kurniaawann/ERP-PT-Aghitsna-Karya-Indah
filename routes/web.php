@@ -447,6 +447,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/nota-administrasi', [NotaController::class, 'store'])->name('nota.administrasi.store');
         Route::put('/nota-administrasi/{nota}', [NotaController::class, 'update'])->name('nota.administrasi.update')->where('nota', '.*');
         Route::delete('/nota-administrasi/destroy-selected', [NotaController::class, 'destroySelected'])->name('nota.administrasi.destroySelected');
+        Route::post('/nota-administrasi/unsigned', [NotaController::class, 'unsigned'])->name('nota.administrasi.unsigned');
+        Route::post('/nota-administrasi/sign', [NotaController::class, 'sign'])->name('nota.administrasi.sign');
 
         // Route Nota Administrasi - Export PDF
         Route::get('/nota-administrasi/export/pdf', [NotaController::class, 'exportPdfAll'])->name('nota.administrasi.export.pdf');

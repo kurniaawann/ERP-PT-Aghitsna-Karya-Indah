@@ -103,8 +103,9 @@ class NotaService
      * 5. Hitung grand total (items + biaya tambahan)
      * 6. Hitung PPN (khusus tipe sewa_jual)
      * 7. Simpan ke database
-     * 8. Nota buatan Super Admin otomatis membuat pengajuan reimburse draft
-     *    (NotaObserver) — disimpan dalam satu transaksi bersama nota
+     * 8. Nota proyek dari Invoice Semen (Super Admin) otomatis membuat
+     *    pengajuan reimburse draft (NotaObserver) dalam satu transaksi; nota
+     *    dari "Tambah Nota" tidak (dipilih manual di Reimbursement)
      *
      * @param  array<string, mixed>  $validated  Data yang sudah divalidasi dari StoreNotaRequest
      * @return Nota Model nota yang baru dibuat
@@ -127,7 +128,7 @@ class NotaService
         $ppnPercentage = $isProyek ? 0 : InputNormalizer::normalizeDecimal($validated['ppn_percentage'] ?? self::DEFAULT_PPN_PERCENTAGE);
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
-        $penandatangan = $isProyek ? $this->resolvePenandatangan($validated) : null;
+        $penandatangan = $this->resolvePenandatangan($validated);
 
         return DB::transaction(fn () => Nota::create([
             'id_nota' => $notaCode,
@@ -225,7 +226,7 @@ class NotaService
         $ppnPercentage = $isProyek ? 0 : InputNormalizer::normalizeDecimal($validated['ppn_percentage'] ?? self::DEFAULT_PPN_PERCENTAGE);
         $ppnAmount = (int) ($jumlahTotal * ($ppnPercentage / 100));
         $totalWithPpn = $jumlahTotal + $ppnAmount;
-        $penandatangan = $isProyek ? $this->resolvePenandatangan($validated) : null;
+        $penandatangan = $this->resolvePenandatangan($validated);
 
         DB::transaction(fn () => $nota->update([
             'tipe_nota' => $tipe,
@@ -256,8 +257,124 @@ class NotaService
     }
 
     /**
+     * Jumlah nota (sesuai filter halaman) yang tanda tangannya belum lengkap
+     * (Penerima / Hormat Kami) — dipakai tombol "Export Semua (PDF)" agar
+     * meminta tanda tangan dulu.
+     */
+    public function countUnsigned(?string $search, ?int $month = null, ?int $year = null, ?string $tipe = null): int
+    {
+        return $this->getAllForExport($search, $month, $year, $tipe)
+            ->reject(fn (Nota $nota) => $nota->isSigned())
+            ->count();
+    }
+
+    /**
+     * Rincian nota yang tanda tangannya belum lengkap, untuk modal
+     * "Lengkapi Tanda Tangan Nota" — termasuk isian yang sudah ada agar
+     * ditampilkan terkunci di modal.
+     *
+     * @param  Collection<int, Nota>  $notas
+     * @return array<int, array<string, mixed>>
+     */
+    public function unsignedDetails(Collection $notas): array
+    {
+        return $notas
+            ->reject(fn (Nota $nota) => $nota->isSigned())
+            ->map(fn (Nota $nota) => [
+                'id_nota' => $nota->id_nota,
+                'tipe' => $nota->tipe_nota,
+                'kepada' => $nota->kepada,
+                'penerima' => $nota->penerima,
+                'signer_id' => $nota->penandatangan['id'] ?? null,
+                'signer_name' => $nota->penandatangan['name'] ?? null,
+                'divisi' => $nota->penandatangan['divisi'] ?? null,
+                'needs_signer' => ! $nota->hasSigner(),
+                'needs_receiver' => ! $nota->hasReceiver(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Melengkapi tanda tangan nota yang belum lengkap (revisi klien: kedua
+     * tanda tangan — Penerima/Tanda Terima & Hormat Kami — opsional saat nota
+     * dibuat, tetapi wajib sebelum di-download). Bagian yang sudah terisi
+     * tidak diubah.
+     *
+     * $signatures[id_nota] = ['penerima' => ..., 'petinggi_id' => ..., 'divisi' => ...]
+     * - Hormat Kami kosong → diisi petinggi terpilih (+ divisi).
+     * - Penerima kosong    → diisi nama penerima.
+     *
+     * Semua nota divalidasi dulu; bila masih ada yang belum lengkap tidak ada
+     * yang disimpan dan daftar id_nota-nya dikembalikan. Disimpan tanpa event
+     * model (saveQuietly) karena hanya blok tanda tangan yang berubah —
+     * reimburse draft tertaut (NotaObserver) tidak perlu disinkron.
+     *
+     * @param  Collection<int, Nota>  $notas
+     * @param  array<string, array<string, mixed>>  $signatures
+     * @return array{signed: int, incomplete: array<int, string>}
+     */
+    public function completeSignatures(Collection $notas, array $signatures): array
+    {
+        $pending = [];
+        $incomplete = [];
+
+        foreach ($notas as $nota) {
+            if ($nota->isSigned()) {
+                continue;
+            }
+
+            $input = (array) ($signatures[$nota->id_nota] ?? []);
+            $changes = [];
+
+            if (! $nota->hasSigner()) {
+                $petinggiId = (int) ($input['petinggi_id'] ?? 0);
+                $snapshot = $petinggiId > 0 ? $this->resolvePenandatangan([
+                    'petinggi_id' => $petinggiId,
+                    // Divisi yang sudah tersimpan dipertahankan bila tidak diisi
+                    'divisi' => ($input['divisi'] ?? null) ?: ($nota->penandatangan['divisi'] ?? null),
+                ]) : null;
+
+                if (empty($snapshot['name'])) {
+                    $incomplete[] = $nota->id_nota;
+
+                    continue;
+                }
+
+                $changes['penandatangan'] = $snapshot;
+            }
+
+            if (! $nota->hasReceiver()) {
+                $receiver = trim((string) ($input['penerima'] ?? ''));
+
+                if ($receiver === '') {
+                    $incomplete[] = $nota->id_nota;
+
+                    continue;
+                }
+
+                $changes['penerima'] = mb_substr($receiver, 0, 255);
+            }
+
+            $pending[] = [$nota, $changes];
+        }
+
+        if (! empty($incomplete)) {
+            return ['signed' => 0, 'incomplete' => $incomplete];
+        }
+
+        DB::transaction(function () use ($pending) {
+            foreach ($pending as [$nota, $changes]) {
+                $nota->forceFill($changes)->saveQuietly();
+            }
+        });
+
+        return ['signed' => count($pending), 'incomplete' => []];
+    }
+
+    /**
      * Membuat snapshot petinggi penanda tangan untuk blok "Hormat Kami"
-     * pada PDF nota proyek.
+     * pada PDF nota (proyek maupun sewa/jual).
      *
      * Data diambil dari tabel executives (id, name, position, signature_image)
      * milik user login, plus divisi dari tabel divisions. Hasil disimpan

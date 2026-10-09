@@ -49,6 +49,7 @@
                                 {{-- Checkbox --}}
                                 <td class="p-2 text-center">
                                     <input type="checkbox" name="ids[]" value="{{ $nota->id_nota }}"
+                                        @unless ($nota->isSigned()) data-unsigned @endunless
                                         class="w-4 h-4 accent-primary cursor-pointer">
                                 </td>
 
@@ -64,7 +65,22 @@
                                 </td>
 
                                 {{-- No. Nota --}}
-                                <td class="p-2 font-medium text-primary">{{ $nota->id_nota }}</td>
+                                <td class="p-2 font-medium text-primary">
+                                    {{ $nota->id_nota }}
+                                    {{-- Tanda tangan Penerima / Hormat Kami belum lengkap: wajib dilengkapi saat download --}}
+                                    @unless ($nota->isSigned())
+                                        @php
+                                            $missingSign = implode(' & ', array_filter([
+                                                $nota->hasReceiver() ? null : 'Penerima',
+                                                $nota->hasSigner() ? null : 'Hormat Kami',
+                                            ]));
+                                        @endphp
+                                        <div data-unsigned-badge="{{ $nota->id_nota }}"
+                                            class="mt-0.5 flex items-center gap-1 text-[11px] font-normal text-warning whitespace-nowrap">
+                                            <i class="fa-solid fa-signature"></i> TTD belum lengkap ({{ $missingSign }})
+                                        </div>
+                                    @endunless
+                                </td>
 
                                 {{-- Kepada --}}
                                 <td class="p-2">{{ $nota->kepada }}</td>
@@ -101,7 +117,10 @@
                                         </button>
 
                                         {{-- PDF --}}
-                                        <a href="{{ route('nota.administrasi.export.pdf.single', $nota->id_nota) }}"
+                                        {{-- Tanda tangan belum lengkap: data-nota-sign → modal lengkapi tanda tangan dulu --}}
+                                        <a href="{{ route('nota.administrasi.export.pdf.single', $nota->id_nota) }}" data-preview
+                                            data-preview-title="Nota {{ $nota->id_nota }}"
+                                            @unless ($nota->isSigned()) data-nota-sign="{{ $nota->id_nota }}" @endunless
                                             class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
                                             title="Print PDF">
                                             <i class="fa-solid fa-file-pdf w-3 h-3"></i>

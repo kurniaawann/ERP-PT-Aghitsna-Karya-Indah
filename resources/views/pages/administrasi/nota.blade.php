@@ -59,7 +59,9 @@
                 <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
 
 {{-- Dropdown Export PDF --}}
-                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('nota.administrasi.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'tipe' => request('tipe')]" responsive="custom" fill />
+                    <x-buttons.print-dropdown-with-selected :pdfRoute="route('nota.administrasi.export.pdf')" :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'tipe' => request('tipe')]"
+                        :pdfAttributes="$unsignedCount > 0 ? ['data-nota-sign' => 'all', 'data-preview-title' => 'Pratinjau Nota'] : []"
+                        responsive="custom" fill />
 
                     {{-- Tombol Hapus Massal --}}
                     <x-buttons.delete-button modalId="deleteModal" />
@@ -104,6 +106,9 @@
     {{-- ═══════════════════════════════════════════════════════════════
          MODAL TAMBAH: Form tambah nota baru
          ═══════════════════════════════════════════════════════════════ --}}
+    {{-- Modal lengkapi tanda tangan (Penerima & Hormat Kami) — wajib sebelum download --}}
+    <x-nota-sign-modal />
+
     @include('components.administrasi.nota.add-modal')
     @include('components.administrasi.nota.add-modal-proyek')
 

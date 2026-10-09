@@ -2,8 +2,16 @@
      - pdfRoute / excelRoute           : export semua (GET, ikut queryParams)
      - pdfSelectedRoute / excelSelectedRoute : export data terpilih (POST ids[]) via
        sharedPrintSelected → pratinjau dulu baru download. Bila pdfSelectedRoute
-       kosong, tombol "Export Dipilih" memanggil printSelected(this) milik halaman. --}}
-@props(['pdfRoute' => null, 'excelRoute' => null, 'pdfSelectedRoute' => null, 'excelSelectedRoute' => null, 'queryParams' => [], 'responsive' => 'xl', 'fill' => false])
+       kosong, tombol "Export Dipilih" memanggil printSelected(this) milik halaman.
+     - selectedQueryParams : filter halaman yang ikut dikirim saat Export Dipilih
+       (mis. reimburse: teks "Disetujui x dari y yang diajukan" tetap memakai
+       seluruh pengajuan sesuai filter sebagai pembanding).
+     - pdfAttributes : atribut tambahan pada link "Export Semua (PDF)"
+       (mis. data-nota-sign untuk nota yang wajib ditandatangani dulu). --}}
+@props(['pdfRoute' => null, 'excelRoute' => null, 'pdfSelectedRoute' => null, 'excelSelectedRoute' => null, 'queryParams' => [], 'selectedQueryParams' => [], 'pdfAttributes' => [], 'responsive' => 'xl', 'fill' => false])
+@php
+    $selectedExtra = array_filter((array) $selectedQueryParams, fn ($value) => $value !== null && $value !== '');
+@endphp
 
 @if($responsive === 'custom')
     @php
@@ -37,6 +45,7 @@
             {{-- Export All --}}
             @if ($pdfRoute)
                 <a href="{{ $pdfRoute }}?{{ http_build_query(array_filter($queryParams)) }}" data-preview
+                    {{ new \Illuminate\View\ComponentAttributeBag((array) $pdfAttributes) }}
                     class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150">
                     <i class="fa-solid fa-file-pdf text-error w-4"></i>
                     <span>Export Semua (PDF)</span>
@@ -55,7 +64,9 @@
                 <div id="printSelectedItem" class="hidden">
                     @if ($pdfSelectedRoute || $pdfRoute)
                         <button type="button"
-                            @if ($pdfSelectedRoute)
+                            @if ($pdfSelectedRoute && $selectedExtra)
+                                onclick="sharedPrintSelected(@js($pdfSelectedRoute), this, undefined, undefined, @js($selectedExtra))"
+                            @elseif ($pdfSelectedRoute)
                                 onclick="sharedPrintSelected(@js($pdfSelectedRoute), this)"
                             @else
                                 onclick="printSelected(this)"
@@ -66,7 +77,12 @@
                         </button>
                     @endif
                     @if ($excelSelectedRoute)
-                        <button type="button" onclick="sharedPrintSelected(@js($excelSelectedRoute), this)"
+                        <button type="button"
+                            @if ($selectedExtra)
+                                onclick="sharedPrintSelected(@js($excelSelectedRoute), this, undefined, undefined, @js($selectedExtra))"
+                            @else
+                                onclick="sharedPrintSelected(@js($excelSelectedRoute), this)"
+                            @endif
                             class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-150 text-left">
                             <i class="fa-solid fa-file-excel text-success w-4"></i>
                             <span>Export Dipilih (Excel)</span>

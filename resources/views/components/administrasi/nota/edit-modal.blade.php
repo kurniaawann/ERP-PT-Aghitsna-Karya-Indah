@@ -217,15 +217,8 @@
             </div>
         </div>
 
-        {{-- ═══════════════════════════════════════════════════════
-             FIELD: Penerima
-             ═══════════════════════════════════════════════════════ --}}
-        <div class="mb-3">
-            <label class="block text-text-primary mb-1">Penerima s/d</label>
-            <input type="text" name="penerima"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="Nama penerima" maxlength="255" value="{{ $nota->penerima }}">
-        </div>
+        {{-- Tanda Tangan Nota: Penerima (kiri) & Hormat Kami (kanan) --}}
+        @include('components.administrasi.nota.signature-fields', ['idPrefix' => 'editModal-' . $nota->id_nota, 'receiverLabel' => 'Penerima', 'nota' => $nota])
 
         {{-- ═══════════════════════════════════════════════════════
              SECTION: Biaya Tambahan (Opsional)

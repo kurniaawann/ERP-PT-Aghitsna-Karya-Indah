@@ -127,8 +127,10 @@ class ReimburseService
     /**
      * Membuat pengajuan reimburse otomatis dari Nota (revisi klien).
      *
-     * Hanya untuk nota yang dibuat oleh Super Admin (termasuk nota proyek
-     * otomatis dari Invoice Semen); nota buatan admin diabaikan.
+     * Hanya untuk nota proyek yang dibuat OTOMATIS dari Invoice Semen oleh
+     * Super Admin. Nota yang dibuat sendiri lewat "Tambah Nota" tidak otomatis
+     * masuk reimbursement (revisi klien) — bisa dipilih manual lewat "Ambil
+     * dari Nota" pada modal Tambah Reimburse. Nota buatan admin diabaikan.
      * Pengajuan berstatus draft, tanpa tanggal jatuh tempo, dan tertaut ke
      * nota lewat kolom id_nota.
      *
@@ -136,11 +138,11 @@ class ReimburseService
      * (unique index id_nota juga mencegah duplikat di level database).
      *
      * @param  \App\Models\Administrasi\Nota  $nota  Nota sumber
-     * @return \App\Models\Finance\Reimburse|null  null bila nota bukan buatan Super Admin
+     * @return \App\Models\Finance\Reimburse|null  null bila bukan nota Invoice Semen buatan Super Admin
      */
     public function createFromNota(Nota $nota): ?Reimburse
     {
-        if (!$nota->creator?->isSuperAdmin()) {
+        if (!$nota->isFromSemenInvoice() || !$nota->creator?->isSuperAdmin()) {
             return null;
         }
 
@@ -156,6 +158,39 @@ class ReimburseService
             'notes' => $this->buildNotaNotes($nota),
             'id_nota' => $nota->id_nota,
         ]));
+    }
+
+    /**
+     * Pilihan "Ambil dari Nota" pada modal Tambah Reimburse (Super Admin).
+     *
+     * Nota milik user login yang BELUM punya pengajuan reimburse — terutama
+     * nota dari "Tambah Nota" (tidak otomatis masuk reimbursement), plus nota
+     * Invoice Semen yang draft otomatisnya dihapus.
+     * Setiap opsi membawa isian siap pakai untuk field form (tanggal, nama
+     * proyek, keterangan belanja, total, catatan) — diisi otomatis oleh JS.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getNotaOptionsForReimburse(): array
+    {
+        return Nota::where('created_by', auth()->id())
+            ->whereDoesntHave('reimburse')
+            ->latest('nota_date')
+            ->latest('created_at')
+            ->get()
+            ->map(function (Nota $nota) {
+                $payload = $this->buildNotaPayload($nota);
+
+                return array_merge($payload, [
+                    'value' => $nota->id_nota,
+                    'label' => $nota->id_nota.' — '.$payload['project_name']
+                        .' — Rp '.number_format($payload['total_amount'], 0, ',', '.')
+                        .($nota->nota_date ? ' ('.$nota->nota_date->format('d/m/Y').')' : ''),
+                    'notes' => $this->buildNotaNotes($nota, false),
+                ]);
+            })
+            ->values()
+            ->all();
     }
 
     /**
@@ -383,30 +418,61 @@ class ReimburseService
     }
 
     /**
+     * Ringkasan seluruh pengajuan sesuai filter halaman (search/bulan/tahun),
+     * TANPA filter status dan tanpa melihat data terpilih — pembanding teks
+     * "x dari y yang diajukan" di PDF/Excel.
+     *
+     * Contoh: ada 4 pengajuan, 2 disetujui; walau yang dicetak hanya 2 yang
+     * disetujui (dicentang atau filter status), pembandingnya tetap 4.
+     *
+     * @param  \Illuminate\Http\Request $request  Request export (filter halaman ikut dikirim)
+     * @return array{submitted: int, draft_count: int, approved_count: int, rejected_count: int}
+     */
+    public function getSubmissionSummary(Request $request): array
+    {
+        $counts = $this->buildFilteredQuery(new Request($request->only(['search', 'month', 'year'])))
+            ->reorder()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return [
+            'submitted' => (int) $counts->sum(),
+            'draft_count' => (int) ($counts['draft'] ?? 0),
+            'approved_count' => (int) ($counts['approved'] ?? 0),
+            'rejected_count' => (int) ($counts['rejected'] ?? 0),
+        ];
+    }
+
+    /**
      * Teks status untuk header PDF/Excel (revisi klien: menggantikan "SEMUA").
      *
-     * Menggambarkan rasio persetujuan, mis. "Disetujui 3 dari 4 yang diajukan".
-     * - Tanpa filter status / data terpilih: jumlah disetujui dari seluruh data export.
-     * - Filter satu status: "DISETUJUI (3 dari 4 yang diajukan)" — pembandingnya
-     *   seluruh pengajuan dengan filter lain yang sama (search/bulan/tahun).
+     * Menggambarkan rasio persetujuan terhadap SELURUH pengajuan sesuai filter
+     * halaman (getSubmissionSummary), bukan hanya data yang dicetak:
+     * - Tanpa filter status / data terpilih: "Disetujui 2 dari 4 yang diajukan"
+     *   (2 = disetujui di antara data yang dicetak).
+     * - Filter satu status: "DISETUJUI (2 dari 4 yang diajukan)".
      *
      * @param  \Illuminate\Http\Request        $request     Request export
      * @param  \Illuminate\Support\Collection  $reimburses  Data yang di-export
+     * @param  array|null                       $summary     Hasil getSubmissionSummary (opsional)
      * @return string
      */
-    public function buildStatusText(Request $request, Collection $reimburses): string
+    public function buildStatusText(Request $request, Collection $reimburses, ?array $summary = null): string
     {
         $status = $request->input('status');
         $labels = ['draft' => 'DRAFT', 'approved' => 'DISETUJUI', 'rejected' => 'DITOLAK'];
+        $submitted = ($summary ?? $this->getSubmissionSummary($request))['submitted'];
+
+        // Data terpilih bisa berada di luar filter halaman (mis. filter diubah
+        // setelah mencentang) — pembanding minimal sebanyak data yang dicetak.
+        $submitted = max($submitted, $reimburses->count());
 
         if (!empty($this->selectedIds($request)) || !isset($labels[$status])) {
             $approved = $reimburses->where('status', 'approved')->count();
 
-            return "Disetujui {$approved} dari {$reimburses->count()} yang diajukan";
+            return "Disetujui {$approved} dari {$submitted} yang diajukan";
         }
-
-        // Total pengajuan dengan filter yang sama, tanpa filter status
-        $submitted = $this->buildFilteredQuery(new Request($request->except('status')))->count();
 
         return "{$labels[$status]} ({$reimburses->count()} dari {$submitted} yang diajukan)";
     }
@@ -523,14 +589,14 @@ class ReimburseService
      * @param  \App\Models\Administrasi\Nota  $nota
      * @return string
      */
-    private function buildNotaNotes(Nota $nota): string
+    private function buildNotaNotes(Nota $nota, bool $automatic = true): string
     {
         $sources = array_filter([
             $nota->invoice_number ? "Invoice Semen {$nota->invoice_number}" : null,
             $nota->do_no ? "DO {$nota->do_no}" : null,
         ]);
 
-        return "Dibuat otomatis dari Nota {$nota->id_nota}"
+        return ($automatic ? 'Dibuat otomatis dari' : 'Diambil dari')." Nota {$nota->id_nota}"
             .(empty($sources) ? '' : ' ('.implode(', ', $sources).')')
             .'.';
     }

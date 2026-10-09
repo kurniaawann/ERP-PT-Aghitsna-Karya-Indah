@@ -139,11 +139,11 @@
 
     <hr class="my-4">
 
-    {{-- ==================== Penanda Tangan (dari Data Petinggi) ==================== --}}
+    {{-- ==================== Penanda Tangan (dari Data Penandatangan) ==================== --}}
     <div class="mb-3">
         <h6 class="text-text-primary font-semibold mb-3">Penanda Tangan</h6>
-        <p class="text-xs text-text-secondary mb-3">Opsional — pilih petinggi sebagai penandatangan laporan. Data
-            diambil dari modul Data Petinggi; jika dikosongkan, blok tanda tangan pada cetakan PDF/Excel tidak
+        <p class="text-xs text-text-secondary mb-3">Opsional — pilih penanda tangan laporan. Data
+            diambil dari modul Data Penandatangan; jika dikosongkan, blok tanda tangan pada cetakan PDF/Excel tidak
             menampilkan nama.</p>
 
         @php
@@ -161,7 +161,7 @@
                     name="signatures[{{ $roleKey }}]"
                     id="signatures-{{ $roleKey }}-{{ $recap->id }}"
                     :label="$roleLabel"
-                    placeholder="Cari petinggi..."
+                    placeholder="Cari penanda tangan..."
                     :options="$executiveOptions"
                     :selected="($storedSignatures[$roleKey]['id'] ?? '')" />
             @endforeach

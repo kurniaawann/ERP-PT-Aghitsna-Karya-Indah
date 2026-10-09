@@ -100,7 +100,7 @@ function initDirectorLabel() {
 
         const apply = function () {
             labelSelector.textContent = (templateSelect.value === 'hollow') ? 'Manager' : 'Direktur';
-            inputEl.placeholder = 'Cari petinggi...';
+            inputEl.placeholder = 'Cari penanda tangan...';
         };
 
         templateSelect.addEventListener('change', apply);
