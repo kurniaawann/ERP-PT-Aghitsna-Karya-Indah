@@ -78,7 +78,8 @@ class CementDeliveryOrder extends Model
     // ─── Scopes ───────────────────────────────────────────────────────
 
     /**
-     * Scope pencarian berdasarkan nomor atau tanggal DO.
+     * Scope pencarian berdasarkan nomor DO, tanggal, atau nama proyek pada
+     * baris Data Semen di dalam DO (revisi klien: cari DO lewat nama proyek).
      *
      * @param  Builder       $query
      * @param  string|null   $search
@@ -88,7 +89,8 @@ class CementDeliveryOrder extends Model
     {
         return $query->when($search, fn ($q, $search) => $q->where(function ($q) use ($search) {
             $q->where('no', 'like', "%{$search}%")
-              ->orWhere('tanggal', 'like', "%{$search}%");
+              ->orWhere('tanggal', 'like', "%{$search}%")
+              ->orWhereHas('cements', fn ($cement) => $cement->where('nama_proyek', 'like', "%{$search}%"));
         }));
     }
 

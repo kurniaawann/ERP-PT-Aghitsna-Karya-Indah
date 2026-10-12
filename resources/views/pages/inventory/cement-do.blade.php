@@ -54,7 +54,7 @@
                 <x-filters.year-filter :value="request('year')"
                     onchange="document.getElementById('filterForm').submit()" />
 
-                <x-filters.search-input :value="request('search')" placeholder="Cari data DO Semen..." />
+                <x-filters.search-input :value="request('search')" placeholder="Cari no. DO / nama proyek..." />
             </form>
 
             {{-- Tombol Aksi: Print, Hapus, Tambah --}}
