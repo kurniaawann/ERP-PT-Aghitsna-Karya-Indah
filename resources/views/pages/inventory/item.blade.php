@@ -12,7 +12,8 @@
                                                hapus massal, paginasi)
      - components.inventory.item.add-modal   : modal tambah barang
      - components.inventory.item.edit-modal  : modal edit barang (per item)
-     - x-fi.page-header, x-fi.export-dropdown, x-fi.button, x-fi.modal
+     - x-fi.page-header, x-fi.export-dropdown, x-fi.button, x-fi.modal,
+       x-fi.delete-row-modal (hapus 1 data dari menu Aksi)
      JS: @vite('resources/js/pages/inventory/items/index.js')
      ===================================================================== --}}
 @extends('layouts.app')
@@ -52,10 +53,14 @@
     {{-- SECTION: Modal Konfirmasi Hapus Massal --}}
     {{-- Saat dikonfirmasi, memanggil submitDeleteForm() (didefinisikan di JS items/index.js)
          yang mengirim request hapus massal ke route('items.destroySelected'). --}}
-    <x-fi.modal id="deleteModal" heading="Hapus Data Terpilih" icon="trash" color="danger" width="md"
+    <x-fi.modal id="deleteModal" heading="Hapus Barang Terpilih" icon="trash" color="danger" width="md"
         onConfirm="submitDeleteForm()" submitLabel="Ya, Hapus">
-        Apakah kamu yakin ingin menghapus data yang dipilih?
+        Apakah kamu yakin ingin menghapus semua barang yang dipilih? Data yang dihapus tidak dapat dikembalikan.
     </x-fi.modal>
+
+    {{-- SECTION: Modal Konfirmasi Hapus 1 Barang (menu Aksi ⋮ tiap baris) --}}
+    {{-- Mengirim satu id ke route('items.destroySelected') yang sama dengan hapus massal. --}}
+    <x-fi.delete-row-modal :action="route('items.destroySelected')" heading="Hapus Barang" />
 
     {{-- SECTION: Scripts (JavaScript Modular) --}}
     {{-- Modul items/index.js menangani: select-all, status tombol hapus massal,

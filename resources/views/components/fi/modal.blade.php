@@ -1,5 +1,7 @@
 {{--
-    Modal bergaya Filament. Dibuka/ditutup dengan openModal(id) / closeModal(id)
+    Modal bergaya Filament.
+    Id judul memakai "fi-modal-heading-{id}" (bukan "{id}-...") agar tidak ikut
+    tertangkap selector JS berbasis prefix id modal, mis. [id^="editModal-"]. Dibuka/ditutup dengan openModal(id) / closeModal(id)
     dari layouts/app (toggle class hidden ↔ flex), sama seperti x-modal.
 
     Mode:
@@ -15,7 +17,7 @@
     - action, method, enctype, formId
     - onConfirm
     - submitLabel, submitIcon, cancelLabel
-    - width         : sm | md | lg | xl | 2xl | 4xl (default lg)
+    - width         : sm | md | lg | xl | 2xl | 4xl | 5xl | 6xl (default lg)
 --}}
 @props([
     'id',
@@ -41,6 +43,8 @@
         'xl' => 'max-w-xl',
         '2xl' => 'max-w-2xl',
         '4xl' => 'max-w-4xl',
+        '5xl' => 'max-w-5xl',
+        '6xl' => 'max-w-6xl',
         default => 'max-w-lg',
     };
 
@@ -52,7 +56,7 @@
     };
 @endphp
 
-<div id="{{ $id }}" role="dialog" aria-modal="true" @if ($heading) aria-labelledby="{{ $id }}-heading" @endif
+<div id="{{ $id }}" role="dialog" aria-modal="true" @if ($heading) aria-labelledby="fi-modal-heading-{{ $id }}" @endif
     class="hidden fixed inset-0 z-50 items-center justify-center bg-gray-950/50 p-4 text-base">
     <div class="relative w-full {{ $widthClass }} max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl ring-1 ring-gray-950/5">
 
@@ -73,7 +77,7 @@
                 @endif
 
                 @if ($heading)
-                    <h2 id="{{ $id }}-heading" class="text-base font-semibold leading-6 text-gray-950">{{ $heading }}</h2>
+                    <h2 id="fi-modal-heading-{{ $id }}" class="text-base font-semibold leading-6 text-gray-950">{{ $heading }}</h2>
                 @endif
 
                 <div class="mt-2 text-sm text-gray-500">{{ $slot }}</div>
@@ -95,7 +99,7 @@
                         </div>
                     @endif
                     <div class="{{ $icon ? 'pt-2' : '' }}">
-                        <h2 id="{{ $id }}-heading" class="text-base font-semibold leading-6 text-gray-950">{{ $heading }}</h2>
+                        <h2 id="fi-modal-heading-{{ $id }}" class="text-base font-semibold leading-6 text-gray-950">{{ $heading }}</h2>
                         @if ($description)
                             <p class="mt-1 text-sm text-gray-500">{{ $description }}</p>
                         @endif

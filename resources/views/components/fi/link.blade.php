@@ -2,7 +2,7 @@
     Aksi berbentuk link bergaya Filament (dipakai untuk aksi baris tabel).
 
     Props:
-    - color : primary | gray | danger (default primary)
+    - color : primary | gray | danger | success (default primary)
     - icon  : nama ikon x-fi.icon (opsional)
     - href  : bila diisi dirender sebagai <a>, selain itu <button type="button">
 --}}
@@ -15,6 +15,7 @@
 @php
     $colorClasses = match ($color) {
         'danger' => 'text-red-600 hover:text-red-500',
+        'success' => 'text-success hover:text-emerald-500',
         'gray' => 'text-gray-700 hover:text-gray-500',
         default => 'text-primary hover:text-primary-hover',
     };

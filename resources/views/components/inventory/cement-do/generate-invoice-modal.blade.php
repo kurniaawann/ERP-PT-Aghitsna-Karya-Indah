@@ -3,6 +3,8 @@
      Menampilkan daftar Data Semen milik DO dengan checkbox; data semen yang
      sudah pernah masuk invoice lain ditandai & dinonaktifkan.
      Submit → POST /do-semen/{no}/generate-invoice
+     Hook JS (cement-do/index.js): .gen-inv-cement, .gen-select-all,
+     .gen-inv-total, form & button[type=submit] di dalam modal.
      ===================================================================== --}}
 @php
     $no = $cementDeliveryOrder->no;
@@ -14,62 +16,59 @@
         ->values();
 @endphp
 
-<x-modal id="generateInvoiceModal-{{ $no }}"
-    title="Buat Invoice Semen — {{ $no }}"
-    action="{{ route('cement-do.generateInvoice', $no) }}"
-    method="POST" buttonText="Buat Invoice" size="6xl">
+<x-fi.modal id="generateInvoiceModal-{{ $no }}" heading="Buat Invoice Semen" :description="'No. DO: ' . $no"
+    icon="document-plus" color="success" :action="route('cement-do.generateInvoice', $no)" method="POST"
+    submitLabel="Buat Invoice" width="6xl">
 
     {{-- Info DO (read only) --}}
-    <div class="flex items-center justify-between border-b pb-3 mb-3 bg-surface-secondary rounded-lg p-3">
-        <div>
-            <span class="text-xs text-text-secondary">Tanggal DO</span>
-            <div class="font-semibold text-text-primary">{{ $cementDeliveryOrder->tanggal?->format('d M Y') ?: '-' }}</div>
+    <div class="grid grid-cols-2 divide-x divide-gray-200 rounded-xl bg-gray-50 ring-1 ring-gray-950/5">
+        <div class="px-4 py-3">
+            <div class="text-sm text-gray-500">Tanggal DO</div>
+            <div class="mt-0.5 font-semibold text-gray-950">{{ $cementDeliveryOrder->tanggal?->format('d M Y') ?: '-' }}</div>
         </div>
-        <div class="text-right">
-            <span class="text-xs text-text-secondary">Subtotal DO</span>
-            <div class="font-semibold text-text-primary">Rp {{ number_format($cementDeliveryOrder->subtotal, 0, ',', '.') }}</div>
+        <div class="px-4 py-3 text-end">
+            <div class="text-sm text-gray-500">Subtotal DO</div>
+            <div class="mt-0.5 font-semibold tabular-nums text-gray-950">Rp {{ number_format($cementDeliveryOrder->subtotal, 0, ',', '.') }}</div>
         </div>
     </div>
 
     @if ($invoicedTotal > 0)
-        <div class="mb-3">
-            <span class="text-xs text-error">Sebagian data semen ({{
-                number_format($invoicedTotal, 0, ',', '.') }}) sudah pernah dibuat invoice lain &
-                otomatis dilewati. Centang data semen yang tersisa untuk diinvois.</span>
+        <div class="flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-600/20">
+            <x-fi.icon name="exclamation-triangle" class="h-5 w-5 text-amber-500" />
+            <p>
+                Sebagian data semen ({{ number_format($invoicedTotal, 0, ',', '.') }}) sudah pernah dibuat invoice lain &
+                otomatis dilewati. Centang data semen yang tersisa untuk diinvois.
+            </p>
         </div>
     @endif
 
     {{-- Field Invoice --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-        <div>
-            <label class="block text-text-primary mb-1">Tanggal Invoice <span class="text-error">*</span></label>
-            <input type="date" name="invoice_date" class="w-full border rounded p-2" required
-                value="{{ date('Y-m-d') }}"
+    <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-3">
+        <x-fi.field label="Tanggal Invoice" for="gen-invoice-date-{{ $no }}" required>
+            <x-fi.input type="date" id="gen-invoice-date-{{ $no }}" name="invoice_date" :value="date('Y-m-d')" required
                 oninvalid="this.setCustomValidity('Tanggal invoice tidak boleh kosong')"
-                oninput="this.setCustomValidity('')">
-        </div>
+                oninput="this.setCustomValidity('')" />
+        </x-fi.field>
 
-        <div>
-            {{-- Rekening wajib dipilih (default: rekening pertama) agar No. Rek selalu tercetak di invoice --}}
-            <label class="block text-text-primary mb-1">Rekening Pembayaran <span class="text-error">*</span></label>
+        {{-- Rekening wajib dipilih (default: rekening pertama) agar No. Rek selalu tercetak di invoice --}}
+        <x-fi.field label="Rekening Pembayaran" for="gen-payment-account-{{ $no }}" required>
             <div class="flex items-center gap-2">
-                <select name="payment_account_id" class="flex-1 w-full border rounded p-2" required
+                <x-fi.select id="gen-payment-account-{{ $no }}" name="payment_account_id" prefix-icon="credit-card"
+                    placeholder="-- Pilih Rekening --" required
                     oninvalid="this.setCustomValidity('Pilih rekening pembayaran (tambah lewat tombol Rekening Baru bila belum ada)')"
                     onchange="this.setCustomValidity('')">
-                    <option value="">-- Pilih Rekening --</option>
                     @foreach ($paymentAccounts as $account)
                         <option value="{{ $account->id }}" @selected($loop->first)>{{ $account->bank_name }} - {{ $account->account_number }}</option>
                     @endforeach
-                </select>
+                </x-fi.select>
                 <x-finance.quick-add-payment-account mode="select"
                     target-selector="select[name='payment_account_id']" id-suffix="{{ $no }}" />
             </div>
-        </div>
+        </x-fi.field>
 
-        <div>
-            <label class="block text-text-primary mb-1">Nama Tanda Tangan</label>
-            <select name="signed_by_id" class="w-full border rounded p-2">
-                <option value="">-- Pilih Nama Tanda Tangan --</option>
+        <x-fi.field label="Nama Tanda Tangan" for="gen-signed-by-{{ $no }}">
+            <x-fi.select id="gen-signed-by-{{ $no }}" name="signed_by_id" prefix-icon="user"
+                placeholder="-- Pilih Nama Tanda Tangan --">
                 @foreach ($executives as $executive)
                     <option value="{{ $executive->id }}">{{ $executive->name }}
                         @if ($executive->position)
@@ -77,86 +76,77 @@
                         @endif
                     </option>
                 @endforeach
-            </select>
-        </div>
+            </x-fi.select>
+        </x-fi.field>
     </div>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Note</label>
-        <textarea name="note" rows="2" class="w-full border rounded p-2"
-            placeholder="Catatan tambahan (opsional)"></textarea>
-    </div>
+    <x-fi.field label="Note" for="gen-note-{{ $no }}">
+        <x-fi.textarea id="gen-note-{{ $no }}" name="note" rows="2" placeholder="Catatan tambahan (opsional)" />
+    </x-fi.field>
 
     {{-- Daftar Data Semen -> checkbox --}}
-    <div class="mb-3">
-        <div class="flex items-center justify-between mb-2">
-            <label class="block text-text-primary font-semibold">
-                Pilih Data Semen untuk Diinvois <span class="text-error">*</span>
-            </label>
-            <button type="button"
-                class="flex items-center gap-1 bg-btn-add hover:bg-btn-add-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs gen-select-all"
-                data-no="{{ $no }}">
-                <i class="fa-solid fa-check-double w-3 h-3"></i> Centang Semua
-            </button>
+    <div class="grid gap-y-2">
+        <div class="flex items-center justify-between gap-3">
+            <span class="text-sm font-medium leading-6 text-gray-950">
+                Pilih Data Semen untuk Diinvois<sup class="ms-0.5 font-medium text-red-600">*</sup>
+            </span>
+            <x-fi.button color="gray" size="sm" icon="check-circle" class="gen-select-all" data-no="{{ $no }}">
+                Centang Semua
+            </x-fi.button>
         </div>
 
-        <div class="border rounded-lg overflow-auto max-h-[320px]">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50 sticky top-0">
-                    <tr class="text-xs text-text-secondary">
-                        <th class="p-2 text-center w-10"></th>
-                        <th class="p-2 text-left">No</th>
-                        <th class="p-2 text-left">Tanggal</th>
-                        <th class="p-2 text-left">Proyek</th>
-                        <th class="p-2 text-center">Jumlah</th>
-                        <th class="p-2 text-right">Harga</th>
-                        <th class="p-2 text-right">Total</th>
-                        <th class="p-2 text-center">Status</th>
+        <div class="max-h-[320px] overflow-auto rounded-xl shadow-sm ring-1 ring-gray-950/5">
+            <table class="w-full table-auto divide-y divide-gray-200">
+                <thead class="sticky top-0 z-10 bg-gray-50">
+                    <tr>
+                        <th class="w-10 px-3 py-2"><span class="sr-only">Pilih</span></th>
+                        <th class="px-3 py-2 text-start text-sm font-semibold text-gray-950">No</th>
+                        <th class="px-3 py-2 text-start text-sm font-semibold text-gray-950">Tanggal</th>
+                        <th class="px-3 py-2 text-start text-sm font-semibold text-gray-950">Proyek</th>
+                        <th class="px-3 py-2 text-center text-sm font-semibold text-gray-950">Jumlah</th>
+                        <th class="px-3 py-2 text-end text-sm font-semibold text-gray-950">Harga</th>
+                        <th class="px-3 py-2 text-end text-sm font-semibold text-gray-950">Total</th>
+                        <th class="px-3 py-2 text-center text-sm font-semibold text-gray-950">Status</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap bg-white text-sm text-gray-950">
                     @forelse ($cementDeliveryOrder->cements as $cement)
                         @php
                             $alreadyInvoiced = !empty($cement->invoice_number);
                         @endphp
-                        <tr class="{{ $alreadyInvoiced ? 'bg-surface-secondary opacity-70' : 'bg-white' }} gen-cement-row"
+                        <tr class="{{ $alreadyInvoiced ? 'bg-gray-50 opacity-70' : 'has-[:checked]:bg-primary-light/30' }} gen-cement-row"
                             data-no="{{ $no }}">
-                            <td class="p-2 text-center">
+                            <td class="px-3 py-2.5 text-center">
                                 @if ($alreadyInvoiced)
-                                    <input type="checkbox" disabled class="w-4 h-4 accent-primary">
+                                    <input type="checkbox" disabled class="fi-checkbox cursor-not-allowed opacity-50">
                                 @else
                                     <input type="checkbox" name="cement_nos[]" value="{{ $cement->no }}"
                                         data-total="{{ $cement->total }}" checked
-                                        class="gen-inv-cement w-4 h-4 accent-primary cursor-pointer">
+                                        class="gen-inv-cement fi-checkbox">
                                 @endif
                             </td>
-                            <td class="p-2 text-xs text-text-secondary">{{ $cement->no }}</td>
-                            <td class="p-2">{{ $cement->tanggal?->format('d M Y') ?: '-' }}</td>
-                            <td class="p-2">
-                                {{ $cement->nama_proyek }}
+                            <td class="px-3 py-2.5 text-gray-500">{{ $cement->no }}</td>
+                            <td class="px-3 py-2.5">{{ $cement->tanggal?->format('d M Y') ?: '-' }}</td>
+                            <td class="px-3 py-2.5">
+                                <div>{{ $cement->nama_proyek }}</div>
                                 @if ($cement->name)
-                                    <div class="text-xs text-text-secondary">{{ $cement->name }}</div>
+                                    <div class="text-gray-500">{{ $cement->name }}</div>
                                 @endif
                             </td>
-                            <td class="p-2 text-center">{{ number_format($cement->jumlah, 0, ',', '.') }} {{ $cement->satuan ?: 'zak' }}</td>
-                            <td class="p-2 text-right">{{ 'Rp ' . number_format($cement->harga, 0, ',', '.') }}</td>
-                            <td class="p-2 text-right font-medium">{{ 'Rp ' . number_format($cement->total, 0, ',', '.') }}</td>
-                            <td class="p-2 text-center">
+                            <td class="px-3 py-2.5 text-center tabular-nums">{{ number_format($cement->jumlah, 0, ',', '.') }} {{ $cement->satuan ?: 'zak' }}</td>
+                            <td class="px-3 py-2.5 text-end tabular-nums text-gray-700">{{ 'Rp ' . number_format($cement->harga, 0, ',', '.') }}</td>
+                            <td class="px-3 py-2.5 text-end font-medium tabular-nums">{{ 'Rp ' . number_format($cement->total, 0, ',', '.') }}</td>
+                            <td class="px-3 py-2.5 text-center">
                                 @if ($alreadyInvoiced)
-                                    <span class="inline-block text-[10px] bg-error/10 text-error px-2 py-0.5 rounded-full"
-                                        title="Masuk invoice {{ $cement->invoice_number }}">
-                                        Diinvois
-                                    </span>
+                                    <x-fi.badge color="danger" title="Masuk invoice {{ $cement->invoice_number }}">Diinvois</x-fi.badge>
                                 @else
-                                    <span class="inline-block text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full">
-                                        Siap diinvois
-                                    </span>
+                                    <x-fi.badge color="success">Siap diinvois</x-fi.badge>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="p-4 text-center text-text-secondary text-sm">
+                            <td colspan="8" class="px-3 py-6 text-center text-sm text-gray-500">
                                 Tidak ada data semen dalam DO ini.
                             </td>
                         </tr>
@@ -167,11 +157,8 @@
     </div>
 
     {{-- Preview Total --}}
-    <div class="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
-        <div class="flex justify-between items-center">
-            <span class="text-text-primary font-semibold">Total Yang Akan Diinvois:</span>
-            <span class="gen-inv-total text-2xl font-bold text-primary">Rp 0</span>
-        </div>
+    <div class="flex items-center justify-between gap-3 rounded-xl bg-primary-light/40 px-4 py-3 ring-1 ring-primary/20">
+        <span class="text-sm font-medium text-gray-700">Total Yang Akan Diinvois</span>
+        <span class="gen-inv-total text-2xl font-bold tabular-nums text-primary">Rp 0</span>
     </div>
-
-</x-modal>
+</x-fi.modal>

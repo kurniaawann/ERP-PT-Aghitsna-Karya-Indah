@@ -10,6 +10,8 @@ import './shared/print-signer';
 import './shared/nota-sign';
 import './shared/delete-form';
 import './shared/quick-add-payment-account';
+import './shared/fi-dropdown';
+import './shared/fi-delete-row';
 
 /**
  * Inisialisasi search input (selector: `data-search-debounce`).
