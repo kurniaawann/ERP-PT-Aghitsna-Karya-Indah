@@ -35,6 +35,22 @@ function showSpinner(button, text = 'Processing...') {
     button.classList.add('opacity-70', 'cursor-not-allowed');
 }
 
+/**
+ * Escape teks agar aman dimasukkan ke innerHTML (nama barang bisa berisi
+ * tanda kutip / karakter HTML).
+ *
+ * @param {*} value
+ * @returns {string}
+ */
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // ==========================================
 // RETURN TYPE → ITEM POPULATION
 // ==========================================
@@ -86,7 +102,10 @@ function buildAddItemDropdown(returnType) {
     loadMoreBtn.classList.add('hidden');
     noResults.classList.add('hidden');
 
-    const sourceData = returnType === 'masuk' ? stockInsData : stockOutsData;
+    // Tipe belum dipilih → daftar kosong (bukan jatuh ke data barang keluar)
+    const sourceData = returnType === 'masuk' ? stockInsData
+        : returnType === 'keluar' ? stockOutsData
+        : [];
     const uniqueItems = {};
 
     sourceData.forEach(record => {
@@ -131,13 +150,15 @@ function renderAddDropdownItems() {
 
     nextBatch.forEach(item => {
         const div = document.createElement('div');
-        div.className = 'px-3 py-2 hover:bg-primary-light cursor-pointer text-sm transition-colors';
+        div.className = 'cursor-pointer rounded-md px-3 py-2 transition duration-75 hover:bg-gray-50';
         div.dataset.value = item.id_item;
         div.dataset.stockInId = item.stockInId || '';
         div.dataset.stockOutId = item.stockOutId || '';
         div.dataset.quantity = item.quantity;
         div.dataset.search = `${item.id_item} ${item.name}`.toLowerCase();
-        div.innerHTML = `<span class="font-medium">${item.id_item} - ${item.name}</span> <span class="text-text-secondary text-xs">(Stok: ${item.quantity})</span>`;
+        // .font-medium dibaca selectAddItem() sebagai teks barang terpilih
+        div.innerHTML = `<div class="font-medium text-sm text-gray-950">${escapeHtml(item.id_item)} - ${escapeHtml(item.name)}</div>`
+            + `<div class="text-sm text-gray-500">${escapeHtml(item.stockInId || item.stockOutId)} · maks. ${item.quantity} unit</div>`;
         div.addEventListener('click', function () {
             selectAddItem(this);
         });
@@ -165,8 +186,8 @@ function renderAddDropdownItems() {
  * Alur:
  * 1. Tampilkan nama item terpilih pada search input dan set readOnly.
  * 2. Simpan id_item, id stock-in/stock-out ke hidden input.
- * 3. Tutup dropdown lalu jalankan validateAddQuantity() agar stok
- *    tersedia langsung divalidasi.
+ * 3. Tutup dropdown lalu picu event 'input' pada #addQuantity (menjalankan
+ *    validateAddQuantity()) agar batas jumlah langsung tampil & divalidasi.
  *
  * @param {HTMLElement} optionEl  Elemen opsi yang diklik
  * @returns {void}
@@ -185,7 +206,9 @@ function selectAddItem(optionEl) {
     if (stockOutIdInput) stockOutIdInput.value = optionEl.dataset.stockOutId;
 
     dropdown.classList.add('hidden');
-    validateAddQuantity();
+    // validateAddQuantity() ada di dalam scope DOMContentLoaded (tidak bisa
+    // dipanggil dari sini) → picu listener 'input' pada #addQuantity.
+    document.getElementById('addQuantity')?.dispatchEvent(new Event('input'));
 }
 
 /**
@@ -390,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function () {
      *    tersimpan di hidden input addItemId.
      * 2. Panggil validateQuantity() yang menampilkan warning dan
      *    menonaktifkan tombol submit bila quantity melebihi stok.
-     * 3. Tampilkan teks "Stok tersedia: N" bila ada stok, atau kosongkan.
+     * 3. Tampilkan teks "Maks. dapat dikembalikan: N unit" bila ada stok, atau kosongkan.
      *
      * @returns {void}
      */
@@ -405,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function () {
         validateQuantity(addQuantityInput, addQuantityWarning, addButton, maxQuantity);
 
         if (addAvailableStock && maxQuantity > 0) {
-            addAvailableStock.textContent = `Stok tersedia: ${maxQuantity}`;
+            addAvailableStock.textContent = `Maks. dapat dikembalikan: ${maxQuantity} unit`;
         } else if (addAvailableStock) {
             addAvailableStock.textContent = '';
         }

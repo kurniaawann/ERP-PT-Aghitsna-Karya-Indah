@@ -1,58 +1,57 @@
-{{-- Modal Edit Return Barang --}}
+{{-- Modal Edit Pengembalian Barang (gaya Filament). Tipe & barang tidak bisa diubah.
+     Hook JS (item-returns/index.js): [id^="editModal-"] form + button[type=submit],
+     #editQuantity-{id}[data-max-quantity], #editQuantityWarning-{id},
+     #editAvailableStock-{id}. --}}
 @php
     $item = $record;
 @endphp
 
-<x-modal id="editModal-{{ $item->id_return }}" title="Edit Return Barang"
-    action="{{ route('item-return.update', $item->id_return) }}" method="POST" buttonText="Update">
-    @method('PUT')
+<x-fi.modal id="editModal-{{ $item->id_return }}" heading="Edit Pengembalian Barang"
+    :description="'ID: ' . $item->id_return . ' — tipe & barang tidak dapat diubah.'"
+    icon="pencil-square" :action="route('item-return.update', $item->id_return)" method="PUT" submitLabel="Update"
+    width="xl">
 
-    {{-- Field: Tipe Return (readonly) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tipe Return</label>
-        <input type="text" value="{{ ucfirst($item->return_type) }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary" disabled>
+    {{-- Tipe & Barang (readonly) --}}
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <x-fi.field label="Tipe Pengembalian">
+            <x-fi.input :value="$item->return_type === 'masuk' ? 'Retur Barang Masuk — ke supplier' : 'Retur Barang Keluar — dari proyek'"
+                aria-label="Tipe pengembalian" disabled />
+        </x-fi.field>
+
+        <x-fi.field label="Barang">
+            <x-fi.input :value="$item->id_item . ' - ' . ($item->item?->name_item ?? '-')" aria-label="Barang" disabled />
+        </x-fi.field>
     </div>
 
-    {{-- Field: Barang (readonly) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Barang</label>
-        <input type="text" value="{{ $item->id_item }} - {{ $item->item->name_item }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-primary" disabled>
+    {{-- Jumlah & Tanggal --}}
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <x-fi.field label="Jumlah" for="editQuantity-{{ $item->id_return }}" required>
+            <x-fi.input type="number" id="editQuantity-{{ $item->id_return }}" name="quantity" :value="$item->quantity"
+                data-max-quantity="{{ $maxQuantity }}" min="1" suffix="unit" required />
+            <p id="editQuantityWarning-{{ $item->id_return }}" class="hidden text-sm text-red-600">
+                <x-fi.icon name="exclamation-circle" class="-mt-0.5 inline h-4 w-4" />
+                Jumlah melebihi batas yang dapat dikembalikan
+            </p>
+            <p id="editAvailableStock-{{ $item->id_return }}" class="text-sm text-gray-500">
+                Maks. dapat dikembalikan: {{ number_format($maxQuantity, 0, ',', '.') }} unit
+            </p>
+        </x-fi.field>
+
+        <x-fi.field label="Tanggal" for="edit-date-{{ $item->id_return }}" required>
+            <x-fi.input type="date" id="edit-date-{{ $item->id_return }}" name="date"
+                :value="$item->date->format('Y-m-d')" required />
+        </x-fi.field>
     </div>
 
-    {{-- Field: Jumlah --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jumlah <span class="text-error">*</span></label>
-        <input type="number" id="editQuantity-{{ $item->id_return }}" name="quantity" value="{{ $item->quantity }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            data-max-quantity="{{ $maxQuantity }}" min="1" required>
-        <p id="editQuantityWarning-{{ $item->id_return }}" class="text-error text-sm mt-1 hidden">
-            <i class="fa-solid fa-circle-exclamation"></i> Jumlah return tidak boleh melebihi stok yang tersedia
-        </p>
-        <p id="editAvailableStock-{{ $item->id_return }}" class="text-primary text-sm mt-1 text-xs">Stok tersedia:
-            {{ $maxQuantity }}</p>
-    </div>
-
-    {{-- Field: Alasan Return --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Alasan Return</label>
-        <input type="text" name="reason" value="{{ $item->reason }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Rusak, Tidak sesuai, dll">
-    </div>
-
-    {{-- Field: Tanggal --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="date" value="{{ $item->date->format('Y-m-d') }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required>
-    </div>
+    {{-- Field: Alasan --}}
+    <x-fi.field label="Alasan" for="edit-reason-{{ $item->id_return }}">
+        <x-fi.input id="edit-reason-{{ $item->id_return }}" name="reason" :value="$item->reason"
+            placeholder="Mis. rusak, tidak sesuai pesanan" />
+    </x-fi.field>
 
     {{-- Field: Keterangan --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            rows="3">{{ $item->notes }}</textarea>
-    </div>
-</x-modal>
+    <x-fi.field label="Keterangan" for="edit-notes-{{ $item->id_return }}">
+        <x-fi.textarea id="edit-notes-{{ $item->id_return }}" name="notes" rows="3"
+            placeholder="Masukkan keterangan (opsional)">{{ $item->notes }}</x-fi.textarea>
+    </x-fi.field>
+</x-fi.modal>
