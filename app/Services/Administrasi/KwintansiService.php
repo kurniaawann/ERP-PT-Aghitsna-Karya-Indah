@@ -109,6 +109,7 @@ class KwintansiService
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
         $validatedData['created_by'] = auth()->id();
+        $validatedData = $this->normalizeHighlight($validatedData);
 
         return Kwintansi::create($validatedData);
     }
@@ -197,10 +198,30 @@ class KwintansiService
         $validatedData['include_bank'] = !empty($validatedData['selected_payment_accounts']);
         $validatedData['amount'] = InputNormalizer::normalizeCurrency($validatedData['amount'] ?? 0);
         $validatedData['remaining'] = InputNormalizer::normalizeCurrency($validatedData['remaining'] ?? 0);
+        $validatedData = $this->normalizeHighlight($validatedData);
 
         $kwintansi->update($validatedData);
 
         return $kwintansi;
+    }
+
+    /**
+     * Catatan kolom kuning: default otomatis; teks hanya disimpan untuk
+     * pilihan "Tulis sendiri".
+     *
+     * @param  array<string, mixed>  $validatedData
+     * @return array<string, mixed>
+     */
+    private function normalizeHighlight(array $validatedData): array
+    {
+        $mode = $validatedData['highlight_mode'] ?? Kwintansi::HIGHLIGHT_AUTO;
+
+        $validatedData['highlight_mode'] = $mode;
+        $validatedData['highlight_note'] = $mode === Kwintansi::HIGHLIGHT_CUSTOM
+            ? trim((string) ($validatedData['highlight_note'] ?? ''))
+            : null;
+
+        return $validatedData;
     }
 
     /**

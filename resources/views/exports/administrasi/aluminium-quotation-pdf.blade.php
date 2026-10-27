@@ -317,7 +317,7 @@
 
     {{-- ═══ FOOTER ══════════════════════════════════════════════════════════════════ --}}
     <div class="terbilang">
-        Terbilang : {{ ucwords(terbilang($grandTotal)) . ' rupiah' }}
+        Terbilang : {{ terbilang_rupiah($grandTotal) }}
     </div>
 
     <div class="payment-info">

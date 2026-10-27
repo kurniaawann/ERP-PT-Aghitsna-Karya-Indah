@@ -33,6 +33,7 @@ window.submitDeleteForm = function (buttonId = 'confirm-btn-deleteModal', formId
 
 /**
  * Mengambil nomor SPK berikutnya dari server lalu mengisi field #nomorSpk.
+ * Nomor mengikuti Divisi & bulan (romawi) dari Tanggal yang sedang diisi.
  * Nomor sebenarnya ditentukan server saat penyimpanan; nilai di sini hanya
  * preview untuk memudahkan pengguna.
  */
@@ -43,7 +44,13 @@ function loadNextNomor() {
     const route = field.dataset.nextNomorRoute;
     if (!route) return;
 
-    fetch(route, {
+    const form = field.closest('form');
+    const params = new URLSearchParams({
+        divisi: form?.querySelector('[name="divisi"]')?.value || '',
+        tanggal: form?.querySelector('[name="tanggal"]')?.value || '',
+    });
+
+    fetch(`${route}?${params}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
     })
         .then((response) => response.json())
@@ -421,6 +428,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ─── Auto-generate Nomor SPK ──────────────────────────────────
     loadNextNomor();
+    const addSpkForm = document.getElementById('nomorSpk')?.closest('form');
+    addSpkForm?.querySelector('[name="tanggal"]')?.addEventListener('change', loadNextNomor);
+    addSpkForm?.querySelector('[name="divisi"]')?.addEventListener('change', loadNextNomor);
 
     // ─── Perhitungan Jumlah & Total ──────────────────────────────
     attachAmountListeners();

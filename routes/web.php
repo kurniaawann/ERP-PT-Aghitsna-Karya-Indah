@@ -488,13 +488,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/project-quotation/export/pdf-selected', [ProjectQuotationController::class, 'exportPdfSelected'])->name('project-quotation.export.pdf.selected');
 
         // Specific routes MUST come before generic {quotation_number} routes
-        Route::get('/project-quotation/{quotation_number}/print/pdf', [ProjectQuotationController::class, 'printPdfSingle'])->name('project-quotation.print.pdf')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
-        Route::get('/project-quotation/{quotation_number}/print/excel', [ProjectQuotationController::class, 'printExcelSingle'])->name('project-quotation.print.excel')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
-        Route::post('/project-quotation/{quotation_number}/create-invoice', [ProjectQuotationController::class, 'createInvoiceFromQuotation'])->name('project-quotation.invoice.create')->middleware('role:superadmin')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+        Route::get('/project-quotation/{quotation_number}/print/pdf', [ProjectQuotationController::class, 'printPdfSingle'])->name('project-quotation.print.pdf')->where('quotation_number', '[^/]+/[^/]+/[^/]+(?:/[^/]+)?/[0-9]+');
+        Route::get('/project-quotation/{quotation_number}/print/excel', [ProjectQuotationController::class, 'printExcelSingle'])->name('project-quotation.print.excel')->where('quotation_number', '[^/]+/[^/]+/[^/]+(?:/[^/]+)?/[0-9]+');
+        Route::post('/project-quotation/{quotation_number}/create-invoice', [ProjectQuotationController::class, 'createInvoiceFromQuotation'])->name('project-quotation.invoice.create')->middleware('role:superadmin')->where('quotation_number', '[^/]+/[^/]+/[^/]+(?:/[^/]+)?/[0-9]+');
 
         // Generic routes come LAST — update route MUST come before show to avoid PUT being caught by GET
-        Route::put('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
-        Route::get('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'show'])->name('project-quotation.show')->where('quotation_number', '[^/]+/[^/]+/[^/]+/[0-9]+');
+        Route::put('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'update'])->name('project-quotation.update')->where('quotation_number', '[^/]+/[^/]+/[^/]+(?:/[^/]+)?/[0-9]+');
+        Route::get('/project-quotation/{quotation_number}', [ProjectQuotationController::class, 'show'])->name('project-quotation.show')->where('quotation_number', '[^/]+/[^/]+/[^/]+(?:/[^/]+)?/[0-9]+');
 
         // ─── RAB (Rancangan Anggaran Biaya) ─────────────────────────────────────────
         Route::get('/rab', [RABController::class, 'index'])->name('rab.index');

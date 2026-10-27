@@ -125,7 +125,7 @@
                 <div class="mb-4 p-3 bg-surface-secondary border border-border rounded">
                     <p class="text-text-primary">
                         <strong>Terbilang:</strong><br>
-                        {{ $rab->amount_in_words }}
+                        {{ rapikan_terbilang($rab->amount_in_words) }}
                     </p>
                 </div>
             </div>

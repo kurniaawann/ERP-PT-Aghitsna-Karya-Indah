@@ -92,11 +92,12 @@ class ProjectQuotationService
     /**
      * Generate nomor penawaran berikutnya.
      *
-     * @return string  Format: {A}/{B}/PT.AKI/{yy}
+     * @param  \DateTimeInterface|string|null  $date  Tanggal penawaran (bulan romawi)
+     * @return string  Format: {A}/{B}/PT.AKI/{bulan romawi}/{yy}
      */
-    public function generateQuotationNumber(): string
+    public function generateQuotationNumber($date = null): string
     {
-        return ProjectQuotation::generateQuotationNumber();
+        return ProjectQuotation::generateQuotationNumber($date);
     }
 
     /**
@@ -113,7 +114,7 @@ class ProjectQuotationService
         $items = $this->normalizeItems($validated['items'] ?? '[]');
         $isTextMode = ($validated['items_mode'] ?? 'items') === 'text';
 
-        $quotationNumber = ProjectQuotation::generateQuotationNumber();
+        $quotationNumber = ProjectQuotation::generateQuotationNumber($validated['date']);
         preg_match('/^(\d+)\//', $quotationNumber, $matches);
         $seqNumber = (int) $matches[1];
 
@@ -146,7 +147,7 @@ class ProjectQuotationService
                 'discount_type' => $isTextMode ? null : ($validated['discount_type'] ?? null),
                 'discount_value' => $isTextMode ? null : ($validated['discount_value'] ?? null),
                 'total_after_discount' => $isTextMode ? null : $totalAfterDiscount,
-                'amount_in_words' => $isTextMode ? null : (ucwords(terbilang($totalAmount)) . ' rupiah'),
+                'amount_in_words' => $isTextMode ? null : terbilang_rupiah($totalAmount),
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
                 'division_id' => $validated['division_id'] ?? null,
@@ -196,7 +197,7 @@ class ProjectQuotationService
                 'discount_type' => $isTextMode ? null : ($validated['discount_type'] ?? null),
                 'discount_value' => $isTextMode ? null : ($validated['discount_value'] ?? null),
                 'total_after_discount' => $isTextMode ? null : $totalAfterDiscount,
-                'amount_in_words' => $isTextMode ? null : (ucwords(terbilang($totalAmount)) . ' rupiah'),
+                'amount_in_words' => $isTextMode ? null : terbilang_rupiah($totalAmount),
                 'selected_payment_accounts' => $validated['selected_payment_accounts'] ?? [],
                 'signed_by_id' => $validated['signed_by_id'] ?? null,
                 'division_id' => $validated['division_id'] ?? null,

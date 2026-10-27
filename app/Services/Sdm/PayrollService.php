@@ -680,11 +680,12 @@ class PayrollService
             $personalKasbonPerEmployee[$empCode] = $payments->sum('amount');
         }
 
-        // Team: cari kasbon payment per divisi
+        // Team: cari kasbon payment tim milik user
         $pendingTeamPayments = KasbonPayment::whereNull('payroll_id')
             ->where('payment_method', 'manual')
             ->whereHas('kasbon', function ($q) {
-                $q->where('kasbon_type', 'team');
+                $q->where('kasbon_type', 'team')
+                    ->where('created_by', auth()->id());
             })
             ->with('kasbon')
             ->get()
@@ -762,22 +763,20 @@ class PayrollService
             }
         }
 
-        // Assign KasbonPayment team ke payroll pertama per divisi
+        // Assign KasbonPayment team ke payroll PROYEK kasbon itu sendiri.
+        // Sebelumnya selalu ke payroll pertama di batch, sehingga generate
+        // beberapa proyek sekaligus membuat kasbon proyek B ikut tercetak di
+        // payroll proyek A.
         if (!empty($payrolls)) {
             $payrollCollection = collect($payrolls);
-            $processedDivisions = [];
+            $divisionByEmployee = $employees->pluck('division', 'employee_code');
 
-            foreach ($employees as $employee) {
-                if ($employee->division && !in_array($employee->division, $processedDivisions)) {
-                    $divPayments = $pendingTeamPayments->get($employee->division, new Collection());
-                    $firstPayroll = $payrollCollection->first();
+            foreach ($pendingTeamPayments->flatten(1) as $payment) {
+                $target = $this->resolveTeamKasbonPayroll($payment->kasbon, $payrollCollection, $divisionByEmployee);
 
-                    foreach ($divPayments as $payment) {
-                        $payment->payroll_id = $firstPayroll?->id;
-                        $payment->save();
-                    }
-
-                    $processedDivisions[] = $employee->division;
+                if ($target) {
+                    $payment->payroll_id = $target->id;
+                    $payment->save();
                 }
             }
         }
@@ -808,6 +807,51 @@ class PayrollService
         }
 
         return ['success' => true, 'message' => 'Payroll berhasil digenerate!'];
+    }
+
+    /**
+     * Payroll tujuan pembayaran kasbon tim dalam satu batch generate.
+     *
+     * - Kasbon tim ber-proyek → payroll proyek tersebut (utamakan karyawan
+     *   divisi kasbon).
+     * - Kasbon tim tanpa proyek (data lama) → payroll karyawan divisinya.
+     * - Tidak ada yang cocok → null; pembayaran menunggu payroll proyek/
+     *   divisinya di-generate.
+     *
+     * @param  Kasbon|null  $kasbon
+     * @param  Collection<int, Payroll>  $payrolls  Payroll hasil batch generate
+     * @param  Collection<string, string|null>  $divisionByEmployee  employee_code => division
+     * @return Payroll|null
+     */
+    private function resolveTeamKasbonPayroll(?Kasbon $kasbon, Collection $payrolls, Collection $divisionByEmployee): ?Payroll
+    {
+        if (! $kasbon) {
+            return null;
+        }
+
+        $projects = $this->teamKasbonProjects($kasbon);
+        $inDivision = fn (Payroll $payroll) => $kasbon->division
+            && $divisionByEmployee->get($payroll->employee_id) === $kasbon->division;
+
+        $candidates = $projects->isNotEmpty()
+            ? $payrolls->filter(fn (Payroll $payroll) => $projects->contains(trim((string) $payroll->project_name)))
+            : $payrolls->filter($inDivision);
+
+        return $candidates->first($inDivision) ?? $candidates->first();
+    }
+
+    /**
+     * Daftar proyek kasbon tim (trim, tanpa nilai kosong).
+     *
+     * @param  Kasbon  $kasbon
+     * @return Collection<int, string>
+     */
+    private function teamKasbonProjects(Kasbon $kasbon): Collection
+    {
+        return collect($kasbon->project_names ?? [])
+            ->map(fn ($project) => trim((string) $project))
+            ->filter()
+            ->values();
     }
 
     /**
@@ -1417,7 +1461,8 @@ class PayrollService
      * Kasbon divisi tidak dibagi rata ke karyawan, melainkan hanya
      * dimunculkan sebagai informasi pada section REKAPITULASI DANA saat
      * mencetak payroll (PDF/Excel). Data diambil dari KasbonPayment yang
-     * sudah di-assign (payroll_id) ke payroll terpilih, dikelompokkan per
+     * sudah di-assign (payroll_id) ke payroll pada periode yang sama, lalu
+     * hanya kasbon milik proyek yang dicetak yang diambil — dikelompokkan per
      * proyek (bila kasbon ber-proyek) atau per divisi (kasbon tanpa proyek).
      *
      * @param  Collection  $payrolls  Koleksi payroll yang diexport
@@ -1425,28 +1470,56 @@ class PayrollService
      */
     public function getTeamKasbonRecap(Collection $payrolls): Collection
     {
-        $payrollIds = $payrolls->pluck('id');
-
-        if ($payrollIds->isEmpty()) {
+        if ($payrolls->isEmpty()) {
             return collect();
         }
 
-        return KasbonPayment::whereIn('payroll_id', $payrollIds)
+        $exportedIds = $payrolls->pluck('id');
+        $exportedProjects = $payrolls->pluck('project_name')
+            ->map(fn ($project) => trim((string) $project))
+            ->filter()
+            ->unique();
+
+        // Data lama: kasbon tim bisa tertempel ke payroll proyek LAIN pada
+        // periode yang sama (generate beberapa proyek sekaligus). Ambil semua
+        // payroll di periode tersebut lalu tentukan proyeknya dari data
+        // kasbon sendiri, agar cetakan satu proyek tidak memuat kasbon proyek
+        // lain dan kasbon yang salah tempel tetap muncul di proyeknya.
+        $periodStarts = $payrolls->pluck('period_start_date')
+            ->filter()
+            ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
+            ->unique()
+            ->values();
+
+        $periodPayrollIds = Payroll::where('created_by', $payrolls->first()->created_by)
+            ->whereIn('period_start_date', $periodStarts)
+            ->pluck('id');
+
+        return KasbonPayment::whereIn('payroll_id', $periodPayrollIds->merge($exportedIds)->unique()->values())
             ->whereHas('kasbon', fn ($q) => $q->where('kasbon_type', 'team'))
             ->with(['kasbon', 'payroll'])
             ->get()
-            ->groupBy(function (KasbonPayment $payment) {
+            ->map(function (KasbonPayment $payment) use ($exportedIds, $exportedProjects) {
                 $kasbon = $payment->kasbon;
+                $projects = $this->teamKasbonProjects($kasbon);
 
-                if (! empty($kasbon->project_names)) {
-                    $project = $payment->payroll?->project_name;
+                if ($projects->isNotEmpty()) {
+                    $attachedProject = trim((string) $payment->payroll?->project_name);
+                    $project = $projects->contains($attachedProject) ? $attachedProject : $projects->first();
 
-                    return 'Kasbon '.($project ?: ($kasbon->project_names[0] ?? 'Tanpa Proyek'));
+                    return $exportedProjects->contains($project)
+                        ? ['label' => 'Kasbon '.$project, 'amount' => (int) $payment->amount]
+                        : null;
                 }
 
-                return 'Kasbon Divisi '.($kasbon->division ?: 'Tanpa Divisi');
+                // Kasbon divisi tanpa proyek (data lama): ikut payroll tempatnya.
+                return $exportedIds->contains($payment->payroll_id)
+                    ? ['label' => 'Kasbon Divisi '.($kasbon->division ?: 'Tanpa Divisi'), 'amount' => (int) $payment->amount]
+                    : null;
             })
-            ->map(fn ($payments) => (int) $payments->sum('amount'))
+            ->filter()
+            ->groupBy('label')
+            ->map(fn ($rows) => (int) $rows->sum('amount'))
             ->filter(fn ($total) => $total > 0);
     }
 

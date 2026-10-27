@@ -394,7 +394,7 @@
 
         <!-- Terbilang -->
         <div class="terbilang">
-            Terbilang : {{ ucwords(terbilang($grandTotal)) }} rupiah
+            Terbilang : {{ terbilang_rupiah($grandTotal) }}
         </div>
 
         <!-- Payment Information (nama bank, nomor & pemilik rekening tidak di-bold) -->

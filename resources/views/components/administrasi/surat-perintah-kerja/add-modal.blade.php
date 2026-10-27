@@ -2,7 +2,7 @@
      Komponen Modal Tambah Surat Perintah Kerja (SPK)
 
      Form tambah SPK baru dengan field:
-     - Nomor SPK (auto-generated, readonly)
+     - Nomor SPK (auto-generated, readonly) & Divisi (default DIV.PRODUKSI)
      - Tanggal
      - Proyek & Lokasi
      - Pemberi Tugas: Nama, Alamat
@@ -30,6 +30,20 @@
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
                 value="{{ date('Y-m-d') }}">
         </div>
+    </div>
+
+    {{-- Divisi pada nomor SPK (bisa diganti, default DIV.PRODUKSI) --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Divisi</label>
+        <input type="text" name="divisi"
+            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input uppercase"
+            value="{{ \App\Models\Administrasi\SuratPerintahKerja::DEFAULT_DIVISI }}"
+            placeholder="{{ \App\Models\Administrasi\SuratPerintahKerja::DEFAULT_DIVISI }}" maxlength="50"
+            pattern="[^\/]*" title="Divisi tidak boleh mengandung tanda /">
+        <p class="text-xs text-text-secondary mt-1">
+            Dicantumkan di nomor SPK, diikuti bulan (romawi) dari tanggal &mdash; mis.
+            01/SPK/AKI/DIV.PRODUKSI/VIII/2026.
+        </p>
     </div>
 
     {{-- Proyek & Lokasi --}}

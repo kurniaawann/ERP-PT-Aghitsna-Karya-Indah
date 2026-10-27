@@ -352,16 +352,24 @@
                             </tr>
                         @endif
 
-                        {{-- Kode Item --}}
-                        <tr>
-                            <td class="text-center">{{ data_get($item, 'no', $loop->iteration) }}.</td>
-                            <td colspan="7" class="item-code">{{ data_get($item, 'kode') ?? '-' }}</td>
-                        </tr>
+                        @php
+                            $itemNo = data_get($item, 'no', $loop->iteration);
+                            $itemKode = trim((string) data_get($item, 'kode'));
+                        @endphp
 
-                        {{-- Detail Sub Item --}}
+                        {{-- Kode Item (judul grup) — hanya bila kode diisi --}}
+                        @if ($itemKode !== '')
+                            <tr>
+                                <td class="text-center">{{ $itemNo }}.</td>
+                                <td colspan="7" class="item-code">{{ $itemKode }}</td>
+                            </tr>
+                        @endif
+
+                        {{-- Detail Sub Item. Tanpa kode, keterangan pertama langsung
+                             sejajar dengan nomor (revisi klien). --}}
                         @foreach (data_get($item, 'details', []) as $detail)
                             <tr>
-                                <td></td>
+                                <td class="text-center">{{ $itemKode === '' && $loop->first ? $itemNo . '.' : '' }}</td>
                                 <td>{{ $detail['keterangan'] ?? '-' }}</td>
                                 <td class="text-center">{{ $detail['volume'] }}</td>
                                 <td class="text-center">{!! $detail['satuan'] ?? '-' !!}</td>

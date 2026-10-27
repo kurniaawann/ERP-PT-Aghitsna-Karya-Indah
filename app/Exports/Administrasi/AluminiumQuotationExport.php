@@ -317,7 +317,7 @@ class AluminiumQuotationExport implements FromCollection, WithEvents, WithTitle,
                 // Terbilang (bold, revisi klien)
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $amountInWords = ucwords(terbilang($grandTotal)) . ' rupiah';
+                $amountInWords = terbilang_rupiah($grandTotal);
                 $terbilangText = 'Terbilang : ' . $amountInWords;
                 $sheet->setCellValue("A{$currentRow}", $terbilangText);
                 $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->setItalic(true);

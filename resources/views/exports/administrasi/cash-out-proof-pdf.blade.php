@@ -406,7 +406,7 @@
                     <tr>
                         <td class="form-label">Jumlah Dibayar</td>
                         <td class="form-separator">:</td>
-                        <td class="form-value">{{ ucwords(trim(terbilang($cashOut->amount))) }} Rupiah</td>
+                        <td class="form-value">{{ terbilang_rupiah($cashOut->amount) }}</td>
                     </tr>
                 </table>
 

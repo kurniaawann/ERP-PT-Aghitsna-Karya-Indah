@@ -513,14 +513,16 @@ window.submitDeleteForm = submitDeleteForm;
 
 /**
  * Memperbarui nomor penawaran otomatis di modal tambah.
- * Mengambil nomor berikutnya via AJAX dari controller.
+ * Mengambil nomor berikutnya via AJAX dari controller; bulan romawi pada
+ * nomor mengikuti Tanggal yang sedang diisi.
  */
 function fetchNextQuotationNumber() {
     const getNextNumberUrl = document.querySelector('meta[name="project-quotation-get-next-number"]')?.content;
     const displayEl = document.getElementById('addQuotationNumberDisplay');
+    const date = document.querySelector('#addModal input[name="date"]')?.value || '';
 
     if (getNextNumberUrl && displayEl) {
-        fetch(getNextNumberUrl)
+        fetch(`${getNextNumberUrl}?${new URLSearchParams({ date })}`)
             .then(r => r.json())
             .then(data => {
                 if (data.quotation_number) {
@@ -582,6 +584,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         observer.observe(addModal, { attributes: true, attributeFilter: ['class'] });
     }
+    document.querySelector('#addModal input[name="date"]')?.addEventListener('change', fetchNextQuotationNumber);
 
     // ADD MODAL - ADD ITEM
     const addItemBtn = document.getElementById('add-item');

@@ -3,7 +3,7 @@
 
      Form edit SPK yang sudah ada. Satu modal per data.
      Field sama dengan form tambah, namun sudah terisi data existing.
-     Nomor SPK tidak dapat diubah.
+     Nomor urut SPK tetap; divisi & bulan romawi pada nomor mengikuti isian.
      ===================================================================== --}}
 
 <x-modal id="editModal-{{ $spk->nomor }}" title="Edit Surat Perintah Kerja"
@@ -25,6 +25,19 @@
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
                 value="{{ $spk->tanggal->format('Y-m-d') }}">
         </div>
+    </div>
+
+    {{-- Divisi pada nomor SPK --}}
+    <div class="mb-3">
+        <label class="block text-text-primary mb-1">Divisi</label>
+        <input type="text" name="divisi"
+            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input uppercase"
+            value="{{ $spk->divisi }}"
+            placeholder="{{ \App\Models\Administrasi\SuratPerintahKerja::DEFAULT_DIVISI }}" maxlength="50"
+            pattern="[^\/]*" title="Divisi tidak boleh mengandung tanda /">
+        <p class="text-xs text-text-secondary mt-1">
+            Saat disimpan, nomor SPK menyesuaikan divisi & bulan (romawi) dari tanggal; nomor urut tetap.
+        </p>
     </div>
 
     {{-- Proyek & Lokasi --}}

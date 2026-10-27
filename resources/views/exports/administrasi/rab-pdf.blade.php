@@ -477,7 +477,7 @@
                 @if (!auth()->user()->isAdmin())
                     <tr class="summary-row terbilang-row">
                         <td colspan="6" class="label">TERBILANG</td>
-                        <td class="value">{{ ucwords($rab->amount_in_words) }}</td>
+                        <td class="value">{{ rapikan_terbilang($rab->amount_in_words) }}</td>
                     </tr>
                 @endif
                 @if (auth()->user()->role === 'superadmin')
@@ -496,7 +496,7 @@
                         </tr>
                         <tr class="summary-row terbilang-row">
                             <td colspan="6" class="label">TERBILANG</td>
-                            <td class="value">{{ ucwords(terbilang($sisaPembayaran)) }} rupiah</td>
+                            <td class="value">{{ terbilang_rupiah($sisaPembayaran) }}</td>
                         </tr>
                     @endif
                 @endif

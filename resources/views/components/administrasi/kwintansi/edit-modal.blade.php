@@ -60,6 +60,12 @@
             oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
     </div>
 
+    @include('components.administrasi.kwintansi.highlight-field', [
+        'idPrefix' => 'editModal-' . $kwintansi->id_kwintansi,
+        'mode' => $kwintansi->highlight_mode,
+        'note' => $kwintansi->highlight_note,
+    ])
+
     {{-- Tanda Tangan --}}
     <div class="mb-3 p-3 border rounded bg-purple-50">
         <label class="block text-text-primary font-semibold mb-2">Tanda Tangan</label>

@@ -164,7 +164,7 @@ class RABService
                 'intro_text' => $validatedData['intro_text'] ?? null,
                 'total_amount' => $totalAnggaranBiaya,
                 'incoming_payment' => $isSuperAdmin ? ($validatedData['incoming_payment'] ?? 0) : 0,
-                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)).' rupiah',
+                'amount_in_words' => terbilang_rupiah($totalAnggaranBiaya),
                 'selected_payment_accounts' => $validatedData['selected_payment_accounts'] ?? [],
                 'signed_by' => $validatedData['signed_by'] ?? null,
                 'division' => $validatedData['division'] ?? null,
@@ -219,7 +219,7 @@ class RABService
                 'incoming_payment' => $isSuperAdmin
                     ? ($validatedData['incoming_payment'] ?? 0)
                     : $rab->incoming_payment,
-                'amount_in_words' => ucwords(terbilang($totalAnggaranBiaya)).' rupiah',
+                'amount_in_words' => terbilang_rupiah($totalAnggaranBiaya),
                 'selected_payment_accounts' => $isAdmin
                     ? $rab->selected_payment_accounts
                     : ($validatedData['selected_payment_accounts'] ?? []),

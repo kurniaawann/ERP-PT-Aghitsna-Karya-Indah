@@ -63,10 +63,12 @@ class ProjectQuotationController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getNextQuotationNumber()
+    public function getNextQuotationNumber(Request $request)
     {
+        $date = strtotime((string) $request->query('date')) ? $request->query('date') : null;
+
         return response()->json([
-            'quotation_number' => $this->service->generateQuotationNumber(),
+            'quotation_number' => $this->service->generateQuotationNumber($date),
         ]);
     }
 

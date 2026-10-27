@@ -50,7 +50,7 @@
          ═══════════════════════════════════════════════════════════ --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 items-end">
         <div>
-            <label class="block text-text-primary mb-1">Periode Awal</label>
+            <label class="block text-text-primary mb-1">Periode Awal <span class="text-text-secondary text-xs">(opsional)</span></label>
             <input type="date" name="periode_start"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
                 oninvalid="this.setCustomValidity('Format tanggal periode tidak valid')"
@@ -78,21 +78,21 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════
-         FIELD: Faktur No & SJ No
+         FIELD: No. Faktur & No. SJ (opsional — tidak dicetak bila kosong)
          ═══════════════════════════════════════════════════════════ --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
-            <label class="block text-text-primary mb-1">Faktur No</label>
+            <label class="block text-text-primary mb-1">No. Faktur <span class="text-text-secondary text-xs">(opsional)</span></label>
             <input type="text" name="faktur_no"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="Masukkan faktur no (opsional)" maxlength="100">
+                placeholder="Kosongkan bila tidak ada" maxlength="100">
         </div>
 
         <div>
-            <label class="block text-text-primary mb-1">SJ.NO</label>
+            <label class="block text-text-primary mb-1">No. SJ <span class="text-text-secondary text-xs">(opsional)</span></label>
             <input type="text" name="sj_no"
                 class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="Masukkan SJ No (opsional)" maxlength="100">
+                placeholder="Kosongkan bila tidak ada" maxlength="100">
         </div>
     </div>
 
@@ -189,7 +189,8 @@
          Semua field menggunakan format Rupiah
          ═══════════════════════════════════════════════════════════ --}}
     <div class="border-t pt-3 mt-3">
-        <label class="block text-text-primary font-semibold mb-2">Biaya Tambahan (Opsional)</label>
+        <label class="block text-text-primary font-semibold mb-1">Biaya Tambahan (Opsional)</label>
+        <p class="text-xs text-text-secondary mb-2">Isi sesuai kebutuhan. Biaya yang dikosongkan tidak dicetak di nota.</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>

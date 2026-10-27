@@ -2,6 +2,7 @@
 
 namespace App\Models\Administrasi;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -148,34 +149,30 @@ class ProjectQuotation extends Model
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Generate nomor penawaran berikutnya: {A}/{B}/PT.AKI/{yy}
+     * Generate nomor penawaran berikutnya: {A}/{B}/PT.AKI/{bulan romawi}/{yy}
      * Kedua angka (A dan B) diincrement secara terpisah.
-     * Contoh: 275/310/PT.AKI/26 -> 276/311/PT.AKI/26
+     * Contoh: 275/310/PT.AKI/VIII/26 -> 276/311/PT.AKI/VIII/26
      *
-     * Urutkan berdasarkan PANJANG string DESC lalu string DESC agar benar
-     * saat melewati batas digit (orderBy string murni salah, mis. "9/..."
-     * dianggap lebih besar dari "10/...").
+     * Revisi klien: bulan romawi (dari tanggal penawaran) dicantumkan sebelum
+     * tahun. Nomor format lama ({A}/{B}/PT.AKI/{yy}) tetap ikut dihitung agar
+     * urutan di tahun yang sama berlanjut.
      *
+     * @param  \DateTimeInterface|string|null  $date  Tanggal penawaran (default hari ini)
      * @return string  Nomor penawaran yang sudah di-generate
      */
-    public static function generateQuotationNumber(): string
+    public static function generateQuotationNumber($date = null): string
     {
-        $year = date('y');
+        $date = $date ? Carbon::parse($date) : now();
+        $last = self::lastSequenceOfYear($date->format('y'));
 
-        $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
-            ->orderByRaw('LENGTH(quotation_number) DESC')
-            ->orderByDesc('quotation_number')
-            ->first();
-
-        if ($last && preg_match('/^(\d+)\/(\d+)\//', $last->quotation_number, $matches)) {
-            $nextA = (int) $matches[1] + 1;
-            $nextB = (int) $matches[2] + 1;
+        if ($last) {
+            [$nextA, $nextB] = [$last[0] + 1, $last[1] + 1];
         } else {
             $nextA = 275;
             $nextB = 310;
         }
 
-        return "{$nextA}/{$nextB}/PT.AKI/{$year}";
+        return "{$nextA}/{$nextB}/PT.AKI/" . bulan_romawi($date->month) . '/' . $date->format('y');
     }
 
     /**
@@ -186,16 +183,27 @@ class ProjectQuotation extends Model
      */
     public static function getNextSequenceNumber(): int
     {
-        $year = date('y');
-        $last = self::where('quotation_number', 'like', "%/PT.AKI/{$year}")
-            ->orderByRaw('LENGTH(quotation_number) DESC')
-            ->orderByDesc('quotation_number')
+        $last = self::lastSequenceOfYear(date('y'));
+
+        return $last ? $last[0] + 1 : 1;
+    }
+
+    /**
+     * Pasangan angka [A, B] terbesar dari nomor penawaran pada tahun tertentu
+     * (dibandingkan sebagai angka, bukan string — panjang bulan romawi
+     * berbeda-beda sehingga urutan string tidak bisa dipakai).
+     *
+     * @param  string  $year  Tahun 2 digit
+     * @return array{0: int, 1: int}|null
+     */
+    private static function lastSequenceOfYear(string $year): ?array
+    {
+        return self::where('quotation_number', 'like', '%/PT.AKI/%')
+            ->where('quotation_number', 'like', "%/{$year}")
+            ->pluck('quotation_number')
+            ->map(fn (string $number) => preg_match('/^(\d+)\/(\d+)\//', $number, $m) ? [(int) $m[1], (int) $m[2]] : null)
+            ->filter()
+            ->sortByDesc(fn (array $pair) => $pair[0])
             ->first();
-
-        if ($last && preg_match('/^(\d+)\//', $last->quotation_number, $matches)) {
-            return (int) $matches[1] + 1;
-        }
-
-        return 1;
     }
 }

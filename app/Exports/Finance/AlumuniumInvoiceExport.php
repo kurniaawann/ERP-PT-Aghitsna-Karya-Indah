@@ -364,7 +364,7 @@ class AlumuniumInvoiceExport implements FromCollection, WithEvents, WithTitle, W
 
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($totalAmount)) . ' rupiah');
+                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . terbilang_rupiah($totalAmount));
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setBold(true);
                 $fitWrappedRow($currentRow, (string) $sheet->getCell("A{$currentRow}")->getValue(), 80);
 

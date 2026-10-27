@@ -90,8 +90,8 @@
                                     @if ($nota->tipe_nota === \App\Models\Administrasi\Nota::TIPE_PROYEK)
                                         <span class="font-medium">{{ $nota->nama_proyek }}</span>
                                     @else
-                                        <span class="mr-3">Faktur: {{ $nota->faktur_no }}</span>
-                                        <span>SJ: {{ $nota->sj_no }}</span>
+                                        <span class="mr-3">No. Faktur: {{ $nota->faktur_no ?: '-' }}</span>
+                                        <span>No. SJ: {{ $nota->sj_no ?: '-' }}</span>
                                     @endif
                                 </td>
 

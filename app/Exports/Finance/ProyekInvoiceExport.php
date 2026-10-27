@@ -438,7 +438,7 @@ class ProyekInvoiceExport implements FromCollection, WithEvents, WithTitle, With
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                 $grandTotalVal = $totalAmount - $discountAmountVal + $ppnAmountVal;
-                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . ucwords(terbilang($grandTotalVal)) . ' rupiah');
+                $sheet->setCellValue("A{$currentRow}", 'Terbilang : ' . terbilang_rupiah($grandTotalVal));
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setBold(true);
                 $fitWrappedRow($currentRow, (string) $sheet->getCell("A{$currentRow}")->getValue(), 80);
 

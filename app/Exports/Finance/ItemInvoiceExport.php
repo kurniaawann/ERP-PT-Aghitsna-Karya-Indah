@@ -253,7 +253,7 @@ class ItemInvoiceExport implements FromCollection, WithEvents, WithTitle, WithCo
                 // Terbilang di-bold
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $terbilangText = 'Terbilang : ' . ucwords(terbilang($totalAmount)) . ' rupiah';
+                $terbilangText = 'Terbilang : ' . terbilang_rupiah($totalAmount);
                 $sheet->setCellValue("A{$currentRow}", $terbilangText);
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setBold(true);
                 $fitWrappedRow($currentRow, $terbilangText, 80);

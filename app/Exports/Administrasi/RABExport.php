@@ -358,7 +358,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", 'TERBILANG');
-                    $amountInWords = $rab->amount_in_words ?? ucwords(terbilang($totalAnggaranBiaya)) . ' rupiah';
+                    $amountInWords = $rab->amount_in_words ? rapikan_terbilang($rab->amount_in_words) : terbilang_rupiah($totalAnggaranBiaya);
                     $sheet->setCellValue("G{$currentRow}", $amountInWords);
                     $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true, 'italic' => true],
@@ -407,7 +407,7 @@ class RABExport implements FromCollection, WithEvents, WithTitle, WithColumnWidt
                     $currentRow++;
                     $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
                     $sheet->setCellValue("A{$currentRow}", 'TERBILANG');
-                    $sheet->setCellValue("G{$currentRow}", ucwords(terbilang($sisaPembayaran)) . ' rupiah');
+                    $sheet->setCellValue("G{$currentRow}", terbilang_rupiah($sisaPembayaran));
                     $sheet->getStyle("A{$currentRow}:G{$currentRow}")->applyFromArray([
                         'font' => ['bold' => true, 'italic' => true],
                         'borders' => [

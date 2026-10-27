@@ -315,7 +315,7 @@ class ProyekInvoiceAdminExport implements FromCollection, WithEvents, WithTitle,
                 // ═══ TERBILANG ═══════════════════════════════════════════════════════
                 $currentRow += 2;
                 $sheet->mergeCells("A{$currentRow}:F{$currentRow}");
-                $terbilangText = 'Terbilang : ' . ucwords(terbilang(round($finalAmount))) . ' Rupiah';
+                $terbilangText = 'Terbilang : ' . terbilang_rupiah($finalAmount);
                 $sheet->setCellValue("A{$currentRow}", $terbilangText);
                 $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setBold(true);
                 $fitWrappedRow($currentRow, $terbilangText, 80);

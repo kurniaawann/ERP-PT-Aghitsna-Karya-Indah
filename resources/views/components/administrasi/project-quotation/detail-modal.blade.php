@@ -145,7 +145,7 @@
         <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p class="text-sm text-text-primary">
                 <span class="font-semibold">Terbilang:</span>
-                <span class="italic">{{ $quotation->amount_in_words }}</span>
+                <span class="italic">{{ rapikan_terbilang($quotation->amount_in_words) }}</span>
             </p>
         </div>
     @endif

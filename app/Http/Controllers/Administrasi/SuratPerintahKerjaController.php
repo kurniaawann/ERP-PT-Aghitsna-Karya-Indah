@@ -66,13 +66,19 @@ class SuratPerintahKerjaController extends Controller
     }
 
     /**
-     * Mengambil nomor SPK berikutnya (untuk preview di form tambah).
+     * Mengambil nomor SPK berikutnya (untuk preview di form tambah) sesuai
+     * divisi & tanggal yang sedang diisi (query `divisi`, `tanggal`).
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse  JSON berisi nextNomor
      */
-    public function getNextNomor()
+    public function getNextNomor(Request $request)
     {
-        return response()->json(['nextNomor' => SuratPerintahKerja::generateNomor()]);
+        $tanggal = strtotime((string) $request->query('tanggal')) ? $request->query('tanggal') : null;
+
+        return response()->json([
+            'nextNomor' => SuratPerintahKerja::generateNomor($request->query('divisi'), $tanggal),
+        ]);
     }
 
     /**

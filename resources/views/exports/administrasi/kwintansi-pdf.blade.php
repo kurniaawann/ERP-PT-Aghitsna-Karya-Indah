@@ -152,6 +152,7 @@
             display: inline-block;
         }
 
+        /* Revisi klien: kotak nominal dilebarkan agar tidak "ngepres" */
         .amount-box {
             background-color: #ffffcc;
             border: 1px solid #000000;
@@ -159,7 +160,8 @@
             font-weight: normal;
             font-style: italic;
             text-align: center;
-            padding: 8px 15px;
+            padding: 8px 28px;
+            min-width: 240px;
             display: inline-block;
             float: right;
         }
@@ -201,8 +203,12 @@
             margin-bottom: 12px;
         }
 
+        /* Revisi klien: nama penanda tangan di atas garis titik-titik */
         .signature-name {
-            margin-top: 5px;
+            margin: 5px auto 0;
+            width: 200px;
+            padding-bottom: 2px;
+            border-bottom: 1px dotted #000000;
         }
 
         .signature-position {
@@ -294,7 +300,7 @@
                     <td class="colon-col">:</td>
                     <td class="value-col">
                         <div class="terbilang-box">
-                            {{ ucfirst(terbilang($kwintansi->amount)) }} Rupiah
+                            {{ terbilang_rupiah($kwintansi->amount) }}
                         </div>
                     </td>
                 </tr>
@@ -328,12 +334,22 @@
                 <tr>
                     <td style="vertical-align: middle;">
                         @php
-                            $invoicePaidTotal = $sourceInvoice ? (int) $sourceInvoice->getTotalPaidAmount() : 0;
+                            // Catatan kolom kuning: otomatis (Total Uang Masuk invoice),
+                            // tulis sendiri, atau tidak ditampilkan (revisi klien).
+                            $highlightMode = $kwintansi->highlight_mode ?: \App\Models\Administrasi\Kwintansi::HIGHLIGHT_AUTO;
+                            $highlightText = null;
+
+                            if ($highlightMode === \App\Models\Administrasi\Kwintansi::HIGHLIGHT_CUSTOM) {
+                                $highlightText = trim((string) $kwintansi->highlight_note) ?: null;
+                            } elseif ($highlightMode === \App\Models\Administrasi\Kwintansi::HIGHLIGHT_AUTO) {
+                                $invoicePaidTotal = $sourceInvoice ? (int) $sourceInvoice->getTotalPaidAmount() : 0;
+                                $highlightText = $invoicePaidTotal > 0
+                                    ? '*Total Uang Masuk Per ' . \Carbon\Carbon::parse($kwintansi->kwintansi_date)->locale('id')->translatedFormat('j F Y') . ' = ' . format_rupiah($invoicePaidTotal)
+                                    : null;
+                            }
                         @endphp
-                        @if ($invoicePaidTotal > 0)
-                            <span class="highlight-text">
-                                *Total Uang Masuk Per {{ \Carbon\Carbon::parse($kwintansi->kwintansi_date)->locale('id')->translatedFormat('j F Y') }} = {{ format_rupiah($invoicePaidTotal) }}
-                            </span>
+                        @if ($highlightText)
+                            <span class="highlight-text">{{ $highlightText }}</span>
                         @endif
                     </td>
                     <td style="vertical-align: middle; text-align: right; width: 40%;">

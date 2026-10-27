@@ -49,7 +49,7 @@ class SuratPerintahKerjaService
      * Membuat data SPK baru.
      *
      * Proses:
-     * 1. Generate nomor SPK otomatis ({sequence}/SPK/AKI/DIV.PRODUKSI/{tahun})
+     * 1. Generate nomor SPK otomatis ({sequence}/SPK/AKI/{divisi}/{bulan romawi}/{tahun})
      * 2. Proses array items (no, keterangan, volume, satuan, harga, jumlah)
      * 3. Hitung total amount
      * 4. Simpan ke database
@@ -59,7 +59,7 @@ class SuratPerintahKerjaService
      */
     public function create(array $validated): SuratPerintahKerja
     {
-        $nomor = SuratPerintahKerja::generateNomor();
+        $nomor = SuratPerintahKerja::generateNomor($validated['divisi'] ?? null, $validated['tanggal']);
         $items = $this->processItems($validated);
         $totalAmount = $this->calculateTotalAmount($items);
 
@@ -81,7 +81,9 @@ class SuratPerintahKerjaService
     /**
      * Memperbarui data SPK yang sudah ada.
      *
-     * Proses sama dengan create, tetapi memperbarui data existing (nomor tetap).
+     * Proses sama dengan create, tetapi memperbarui data existing. Nomor urut
+     * & tahun nomor tetap; divisi dan bulan romawi menyesuaikan isian terbaru
+     * (nomor SPK tidak direferensikan tabel lain, jadi aman diganti).
      *
      * @param  SuratPerintahKerja  $spk  Model SPK yang akan diperbarui
      * @param  array<string, mixed>  $validated  Data yang sudah divalidasi dari UpdateSuratPerintahKerjaRequest
@@ -92,7 +94,16 @@ class SuratPerintahKerjaService
         $items = $this->processItems($validated);
         $totalAmount = $this->calculateTotalAmount($items);
 
+        $parts = explode('/', $spk->nomor);
+        $nomor = SuratPerintahKerja::buildNomor(
+            (int) $parts[0],
+            $validated['divisi'] ?? $spk->divisi,
+            $validated['tanggal'],
+            (int) end($parts) ?: null,
+        );
+
         $spk->update([
+            'nomor' => $nomor,
             'proyek' => $validated['proyek'],
             'lokasi' => $validated['lokasi'],
             'tanggal' => $validated['tanggal'],

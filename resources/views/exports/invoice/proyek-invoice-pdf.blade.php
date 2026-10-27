@@ -356,7 +356,7 @@
 
         <!-- Terbilang -->
         <div class="terbilang">
-            <em>Terbilang : {{ ucwords(terbilang($totalAmount)) }} rupiah</em>
+            <em>Terbilang : {{ terbilang_rupiah($totalAmount) }}</em>
         </div>
 
         <!-- Payment Information -->

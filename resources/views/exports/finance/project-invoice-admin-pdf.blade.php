@@ -410,7 +410,7 @@
 
     {{-- ═══ TERBILANG ═══════════════════════════════════════════════════════════ --}}
     <div class="terbilang">
-        Terbilang : <em>{{ ucwords(terbilang(round($finalAmount))) . ' Rupiah' }}</em>
+        Terbilang : <em>{{ terbilang_rupiah($finalAmount) }}</em>
     </div>
 
     {{-- ═══ INFO PEMBAYARAN ═══════════════════════════════════════════════════════ --}}

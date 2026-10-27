@@ -2,6 +2,7 @@
 
 namespace App\Models\Administrasi;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,7 +19,7 @@ use App\Models\User;
  *
  * Model ini menyimpan data nota penjualan/barang PT Aghitsna Karya Indah.
  * Setiap nota memiliki:
- * - Kode nota unik (NTA-001/AKI/26)
+ * - Kode nota unik (NTA-001/AKI/X/26)
  * - Informasi penerima (kepada)
  * - Data faktur dan surat jalan
  * - Daftar item barang (disimpan sebagai JSON)
@@ -114,63 +115,54 @@ class Nota extends Model
     ];
 
     /**
-     * Generate kode nota berikutnya secara otomatis.
+     * Generate kode nota (sewa/jual) berikutnya secara otomatis.
      *
-     * Format: NTA-001/AKI/26 (NTA = Nota, 001 = nomor urut, AKI = Aghitsna Karya Indah, 26 = tahun)
-     * Nomor urut akan otomatis increment berdasarkan nota terakhir di tahun yang sama.
+     * Format: NTA-001/AKI/X/26 (NTA = Nota, 001 = nomor urut, AKI = Aghitsna
+     * Karya Indah, X = bulan romawi, 26 = tahun) — bulan & tahun diambil dari
+     * tanggal nota. Nomor urut berlanjut per tahun.
      *
-     * @return string Kode nota baru (contoh: NTA-001/AKI/26)
+     * @param  \DateTimeInterface|string|null  $date  Tanggal nota (default hari ini)
+     * @return string Kode nota baru (contoh: NTA-001/AKI/X/26)
      */
-    public static function generateNotaCode(): string
+    public static function generateNotaCode($date = null): string
     {
-        $year = date('y');
-
-        // Ambil nota terakhir dengan pola NTA-xxx/AKI/[year]
-        $lastNota = self::where('id_nota', 'like', "NTA-%/AKI/{$year}")
-            ->orderBy('id_nota', 'desc')
-            ->first();
-
-        if ($lastNota) {
-            // Extract nomor urut dari id_nota (NTA-001/AKI/26 -> 001)
-            $parts = explode('/', $lastNota->id_nota);
-            $numberPart = explode('-', $parts[0])[1];
-            $nextNumber = intval($numberPart) + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return sprintf('NTA-%03d/AKI/%s', $nextNumber, $year);
+        return self::generateCode('NTA', $date);
     }
 
     /**
      * Generate kode nota proyek berikutnya secara otomatis.
      *
-     * Format: NTP-001/AKI/26 (NTP = Nota Proyek, 001 = nomor urut,
-     * AKI = Aghitsna Karya Indah, 26 = tahun).
+     * Format: NTP-001/AKI/X/26 (NTP = Nota Proyek, 001 = nomor urut,
+     * AKI = Aghitsna Karya Indah, X = bulan romawi, 26 = tahun).
      * Nomor urut terpisah dari NTA (per tipe).
      *
-     * @return string Kode nota proyek baru (contoh: NTP-001/AKI/26)
+     * @param  \DateTimeInterface|string|null  $date  Tanggal nota (default hari ini)
+     * @return string Kode nota proyek baru (contoh: NTP-001/AKI/X/26)
      */
-    public static function generateProyekCode(): string
+    public static function generateProyekCode($date = null): string
     {
-        $year = date('y');
+        return self::generateCode('NTP', $date);
+    }
 
-        // Ambil nota terakhir dengan pola NTP-xxx/AKI/[year]
-        $lastNota = self::where('tipe_nota', self::TIPE_PROYEK)
-            ->where('id_nota', 'like', "NTP-%/AKI/{$year}")
-            ->orderBy('id_nota', 'desc')
-            ->first();
+    /**
+     * Kode nota {prefix}-{urut}/AKI/{bulan romawi}/{yy}.
+     *
+     * Revisi klien: setelah "AKI" dicantumkan bulan romawi. Nota lama
+     * berformat {prefix}-{urut}/AKI/{yy} tetap ikut dihitung agar nomor urut
+     * di tahun yang sama tidak mengulang.
+     */
+    private static function generateCode(string $prefix, $date = null): string
+    {
+        $date = $date ? Carbon::parse($date) : now();
+        $year = $date->format('y');
 
-        if ($lastNota) {
-            // Extract nomor urut dari id_nota (NTP-001/AKI/26 -> 001)
-            $parts = explode('/', $lastNota->id_nota);
-            $numberPart = explode('-', $parts[0])[1];
-            $nextNumber = intval($numberPart) + 1;
-        } else {
-            $nextNumber = 1;
-        }
+        $lastNumber = (int) self::where('id_nota', 'like', "{$prefix}-%/AKI/%")
+            ->where('id_nota', 'like', "%/{$year}")
+            ->pluck('id_nota')
+            ->map(fn (string $id) => (int) substr(explode('/', $id)[0], strlen($prefix) + 1))
+            ->max();
 
-        return sprintf('NTP-%03d/AKI/%s', $nextNumber, $year);
+        return sprintf('%s-%03d/AKI/%s/%s', $prefix, $lastNumber + 1, bulan_romawi($date->month), $year);
     }
 
     /**

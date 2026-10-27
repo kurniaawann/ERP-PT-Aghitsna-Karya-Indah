@@ -4,12 +4,14 @@
 
      - Kop: partials/nota-kop (logo & kop yang sama dengan nota proyek)
      - Judul "NOTA"
-     - Info kiri: No. Nota, Faktur No. & SJ No. (opsional), Periode (opsional)
+     - Info kiri: No. Nota, No. Faktur & No. SJ (opsional), Periode (opsional)
+       — baris opsional hanya dicetak bila diisi
      - Info kanan: tempat/tanggal + Kepada Yth. (rata kanan)
      - Tabel: NO / BANYAKNYA / NAMA BARANG / HARGA SATUAN / JUMLAH (minimal 7 baris)
      - Bawah kiri: rekening pembayaran + catatan
-     - Bawah kanan: rincian Sewa/Jual, Ongkir, Bongkar, Lembur, Uang Jaminan,
-       PPN (bila ada) & Jumlah -- kolom nilai sejajar dengan kolom Jumlah tabel
+     - Bawah kanan: Jumlah (nilai barang), lalu biaya tambahan yang diisi saja
+       (Sewa/Jual, Ongkir, Bongkar, Lembur, Uang Jaminan), PPN (bila ada) &
+       Grand Total -- kolom nilai sejajar dengan kolom Jumlah tabel
      - Tanda tangan: Penerima & Hormat Kami (penandatangan + divisi; wajib
        dipilih sebelum download — NotaController::ensureSigned)
      - Nominal ditulis "Rp. 50.000" via helper format_rupiah()
@@ -90,14 +92,16 @@
     // Persentase PPN tanpa desimal nol berlebih (11.00 -> 11, 11.50 -> 11,5)
     $ppnLabel = format_persen($nota->ppn_percentage);
 
-    // Rincian biaya tambahan (kosong ditampilkan "-")
-    $summaryRows = [
+    // Revisi klien: "Jumlah" (nilai pembelian barang) di atas, lalu biaya
+    // tambahan yang opsional — hanya yang diisi yang dicetak — dan terakhir
+    // Grand Total.
+    $feeRows = array_filter([
         'Sewa / Jual' => $nota->sewa_jual,
         'Ongkos Kirim PP / 1x' => $nota->ongkos_kirim,
         'Bongkar / Pasang' => $nota->bongkar_pasang,
         'Lembur Antar / Ambil' => $nota->lembur,
         'Uang Jaminan' => $nota->uang_jaminan,
-    ];
+    ], fn ($value) => (int) $value > 0);
 @endphp
 
 <div class="nota nota-sewa-jual">
@@ -121,14 +125,14 @@
                     </tr>
                     @if (trim((string) $nota->faktur_no) !== '')
                         <tr>
-                            <td class="meta-label">Faktur No.</td>
+                            <td class="meta-label">No. Faktur</td>
                             <td class="meta-colon">:</td>
                             <td>{{ $nota->faktur_no }}</td>
                         </tr>
                     @endif
                     @if (trim((string) $nota->sj_no) !== '')
                         <tr>
-                            <td class="meta-label">SJ No.</td>
+                            <td class="meta-label">No. SJ</td>
                             <td class="meta-colon">:</td>
                             <td>{{ $nota->sj_no }}</td>
                         </tr>
@@ -215,10 +219,14 @@
 
             <td class="bottom-right">
                 <table class="summary">
-                    @foreach ($summaryRows as $label => $value)
+                    <tr>
+                        <td class="summary-label">Jumlah</td>
+                        <td class="summary-value">{{ format_rupiah($nota->calculateItemsTotal()) }}</td>
+                    </tr>
+                    @foreach ($feeRows as $label => $value)
                         <tr>
                             <td class="summary-label">{{ $label }}</td>
-                            <td class="summary-value">{{ $value ? format_rupiah($value) : '-' }}</td>
+                            <td class="summary-value">{{ format_rupiah($value) }}</td>
                         </tr>
                     @endforeach
                     @if ($nota->ppn_percentage > 0)
@@ -228,7 +236,7 @@
                         </tr>
                     @endif
                     <tr class="total-row">
-                        <td class="summary-label">JUMLAH</td>
+                        <td class="summary-label">GRAND TOTAL</td>
                         <td class="summary-value">{{ format_rupiah($nota->total_with_ppn) }}</td>
                     </tr>
                 </table>

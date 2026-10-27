@@ -48,6 +48,16 @@ class Kwintansi extends Model
     protected $keyType = 'string';
 
     /**
+     * Pilihan catatan "kolom kuning" pada PDF kwitansi.
+     * - auto: teks otomatis "*Total Uang Masuk Per ..." (kwitansi dari invoice)
+     * - custom: teks ditulis sendiri (highlight_note)
+     * - none: tidak ditampilkan
+     */
+    public const HIGHLIGHT_AUTO = 'auto';
+    public const HIGHLIGHT_CUSTOM = 'custom';
+    public const HIGHLIGHT_NONE = 'none';
+
+    /**
      * Kolom yang dapat diisi secara mass-assignable.
      *
      * @var array<int, string>
@@ -63,6 +73,8 @@ class Kwintansi extends Model
         'is_bilyet_giro',
         'received_from',
         'payment_for',
+        'highlight_mode',
+        'highlight_note',
         'remaining',
         'kwintansi_date',
         'location',

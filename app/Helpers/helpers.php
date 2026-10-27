@@ -76,6 +76,55 @@ if (!function_exists('terbilang')) {
     }
 }
 
+if (!function_exists('terbilang_rupiah')) {
+    /**
+     * Terbilang nominal untuk dokumen cetak: "Lima Ratus Juta Rupiah".
+     *
+     * Revisi klien: penulisan terbilang diseragamkan — setiap kata diawali
+     * huruf besar (sebelumnya campur "Lima ratus juta Rupiah" / "Satu Juta
+     * rupiah" antar dokumen).
+     *
+     * @param  float|int|string|null  $number
+     * @return string
+     */
+    function terbilang_rupiah($number)
+    {
+        $words = terbilang((int) round((float) $number));
+
+        return ucwords($words !== '' ? $words : 'nol') . ' Rupiah';
+    }
+}
+
+if (!function_exists('rapikan_terbilang')) {
+    /**
+     * Seragamkan teks terbilang yang sudah tersimpan (mis. kolom
+     * amount_in_words data lama "Satu Juta rupiah") ke format
+     * terbilang_rupiah(): setiap kata diawali huruf besar.
+     *
+     * @param  string|null  $text
+     * @return string
+     */
+    function rapikan_terbilang($text)
+    {
+        return ucwords(mb_strtolower(trim((string) $text)));
+    }
+}
+
+if (!function_exists('bulan_romawi')) {
+    /**
+     * Bulan dalam angka Romawi untuk penomoran dokumen (1 → "I", 10 → "X").
+     *
+     * @param  int  $month  1-12
+     * @return string
+     */
+    function bulan_romawi($month)
+    {
+        $romawi = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+        return $romawi[((int) $month - 1) % 12] ?? '';
+    }
+}
+
 if (!function_exists('format_persen')) {
     /**
      * Format angka persen tanpa pembulatan ke bilangan bulat.

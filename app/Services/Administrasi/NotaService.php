@@ -96,7 +96,8 @@ class NotaService
      * Membuat data nota baru.
      *
      * Proses:
-     * 1. Generate kode nota otomatis (NTA-001/AKI/26 atau NTP-001/AKI/26)
+     * 1. Generate kode nota otomatis (NTA-001/AKI/X/26 atau NTP-001/AKI/X/26;
+     *    bulan romawi & tahun dari tanggal nota)
      * 2. Proses array items sesuai tipe nota
      * 3. Hitung total items
      * 4. Proses biaya tambahan opsional (khusus tipe sewa_jual)
@@ -114,7 +115,9 @@ class NotaService
     {
         $tipe = $validated['tipe_nota'] ?? Nota::TIPE_SEWA_JUAL;
         $isProyek = $tipe === Nota::TIPE_PROYEK;
-        $notaCode = $isProyek ? Nota::generateProyekCode() : Nota::generateNotaCode();
+        $notaCode = $isProyek
+            ? Nota::generateProyekCode($validated['nota_date'])
+            : Nota::generateNotaCode($validated['nota_date']);
         $location = $validated['location'] ?? self::DEFAULT_LOCATION;
 
         // Proses array items sesuai tipe
