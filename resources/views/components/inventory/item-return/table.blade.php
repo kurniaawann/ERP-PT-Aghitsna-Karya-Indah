@@ -39,7 +39,7 @@
                  Dipakai scope filterReturnType() pada ItemReturnController::baseQuery(). --}}
             <div class="col-span-2 sm:w-56">
                 <x-fi.select name="return_type" id="return_type" aria-label="Pilih Tipe Pengembalian"
-                    prefix-icon="arrow-uturn-left" placeholder="Semua Tipe" :value="request('return_type')"
+                    prefix-icon="arrow-uturn-left" placeholder="Semua Tipe" :value="request('return_type')" data-fi-select
                     :options="['masuk' => 'Retur Barang Masuk', 'keluar' => 'Retur Barang Keluar']" />
             </div>
             <div class="sm:w-44">

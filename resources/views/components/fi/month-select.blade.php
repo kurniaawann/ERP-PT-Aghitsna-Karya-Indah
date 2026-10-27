@@ -1,6 +1,7 @@
 {{--
     Filter bulan bergaya Filament (name="month", id="{name}-select").
-    Atribut lain (mis. onchange) diteruskan ke <select>.
+    Atribut lain (mis. onchange) diteruskan ke <select>. Tampilan daftar
+    opsi dibuat resources/js/shared/fi-select.js (data-fi-select).
 --}}
 @props([
     'name' => 'month',
@@ -16,4 +17,4 @@
 @endphp
 
 <x-fi.select :name="$name" :id="$name . '-select'" aria-label="Pilih Bulan" :options="$months" :value="$value"
-    placeholder="Semua Bulan" prefix-icon="calendar-days" {{ $attributes }} />
+    placeholder="Semua Bulan" prefix-icon="calendar-days" data-fi-select {{ $attributes }} />

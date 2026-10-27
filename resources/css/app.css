@@ -68,3 +68,172 @@
 .fi-repeater .remove-row-btn {
     @apply inline-flex h-9 w-9 items-center justify-center rounded-lg p-0 text-gray-400 transition duration-75 hover:bg-red-50 hover:text-red-600;
 }
+
+/*
+ * Date picker bergaya Filament (resources/js/shared/fi-datepicker.js).
+ * Input tanggal asli tetap ada (pembawa nilai & validasi) tetapi transparan
+ * di bawah tombol pemicu; panel kalender dipasang di <body> (fixed, di atas modal).
+ */
+.fi-datepicker {
+    @apply relative w-full;
+}
+
+.fi-datepicker-native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fi-datepicker-trigger {
+    @apply flex w-full items-center gap-x-2 rounded-lg bg-white px-3 py-1.5 text-start text-base text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 transition duration-75 focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 sm:text-sm sm:leading-6;
+}
+
+.fi-datepicker-trigger[aria-expanded='true'] {
+    @apply ring-2 ring-primary;
+}
+
+.fi-datepicker.is-invalid .fi-datepicker-trigger {
+    @apply ring-2 ring-red-600;
+}
+
+.fi-datepicker-trigger svg {
+    @apply h-5 w-5 shrink-0 text-gray-400;
+}
+
+.fi-datepicker-text {
+    @apply min-w-0 flex-1 truncate;
+}
+
+.fi-datepicker-text.is-placeholder {
+    @apply text-gray-400;
+}
+
+.fi-repeater .fi-datepicker-trigger {
+    @apply px-2.5 text-sm leading-6;
+}
+
+.fi-repeater .fi-datepicker-trigger svg {
+    @apply h-4 w-4;
+}
+
+.fi-datepicker-panel {
+    @apply fixed z-[60] w-72 rounded-xl bg-white p-4 text-sm shadow-lg ring-1 ring-gray-950/5;
+}
+
+.fi-datepicker-header {
+    @apply mb-3 flex items-center justify-between gap-x-2;
+}
+
+.fi-datepicker-heading {
+    @apply flex min-w-0 flex-1 items-center justify-center gap-x-1;
+}
+
+.fi-datepicker-nav {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 outline-none transition duration-75 hover:bg-gray-50 hover:text-gray-500 focus-visible:ring-2 focus-visible:ring-primary/50;
+}
+
+.fi-datepicker-nav svg {
+    @apply h-5 w-5;
+}
+
+.fi-datepicker-month,
+.fi-datepicker-year {
+    @apply cursor-pointer rounded-md border-0 bg-transparent py-1 text-sm font-semibold text-gray-950 outline-none transition duration-75 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-primary/50;
+}
+
+.fi-datepicker-month {
+    @apply ps-1.5 pe-1;
+}
+
+.fi-datepicker-year {
+    @apply w-14 cursor-text px-1.5;
+    -moz-appearance: textfield;
+}
+
+.fi-datepicker-year::-webkit-inner-spin-button,
+.fi-datepicker-year::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.fi-datepicker-weekdays {
+    @apply mb-1 grid grid-cols-7;
+}
+
+.fi-datepicker-weekdays span {
+    @apply py-1 text-center text-xs font-medium text-gray-500;
+}
+
+.fi-datepicker-days {
+    @apply grid grid-cols-7 gap-y-1;
+}
+
+.fi-datepicker-day {
+    @apply mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm text-gray-950 outline-none transition duration-75 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent;
+}
+
+.fi-datepicker-day.is-today {
+    @apply font-semibold text-primary ring-1 ring-inset ring-primary/30;
+}
+
+.fi-datepicker-day.is-selected {
+    @apply bg-primary font-semibold text-white hover:bg-primary-hover;
+}
+
+.fi-datepicker-footer {
+    @apply mt-3 flex items-center justify-between border-t border-gray-100 pt-3;
+}
+
+.fi-datepicker-link {
+    @apply rounded-md px-1.5 py-1 text-sm font-semibold text-primary outline-none transition duration-75 hover:bg-primary-light/50 focus-visible:ring-2 focus-visible:ring-primary/50;
+}
+
+.fi-datepicker-link.is-gray {
+    @apply text-gray-500 hover:bg-gray-50;
+}
+
+/*
+ * Dropdown pilihan bergaya Filament untuk <select data-fi-select>
+ * (resources/js/shared/fi-select.js), mis. filter bulan & tahun. <select> asli
+ * tetap ada (pembawa nilai & onchange) tetapi transparan di bawah tombol pemicu.
+ */
+.fi-select-native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fi-select-trigger {
+    @apply block w-full min-w-0 cursor-pointer bg-transparent py-1.5 pe-9 text-start text-base text-gray-950 outline-none disabled:cursor-not-allowed disabled:text-gray-500 sm:text-sm sm:leading-6;
+}
+
+.fi-select-text {
+    @apply block truncate;
+}
+
+.fi-select-open {
+    @apply ring-2 ring-primary;
+}
+
+.fi-select-panel {
+    @apply fixed z-[60] max-h-64 overflow-y-auto rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/5;
+}
+
+.fi-select-option {
+    @apply flex w-full items-center justify-between gap-x-3 whitespace-nowrap rounded-md px-3 py-2 text-start text-sm text-gray-700 outline-none transition duration-75 hover:bg-gray-50 focus:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.fi-select-option.is-selected {
+    @apply font-medium text-primary;
+}
+
+.fi-select-option svg {
+    @apply h-5 w-5 shrink-0 text-primary;
+}
+

@@ -7,6 +7,10 @@
     - suffix     : teks affix kanan (opsional)
     Atribut lain (name, id, value, required, readonly, oninvalid, ...)
     diteruskan ke elemen <input>; type default "text".
+
+    type="date" → date picker kalender (resources/js/shared/fi-datepicker.js):
+    input asli tetap membawa nilai "Y-m-d" (name/required/min/max tetap
+    berlaku) tetapi disembunyikan di bawah tombol pemicu yang dibuat JS.
 --}}
 @props([
     'prefixIcon' => null,
@@ -17,6 +21,12 @@
 @php
     $locked = $attributes->has('readonly') || $attributes->has('disabled');
 @endphp
+
+@if ($attributes->get('type') === 'date')
+    <div class="fi-datepicker">
+        <input {{ $attributes->class('fi-control') }} data-fi-datepicker>
+    </div>
+@else
 
 <div @class([
     'flex w-full overflow-hidden rounded-lg shadow-sm ring-1 ring-gray-950/10 transition duration-75',
@@ -51,3 +61,4 @@
         </div>
     @endif
 </div>
+@endif

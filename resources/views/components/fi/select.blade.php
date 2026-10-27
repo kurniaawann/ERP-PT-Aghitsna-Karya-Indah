@@ -7,6 +7,8 @@
     - placeholder : opsi kosong di paling atas (value "") (opsional)
     - prefixIcon  : nama ikon x-fi.icon di sisi kiri (opsional)
     Atribut lain (name, id, required, onchange, ...) diteruskan ke <select>.
+    Tambah atribut data-fi-select → daftar opsi tampil sebagai dropdown
+    bergaya Filament (resources/js/shared/fi-select.js), bukan popup native.
 --}}
 @props([
     'options' => null,

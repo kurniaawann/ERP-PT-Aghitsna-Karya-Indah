@@ -1,7 +1,8 @@
 {{--
     Filter tahun bergaya Filament (name="year", id="{name}-select"), dari
     tahun berjalan mundur sampai startYear. Atribut lain (mis. onchange)
-    diteruskan ke <select>.
+    diteruskan ke <select>. Tampilan daftar opsi dibuat
+    resources/js/shared/fi-select.js (data-fi-select).
 --}}
 @props([
     'name' => 'year',
@@ -17,4 +18,4 @@
 @endphp
 
 <x-fi.select :name="$name" :id="$name . '-select'" aria-label="Pilih Tahun" :options="$years" :value="$value"
-    placeholder="Semua Tahun" {{ $attributes }} />
+    placeholder="Semua Tahun" data-fi-select {{ $attributes }} />

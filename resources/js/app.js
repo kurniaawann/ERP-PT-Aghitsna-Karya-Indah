@@ -12,6 +12,8 @@ import './shared/delete-form';
 import './shared/quick-add-payment-account';
 import './shared/fi-dropdown';
 import './shared/fi-delete-row';
+import './shared/fi-datepicker';
+import './shared/fi-select';
 
 /**
  * Inisialisasi search input (selector: `data-search-debounce`).
