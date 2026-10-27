@@ -12,13 +12,15 @@
     {{-- Vite Assets --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    {{-- Style tambahan per halaman (optional) --}}
+    @stack('styles')
 
 </head>
 
 <body class="min-h-screen flex items-center justify-center bg-surface-secondary text-text-primary text-base">
 
-    {{-- Wrapper halaman --}}
-    <main class="w-full flex flex-col items-center justify-center px-4 py-8">
+    {{-- Wrapper halaman (bisa diganti per halaman lewat @section('main-class'), mis. login full-screen) --}}
+    <main class="@yield('main-class', 'w-full flex flex-col items-center justify-center px-4 py-8')">
         @yield('content')
     </main>
 
