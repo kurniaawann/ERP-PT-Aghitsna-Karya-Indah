@@ -2,7 +2,8 @@
  * Hapus satu data dari menu Aksi ⋮ (komponen x-fi.delete-row-modal).
  *
  * - Klik elemen [data-delete-row="{id}"] → isi #delete-row-value, tampilkan
- *   label data (data-delete-row-label) di #delete-row-label, lalu buka modal
+ *   label data (data-delete-row-label) di #delete-row-label, pakai URL
+ *   data-delete-row-action (bila ada) sebagai action form, lalu buka modal
  *   konfirmasi #deleteRowModal.
  * - Tombol konfirmasi modal memanggil submitDeleteRowForm() → submit
  *   #deleteRowForm (DELETE berisi satu id) dengan loading state.
@@ -16,6 +17,9 @@ document.addEventListener('click', function (e) {
     if (!input) return;
 
     input.value = trigger.dataset.deleteRow;
+
+    const form = document.getElementById('deleteRowForm');
+    if (form && trigger.dataset.deleteRowAction) form.action = trigger.dataset.deleteRowAction;
 
     const labelEl = document.getElementById('delete-row-label');
     if (labelEl) labelEl.textContent = trigger.dataset.deleteRowLabel || trigger.dataset.deleteRow;
@@ -32,7 +36,7 @@ document.addEventListener('click', function (e) {
 window.submitDeleteRowForm = function () {
     const form = document.getElementById('deleteRowForm');
     const input = document.getElementById('delete-row-value');
-    if (!form || !input || !input.value) return;
+    if (!form || !input || !input.value || !form.getAttribute('action')) return;
 
     const deleteBtn = document.getElementById('confirm-btn-deleteRowModal');
     if (deleteBtn) {

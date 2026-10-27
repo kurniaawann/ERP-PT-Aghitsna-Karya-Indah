@@ -15,6 +15,41 @@
     .fi-checkbox:checked {
         background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
     }
+
+    /* Input polos bergaya Filament (tanpa wrapper) untuk markup yang juga
+       dibuat lewat JS, mis. kartu item Barang Masuk. Ikon/affix diletakkan
+       absolute di atasnya + padding (ps-10) dari utility. */
+    .fi-control {
+        @apply block w-full rounded-lg border-0 bg-white px-3 py-1.5 text-base text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 transition duration-75 placeholder:text-gray-400 focus:ring-2 focus:ring-primary sm:text-sm sm:leading-6;
+    }
+}
+
+/*
+ * Kartu item repeater (mis. Barang Masuk): nomor otomatis "Item n" lewat CSS
+ * counter (ikut berlaku untuk kartu yang ditambah JS), dan field "Nama Barang
+ * Baru" ikut tersembunyi saat "Barang sudah ada di Data Barang" dicentang
+ * (input-nya sendiri di-toggle JS).
+ */
+.fi-repeater-list {
+    counter-reset: fi-repeater-item;
+}
+
+.fi-repeater-list > .item-row {
+    counter-increment: fi-repeater-item;
+}
+
+.fi-repeater-list .fi-repeater-item-title::before {
+    content: 'Item ' counter(fi-repeater-item);
+}
+
+/* Minimal satu item: tombol hapus disembunyikan pada kartu terakhir
+   (visibility, karena display tombol di-toggle inline oleh JS). */
+.fi-repeater-list > .item-row:only-child .remove-item {
+    visibility: hidden;
+}
+
+.item-row:has(.item-from-stock:checked, .item-from-stock-edit:checked) .item-name-field {
+    display: none;
 }
 
 /*

@@ -35,7 +35,6 @@
 
         {{-- SECTION: Header Halaman + Aksi (Export & Tambah) --}}
         <x-fi.page-header heading="DO Semen"
-            subheading="Kelola delivery order semen dan buat invoice semen langsung dari DO."
             :breadcrumbs="['Inventory' => null, 'DO Semen' => route('cement-do.index')]">
             <x-slot:actions>
                 {{-- Dropdown Export (PDF & Excel) --}}
