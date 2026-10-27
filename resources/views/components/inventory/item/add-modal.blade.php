@@ -1,46 +1,43 @@
-{{-- Modal Tambah Barang --}}
-<x-modal id="addModal" title="Tambah Barang" action="{{ route('item.store') }}" method="POST" buttonText="Simpan">
+{{-- Modal Tambah Barang (gaya Filament) --}}
+<x-fi.modal id="addModal" heading="Tambah Barang" description="Lengkapi data barang baru di bawah ini."
+    icon="cube" :action="route('item.store')" method="POST" submitLabel="Simpan">
 
     {{-- Field: Nama Barang --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Barang <span class="text-error">*</span></label>
-        <input type="text" name="name_item" class="w-full border rounded p-2" placeholder="Masukkan nama barang"
-            required maxlength="255" oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-    </div>
+    <x-fi.field label="Nama Barang" for="add-name-item" required>
+        <x-fi.input id="add-name-item" name="name_item" placeholder="Masukkan nama barang" required maxlength="255"
+            oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
     {{-- Field: Jumlah Stok --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jumlah <span class="text-error">*</span></label>
-        <input type="number" name="quantity" value="0" class="w-full border rounded p-2"
-            placeholder="Masukkan jumlah" required min="0"
-            oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
+    <x-fi.field label="Jumlah" for="add-quantity" required>
+        <x-fi.input type="number" id="add-quantity" name="quantity" value="0" placeholder="Masukkan jumlah"
+            prefix-icon="archive-box" required min="0"
+            oninvalid="this.setCustomValidity('Jumlah tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
     {{-- Field: Harga Modal --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Harga Modal <span class="text-error">*</span></label>
-        <input type="text" name="capital_price" value="Rp 0" class="w-full border rounded p-2" placeholder="Rp 0"
+    <x-fi.field label="Harga Modal" for="add-capital-price" required>
+        <x-fi.input name="capital_price" value="Rp 0" placeholder="Rp 0" prefix-icon="banknotes"
             required inputmode="numeric" id="add-capital-price"
-            oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
-    
+            oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
+
     {{-- Field: Harga Jual --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Harga Jual <span class="text-error">*</span></label>
-        <input type="text" name="selling_price" value="Rp 0" class="w-full border rounded p-2" placeholder="Rp 0"
-        required inputmode="numeric" id="add-selling-price"
-        oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')">
-        
+    <x-fi.field label="Harga Jual" for="add-selling-price" required>
+        <x-fi.input name="selling_price" value="Rp 0" placeholder="Rp 0" prefix-icon="banknotes"
+            required inputmode="numeric" id="add-selling-price"
+            oninvalid="this.setCustomValidity('Harga jual tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+
         {{-- Peringatan: Harga Jual harus lebih besar dari Harga Modal --}}
-        <p id="add-price-warning" class="text-error text-sm mt-1 hidden">
+        <p id="add-price-warning" class="hidden text-sm text-red-600">
+            <x-fi.icon name="exclamation-circle" class="me-1 inline-block h-4 w-4 align-[-3px]" />
             <span class="font-semibold">Peringatan:</span> Harga modal tidak boleh lebih besar atau sama dengan harga
             jual!
         </p>
-    </div>
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan</label>
-        <input type="text" name="keterangan" class="w-full border rounded p-2" placeholder="Masukkan keterangan"
-            maxlength="255">
-    </div>
-</x-modal>
+    </x-fi.field>
+
+    {{-- Field: Keterangan --}}
+    <x-fi.field label="Keterangan" for="add-keterangan">
+        <x-fi.input id="add-keterangan" name="keterangan" placeholder="Masukkan keterangan" maxlength="255" />
+    </x-fi.field>
+</x-fi.modal>
