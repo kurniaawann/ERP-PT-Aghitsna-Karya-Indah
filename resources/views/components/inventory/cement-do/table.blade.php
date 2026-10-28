@@ -166,7 +166,7 @@
                                 <x-fi.dropdown label="Aksi {{ $cementDeliveryOrder->no }}" width="w-60" class="-my-1.5">
                                     <x-fi.dropdown.list>
                                         <x-fi.dropdown.item icon="pencil-square"
-                                            onclick="openModal('editModal-{{ $cementDeliveryOrder->no }}')">
+                                            :href="route('cement-do.edit', $cementDeliveryOrder->no)">
                                             Edit DO
                                         </x-fi.dropdown.item>
                                     </x-fi.dropdown.list>

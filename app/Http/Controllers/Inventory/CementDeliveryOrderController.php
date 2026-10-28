@@ -56,6 +56,35 @@ class CementDeliveryOrderController extends Controller
     }
 
     /**
+     * Menampilkan halaman form tambah DO Semen.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('pages.inventory.cement-do-form', ['cementDeliveryOrder' => null]);
+    }
+
+    /**
+     * Menampilkan halaman form edit DO Semen beserta baris Data Semen-nya.
+     *
+     * @param  string  $no
+     * @return \Illuminate\View\View
+     */
+    public function edit(string $no)
+    {
+        $cementDeliveryOrder = $this->cementDeliveryOrderService->findById($no);
+
+        if (!$cementDeliveryOrder) {
+            abort(404);
+        }
+
+        $cementDeliveryOrder->loadMissing('cements');
+
+        return view('pages.inventory.cement-do-form', compact('cementDeliveryOrder'));
+    }
+
+    /**
      * Menyimpan DO Semen baru.
      *
      * @param  StoreCementDeliveryOrderRequest  $request
@@ -65,7 +94,7 @@ class CementDeliveryOrderController extends Controller
     {
         $this->cementDeliveryOrderService->store($request->validated());
 
-        return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
+        return redirect()->route('cement-do.index')->with('success', 'Data berhasil ditambahkan!');
     }
 
     /**
@@ -85,7 +114,7 @@ class CementDeliveryOrderController extends Controller
 
         $this->cementDeliveryOrderService->update($cementDeliveryOrder, $request->validated());
 
-        return redirect()->back()->with('success', 'Data berhasil diupdate!');
+        return redirect()->route('cement-do.index')->with('success', 'Data berhasil diupdate!');
     }
 
     /**

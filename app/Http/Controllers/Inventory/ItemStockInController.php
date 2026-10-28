@@ -47,6 +47,18 @@ class ItemStockInController extends Controller
     }
 
     /**
+     * Menampilkan halaman form tambah Barang Masuk (multi item).
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        $items = $this->itemService->getAll();
+
+        return view('pages.inventory.stock-in-create', compact('items'));
+    }
+
+    /**
      * Menyimpan Barang Masuk baru beserta penyesuaian stok.
      *
      * @param  StoreStockInRequest  $request
@@ -57,21 +69,21 @@ class ItemStockInController extends Controller
         $items = json_decode($request->items, true);
 
         if (empty($items) || !is_array($items)) {
-            return redirect()->back()->with('error', 'Minimal harus ada satu item barang masuk!');
+            return redirect()->back()->withInput()->with('error', 'Minimal harus ada satu item barang masuk!');
         }
 
         try {
             $this->stockInService->store($items, $request->date, $request->notes);
 
-            return redirect()->back()->with('success', 'Data barang masuk berhasil ditambahkan!');
+            return redirect()->route('stock-in.index')->with('success', 'Data barang masuk berhasil ditambahkan!');
         } catch (\InvalidArgumentException $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Stock In store failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
         }
     }
 

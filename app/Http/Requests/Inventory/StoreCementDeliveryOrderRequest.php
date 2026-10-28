@@ -36,6 +36,31 @@ class StoreCementDeliveryOrderRequest extends FormRequest
         ];
     }
 
+    /**
+     * Pesan validasi dalam Bahasa Indonesia.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'tanggal.required' => 'Tanggal DO harus diisi.',
+            'tanggal.date' => 'Format tanggal DO tidak valid.',
+            'tanggal_datang.date' => 'Format tanggal datang tidak valid.',
+            'tanggal_bayar.date' => 'Format tanggal bayar tidak valid.',
+            'harga_modal.required' => 'Harga modal harus diisi.',
+            'cements.*.tanggal.date' => 'Format tanggal pada data semen tidak valid.',
+            'cements.*.nama_proyek.required' => 'Nama proyek pada data semen harus diisi.',
+            'cements.*.nama_proyek.max' => 'Nama proyek pada data semen maksimal 255 karakter.',
+            'cements.*.name.max' => 'Nama pada data semen maksimal 255 karakter.',
+            'cements.*.jumlah.required' => 'Jumlah (zak) pada data semen harus diisi.',
+            'cements.*.jumlah.integer' => 'Jumlah (zak) pada data semen harus berupa angka bulat.',
+            'cements.*.jumlah.min' => 'Jumlah (zak) pada data semen tidak boleh negatif.',
+            'cements.*.harga.required' => 'Harga pada data semen harus diisi.',
+            'cements.*.tanggal_lunas.date' => 'Format tanggal lunas pada data semen tidak valid.',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $cements = collect($this->input('cements', []))

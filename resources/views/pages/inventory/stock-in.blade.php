@@ -7,15 +7,16 @@
      Data dari ItemStockInController@index:
      - $stockIns : LengthAwarePaginator hasil baseQuery (search, month, year)
                    + eager load relasi item.
-     - $items    : seluruh master barang untuk dropdown modal (ItemService::getAll()).
+     - $items    : seluruh master barang untuk dropdown modal edit (ItemService::getAll()).
      Komponen yang di-include:
      - components.inventory.stock-in.table      : tabel data barang masuk (+ filter,
                                                   pencarian, hapus massal, paginasi)
-     - components.inventory.stock-in.add-modal  : modal tambah (menerima $items)
      - components.inventory.stock-in.edit-modal : modal edit per record
      - x-fi.page-header, x-fi.export-dropdown, x-fi.button, x-fi.modal,
        x-fi.delete-row-modal (hapus 1 data dari menu Aksi)
-     JS: inline window.STOCK_IN_ITEMS + @vite('resources/js/pages/inventory/incoming-items/index.js')
+     Tambah Barang Masuk berupa halaman tersendiri: route('stock-in.create')
+     → pages/inventory/stock-in-create.blade.php.
+     JS: @vite('resources/js/pages/inventory/incoming-items/index.js')
      ===================================================================== --}}
 @extends('layouts.app')
 
@@ -34,7 +35,7 @@
                     :queryParams="['search' => request('search'), 'month' => request('month'), 'year' => request('year')]" />
 
                 {{-- Tombol Tambah Barang Masuk --}}
-                <x-fi.button icon="plus" onclick="openModal('addModal')">Tambah Barang Masuk</x-fi.button>
+                <x-fi.button icon="plus" :href="route('stock-in.create')">Tambah Barang Masuk</x-fi.button>
             </x-slot:actions>
         </x-fi.page-header>
 
@@ -42,10 +43,6 @@
         {{-- Tabel di-include dari komponen terpisah; menerima $stockIns (LengthAwarePaginator). --}}
         @include('components.inventory.stock-in.table', ['stockIns' => $stockIns])
     </div>
-
-    {{-- SECTION: Modal Tambah Barang Masuk --}}
-    {{-- Modal menerima $items untuk dropdown pemilihan barang (multi-item via JS). --}}
-    @include('components.inventory.stock-in.add-modal', ['items' => $items])
 
     {{-- SECTION: Modal Edit Barang Masuk (satu modal per record) --}}
     {{-- Satu modal dibuat per record dengan id unik; $allItems untuk pilihan barang saat edit. --}}
@@ -66,19 +63,8 @@
     <x-fi.delete-row-modal heading="Hapus Barang Masuk" field="selected_stock_ins"
         warning="Stok barang terkait akan dikurangi sesuai jumlah barang masuk ini." />
 
-    {{-- SECTION: Scripts (Data Items untuk JavaScript) --}}
-    {{-- window.STOCK_IN_ITEMS menyuplai data item (id, nama, harga modal, stok) ke modul
-         incoming-items/index.js untuk baris item baru pada modal tambah. --}}
+    {{-- SECTION: Scripts (JavaScript Modular) --}}
     @push('scripts')
-        <script>
-            window.STOCK_IN_ITEMS = {!! json_encode($items->map(fn($item) => [
-                'id_item' => $item->id_item,
-                'name_item' => $item->name_item,
-                'capital_price' => $item->capital_price,
-                'quantity' => $item->quantity,
-            ])) !!};
-        </script>
-
         @vite('resources/js/pages/inventory/incoming-items/index.js')
     @endpush
 @endsection

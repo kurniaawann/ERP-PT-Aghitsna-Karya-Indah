@@ -1,47 +1,50 @@
-{{-- Repeater "Data Semen" untuk modal tambah/edit DO Semen.
-     Pakai: <x-inventory.cement-do.cement-rows-table mode="add|edit"> baris awal </...>
-     - mode="add"  : tombol #add-row-btn, tbody #cement-rows
-     - mode="edit" : tombol .add-row-btn, tbody .cement-rows
-     (selector di atas dipakai resources/js/pages/inventory/cement-do/index.js) --}}
-@props(['mode' => 'add'])
+{{-- Tabel repeater "Data Semen" pada halaman form DO Semen (tambah/edit).
+     Pakai: <x-inventory.cement-do.cement-rows-table> baris awal </...>
+     Hook JS (resources/js/pages/inventory/cement-do/form.js):
+     - tbody#cement-rows        : tempat baris .cement-row
+     - #cement-rows-empty       : pesan kosong (tampil bila tidak ada baris)
+     - [data-add-cement-row]    : tombol "Tambah Baris"
+     - [data-summary="volume"] / [data-summary="subtotal"] : total di <tfoot> --}}
+<div class="overflow-x-auto">
+    <table class="w-full table-auto divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="min-w-[9.5rem] py-2 pe-2 ps-4 text-start text-sm font-semibold text-gray-950">Tanggal</th>
+                <th class="min-w-[12rem] px-2 py-2 text-start text-sm font-semibold text-gray-950">
+                    Nama Proyek<sup class="ms-0.5 font-medium text-red-600">*</sup>
+                </th>
+                <th class="min-w-[10rem] px-2 py-2 text-start text-sm font-semibold text-gray-950">Nama</th>
+                <th class="min-w-[6.5rem] px-2 py-2 text-center text-sm font-semibold text-gray-950">
+                    Jumlah (zak)<sup class="ms-0.5 font-medium text-red-600">*</sup>
+                </th>
+                <th class="min-w-[9rem] px-2 py-2 text-end text-sm font-semibold text-gray-950">
+                    Harga / zak<sup class="ms-0.5 font-medium text-red-600">*</sup>
+                </th>
+                <th class="min-w-[9.5rem] px-2 py-2 text-start text-sm font-semibold text-gray-950">Tgl Lunas</th>
+                <th class="min-w-[8rem] py-2 pe-2 ps-4 text-end text-sm font-semibold text-gray-950">Total</th>
+                <th class="w-12 py-2 pe-4 ps-2"><span class="sr-only">Hapus</span></th>
+            </tr>
+        </thead>
 
-{{-- PENTING: class "mb-3" pada pembungkus ini dipakai JS
-     (btn.closest('.mb-3').querySelector('.cement-rows')) — jangan dihapus
-     dan jangan pakai "mb-3" di elemen antara tombol & pembungkus ini. --}}
-<div class="mb-3 grid gap-y-2">
-    <div class="flex items-center justify-between gap-3">
-        <span class="text-sm font-medium leading-6 text-gray-950">
-            Data Semen<sup class="ms-0.5 font-medium text-red-600">*</sup>
-        </span>
+        <tbody id="cement-rows" class="fi-repeater divide-y divide-gray-200 bg-white">
+            {{ $slot }}
+        </tbody>
 
-        @if ($mode === 'add')
-            <x-fi.button id="add-row-btn" color="gray" size="sm" icon="plus">Tambah Baris</x-fi.button>
-        @else
-            <x-fi.button color="gray" size="sm" icon="plus" class="add-row-btn">Tambah Baris</x-fi.button>
-        @endif
-    </div>
+        <tfoot class="border-t border-gray-200 bg-gray-50">
+            <tr>
+                <td colspan="3" class="py-3 pe-2 ps-4 text-sm font-semibold text-gray-950">Total</td>
+                <td class="px-2 py-3 text-center text-sm font-semibold tabular-nums text-gray-950" data-summary="volume">0 zak</td>
+                <td colspan="2"></td>
+                <td class="whitespace-nowrap py-3 pe-2 ps-4 text-end text-sm font-semibold tabular-nums text-gray-950" data-summary="subtotal">Rp 0</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
 
-    <div class="overflow-x-auto rounded-xl shadow-sm ring-1 ring-gray-950/5">
-        <table class="w-full table-auto divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="min-w-[9.5rem] px-2 py-2 text-start text-sm font-semibold text-gray-950">Tanggal</th>
-                    <th class="min-w-[12rem] px-2 py-2 text-start text-sm font-semibold text-gray-950">Nama Proyek</th>
-                    <th class="min-w-[10rem] px-2 py-2 text-start text-sm font-semibold text-gray-950">Nama</th>
-                    <th class="min-w-[6.5rem] px-2 py-2 text-center text-sm font-semibold text-gray-950">Jumlah (zak)</th>
-                    <th class="min-w-[9rem] px-2 py-2 text-end text-sm font-semibold text-gray-950">Harga</th>
-                    <th class="min-w-[9.5rem] px-2 py-2 text-start text-sm font-semibold text-gray-950">Tgl Lunas</th>
-                    <th class="w-12 px-2 py-2"><span class="sr-only">Hapus</span></th>
-                </tr>
-            </thead>
-            <tbody @if ($mode === 'add') id="cement-rows" @endif
-                class="{{ $mode === 'add' ? '' : 'cement-rows ' }}fi-repeater divide-y divide-gray-200 bg-white">
-                {{ $slot }}
-            </tbody>
-        </table>
-    </div>
-
-    <p class="text-sm text-gray-500">
-        Satu DO dapat memuat banyak baris data semen. Klik “Tambah Baris” untuk menambahkan.
-    </p>
+<div id="cement-rows-empty" class="hidden border-t border-gray-200">
+    <x-fi.empty-state icon="truck" heading="Belum ada data semen"
+        description="DO tetap bisa disimpan tanpa data semen dan dilengkapi nanti.">
+        <x-fi.button color="gray" icon="plus" data-add-cement-row>Tambah Baris</x-fi.button>
+    </x-fi.empty-state>
 </div>

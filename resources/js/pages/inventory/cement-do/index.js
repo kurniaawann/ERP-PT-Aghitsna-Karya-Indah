@@ -2,13 +2,12 @@
  * DO Semen - Index Page JavaScript
  *
  * Modul ini menangani:
- * - Format input currency Rupiah (harga modal & harga tiap baris semen)
- * - Baris Data Semen dinamis (tambah/hapus baris) pada modal tambah/edit
  * - Modal "Buat Invoice Semen" per baris DO (checkbox data semen,
  *   preview total, select all, guard jumlah minimal)
  * - Select all checkbox
  * - Bulk delete button state
- * - Loading state saat submit form modal tambah/edit
+ *
+ * Form tambah/edit DO kini halaman tersendiri (cement-do/form.js).
  */
 
 /* global submitDeleteForm - dipanggil dari inline onclick pada Blade modal */
@@ -30,72 +29,6 @@ window.submitDeleteForm = function () {
         form.submit();
     }
 };
-
-/**
- * Mengikat event listener untuk format currency pada input harga.
- *
- * @param {HTMLInputElement} input
- */
-function bindCurrencyInput(input) {
-    input.addEventListener('input', function () {
-        this.value = formatRupiah(parseCurrencyInput(this.value));
-    });
-}
-
-/**
- * Mengikat pencegahan double-submit pada form modal tambah/edit.
- *
- * @param {HTMLFormElement|null} form Form modal (opsional)
- */
-function bindFormSubmit(form) {
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            const submitBtnEl = form.querySelector('button[type="submit"]');
-            const originalText = submitBtnEl.innerHTML;
-            if (!handleFormSubmit(submitBtnEl, originalText)) {
-                e.preventDefault();
-                return false;
-            }
-        });
-    }
-}
-
-/**
- * Bangun elemen baris Data Semen baru di dalam sebuah <tbody>.
- *
- * @param {HTMLTableSectionElement} tbody
- * @returns {HTMLTableRowElement}
- */
-function buildCementRow(tbody) {
-    const index = tbody.querySelectorAll('.cement-row').length;
-    const tr = document.createElement('tr');
-    tr.className = 'cement-row';
-
-    const cell = function (html) {
-        const td = document.createElement('td');
-        td.className = 'p-1';
-        td.innerHTML = html;
-        return td;
-    };
-
-    tr.appendChild(cell('<input type="date" name="cements[' + index + '][tanggal]" class="w-full border rounded p-2 text-sm">'));
-    tr.appendChild(cell('<input type="text" name="cements[' + index + '][nama_proyek]" class="w-full border rounded p-2 text-sm" placeholder="Nama proyek" required maxlength="255" oninvalid="this.setCustomValidity(\'Nama proyek tidak boleh kosong\')" oninput="this.setCustomValidity(\'\')">'));
-    tr.appendChild(cell('<input type="text" name="cements[' + index + '][name]" class="w-full border rounded p-2 text-sm" placeholder="Nama pemesan" maxlength="255">'));
-    tr.appendChild(cell('<input type="number" name="cements[' + index + '][jumlah]" value="0" min="0" class="w-full border rounded p-2 text-sm text-center" placeholder="0" required>'));
-    tr.appendChild(cell('<input type="text" name="cements[' + index + '][harga]" value="Rp 0" class="w-full border rounded p-2 text-sm text-right cement-harga" placeholder="Rp 0" required inputmode="numeric">'));
-    tr.appendChild(cell('<input type="date" name="cements[' + index + '][tanggal_lunas]" class="w-full border rounded p-2 text-sm">'));
-
-    const actionTd = document.createElement('td');
-    actionTd.className = 'p-1 text-center';
-    // Ikon Heroicons "trash" (sama dengan baris dari Blade); gaya tombol diatur CSS .fi-repeater.
-    actionTd.innerHTML = '<button type="button" class="remove-row-btn text-error hover:text-red-700 px-2 py-1 rounded" title="Hapus baris">'
-        + '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-5 w-5 shrink-0">'
-        + '<path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />'
-        + '</svg></button>';
-    tr.appendChild(actionTd);
-
-    return tr;
-}
 
 /**
  * Batalkan submit bila tidak ada data semen yang dicentang, lalu
@@ -160,83 +93,6 @@ window.openGenerateInvoiceModal = function (no) {
  * Inisialisasi halaman DO Semen.
  */
 document.addEventListener('DOMContentLoaded', function () {
-
-    // ─── Format Harga & Anti Double-Submit pada Modal Tambah ──────────
-    const addForm = document.querySelector('#addModal form');
-    const addHargaModal = document.getElementById('add-harga-modal');
-
-    if (addHargaModal) bindCurrencyInput(addHargaModal);
-    bindFormSubmit(addForm);
-
-    // ─── Format Harga Modal & Anti Double-Submit pada Modal Edit ─────
-    document.querySelectorAll('[id^="edit-harga-modal-"]').forEach(function (hargaModalInput) {
-        const itemNo = hargaModalInput.id.replace('edit-harga-modal-', '');
-        bindCurrencyInput(hargaModalInput);
-        bindFormSubmit(document.querySelector('#editModal-' + itemNo + ' form'));
-    });
-
-    // ─── Baris Data Semen Dinamis ────────────────────────────────────
-
-    /**
-     * Tambahkan satu baris Data Semen ke dalam <tbody> lalu ikat format
-     * currency dan tombol hapus.
-     *
-     * @param {HTMLTableSectionElement} tbody
-     */
-    function addRow(tbody) {
-        const tr = buildCementRow(tbody);
-        tbody.appendChild(tr);
-
-        const hargaInput = tr.querySelector('.cement-harga');
-        if (hargaInput) bindCurrencyInput(hargaInput);
-
-        const removeBtn = tr.querySelector('.remove-row-btn');
-        if (removeBtn) {
-            removeBtn.addEventListener('click', function () {
-                tr.remove();
-            });
-        }
-    }
-
-    /**
-     * Ikat tombol hapus pada baris yang sudah ada di dalam <tbody>.
-     *
-     * @param {HTMLTableSectionElement} tbody
-     */
-    function bindExistingRows(tbody) {
-        tbody.querySelectorAll('.cement-row').forEach(function (tr) {
-            const hargaInput = tr.querySelector('.cement-harga');
-            if (hargaInput) bindCurrencyInput(hargaInput);
-
-            const removeBtn = tr.querySelector('.remove-row-btn');
-            if (removeBtn) {
-                removeBtn.addEventListener('click', function () {
-                    tr.remove();
-                });
-            }
-        });
-    }
-
-    // Tombol "Tambah Baris" pada modal tambah.
-    const addRowBtn = document.getElementById('add-row-btn');
-    if (addRowBtn) {
-        const addRowsBody = document.getElementById('cement-rows');
-        if (addRowsBody) bindExistingRows(addRowsBody);
-        addRowBtn.addEventListener('click', function () {
-            if (addRowsBody) addRow(addRowsBody);
-        });
-    }
-
-    // Tombol "Tambah Baris" pada setiap modal edit (class .add-row-btn).
-    document.querySelectorAll('.add-row-btn').forEach(function (btn) {
-        const tbody = btn.closest('.mb-3').querySelector('.cement-rows');
-        if (tbody) {
-            bindExistingRows(tbody);
-            btn.addEventListener('click', function () {
-                addRow(tbody);
-            });
-        }
-    });
 
     // ─── Select All Checkbox ──────────────────────────────────────────
     const selectAllCheckbox = document.getElementById('selectAll');

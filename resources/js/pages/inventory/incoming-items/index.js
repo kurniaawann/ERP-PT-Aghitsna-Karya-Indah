@@ -1,9 +1,10 @@
 /**
  * Barang Masuk (Stock In) - Page Module
  *
- * Mengelola semua interaksi halaman Barang Masuk:
- * - Dynamic items form (add/edit modals)
+ * Mengelola interaksi halaman daftar & halaman tambah Barang Masuk:
+ * - Dynamic items form (halaman tambah #stock-in-create-form & modal edit)
  * - Searchable dropdown barang
+ * - Ringkasan halaman tambah (jumlah item, total unit, total nilai modal)
  * - Select all / bulk delete
  * - Form submission dengan double-submit prevention
  * - Currency formatting
@@ -185,6 +186,8 @@ function initSearchableDropdown(row) {
                 nameInput.value = name;
                 capitalInput.value = capital;
                 formatCurrencyInput(capitalInput);
+                // Beri tahu listener lain (mis. ringkasan halaman tambah)
+                capitalInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
 
             dropdown.classList.add('hidden');
@@ -211,6 +214,9 @@ function initSearchableDropdown(row) {
  *    pertama diisi dan setiap kali user mengetik.
  * 4. Memanggil initSearchableDropdown() untuk tiap baris.
  *
+ * Baris yang sudah dipasangi listener ditandai (data-bound) agar tidak
+ * terpasang ganda saat fungsi dipanggil ulang setelah "Tambah Item".
+ *
  * @param {HTMLElement} container  Container daftar item (.items-list)
  * @returns {void}
  */
@@ -218,6 +224,9 @@ function attachItemListeners(container) {
     const itemRows = container.querySelectorAll('.item-row');
 
     itemRows.forEach(row => {
+        if (row.dataset.bound) return;
+        row.dataset.bound = '1';
+
         const removeBtn = row.querySelector('.remove-item');
         const fromStockCheckbox = row.querySelector('.item-from-stock, .item-from-stock-edit');
         const capitalInput = row.querySelector('.item-capital, .item-capital-edit');
@@ -408,6 +417,38 @@ function buildNewItemRowHtml() {
 }
 
 // ==========================================
+// RINGKASAN HALAMAN TAMBAH
+// ==========================================
+
+/**
+ * Hitung ulang ringkasan halaman tambah: jumlah kartu item, total unit,
+ * dan total nilai modal (Σ qty × harga modal / unit).
+ *
+ * @param {HTMLElement} container  Container kartu item (#items-list)
+ * @returns {void}
+ */
+function updateStockInSummary(container) {
+    const rows = container.querySelectorAll('.item-row');
+    let units = 0;
+    let capital = 0;
+
+    rows.forEach(row => {
+        const qty = parseInt(row.querySelector('.item-qty')?.value, 10) || 0;
+        units += qty;
+        capital += qty * parseCurrencyValue(row.querySelector('.item-capital')?.value);
+    });
+
+    const set = (key, text) => {
+        const el = document.querySelector(`[data-stock-in-summary="${key}"]`);
+        if (el) el.textContent = text;
+    };
+
+    set('items', rows.length.toLocaleString('id-ID'));
+    set('units', units.toLocaleString('id-ID') + ' unit');
+    set('capital', 'Rp ' + capital.toLocaleString('id-ID'));
+}
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 
@@ -416,8 +457,9 @@ function buildNewItemRowHtml() {
  *
  * Alur:
  * 1. Tombol "add-item" menambahkan baris item baru dan memasang listener.
- * 2. Listener dipasang pada container items-list utama dan semua modal edit.
- * 3. Submit form modal tambah/edit: baris item di-serialisasi via
+ * 2. Listener dipasang pada container items-list utama dan semua modal edit;
+ *    ringkasan halaman tambah dihitung ulang saat kartu/isinya berubah.
+ * 3. Submit form halaman tambah / modal edit: baris item di-serialisasi via
  *    serializeItemsData() menjadi JSON dan di-set ke hidden input,
  *    lalu handleFormSubmit() mencegah double-submit.
  * 4. Checkbox select all dan checkbox per item mengontrol status tombol
@@ -425,7 +467,7 @@ function buildNewItemRowHtml() {
  */
 document.addEventListener('DOMContentLoaded', function () {
     // ------------------------------------------
-    // Dynamic Items - Add Modal
+    // Dynamic Items - Halaman Tambah
     // ------------------------------------------
 
     const addItemBtn = document.getElementById('add-item');
@@ -444,6 +486,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const itemsContainer = document.getElementById('items-list');
     if (itemsContainer) {
         attachItemListeners(itemsContainer);
+
+        // Ringkasan: kartu ditambah/dihapus atau isi qty/harga berubah
+        const refreshSummary = () => updateStockInSummary(itemsContainer);
+        new MutationObserver(refreshSummary).observe(itemsContainer, { childList: true });
+        itemsContainer.addEventListener('input', refreshSummary);
+        itemsContainer.addEventListener('change', refreshSummary);
+        refreshSummary();
     }
 
     // ------------------------------------------
@@ -455,10 +504,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ------------------------------------------
-    // Form Submission - Add Modal
+    // Form Submission - Halaman Tambah
     // ------------------------------------------
 
-    const addForm = document.querySelector('#addModal form');
+    const addForm = document.getElementById('stock-in-create-form');
     if (addForm) {
         addForm.addEventListener('submit', function (e) {
             const container = document.getElementById('items-list');

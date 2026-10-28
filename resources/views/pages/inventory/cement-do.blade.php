@@ -16,12 +16,13 @@
      Komponen yang di-include:
      - components.inventory.cement-do.table         : tabel DO semen (+ filter,
                  pencarian, hapus massal, paginasi)
-     - components.inventory.cement-do.add-modal     : modal tambah DO
-     - components.inventory.cement-do.edit-modal    : modal edit DO
      - components.inventory.cement-do.generate-invoice-modal : modal
                  "Buat Invoice" per DO
      - x-fi.page-header, x-fi.export-dropdown, x-fi.button, x-fi.modal,
        x-fi.delete-row-modal (hapus 1 data dari menu Aksi)
+
+     Tambah/Edit DO berupa halaman tersendiri: route('cement-do.create') /
+     route('cement-do.edit') → pages/inventory/cement-do-form.blade.php.
 
      JS yang di-load:
      - @vite('resources/js/pages/inventory/cement-do/index.js')
@@ -42,21 +43,13 @@
                     :pdfRoute="route('cement-do.export.pdf')" />
 
                 {{-- Tombol Tambah DO Semen --}}
-                <x-fi.button icon="plus" onclick="openModal('addModal')">Tambah DO</x-fi.button>
+                <x-fi.button icon="plus" :href="route('cement-do.create')">Tambah DO</x-fi.button>
             </x-slot:actions>
         </x-fi.page-header>
 
         {{-- SECTION: Tabel DO Semen --}}
         @include('components.inventory.cement-do.table', ['cementDeliveryOrders' => $cementDeliveryOrders])
     </div>
-
-    {{-- SECTION: Modal Tambah DO Semen --}}
-    @include('components.inventory.cement-do.add-modal')
-
-    {{-- SECTION: Modal Edit DO Semen (satu modal per item) --}}
-    @foreach ($cementDeliveryOrders as $cementDeliveryOrder)
-        @include('components.inventory.cement-do.edit-modal', ['cementDeliveryOrder' => $cementDeliveryOrder])
-    @endforeach
 
     {{-- SECTION: Modal Konfirmasi Hapus Massal --}}
     <x-fi.modal id="deleteModal" heading="Hapus DO Terpilih" icon="trash" color="danger" width="md"

@@ -1,5 +1,8 @@
-{{-- Satu kartu item pada modal Barang Masuk (gaya repeater Filament).
-     Variabel: $items (pilihan barang), $record (opsional → mode edit).
+{{-- Satu kartu item Barang Masuk (gaya repeater Filament) untuk halaman
+     tambah & modal edit.
+     Variabel: $items (pilihan barang), $record (opsional → mode edit),
+     $old (opsional, halaman tambah → satu item dari JSON old('items') saat
+     penyimpanan gagal: id_item, name_item, quantity, capital_price, from_stock).
 
      Hook JS incoming-items/index.js (jangan diubah): .item-row,
      .item-from-stock / .item-from-stock-edit, .item-select-wrapper (display
@@ -7,14 +10,22 @@
      .item-option[data-value|name|capital|stock|search], .no-results,
      .item-select-hidden, .item-name (display di-toggle JS), .item-qty,
      .item-capital, .remove-item (display di-toggle JS).
-     Kartu baru di modal tambah dibuat JS (buildNewItemRowHtml /
+     Kartu baru di halaman tambah dibuat JS (buildNewItemRowHtml /
      buildItemDropdownHtml) dengan markup yang SAMA dengan file ini. --}}
 @php
     $isEdit = isset($record);
+    $old = is_array($old ?? null) ? $old : [];
+
+    // Dicentang "sudah ada di Data Barang": selalu pada edit, atau item lama yang dipilih dari daftar
+    $fromStock = $isEdit || (!empty($old['from_stock']) && !empty($old['id_item']));
+    $selectedId = $isEdit ? $record->id_item : ($fromStock ? $old['id_item'] : '');
+    $nameValue = $isEdit ? $record->item?->name_item : ($old['name_item'] ?? '');
+    $qtyValue = $isEdit ? $record->quantity : ($old['quantity'] ?? 1);
+    $capitalValue = $isEdit ? $record->capital_price : ($old['capital_price'] ?? null);
 @endphp
 
 <div class="item-row rounded-xl bg-white shadow-sm ring-1 ring-gray-950/10">
-    {{-- Header kartu: judul + tombol hapus item (hanya modal tambah) --}}
+    {{-- Header kartu: judul + tombol hapus item (hanya halaman tambah) --}}
     <div class="flex min-h-[3rem] items-center justify-between gap-3 rounded-t-xl border-b border-gray-100 bg-gray-50 px-4 py-2">
         @if ($isEdit)
             <span class="text-sm font-medium text-gray-950">Detail Barang</span>
@@ -32,7 +43,7 @@
         {{-- Sumber barang: dicentang = pilih dari Data Barang; tidak = barang baru --}}
         <label class="flex cursor-pointer items-start gap-3">
             <input type="checkbox" class="{{ $isEdit ? 'item-from-stock-edit' : 'item-from-stock' }} fi-checkbox mt-1"
-                @checked($isEdit)>
+                @checked($fromStock)>
             <span class="grid">
                 <span class="text-sm font-medium text-gray-950">Barang sudah ada di Data Barang</span>
                 <span class="text-sm text-gray-500">Bila tidak dicentang, nama yang diisi akan dibuat sebagai barang baru.</span>
@@ -40,12 +51,12 @@
         </label>
 
         {{-- Pilih barang (pencarian) --}}
-        <div class="item-select-wrapper relative" @unless ($isEdit) style="display: none;" @endunless>
+        <div class="item-select-wrapper relative" @unless ($fromStock) style="display: none;" @endunless>
             <span class="mb-2 block text-sm font-medium leading-6 text-gray-950">Barang<sup class="ms-0.5 font-medium text-red-600">*</sup></span>
             <div class="relative">
                 <x-fi.icon name="magnifying-glass" class="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input type="text" class="item-search-input fi-control ps-10" placeholder="Cari nama barang..."
-                    autocomplete="off" aria-label="Cari barang" value="{{ $isEdit ? $record->item?->name_item : '' }}">
+                    autocomplete="off" aria-label="Cari barang" value="{{ $fromStock ? $nameValue : '' }}">
             </div>
 
             <div class="item-dropdown absolute z-50 mt-1 hidden max-h-64 w-full overflow-y-auto rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/5">
@@ -66,13 +77,13 @@
             </div>
         </div>
 
-        <input type="hidden" class="item-select-hidden" value="{{ $isEdit ? $record->id_item : '' }}">
+        <input type="hidden" class="item-select-hidden" value="{{ $selectedId }}">
 
         {{-- Nama barang baru (disembunyikan saat memilih dari Data Barang) --}}
         <div class="item-name-field grid gap-y-2">
             <span class="text-sm font-medium leading-6 text-gray-950">Nama Barang Baru<sup class="ms-0.5 font-medium text-red-600">*</sup></span>
             <input type="text" class="item-name fi-control" placeholder="Masukkan nama barang" aria-label="Nama barang baru"
-                required @if ($isEdit) style="display: none;" value="{{ $record->item?->name_item }}" @endif
+                required value="{{ $nameValue }}" @if ($fromStock) style="display: none;" @endif
                 oninvalid="this.setCustomValidity('Nama barang tidak boleh kosong')" oninput="this.setCustomValidity('')">
         </div>
 
@@ -81,7 +92,7 @@
             <div class="grid content-start gap-y-2">
                 <span class="text-sm font-medium leading-6 text-gray-950">Jumlah (unit)<sup class="ms-0.5 font-medium text-red-600">*</sup></span>
                 <input type="number" class="item-qty fi-control" placeholder="0" aria-label="Jumlah" required min="1"
-                    value="{{ $isEdit ? $record->quantity : 1 }}"
+                    value="{{ $qtyValue }}"
                     oninvalid="this.setCustomValidity('Qty tidak boleh kosong')" oninput="this.setCustomValidity('')">
             </div>
 
@@ -91,7 +102,7 @@
                     <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-sm text-gray-500">Rp</span>
                     <input type="text" inputmode="numeric" class="item-capital fi-control ps-10" placeholder="0"
                         aria-label="Harga modal per unit" required min="0"
-                        value="{{ $isEdit ? number_format($record->capital_price, 0, ',', '.') : '' }}"
+                        value="{{ $capitalValue !== null && $capitalValue !== '' ? number_format((float) $capitalValue, 0, ',', '.') : '' }}"
                         oninvalid="this.setCustomValidity('Harga modal tidak boleh kosong')"
                         oninput="formatCurrencyInput(this); this.setCustomValidity('')">
                 </div>

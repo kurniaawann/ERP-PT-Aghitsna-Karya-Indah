@@ -8,6 +8,7 @@
  * - Select all / bulk delete
  * - Print dropdown
  * - Filter auto-submit
+ * - Buka ulang modal tambah/edit (berisi input lama) saat penyimpanan gagal
  */
 
 // ==========================================
@@ -347,6 +348,8 @@ window.submitDeleteForm = function () {
  * 4. Form hapus menampilkan spinner saat submit.
  * 5. Filter bulan/tahun/tipe auto-submit saat berubah.
  * 6. Checkbox select all & per-item mengontrol tombol hapus bulk delete.
+ * 7. Penyimpanan gagal → modal asal (ITEM_RETURN_DATA.reopenModal) dibuka lagi;
+ *    untuk modal tambah, dropdown barang & batas jumlah dipulihkan dulu.
  */
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -436,6 +439,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (addQuantityInput) {
         addQuantityInput.addEventListener('input', validateAddQuantity);
+    }
+
+    /**
+     * Memulihkan isi modal tambah dari input lama (old()) setelah penyimpanan
+     * gagal: bangun ulang dropdown sesuai tipe, pilih kembali barangnya, lalu
+     * validasi ulang jumlah terhadap batas stok sumber.
+     *
+     * @returns {void}
+     */
+    function restoreAddModalState() {
+        if (!addReturnType || !addReturnType.value) return;
+
+        const itemIdInput = document.getElementById('addItemId');
+        const stockInIdInput = document.getElementById('addStockInId');
+        const stockOutIdInput = document.getElementById('addStockOutId');
+        const oldItemId = itemIdInput.value;
+        const oldStockInId = stockInIdInput?.value || '';
+        const oldStockOutId = stockOutIdInput?.value || '';
+
+        // buildAddItemDropdown() mengosongkan hidden input → nilai lama disimpan dulu
+        buildAddItemDropdown(addReturnType.value);
+
+        const item = addDropdownState.items.find(i => i.id_item === oldItemId);
+        if (!item) return;
+
+        addItemSearch.value = `${item.id_item} - ${item.name}`;
+        addItemSearch.readOnly = true;
+        itemIdInput.value = item.id_item;
+        if (stockInIdInput) stockInIdInput.value = oldStockInId || item.stockInId || '';
+        if (stockOutIdInput) stockOutIdInput.value = oldStockOutId || item.stockOutId || '';
+
+        validateAddQuantity();
     }
 
     if (addFormElement && addButton) {
@@ -578,4 +613,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     updateBulkDeleteButtonState();
+
+    // ==========================================
+    // BUKA ULANG MODAL SAAT PENYIMPANAN GAGAL
+    // ==========================================
+
+    const reopenModalId = window.ITEM_RETURN_DATA?.reopenModal;
+    if (reopenModalId && document.getElementById(reopenModalId) && typeof openModal === 'function') {
+        if (reopenModalId === 'addModal') restoreAddModalState();
+        openModal(reopenModalId);
+    }
 });

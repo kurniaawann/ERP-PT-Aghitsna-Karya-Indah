@@ -35,4 +35,20 @@ class StoreStockInRequest extends FormRequest
             'notes' => 'nullable|string|max:500',
         ];
     }
+
+    /**
+     * Pesan validasi dalam Bahasa Indonesia.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'items.required' => 'Minimal harus ada satu item barang masuk.',
+            'items.json' => 'Format data item tidak valid.',
+            'date.required' => 'Tanggal harus diisi.',
+            'date.date' => 'Format tanggal tidak valid.',
+            'notes.max' => 'Keterangan maksimal 500 karakter.',
+        ];
+    }
 }

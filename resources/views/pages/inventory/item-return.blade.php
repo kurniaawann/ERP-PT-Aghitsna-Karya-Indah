@@ -110,7 +110,9 @@
                 items: {!! json_encode($items->map(fn($i) => [
                     'id_item' => $i->id_item,
                     'name_item' => $i->name_item,
-                ])) !!}
+                ])) !!},
+                // Modal yang dibuka ulang karena penyimpanan gagal (addModal / editModal-{id})
+                reopenModal: @json($errors->any() ? old('_modal') : null),
             };
         </script>
 

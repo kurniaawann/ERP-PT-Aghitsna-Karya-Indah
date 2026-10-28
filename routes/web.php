@@ -114,7 +114,9 @@ Route::middleware('auth')->group(function () {
     // ─── Inventory: DO Semen (Super Admin only) ───
     Route::middleware('role:superadmin')->group(function () {
         Route::get('/do-semen', [CementDeliveryOrderController::class, 'index'])->name('cement-do.index');
+        Route::get('/do-semen/create', [CementDeliveryOrderController::class, 'create'])->name('cement-do.create');
         Route::post('/do-semen', [CementDeliveryOrderController::class, 'store'])->name('cement-do.store');
+        Route::get('/do-semen/{no}/edit', [CementDeliveryOrderController::class, 'edit'])->name('cement-do.edit');
         Route::put('/do-semen/{no}', [CementDeliveryOrderController::class, 'update'])->name('cement-do.update');
         Route::post('/do-semen/{no}/generate-invoice', [CementDeliveryOrderController::class, 'generateInvoice'])->name('cement-do.generateInvoice');
         Route::delete('/do-semens', [CementDeliveryOrderController::class, 'destroySelected'])->name('cement-does.destroySelected');
@@ -126,6 +128,7 @@ Route::middleware('auth')->group(function () {
     // ─── Inventory: Stock In (Super Admin only) ───
     Route::middleware('role:superadmin')->group(function () {
         Route::get('/stock-in', [ItemStockInController::class, 'index'])->name('stock-in.index');
+        Route::get('/stock-in/create', [ItemStockInController::class, 'create'])->name('stock-in.create');
         Route::post('/stock-in', [ItemStockInController::class, 'store'])->name('stock-in.store');
         Route::put('/stock-in/{id_stock_in}', [ItemStockInController::class, 'update'])->name('stock-in.update');
         Route::delete('/stock-in/{id_stock_in}', [ItemStockInController::class, 'destroy'])->name('stock-in.destroy');
