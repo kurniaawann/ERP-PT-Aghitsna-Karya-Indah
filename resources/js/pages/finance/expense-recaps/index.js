@@ -58,7 +58,7 @@ function syncCategoryFields(form) {
 
     if (amountLabel) {
         amountLabel.innerHTML = (isIncome ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran') +
-            ' <span class="text-error">*</span>';
+            ' <sup class="ms-0.5 font-medium text-red-600">*</sup>';
     }
     if (invoiceSection) {
         invoiceSection.classList.toggle('hidden', !isIncome);

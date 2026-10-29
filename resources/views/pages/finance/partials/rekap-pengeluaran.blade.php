@@ -1,70 +1,89 @@
 {{-- =====================================================================
-     Partial Tab: Rekap Pengeluaran (dipakai pada halaman Rekap tab pengeluaran)
-     Data tersedia dari RecapExpenseController::indexData():
+     Konten: Rekap Pengeluaran / Kas Kantor (gaya Filament)
+     Dipakai di dua tempat:
+     - pages/finance/rekap.blade.php (Super Admin, tab "pengeluaran"; $tabs & $tab
+       tersedia → judul "Rekap" + tab, filter ke route('rekap.index') + tab)
+     - pages/finance/expense-recaps.blade.php (halaman sendiri; role admin
+       menyebutnya "Kas Kantor" — menu Report)
+
+     Data dari RecapExpenseController::indexData():
      - $expenseRecaps : Paginator ExpenseRecap (10/halaman)
      - $categories    : Daftar kategori pengeluaran (filter & dropdown modal)
      - $totals        : Grand totals (income, expense, balance)
+     - $recapLabel    : "Kas Kantor" (admin) / "Rekap Pengeluaran" (lainnya)
+     - $nextIncomeInvoiceNumber : pratinjau nomor faktur uang masuk berikutnya
+                        (null untuk admin — tanpa faktur)
+
+     JS: @vite('resources/js/pages/finance/expense-recaps/index.js')
      ===================================================================== --}}
+@php
+    $inRekap = isset($tabs);
+    $recapLabel = $recapLabel ?? 'Rekap Pengeluaran';
+    $indexUrl = $inRekap ? route('rekap.index', ['tab' => 'pengeluaran']) : route('recap-expense.index');
+@endphp
 
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        {{-- Header Rekap Pengeluaran --}}
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Rekap Pengeluaran</h1>
+<div class="flex flex-col gap-y-6">
 
-        {{-- Toolbar: Filter + Action Buttons (form mengarah ke tab aktif) --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <form method="GET" action="{{ route('rekap.index', ['tab' => 'pengeluaran']) }}"
-                class="w-full min-[1520px]:w-auto min-[1520px]:flex-1 flex flex-col min-[1520px]:flex-row gap-3">
+    {{-- SECTION: Header Halaman + Aksi (Export & Tambah) --}}
+    <x-fi.page-header :heading="$inRekap ? 'Rekap' : $recapLabel"
+        :breadcrumbs="$inRekap
+            ? ['Finance' => null, 'Rekap' => route('rekap.index'), $recapLabel => null]
+            : ['Report' => null, $recapLabel => $indexUrl]">
+        <x-slot:actions>
+            {{-- Dropdown Export (Excel & PDF, mengikuti filter aktif; minta penandatangan bila diwajibkan) --}}
+            <x-fi.export-dropdown :excelRoute="route('recap-expense.export.excel')" :pdfRoute="route('recap-expense.export.pdf')"
+                :queryParams="[
+                    'search' => request('search'),
+                    'category' => request('category'),
+                    'month' => request('month'),
+                    'year' => request('year'),
+                ]" :requireSigner="app(\App\Services\Report\ReportSignerService::class)->isRequired()" />
 
-                <x-filters.select-filter name="category" :value="request('category')" :options="$categories" placeholder="Semua Kategori" responsive="custom" />
-                <x-filters.month-filter :value="request('month')" responsive="custom" />
-                <x-filters.year-filter :value="request('year')" responsive="custom" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari transaksi..." responsive="custom" />
-            </form>
+            <x-fi.button icon="plus" onclick="openModal('addModal')">
+                {{ $recapLabel === 'Kas Kantor' ? 'Tambah Kas Kantor' : 'Tambah Pengeluaran' }}
+            </x-fi.button>
+        </x-slot:actions>
+    </x-fi.page-header>
 
-            <div class="flex items-center gap-2 mt-2 min-[1520px]:mt-0 w-full min-[1520px]:w-auto">
-                <div class="flex flex-col min-[1520px]:flex-row gap-2 w-full min-[1520px]:w-auto">
-                    <x-buttons.print-dropdown :excelRoute="route('recap-expense.export.excel')" :pdfRoute="route('recap-expense.export.pdf')" :queryParams="[
-                        'search' => request('search'),
-                        'category' => request('category'),
-                        'month' => request('month'),
-                        'year' => request('year'),
-                    ]" :requireSigner="app(\App\Services\Report\ReportSignerService::class)->isRequired()" responsive="custom" />
+    {{-- SECTION: Tab Rekap (Super Admin) --}}
+    @if ($inRekap)
+        <x-finance.recap-tabs :tabs="$tabs" active="pengeluaran" />
+    @endif
 
-                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
-                    <x-buttons.add-button modalId="addModal" text="Tambah Pengeluaran" responsive="custom" />
-                </div>
-            </div>
-        </div>
+    {{-- SECTION: Tabel (+ filter, pencarian, hapus massal, total, paginasi).
+         Data auto-generated (dari sales report) ikut ditampilkan tetapi terkunci. --}}
+    @include('components.finance.expense-recaps.table', [
+        'expenseRecaps' => $expenseRecaps,
+        'categories' => $categories,
+        'totals' => $totals,
+        'indexUrl' => $indexUrl,
+        'filterTab' => $inRekap ? 'pengeluaran' : null,
+    ])
+</div>
 
-        {{-- Tabel Rekap Pengeluaran --}}
-        @include('components.finance.expense-recaps.table', [
-            'expenseRecaps' => $expenseRecaps,
-            'totals' => $totals,
-        ])
-    </div>
+{{-- SECTION: Modal Tambah --}}
+@include('components.finance.expense-recaps.add-modal', ['categories' => $categories])
 
-    {{-- Pagination --}}
-    <x-pagination :paginator="$expenseRecaps" />
+{{-- SECTION: Modal Edit (hanya data manual; data auto-generated dari sales report
+     tidak boleh diedit karena sumber datanya dari modul lain) --}}
+@foreach ($expenseRecaps as $expense)
+    @if (!$expense->isAutoGenerated())
+        @include('components.finance.expense-recaps.edit-modal', ['expense' => $expense, 'categories' => $categories])
+    @endif
+@endforeach
 
-    {{-- Modal Tambah --}}
-    @include('components.finance.expense-recaps.add-modal', ['categories' => $categories])
+{{-- SECTION: Modal Konfirmasi Hapus Massal (data auto-generated tidak ikut terhapus) --}}
+<x-fi.modal id="deleteModal" heading="Hapus Data Terpilih" icon="trash" color="danger" width="md"
+    onConfirm="submitDeleteForm()" submitLabel="Ya, Hapus">
+    <p>Apakah Anda yakin ingin menghapus data yang dipilih?</p>
+    <p class="mt-3">Data yang auto-generated dari sales report tidak akan dihapus.</p>
+</x-fi.modal>
 
-    {{-- Modal Edit untuk setiap expense (hanya yang manual) --}}
-    @foreach ($expenseRecaps as $expense)
-        @if (!$expense->isAutoGenerated())
-            @include('components.finance.expense-recaps.edit-modal', ['expense' => $expense, 'categories' => $categories])
-        @endif
-    @endforeach
+{{-- SECTION: Modal Konfirmasi Hapus 1 Data (menu Aksi ⋮ tiap baris) --}}
+{{-- Mengirim satu id ke route('recap-expense.destroySelected') yang sama dengan hapus massal. --}}
+<x-fi.delete-row-modal :action="route('recap-expense.destroySelected')" field="selected_expenses"
+    :heading="'Hapus ' . ($recapLabel === 'Kas Kantor' ? 'Kas Kantor' : 'Pengeluaran')" />
 
-    {{-- Modal Konfirmasi Bulk Delete --}}
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
-        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data yang dipilih?</p>
-        <p class="text-sm text-text-secondary">
-            <i class="fa-solid fa-info-circle"></i> Data yang auto-generated dari sales report tidak akan dihapus.
-        </p>
-    </x-modal>
-
-    @push('scripts')
-        @vite(['resources/js/pages/finance/expense-recaps/index.js'])
-    @endpush
+@push('scripts')
+    @vite(['resources/js/pages/finance/expense-recaps/index.js'])
+@endpush

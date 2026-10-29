@@ -1,3 +1,7 @@
+{{-- Modal Detail Rekap Proyek (gaya Filament, hanya baca).
+     Dibuka dari No / menu Aksi "Lihat Detail" di tabel:
+     openModal('detailModal-{id}'). Tanpa tombol "Tutup" — tutup lewat
+     tombol X, klik di luar, atau Escape. --}}
 @php
     $recapTotal = $recap->getTotalAmount();
     $recapDp = $recap->getDpAmount();
@@ -51,316 +55,298 @@
             (int) ($payment->proof->payment_stage ?? 0)
         ))
         ->values();
+
+    $rupiah = fn ($value) => 'Rp ' . number_format($value, 0, ',', '.');
 @endphp
 
-<x-modal id="detailModal-{{ $recap->id }}" title="Detail Rekap Proyek" :hideFooter="true" size="4xl">
+<x-fi.modal id="detailModal-{{ $recap->id }}" heading="Rekap Proyek {{ $recap->id }}"
+    :description="$recap->project_name" icon="building-office-2" width="4xl">
+    <div class="grid gap-y-6">
 
-    {{-- Card A: Informasi Rekap --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500">Informasi Rekap</h3>
-            @if ($isFullyPaid)
-                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-green-100 text-green-800">
-                    Sudah Lunas
-                </span>
-            @else
-                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800">
-                    Belum Lunas
-                </span>
-            @endif
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+        {{-- Informasi Rekap --}}
+        <dl class="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
             <div>
-                <p class="text-xs text-gray-400 mb-0.5">No Rekap</p>
-                <p class="font-semibold text-gray-900">{{ $recap->id }}</p>
+                <dt class="text-gray-500">No Rekap</dt>
+                <dd class="mt-1 font-medium text-gray-950">{{ $recap->id }}</dd>
             </div>
             <div>
-                <p class="text-xs text-gray-400 mb-0.5">No RAB</p>
-                <p class="text-gray-900">{{ $recap->rab_number ?? '-' }}</p>
+                <dt class="text-gray-500">No RAB</dt>
+                <dd class="mt-1 text-gray-950">{{ $recap->rab_number ?? '-' }}</dd>
             </div>
             <div>
-                <p class="text-xs text-gray-400 mb-0.5">Nama Proyek</p>
-                <p class="font-medium text-gray-900">{{ $recap->project_name }}</p>
+                <dt class="text-gray-500">Status</dt>
+                <dd class="mt-1">
+                    <x-fi.badge :color="$isFullyPaid ? 'success' : 'warning'">{{ $isFullyPaid ? 'Sudah Lunas' : 'Belum Lunas' }}</x-fi.badge>
+                </dd>
+            </div>
+            <div class="sm:col-span-2">
+                <dt class="text-gray-500">Nama Proyek</dt>
+                <dd class="mt-1 font-medium text-gray-950">{{ $recap->project_name }}</dd>
             </div>
             <div>
-                <p class="text-xs text-gray-400 mb-0.5">Dibuat Oleh</p>
-                <p class="text-gray-900">{{ $recap->creator?->name ?? '-' }}</p>
+                <dt class="text-gray-500">Dibuat Oleh</dt>
+                <dd class="mt-1 text-gray-950">{{ $recap->creator?->name ?? '-' }}</dd>
             </div>
-        </div>
-    </div>
+        </dl>
 
-    {{-- Card B: Ringkasan Finansial --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Ringkasan Finansial</h3>
+        {{-- Ringkasan Finansial --}}
+        <div class="grid gap-y-3">
+            <h3 class="text-sm font-semibold text-gray-950">Ringkasan Finansial</h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
-                <p class="text-xs text-gray-400 mb-1">Total RAB</p>
-                <p class="text-lg font-bold text-gray-900">Rp {{ number_format($recapTotal, 0, ',', '.') }}</p>
-            </div>
-
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
-                <p class="text-xs text-gray-400 mb-1">Total Terbayar</p>
-                @if ($recapPaid > 0)
-                    <p class="text-lg font-bold text-green-600">Rp {{ number_format($recapPaid, 0, ',', '.') }}</p>
-                @else
-                    <p class="text-sm text-gray-400 italic">Belum ada pembayaran</p>
-                @endif
-            </div>
-
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
-                <p class="text-xs text-gray-400 mb-1">Sisa Pembayaran</p>
-                @if ($recapRemaining > 0)
-                    <p class="text-lg font-bold text-red-600">Rp {{ number_format($recapRemaining, 0, ',', '.') }}</p>
-                @else
-                    <p class="text-lg font-bold text-green-600">Rp 0</p>
-                @endif
-            </div>
-        </div>
-
-        {{-- Rincian Total Terbayar --}}
-        <div class="rounded-lg border border-gray-100 p-3 mb-2 space-y-1.5">
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Rincian Terbayar</p>
-            <div class="flex justify-between items-center text-sm">
-                <span class="text-gray-600"><i class="fa-solid fa-file-invoice mr-1 text-blue-500"></i>Bukti pembayaran rekap</span>
-                <span class="font-semibold text-gray-900">Rp {{ number_format($recapDirectPaid, 0, ',', '.') }}</span>
-            </div>
-            <div class="flex justify-between items-start gap-3 text-sm">
-                <span class="text-gray-600">
-                    <i class="fa-solid fa-file-invoice-dollar mr-1 text-blue-500"></i>Pembayaran invoice tertaut
-                    <span class="block text-xs text-gray-400">Tanpa PPN agar sebanding dengan Total RAB</span>
-                </span>
-                <span class="text-right">
-                    <span class="block font-semibold text-gray-900">Rp {{ number_format($recapInvoicePaid, 0, ',', '.') }}</span>
-                    @if ($recapInvoicePpn > 0)
-                        <span class="block text-xs text-gray-400">
-                            dibayar Rp {{ number_format($recapInvoicePaid + $recapInvoicePpn, 0, ',', '.') }}
-                            (PPN Rp {{ number_format($recapInvoicePpn, 0, ',', '.') }})
-                        </span>
-                    @endif
-                </span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-                <span class="text-gray-600"><i class="fa-solid fa-arrow-down mr-1 text-green-500"></i>Uang masuk manual (Laporan Keuangan)</span>
-                <span class="font-semibold text-gray-900">Rp {{ number_format($recapIncomePaid, 0, ',', '.') }}</span>
-            </div>
-            <div class="flex justify-between items-center text-sm border-t border-gray-100 pt-1.5">
-                <span class="font-semibold text-gray-700">Total Terbayar</span>
-                <span class="font-bold text-green-600">Rp {{ number_format($recapPaid, 0, ',', '.') }}</span>
-            </div>
-        </div>
-
-        @if (auth()->user()->role === 'superadmin')
-            <div class="flex justify-between items-center py-1.5 px-3 bg-blue-50 rounded-lg">
-                <span class="text-sm text-blue-700">
-                    <i class="fa-solid fa-hand-holding-dollar mr-1"></i>Uang Masuk (DP)
-                </span>
-                <span class="text-sm font-semibold text-blue-600">Rp {{ number_format($recapDp, 0, ',', '.') }}</span>
-            </div>
-        @endif
-
-        <div class="flex justify-between items-center py-1.5 px-3 bg-gray-50 rounded-lg mt-2">
-            <span class="text-sm text-gray-600">Sisa setelah DP dan pembayaran</span>
-            <span class="text-sm font-semibold {{ $recapRemaining > 0 ? 'text-red-600' : 'text-green-600' }}">
-                Rp {{ number_format($recapRemaining, 0, ',', '.') }}
-            </span>
-        </div>
-    </div>
-
-    {{-- Card B2: Invoice Proyek Tertaut --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Invoice Proyek Tertaut</h3>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <p class="text-xs text-gray-400 mb-1">Nilai Proyek (Total RAB)</p>
-                <p class="text-base font-bold text-gray-900">Rp {{ number_format($recapTotal, 0, ',', '.') }}</p>
-            </div>
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <p class="text-xs text-gray-400 mb-1">Total Ditagih ({{ $linkedInvoices->count() }} invoice)</p>
-                <p class="text-base font-bold text-blue-600">Rp {{ number_format($recapInvoiced, 0, ',', '.') }}</p>
-            </div>
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <p class="text-xs text-gray-400 mb-1">Sisa Belum Ditagih</p>
-                <p class="text-base font-bold {{ $recapUninvoiced < 0 ? 'text-red-600' : 'text-green-600' }}">
-                    {{ $recapUninvoiced < 0 ? '-' : '' }}Rp {{ number_format(abs($recapUninvoiced), 0, ',', '.') }}
-                </p>
-            </div>
-        </div>
-
-        @if ($recapUninvoiced < 0)
-            <p class="mb-3 text-xs text-red-600">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                Total tagihan invoice melebihi nilai proyek sebesar Rp {{ number_format(abs($recapUninvoiced), 0, ',', '.') }}.
-            </p>
-        @endif
-
-        @if ($linkedInvoices->isNotEmpty())
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="py-2 pr-2 text-left text-xs font-medium text-gray-500 uppercase">No Invoice</th>
-                            <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                            <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Kepada</th>
-                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Nilai Tagihan</th>
-                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Terbayar</th>
-                            <th class="py-2 px-2 text-right text-xs font-medium text-gray-500 uppercase">Masuk ke Rekap</th>
-                            <th class="py-2 pl-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach ($linkedInvoices as $linkedInvoice)
-                            @php
-                                $linkedInvoicePayments = $invoicePaymentsByInvoice->get($linkedInvoice->invoice_number, collect());
-                            @endphp
-                            <tr>
-                                <td class="py-2 pr-2 font-medium whitespace-nowrap">
-                                    <a href="{{ route('proyek-invoice.index', ['search' => $linkedInvoice->invoice_number]) }}"
-                                        class="text-primary hover:underline" title="Buka di menu Invoice">
-                                        {{ $linkedInvoice->invoice_number }}
-                                    </a>
-                                </td>
-                                <td class="py-2 px-2 text-gray-700 whitespace-nowrap">{{ $linkedInvoice->invoice_date?->format('d-m-Y') }}</td>
-                                <td class="py-2 px-2 text-gray-900">{{ $linkedInvoice->recipient }}</td>
-                                <td class="py-2 px-2 text-right font-semibold text-gray-900 whitespace-nowrap">
-                                    Rp {{ number_format($linkedInvoice->getBilledAmount(), 0, ',', '.') }}
-                                </td>
-                                <td class="py-2 px-2 text-right text-green-600 whitespace-nowrap">
-                                    Rp {{ number_format($linkedInvoice->getTotalPaidAmount(), 0, ',', '.') }}
-                                </td>
-                                <td class="py-2 px-2 text-right font-semibold text-green-600 whitespace-nowrap">
-                                    Rp {{ number_format((int) $linkedInvoicePayments->sum('project_amount'), 0, ',', '.') }}
-                                </td>
-                                <td class="py-2 pl-2 text-center">
-                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold {{ $linkedInvoice->payment_status_badge_class }}">
-                                        {{ $linkedInvoice->payment_status_label }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr class="border-t-2 border-gray-300 font-bold">
-                            <td colspan="3" class="pt-2 pr-2 text-right text-sm text-gray-700">Total</td>
-                            <td class="pt-2 px-2 text-right text-sm text-gray-900 whitespace-nowrap">
-                                Rp {{ number_format($recapInvoiced, 0, ',', '.') }}
-                            </td>
-                            <td class="pt-2 px-2 text-right text-sm text-green-600 whitespace-nowrap">
-                                Rp {{ number_format($recapInvoicePaid + $recapInvoicePpn, 0, ',', '.') }}
-                            </td>
-                            <td class="pt-2 px-2 text-right text-sm text-green-600 whitespace-nowrap">
-                                Rp {{ number_format($recapInvoicePaid, 0, ',', '.') }}
-                            </td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            <p class="mt-2 text-xs text-gray-400">
-                Nilai tagihan dihitung dari total item invoice setelah diskon (sebelum PPN). Kolom
-                <strong>Terbayar</strong> adalah nominal bukti pembayaran invoice (termasuk PPN); kolom
-                <strong>Masuk ke Rekap</strong> adalah bagian nilai proyek tanpa PPN yang dihitung ke Total Terbayar rekap
-                dan ke uang masuk Laporan Keuangan Proyek.
-            </p>
-        @else
-            <div class="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                <p class="text-sm text-gray-400 font-medium">Belum ada invoice proyek yang ditautkan</p>
-                <p class="text-xs text-gray-300 mt-1">Pilih rekap ini pada form tambah/edit Invoice Proyek.</p>
-            </div>
-        @endif
-
-        @if ($unlinkedCandidates->isNotEmpty())
-            {{-- Invoice lama dengan nama proyek sama yang belum ditautkan (saran, tidak dihitung) --}}
-            <div class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-                <p class="text-sm font-semibold text-yellow-800">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                    {{ $unlinkedCandidates->count() }} invoice dengan nama proyek sama belum ditautkan
-                </p>
-                <p class="text-xs text-yellow-700 mt-0.5 mb-2">
-                    Pembayaran invoice berikut <strong>belum</strong> dihitung ke rekap ini. Bila memang milik proyek ini,
-                    pilih rekap ini pada form Edit Invoice Proyek.
-                </p>
-                <ul class="space-y-1">
-                    @foreach ($unlinkedCandidates as $candidate)
-                        <li class="flex items-center justify-between gap-3 text-sm">
-                            <a href="{{ route('proyek-invoice.index', ['search' => $candidate->invoice_number]) }}"
-                                class="text-primary hover:underline font-medium" title="Buka di menu Invoice">
-                                {{ $candidate->invoice_number }}
-                            </a>
-                            <span class="text-xs text-gray-600 whitespace-nowrap">
-                                Tagihan Rp {{ number_format($candidate->getBilledAmount(), 0, ',', '.') }}
-                                &middot; Terbayar Rp {{ number_format($candidate->getTotalPaidAmount(), 0, ',', '.') }}
-                            </span>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-    </div>
-
-    {{-- Card C: Progress Bar --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Progress Pembayaran</h3>
-
-        <div class="flex justify-between text-xs text-gray-500 mb-1.5">
-            <span>Progress Pembayaran</span>
-            <span class="font-semibold
-                {{ $recapProgress == 100 ? 'text-green-600' : ($recapProgress > 0 ? 'text-orange-500' : 'text-red-500') }}">
-                {{ $recapProgress }}%
-            </span>
-        </div>
-        <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div class="h-full rounded-full transition-all duration-500 ease-in-out
-                {{ $recapProgress == 100 ? 'bg-green-500' : ($recapProgress > 0 ? 'bg-orange-400' : 'bg-red-400') }}"
-                style="width: {{ $recapProgress }}%">
-            </div>
-        </div>
-        <p class="text-xs text-gray-400 mt-1">
-            @if ($isFullyPaid)
-                <span class="text-green-600 font-medium"><i class="fa-solid fa-circle-check mr-0.5"></i>Sudah Lunas</span>
-            @elseif ($recapPaid > 0 || $recapDp > 0)
-                <span class="text-orange-500 font-medium"><i class="fa-solid fa-circle-half-stroke mr-0.5"></i>Sebagian ({{ $recapProgress }}% terbayar)</span>
-            @else
-                <span class="text-red-500 font-medium"><i class="fa-solid fa-circle mr-0.5"></i>Belum ada pembayaran</span>
-            @endif
-        </p>
-    </div>
-
-    {{-- Card D: Pembayaran Bertahap --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Pembayaran Bertahap</h3>
-
-        @if ($paymentTimeline->isNotEmpty())
-            @php
-                // Bukti rekap + bukti invoice tertaut, urut tanggal bayar.
-                $sortedProofs = $paymentTimeline;
-            @endphp
-
-            <div class="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <div class="flex-1">
-                    <p class="text-xs text-gray-500 mb-1">Tahap Pembayaran</p>
-                    <p class="text-sm font-semibold text-gray-800">{{ $sortedProofs->count() }} tahap terbayar</p>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Total RAB</p>
+                    <p class="mt-1 text-lg font-semibold tabular-nums text-gray-950">{{ $rupiah($recapTotal) }}</p>
                 </div>
-                <div class="text-right">
-                    <p class="text-xs text-gray-500 mb-1">Status</p>
-                    @if ($isFullyPaid)
-                        <span class="text-xs font-semibold text-green-600"><i class="fa-solid fa-circle-check mr-0.5"></i>Semua lunas</span>
+                <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Total Terbayar</p>
+                    @if ($recapPaid > 0)
+                        <p class="mt-1 text-lg font-semibold tabular-nums text-emerald-600">{{ $rupiah($recapPaid) }}</p>
                     @else
-                        <span class="text-xs font-semibold text-orange-500"><i class="fa-solid fa-clock mr-0.5"></i>Belum selesai</span>
+                        <p class="mt-1 text-sm italic text-gray-400">Belum ada pembayaran</p>
                     @endif
+                </div>
+                <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Sisa Pembayaran</p>
+                    <p @class(['mt-1 text-lg font-semibold tabular-nums', 'text-red-600' => $recapRemaining > 0, 'text-emerald-600' => $recapRemaining <= 0])>
+                        {{ $rupiah($recapRemaining > 0 ? $recapRemaining : 0) }}
+                    </p>
                 </div>
             </div>
 
-            <div class="relative">
-                <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200"></div>
+            {{-- Rincian Total Terbayar --}}
+            <dl class="grid gap-y-2 rounded-xl p-4 text-sm ring-1 ring-gray-950/10">
+                <p class="text-sm font-medium text-gray-500">Rincian Terbayar</p>
+                <div class="flex items-center justify-between gap-3">
+                    <dt class="flex items-center gap-x-2 text-gray-700">
+                        <x-fi.icon name="document-text" class="h-4 w-4 shrink-0 text-sky-500" /> Bukti pembayaran rekap
+                    </dt>
+                    <dd class="font-semibold tabular-nums text-gray-950">{{ $rupiah($recapDirectPaid) }}</dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="text-gray-700">
+                        <span class="flex items-center gap-x-2">
+                            <x-fi.icon name="document-currency-dollar" class="h-4 w-4 shrink-0 text-sky-500" /> Pembayaran invoice tertaut
+                        </span>
+                        <span class="block ps-6 text-xs text-gray-500">Tanpa PPN agar sebanding dengan Total RAB</span>
+                    </dt>
+                    <dd class="text-end">
+                        <span class="block font-semibold tabular-nums text-gray-950">{{ $rupiah($recapInvoicePaid) }}</span>
+                        @if ($recapInvoicePpn > 0)
+                            <span class="block text-xs text-gray-500">
+                                dibayar {{ $rupiah($recapInvoicePaid + $recapInvoicePpn) }}
+                                (PPN {{ $rupiah($recapInvoicePpn) }})
+                            </span>
+                        @endif
+                    </dd>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <dt class="flex items-center gap-x-2 text-gray-700">
+                        <x-fi.icon name="inbox-arrow-down" class="h-4 w-4 shrink-0 text-emerald-500" /> Uang masuk manual (Laporan Keuangan)
+                    </dt>
+                    <dd class="font-semibold tabular-nums text-gray-950">{{ $rupiah($recapIncomePaid) }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-t border-gray-200 pt-2">
+                    <dt class="font-semibold text-gray-950">Total Terbayar</dt>
+                    <dd class="font-semibold tabular-nums text-emerald-600">{{ $rupiah($recapPaid) }}</dd>
+                </div>
+            </dl>
 
-                <div class="space-y-0">
-                    @foreach ($sortedProofs as $proofIndex => $payment)
+            @if (auth()->user()->role === 'superadmin')
+                <div class="flex items-center justify-between gap-3 rounded-xl bg-sky-50 px-4 py-2.5 text-sm ring-1 ring-sky-600/10">
+                    <span class="flex items-center gap-x-2 text-sky-700">
+                        <x-fi.icon name="banknotes" class="h-4 w-4 shrink-0" /> Uang Masuk (DP)
+                    </span>
+                    <span class="font-semibold tabular-nums text-sky-700">{{ $rupiah($recapDp) }}</span>
+                </div>
+            @endif
+
+            <div class="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-2.5 text-sm">
+                <span class="text-gray-700">Sisa setelah DP dan pembayaran</span>
+                <span @class(['font-semibold tabular-nums', 'text-red-600' => $recapRemaining > 0, 'text-emerald-600' => $recapRemaining <= 0])>
+                    {{ $rupiah($recapRemaining) }}
+                </span>
+            </div>
+        </div>
+
+        {{-- Invoice Proyek Tertaut --}}
+        <div class="grid gap-y-3">
+            <h3 class="text-sm font-semibold text-gray-950">Invoice Proyek Tertaut</h3>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="rounded-xl p-3 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Nilai Proyek (Total RAB)</p>
+                    <p class="mt-1 font-semibold tabular-nums text-gray-950">{{ $rupiah($recapTotal) }}</p>
+                </div>
+                <div class="rounded-xl p-3 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Total Ditagih ({{ $linkedInvoices->count() }} invoice)</p>
+                    <p class="mt-1 font-semibold tabular-nums text-sky-600">{{ $rupiah($recapInvoiced) }}</p>
+                </div>
+                <div class="rounded-xl p-3 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Sisa Belum Ditagih</p>
+                    <p @class(['mt-1 font-semibold tabular-nums', 'text-red-600' => $recapUninvoiced < 0, 'text-emerald-600' => $recapUninvoiced >= 0])>
+                        {{ $recapUninvoiced < 0 ? '-' : '' }}{{ $rupiah(abs($recapUninvoiced)) }}
+                    </p>
+                </div>
+            </div>
+
+            @if ($recapUninvoiced < 0)
+                <p class="text-sm text-red-600">
+                    <x-fi.icon name="exclamation-triangle" class="-mt-0.5 inline h-4 w-4" />
+                    Total tagihan invoice melebihi nilai proyek sebesar {{ $rupiah(abs($recapUninvoiced)) }}.
+                </p>
+            @endif
+
+            @if ($linkedInvoices->isNotEmpty())
+                <div class="overflow-hidden rounded-xl ring-1 ring-gray-950/10">
+                    <div class="relative overflow-x-auto">
+                        <table class="w-full table-auto divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-start font-semibold text-gray-950">No Invoice</th>
+                                    <th class="px-3 py-2 text-start font-semibold text-gray-950">Tanggal</th>
+                                    <th class="px-3 py-2 text-start font-semibold text-gray-950">Kepada</th>
+                                    <th class="px-3 py-2 text-end font-semibold text-gray-950">Nilai Tagihan</th>
+                                    <th class="px-3 py-2 text-end font-semibold text-gray-950">Terbayar</th>
+                                    <th class="px-3 py-2 text-end font-semibold text-gray-950">Masuk ke Rekap</th>
+                                    <th class="px-3 py-2 text-start font-semibold text-gray-950">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                                @foreach ($linkedInvoices as $linkedInvoice)
+                                    @php
+                                        $linkedInvoicePayments = $invoicePaymentsByInvoice->get($linkedInvoice->invoice_number, collect());
+                                    @endphp
+                                    <tr>
+                                        <td class="px-3 py-2 font-medium">
+                                            <a href="{{ route('proyek-invoice.index', ['search' => $linkedInvoice->invoice_number]) }}"
+                                                class="text-primary hover:underline" title="Buka di menu Invoice">
+                                                {{ $linkedInvoice->invoice_number }}
+                                            </a>
+                                        </td>
+                                        <td class="px-3 py-2 text-gray-700">{{ $linkedInvoice->invoice_date?->format('d M Y') }}</td>
+                                        <td class="min-w-[9rem] whitespace-normal px-3 py-2">{{ $linkedInvoice->recipient }}</td>
+                                        <td class="px-3 py-2 text-end font-semibold tabular-nums">{{ $rupiah($linkedInvoice->getBilledAmount()) }}</td>
+                                        <td class="px-3 py-2 text-end tabular-nums text-emerald-600">{{ $rupiah($linkedInvoice->getTotalPaidAmount()) }}</td>
+                                        <td class="px-3 py-2 text-end font-semibold tabular-nums text-emerald-600">
+                                            {{ $rupiah((int) $linkedInvoicePayments->sum('project_amount')) }}
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <x-fi.badge :color="$linkedInvoice->isFullyPaid() ? 'success' : ($linkedInvoice->getTotalPaidAmount() > 0 ? 'warning' : 'danger')">
+                                                {{ $linkedInvoice->payment_status_label }}
+                                            </x-fi.badge>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="border-t border-gray-200 bg-gray-50 font-semibold text-gray-950">
+                                <tr>
+                                    <td colspan="3" class="px-3 py-2 text-end">Total</td>
+                                    <td class="whitespace-nowrap px-3 py-2 text-end tabular-nums">{{ $rupiah($recapInvoiced) }}</td>
+                                    <td class="whitespace-nowrap px-3 py-2 text-end tabular-nums text-emerald-600">{{ $rupiah($recapInvoicePaid + $recapInvoicePpn) }}</td>
+                                    <td class="whitespace-nowrap px-3 py-2 text-end tabular-nums text-emerald-600">{{ $rupiah($recapInvoicePaid) }}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">
+                    Nilai tagihan dihitung dari total item invoice setelah diskon (sebelum PPN). Kolom
+                    <strong class="font-medium text-gray-700">Terbayar</strong> adalah nominal bukti pembayaran invoice (termasuk PPN); kolom
+                    <strong class="font-medium text-gray-700">Masuk ke Rekap</strong> adalah bagian nilai proyek tanpa PPN yang dihitung ke Total Terbayar rekap
+                    dan ke uang masuk Laporan Keuangan Proyek.
+                </p>
+            @else
+                <div class="flex flex-col items-center rounded-xl border border-dashed border-gray-300 px-6 py-6 text-center">
+                    <p class="text-sm font-medium text-gray-950">Belum ada invoice proyek yang ditautkan</p>
+                    <p class="mt-1 text-sm text-gray-500">Pilih rekap ini pada form tambah/edit Invoice Proyek.</p>
+                </div>
+            @endif
+
+            @if ($unlinkedCandidates->isNotEmpty())
+                {{-- Invoice lama dengan nama proyek sama yang belum ditautkan (saran, tidak dihitung) --}}
+                <div class="flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-600/20">
+                    <x-fi.icon name="exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                    <div class="min-w-0 flex-1">
+                        <p class="font-semibold">{{ $unlinkedCandidates->count() }} invoice dengan nama proyek sama belum ditautkan</p>
+                        <p class="mt-0.5">
+                            Pembayaran invoice berikut <strong>belum</strong> dihitung ke rekap ini. Bila memang milik proyek ini,
+                            pilih rekap ini pada form Edit Invoice Proyek.
+                        </p>
+                        <ul class="mt-2 grid gap-y-1">
+                            @foreach ($unlinkedCandidates as $candidate)
+                                <li class="flex flex-wrap items-center justify-between gap-x-3">
+                                    <a href="{{ route('proyek-invoice.index', ['search' => $candidate->invoice_number]) }}"
+                                        class="font-medium text-primary hover:underline" title="Buka di menu Invoice">
+                                        {{ $candidate->invoice_number }}
+                                    </a>
+                                    <span class="whitespace-nowrap text-xs text-amber-700">
+                                        Tagihan {{ $rupiah($candidate->getBilledAmount()) }}
+                                        &middot; Terbayar {{ $rupiah($candidate->getTotalPaidAmount()) }}
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        {{-- Progress Pembayaran --}}
+        <div class="grid gap-y-1.5">
+            <div class="flex justify-between text-sm">
+                <h3 class="font-semibold text-gray-950">Progress Pembayaran</h3>
+                <span @class(['font-semibold tabular-nums', 'text-emerald-600' => $recapProgress == 100, 'text-amber-600' => $recapProgress > 0 && $recapProgress < 100, 'text-red-600' => $recapProgress <= 0])>
+                    {{ $recapProgress }}%
+                </span>
+            </div>
+            <div class="h-2.5 w-full overflow-hidden rounded-full bg-gray-200">
+                <div @class(['h-full rounded-full transition-all duration-500 ease-in-out', 'bg-emerald-500' => $recapProgress == 100, 'bg-amber-400' => $recapProgress > 0 && $recapProgress < 100, 'bg-red-400' => $recapProgress <= 0])
+                    style="width: {{ $recapProgress }}%"></div>
+            </div>
+            <p class="text-sm">
+                @if ($isFullyPaid)
+                    <span class="inline-flex items-center gap-1 font-medium text-emerald-600">
+                        <x-fi.icon name="check-circle" class="h-4 w-4" /> Sudah Lunas
+                    </span>
+                @elseif ($recapPaid > 0 || $recapDp > 0)
+                    <span class="inline-flex items-center gap-1 font-medium text-amber-600">
+                        <x-fi.icon name="clock" class="h-4 w-4" /> Sebagian ({{ $recapProgress }}% terbayar)
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 font-medium text-red-600">
+                        <x-fi.icon name="exclamation-circle" class="h-4 w-4" /> Belum ada pembayaran
+                    </span>
+                @endif
+            </p>
+        </div>
+
+        {{-- Pembayaran Bertahap (bukti rekap + bukti invoice tertaut, urut tanggal bayar) --}}
+        <div class="grid gap-y-3">
+            <h3 class="text-sm font-semibold text-gray-950">Pembayaran Bertahap</h3>
+
+            @if ($paymentTimeline->isNotEmpty())
+                <div class="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 text-sm">
+                    <div>
+                        <p class="text-gray-500">Tahap Pembayaran</p>
+                        <p class="font-semibold text-gray-950">{{ $paymentTimeline->count() }} tahap terbayar</p>
+                    </div>
+                    <div class="text-end">
+                        <p class="text-gray-500">Status</p>
+                        @if ($isFullyPaid)
+                            <p class="font-semibold text-emerald-600">Semua lunas</p>
+                        @else
+                            <p class="font-semibold text-amber-600">Belum selesai</p>
+                        @endif
+                    </div>
+                </div>
+
+                <ol class="divide-y divide-gray-200 rounded-xl ring-1 ring-gray-950/10">
+                    @foreach ($paymentTimeline as $proofIndex => $payment)
                         @php
                             $proof = $payment->proof;
                             $stageNumber = $proofIndex + 1;
-                            $isLast = $proofIndex === $sortedProofs->count() - 1;
                             // Nominal yang dihitung ke rekap (bukti invoice: tanpa PPN).
                             $proofAmount = (int) $payment->project_amount;
                             $proofDate = $proof->payment_date ?? $proof->created_at;
@@ -369,175 +355,161 @@
                             $stageLabel = ($payment->invoice ? 'Invoice ' . $payment->invoice->invoice_number . ' — ' : '')
                                 . 'Pembayaran ke-' . ($proof->payment_stage ?? $stageNumber);
                         @endphp
-                        <div class="relative flex items-start gap-4 pb-6">
-                            <div class="relative z-10 flex-shrink-0 w-[30px] h-[30px] rounded-full flex items-center justify-center text-xs font-bold
-                                {{ $isInstallmentPaid ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400' }}">
+                        <li class="flex items-start gap-3 px-3 py-3">
+                            <span @class(['flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold', 'bg-emerald-500 text-white' => $isInstallmentPaid, 'bg-gray-100 text-gray-500' => ! $isInstallmentPaid])>
                                 @if ($isInstallmentPaid)
-                                    <i class="fa-solid fa-check text-xs"></i>
+                                    <x-fi.icon name="check-circle" class="h-4 w-4" />
                                 @else
                                     {{ $stageNumber }}
                                 @endif
-                            </div>
-                            <div class="flex-1 min-w-0 pt-0.5">
-                                <div class="flex items-center justify-between">
-                                    <p class="text-sm font-semibold {{ $isInstallmentPaid ? 'text-gray-900' : 'text-gray-500' }}">
+                            </span>
+                            <div class="grid min-w-0 flex-1 gap-y-0.5 text-sm">
+                                <div class="flex items-center justify-between gap-3">
+                                    <p @class(['font-medium', 'text-gray-950' => $isInstallmentPaid, 'text-gray-500' => ! $isInstallmentPaid])>
                                         {{ $stageLabel }}
                                     </p>
-                                    <span class="text-sm font-semibold {{ $isInstallmentPaid ? 'text-green-600' : 'text-gray-400' }}">
-                                        Rp {{ number_format($proofAmount, 0, ',', '.') }}
+                                    <span @class(['font-semibold tabular-nums', 'text-emerald-600' => $isInstallmentPaid, 'text-gray-400' => ! $isInstallmentPaid])>
+                                        {{ $rupiah($proofAmount) }}
                                     </span>
                                 </div>
                                 @if ($payment->ppn_amount > 0)
-                                    <p class="text-xs text-gray-400 text-right">
-                                        dibayar Rp {{ number_format($payment->amount, 0, ',', '.') }}, PPN Rp {{ number_format($payment->ppn_amount, 0, ',', '.') }} tidak dihitung
+                                    <p class="text-end text-xs text-gray-500">
+                                        dibayar {{ $rupiah($payment->amount) }}, PPN {{ $rupiah($payment->ppn_amount) }} tidak dihitung
                                     </p>
                                 @endif
-                                <div class="flex items-center justify-between mt-0.5">
-                                    <p class="text-xs text-gray-400">{{ $proofDateLabel }}</p>
-                                    @if ($isInstallmentPaid)
-                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                            Lunas
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-400">
-                                            Belum dibayar
-                                        </span>
-                                    @endif
+                                <div class="flex items-center justify-between gap-3">
+                                    <p class="text-gray-500">{{ $proofDateLabel }}</p>
+                                    <x-fi.badge :color="$isInstallmentPaid ? 'success' : 'gray'">{{ $isInstallmentPaid ? 'Lunas' : 'Belum dibayar' }}</x-fi.badge>
                                 </div>
                                 @if (!empty($proof->file_path))
                                     {{-- Bukti dibuka di modal pratinjau (tanpa tab baru) --}}
                                     <a href="{{ asset('storage/' . $proof->file_path) }}" title="{{ $proof->file_name }}"
                                         onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti ' . $stageLabel), downloadName: @js($proof->file_name) }); }"
-                                        class="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline">
-                                        <i class="fa-solid fa-paperclip"></i> Lihat Bukti
+                                        class="inline-flex items-center gap-1 justify-self-start font-medium text-primary hover:underline">
+                                        <x-fi.icon name="paper-clip" class="h-4 w-4" /> Lihat Bukti
                                     </a>
                                 @endif
                             </div>
-                        </div>
+                        </li>
                     @endforeach
+                </ol>
+            @else
+                <div class="flex flex-col items-center rounded-xl border border-dashed border-gray-300 px-6 py-8 text-center">
+                    <div class="mb-3 rounded-full bg-gray-100 p-3">
+                        <x-fi.icon name="clock" class="h-6 w-6 text-gray-500" />
+                    </div>
+                    <p class="text-sm font-medium text-gray-950">Belum ada pembayaran bertahap</p>
+                    <p class="mt-1 text-sm text-gray-500">Pembayaran akan muncul setelah bukti pembayaran diupload</p>
                 </div>
-            </div>
-        @else
-            <div class="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                    <i class="fa-solid fa-clock text-gray-300 text-lg"></i>
-                </div>
-                <p class="text-sm text-gray-400 font-medium">Belum ada pembayaran bertahap</p>
-                <p class="text-xs text-gray-300 mt-1">Pembayaran akan muncul setelah bukti pembayaran diupload</p>
-            </div>
-        @endif
-    </div>
+            @endif
+        </div>
 
-    {{-- Card E: Bukti Pembayaran --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-1">Bukti Pembayaran Rekap</h3>
-        <p class="text-xs text-gray-400 mb-3">
-            Bukti yang diupload langsung ke rekap ini. Pembayaran lewat invoice tertaut sudah otomatis terhitung
-            (lihat Pembayaran Bertahap) — jangan diupload ulang di rekap agar tidak terhitung dua kali.
-        </p>
-
-        @if ($paymentProofs->isNotEmpty())
-            <div class="space-y-2">
-                @foreach ($paymentProofs as $proof)
-                    <a href="{{ asset('storage/' . $proof->file_path) }}" title="{{ $proof->file_name }}"
-                        onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'Bukti Pembayaran', downloadName: @js($proof->file_name) }); }"
-                        class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 hover:border-blue-300 hover:bg-blue-50">
-                        <span class="flex items-center gap-2 min-w-0">
-                            <i class="fa-solid fa-file-invoice text-blue-500"></i>
-                            <span class="truncate text-sm font-medium text-gray-900">{{ $proof->file_name }}</span>
-                        </span>
-                        <span class="flex items-center gap-2 flex-shrink-0">
-                            <span class="text-sm font-semibold text-green-600">
-                                Rp {{ number_format($proof->amount ?? 0, 0, ',', '.') }}
-                            </span>
-                            <span class="text-xs text-gray-400">
-                                {{ optional($proof->payment_date ?? $proof->created_at)->format('d M Y') }}
-                            </span>
-                            <span class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
-                                <i class="fa-solid fa-paperclip"></i> Lihat
-                            </span>
-                        </span>
-                    </a>
-                @endforeach
+        {{-- Bukti Pembayaran Rekap --}}
+        <div class="grid gap-y-3">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-950">Bukti Pembayaran Rekap</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    Bukti yang diupload langsung ke rekap ini. Pembayaran lewat invoice tertaut sudah otomatis terhitung
+                    (lihat Pembayaran Bertahap) — jangan diupload ulang di rekap agar tidak terhitung dua kali.
+                </p>
             </div>
-        @else
-            <div class="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                    <i class="fa-solid fa-file-invoice text-gray-300 text-lg"></i>
-                </div>
-                <p class="text-sm text-gray-400 font-medium">Belum ada bukti pembayaran</p>
-                <p class="text-xs text-gray-300 mt-1">Upload melalui menu Bukti Pembayaran (kategori Rekap Proyek).</p>
-            </div>
-        @endif
-    </div>
 
-    {{-- Card E2: Uang Masuk (Laporan Keuangan Proyek) --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Uang Masuk (Laporan Keuangan)</h3>
-        <p class="text-xs text-gray-400 mb-3">Pembayaran dari transaksi kategori pemasukan yang diinput manual pada Laporan Keuangan Proyek (baris otomatis dari bukti pembayaran tidak dihitung dua kali).</p>
-
-        @if ($incomePayments->isNotEmpty())
-            <div class="space-y-2">
-                @foreach ($incomePayments as $income)
-                    @php
-                        $incomeDate = $income->transaction_date ?? $income->created_at;
-                    @endphp
-                    <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                        <span class="flex items-center gap-2 min-w-0">
-                            <i class="fa-solid fa-arrow-down text-green-500"></i>
-                            <span class="min-w-0">
-                                <span class="block truncate text-sm font-medium text-gray-900">
-                                    {{ $income->category?->name ?? 'Uang Masuk' }}
+            @if ($paymentProofs->isNotEmpty())
+                <ul class="divide-y divide-gray-200 rounded-xl ring-1 ring-gray-950/10">
+                    @foreach ($paymentProofs as $proof)
+                        <li>
+                            <a href="{{ asset('storage/' . $proof->file_path) }}" title="{{ $proof->file_name }}"
+                                onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'Bukti Pembayaran', downloadName: @js($proof->file_name) }); }"
+                                class="flex items-center justify-between gap-3 px-3 py-3 text-sm transition duration-75 hover:bg-gray-50">
+                                <span class="flex min-w-0 items-center gap-2">
+                                    <x-fi.icon name="document-text" class="h-5 w-5 shrink-0 text-sky-500" />
+                                    <span class="truncate font-medium text-gray-950">{{ $proof->file_name }}</span>
                                 </span>
-                                @if (!empty($income->description))
-                                    <span class="block truncate text-xs text-gray-400">{{ $income->description }}</span>
+                                <span class="flex shrink-0 items-center gap-3">
+                                    <span class="font-semibold tabular-nums text-emerald-600">{{ $rupiah($proof->amount ?? 0) }}</span>
+                                    <span class="text-gray-500">{{ optional($proof->payment_date ?? $proof->created_at)->format('d M Y') }}</span>
+                                    <span class="inline-flex items-center gap-1 font-medium text-primary">
+                                        <x-fi.icon name="paper-clip" class="h-4 w-4" /> Lihat
+                                    </span>
+                                </span>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <div class="flex flex-col items-center rounded-xl border border-dashed border-gray-300 px-6 py-8 text-center">
+                    <div class="mb-3 rounded-full bg-gray-100 p-3">
+                        <x-fi.icon name="document-text" class="h-6 w-6 text-gray-500" />
+                    </div>
+                    <p class="text-sm font-medium text-gray-950">Belum ada bukti pembayaran</p>
+                    <p class="mt-1 text-sm text-gray-500">Upload melalui menu Bukti Pembayaran (kategori Rekap Proyek).</p>
+                </div>
+            @endif
+        </div>
+
+        {{-- Uang Masuk (Laporan Keuangan Proyek) --}}
+        <div class="grid gap-y-3">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-950">Uang Masuk (Laporan Keuangan)</h3>
+                <p class="mt-1 text-sm text-gray-500">Pembayaran dari transaksi kategori pemasukan yang diinput manual pada Laporan Keuangan Proyek (baris otomatis dari bukti pembayaran tidak dihitung dua kali).</p>
+            </div>
+
+            @if ($incomePayments->isNotEmpty())
+                <ul class="divide-y divide-gray-200 rounded-xl ring-1 ring-gray-950/10">
+                    @foreach ($incomePayments as $income)
+                        @php
+                            $incomeDate = $income->transaction_date ?? $income->created_at;
+                        @endphp
+                        <li class="flex items-center justify-between gap-3 px-3 py-3 text-sm">
+                            <span class="flex min-w-0 items-center gap-2">
+                                <x-fi.icon name="inbox-arrow-down" class="h-5 w-5 shrink-0 text-emerald-500" />
+                                <span class="min-w-0">
+                                    <span class="block truncate font-medium text-gray-950">{{ $income->category?->name ?? 'Uang Masuk' }}</span>
+                                    @if (!empty($income->description))
+                                        <span class="block truncate text-xs text-gray-500">{{ $income->description }}</span>
+                                    @endif
+                                </span>
+                            </span>
+                            <span class="flex shrink-0 items-center gap-3">
+                                <span class="font-semibold tabular-nums text-emerald-600">{{ $rupiah($income->income_amount ?? 0) }}</span>
+                                <span class="text-gray-500">{{ optional($incomeDate)->format('d M Y') }}</span>
+                                @if (!empty($income->proof_file))
+                                    <a href="{{ asset('storage/' . $income->proof_file) }}" title="{{ $income->proof_file_name }}"
+                                        onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'Bukti Uang Masuk', downloadName: @js($income->proof_file_name ?: basename($income->proof_file)) }); }"
+                                        class="inline-flex items-center gap-1 font-medium text-primary hover:underline">
+                                        <x-fi.icon name="paper-clip" class="h-4 w-4" /> Lihat
+                                    </a>
+                                @else
+                                    <span class="text-xs italic text-gray-400">Tanpa bukti</span>
                                 @endif
                             </span>
-                        </span>
-                        <span class="flex items-center gap-2 flex-shrink-0">
-                            <span class="text-sm font-semibold text-green-600">
-                                Rp {{ number_format($income->income_amount ?? 0, 0, ',', '.') }}
-                            </span>
-                            <span class="text-xs text-gray-400">
-                                {{ optional($incomeDate)->format('d M Y') }}
-                            </span>
-                            @if (!empty($income->proof_file))
-                                <a href="{{ asset('storage/' . $income->proof_file) }}" title="{{ $income->proof_file_name }}"
-                                    onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'Bukti Uang Masuk', downloadName: @js($income->proof_file_name ?: basename($income->proof_file)) }); }"
-                                    class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
-                                    <i class="fa-solid fa-paperclip"></i> Lihat
-                                </a>
-                            @else
-                                <span class="text-xs text-gray-300 italic">Tanpa bukti</span>
-                            @endif
-                        </span>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <div class="flex flex-col items-center rounded-xl border border-dashed border-gray-300 px-6 py-8 text-center">
+                    <div class="mb-3 rounded-full bg-gray-100 p-3">
+                        <x-fi.icon name="inbox-arrow-down" class="h-6 w-6 text-gray-500" />
                     </div>
-                @endforeach
-            </div>
-        @else
-            <div class="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                    <i class="fa-solid fa-arrow-down text-gray-300 text-lg"></i>
+                    <p class="text-sm font-medium text-gray-950">Belum ada transaksi uang masuk</p>
+                    <p class="mt-1 text-sm text-gray-500">Transaksi kategori pemasukan akan muncul di sini.</p>
                 </div>
-                <p class="text-sm text-gray-400 font-medium">Belum ada transaksi uang masuk</p>
-                <p class="text-xs text-gray-300 mt-1">Transaksi kategori pemasukan akan muncul di sini.</p>
-            </div>
-        @endif
-    </div>
+            @endif
+        </div>
 
-    {{-- Card F: File Design --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 shadow-sm">
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">File Design</h3>
-        @if ($recap->hasDesignFile())
-            <a href="{{ asset('storage/' . $recap->design_file) }}"
-                onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'File Design', downloadName: @js($recap->design_file_name ?: basename($recap->design_file)) }); }"
-                class="inline-flex items-center gap-2 text-blue-600 hover:underline">
-                <i class="fa-solid fa-image"></i>
-                <span>{{ $recap->design_file_name }}</span>
-            </a>
-        @else
-            <p class="text-sm text-gray-400 italic">Tidak ada file design.</p>
-        @endif
+        {{-- File Design --}}
+        <div class="grid gap-y-3">
+            <h3 class="text-sm font-semibold text-gray-950">File Design</h3>
+            @if ($recap->hasDesignFile())
+                <a href="{{ asset('storage/' . $recap->design_file) }}"
+                    onclick="if (window.openFilePreview) { event.preventDefault(); window.openFilePreview(this.href, { title: 'File Design', downloadName: @js($recap->design_file_name ?: basename($recap->design_file)) }); }"
+                    class="flex items-center gap-x-3 rounded-xl p-3 text-sm ring-1 ring-gray-950/10 transition duration-75 hover:bg-gray-50">
+                    <x-fi.icon name="photo" class="h-5 w-5 shrink-0 text-primary" />
+                    <span class="min-w-0 truncate font-medium text-primary">{{ $recap->design_file_name }}</span>
+                </a>
+            @else
+                <p class="text-sm italic text-gray-400">Tidak ada file design.</p>
+            @endif
+        </div>
     </div>
-
-</x-modal>
+</x-fi.modal>

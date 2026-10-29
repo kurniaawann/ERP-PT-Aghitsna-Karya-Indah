@@ -1,48 +1,54 @@
 {{-- =====================================================================
-     Partial Tab: Rekap Alumunium (dipakai pada halaman Rekap tab aluminium)
-     Data tersedia dari RecapAlumuniumController::indexData():
+     Konten: Rekap Alumunium (gaya Filament)
+     Dipakai di dua tempat:
+     - pages/finance/rekap.blade.php (Super Admin, tab "aluminium"; $tabs & $tab
+       tersedia → judul "Rekap" + tab, filter ke route('rekap.index') + tab)
+     - pages/finance/aluminium-recaps.blade.php (halaman Rekap Alumunium sendiri)
+
+     Data dari RecapAlumuniumController::indexData():
      - $invoices    : Paginator InvoiceAlumunium (10/halaman)
-     - $totals      : Objek ringkasan (total qty, nominal, dsb)
+     - $totals      : Objek ringkasan (total invoice, jumlah, lunas)
      - $periodTitle : Label periode yang sedang difilter
+
+     JS: tidak ada modul khusus (filter submit lewat onchange; modal bawaan).
      ===================================================================== --}}
+@php
+    $inRekap = isset($tabs);
+    $indexUrl = $inRekap ? route('rekap.index', ['tab' => 'aluminium']) : route('recap-alumunium.index');
+@endphp
 
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Rekap Alumunium</h1>
+<div class="flex flex-col gap-y-6">
 
-        {{-- Toolbar Filter & Aksi (form mengarah ke tab aktif) --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <form method="GET" action="{{ route('rekap.index', ['tab' => 'aluminium']) }}"
-                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
-                <x-filters.month-filter :value="request('month')" responsive="custom" />
-                <x-filters.year-filter :value="request('year')" responsive="custom" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari invoice, penerima, atau proyek..." responsive="custom" />
-            </form>
+    {{-- SECTION: Header Halaman + Aksi (Export) --}}
+    <x-fi.page-header :heading="$inRekap ? 'Rekap' : 'Rekap Alumunium'"
+        :breadcrumbs="$inRekap
+            ? ['Finance' => null, 'Rekap' => route('rekap.index'), 'Rekap Alumunium' => null]
+            : ['Finance' => null, 'Rekap Alumunium' => $indexUrl]">
+        <x-slot:actions>
+            {{-- Dropdown Export (Excel & PDF, mengikuti filter aktif) --}}
+            <x-fi.export-dropdown :excelRoute="route('recap-alumunium.export.excel')"
+                :pdfRoute="route('recap-alumunium.export.pdf')" :queryParams="[
+                    'search' => request('search'),
+                    'month' => request('month'),
+                    'year' => request('year'),
+                ]" />
+        </x-slot:actions>
+    </x-fi.page-header>
 
-            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
-                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                    <x-buttons.print-dropdown
-                        :excelRoute="route('recap-alumunium.export.excel')"
-                        :pdfRoute="route('recap-alumunium.export.pdf')"
-                        :queryParams="[
-                            'search' => request('search'),
-                            'month' => request('month'),
-                            'year' => request('year'),
-                        ]"
-                        responsive="custom"
-                    />
-                </div>
-            </div>
-        </div>
+    {{-- SECTION: Tab Rekap (Super Admin) --}}
+    @if ($inRekap)
+        <x-finance.recap-tabs :tabs="$tabs" active="aluminium" />
+    @endif
 
-        <x-finance.aluminium-recaps.summary-cards :totals="$totals" />
+    {{-- SECTION: Kartu Ringkasan --}}
+    <x-finance.aluminium-recaps.summary-cards :totals="$totals" />
 
-        <x-finance.aluminium-recaps.table :invoices="$invoices" :totals="$totals" />
-    </div>
+    {{-- SECTION: Tabel Rekap (+ filter, pencarian, total, paginasi) --}}
+    <x-finance.aluminium-recaps.table :invoices="$invoices" :totals="$totals" :indexUrl="$indexUrl"
+        :filterTab="$inRekap ? 'aluminium' : null" />
+</div>
 
-    {{-- Pagination --}}
-    <x-pagination :paginator="$invoices" />
-
-    {{-- Modal Detail per Invoice --}}
-    @foreach ($invoices as $invoice)
-        <x-finance.aluminium-invoices.detail-modal :invoice="$invoice" />
-    @endforeach
+{{-- SECTION: Modal Detail per Invoice --}}
+@foreach ($invoices as $invoice)
+    <x-finance.aluminium-invoices.detail-modal :invoice="$invoice" />
+@endforeach

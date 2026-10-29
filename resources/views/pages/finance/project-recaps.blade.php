@@ -1,82 +1,26 @@
 {{-- =====================================================================
-     Halaman: Rekap Proyek (Standalone)
+     Halaman: Rekap Proyek (Standalone, role admin — menu Report)
      Tujuan: Menampilkan daftar rekap proyek yang diinput manual dengan
              kolom No (auto-generate), Nama Proyek, Total RAB, Uang Masuk
-             (DP, superadmin), Terbayar, Sisa Pembayaran, progress bar,
-             status, dan file design. Mendukung tambah, lihat detail, edit, dan
-             hapus massal. Bukti pembayaran diupload lewat tombol di dalam
-             modal Edit (kategori Rekap Proyek).
-     Data dari RecapProyekController@index:
+             (DP, superadmin), Terbayar, Sisa Pembayaran, status + progress,
+             dan file design. Mendukung tambah, lihat detail, edit, upload
+             bukti pembayaran (kategori Rekap Proyek), dan hapus.
+     Tampilan memakai komponen bergaya Filament (resources/views/components/fi).
+
+     Super Admin diarahkan ke halaman Rekap ber-tab (route('rekap.index', tab=proyek))
+     yang memakai konten yang sama.
+
+     Data dari RecapProyekController@index (indexData()):
      - $recaps : Paginator ProjectRecap dari
                  RecapProyekService::buildIndexQuery($request),
                  difilter oleh search & status.
-     Komponen yang di-include:
-     - x-filters.search-input                         : toolbar pencarian
-     - x-buttons.delete-button / add-button           : tombol aksi
-     - components.finance.project-recaps.table        : tabel rekap
-     - components.finance.project-recaps.add-modal    : modal tambah
-     - components.finance.project-recaps.detail-modal : modal detail
-     - components.finance.project-recaps.edit-modal   : modal edit
-     - x-modal                                        : konfirmasi hapus
-     - x-pagination                                   : navigasi halaman
-     JS: @vite('resources/js/pages/finance/project-recaps/index.js')
+
+     Konten: pages/finance/partials/rekap-proyek.blade.php
      ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Rekap Proyek')
 
 @section('content')
-    {{-- ==================== Container Utama ==================== --}}
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Rekap Proyek</h1>
-
-        {{-- ==================== Toolbar Pencarian & Aksi ==================== --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <form method="GET" action="{{ route('recap-proyek.index') }}"
-                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
-                <x-filters.status-filter :value="request('status')" responsive="custom" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari nama proyek..." responsive="custom" />
-            </form>
-
-            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
-                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
-                    <x-buttons.add-button modalId="addModal" text="Tambah Proyek" responsive="custom" />
-                </div>
-            </div>
-        </div>
-
-        {{-- ==================== Tabel Rekap Proyek ==================== --}}
-        <x-finance.project-recaps.table :recaps="$recaps" />
-    </div>
-
-    {{-- ==================== Pagination ==================== --}}
-    <x-pagination :paginator="$recaps" />
-
-    {{-- ==================== Modals ==================== --}}
-    @include('components.finance.project-recaps.add-modal')
-
-    @foreach ($recaps as $recap)
-        @include('components.finance.project-recaps.detail-modal', ['recap' => $recap])
-        @include('components.finance.project-recaps.edit-modal', ['recap' => $recap])
-    @endforeach
-
-    {{-- Modal Upload & Hapus Bukti Pembayaran (shared, dipicu dari modal Edit) --}}
-    @include('components.finance.payment-proofs.upload-modal')
-    @include('components.finance.payment-proofs.delete-modal')
-
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
-        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data rekap proyek yang dipilih?</p>
-        <p class="text-sm text-text-secondary mb-4">
-            <i class="fa-solid fa-info-circle"></i> Laporan Keuangan Proyek beserta seluruh transaksi "Bon"-nya pada
-            rekap tersebut juga akan ikut terhapus (tidak dapat dikembalikan).
-        </p>
-        <p class="text-sm text-text-secondary">
-            <i class="fa-solid fa-info-circle"></i> File design dari data yang dihapus juga akan ikut terhapus.
-        </p>
-    </x-modal>
-
-    {{-- ==================== JavaScript ==================== --}}
-    @vite(['resources/js/pages/finance/project-recaps/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
+    @include('pages.finance.partials.rekap-proyek')
 @endsection

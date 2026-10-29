@@ -253,7 +253,9 @@ Route::middleware('auth')->group(function () {
 
     // Route Recap Sales
     Route::get('/recap-sales', [RecapSalesController::class, 'index'])->name('recap-sales.index');
+    Route::get('/recap-sales/create', [RecapSalesController::class, 'create'])->name('recap-sales.create');
     Route::post('/recap-sales', [RecapSalesController::class, 'store'])->name('recap-sales.store');
+    Route::get('/recap-sales/{id_sales_recap}/edit', [RecapSalesController::class, 'edit'])->name('recap-sales.edit');
     Route::put('/recap-sales/{id_sales_recap}', [RecapSalesController::class, 'update'])->name('recap-sales.update');
     Route::patch('/recap-sales/{id_sales_recap}/status', [RecapSalesController::class, 'updateStatus'])->name('recap-sales.updateStatus');
     Route::delete('/recap-sales/destroy-selected', [RecapSalesController::class, 'destroySelected'])->name('recap-sales.destroySelected');

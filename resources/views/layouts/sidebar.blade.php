@@ -127,7 +127,8 @@
                         <x-fi.sidebar.item :href="url('/payment-accounts')" icon="building-library" :active="request()->is('payment-accounts*')">
                             Rekening Pembayaran
                         </x-fi.sidebar.item>
-                        <x-fi.sidebar.item :href="url('/rekap')" icon="chart-bar" :active="request()->is('rekap*')">
+                        {{-- Aktif juga di halaman form Tambah/Edit Rekap Penjualan (/recap-sales/...) --}}
+                        <x-fi.sidebar.item :href="url('/rekap')" icon="chart-bar" :active="request()->is('rekap*') || request()->is('recap-sales*')">
                             Rekap
                         </x-fi.sidebar.item>
                     </x-fi.sidebar.group>

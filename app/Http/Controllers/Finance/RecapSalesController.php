@@ -75,6 +75,42 @@ class RecapSalesController extends Controller
     }
 
     /**
+     * Menampilkan halaman form tambah rekap penjualan.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('pages.finance.sales-recap-form', [
+            'sale' => null,
+            'items' => Items::orderBy('name_item')->get(),
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman form edit rekap penjualan.
+     *
+     * Rekap yang sudah lunas tidak dapat diubah (sama dengan update()).
+     *
+     * @param  string $id
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function edit($id)
+    {
+        $sale = SalesRecap::with('paymentProofs')->findOrFail($id);
+
+        if ($sale->isLunas()) {
+            return redirect()->route('recap-sales.index')
+                ->with('error', 'Data yang sudah lunas tidak dapat diubah!');
+        }
+
+        return view('pages.finance.sales-recap-form', [
+            'sale' => $sale,
+            'items' => Items::orderBy('name_item')->get(),
+        ]);
+    }
+
+    /**
      * Menyimpan rekap penjualan baru.
      *
      * @param  \App\Http\Requests\Finance\StoreRecapSalesRequest $request

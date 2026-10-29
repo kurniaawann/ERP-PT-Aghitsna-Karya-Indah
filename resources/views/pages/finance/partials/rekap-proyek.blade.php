@@ -1,60 +1,71 @@
 {{-- =====================================================================
-     Partial Tab: Rekap Proyek (dipakai pada halaman Rekap tab proyek)
-     Data tersedia dari RecapProyekController::indexData():
+     Konten: Rekap Proyek (gaya Filament)
+     Dipakai di dua tempat:
+     - pages/finance/rekap.blade.php (Super Admin, tab "proyek"; $tabs & $tab
+       tersedia → judul "Rekap" + tab, filter ke route('rekap.index') + tab)
+     - pages/finance/project-recaps.blade.php (halaman Rekap Proyek sendiri, admin)
+
+     Data dari RecapProyekController::indexData():
      - $recaps : Paginator ProjectRecap (10/halaman)
+
+     JS: @vite('resources/js/pages/finance/project-recaps/index.js',
+               'resources/js/pages/finance/payment-proofs/embedded.js')
      ===================================================================== --}}
+@php
+    $inRekap = isset($tabs);
+    $indexUrl = $inRekap ? route('rekap.index', ['tab' => 'proyek']) : route('recap-proyek.index');
+@endphp
 
-    {{-- Container Utama --}}
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Rekap Proyek</h1>
+<div class="flex flex-col gap-y-6">
 
-        {{-- Toolbar Pencarian & Aksi (form mengarah ke tab aktif) --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <form method="GET" action="{{ route('rekap.index', ['tab' => 'proyek']) }}"
-                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
-                <x-filters.status-filter :value="request('status')" responsive="custom" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari nama proyek..." responsive="custom" />
-            </form>
+    {{-- SECTION: Header Halaman + Aksi (Tambah) --}}
+    <x-fi.page-header :heading="$inRekap ? 'Rekap' : 'Rekap Proyek'"
+        :breadcrumbs="$inRekap
+            ? ['Finance' => null, 'Rekap' => route('rekap.index'), 'Rekap Proyek' => null]
+            : ['Report' => null, 'Rekap Proyek' => $indexUrl]">
+        <x-slot:actions>
+            <x-fi.button icon="plus" onclick="openModal('addModal')">Tambah Proyek</x-fi.button>
+        </x-slot:actions>
+    </x-fi.page-header>
 
-            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
-                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
-                    <x-buttons.add-button modalId="addModal" text="Tambah Proyek" responsive="custom" />
-                </div>
-            </div>
-        </div>
+    {{-- SECTION: Tab Rekap (Super Admin) --}}
+    @if ($inRekap)
+        <x-finance.recap-tabs :tabs="$tabs" active="proyek" />
+    @endif
 
-        {{-- Tabel Rekap Proyek --}}
-        <x-finance.project-recaps.table :recaps="$recaps" />
-    </div>
+    {{-- SECTION: Tabel Rekap Proyek (+ filter status, pencarian, hapus massal, paginasi) --}}
+    <x-finance.project-recaps.table :recaps="$recaps" :indexUrl="$indexUrl" :filterTab="$inRekap ? 'proyek' : null" />
+</div>
 
-    {{-- Pagination --}}
-    <x-pagination :paginator="$recaps" />
+{{-- SECTION: Modal Tambah --}}
+@include('components.finance.project-recaps.add-modal')
 
-    {{-- Modals --}}
-    @include('components.finance.project-recaps.add-modal')
+{{-- SECTION: Modal Detail & Edit (satu per rekap) --}}
+@foreach ($recaps as $recap)
+    @include('components.finance.project-recaps.detail-modal', ['recap' => $recap])
+    @include('components.finance.project-recaps.edit-modal', ['recap' => $recap])
+@endforeach
 
-    @foreach ($recaps as $recap)
-        @include('components.finance.project-recaps.detail-modal', ['recap' => $recap])
-        @include('components.finance.project-recaps.edit-modal', ['recap' => $recap])
-    @endforeach
+{{-- SECTION: Modal Upload & Hapus Bukti Pembayaran (shared, dipicu menu Aksi / modal Edit) --}}
+@include('components.finance.payment-proofs.upload-modal')
+@include('components.finance.payment-proofs.delete-modal')
 
-    {{-- Modal Upload & Hapus Bukti Pembayaran (shared, dipicu dari modal Edit) --}}
-    @include('components.finance.payment-proofs.upload-modal')
-    @include('components.finance.payment-proofs.delete-modal')
+{{-- SECTION: Modal Konfirmasi Hapus Massal --}}
+<x-fi.modal id="deleteModal" heading="Hapus Rekap Proyek Terpilih" icon="trash" color="danger" width="md"
+    onConfirm="submitDeleteForm()" submitLabel="Ya, Hapus">
+    <p>Apakah Anda yakin ingin menghapus data rekap proyek yang dipilih?</p>
+    <p class="mt-3">
+        Laporan Keuangan Proyek beserta seluruh transaksi "Bon"-nya pada rekap tersebut juga akan ikut terhapus
+        (tidak dapat dikembalikan).
+    </p>
+    <p class="mt-3">File design dari data yang dihapus juga akan ikut terhapus.</p>
+</x-fi.modal>
 
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
-        <p class="text-text-primary mb-4">Apakah Anda yakin ingin menghapus data rekap proyek yang dipilih?</p>
-        <p class="text-sm text-text-secondary mb-4">
-            <i class="fa-solid fa-info-circle"></i> Laporan Keuangan Proyek beserta seluruh transaksi "Bon"-nya pada
-            rekap tersebut juga akan ikut terhapus (tidak dapat dikembalikan).
-        </p>
-        <p class="text-sm text-text-secondary">
-            <i class="fa-solid fa-info-circle"></i> File design dari data yang dihapus juga akan ikut terhapus.
-        </p>
-    </x-modal>
+{{-- SECTION: Modal Konfirmasi Hapus 1 Rekap (menu Aksi ⋮ tiap baris) --}}
+{{-- Mengirim satu id ke route('recap-proyek.destroySelected') yang sama dengan hapus massal. --}}
+<x-fi.delete-row-modal :action="route('recap-proyek.destroySelected')" field="selected_recaps" heading="Hapus Rekap Proyek"
+    warning="Laporan Keuangan Proyek beserta seluruh transaksi “Bon”-nya dan file design rekap ini juga ikut terhapus." />
 
-    @push('scripts')
-        @vite(['resources/js/pages/finance/project-recaps/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
-    @endpush
+@push('scripts')
+    @vite(['resources/js/pages/finance/project-recaps/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
+@endpush
