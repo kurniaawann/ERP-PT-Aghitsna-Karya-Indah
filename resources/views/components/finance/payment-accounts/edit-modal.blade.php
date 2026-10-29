@@ -1,37 +1,32 @@
-{{-- ==================== Modal Edit Rekening Pembayaran ==================== --}}
-<x-modal id="editModal-{{ $account->id }}" title="Edit Rekening Pembayaran"
-    action="{{ route('payment-accounts.update', $account->id) }}" method="PUT" buttonText="Update">
+{{-- Modal Edit Rekening Pembayaran (gaya Filament, satu per rekening) --}}
+<x-fi.modal id="editModal-{{ $account->id }}" heading="Edit Rekening Pembayaran"
+    :description="$account->bank_name . ' · ' . $account->account_number" icon="pencil-square"
+    :action="route('payment-accounts.update', $account->id)" method="PUT" submitLabel="Update">
 
-    {{-- ID Rekening (Read-only) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">ID Rekening</label>
-        <input type="text" value="{{ $account->id }}" class="w-full border rounded p-2 bg-surface-hover cursor-not-allowed"
-            readonly>
-        <p class="text-xs text-text-secondary mt-1">ID Rekening tidak dapat diubah</p>
-    </div>
+    {{-- Field: ID Rekening (Read-only) --}}
+    <x-fi.field label="ID Rekening" hint="ID Rekening tidak dapat diubah">
+        <x-fi.input :value="$account->id" prefix-icon="lock-closed" readonly />
+    </x-fi.field>
 
-    {{-- Nama Bank --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Bank <span class="text-error">*</span></label>
-        <input type="text" name="bank_name" value="{{ $account->bank_name }}" class="w-full border rounded p-2"
-            required maxlength="255" oninvalid="this.setCustomValidity('Nama bank wajib diisi')"
-            oninput="this.setCustomValidity('')">
-    </div>
+    {{-- Field: Nama Bank --}}
+    <x-fi.field label="Nama Bank" for="edit-bank-name-{{ $account->id }}" required>
+        <x-fi.input id="edit-bank-name-{{ $account->id }}" name="bank_name" :value="$account->bank_name"
+            prefix-icon="building-library" required maxlength="255"
+            oninvalid="this.setCustomValidity('Nama bank wajib diisi')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
-    {{-- Nomor Rekening --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nomor Rekening <span class="text-error">*</span></label>
-        <input type="text" name="account_number" value="{{ $account->account_number }}"
-            class="w-full border rounded p-2" required maxlength="255"
-            oninvalid="this.setCustomValidity('Nomor rekening wajib diisi')" oninput="this.setCustomValidity('')">
-    </div>
+    {{-- Field: Nomor Rekening --}}
+    <x-fi.field label="Nomor Rekening" for="edit-account-number-{{ $account->id }}" required>
+        <x-fi.input id="edit-account-number-{{ $account->id }}" name="account_number" :value="$account->account_number"
+            prefix-icon="hashtag" required maxlength="255"
+            oninvalid="this.setCustomValidity('Nomor rekening wajib diisi')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
-    {{-- Nama Pemilik Rekening --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Pemilik Rekening <span class="text-error">*</span></label>
-        <input type="text" name="account_holder" value="{{ $account->account_holder }}"
-            class="w-full border rounded p-2" required maxlength="255"
+    {{-- Field: Nama Pemilik Rekening --}}
+    <x-fi.field label="Nama Pemilik Rekening" for="edit-account-holder-{{ $account->id }}" required>
+        <x-fi.input id="edit-account-holder-{{ $account->id }}" name="account_holder" :value="$account->account_holder"
+            prefix-icon="user" required maxlength="255"
             oninvalid="this.setCustomValidity('Nama pemilik rekening wajib diisi')"
-            oninput="this.setCustomValidity('')">
-    </div>
-</x-modal>
+            oninput="this.setCustomValidity('')" />
+    </x-fi.field>
+</x-fi.modal>

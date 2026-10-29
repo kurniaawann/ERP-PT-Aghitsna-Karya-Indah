@@ -1,29 +1,26 @@
-{{-- ==================== Modal Tambah Rekening Pembayaran ==================== --}}
-<x-modal id="addModal" title="Tambah Rekening Pembayaran" action="{{ route('payment-accounts.store') }}" method="POST"
-    buttonText="Simpan">
+{{-- Modal Tambah Rekening Pembayaran (gaya Filament) --}}
+<x-fi.modal id="addModal" heading="Tambah Rekening Pembayaran" icon="building-library"
+    :action="route('payment-accounts.store')" method="POST" submitLabel="Simpan">
 
-    {{-- Nama Bank --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Bank <span class="text-error">*</span></label>
-        <input type="text" name="bank_name" class="w-full border rounded p-2" placeholder="Contoh: Bank BCA" required
-            maxlength="255" oninvalid="this.setCustomValidity('Nama bank wajib diisi')"
-            oninput="this.setCustomValidity('')">
-    </div>
+    {{-- Field: Nama Bank --}}
+    <x-fi.field label="Nama Bank" for="add-bank-name" required>
+        <x-fi.input id="add-bank-name" name="bank_name" placeholder="Contoh: Bank BCA" prefix-icon="building-library"
+            required maxlength="255" oninvalid="this.setCustomValidity('Nama bank wajib diisi')"
+            oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
-    {{-- Nomor Rekening --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nomor Rekening <span class="text-error">*</span></label>
-        <input type="text" name="account_number" class="w-full border rounded p-2" placeholder="Contoh: 1234567890"
+    {{-- Field: Nomor Rekening --}}
+    <x-fi.field label="Nomor Rekening" for="add-account-number" required>
+        <x-fi.input id="add-account-number" name="account_number" placeholder="Contoh: 1234567890" prefix-icon="hashtag"
             required maxlength="255" oninvalid="this.setCustomValidity('Nomor rekening wajib diisi')"
-            oninput="this.setCustomValidity('')">
-    </div>
+            oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
-    {{-- Nama Pemilik Rekening --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Pemilik Rekening <span class="text-error">*</span></label>
-        <input type="text" name="account_holder" class="w-full border rounded p-2"
-            placeholder="Contoh: PT Aghitsna Karya Indah" required maxlength="255"
+    {{-- Field: Nama Pemilik Rekening --}}
+    <x-fi.field label="Nama Pemilik Rekening" for="add-account-holder" required>
+        <x-fi.input id="add-account-holder" name="account_holder" placeholder="Contoh: PT Aghitsna Karya Indah"
+            prefix-icon="user" required maxlength="255"
             oninvalid="this.setCustomValidity('Nama pemilik rekening wajib diisi')"
-            oninput="this.setCustomValidity('')">
-    </div>
-</x-modal>
+            oninput="this.setCustomValidity('')" />
+    </x-fi.field>
+</x-fi.modal>
