@@ -1,285 +1,199 @@
 {{-- =====================================================================
-     Partial: Laporan Penjualan (dalam Laporan Akhir)
+     Partial: Laporan Penjualan (dalam Laporan Akhir, gaya Filament)
      Logika/data sama dengan halaman Laporan Penjualan lama (SalesReportController),
      hanya form disubmit ke route report.final dengan tab=sales agar tetap
      berada di halaman Laporan Akhir. Export tetap ke endpoint terpisah
-     (report.sales.export.pdf / report.sales.export.excel).
+     (report.sales.export.pdf / report.sales.export.excel) lewat tombol Export
+     di header halaman.
+
+     Hook JS (report/sales-reports/index.js): canvas #monthlySalesChart &
+     #statusDistributionChart + window.monthlyTrendData / statusDistributionData.
      ===================================================================== --}}
-<div class="space-y-6">
+@php
+    $rupiah = fn ($value) => 'Rp ' . number_format($value ?? 0, 0, ',', '.');
+    // Badge status pembayaran (sama seperti x-report.sales-reports.status-badge)
+    $statusBadge = fn ($status) => $status === 'Lunas'
+        ? ['color' => 'success', 'icon' => 'check-circle', 'label' => 'Lunas']
+        : ['color' => 'warning', 'icon' => null, 'label' => 'Belum Lunas'];
+@endphp
 
-    {{-- ==================== Filter Section ==================== --}}
-    <div class="bg-surface-base p-6 rounded-xl shadow">
-        <div class="flex flex-col min-[1520px]:flex-row items-stretch min-[1520px]:items-center gap-3">
+<div class="flex flex-col gap-y-6">
 
-            {{-- Form Filter (kiri) --}}
-            <form method="GET" action="{{ route('report.final') }}"
-                class="flex flex-col min-[1520px]:flex-row items-stretch min-[1520px]:items-center gap-3 flex-1">
-
-                {{-- Hidden: pertahankan tab aktif --}}
-                <input type="hidden" name="tab" value="sales">
-
-                {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" responsive="custom" />
-
-                {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" responsive="custom" />
-
-                {{-- Filter Status --}}
-                <x-filters.select-filter name="status" :value="request('status')"
-                    :options="collect([
-                        (object) ['id' => 'Lunas', 'name' => 'Lunas'],
-                        (object) ['id' => 'Belum Lunas', 'name' => 'Belum Lunas'],
-                    ])"
-                    placeholder="Semua Status" :autoSubmit="true" responsive="custom" />
-
-                {{-- Search --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari proyek..." responsive="custom" />
-            </form>
+    {{-- SECTION: Filter (bulan, tahun, status, pencarian) --}}
+    <x-report.final-report.filter-bar tab="sales">
+        <div class="sm:w-44">
+            <x-fi.month-select :value="request('month')" onchange="this.form.requestSubmit()" />
         </div>
+        <div class="sm:w-36">
+            <x-fi.year-select :value="request('year')" onchange="this.form.requestSubmit()" />
+        </div>
+        <div class="col-span-2 sm:w-44">
+            <x-fi.select name="status" aria-label="Filter Status" placeholder="Semua Status"
+                :options="['Lunas' => 'Lunas', 'Belum Lunas' => 'Belum Lunas']" :value="request('status')"
+                onchange="this.form.requestSubmit()" data-fi-select />
+        </div>
+        <x-fi.search-input :value="request('search')" placeholder="Cari proyek..." class="col-span-2 sm:w-64" />
+    </x-report.final-report.filter-bar>
+
+    {{-- SECTION: Kartu Ringkasan --}}
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <x-fi.stat label="Total Penjualan" icon="chart-bar" color="primary" size="sm"
+            :description="$summary['total_transactions'] . ' transaksi'">
+            {{ $rupiah($summary['total_selling']) }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Modal" icon="banknotes" color="warning" size="sm" description="HPP">
+            {{ $rupiah($summary['total_capital']) }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Profit" icon="currency-dollar" color="success" size="sm"
+            :description="'Margin: ' . $summary['profit_margin'] . '%'">
+            {{ $rupiah($summary['total_profit']) }}
+        </x-fi.stat>
+        <x-fi.stat label="Rata-rata/Transaksi" icon="calculator" size="sm" description="Per transaksi">
+            {{ $rupiah($summary['avg_transaction']) }}
+        </x-fi.stat>
     </div>
 
-    {{-- ==================== Summary Cards ==================== --}}
-    <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-4 gap-6">
-        <x-report.sales-reports.summary-card
-            title="Total Penjualan"
-            value="Rp {{ number_format($summary['total_selling'], 0, ',', '.') }}"
-            subtitle="{{ $summary['total_transactions'] }} transaksi"
-            icon="fa-chart-line"
-            color="primary"
-        />
-
-        <x-report.sales-reports.summary-card
-            title="Total Modal"
-            value="Rp {{ number_format($summary['total_capital'], 0, ',', '.') }}"
-            subtitle="HPP"
-            icon="fa-coins"
-            color="warning"
-        />
-
-        <x-report.sales-reports.summary-card
-            title="Total Profit"
-            value="Rp {{ number_format($summary['total_profit'], 0, ',', '.') }}"
-            subtitle="Margin: {{ $summary['profit_margin'] }}%"
-            icon="fa-hand-holding-usd"
-            color="success"
-        />
-
-        <x-report.sales-reports.summary-card
-            title="Rata-rata/Transaksi"
-            value="Rp {{ number_format($summary['avg_transaction'], 0, ',', '.') }}"
-            subtitle="Per transaksi"
-            icon="fa-calculator"
-            color="default"
-        />
-    </div>
-
-    {{-- ==================== Charts Section ==================== --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {{-- Monthly Trend Chart --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4">Trend Penjualan Bulanan</h3>
-            <div style="position: relative; height: 300px;">
+    {{-- SECTION: Grafik --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <x-fi.section heading="Trend Penjualan Bulanan">
+            <div class="relative h-[300px]">
                 <canvas id="monthlySalesChart"></canvas>
             </div>
-        </div>
+        </x-fi.section>
 
-        {{-- Status Distribution Chart --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4">Status Pembayaran</h3>
-            <div style="position: relative; height: 300px;">
+        <x-fi.section heading="Status Pembayaran">
+            <div class="relative h-[300px]">
                 <canvas id="statusDistributionChart"></canvas>
             </div>
-        </div>
+        </x-fi.section>
     </div>
 
-    {{-- ==================== Status Pembayaran Cards ==================== --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4 flex items-center">
-                <span class="w-3 h-3 bg-success rounded-full mr-2"></span>
-                Transaksi Lunas
-            </h3>
-            <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                    <span class="text-text-secondary">Jumlah Transaksi:</span>
-                    <span class="font-semibold text-text-primary">{{ $summary['paid_count'] }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-text-secondary">Total Nilai:</span>
-                    <span class="font-semibold text-success">Rp
-                        {{ number_format($summary['paid_amount'], 0, ',', '.') }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4 flex items-center">
-                <span class="w-3 h-3 bg-error rounded-full mr-2"></span>
-                Transaksi Belum Lunas
-            </h3>
-            <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                    <span class="text-text-secondary">Jumlah Transaksi:</span>
-                    <span class="font-semibold text-text-primary">{{ $summary['unpaid_count'] }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-text-secondary">Total Piutang:</span>
-                    <span class="font-semibold text-error">Rp
-                        {{ number_format($summary['unpaid_amount'], 0, ',', '.') }}</span>
-                </div>
-            </div>
-        </div>
+    {{-- SECTION: Ringkasan Status Pembayaran --}}
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        @foreach ([
+            ['Transaksi Lunas', 'bg-emerald-500', $summary['paid_count'], 'Total Nilai', $summary['paid_amount'], 'text-emerald-600'],
+            ['Transaksi Belum Lunas', 'bg-red-500', $summary['unpaid_count'], 'Total Piutang', $summary['unpaid_amount'], 'text-red-600'],
+        ] as [$statusHeading, $statusDot, $statusCount, $statusAmountLabel, $statusAmount, $statusAmountColor])
+            <x-fi.card class="p-6">
+                <h3 class="flex items-center gap-x-2 text-base font-semibold text-gray-950">
+                    <span class="h-2.5 w-2.5 rounded-full {{ $statusDot }}"></span>
+                    {{ $statusHeading }}
+                </h3>
+                <dl class="mt-4 grid gap-y-2 text-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-gray-500">Jumlah Transaksi:</dt>
+                        <dd class="font-semibold tabular-nums text-gray-950">{{ $statusCount }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-gray-500">{{ $statusAmountLabel }}:</dt>
+                        <dd class="font-semibold tabular-nums {{ $statusAmountColor }}">{{ $rupiah($statusAmount) }}</dd>
+                    </div>
+                </dl>
+            </x-fi.card>
+        @endforeach
     </div>
 
-    {{-- ==================== Top Projects Table ==================== --}}
-    <div class="bg-surface-base rounded-xl shadow overflow-hidden">
-        <div class="p-6 border-b border-border-light">
-            <h3 class="text-lg font-semibold text-text-primary">Top 5 Proyek Terbaik (Berdasarkan Profit)</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-surface-secondary">
+    {{-- SECTION: Top 5 Proyek --}}
+    <x-fi.section heading="Top 5 Proyek Terbaik (Berdasarkan Profit)" flush>
+        <div class="relative overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Ranking</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Tanggal</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Nama Proyek</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Penjualan</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Modal</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Profit</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Status</th>
+                        <x-fi.table.th align="center" class="w-1">Ranking</x-fi.table.th>
+                        <x-fi.table.th>Tanggal</x-fi.table.th>
+                        <x-fi.table.th>Nama Proyek</x-fi.table.th>
+                        <x-fi.table.th align="end">Penjualan</x-fi.table.th>
+                        <x-fi.table.th align="end">Modal</x-fi.table.th>
+                        <x-fi.table.th align="end">Profit</x-fi.table.th>
+                        <x-fi.table.th>Status</x-fi.table.th>
                     </tr>
                 </thead>
-                <tbody class="bg-surface-base divide-y divide-border-light">
-                    @forelse($topProjects as $index => $project)
-                        <tr class="hover:bg-surface-secondary transition-colors duration-150">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    @if ($index == 0)
-                                        <span class="text-2xl">&#x1F947;</span>
-                                    @elseif($index == 1)
-                                        <span class="text-2xl">&#x1F948;</span>
-                                    @elseif($index == 2)
-                                        <span class="text-2xl">&#x1F949;</span>
-                                    @else
-                                        <span class="text-text-secondary font-semibold">{{ $index + 1 }}</span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                {{ \Carbon\Carbon::parse($project->date)->format('d M Y') }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-text-primary">{{ $project->name_proyek }}</div>
-                                <div class="text-xs text-text-secondary">{{ $project->no_faktur }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                Rp {{ number_format($project->total_selling, 0, ',', '.') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                Rp {{ number_format($project->total_capital, 0, ',', '.') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-success">
-                                Rp {{ number_format($project->total_profit, 0, ',', '.') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <x-report.sales-reports.status-badge :status="$project->status" />
-                            </td>
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($topProjects as $index => $project)
+                        @php $badge = $statusBadge($project->status); @endphp
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50">
+                            <x-fi.table.td align="center">
+                                @if ($index == 0)
+                                    <span class="text-2xl" title="Peringkat 1">&#x1F947;</span>
+                                @elseif ($index == 1)
+                                    <span class="text-2xl" title="Peringkat 2">&#x1F948;</span>
+                                @elseif ($index == 2)
+                                    <span class="text-2xl" title="Peringkat 3">&#x1F949;</span>
+                                @else
+                                    <span class="font-semibold tabular-nums text-gray-500">{{ $index + 1 }}</span>
+                                @endif
+                            </x-fi.table.td>
+                            <x-fi.table.td>{{ \Carbon\Carbon::parse($project->date)->format('d M Y') }}</x-fi.table.td>
+                            <x-fi.table.td class="min-w-[12rem] whitespace-normal">
+                                <div class="font-medium">{{ $project->name_proyek }}</div>
+                                <div class="text-xs text-gray-500">{{ $project->no_faktur }}</div>
+                            </x-fi.table.td>
+                            <x-fi.table.td align="end" class="tabular-nums">{{ $rupiah($project->total_selling) }}</x-fi.table.td>
+                            <x-fi.table.td align="end" class="tabular-nums">{{ $rupiah($project->total_capital) }}</x-fi.table.td>
+                            <x-fi.table.td align="end" class="font-semibold tabular-nums text-emerald-600">{{ $rupiah($project->total_profit) }}</x-fi.table.td>
+                            <x-fi.table.td>
+                                <x-fi.badge :color="$badge['color']" :icon="$badge['icon']">{{ $badge['label'] }}</x-fi.badge>
+                            </x-fi.table.td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-text-secondary">
-                                Tidak ada data proyek
+                            <td colspan="7">
+                                <x-fi.empty-state icon="chart-bar" heading="Tidak ada data proyek" />
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-fi.section>
 
-    {{-- ==================== Detail Transactions Table ==================== --}}
-    <div class="bg-surface-base rounded-xl shadow overflow-hidden">
-        <div class="p-6 border-b border-border-light">
-            <h3 class="text-lg font-semibold text-text-primary">Detail Transaksi Penjualan</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-surface-secondary">
+    {{-- SECTION: Detail Transaksi + Paginasi --}}
+    <x-fi.section heading="Detail Transaksi Penjualan" flush>
+        <div class="relative overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Tanggal</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Nama Proyek</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Modal</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Penjualan</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Profit</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Status</th>
+                        <x-fi.table.th>ID</x-fi.table.th>
+                        <x-fi.table.th>Tanggal</x-fi.table.th>
+                        <x-fi.table.th>Nama Proyek</x-fi.table.th>
+                        <x-fi.table.th align="end">Modal</x-fi.table.th>
+                        <x-fi.table.th align="end">Penjualan</x-fi.table.th>
+                        <x-fi.table.th align="end">Profit</x-fi.table.th>
+                        <x-fi.table.th>Status</x-fi.table.th>
                     </tr>
                 </thead>
-                <tbody class="bg-surface-base divide-y divide-border-light">
-                    @forelse($salesRecaps as $recap)
-                        <tr class="hover:bg-surface-secondary transition-colors duration-150">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
-                                {{ $recap->no_faktur }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                {{ \Carbon\Carbon::parse($recap->date)->format('d M Y') }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-text-primary">{{ $recap->name_proyek }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                Rp {{ number_format($recap->total_capital, 0, ',', '.') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                Rp {{ number_format($recap->total_selling, 0, ',', '.') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-success">
-                                Rp {{ number_format($recap->total_profit, 0, ',', '.') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <x-report.sales-reports.status-badge :status="$recap->status" />
-                            </td>
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($salesRecaps as $recap)
+                        @php $badge = $statusBadge($recap->status); @endphp
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50">
+                            <x-fi.table.td class="font-medium text-primary">{{ $recap->no_faktur }}</x-fi.table.td>
+                            <x-fi.table.td>{{ \Carbon\Carbon::parse($recap->date)->format('d M Y') }}</x-fi.table.td>
+                            <x-fi.table.td class="min-w-[12rem] whitespace-normal font-medium">{{ $recap->name_proyek }}</x-fi.table.td>
+                            <x-fi.table.td align="end" class="tabular-nums">{{ $rupiah($recap->total_capital) }}</x-fi.table.td>
+                            <x-fi.table.td align="end" class="tabular-nums">{{ $rupiah($recap->total_selling) }}</x-fi.table.td>
+                            <x-fi.table.td align="end" class="font-semibold tabular-nums text-emerald-600">{{ $rupiah($recap->total_profit) }}</x-fi.table.td>
+                            <x-fi.table.td>
+                                <x-fi.badge :color="$badge['color']" :icon="$badge['icon']">{{ $badge['label'] }}</x-fi.badge>
+                            </x-fi.table.td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-text-secondary">
-                                Tidak ada data transaksi
+                            <td colspan="7">
+                                <x-fi.empty-state icon="inbox" heading="Tidak ada data transaksi" />
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
 
-    {{-- ==================== Pagination ==================== --}}
-    <div class="bg-surface-base p-4 rounded-xl shadow">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="text-sm text-text-primary font-semibold">
-                Halaman {{ $salesRecaps->currentPage() }} dari {{ $salesRecaps->lastPage() }}
-            </div>
-            <div>
-                {{ $salesRecaps->links() }}
-            </div>
+        <div class="border-t border-gray-200 px-4 py-3 sm:px-6">
+            <x-fi.pagination :paginator="$salesRecaps" />
         </div>
-    </div>
+    </x-fi.section>
 </div>
 
-{{-- Chart Data & JavaScript --}}
+{{-- Data grafik & JavaScript --}}
 @push('scripts')
     <script>
         window.monthlyTrendData = @json($monthlyTrend);

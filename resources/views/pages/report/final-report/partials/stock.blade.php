@@ -1,244 +1,171 @@
 {{-- =====================================================================
-     Partial: Laporan Stok (dalam Laporan Akhir)
+     Partial: Laporan Stok (dalam Laporan Akhir, gaya Filament)
      Logika/data sama dengan halaman Laporan Stok lama (StockReportController),
      hanya form disubmit ke route report.final dengan tab=stock agar tetap
      berada di halaman Laporan Akhir. Export tetap ke endpoint terpisah
-     (stock-report.export.pdf / stock-report.export.excel).
+     (stock-report.export.pdf / stock-report.export.excel) lewat tombol Export
+     di header halaman.
+
+     Hook JS (inventory/stock-report.js): #start_date, #end_date (auto-submit
+     saat berubah), #item_id, #itemDropdownBtn, #itemDropdownLabel,
+     #itemDropdownMenu, #itemSearchInput, #itemDropdownList, #clearItemBtn.
      ===================================================================== --}}
-<div class="space-y-6">
-    {{-- SECTION: Filter — Form filter periode (tanggal mulai/akhir) & pilihan barang --}}
-    <div class="bg-surface-base rounded-lg shadow-sm p-6">
-        <form method="GET" action="{{ route('report.final') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+@php
+    $qty = fn ($value) => number_format($value ?? 0, 0, ',', '.');
+    $rupiah = fn ($value) => 'Rp ' . number_format($value ?? 0, 0, ',', '.');
+@endphp
+
+<div class="flex flex-col gap-y-6">
+
+    {{-- SECTION: Filter — periode (tanggal mulai/akhir) & pilihan barang --}}
+    <x-fi.card class="p-4 sm:p-6">
+        <form method="GET" action="{{ route('report.final') }}" class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
             {{-- Hidden: pertahankan tab aktif --}}
             <input type="hidden" name="tab" value="stock">
 
             {{-- Filter Tanggal Mulai --}}
-            <div>
-                <label for="start_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Mulai</label>
-                <input type="date"
-                    class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
-                    id="start_date" name="start_date" value="{{ $startDate }}" required>
-            </div>
+            <x-fi.field label="Tanggal Mulai" for="start_date">
+                <x-fi.input type="date" id="start_date" name="start_date" :value="$startDate" required />
+            </x-fi.field>
 
             {{-- Filter Tanggal Akhir --}}
-            <div>
-                <label for="end_date" class="block text-sm font-semibold text-text-primary mb-2">Tanggal Akhir</label>
-                <input type="date"
-                    class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base text-text-input focus:outline-none focus:ring-2 focus:ring-primary"
-                    id="end_date" name="end_date" value="{{ $endDate }}" required>
-            </div>
+            <x-fi.field label="Tanggal Akhir" for="end_date">
+                <x-fi.input type="date" id="end_date" name="end_date" :value="$endDate" required />
+            </x-fi.field>
 
-            {{-- SECTION: Filter Pilihan Barang (Dropdown Infinite Scroll) --}}
-            <div>
-                <label class="block text-sm font-semibold text-text-primary mb-2">Pilih Barang (Opsional)</label>
-
+            {{-- Filter Pilihan Barang (dropdown pencarian + infinite scroll, stock-report.js) --}}
+            <x-fi.field label="Pilih Barang (Opsional)" for="itemDropdownBtn">
                 {{-- Hidden input untuk form submission: value diisi JS saat user memilih barang --}}
                 <input type="hidden" name="item_id" id="item_id" value="{{ $selectedItemId ?? '' }}">
 
-                {{-- Custom dropdown (infinite scroll) --}}
                 <div class="relative">
-                    <button type="button" id="itemDropdownBtn"
-                        class="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-base flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary">
-                        <span id="itemDropdownLabel" class="text-sm text-text-primary">
+                    <button type="button" id="itemDropdownBtn" aria-haspopup="listbox"
+                        class="flex w-full items-center gap-x-2 rounded-lg bg-white py-1.5 pe-3 ps-3 text-start text-base shadow-sm outline-none ring-1 ring-gray-950/10 transition duration-75 focus-visible:ring-2 focus-visible:ring-primary sm:text-sm sm:leading-6">
+                        <x-fi.icon name="cube" class="h-5 w-5 shrink-0 text-gray-400" />
+                        <span id="itemDropdownLabel" class="min-w-0 flex-1 truncate text-gray-950">
                             {{ $selectedItemId ? $items[0]['id_item'] ?? $selectedItemId : '- Semua Barang -' }}
                         </span>
-                        <span class="text-text-secondary">▼</span>
+                        <x-fi.icon name="chevron-down" class="h-4 w-4 shrink-0 text-gray-400" />
                     </button>
 
                     <div id="itemDropdownMenu"
-                        class="absolute z-20 mt-1 w-full bg-surface-base border border-border-light rounded-lg shadow-sm hidden">
+                        class="absolute z-20 mt-2 hidden w-full overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-gray-950/5">
                         {{-- Input pencarian barang --}}
-                        <div class="p-2 border-b border-border-light">
-                            <input type="text" id="itemSearchInput"
-                                placeholder="Cari ID atau nama barang..."
-                                class="w-full px-3 py-2 border border-border-light rounded-lg bg-surface-base text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary">
+                        <div class="border-b border-gray-200 p-2">
+                            <x-fi.input id="itemSearchInput" placeholder="Cari ID atau nama barang..."
+                                prefix-icon="magnifying-glass" autocomplete="off" aria-label="Cari barang" />
                         </div>
 
                         {{-- Daftar barang (infinite scroll) --}}
-                        <div id="itemDropdownList" class="max-h-60 overflow-y-auto">
-                            <div class="p-2 text-sm text-text-secondary" id="dropdownLoadingPlaceholder">
+                        <div id="itemDropdownList" class="max-h-60 overflow-y-auto p-1">
+                            <div class="p-2 text-sm text-gray-500" id="dropdownLoadingPlaceholder">
                                 Silakan klik scroll untuk memuat data...
                             </div>
                         </div>
 
-                        <div class="p-2 border-t border-border-light">
-                            <button type="button" id="clearItemBtn" class="text-sm text-error hover:text-error">
+                        <div class="border-t border-gray-200 p-1">
+                            <button type="button" id="clearItemBtn"
+                                class="flex w-full items-center gap-2 rounded-md p-2 text-start text-sm font-medium text-red-600 outline-none transition-colors duration-75 hover:bg-gray-50 focus-visible:bg-gray-50">
+                                <x-fi.icon name="x-mark" class="h-5 w-5 text-red-500" />
                                 Reset (- Semua Barang -)
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            {{-- Print Dropdown dihapus: sudah terpusat di header Laporan Akhir --}}
-
+            </x-fi.field>
         </form>
+    </x-fi.card>
+
+    {{-- SECTION: Kartu Ringkasan --}}
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <x-fi.stat label="Total Jumlah Barang" icon="cube" color="primary">
+            {{ $qty($summary['total_items']) }} <span class="text-base font-medium text-gray-500">item</span>
+        </x-fi.stat>
+        <x-fi.stat label="Stok Akhir Total" icon="check-circle" color="success">
+            {{ $qty($summary['total_ending_stock']) }} <span class="text-base font-medium text-gray-500">unit</span>
+        </x-fi.stat>
+        <x-fi.stat label="Nilai Stok Total" icon="banknotes" color="warning">
+            {{ $rupiah($summary['total_stock_value']) }}
+        </x-fi.stat>
     </div>
 
-    {{-- SECTION: Summary Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {{-- SECTION: Ringkasan Pergerakan Stok periode --}}
+    <x-fi.section heading="Ringkasan Pergerakan Stok"
+        :description="'Periode ' . \Carbon\Carbon::parse($startDate)->format('d/m/Y') . ' - ' . \Carbon\Carbon::parse($endDate)->format('d/m/Y')">
+        @php
+            $movements = [
+                ['Stok Awal', $summary['total_beginning_stock'], 'text-primary'],
+                ['Stok Masuk', $summary['total_stock_in'], 'text-emerald-600'],
+                ['Stok Keluar', $summary['total_stock_out'], 'text-red-600'],
+                ['Retur Barang', $summary['total_returns'], 'text-amber-600'],
+                ['Stok Akhir', $summary['total_beginning_stock'] + $summary['total_stock_in'] - $summary['total_stock_out'] - $summary['total_returns'], 'text-primary'],
+            ];
+        @endphp
+        <dl class="grid grid-cols-2 gap-4 text-center md:grid-cols-5">
+            @foreach ($movements as [$movementLabel, $movementValue, $movementColor])
+                <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                    <dt class="text-sm text-gray-500">{{ $movementLabel }}</dt>
+                    <dd class="mt-1 text-xl font-semibold tabular-nums {{ $movementColor }}">{{ $qty($movementValue) }}</dd>
+                </div>
+            @endforeach
+        </dl>
+    </x-fi.section>
 
-        {{-- Card 1: Total Jumlah Barang --}}
-        <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-primary">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-text-secondary text-sm mb-1">Total Jumlah Barang</p>
-                    <h5 class="text-2xl font-bold text-text-primary">{{ number_format($summary['total_items']) }} item
-                    </h5>
-                </div>
-                <i class="fas fa-box-open text-primary text-3xl opacity-20"></i>
-            </div>
-        </div>
+    {{-- SECTION: Tabel Detail Laporan Stok --}}
+    <x-fi.section heading="Detail Laporan Stok" flush>
+        <div class="relative max-h-[520px] overflow-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                <thead class="sticky top-0 z-10 bg-gray-50">
+                    <tr>
+                        <x-fi.table.th align="center" class="w-1">No</x-fi.table.th>
+                        <x-fi.table.th>ID Barang</x-fi.table.th>
+                        <x-fi.table.th>Nama Barang</x-fi.table.th>
+                        <x-fi.table.th align="end">Stok Awal</x-fi.table.th>
+                        <x-fi.table.th align="end">Masuk</x-fi.table.th>
+                        <x-fi.table.th align="end">Keluar</x-fi.table.th>
+                        <x-fi.table.th align="end">Retur</x-fi.table.th>
+                        <x-fi.table.th align="end">Stok Akhir</x-fi.table.th>
+                        <x-fi.table.th align="end">Harga Satuan</x-fi.table.th>
+                        <x-fi.table.th align="end">Nilai Stok</x-fi.table.th>
+                    </tr>
+                </thead>
 
-        {{-- Card 2: Stok Akhir Total --}}
-        <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-success">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-text-secondary text-sm mb-1">Stok Akhir Total</p>
-                    <h5 class="text-2xl font-bold text-text-primary">{{ number_format($summary['total_ending_stock']) }}
-                        unit</h5>
-                </div>
-                <i class="fas fa-check-circle text-success text-3xl opacity-20"></i>
-            </div>
-        </div>
-
-        {{-- Card 3: Nilai Stok Total --}}
-        <div class="bg-surface-base rounded-lg shadow-sm p-6 border-l-4 border-warning">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-text-secondary text-sm mb-1">Nilai Stok Total</p>
-                    <h5 class="text-xl font-bold text-text-primary truncate">Rp
-                        {{ number_format($summary['total_stock_value']) }}</h5>
-                </div>
-                <i class="fas fa-coins text-warning text-3xl opacity-20"></i>
-            </div>
-        </div>
-    </div>
-
-    {{-- SECTION: Detail Summary — Ringkasan pergerakan stok per periode --}}
-    <div class="bg-surface-base rounded-lg shadow-sm overflow-hidden">
-        <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
-            <h6 class="text-sm font-semibold text-text-primary mb-0">📈 Ringkasan Pergerakan Stok Periode
-                {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} -
-                {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</h6>
-        </div>
-        <div class="p-6">
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                <div>
-                    <h6 class="text-text-secondary text-sm mb-2">Stok Awal</h6>
-                    <h5 class="text-xl font-bold text-primary">{{ number_format($summary['total_beginning_stock']) }}
-                    </h5>
-                </div>
-                <div>
-                    <h6 class="text-text-secondary text-sm mb-2">Stok Masuk</h6>
-                    <h5 class="text-xl font-bold text-success">{{ number_format($summary['total_stock_in']) }}</h5>
-                </div>
-                <div>
-                    <h6 class="text-text-secondary text-sm mb-2">Stok Keluar</h6>
-                    <h5 class="text-xl font-bold text-error">{{ number_format($summary['total_stock_out']) }}</h5>
-                </div>
-                <div>
-                    <h6 class="text-text-secondary text-sm mb-2">Retur Barang</h6>
-                    <h5 class="text-xl font-bold text-warning">{{ number_format($summary['total_returns']) }}</h5>
-                </div>
-                <div>
-                    <h6 class="text-text-secondary text-sm mb-2">Stok Akhir</h6>
-                    <h5 class="text-xl font-bold text-primary">
-                        {{ number_format($summary['total_beginning_stock'] + $summary['total_stock_in'] - $summary['total_stock_out'] - $summary['total_returns']) }}
-                    </h5>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- SECTION: Tabel Laporan Stok --}}
-    <div class="bg-surface-base rounded-lg shadow-sm overflow-hidden">
-        <div class="bg-surface-secondary px-6 py-4 border-b border-border-light">
-            <h6 class="text-sm font-semibold text-text-primary mb-0">📋 Detail Laporan Stok</h6>
-        </div>
-
-        <div class="overflow-x-auto">
-            <div class="max-h-[520px] overflow-y-auto">
-                <table class="w-full">
-                    <thead class="bg-surface-secondary border-b border-border-light sticky top-0 z-10">
-                        <tr>
-                            <th class="px-6 py-3 text-center text-xs font-semibold text-text-secondary w-12">No</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">ID Barang</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Nama Barang</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Stok Awal</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Masuk</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Keluar</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Retur</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Stok Akhir</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Harga Satuan</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-text-secondary">Nilai Stok</th>
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($reportData as $index => $item)
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50">
+                            <x-fi.table.td align="center" class="tabular-nums text-gray-500">
+                                {{ ($reportData->currentPage() - 1) * $perPage + $index + 1 }}
+                            </x-fi.table.td>
+                            <x-fi.table.td>
+                                <span class="rounded-md bg-gray-50 px-2 py-1 font-mono text-xs text-gray-950 ring-1 ring-inset ring-gray-950/10">{{ $item['id_item'] }}</span>
+                            </x-fi.table.td>
+                            <x-fi.table.td class="min-w-[12rem] whitespace-normal font-medium">{{ $item['name_item'] }}</x-fi.table.td>
+                            <x-fi.table.td align="end"><x-fi.badge color="primary">{{ $qty($item['beginning_stock']) }}</x-fi.badge></x-fi.table.td>
+                            <x-fi.table.td align="end"><x-fi.badge color="success">{{ $qty($item['stock_in']) }}</x-fi.badge></x-fi.table.td>
+                            <x-fi.table.td align="end"><x-fi.badge color="danger">{{ $qty($item['stock_out']) }}</x-fi.badge></x-fi.table.td>
+                            <x-fi.table.td align="end"><x-fi.badge color="warning">{{ $qty($item['returns']) }}</x-fi.badge></x-fi.table.td>
+                            <x-fi.table.td align="end"><x-fi.badge color="gray">{{ $qty($item['ending_stock']) }}</x-fi.badge></x-fi.table.td>
+                            <x-fi.table.td align="end" class="tabular-nums text-gray-700">{{ $rupiah($item['capital_price']) }}</x-fi.table.td>
+                            <x-fi.table.td align="end" class="font-semibold tabular-nums">{{ $rupiah($item['stock_value']) }}</x-fi.table.td>
                         </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-gray-200">
-                        @forelse($reportData as $index => $item)
-                            <tr class="hover:bg-surface-secondary transition-colors">
-                                <td class="px-6 py-4 text-center text-sm text-text-secondary">
-                                    {{ ($reportData->currentPage() - 1) * $perPage + $index + 1 }}
-                                </td>
-                                <td class="px-6 py-4 text-sm">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-surface-secondary text-text-primary rounded text-xs font-semibold">{{ $item['id_item'] }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-text-primary">{{ $item['name_item'] }}</td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-primary-light text-primary rounded text-xs font-semibold">{{ number_format($item['beginning_stock']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-success-light text-success rounded text-xs font-semibold">{{ number_format($item['stock_in']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-error-light text-error rounded text-xs font-semibold">{{ number_format($item['stock_out']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-warning-light text-warning rounded text-xs font-semibold">{{ number_format($item['returns']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right">
-                                    <span
-                                        class="inline-block px-2 py-1 bg-surface-secondary text-text-primary rounded text-xs font-semibold">{{ number_format($item['ending_stock']) }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-right text-text-secondary">Rp
-                                    {{ number_format($item['capital_price']) }}</td>
-                                <td class="px-6 py-4 text-sm text-right font-bold text-text-primary">Rp
-                                    {{ number_format($item['stock_value']) }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="10" class="px-6 py-12 text-center">
-                                    <p class="text-text-secondary mb-0">
-                                        <i class="fas fa-inbox mr-2"></i>Tidak ada data stok untuk periode ini
-                                    </p>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @empty
+                        <tr>
+                            <td colspan="10">
+                                <x-fi.empty-state icon="inbox" heading="Tidak ada data stok untuk periode ini"
+                                    description="Ubah tanggal atau pilihan barang untuk melihat data lain." />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
 
-        {{-- Pagination (manual LengthAwarePaginator) --}}
-        <div class="px-6 py-4 border-t border-border-light">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="text-sm text-text-primary font-semibold">
-                    Halaman {{ $reportData->currentPage() }} dari {{ $reportData->lastPage() }}
-                </div>
-                <div>
-                    {{ $reportData->appends(request()->query())->links() }}
-                </div>
-            </div>
+        {{-- Paginasi (manual LengthAwarePaginator) --}}
+        <div class="border-t border-gray-200 px-4 py-3 sm:px-6">
+            <x-fi.pagination :paginator="$reportData" />
         </div>
-    </div>
-
+    </x-fi.section>
 </div>
 
 {{-- Konfigurasi route untuk modul stock-report.js (index = halaman Laporan Akhir) --}}

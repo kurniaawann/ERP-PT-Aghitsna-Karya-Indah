@@ -10,13 +10,15 @@
 --}}
 @props(['tabs' => [], 'active' => null])
 
-<nav {{ $attributes->class('flex gap-x-6 overflow-x-auto border-b border-gray-200') }} aria-label="Tab">
+{{-- Garis bawah memakai inset shadow (bukan border-b + -mb-px pada tab) agar
+     tidak ada overflow vertikal 1px yang memunculkan scrollbar di samping tab. --}}
+<nav {{ $attributes->class('flex gap-x-6 overflow-x-auto shadow-[inset_0_-1px_0_0_theme(colors.gray.200)]') }} aria-label="Tab">
     @foreach ($tabs as $key => $tab)
         @php $isActive = $active === $key; @endphp
 
         <a href="{{ $tab['url'] }}" @if ($isActive) aria-current="page" @endif
             @class([
-                '-mb-px flex shrink-0 items-center gap-x-2 whitespace-nowrap border-b-2 px-1 pb-3 pt-1 text-sm font-medium outline-none transition duration-75 focus-visible:text-primary',
+                'flex shrink-0 items-center gap-x-2 whitespace-nowrap border-b-2 px-1 pb-3 pt-1 text-sm font-medium outline-none transition duration-75 focus-visible:text-primary',
                 'border-primary text-primary' => $isActive,
                 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' => ! $isActive,
             ])>

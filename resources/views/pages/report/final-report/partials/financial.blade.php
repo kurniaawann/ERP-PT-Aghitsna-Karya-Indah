@@ -1,178 +1,146 @@
 {{-- =====================================================================
-     Partial: Laporan Keuangan Proyek (dalam Laporan Akhir)
+     Partial: Laporan Keuangan Proyek (dalam Laporan Akhir, gaya Filament)
      Menampilkan rekap uang masuk, uang keluar, dan saldo per proyek
      berdasarkan transaksi "Bon" pada Laporan Keuangan Proyek masing-masing
-     rekap. Dilengkapi ringkasan, grafik status, dan tombol "Detail" untuk
-     melihat rincian transaksi per proyek (modal).
+     rekap. Dilengkapi ringkasan dan menu Aksi "Lihat Detail" untuk melihat
+     rincian transaksi per proyek (modal).
      Form disubmit ke route report.final dengan tab=financial agar tetap
      berada di halaman Laporan Akhir.
      Data dari FinalReportService::buildFinancialData:
      - $recaps : paginator Rekap Proyek (relasi financialReport.items)
      - $summary: ringkasan seluruh data yang lolos filter
      ===================================================================== --}}
-<div class="space-y-6">
+@php
+    $rupiah = fn ($value) => 'Rp ' . number_format($value ?? 0, 0, ',', '.');
+    $bonDescription = 'Seluruh baris "Bon" tercatat';
+@endphp
 
-    {{-- ==================== FILTER SECTION ==================== --}}
-    <div class="bg-surface-base p-6 rounded-xl shadow">
-        <form method="GET" action="{{ route('report.final') }}" id="financialFilterForm"
-            class="flex flex-col min-[1520px]:flex-row items-stretch min-[1520px]:items-center gap-3">
+<div class="flex flex-col gap-y-6">
 
-            {{-- Hidden: pertahankan tab aktif --}}
-            <input type="hidden" name="tab" value="financial">
+    {{-- SECTION: Filter (bulan, tahun, status laporan, pencarian) --}}
+    <x-report.final-report.filter-bar tab="financial" formId="financialFilterForm">
+        <div class="sm:w-44">
+            <x-fi.month-select :value="request('month')" onchange="this.form.requestSubmit()" />
+        </div>
+        <div class="sm:w-36">
+            <x-fi.year-select :value="request('year')" onchange="this.form.requestSubmit()" />
+        </div>
+        <div class="col-span-2 sm:w-52">
+            <x-fi.select name="status" aria-label="Filter Status" placeholder="Semua Status"
+                :options="['with_transactions' => 'Sudah Ada Transaksi', 'without_transactions' => 'Belum Ada Transaksi']"
+                :value="request('status')" onchange="this.form.requestSubmit()" data-fi-select />
+        </div>
+        <x-fi.search-input :value="request('search')" placeholder="Cari nama proyek atau lokasi..." class="col-span-2 sm:w-64" />
+    </x-report.final-report.filter-bar>
 
-            {{-- Filter Bulan --}}
-            <x-filters.month-filter :value="request('month')" responsive="custom" />
-
-            {{-- Filter Tahun --}}
-            <x-filters.year-filter :value="request('year')" responsive="custom" />
-
-            {{-- Filter Status Laporan --}}
-            <x-filters.select-filter name="status" :value="request('status')"
-                :options="collect([
-                    (object) ['id' => 'with_transactions', 'name' => 'Sudah Ada Transaksi'],
-                    (object) ['id' => 'without_transactions', 'name' => 'Belum Ada Transaksi'],
-                ])"
-                placeholder="Semua Status" :autoSubmit="true" responsive="custom" />
-
-            {{-- Search (submit manual) --}}
-            <x-filters.search-input :value="request('search')" placeholder="Cari nama proyek atau lokasi..." responsive="custom" />
-        </form>
+    {{-- SECTION: Kartu Ringkasan --}}
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <x-fi.stat label="Total Proyek" icon="building-office-2" color="primary" description="Proyek yang tercatat">
+            {{ number_format($summary['total_projects'], 0, ',', '.') }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Uang Masuk" icon="arrow-down" color="success" size="sm" description="Total pendapatan proyek">
+            {{ $rupiah($summary['total_income']) }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Uang Keluar" icon="arrow-up" color="danger" size="sm" description="Total pengeluaran proyek">
+            {{ $rupiah($summary['total_expense']) }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Saldo" icon="scale" :color="$summary['total_balance'] >= 0 ? 'primary' : 'danger'" size="sm"
+            :description="$summary['total_balance'] >= 0 ? 'Saldo surplus' : 'Saldo minus (defisit)'">
+            {{ $rupiah(abs($summary['total_balance'])) }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Transaksi" icon="document-text" :description="$bonDescription">
+            {{ number_format($summary['total_transactions'], 0, ',', '.') }}
+        </x-fi.stat>
     </div>
 
-    {{-- ==================== SUMMARY CARDS ==================== --}}
-    <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-5 gap-4">
-
-        {{-- Total Proyek --}}
-        <div class="bg-surface-base p-5 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <p class="text-sm font-medium text-text-secondary">Total Proyek</p>
-            <h3 class="text-2xl font-bold text-primary mt-1">{{ number_format($summary['total_projects']) }}</h3>
-            <p class="text-xs text-text-secondary mt-1">Proyek yang tercatat</p>
-        </div>
-
-        {{-- Total Uang Masuk --}}
-        <div class="bg-surface-base p-5 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <p class="text-sm font-medium text-text-secondary">Total Uang Masuk</p>
-            <h3 class="text-xl font-bold text-success mt-1 truncate">Rp {{ number_format($summary['total_income'], 0, ',', '.') }}</h3>
-            <p class="text-xs text-text-secondary mt-1">Total pendapatan proyek</p>
-        </div>
-
-        {{-- Total Uang Keluar --}}
-        <div class="bg-surface-base p-5 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <p class="text-sm font-medium text-text-secondary">Total Uang Keluar</p>
-            <h3 class="text-xl font-bold text-error mt-1 truncate">Rp {{ number_format($summary['total_expense'], 0, ',', '.') }}</h3>
-            <p class="text-xs text-text-secondary mt-1">Total pengeluaran proyek</p>
-        </div>
-
-        {{-- Total Saldo --}}
-        <div class="bg-surface-base p-5 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <p class="text-sm font-medium text-text-secondary">Total Saldo</p>
-            <h3 class="text-xl font-bold {{ $summary['total_balance'] >= 0 ? 'text-primary' : 'text-error' }} mt-1 truncate">
-                Rp {{ number_format(abs($summary['total_balance']), 0, ',', '.') }}
-            </h3>
-            <p class="text-xs text-text-secondary mt-1">
-                {{ $summary['total_balance'] >= 0 ? 'Saldo surplus' : 'Saldo minus (defisit)' }}
-            </p>
-        </div>
-
-        {{-- Total Transaksi --}}
-        <div class="bg-surface-base p-5 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <p class="text-sm font-medium text-text-secondary">Total Transaksi</p>
-            <h3 class="text-2xl font-bold text-text-primary mt-1">{{ number_format($summary['total_transactions']) }}</h3>
-            <p class="text-xs text-text-secondary mt-1">Seluruh baris "Bon" tercatat</p>
-        </div>
-    </div>
-
-    {{-- ==================== DETAIL TABEL ==================== --}}
-    <div class="bg-surface-base rounded-xl shadow overflow-hidden">
-        <div class="p-6 border-b border-border-light">
-            <h3 class="text-lg font-semibold text-text-primary">Detail Keuangan per Proyek</h3>
-            <p class="text-sm text-text-secondary mt-1">Ringkasan uang masuk, uang keluar, dan saldo per proyek. Klik <strong>"Detail"</strong> untuk melihat rincian transaksi.</p>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-surface-secondary border-b border-border-light">
+    {{-- SECTION: Detail Tabel + Paginasi --}}
+    <x-fi.section heading="Detail Keuangan per Proyek"
+        description="Ringkasan uang masuk, uang keluar, dan saldo per proyek. Pilih “Lihat Detail” untuk melihat rincian transaksi." flush>
+        <div class="relative overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary w-12">No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Nama Proyek</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Lokasi</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary">Dibuat</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-text-secondary">Uang Masuk</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-text-secondary">Uang Keluar</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-text-secondary">Saldo</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary w-28">Transaksi</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary w-32">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary w-28">Aksi</th>
+                        <x-fi.table.th align="center" class="w-1">No</x-fi.table.th>
+                        <x-fi.table.th>Nama Proyek</x-fi.table.th>
+                        <x-fi.table.th>Lokasi</x-fi.table.th>
+                        <x-fi.table.th>Dibuat</x-fi.table.th>
+                        <x-fi.table.th align="end">Uang Masuk</x-fi.table.th>
+                        <x-fi.table.th align="end">Uang Keluar</x-fi.table.th>
+                        <x-fi.table.th align="end">Saldo</x-fi.table.th>
+                        <x-fi.table.th align="center">Transaksi</x-fi.table.th>
+                        <x-fi.table.th>Status</x-fi.table.th>
+                        <x-fi.table.th align="center">Aksi</x-fi.table.th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-gray-200">
-                    @forelse($recaps as $recap)
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($recaps as $recap)
                         @php
                             $finIncome = (int) $recap->fin_income;
                             $finExpense = (int) $recap->fin_expense;
                             $finBalance = (int) $recap->fin_balance;
                             $finTransactions = (int) $recap->fin_transactions;
-
-                            if ($finTransactions > 0) {
-                                $finStatusLabel = 'Ada Transaksi';
-                                $finStatusClass = 'bg-green-100 text-green-800';
-                            } else {
-                                $finStatusLabel = 'Belum Ada';
-                                $finStatusClass = 'bg-red-100 text-red-800';
-                            }
                         @endphp
-                        <tr class="hover:bg-surface-secondary transition-colors duration-150">
-                            <td class="px-4 py-3 text-center text-sm font-medium text-primary">{{ $loop->iteration }}</td>
-                            <td class="px-4 py-3">
-                                <div class="text-sm font-medium text-text-primary">{{ $recap->project_name }}</div>
-                                @if ($recap->rab_number)
-                                    <div class="text-xs text-text-secondary">No RAB: {{ $recap->rab_number }}</div>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-sm text-text-secondary">{{ $recap->location ?: '-' }}</td>
-                            <td class="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">
-                                {{ $recap->created_at ? \Carbon\Carbon::parse($recap->created_at)->format('d M Y') : '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-right text-sm font-medium text-success">
-                                Rp {{ number_format($finIncome, 0, ',', '.') }}
-                            </td>
-                            <td class="px-4 py-3 text-right text-sm font-medium text-error">
-                                Rp {{ number_format($finExpense, 0, ',', '.') }}
-                            </td>
-                            <td class="px-4 py-3 text-right text-sm font-bold {{ $finBalance >= 0 ? 'text-primary' : 'text-error' }}">
-                                Rp {{ number_format($finBalance, 0, ',', '.') }}
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <span class="inline-flex items-center gap-1 text-sm font-medium text-text-primary">
-                                    <i class="fa-solid fa-receipt text-xs text-text-tertiary"></i>
-                                    {{ number_format($finTransactions) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <span class="inline-block px-2.5 py-1 rounded-full text-xs font-medium {{ $finStatusClass }}">
-                                    {{ $finStatusLabel }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-center">
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50">
+                            <x-fi.table.td align="center" class="tabular-nums text-gray-500">{{ $recaps->firstItem() + $loop->index }}</x-fi.table.td>
+
+                            <x-fi.table.td class="min-w-[11rem] max-w-xs whitespace-normal">
                                 @if ($finTransactions > 0)
                                     <button type="button" onclick="openModal('finDetailModal-{{ $recap->id }}')"
-                                        class="inline-flex items-center gap-1 bg-btn-search hover:bg-btn-search-hover text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200"
-                                        title="Lihat rincian transaksi proyek ini">
-                                        <i class="fa-solid fa-eye w-3 h-3"></i>
-                                        Detail
+                                        class="text-start font-medium text-primary hover:underline" title="Lihat rincian transaksi">
+                                        {{ $recap->project_name }}
                                     </button>
                                 @else
-                                    <span class="text-text-tertiary text-xs">-</span>
+                                    <div class="font-medium">{{ $recap->project_name }}</div>
                                 @endif
-                            </td>
+                                @if ($recap->rab_number)
+                                    <div class="text-xs text-gray-500">No RAB: {{ $recap->rab_number }}</div>
+                                @endif
+                            </x-fi.table.td>
+
+                            <x-fi.table.td class="max-w-[10rem] whitespace-normal text-gray-700">{{ $recap->location ?: '-' }}</x-fi.table.td>
+
+                            <x-fi.table.td class="text-gray-700">
+                                {{ $recap->created_at ? \Carbon\Carbon::parse($recap->created_at)->format('d M Y') : '-' }}
+                            </x-fi.table.td>
+
+                            <x-fi.table.td align="end" class="font-medium tabular-nums text-emerald-600">{{ $rupiah($finIncome) }}</x-fi.table.td>
+                            <x-fi.table.td align="end" class="font-medium tabular-nums text-red-600">{{ $rupiah($finExpense) }}</x-fi.table.td>
+                            <x-fi.table.td align="end" :class="'font-semibold tabular-nums ' . ($finBalance >= 0 ? 'text-primary' : 'text-red-600')">
+                                {{ $rupiah($finBalance) }}
+                            </x-fi.table.td>
+
+                            <x-fi.table.td align="center">
+                                <span class="inline-flex items-center gap-1 font-medium tabular-nums">
+                                    <x-fi.icon name="document-text" class="h-4 w-4 text-gray-400" />
+                                    {{ number_format($finTransactions, 0, ',', '.') }}
+                                </span>
+                            </x-fi.table.td>
+
+                            <x-fi.table.td>
+                                @if ($finTransactions > 0)
+                                    <x-fi.badge color="success">Ada Transaksi</x-fi.badge>
+                                @else
+                                    <x-fi.badge color="danger">Belum Ada</x-fi.badge>
+                                @endif
+                            </x-fi.table.td>
+
+                            {{-- Aksi: tombol ⋮ (detail hanya bila sudah ada transaksi) --}}
+                            <x-fi.table.td align="center">
+                                <x-fi.dropdown label="Aksi {{ $recap->project_name }}" width="w-60" class="-my-1.5">
+                                    <x-fi.dropdown.list>
+                                        <x-fi.dropdown.item icon="eye" onclick="openModal('finDetailModal-{{ $recap->id }}')"
+                                            :disabled="$finTransactions === 0" :hint="$finTransactions === 0 ? 'Belum ada transaksi' : null">
+                                            Lihat Detail
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
+                                </x-fi.dropdown>
+                            </x-fi.table.td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-6 py-12 text-center">
-                                <p class="text-text-secondary">
-                                    <i class="fas fa-inbox mr-2"></i>Tidak ada data laporan keuangan proyek untuk filter ini
-                                </p>
+                            <td colspan="10">
+                                <x-fi.empty-state icon="inbox" heading="Tidak ada data laporan keuangan proyek untuk filter ini" />
                             </td>
                         </tr>
                     @endforelse
@@ -180,141 +148,124 @@
             </table>
         </div>
 
-        {{-- Pagination --}}
-        <div class="px-6 py-4 border-t border-border-light">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="text-sm text-text-primary font-semibold">
-                    Halaman {{ $recaps->currentPage() }} dari {{ $recaps->lastPage() }}
-                </div>
-                <div>
-                    {{ $recaps->appends(request()->query())->links() }}
-                </div>
-            </div>
+        <div class="border-t border-gray-200 px-4 py-3 sm:px-6">
+            <x-fi.pagination :paginator="$recaps" />
         </div>
-    </div>
-
+    </x-fi.section>
 </div>
 
-{{-- ==================== MODAL DETAIL TRANSAKSI PER PROYEK ==================== --}}
+{{-- SECTION: Modal Rincian Transaksi per Proyek --}}
 @foreach ($recaps as $recap)
     @php
         $finItems = optional($recap->financialReport)->items ?? collect();
         $finItems = $finItems->sortBy('transaction_date')->values();
         $finTotalIncome = (int) $finItems->where('is_informational', false)->sum('income_amount');
         $finTotalExpense = (int) $finItems->where('is_informational', false)->sum('expense_amount');
+        $finTotalBalance = $finTotalIncome - $finTotalExpense;
     @endphp
 
-    <x-modal id="finDetailModal-{{ $recap->id }}"
-        title="Rincian Keuangan — {{ $recap->project_name }}"
-        :hideFooter="true" size="6xl">
+    <x-fi.modal id="finDetailModal-{{ $recap->id }}" heading="Rincian Keuangan — {{ $recap->project_name }}"
+        :description="$recap->id . ($recap->location ? ' (' . $recap->location . ')' : '')" icon="document-currency-dollar"
+        width="6xl">
+        <div class="grid gap-y-6">
 
-        <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
-            <div>
-                <p class="text-sm text-text-secondary">
-                    {{ $recap->id }}
-                    @if ($recap->location)
-                        <span class="text-text-label">({{ $recap->location }})</span>
-                    @endif
-                </p>
-                <p class="text-sm text-text-secondary mt-1">Rincian transaksi "Bon" pada proyek ini.</p>
+            {{-- Keterangan + nomor Laporan Keuangan --}}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm text-gray-500">Rincian transaksi "Bon" pada proyek ini.</p>
+                @if ($recap->financialReport)
+                    <x-fi.badge color="primary" icon="document-currency-dollar">{{ $recap->financialReport->id }}</x-fi.badge>
+                @endif
             </div>
-            @if ($recap->financialReport)
-                <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-primary-light text-primary gap-1">
-                    <i class="fa-solid fa-file-invoice-dollar"></i>
-                    {{ $recap->financialReport->id }}
-                </span>
-            @endif
-        </div>
 
-        {{-- Ringkasan Finansial --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="rounded-xl border border-border-strong bg-surface-secondary p-4 shadow-sm">
-                <p class="text-xs text-text-secondary mb-1">Total Uang Masuk</p>
-                <p class="text-xl font-bold text-success">Rp {{ number_format($finTotalIncome, 0, ',', '.') }}</p>
-            </div>
-            <div class="rounded-xl border border-border-strong bg-surface-secondary p-4 shadow-sm">
-                <p class="text-xs text-text-secondary mb-1">Total Uang Keluar</p>
-                <p class="text-xl font-bold text-error">Rp {{ number_format($finTotalExpense, 0, ',', '.') }}</p>
-            </div>
-            <div class="rounded-xl border border-border-strong bg-surface-secondary p-4 shadow-sm">
-                <p class="text-xs text-text-secondary mb-1">Saldo</p>
-                <p class="text-xl font-bold {{ ($finTotalIncome - $finTotalExpense) >= 0 ? 'text-primary' : 'text-error' }}">
-                    Rp {{ number_format($finTotalIncome - $finTotalExpense, 0, ',', '.') }}
-                </p>
-            </div>
-        </div>
-
-        {{-- Daftar Transaksi --}}
-        <div class="mt-6">
-            <h6 class="text-text-primary font-semibold mb-3">Daftar Transaksi ({{ $finItems->count() }})</h6>
-
-            @if ($finItems->isEmpty())
-                <div class="text-center p-4 border border-dashed border-border-strong rounded bg-surface-secondary">
-                    <p class="text-sm text-text-secondary">Belum ada transaksi pada proyek ini.</p>
+            {{-- Ringkasan Finansial --}}
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Total Uang Masuk</p>
+                    <p class="mt-1 text-lg font-semibold tabular-nums text-emerald-600">{{ $rupiah($finTotalIncome) }}</p>
                 </div>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-surface-secondary">
-                            <tr>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary w-10">No</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Tanggal</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Kategori</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Keterangan</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold text-text-secondary">Jumlah</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Keterangan Bon</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-text-secondary">Bukti</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach ($finItems as $index => $item)
-                                @php
-                                    $isIncome = (int) ($item->income_amount ?? 0) > 0;
-                                    $amount = (int) ($item->income_amount ?: $item->expense_amount);
-                                @endphp
-                                <tr class="hover:bg-surface-secondary transition-colors duration-150">
-                                    <td class="px-4 py-3 text-center text-sm font-medium text-primary">{{ $index + 1 }}</td>
-                                    <td class="px-4 py-3 text-sm text-text-secondary whitespace-nowrap">
-                                        {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d M Y') : '-' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-text-primary">
-                                        {{ $item->category->name ?? '-' }}
-                                        @if ($item->is_informational)
-                                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-700"
-                                                title="Baris informasi — tidak memengaruhi total laporan">
-                                                <i class="fa-solid fa-circle-info w-2.5 h-2.5 mr-0.5"></i> Info
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-text-primary">{{ $item->description }}</td>
-                                    <td class="px-4 py-3 text-right text-sm font-medium {{ $isIncome ? 'text-success' : 'text-error' }}">
-                                        @if ($item->is_informational)
-                                            <span class="text-text-tertiary">-</span>
-                                        @else
-                                            {{ $isIncome ? '+' : '-' }} Rp {{ number_format($amount, 0, ',', '.') }}
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-text-secondary">{{ $item->keterangan_bon ?: '-' }}</td>
-                                    <td class="px-4 py-3 text-center text-sm">
-                                        @if ($item->hasProof())
-                                            {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
-                                            <a href="{{ asset('storage/' . $item->proof_file) }}"
-                                                onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti — ' . ($item->description ?: 'Transaksi')), downloadName: @js($item->proof_file_name ?: basename($item->proof_file)) })"
-                                                title="{{ $item->proof_file_name }}"
-                                                class="text-blue-600 hover:underline">
-                                                <i class="fa-solid fa-paperclip"></i> File
-                                            </a>
-                                        @else
-                                            <span class="text-text-tertiary">-</span>
-                                        @endif
-                                    </td>
+                <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Total Uang Keluar</p>
+                    <p class="mt-1 text-lg font-semibold tabular-nums text-red-600">{{ $rupiah($finTotalExpense) }}</p>
+                </div>
+                <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                    <p class="text-sm text-gray-500">Saldo</p>
+                    <p @class(['mt-1 text-lg font-semibold tabular-nums', 'text-primary' => $finTotalBalance >= 0, 'text-red-600' => $finTotalBalance < 0])>
+                        {{ $rupiah($finTotalBalance) }}
+                    </p>
+                </div>
+            </div>
+
+            {{-- Daftar Transaksi --}}
+            <div class="grid gap-y-3">
+                <h3 class="text-sm font-semibold text-gray-950">Daftar Transaksi ({{ $finItems->count() }})</h3>
+
+                @if ($finItems->isEmpty())
+                    <div class="rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
+                        Belum ada transaksi pada proyek ini.
+                    </div>
+                @else
+                    <div class="relative overflow-x-auto rounded-xl ring-1 ring-gray-950/10">
+                        <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <x-fi.table.th align="center" class="w-1">No</x-fi.table.th>
+                                    <x-fi.table.th>Tanggal</x-fi.table.th>
+                                    <x-fi.table.th>Kategori</x-fi.table.th>
+                                    <x-fi.table.th>Keterangan</x-fi.table.th>
+                                    <x-fi.table.th align="end">Jumlah</x-fi.table.th>
+                                    <x-fi.table.th>Keterangan Bon</x-fi.table.th>
+                                    <x-fi.table.th align="center">Bukti</x-fi.table.th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                                @foreach ($finItems as $index => $item)
+                                    @php
+                                        $isIncome = (int) ($item->income_amount ?? 0) > 0;
+                                        $amount = (int) ($item->income_amount ?: $item->expense_amount);
+                                    @endphp
+                                    <tr class="bg-white">
+                                        <x-fi.table.td align="center" class="tabular-nums text-gray-500">{{ $index + 1 }}</x-fi.table.td>
+                                        <x-fi.table.td class="text-gray-700">
+                                            {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d M Y') : '-' }}
+                                        </x-fi.table.td>
+                                        <x-fi.table.td class="whitespace-normal">
+                                            <span class="inline-flex flex-wrap items-center gap-1.5">
+                                                {{ $item->category->name ?? '-' }}
+                                                @if ($item->is_informational)
+                                                    <x-fi.badge color="primary" icon="information-circle"
+                                                        title="Baris informasi — tidak memengaruhi total laporan">Info</x-fi.badge>
+                                                @endif
+                                            </span>
+                                        </x-fi.table.td>
+                                        <x-fi.table.td class="min-w-[12rem] whitespace-normal">{{ $item->description }}</x-fi.table.td>
+                                        <x-fi.table.td align="end" :class="'font-semibold tabular-nums ' . ($isIncome ? 'text-emerald-600' : 'text-red-600')">
+                                            @if ($item->is_informational)
+                                                <span class="text-gray-400">-</span>
+                                            @else
+                                                {{ $isIncome ? '+' : '-' }} {{ $rupiah($amount) }}
+                                            @endif
+                                        </x-fi.table.td>
+                                        <x-fi.table.td class="min-w-[10rem] whitespace-normal text-gray-700">{{ $item->keterangan_bon ?: '-' }}</x-fi.table.td>
+                                        <x-fi.table.td align="center">
+                                            @if ($item->hasProof())
+                                                {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
+                                                <a href="{{ asset('storage/' . $item->proof_file) }}"
+                                                    onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti — ' . ($item->description ?: 'Transaksi')), downloadName: @js($item->proof_file_name ?: basename($item->proof_file)) })"
+                                                    title="{{ $item->proof_file_name }}"
+                                                    class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                                                    <x-fi.icon name="paper-clip" class="h-4 w-4" /> File
+                                                </a>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
+                                        </x-fi.table.td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
         </div>
-
-    </x-modal>
+    </x-fi.modal>
 @endforeach

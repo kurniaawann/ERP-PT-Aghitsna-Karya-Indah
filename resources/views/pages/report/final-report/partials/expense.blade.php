@@ -1,349 +1,222 @@
 {{-- =====================================================================
-     Partial: Laporan Pengeluaran (dalam Laporan Akhir)
+     Partial: Laporan Pengeluaran / Kas Kantor (dalam Laporan Akhir, gaya Filament)
      Logika/data sama dengan halaman Laporan Pengeluaran lama (ExpenseReportController),
      hanya form disubmit ke route report.final dengan tab=expense agar tetap
      berada di halaman Laporan Akhir. Export tetap ke endpoint terpisah
-     (report.expense.export.pdf / report.expense.export.excel).
+     (report.expense.export.pdf / report.expense.export.excel) lewat tombol
+     Export di header halaman.
+
+     Hook JS (report/expense-reports/index.js): canvas #monthlyTrendChart,
+     #categoryExpenseChart, #incomeVsExpenseChart + window.monthlyTrendData /
+     categoryDistributionData / summaryData.
      ===================================================================== --}}
-<div class="space-y-6">
+@php
+    $rupiah = fn ($value) => 'Rp ' . number_format($value ?? 0, 0, ',', '.');
+@endphp
 
-    {{-- ==================== FILTER SECTION ==================== --}}
-    <div class="bg-surface-base p-6 rounded-xl shadow">
-        <div class="flex flex-col min-[1520px]:flex-row items-stretch min-[1520px]:items-center gap-3">
+<div class="flex flex-col gap-y-6">
 
-            {{-- Form Filter (kiri) --}}
-            <form method="GET" action="{{ route('report.final') }}"
-                class="flex flex-col min-[1520px]:flex-row items-stretch min-[1520px]:items-center gap-3 flex-1">
-
-                {{-- Hidden: pertahankan tab aktif --}}
-                <input type="hidden" name="tab" value="expense">
-
-                {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" responsive="custom" />
-
-                {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" responsive="custom" />
-
-                {{-- Filter Kategori (tipe transaksi sudah melekat pada tiap kategori) --}}
-                <x-filters.select-filter name="category" :value="request('category')" :options="$categories"
-                    placeholder="Semua Kategori" :autoSubmit="true" responsive="custom" />
-
-                {{-- Search (debounce via JS, 500ms) --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari transaksi..." responsive="custom" />
-            </form>
+    {{-- SECTION: Filter (bulan, tahun, kategori, pencarian) --}}
+    <x-report.final-report.filter-bar tab="expense" :keys="['month', 'year', 'category', 'search']">
+        <div class="sm:w-44">
+            <x-fi.month-select :value="request('month')" onchange="this.form.requestSubmit()" />
         </div>
+        <div class="sm:w-36">
+            <x-fi.year-select :value="request('year')" onchange="this.form.requestSubmit()" />
+        </div>
+        {{-- Kategori (tipe transaksi sudah melekat pada tiap kategori) --}}
+        <div class="col-span-2 sm:w-56">
+            <x-fi.select name="category" aria-label="Filter Kategori" placeholder="Semua Kategori" prefix-icon="tag"
+                onchange="this.form.requestSubmit()" data-fi-select>
+                @foreach ($categories as $category)
+                    <option value="{{ $category->id }}" @selected(request('category') == $category->id)>{{ $category->name }}</option>
+                @endforeach
+            </x-fi.select>
+        </div>
+        <x-fi.search-input :value="request('search')" placeholder="Cari transaksi..." class="col-span-2 sm:w-60" />
+    </x-report.final-report.filter-bar>
+
+    {{-- SECTION: Kartu Ringkasan --}}
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <x-fi.stat label="Total Pemasukan" icon="arrow-down" color="success" size="sm"
+            :description="$summary['income_count'] . ' transaksi'">
+            {{ $rupiah($summary['total_income']) }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Pengeluaran" icon="arrow-up" color="danger" size="sm"
+            :description="$summary['expense_count'] . ' transaksi'">
+            {{ $rupiah($summary['total_expense']) }}
+        </x-fi.stat>
+        <x-fi.stat label="Saldo" icon="scale" :color="$summary['balance'] >= 0 ? 'primary' : 'danger'" size="sm"
+            :description="$summary['balance'] >= 0 ? 'Surplus' : 'Defisit'">
+            {{ $rupiah(abs($summary['balance'])) }}
+        </x-fi.stat>
+        <x-fi.stat label="Total Transaksi" icon="document-text" size="sm" description="Semua transaksi">
+            {{ $summary['total_transactions'] }}
+        </x-fi.stat>
     </div>
 
-    {{-- ==================== SUMMARY CARDS ==================== --}}
-    <div class="grid grid-cols-1 min-[1272px]:grid-cols-2 min-[1520px]:grid-cols-4 gap-6">
-
-        {{-- Total Pemasukan --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-text-secondary">Total Pemasukan</p>
-                    <h3 class="text-2xl font-bold text-success mt-2">
-                        Rp {{ number_format($summary['total_income'], 0, ',', '.') }}
-                    </h3>
-                    <p class="text-xs text-text-secondary mt-1">{{ $summary['income_count'] }} transaksi</p>
-                </div>
-                <div class="p-4 bg-success-light rounded-full">
-                    <i class="fas fa-arrow-down text-success text-2xl"></i>
-                </div>
-            </div>
+    {{-- SECTION: Grafik --}}
+    <x-fi.section heading="Trend Pemasukan & Pengeluaran Bulanan">
+        <div class="relative h-[350px]">
+            <canvas id="monthlyTrendChart"></canvas>
         </div>
+    </x-fi.section>
 
-        {{-- Total Pengeluaran --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-text-secondary">Total Pengeluaran</p>
-                    <h3 class="text-2xl font-bold text-error mt-2">
-                        Rp {{ number_format($summary['total_expense'], 0, ',', '.') }}
-                    </h3>
-                    <p class="text-xs text-text-secondary mt-1">{{ $summary['expense_count'] }} transaksi</p>
-                </div>
-                <div class="p-4 bg-error-light rounded-full">
-                    <i class="fas fa-arrow-up text-error text-2xl"></i>
-                </div>
-            </div>
+    <x-fi.section heading="Pemasukan & Pengeluaran Per Kategori">
+        <div class="relative h-[400px]">
+            <canvas id="categoryExpenseChart"></canvas>
         </div>
+    </x-fi.section>
 
-        {{-- Saldo --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-text-secondary">Saldo</p>
-                    <h3 class="text-2xl font-bold {{ $summary['balance'] >= 0 ? 'text-primary' : 'text-error' }} mt-2">
-                        Rp {{ number_format(abs($summary['balance']), 0, ',', '.') }}
-                    </h3>
-                    <p class="text-xs text-text-secondary mt-1">
-                        {{ $summary['balance'] >= 0 ? 'Surplus' : 'Defisit' }}
-                    </p>
-                </div>
-                <div class="p-4 {{ $summary['balance'] >= 0 ? 'bg-primary-light' : 'bg-error-light' }} rounded-full">
-                    <i
-                        class="fas fa-balance-scale {{ $summary['balance'] >= 0 ? 'text-primary' : 'text-error' }} text-2xl"></i>
-                </div>
-            </div>
+    <x-fi.section heading="Perbandingan Pemasukan vs Pengeluaran">
+        <div class="relative h-[300px]">
+            <canvas id="incomeVsExpenseChart"></canvas>
         </div>
+    </x-fi.section>
 
-        {{-- Total Transaksi --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow hover:shadow-lg transition-shadow duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-text-secondary">Total Transaksi</p>
-                    <h3 class="text-2xl font-bold text-text-primary mt-2">
-                        {{ $summary['total_transactions'] }}
-                    </h3>
-                    <p class="text-xs text-text-secondary mt-1">Semua transaksi</p>
-                </div>
-                <div class="p-4 bg-secondary-light rounded-full">
-                    <i class="fas fa-receipt text-text-primary text-2xl"></i>
-                </div>
+    {{-- SECTION: Rincian Cash Flow --}}
+    <x-fi.section heading="Rincian Cash Flow">
+        <dl class="grid gap-y-3 text-sm">
+            <div class="flex items-center justify-between gap-3 rounded-xl bg-gray-50 p-4">
+                <dt class="flex items-center gap-x-2 font-medium text-gray-700">
+                    <x-fi.icon name="banknotes" class="h-5 w-5 shrink-0 text-gray-400" />
+                    Saldo Awal Periode
+                </dt>
+                <dd class="text-base font-semibold tabular-nums text-gray-950">{{ $rupiah($cashFlow['opening_balance']) }}</dd>
             </div>
-        </div>
-    </div>
-
-    {{-- ==================== CHARTS SECTION ==================== --}}
-    <div class="grid grid-cols-1 gap-6">
-
-        {{-- Monthly Trend Chart --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4">📈 Trend Pemasukan & Pengeluaran Bulanan</h3>
-            <div style="position: relative; height: 350px;">
-                <canvas id="monthlyTrendChart"></canvas>
-            </div>
-        </div>
-
-        {{-- Category Expense Chart --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4">📊 Pemasukan & Pengeluaran Per Kategori</h3>
-            <div style="position: relative; height: 400px;">
-                <canvas id="categoryExpenseChart"></canvas>
-            </div>
-        </div>
-
-        {{-- Income vs Expense Comparison --}}
-        <div class="bg-surface-base p-6 rounded-xl shadow">
-            <h3 class="text-lg font-semibold text-text-primary mb-4">💰 Perbandingan Pemasukan vs Pengeluaran</h3>
-            <div style="position: relative; height: 300px;">
-                <canvas id="incomeVsExpenseChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    {{-- ==================== CASH FLOW ANALYSIS ==================== --}}
-    <div class="bg-surface-base p-6 rounded-xl shadow">
-        <h3 class="text-lg font-semibold text-text-primary mb-6">Rincian Cash Flow</h3>
-        <div class="space-y-4">
-            <div class="flex items-center justify-between p-4 bg-surface-secondary rounded-lg">
-                <span class="text-text-primary font-medium">Saldo Awal Periode</span>
-                <span class="text-lg font-semibold text-text-primary">
-                    Rp {{ number_format($cashFlow['opening_balance'], 0, ',', '.') }}
-                </span>
-            </div>
-            <div class="flex items-center justify-between p-4 bg-success-light rounded-lg">
-                <span class="text-text-primary font-medium flex items-center">
-                    <i class="fas fa-plus-circle text-success mr-2"></i>
+            <div class="flex items-center justify-between gap-3 rounded-xl bg-emerald-50 p-4">
+                <dt class="flex items-center gap-x-2 font-medium text-gray-700">
+                    <x-fi.icon name="arrow-down" class="h-5 w-5 shrink-0 text-emerald-600" />
                     Pemasukan
-                </span>
-                <span class="text-lg font-semibold text-success">
-                    Rp {{ number_format($cashFlow['total_income'], 0, ',', '.') }}
-                </span>
+                </dt>
+                <dd class="text-base font-semibold tabular-nums text-emerald-600">{{ $rupiah($cashFlow['total_income']) }}</dd>
             </div>
-            <div class="flex items-center justify-between p-4 bg-error-light rounded-lg">
-                <span class="text-text-primary font-medium flex items-center">
-                    <i class="fas fa-minus-circle text-error mr-2"></i>
+            <div class="flex items-center justify-between gap-3 rounded-xl bg-red-50 p-4">
+                <dt class="flex items-center gap-x-2 font-medium text-gray-700">
+                    <x-fi.icon name="arrow-up" class="h-5 w-5 shrink-0 text-red-600" />
                     Pengeluaran
-                </span>
-                <span class="text-lg font-semibold text-error">
-                    Rp {{ number_format($cashFlow['total_expense'], 0, ',', '.') }}
-                </span>
+                </dt>
+                <dd class="text-base font-semibold tabular-nums text-red-600">{{ $rupiah($cashFlow['total_expense']) }}</dd>
             </div>
-            <div class="h-px bg-border-light my-2"></div>
-            <div class="flex items-center justify-between p-4 bg-primary-light rounded-lg">
-                <span class="text-text-primary font-medium flex items-center">
-                    <i class="fas fa-equals text-primary mr-2"></i>
+            <div class="h-px bg-gray-200"></div>
+            <div class="flex items-center justify-between gap-3 rounded-xl bg-blue-50 p-4">
+                <dt class="flex items-center gap-x-2 font-medium text-gray-700">
+                    <x-fi.icon name="calculator" class="h-5 w-5 shrink-0 text-primary" />
                     Net Cash Flow
-                </span>
-                <span
-                    class="text-lg font-semibold {{ $cashFlow['net_cash_flow'] >= 0 ? 'text-primary' : 'text-error' }}">
-                    Rp {{ number_format(abs($cashFlow['net_cash_flow']), 0, ',', '.') }}
-                </span>
+                </dt>
+                <dd @class(['text-base font-semibold tabular-nums', 'text-primary' => $cashFlow['net_cash_flow'] >= 0, 'text-red-600' => $cashFlow['net_cash_flow'] < 0])>
+                    {{ $rupiah(abs($cashFlow['net_cash_flow'])) }}
+                </dd>
             </div>
-            <div
-                class="flex items-center justify-between p-4 bg-secondary-light rounded-lg border-2 border-border-strong">
-                <span class="text-text-primary font-bold flex items-center">
-                    <i class="fas fa-wallet text-text-primary mr-2"></i>
+            <div class="flex items-center justify-between gap-3 rounded-xl p-4 ring-1 ring-gray-950/10">
+                <dt class="flex items-center gap-x-2 font-semibold text-gray-950">
+                    <x-fi.icon name="wallet" class="h-5 w-5 shrink-0 text-gray-500" />
                     Saldo Akhir Periode
-                </span>
-                <span class="text-xl font-bold text-text-primary">
-                    Rp {{ number_format($cashFlow['closing_balance'], 0, ',', '.') }}
-                </span>
+                </dt>
+                <dd class="text-lg font-bold tabular-nums text-gray-950">{{ $rupiah($cashFlow['closing_balance']) }}</dd>
             </div>
-        </div>
-    </div>
+        </dl>
+    </x-fi.section>
 
-    {{-- ==================== CATEGORY SUMMARY TABLE ==================== --}}
-    <div class="bg-surface-base rounded-xl shadow overflow-hidden">
-        <div class="p-6 border-b border-border-light">
-            <h3 class="text-lg font-semibold text-text-primary">📊 Ringkasan Per Kategori</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-surface-secondary">
+    {{-- SECTION: Ringkasan Per Kategori --}}
+    <x-fi.section heading="Ringkasan Per Kategori" flush>
+        <div class="relative overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Kategori</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Transaksi</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Pemasukan</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Pengeluaran</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Total</th>
+                        <x-fi.table.th>Kategori</x-fi.table.th>
+                        <x-fi.table.th>Transaksi</x-fi.table.th>
+                        <x-fi.table.th align="end">Pemasukan</x-fi.table.th>
+                        <x-fi.table.th align="end">Pengeluaran</x-fi.table.th>
+                        <x-fi.table.th align="end">Total</x-fi.table.th>
                     </tr>
                 </thead>
-                <tbody class="bg-surface-base divide-y divide-border-light">
-                    @forelse($categoryDistribution as $category)
-                        <tr class="hover:bg-surface-secondary transition-colors duration-150">
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-text-primary">{{ $category['category_name'] }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                {{ $category['count'] }} transaksi
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($categoryDistribution as $category)
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50">
+                            <x-fi.table.td class="min-w-[12rem] whitespace-normal font-medium">{{ $category['category_name'] }}</x-fi.table.td>
+                            <x-fi.table.td class="text-gray-700">{{ $category['count'] }} transaksi</x-fi.table.td>
+                            <x-fi.table.td align="end" class="font-semibold tabular-nums">
                                 @if ($category['category_type'] === 'EXPENSE')
-                                    <span class="text-text-tertiary">-</span>
+                                    <span class="text-gray-400">-</span>
                                 @else
-                                    <span class="text-success">Rp
-                                        {{ number_format($category['income'], 0, ',', '.') }}</span>
+                                    <span class="text-emerald-600">{{ $rupiah($category['income']) }}</span>
                                 @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">
+                            </x-fi.table.td>
+                            <x-fi.table.td align="end" class="font-semibold tabular-nums">
                                 @if ($category['category_type'] === 'INCOME')
-                                    <span class="text-text-tertiary">-</span>
+                                    <span class="text-gray-400">-</span>
                                 @else
-                                    <span class="text-error">Rp
-                                        {{ number_format($category['expense'], 0, ',', '.') }}</span>
+                                    <span class="text-red-600">{{ $rupiah($category['expense']) }}</span>
                                 @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">
-                                Rp {{ number_format($category['total'], 0, ',', '.') }}
-                            </td>
+                            </x-fi.table.td>
+                            <x-fi.table.td align="end" class="font-semibold tabular-nums">{{ $rupiah($category['total']) }}</x-fi.table.td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-8 text-center text-text-secondary">
-                                Tidak ada data kategori
+                            <td colspan="5">
+                                <x-fi.empty-state icon="tag" heading="Tidak ada data kategori" />
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-fi.section>
 
-    {{-- ==================== DETAIL TRANSACTIONS TABLE ==================== --}}
-    <div class="bg-surface-base rounded-xl shadow overflow-hidden">
-        <div class="p-6 border-b border-border-light">
-            <h3 class="text-lg font-semibold text-text-primary">Detail Transaksi</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-surface-secondary">
+    {{-- SECTION: Detail Transaksi + Paginasi --}}
+    <x-fi.section heading="Detail Transaksi" flush>
+        <div class="relative overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Tanggal</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            No. Invoice</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Kategori</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Deskripsi</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Pemasukan</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                            Pengeluaran</th>
+                        <x-fi.table.th>Tanggal</x-fi.table.th>
+                        <x-fi.table.th>No. Invoice</x-fi.table.th>
+                        <x-fi.table.th>Kategori</x-fi.table.th>
+                        <x-fi.table.th>Deskripsi</x-fi.table.th>
+                        <x-fi.table.th align="end">Pemasukan</x-fi.table.th>
+                        <x-fi.table.th align="end">Pengeluaran</x-fi.table.th>
                     </tr>
                 </thead>
-                <tbody class="bg-surface-base divide-y divide-border-light">
-                    @forelse($expenseRecaps as $expense)
-                        <tr class="hover:bg-surface-secondary transition-colors duration-150">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                                {{ \Carbon\Carbon::parse($expense->transaction_date)->format('d M Y') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
-                                {{ $expense->invoice_number }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span
-                                    class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-surface-secondary text-text-primary">
-                                    {{ $expense->category?->name ?? '-' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm text-text-primary">{{ $expense->description }}</div>
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($expenseRecaps as $expense)
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50">
+                            <x-fi.table.td>{{ \Carbon\Carbon::parse($expense->transaction_date)->format('d M Y') }}</x-fi.table.td>
+                            <x-fi.table.td class="font-medium">{{ $expense->invoice_number }}</x-fi.table.td>
+                            <x-fi.table.td class="max-w-[14rem] whitespace-normal">
+                                <x-fi.badge color="gray" class="!whitespace-normal text-start">{{ $expense->category?->name ?? '-' }}</x-fi.badge>
+                            </x-fi.table.td>
+                            <x-fi.table.td class="min-w-[14rem] whitespace-normal">
+                                <div>{{ $expense->description }}</div>
                                 @if ($expense->notes)
-                                    <div class="text-xs text-text-secondary mt-1">{{ $expense->notes }}</div>
+                                    <div class="mt-1 text-xs text-gray-500">{{ $expense->notes }}</div>
                                 @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-success">
-                                @if ($expense->income_amount > 0)
-                                    Rp {{ number_format($expense->income_amount, 0, ',', '.') }}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-error">
-                                @if ($expense->expense_amount > 0)
-                                    Rp {{ number_format($expense->expense_amount, 0, ',', '.') }}
-                                @else
-                                    -
-                                @endif
-                            </td>
+                            </x-fi.table.td>
+                            <x-fi.table.td align="end" :class="'font-semibold tabular-nums ' . ($expense->income_amount > 0 ? 'text-emerald-600' : 'text-gray-400')">
+                                {{ $expense->income_amount > 0 ? $rupiah($expense->income_amount) : '-' }}
+                            </x-fi.table.td>
+                            <x-fi.table.td align="end" :class="'font-semibold tabular-nums ' . ($expense->expense_amount > 0 ? 'text-red-600' : 'text-gray-400')">
+                                {{ $expense->expense_amount > 0 ? $rupiah($expense->expense_amount) : '-' }}
+                            </x-fi.table.td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-8 text-center text-text-secondary">
-                                Tidak ada data transaksi
+                            <td colspan="6">
+                                <x-fi.empty-state icon="inbox" heading="Tidak ada data transaksi" />
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
 
-    {{-- ==================== PAGINATION ==================== --}}
-    <div class="bg-surface-base p-4 rounded-xl shadow">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="text-sm text-text-primary font-semibold">
-                Halaman {{ $expenseRecaps->currentPage() }} dari {{ $expenseRecaps->lastPage() }}
-            </div>
-            <div>
-                {{ $expenseRecaps->links() }}
-            </div>
+        <div class="border-t border-gray-200 px-4 py-3 sm:px-6">
+            <x-fi.pagination :paginator="$expenseRecaps" />
         </div>
-    </div>
+    </x-fi.section>
 </div>
 
-{{-- Chart Data — Window Globals --}}
+{{-- Data grafik & JavaScript --}}
 @push('scripts')
     <script>
         window.monthlyTrendData = @json($monthlyTrend);
