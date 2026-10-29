@@ -1,8 +1,8 @@
 {{-- Table Invoice Barang (gaya Filament).
-     Toolbar: aksi massal (muncul saat ada invoice dicentang) + filter bulan /
-     tahun / status + pencarian; paginasi di bawah. Jumlah invoice terpilih
-     dihitung Alpine untuk menampilkan grup aksi massal; status disabled
-     #delete-button tetap diatur item-invoices/index.js.
+     Toolbar (x-finance.invoice-table-toolbar): pencarian + filter bulan /
+     tahun / status, lalu bar aksi massal (muncul saat ada invoice dicentang);
+     paginasi di bawah. Jumlah invoice terpilih dihitung Alpine; status
+     disabled #delete-button tetap diatur item-invoices/index.js.
 
      Hook JS (item-invoices/index.js): form#deleteForm, #selectAll,
      input[name="selected_invoices[]"], #delete-button. --}}
@@ -16,52 +16,15 @@
     x-init="selected = $el.querySelectorAll('[name^=selected_invoices]:checked').length"
     x-on:change="selected = $el.querySelectorAll('[name^=selected_invoices]:checked').length">
 
-    {{-- Toolbar --}}
-    <div class="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between sm:px-6">
-        {{-- Aksi massal: hanya tampil saat ada invoice yang dicentang --}}
-        <div x-cloak x-show="selected > 0" class="flex shrink-0 items-center gap-3">
-            <span class="whitespace-nowrap text-sm text-gray-500">
-                <span class="font-semibold text-gray-950" x-text="selected"></span> invoice dipilih
-            </span>
-
-            <x-fi.button id="delete-button" color="danger" size="sm" icon="trash" outlined disabled
-                onclick="openModal('deleteModal')">
-                Hapus yang dipilih
-            </x-fi.button>
-        </div>
-
-        {{-- Form Filter & Pencarian: submit GET ke route('item-invoice.index').
-             Bulan/tahun/status langsung submit saat diganti; pencarian saat Enter. --}}
-        <form method="GET" action="{{ route('item-invoice.index') }}" id="filterForm"
-            class="grid w-full grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center lg:ms-auto lg:w-auto lg:justify-end">
-            <div class="sm:w-44">
-                <x-fi.month-select :value="request('month')" onchange="this.form.requestSubmit()" />
-            </div>
-            <div class="sm:w-36">
-                <x-fi.year-select :value="request('year')" onchange="this.form.requestSubmit()" />
-            </div>
-            <div class="col-span-2 sm:w-40">
-                <x-fi.select name="status" id="status-select" aria-label="Filter Status" :value="request('status')"
-                    :options="['' => 'Semua Status', 'lunas' => 'Sudah Lunas', 'belum' => 'Belum Lunas']"
-                    onchange="this.form.requestSubmit()" data-fi-select />
-            </div>
-            <x-fi.search-input :value="request('search')" placeholder="Cari invoice, penerima, keterangan..."
-                class="col-span-2 sm:w-64" />
-
-            @if ($isFiltered)
-                <x-fi.link :href="route('item-invoice.index')" color="gray" icon="x-mark"
-                    class="col-span-2 justify-self-start" title="Hapus semua filter & pencarian">
-                    Reset
-                </x-fi.link>
-            @endif
-        </form>
-    </div>
+    {{-- Toolbar: pencarian (kiri) + filter (kanan), bar aksi massal saat ada yang dicentang --}}
+    <x-finance.invoice-table-toolbar :action="route('item-invoice.index')"
+        searchPlaceholder="Cari invoice, penerima, keterangan..." />
 
     <form id="deleteForm" method="POST" action="{{ route('item-invoice.destroySelected') }}">
         @csrf
         @method('DELETE')
 
-        <div class="overflow-x-auto">
+        <div class="relative overflow-x-auto">
             <table class="w-full table-auto divide-y divide-gray-200 text-start">
 
                 {{-- Header Tabel --}}

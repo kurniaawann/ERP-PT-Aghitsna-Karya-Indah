@@ -325,11 +325,11 @@
                 @endunless
             </div>
 
-            {{-- SECTION: Aksi Form --}}
-            <div class="flex flex-wrap items-center gap-3">
+            {{-- SECTION: Aksi Form (kanan bawah: [Batal] [Simpan]) --}}
+            <div class="flex flex-wrap items-center justify-end gap-3">
                 @if ($isEditable)
-                    <x-fi.button type="submit">{{ $isEdit ? 'Simpan Perubahan' : 'Simpan' }}</x-fi.button>
                     <x-fi.button color="gray" :href="route('item-invoice.index')">Batal</x-fi.button>
+                    <x-fi.button type="submit">{{ $isEdit ? 'Simpan Perubahan' : 'Simpan' }}</x-fi.button>
                 @else
                     <x-fi.button color="gray" icon="chevron-left" :href="route('item-invoice.index')">Kembali</x-fi.button>
                 @endif

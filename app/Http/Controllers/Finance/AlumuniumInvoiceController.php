@@ -45,6 +45,19 @@ class AlumuniumInvoiceController extends Controller
     }
 
     /**
+     * Halaman form Tambah Invoice Alumunium (pengganti modal tambah).
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('pages.finance.aluminium-invoice-form', array_merge($this->formData(), [
+            'invoice' => null,
+            'nextInvoiceNumber' => $this->service->generateInvoiceNumber(),
+        ]));
+    }
+
+    /**
      * Menghasilkan nomor invoice berikutnya (AJAX response).
      *
      * @return \Illuminate\Http\JsonResponse
@@ -96,19 +109,26 @@ class AlumuniumInvoiceController extends Controller
     }
 
     /**
-     * Mengambil data invoice untuk modal edit (AJAX response).
+     * Halaman form Edit Invoice Alumunium (pengganti modal edit).
+     * Permintaan JSON (AJAX) tetap mendapat data invoice seperti sebelumnya.
      *
      * @param  string  $invoiceNumber
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
      */
     public function edit(string $invoiceNumber)
     {
         $invoice = InvoiceAlumunium::where('invoice_number', $invoiceNumber)->firstOrFail();
 
-        return response()->json([
-            'invoice' => $invoice,
-            'items' => $invoice->items, // Sudah di-decode otomatis oleh model cast
-        ]);
+        if (request()->wantsJson()) {
+            return response()->json([
+                'invoice' => $invoice,
+                'items' => $invoice->items, // Sudah di-decode otomatis oleh model cast
+            ]);
+        }
+
+        return view('pages.finance.aluminium-invoice-form', array_merge($this->formData(), [
+            'invoice' => $invoice->load('paymentProofs'),
+        ]));
     }
 
     /**
@@ -213,5 +233,20 @@ class AlumuniumInvoiceController extends Controller
         $date = date('Y-m-d');
 
         return Excel::download(new AlumuniumInvoiceExport($invoiceNumber), "Invoice_Aluminium_{$safeFileName}_{$date}.xlsx");
+    }
+
+    /**
+     * Data pilihan untuk form tambah/edit: rekening pembayaran aktif,
+     * penandatangan, dan divisi (sama seperti data modal di halaman index).
+     *
+     * @return array<string, mixed>
+     */
+    private function formData(): array
+    {
+        return [
+            'paymentAccounts' => $this->paymentAccountService->getActiveAccounts(),
+            'executives' => Executive::where('created_by', auth()->id())->orderBy('name')->get(),
+            'divisions' => Division::where('created_by', auth()->id())->orderBy('name')->get(),
+        ];
     }
 }

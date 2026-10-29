@@ -1,128 +1,162 @@
-{{-- Alumunium Invoice Table Component --}}
-<form id="deleteForm" method="POST" action="{{ route('alumunium-invoice.destroySelected') }}">
-    @csrf
-    @method('DELETE')
-    <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div class="inline-block min-w-full align-middle">
-            <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                        <tr>
-                            <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
-                            <th class="p-2 text-left">No Invoice</th>
-                            <th class="p-2 text-left">Tanggal</th>
-                            <th class="p-2 text-left">Kepada</th>
-                            <th class="p-2 text-left">Proyek</th>
-                            <th class="p-2 text-center">Total</th>
-                            <th class="p-2 text-center">Terbayar</th>
-                            <th class="p-2 text-center">Sisa Pembayaran</th>
-                            <th class="p-2 text-center">Status</th>
-                            <th class="p-2 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($invoices as $invoice)
-                            @php
-                                $totalPaid = $invoice->getTotalPaidAmount();
-                                $remaining = $invoice->getRemainingAmount();
-                                $isFullyPaid = $invoice->isFullyPaid();
-                                if ($isFullyPaid) {
-                                    $statusLabel = 'Sudah Lunas';
-                                    $statusClass = 'bg-green-100 text-green-800';
-                                } elseif ($totalPaid > 0) {
-                                    $statusLabel = 'Belum Lunas';
-                                    $statusClass = 'bg-orange-100 text-orange-800';
-                                } else {
-                                    $statusLabel = 'Belum Lunas';
-                                    $statusClass = 'bg-red-100 text-red-800';
-                                }
-                            @endphp
-                            <tr class="border-t hover:bg-surface-secondary">
-                                <td class="p-2 text-center">
-                                    <input type="checkbox" name="selected_invoices[]"
-                                        value="{{ $invoice->invoice_number }}"
-                                        class="w-4 h-4 accent-primary cursor-pointer">
-                                </td>
+{{-- Table Invoice Alumunium (gaya Filament).
+     Toolbar (x-finance.invoice-table-toolbar): pencarian + filter bulan /
+     tahun / status, lalu bar aksi massal (muncul saat ada invoice dicentang);
+     paginasi di bawah. Jumlah invoice terpilih dihitung Alpine; status
+     disabled #delete-button tetap diatur aluminium-invoices/index.js.
 
-                                <td class="p-2 font-medium text-primary">{{ $invoice->invoice_number }}</td>
-                                <td class="p-2 text-sm">{{ $invoice->invoice_date->format('d-m-Y') }}</td>
-                                <td class="p-2">{{ $invoice->recipient }}</td>
-                                <td class="p-2 text-sm text-text-label">
-                                    {{ substr($invoice->project_description ?? '-', 0, 30) }}
-                                </td>
+     Hook JS (aluminium-invoices/index.js): form#deleteForm, #selectAll,
+     input[name="selected_invoices[]"], #delete-button. --}}
+@props(['invoices'])
 
-                                <td class="p-2 text-right font-medium whitespace-nowrap">
-                                    Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
-                                </td>
+@php
+    $isFiltered = request()->filled('search') || request()->filled('month') || request()->filled('year') || request()->filled('status');
+@endphp
 
-                                <td class="p-2 text-right font-medium whitespace-nowrap">
-                                    Rp {{ number_format($totalPaid, 0, ',', '.') }}
-                                </td>
+<x-fi.card x-data="{ selected: 0 }"
+    x-init="selected = $el.querySelectorAll('[name^=selected_invoices]:checked').length"
+    x-on:change="selected = $el.querySelectorAll('[name^=selected_invoices]:checked').length">
 
-                                <td class="p-2 text-right font-semibold whitespace-nowrap
-                                    {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">
-                                    Rp {{ number_format($remaining, 0, ',', '.') }}
-                                </td>
+    {{-- Toolbar: pencarian (kiri) + filter (kanan), bar aksi massal saat ada yang dicentang --}}
+    <x-finance.invoice-table-toolbar :action="route('alumunium-invoice.index')"
+        searchPlaceholder="Cari no invoice, kepada, proyek..." />
 
-                                <td class="p-2 text-center pr-4 md:pr-6">
-                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $statusClass }}">
-                                        {{ $statusLabel }}
-                                    </span>
-                                </td>
+    <form id="deleteForm" method="POST" action="{{ route('alumunium-invoice.destroySelected') }}">
+        @csrf
+        @method('DELETE')
 
-                                <td class="p-2 text-center pr-4 md:pr-6">
-                                    <div class="flex justify-center gap-[5px] flex-wrap min-[1363px]:grid min-[1363px]:gap-[5px] min-[1363px]:grid-cols-[auto_auto] min-[1363px]:w-fit min-[1363px]:mx-auto min-[1436px]:grid-cols-[auto_auto_auto_auto_auto] min-[1436px]:gap-[5px]">
-                                        <button type="button"
-                                            onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
-                                            class="flex items-center gap-1 bg-info hover:bg-info/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Lihat Detail">
-                                            <i class="fa-solid fa-eye w-3 h-3"></i>
-                                            Lihat
-                                        </button>
+        <div class="relative overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
 
-                                        <button type="button"
-                                            onclick="openModal('editModal-{{ $invoice->invoice_number }}')"
-                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit Invoice">
-                                            <i class="fa-solid fa-pen w-3 h-3"></i>
+                {{-- Header Tabel --}}
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="w-1 px-2 py-3 sm:ps-4">
+                            <input type="checkbox" id="selectAll" class="fi-checkbox" title="Pilih semua">
+                        </th>
+                        <x-fi.table.th>No Invoice</x-fi.table.th>
+                        <x-fi.table.th>Tanggal</x-fi.table.th>
+                        <x-fi.table.th>Kepada</x-fi.table.th>
+                        <x-fi.table.th>Proyek</x-fi.table.th>
+                        <x-fi.table.th align="end">Total</x-fi.table.th>
+                        <x-fi.table.th align="end">Terbayar</x-fi.table.th>
+                        <x-fi.table.th align="end">Sisa Pembayaran</x-fi.table.th>
+                        <x-fi.table.th>Status</x-fi.table.th>
+                        <x-fi.table.th align="center" class="z-10 bg-gray-50 md:sticky md:right-0 md:shadow-[inset_1px_0_0_0_theme(colors.gray.200)]">Aksi</x-fi.table.th>
+                    </tr>
+                </thead>
+
+                {{-- Body Tabel --}}
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($invoices as $invoice)
+                        @php
+                            $totalPaid = $invoice->getTotalPaidAmount();
+                            $remaining = $invoice->getRemainingAmount();
+                            $isFullyPaid = $invoice->isFullyPaid();
+                            // Lunas → hijau; sudah ada pembayaran → kuning; belum ada pembayaran → merah
+                            $statusColor = $isFullyPaid ? 'success' : ($totalPaid > 0 ? 'warning' : 'danger');
+                        @endphp
+
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50 has-[:checked]:bg-blue-50">
+                            <td class="w-1 px-2 py-4 sm:ps-4">
+                                <input type="checkbox" name="selected_invoices[]" value="{{ $invoice->invoice_number }}"
+                                    class="fi-checkbox" title="Pilih {{ $invoice->invoice_number }}">
+                            </td>
+
+                            <x-fi.table.td>
+                                <button type="button" onclick="openModal('detailModal-{{ $invoice->invoice_number }}')"
+                                    class="font-medium text-primary hover:underline" title="Lihat detail">
+                                    {{ $invoice->invoice_number }}
+                                </button>
+                            </x-fi.table.td>
+
+                            <x-fi.table.td>{{ $invoice->invoice_date?->format('d M Y') }}</x-fi.table.td>
+
+                            <x-fi.table.td class="min-w-[10rem] whitespace-normal">
+                                <div class="font-medium">{{ $invoice->recipient }}</div>
+                                @if ($invoice->regarding)
+                                    <div class="text-sm text-gray-500">{{ $invoice->regarding }}</div>
+                                @endif
+                            </x-fi.table.td>
+
+                            <x-fi.table.td class="min-w-[12rem] max-w-xs whitespace-normal text-gray-700">
+                                <div class="line-clamp-2" title="{{ $invoice->project_description }}">{{ $invoice->project_description ?: '-' }}</div>
+                            </x-fi.table.td>
+
+                            <x-fi.table.td align="end" class="font-semibold tabular-nums">
+                                Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
+                            </x-fi.table.td>
+
+                            <x-fi.table.td align="end" class="tabular-nums">
+                                Rp {{ number_format($totalPaid, 0, ',', '.') }}
+                            </x-fi.table.td>
+
+                            <x-fi.table.td align="end" :class="'font-semibold tabular-nums ' . ($remaining > 0 ? 'text-red-600' : 'text-emerald-600')">
+                                Rp {{ number_format($remaining, 0, ',', '.') }}
+                            </x-fi.table.td>
+
+                            <x-fi.table.td>
+                                <x-fi.badge :color="$statusColor">{{ $invoice->payment_status_label }}</x-fi.badge>
+                            </x-fi.table.td>
+
+                            {{-- Aksi: tombol ⋮ (sticky di kanan agar tetap terlihat saat tabel di-scroll) --}}
+                            <x-fi.table.td align="center" class="bg-inherit md:sticky md:right-0 md:shadow-[inset_1px_0_0_0_theme(colors.gray.200)]">
+                                <x-fi.dropdown label="Aksi {{ $invoice->invoice_number }}" width="w-56" class="-my-1.5">
+                                    <x-fi.dropdown.list>
+                                        <x-fi.dropdown.item icon="eye" onclick="openModal('detailModal-{{ $invoice->invoice_number }}')">
+                                            Lihat Detail
+                                        </x-fi.dropdown.item>
+                                        <x-fi.dropdown.item icon="pencil-square" :href="route('alumunium-invoice.edit', $invoice->invoice_number)">
                                             Edit
-                                        </button>
+                                        </x-fi.dropdown.item>
+                                        <x-fi.dropdown.item icon="arrow-up-tray"
+                                            onclick="openPaymentProofUpload('alumunium', '{{ addslashes($invoice->invoice_number) }}', false)"
+                                            :disabled="$isFullyPaid" :hint="$isFullyPaid ? 'Pembayaran sudah penuh' : null">
+                                            Upload Bukti Bayar
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
 
-                                        @if (!$isFullyPaid)
-                                        <button type="button"
-                                            onclick="openPaymentProofUpload('alumunium', '{{ $invoice->invoice_number }}', false)"
-                                            class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Upload Bukti Pembayaran">
-                                            <i class="fa-solid fa-image w-3 h-3"></i> Bukti
-                                        </button>
-                                        @endif
-
-                                        <a href="{{ route('alumunium-invoice.print.pdf', $invoice->invoice_number) }}"
-                                            class="flex items-center gap-1 bg-error hover:bg-error/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Print PDF">
-                                            <i class="fa-solid fa-file-pdf w-3 h-3"></i>
+                                    <x-fi.dropdown.list label="Cetak">
+                                        <x-fi.dropdown.item icon="document-text" :href="route('alumunium-invoice.print.pdf', $invoice->invoice_number)">
                                             PDF
-                                        </a>
-
-                                        <a href="{{ route('alumunium-invoice.print.excel', $invoice->invoice_number) }}"
-                                            class="flex items-center gap-1 bg-success hover:bg-success/90 text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Print Excel">
-                                            <i class="fa-solid fa-file-excel w-3 h-3"></i>
+                                        </x-fi.dropdown.item>
+                                        <x-fi.dropdown.item icon="table-cells" :href="route('alumunium-invoice.print.excel', $invoice->invoice_number)">
                                             Excel
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="10" class="text-center p-4 text-text-secondary">
-                                    Data invoice tidak ditemukan.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
+
+                                    <x-fi.dropdown.list>
+                                        <x-fi.dropdown.item icon="trash" color="danger"
+                                            data-delete-row="{{ $invoice->invoice_number }}"
+                                            data-delete-row-label="invoice {{ $invoice->invoice_number }}">
+                                            Hapus
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
+                                </x-fi.dropdown>
+                            </x-fi.table.td>
+                        </tr>
+                    @empty
+                        {{-- Pesan jika data kosong --}}
+                        <tr>
+                            <td colspan="10">
+                                @if ($isFiltered)
+                                    <x-fi.empty-state icon="magnifying-glass" heading="Data tidak ditemukan"
+                                        description="Tidak ada invoice alumunium yang cocok dengan filter/pencarian.">
+                                        <x-fi.button color="gray" icon="x-mark" :href="route('alumunium-invoice.index')">Reset filter</x-fi.button>
+                                    </x-fi.empty-state>
+                                @else
+                                    <x-fi.empty-state icon="document-text" heading="Belum ada invoice alumunium"
+                                        description="Klik “Tambah Invoice” untuk membuat invoice pertama." />
+                                @endif
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+    </form>
+
+    {{-- Paginasi --}}
+    <div class="border-t border-gray-200 px-4 py-3 sm:px-6">
+        <x-fi.pagination :paginator="$invoices" />
     </div>
-</form>
+</x-fi.card>

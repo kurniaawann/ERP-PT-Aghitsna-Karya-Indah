@@ -19,7 +19,8 @@
 ])
 
 @php
-    $locked = $attributes->has('readonly') || $attributes->has('disabled');
+    // Nilai atribut (bukan sekadar ada): :disabled="false" / :readonly="false" tidak mengunci
+    $locked = (bool) $attributes->get('readonly') || (bool) $attributes->get('disabled');
 @endphp
 
 @if ($attributes->get('type') === 'date')

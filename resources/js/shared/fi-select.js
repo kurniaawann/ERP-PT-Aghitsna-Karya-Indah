@@ -67,6 +67,9 @@ function enhance(select) {
     select.addEventListener('change', () => refresh(select));
     select.form?.addEventListener('reset', () => setTimeout(() => refresh(select)));
 
+    // select.disabled diubah JS halaman (mis. tipe diskon/DP nonaktif saat belum ada item) → tombol ikut
+    new MutationObserver(() => refresh(select)).observe(select, { attributes: true, attributeFilter: ['disabled'] });
+
     refresh(select);
 }
 

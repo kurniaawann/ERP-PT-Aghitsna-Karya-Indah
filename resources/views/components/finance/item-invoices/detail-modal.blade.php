@@ -147,13 +147,12 @@
             </div>
         </div>
 
-        {{-- Aksi --}}
-        <div class="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
+        {{-- Aksi (kanan; tanpa tombol Tutup — tutup lewat X / klik di luar modal) --}}
+        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-4">
+            <x-fi.button color="gray" icon="printer" :href="route('item-invoice.print.pdf', $invoice->invoice_number)">Cetak PDF</x-fi.button>
             <x-fi.button :icon="$isLunas ? 'lock-closed' : 'pencil-square'" :href="route('item-invoice.edit', $invoice->invoice_number)">
                 {{ $isLunas ? 'Buka Invoice' : 'Edit Invoice' }}
             </x-fi.button>
-            <x-fi.button color="gray" icon="printer" :href="route('item-invoice.print.pdf', $invoice->invoice_number)">Cetak PDF</x-fi.button>
-            <x-fi.button color="gray" class="sm:ms-auto" onclick="closeModal('detailModal-{{ $invoice->invoice_number }}')">Tutup</x-fi.button>
         </div>
     </div>
 </x-fi.modal>

@@ -79,6 +79,23 @@ class ProyekInvoiceController extends Controller
     }
 
     /**
+     * Menampilkan halaman tambah invoice proyek.
+     *
+     * Superadmin: No Invoice digenerate server saat disimpan; perkiraannya
+     * ditampilkan read-only. Admin: nomor urut diketik di form
+     * (lihat project-invoices/admin-number-field).
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('pages.finance.project-invoice-form', array_merge($this->formData(), [
+            'invoice' => null,
+            'nextInvoiceNumber' => auth()->user()->isAdmin() ? null : $this->service->generateInvoiceNumber(false),
+        ]));
+    }
+
+    /**
      * Menyimpan invoice proyek baru ke database.
      *
      * @param  \App\Http\Requests\Finance\StoreProyekInvoiceRequest  $request
@@ -148,18 +165,25 @@ class ProyekInvoiceController extends Controller
     }
 
     /**
-     * Mengambil data invoice untuk modal edit (JSON response).
+     * Menampilkan halaman edit invoice proyek, atau data invoice (JSON)
+     * bila diminta lewat AJAX (respons lama tetap dipertahankan).
      *
      * @param  \App\Models\Finance\InvoiceProyek  $proyek_invoice
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
      */
     public function edit(InvoiceProyek $proyek_invoice)
     {
-        return response()->json([
-            'invoice' => $proyek_invoice,
-            // items sudah di-cast 'json' → array oleh model
-            'items' => is_string($proyek_invoice->items) ? json_decode($proyek_invoice->items, true) : $proyek_invoice->items,
-        ]);
+        if (request()->wantsJson()) {
+            return response()->json([
+                'invoice' => $proyek_invoice,
+                // items sudah di-cast 'json' → array oleh model
+                'items' => is_string($proyek_invoice->items) ? json_decode($proyek_invoice->items, true) : $proyek_invoice->items,
+            ]);
+        }
+
+        return view('pages.finance.project-invoice-form', array_merge($this->formData(), [
+            'invoice' => $proyek_invoice->load('paymentProofs'),
+        ]));
     }
 
     /**
@@ -226,5 +250,23 @@ class ProyekInvoiceController extends Controller
         $prefix = $isAdmin ? 'Invoice' : 'Invoice_Proyek';
 
         return Excel::download($export, "{$prefix}_{$safeFileName}_{$date}.xlsx");
+    }
+
+    /**
+     * Data pilihan untuk halaman form tambah/edit (sama dengan data modal
+     * tambah/edit lama di index): rekening aktif, penandatangan, divisi,
+     * opsi Rekap Proyek, dan nomor admin yang sudah dipakai (khusus admin).
+     *
+     * @return array<string, mixed>
+     */
+    private function formData(): array
+    {
+        return [
+            'paymentAccounts' => $this->paymentAccountService->getActiveAccounts(),
+            'executives' => Executive::where('created_by', auth()->id())->orderBy('name')->get(),
+            'divisions' => Division::where('created_by', auth()->id())->orderBy('name')->get(),
+            'projectRecaps' => $this->service->getProjectRecapOptions(),
+            'takenAdminNumbers' => auth()->user()->isAdmin() ? $this->service->getTakenAdminInvoiceNumbers() : [],
+        ];
     }
 }

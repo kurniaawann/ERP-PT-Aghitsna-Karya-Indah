@@ -14,6 +14,7 @@ import './shared/fi-dropdown';
 import './shared/fi-delete-row';
 import './shared/fi-datepicker';
 import './shared/fi-select';
+import './shared/fi-modal';
 
 /**
  * Inisialisasi search input (selector: `data-search-debounce`).

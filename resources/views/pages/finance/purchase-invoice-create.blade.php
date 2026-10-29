@@ -84,10 +84,10 @@
                 </x-fi.section>
             </div>
 
-            {{-- SECTION: Aksi Form --}}
-            <div class="flex flex-wrap items-center gap-3">
-                <x-fi.button type="submit">Simpan</x-fi.button>
+            {{-- SECTION: Aksi Form (kanan bawah: [Batal] [Simpan]) --}}
+            <div class="flex flex-wrap items-center justify-end gap-3">
                 <x-fi.button color="gray" :href="route('purchase-invoice.index')">Batal</x-fi.button>
+                <x-fi.button type="submit">Simpan</x-fi.button>
             </div>
         </form>
     </div>

@@ -143,12 +143,12 @@
                 </x-fi.section>
             </div>
 
-            {{-- SECTION: Aksi Form --}}
-            <div class="flex flex-wrap items-center gap-3">
+            {{-- SECTION: Aksi Form (kanan bawah: [Batal] [Simpan]) --}}
+            <div class="flex flex-wrap items-center justify-end gap-3">
+                <x-fi.button color="gray" :href="route('cement-do.index')">Batal</x-fi.button>
                 <x-fi.button type="submit">
                     {{ $isEdit ? 'Simpan Perubahan' : 'Simpan' }}
                 </x-fi.button>
-                <x-fi.button color="gray" :href="route('cement-do.index')">Batal</x-fi.button>
             </div>
         </form>
     </div>

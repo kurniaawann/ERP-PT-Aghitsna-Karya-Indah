@@ -1,6 +1,7 @@
 {{-- Tab Invoice (Super Admin): Invoice Barang | Invoice Alumunium | Invoice Proyek.
      Menggantikan submenu Invoice di sidebar (revisi klien: seperti Surat Menyurat).
-     Ditaruh di antara header halaman dan tabel (gaya Filament, x-fi.tabs). --}}
+     Ditaruh di antara header halaman dan tabel (gaya Filament, x-fi.tabs:
+     tab bergaris bawah, rata kiri). --}}
 @props(['active'])
 
 <x-fi.tabs :active="$active" :tabs="[

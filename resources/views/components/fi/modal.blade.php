@@ -6,10 +6,14 @@
 
     Mode:
     - Form       : isi `action` → slot dibungkus <form> (+@csrf, @method),
-                   footer [submit#submit-btn-{id}] [Batal].
+                   footer kanan [Batal] [submit#submit-btn-{id}] (Simpan paling kanan).
     - Konfirmasi : isi `onConfirm` → tampilan tengah dengan ikon,
                    footer [Batal] [tombol#confirm-btn-{id} onclick=onConfirm].
-    - Biasa      : tanpa keduanya → hanya isi slot.
+    - Biasa      : tanpa keduanya → hanya isi slot (mis. modal detail; tanpa
+                   tombol "Tutup" — cukup tombol X).
+    Mode konfirmasi & biasa juga tertutup lewat klik di luar panel / Escape
+    (data-fi-modal-dismissible → resources/js/shared/fi-modal.js); mode form
+    tidak, agar isian tidak hilang karena salah klik.
 
     Props:
     - id, heading, description (opsional)
@@ -57,6 +61,7 @@
 @endphp
 
 <div id="{{ $id }}" role="dialog" aria-modal="true" @if ($heading) aria-labelledby="fi-modal-heading-{{ $id }}" @endif
+    @unless ($action) data-fi-modal-dismissible @endunless
     class="hidden fixed inset-0 z-50 items-center justify-center bg-gray-950/50 p-4 text-base">
     <div class="relative w-full {{ $widthClass }} max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl ring-1 ring-gray-950/5">
 
@@ -121,11 +126,12 @@
                         {{ $slot }}
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3 border-t border-gray-100 px-6 py-4">
+                    {{-- Tombol di kanan: [Batal] [Simpan] (Simpan paling kanan) --}}
+                    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                        <x-fi.button color="gray" onclick="closeModal('{{ $id }}')">{{ $cancelLabel }}</x-fi.button>
                         <x-fi.button type="submit" id="submit-btn-{{ $id }}" :color="$color" :icon="$submitIcon">
                             {{ $submitLabel }}
                         </x-fi.button>
-                        <x-fi.button color="gray" onclick="closeModal('{{ $id }}')">{{ $cancelLabel }}</x-fi.button>
                     </div>
                 </form>
             @else
