@@ -1,55 +1,45 @@
-{{-- ============================================================
-     Modal Tambah Kategori Transaksi
-     Form untuk menambah kategori baru dengan field: nama, kode, tipe
-     Validasi kode duplikat dilakukan di JavaScript (client-side)
-     ============================================================ --}}
-<x-modal id="addModal" title="Tambah Kategori Transaksi" action="{{ route('transaction-category.store') }}" method="POST"
-    buttonText="Simpan">
+{{-- Modal Tambah Kategori Transaksi (gaya Filament).
+     Field: nama, kode, tipe, modul.
+     Validasi kode duplikat dilakukan di JavaScript (client-side):
+     #add-code, #add-code-warning, #add-code-warning-text, #submit-btn-addModal. --}}
+<x-fi.modal id="addModal" heading="Tambah Kategori Transaksi" icon="tag"
+    :action="route('transaction-category.store')" method="POST" submitLabel="Simpan">
 
     {{-- Field: Nama Kategori --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Kategori <span class="text-error">*</span></label>
-        <input type="text" name="name" class="w-full border rounded p-2" placeholder="Contoh: Belanja ATK" required
+    <x-fi.field label="Nama Kategori" for="add-name" required>
+        <x-fi.input id="add-name" name="name" placeholder="Contoh: Belanja ATK" prefix-icon="tag" required
             maxlength="100" oninvalid="this.setCustomValidity('Nama kategori wajib diisi')"
-            oninput="this.setCustomValidity('')">
-    </div>
+            oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
     {{-- Field: Kode (format: HURUF_BESAR_UNDERSCORE) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kode <span class="text-error">*</span></label>
-        <input type="text" id="add-code" name="code" class="w-full border rounded p-2 uppercase"
-            placeholder="Contoh: BELANJA_ATK" required maxlength="50" pattern="[A-Z_]+"
+    <x-fi.field label="Kode" for="add-code" required
+        hint="Kode harus unik dan menggunakan format: HURUF_BESAR_UNDERSCORE">
+        <x-fi.input id="add-code" name="code" class="font-mono uppercase" placeholder="Contoh: BELANJA_ATK"
+            prefix-icon="hashtag" required maxlength="50" pattern="[A-Z_]+"
             oninvalid="this.setCustomValidity('Kode wajib diisi dengan format: HURUF_BESAR_UNDERSCORE')"
-            oninput="this.setCustomValidity(''); this.value = this.value.toUpperCase()">
-        <p class="text-xs text-text-secondary mt-1">Kode harus unik dan menggunakan format: HURUF_BESAR_UNDERSCORE</p>
+            oninput="this.setCustomValidity(''); this.value = this.value.toUpperCase()" />
 
         {{-- Warning untuk kode duplikat --}}
-        <div id="add-code-warning"
-            class="hidden mt-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-            <i class="fa-solid fa-exclamation-triangle"></i>
+        <p id="add-code-warning" class="hidden text-sm text-red-600">
+            <x-fi.icon name="exclamation-triangle" class="me-1 inline-block h-4 w-4 align-[-3px]" />
             <span id="add-code-warning-text">Kode sudah digunakan!</span>
-        </div>
-    </div>
+        </p>
+    </x-fi.field>
 
     {{-- Field: Tipe (Pemasukan/Pengeluaran) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tipe <span class="text-error">*</span></label>
-        <select name="type" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Tipe kategori wajib dipilih')" oninput="this.setCustomValidity('')">
-            <option value="">-- Pilih Tipe --</option>
-            <option value="INCOME">Pemasukan</option>
-            <option value="EXPENSE">Pengeluaran</option>
-        </select>
-    </div>
+    <x-fi.field label="Tipe" for="add-type" required>
+        <x-fi.select id="add-type" name="type" placeholder="-- Pilih Tipe --"
+            :options="['INCOME' => 'Pemasukan', 'EXPENSE' => 'Pengeluaran']" required
+            oninvalid="this.setCustomValidity('Tipe kategori wajib dipilih')" oninput="this.setCustomValidity('')"
+            data-fi-select />
+    </x-fi.field>
 
     {{-- Field: Modul (Rekap Pengeluaran / Keuangan Proyek) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Modul <span class="text-error">*</span></label>
-        <select name="module" class="w-full border rounded p-2" required
-            oninvalid="this.setCustomValidity('Modul kategori wajib dipilih')" oninput="this.setCustomValidity('')">
-            <option value="">-- Pilih Modul --</option>
-            <option value="expense_recap">Rekap Pengeluaran</option>
-            <option value="project_finance">Keuangan Proyek</option>
-        </select>
-    </div>
-</x-modal>
+    <x-fi.field label="Modul" for="add-module" required>
+        <x-fi.select id="add-module" name="module" placeholder="-- Pilih Modul --"
+            :options="['expense_recap' => 'Rekap Pengeluaran', 'project_finance' => 'Keuangan Proyek']" required
+            oninvalid="this.setCustomValidity('Modul kategori wajib dipilih')" oninput="this.setCustomValidity('')"
+            data-fi-select />
+    </x-fi.field>
+</x-fi.modal>

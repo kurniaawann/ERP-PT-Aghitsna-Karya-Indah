@@ -51,17 +51,13 @@ window.checkAndDelete = checkAndDelete;
  * Menampilkan modal peringatan untuk kategori yang sedang digunakan.
  *
  * Alur: kosongkan daftar #usedCategoriesList, render satu <li> per nama
- * kategori, tampilkan modal #warningUsedModal (hapus 'hidden', tambah 'flex'),
- * lalu animasikan konten modal dari scale-95/opacity-0 ke scale-100/opacity-100
- * setelah 10ms (agar transisi CSS berjalan).
+ * kategori, lalu buka modal #warningUsedModal (x-fi.modal) lewat openModal().
  *
  * @param {string[]} usedCategories Array nama kategori yang sedang digunakan
  * @returns {void}
  */
 function showWarningModal(usedCategories) {
-    const modal = document.getElementById('warningUsedModal');
     const list = document.getElementById('usedCategoriesList');
-    const modalContent = modal.querySelector('.bg-surface-base');
 
     list.innerHTML = '';
 
@@ -72,35 +68,16 @@ function showWarningModal(usedCategories) {
         list.appendChild(li);
     });
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
+    openModal('warningUsedModal');
 }
 
 /**
- * Menutup modal peringatan kategori yang sedang digunakan.
- *
- * Alur: animasikan konten modal keluar (scale-100/opacity-100 →
- * scale-95/opacity-0), lalu sembunyikan modal (tambah 'hidden', hapus 'flex')
- * setelah 300ms menunggu transisi selesai.
+ * Menutup modal peringatan kategori yang sedang digunakan (tombol "Mengerti").
  *
  * @returns {void}
  */
 function closeWarningModal() {
-    const modal = document.getElementById('warningUsedModal');
-    const modalContent = modal.querySelector('.bg-surface-base');
-
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modalContent.classList.add('scale-95', 'opacity-0');
-
-    setTimeout(() => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }, 300);
+    closeModal('warningUsedModal');
 }
 window.closeWarningModal = closeWarningModal;
 
@@ -202,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Alur: baca nilai input #add-code (di-trim + uppercase), lalu bandingkan
      * dengan existingCodes (window.existingCodes dari
      * TransactionCategoryService::getExistingCodes()). Jika duplikat →
-     * tampilkan warning + border merah + nonaktifkan tombol submit; jika unik →
+     * tampilkan warning + ring merah + nonaktifkan tombol submit; jika unik →
      * sembunyikan warning + aktifkan kembali tombol submit.
      *
      * @returns {boolean} true bila kode valid/unik, false bila duplikat
@@ -220,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (existingCodes.includes(code)) {
             addCodeWarning.classList.remove('hidden');
-            addCodeInput.classList.add('border-red-500', 'border-2');
+            addCodeInput.parentElement.classList.add('!ring-2', '!ring-red-600');
             addCodeWarningText.textContent =
                 `Kode "${code}" sudah digunakan! Silakan gunakan kode yang berbeda.`;
 
@@ -231,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return false;
         } else {
             addCodeWarning.classList.add('hidden');
-            addCodeInput.classList.remove('border-red-500', 'border-2');
+            addCodeInput.parentElement.classList.remove('!ring-2', '!ring-red-600');
             if (addSubmitBtn) {
                 addSubmitBtn.disabled = false;
                 addSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -283,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (codeExists) {
                 editCodeWarning.classList.remove('hidden');
-                editCodeInput.classList.add('border-red-500', 'border-2');
+                editCodeInput.parentElement.classList.add('!ring-2', '!ring-red-600');
                 editCodeWarningText.textContent =
                     `Kode "${code}" sudah digunakan! Silakan gunakan kode yang berbeda.`;
 
@@ -294,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false;
             } else {
                 editCodeWarning.classList.add('hidden');
-                editCodeInput.classList.remove('border-red-500', 'border-2');
+                editCodeInput.parentElement.classList.remove('!ring-2', '!ring-red-600');
                 if (editSubmitBtn) {
                     editSubmitBtn.disabled = false;
                     editSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
