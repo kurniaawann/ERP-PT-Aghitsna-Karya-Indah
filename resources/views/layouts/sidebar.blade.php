@@ -1,26 +1,35 @@
-<!-- Sidebar -->
+{{-- =====================================================================
+     Sidebar (gaya Filament). Di-include dari layouts.app.
+     - Desktop (lg+): statis di kiri; header logo putih sejajar topbar,
+       navigasi menyatu dengan latar halaman.
+     - Mobile: laci (drawer) dibuka #toggleSidebar (topbar), ditutup
+       #closeSidebar / overlay / Escape.
+     Item & grup menu: x-fi.sidebar.item / x-fi.sidebar.group. Grup terbuka
+     otomatis bila salah satu menunya sedang dibuka; toggleDropdown(id)
+     membuka/menutup grup secara manual.
+     ===================================================================== --}}
 <aside id="sidebar"
-    class="bg-surface-base shadow-lg w-64 fixed lg:static inset-y-0 left-0 z-50 transform 
-           -translate-x-full lg:translate-x-0 flex flex-col transition-transform duration-300 ease-in-out">
+    class="fixed inset-y-0 start-0 z-50 flex w-64 shrink-0 -translate-x-full flex-col bg-white shadow-xl ring-1 ring-gray-950/5 transition-transform duration-300 ease-in-out lg:static lg:z-0 lg:translate-x-0 lg:bg-transparent lg:shadow-none lg:ring-0">
 
-    <!-- Header Sidebar -->
-    <div class="p-4 border-b border-border flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-            <div
-                class="w-10 h-10 bg-surface-base rounded-full flex items-center justify-center overflow-hidden border border-border">
-                <img src="{{ asset('images/logo.jpeg') }}" alt="PT Aghitsna Karya Indah"
-                    class="w-full h-full object-cover">
-            </div>
-            <span class="font-semibold text-text-heading">PT Aghitsna Karya Indah</span>
-        </div>
-        <button id="closeSidebar" class="lg:hidden text-text-secondary hover:text-text-primary">
-            <i class="fas fa-times text-lg"></i>
+    {{-- Header Sidebar: logo + nama perusahaan (tinggi sama dengan topbar) --}}
+    <div class="flex h-16 shrink-0 items-center gap-x-3 bg-white px-4 ring-1 ring-gray-950/5 lg:shadow-sm">
+        <a href="{{ url(auth()->user()?->getHomeRoute() ?? '/dashboard') }}"
+            class="flex min-w-0 flex-1 items-center gap-x-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            <img src="{{ asset('images/logo.jpeg') }}" alt="PT Aghitsna Karya Indah"
+                class="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-gray-950/10">
+            <span class="text-sm font-bold leading-5 tracking-tight text-gray-950">PT Aghitsna Karya Indah</span>
+        </a>
+
+        <button id="closeSidebar" type="button" title="Tutup menu"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 outline-none transition duration-75 hover:bg-gray-100 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-primary/50 lg:hidden">
+            <x-fi.icon name="x-mark" class="h-5 w-5" />
+            <span class="sr-only">Tutup menu</span>
         </button>
     </div>
 
-    <!-- Navigasi -->
-    <nav class="flex-1 overflow-y-auto py-4">
-        <ul class="space-y-1 px-3">
+    {{-- Navigasi --}}
+    <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-5" aria-label="Menu utama">
+        <ul class="flex flex-col gap-y-1">
 
             @php
                 $user = auth()->user();
@@ -57,208 +66,72 @@
 
             {{-- Dashboard --}}
             @if (!$isGeneralManager)
-            <li>
-                <a href="{{ url('/dashboard') }}"
-                    class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                        {{ request()->is('dashboard') ? 'bg-primary-light text-primary' : 'text-text-primary hover:bg-primary-light hover:text-primary' }}">
-
-                    <i
-                        class="fas fa-home w-5 
-                        {{ request()->is('dashboard') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                    </i>
-                    <span class="ml-3 font-medium">Dashboard</span>
-                </a>
-            </li>
+                <x-fi.sidebar.item :href="url('/dashboard')" icon="home" :active="request()->is('dashboard')">
+                    Dashboard
+                </x-fi.sidebar.item>
             @endif
 
-            {{-- Inventory Dropdown --}}
+            {{-- Inventory --}}
             @if (!$isAdmin && !$isGeneralManager)
-            <li>
-                <button onclick="toggleDropdown('inventoryDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
-
-                    <div class="flex items-center">
-                        <i class="fas fa-box-open w-5 text-text-tertiary group-hover:text-primary">
-                        </i>
-                        <span class="ml-3 font-medium">Inventory</span>
-                    </div>
-
-                    <i id="inventoryDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
-                    </i>
-                </button>
-
-                {{-- Submenu --}}
-                <ul id="inventoryDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ (request()->is('item') || request()->is('item/*')) || request()->is('do-semen*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/item') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ (request()->is('item') || request()->is('item/*')) && !request()->is('item-return*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-boxes w-4 
-                                {{ (request()->is('item') || request()->is('item/*')) && !request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Data Barang</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('cement-do.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('do-semen*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-truck w-4 
-                                {{ request()->is('do-semen*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">DO Semen</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('stock-in.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('stock-in*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-truck-loading w-4 
-                                {{ request()->is('stock-in*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Barang Masuk</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('stock-out.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('stock-out*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-sign-out-alt w-4 
-                                {{ request()->is('stock-out*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Barang Keluar</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('item-return.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('item-return*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-reply-all w-4 
-                                {{ request()->is('item-return*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Pengembalian Barang</span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
+                <x-fi.sidebar.group id="inventoryDropdown" icon="archive-box" label="Inventory"
+                    :open="(request()->is('item') || request()->is('item/*')) || request()->is('do-semen*') || request()->is('stock-in*') || request()->is('stock-out*') || request()->is('item-return*')">
+                    <x-fi.sidebar.item :href="url('/item')" icon="cube"
+                        :active="(request()->is('item') || request()->is('item/*')) && !request()->is('item-return*')">
+                        Data Barang
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="route('cement-do.index')" icon="truck" :active="request()->is('do-semen*')">
+                        DO Semen
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="route('stock-in.index')" icon="inbox-arrow-down" :active="request()->is('stock-in*')">
+                        Barang Masuk
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="route('stock-out.index')" icon="arrow-up-tray" :active="request()->is('stock-out*')">
+                        Barang Keluar
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="route('item-return.index')" icon="arrow-uturn-left" :active="request()->is('item-return*')">
+                        Pengembalian Barang
+                    </x-fi.sidebar.item>
+                </x-fi.sidebar.group>
             @endif
 
-            {{-- Finance Dropdown --}}
+            {{-- Finance --}}
             @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
-            <li>
-                <button onclick="toggleDropdown('invoiceDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
-
-                    <div class="flex items-center">
-                        <i class="fas fa-file-invoice w-5 text-text-tertiary group-hover:text-primary">
-                        </i>
-                        <span class="ml-3 font-medium">Finance</span>
-                    </div>
-
-                    <i id="invoiceDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
-                    </i>
-                </button>
-
-                {{-- Submenu --}}
                 @if ($isAdmin)
-                {{-- Admin: Invoice, Rekening Pembayaran & Laporan Keuangan Proyek
-                     (Rekap Proyek, Kas Kantor & Reimbursement pindah ke menu Report) --}}
-                <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('proyek-invoice*') || request()->is('payment-accounts*') || request()->routeIs('project-financial-report.*') || request()->is('recap-proyek*/laporan-keuangan*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/proyek-invoice') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-contract w-4 
-                                {{ request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Invoice</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/payment-accounts') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('payment-accounts*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-building-columns w-4 
-                                {{ request()->is('payment-accounts*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Rekening Pembayaran</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('project-financial-report.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->routeIs('project-financial-report.*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-invoice-dollar w-4 
-                                {{ request()->routeIs('project-financial-report.*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Laporan Keuangan Proyek</span>
-                        </a>
-                    </li>
-                </ul>
+                    {{-- Admin: Invoice, Rekening Pembayaran & Laporan Keuangan Proyek
+                         (Rekap Proyek, Kas Kantor & Reimbursement pindah ke menu Report) --}}
+                    <x-fi.sidebar.group id="invoiceDropdown" icon="banknotes" label="Finance"
+                        :open="request()->is('proyek-invoice*') || request()->is('payment-accounts*') || request()->routeIs('project-financial-report.*') || request()->is('recap-proyek*/laporan-keuangan*')">
+                        <x-fi.sidebar.item :href="url('/proyek-invoice')" icon="document-text" :active="request()->is('proyek-invoice*')">
+                            Invoice
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="url('/payment-accounts')" icon="building-library" :active="request()->is('payment-accounts*')">
+                            Rekening Pembayaran
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="route('project-financial-report.index')" icon="document-currency-dollar"
+                            :active="request()->routeIs('project-financial-report.*')">
+                            Laporan Keuangan Proyek
+                        </x-fi.sidebar.item>
+                    </x-fi.sidebar.group>
                 @else
-                {{-- Super Admin: Full Finance menu --}}
-                <ul id="invoiceDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('rekap*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*') ? '' : 'hidden' }}">
-                    {{-- Invoice: satu menu → halaman bertab (Barang | Alumunium | Proyek), seperti Surat Menyurat --}}
-                    <li>
-                        <a href="{{ route('item-invoice.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-invoice w-4
-                                {{ request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Invoice</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/purchase-invoice') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('purchase-invoice*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-shopping-cart w-4 
-                                {{ request()->is('purchase-invoice*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Faktur Pembelian</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/payment-accounts') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('payment-accounts*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-building-columns w-4 
-                                {{ request()->is('payment-accounts*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Rekening Pembayaran</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/rekap') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('rekap*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-chart-bar w-4 
-                                {{ request()->is('rekap*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Rekap</span>
-                        </a>
-                    </li>
-                </ul>
+                    {{-- Super Admin: Full Finance menu --}}
+                    <x-fi.sidebar.group id="invoiceDropdown" icon="banknotes" label="Finance"
+                        :open="request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*') || request()->is('purchase-invoice*') || request()->is('payment-accounts*') || request()->is('rekap*') || request()->is('recap-sales*') || request()->is('recap-alumunium*') || request()->is('recap-proyek*') || request()->is('recap-expense*')">
+                        {{-- Invoice: satu menu → halaman bertab (Barang | Alumunium | Proyek), seperti Surat Menyurat --}}
+                        <x-fi.sidebar.item :href="route('item-invoice.index')" icon="document-text"
+                            :active="request()->is('item-invoice*') || request()->is('alumunium-invoice*') || request()->is('proyek-invoice*')">
+                            Invoice
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="url('/purchase-invoice')" icon="shopping-cart" :active="request()->is('purchase-invoice*')">
+                            Faktur Pembelian
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="url('/payment-accounts')" icon="building-library" :active="request()->is('payment-accounts*')">
+                            Rekening Pembayaran
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="url('/rekap')" icon="chart-bar" :active="request()->is('rekap*')">
+                            Rekap
+                        </x-fi.sidebar.item>
+                    </x-fi.sidebar.group>
                 @endif
-            </li>
             @endif
 
             {{-- Report (Admin: paling bawah, di bawah User Management) --}}
@@ -266,251 +139,89 @@
                 @include('layouts.partials.sidebar-report')
             @endif
 
-            {{-- SDM (Sumber Daya Manusia) Dropdown --}}
+            {{-- Human Resource --}}
             @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
-            <li>
-                <button onclick="toggleDropdown('sdmDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
-
-                    <div class="flex items-center">
-                        <i class="fas fa-users w-5 text-text-tertiary group-hover:text-primary">
-                        </i>
-                        <span class="ml-3 font-medium">Human Resource</span>
-                    </div>
-
-                    <i id="sdmDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
-                    </i>
-                </button>
-
-                {{-- Submenu --}}
-                <ul id="sdmDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('tunjangan*') || request()->is('executive*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/employee') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('employee*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-user-tie w-4 
-                                {{ request()->is('employee*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Data Karyawan</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/executive') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('executive*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-signature w-4 
-                                {{ request()->is('executive*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Data Penandatangan</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/attendance') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('attendance*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-calendar-check w-4 
-                                {{ request()->is('attendance*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Absensi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/division') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('division*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-sitemap w-4 
-                                {{ request()->is('division*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Divisi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/payroll') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('payroll*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-money-check-alt w-4 
-                                {{ request()->is('payroll*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Payroll</span>
-                        </a>
-                    </li>
+                <x-fi.sidebar.group id="sdmDropdown" icon="user-group" label="Human Resource"
+                    :open="request()->is('employee*') || request()->is('attendance*') || request()->is('overtime*') || request()->is('payroll*') || request()->is('kasbon*') || request()->is('division*') || request()->is('tunjangan*') || request()->is('executive*')">
+                    <x-fi.sidebar.item :href="url('/employee')" icon="identification" :active="request()->is('employee*')">
+                        Data Karyawan
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="url('/executive')" icon="pencil-square" :active="request()->is('executive*')">
+                        Data Penandatangan
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="url('/attendance')" icon="calendar-days" :active="request()->is('attendance*')">
+                        Absensi
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="url('/division')" icon="rectangle-group" :active="request()->is('division*')">
+                        Divisi
+                    </x-fi.sidebar.item>
+                    <x-fi.sidebar.item :href="url('/payroll')" icon="credit-card" :active="request()->is('payroll*')">
+                        Payroll
+                    </x-fi.sidebar.item>
 
                     @if ($isAdmin)
-                    {{-- Admin: satu menu → halaman bertab Lembur | Kasbon (x-sdm.allowance-tabs) --}}
-                    <li>
-                        <a href="{{ url('/overtime') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('overtime*') || request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-money-bill-wave w-4
-                                {{ request()->is('overtime*') || request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Tunjangan & Potongan</span>
-                        </a>
-                    </li>
+                        {{-- Admin: satu menu → halaman bertab Lembur | Kasbon (x-sdm.allowance-tabs) --}}
+                        <x-fi.sidebar.item :href="url('/overtime')" icon="receipt-percent"
+                            :active="request()->is('overtime*') || request()->is('kasbon*')">
+                            Tunjangan & Potongan
+                        </x-fi.sidebar.item>
                     @else
-                    <!-- Tunjangan dan Potongan Dropdown -->
-                    <li>
-                        <button onclick="toggleDropdown('tunjanganDropdown')"
-                            class="flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors duration-200 group text-text-label hover:bg-primary-light hover:text-primary">
-                            <div class="flex items-center">
-                                <i class="fas fa-money-bill-wave w-4 text-text-tertiary group-hover:text-primary"></i>
-                                <span class="ml-3 text-sm font-medium">Tunjangan & Potongan</span>
-                            </div>
-                            <i id="tunjanganDropdownIcon"
-                                class="fas fa-chevron-down text-xs transition-transform duration-200 text-text-tertiary group-hover:text-primary"></i>
-                        </button>
-
-                        <!-- Tunjangan & Potongan Submenu -->
-                        <ul id="tunjanganDropdown"
-                            class="ml-8 mt-2 space-y-1 {{ request()->is('overtime*') || request()->is('kasbon*') ? '' : 'hidden' }}">
-                            <li>
-                                <a href="{{ url('/overtime') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('overtime*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-clock w-4 
-                                        {{ request()->is('overtime*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Lembur</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/kasbon') }}"
-                                    class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                        {{ request()->is('kasbon*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                                    <i
-                                        class="fas fa-hand-holding-usd w-4 
-                                        {{ request()->is('kasbon*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                                    </i>
-                                    <span class="ml-3 text-sm font-medium">Kasbon</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                        {{-- Super Admin: submenu Lembur & Kasbon --}}
+                        <x-fi.sidebar.group id="tunjanganDropdown" icon="receipt-percent" label="Tunjangan & Potongan"
+                            :open="request()->is('overtime*') || request()->is('kasbon*')">
+                            <x-fi.sidebar.item :href="url('/overtime')" icon="clock" :active="request()->is('overtime*')">
+                                Lembur
+                            </x-fi.sidebar.item>
+                            <x-fi.sidebar.item :href="url('/kasbon')" icon="currency-dollar" :active="request()->is('kasbon*')">
+                                Kasbon
+                            </x-fi.sidebar.item>
+                        </x-fi.sidebar.group>
                     @endif
-                </ul>
-            </li>
+                </x-fi.sidebar.group>
             @endif
 
-            {{-- Administrasi Dropdown --}}
+            {{-- Administration --}}
             @if (!$isGeneralManager && ($isSuperAdmin || $isAdmin))
-            <li>
-                <button onclick="toggleDropdown('administrasiDropdown')"
-                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors duration-200 group text-text-primary hover:bg-primary-light hover:text-primary">
-
-                    <div class="flex items-center">
-                        <i class="fas fa-folder-open w-5 text-text-tertiary group-hover:text-primary">
-                        </i>
-                        <span class="ml-3 font-medium">Administration</span>
-                    </div>
-
-                    <i id="administrasiDropdownIcon"
-                        class="fas fa-chevron-down text-sm transition-transform duration-200 text-text-tertiary group-hover:text-primary">
-                    </i>
-                </button>
-
                 @if ($isAdmin)
-                {{-- Admin: Penawaran Harga langsung ke Penawaran Proyek (tanpa submenu); Bukti Kas Keluar jadi tab Surat Menyurat --}}
-                <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('project-quotation*') || request()->is('surat-menyurat*') || request()->is('rab*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/surat-menyurat') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('surat-menyurat*') || request()->is('cash-out-proof*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-envelope w-4
-                                {{ request()->is('surat-menyurat*') || request()->is('cash-out-proof*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/project-quotation') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-contract w-4
-                                {{ request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Penawaran Harga</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/rab') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-calculator w-4
-                                {{ request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">RAB</span>
-                        </a>
-                    </li>
-                </ul>
+                    {{-- Admin: Penawaran Harga langsung ke Penawaran Proyek (tanpa submenu); Bukti Kas Keluar jadi tab Surat Menyurat --}}
+                    <x-fi.sidebar.group id="administrasiDropdown" icon="folder-open" label="Administration"
+                        :open="request()->is('cash-out-proof*') || request()->is('project-quotation*') || request()->is('surat-menyurat*') || request()->is('rab*')">
+                        <x-fi.sidebar.item :href="url('/surat-menyurat')" icon="envelope"
+                            :active="request()->is('surat-menyurat*') || request()->is('cash-out-proof*')">
+                            Surat Menyurat
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="url('/project-quotation')" icon="clipboard-document-check" :active="request()->is('project-quotation*')">
+                            Penawaran Harga
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="url('/rab')" icon="calculator" :active="request()->is('rab*')">
+                            RAB
+                        </x-fi.sidebar.item>
+                    </x-fi.sidebar.group>
                 @else
-                {{-- Super Admin: Full Administration menu (Bukti Kas Keluar jadi tab Surat Menyurat) --}}
-                <ul id="administrasiDropdown"
-                    class="ml-8 mt-2 space-y-1 {{ request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('surat-menyurat*') || request()->is('rab*') ? '' : 'hidden' }}">
-                    <li>
-                        <a href="{{ url('/surat-menyurat') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('surat-menyurat*') || request()->is('cash-out-proof*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-envelope w-4
-                                {{ request()->is('surat-menyurat*') || request()->is('cash-out-proof*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Surat Menyurat</span>
-                        </a>
-                    </li>
-                    {{-- Penawaran Harga: satu menu → halaman bertab (Alumunium | Proyek), seperti Surat Menyurat --}}
-                    <li>
-                        <a href="{{ route('aluminium-quotation.index') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-file-contract w-4
-                                {{ request()->is('aluminium-quotation*') || request()->is('project-quotation*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">Penawaran Harga</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/rab') }}"
-                            class="flex items-center px-4 py-2 rounded-lg transition-colors duration-200 group
-                                {{ request()->is('rab*') ? 'bg-primary-light text-primary' : 'text-text-label hover:bg-primary-light hover:text-primary' }}">
-                            <i
-                                class="fas fa-calculator w-4
-                                {{ request()->is('rab*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                            </i>
-                            <span class="ml-3 text-sm font-medium">RAB</span>
-                        </a>
-                    </li>
-                </ul>
+                    {{-- Super Admin: Full Administration menu (Bukti Kas Keluar jadi tab Surat Menyurat) --}}
+                    <x-fi.sidebar.group id="administrasiDropdown" icon="folder-open" label="Administration"
+                        :open="request()->is('cash-out-proof*') || request()->is('aluminium-quotation*') || request()->is('project-quotation*') || request()->is('surat-menyurat*') || request()->is('rab*')">
+                        <x-fi.sidebar.item :href="url('/surat-menyurat')" icon="envelope"
+                            :active="request()->is('surat-menyurat*') || request()->is('cash-out-proof*')">
+                            Surat Menyurat
+                        </x-fi.sidebar.item>
+                        {{-- Penawaran Harga: satu menu → halaman bertab (Alumunium | Proyek), seperti Surat Menyurat --}}
+                        <x-fi.sidebar.item :href="route('aluminium-quotation.index')" icon="clipboard-document-check"
+                            :active="request()->is('aluminium-quotation*') || request()->is('project-quotation*')">
+                            Penawaran Harga
+                        </x-fi.sidebar.item>
+                        <x-fi.sidebar.item :href="url('/rab')" icon="calculator" :active="request()->is('rab*')">
+                            RAB
+                        </x-fi.sidebar.item>
+                    </x-fi.sidebar.group>
                 @endif
-            </li>
             @endif
 
             {{-- User Management (Super Admin + Admin) --}}
             @if ($isSuperAdmin || $isAdmin)
-                <li>
-                    <a href="{{ route('user-management.index') }}"
-                        class="flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group
-                            {{ request()->is('user-management*') ? 'bg-primary-light text-primary' : 'text-text-primary hover:bg-primary-light hover:text-primary' }}">
-                        <i
-                            class="fas fa-user-shield w-5
-                            {{ request()->is('user-management*') ? 'text-primary' : 'text-text-tertiary group-hover:text-primary' }}">
-                        </i>
-                        <span class="ml-3 font-medium">User Management</span>
-                    </a>
-                </li>
+                <x-fi.sidebar.item :href="route('user-management.index')" icon="shield-check" :active="request()->is('user-management*')">
+                    User Management
+                </x-fi.sidebar.item>
             @endif
 
             {{-- Report untuk Admin: paling bawah (revisi klien) --}}
@@ -522,9 +233,8 @@
     </nav>
 </aside>
 
-<!-- Overlay untuk mobile -->
-<div id="sidebarOverlay"
-    class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden transition-opacity duration-300"></div>
+{{-- Overlay untuk mobile --}}
+<div id="sidebarOverlay" class="fixed inset-0 z-40 hidden bg-gray-950/50 lg:hidden"></div>
 
 <script>
     // Pastikan script berjalan setelah DOM loaded
@@ -581,30 +291,42 @@
             });
         }
 
+        // Escape menutup sidebar mobile (hanya saat sedang terbuka)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) {
+                closeSidebar();
+            }
+        });
+
         // Tutup sidebar saat resize ke desktop
         window.addEventListener('resize', function() {
             if (window.innerWidth >= 1024) { // lg breakpoint
                 closeSidebar();
             }
         });
+
+        // Menu aktif yang berada di bawah (mis. Report admin) tetap terlihat:
+        // gulung navigasi sidebar saja (bukan halaman)
+        const nav = sidebar ? sidebar.querySelector('nav') : null;
+        const activeItem = nav ? nav.querySelector('[aria-current="page"]') : null;
+        if (activeItem) {
+            const overflow = activeItem.getBoundingClientRect().bottom - nav.getBoundingClientRect().bottom;
+            if (overflow > 0) nav.scrollTop += overflow + 16;
+        }
     });
 
-    // Function untuk toggle dropdown
+    // Function untuk toggle dropdown (grup menu sidebar)
     function toggleDropdown(dropdownId) {
         const dropdown = document.getElementById(dropdownId);
         const icon = document.getElementById(dropdownId + 'Icon');
+        const button = document.querySelector('[aria-controls="' + dropdownId + '"]');
 
-        if (dropdown && icon) {
-            dropdown.classList.toggle('hidden');
+        if (dropdown) {
+            const isOpen = dropdown.classList.toggle('hidden') === false;
 
-            // Toggle icon antara chevron-down dan chevron-up
-            if (dropdown.classList.contains('hidden')) {
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-            } else {
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
-            }
+            // Panah berputar ke atas saat grup terbuka
+            if (icon) icon.classList.toggle('rotate-180', isOpen);
+            if (button) button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         }
     }
 </script>

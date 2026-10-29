@@ -1,10 +1,11 @@
-{{-- Toolbar tabel Invoice (Barang | Alumunium | Proyek), gaya Filament.
+{{-- Toolbar tabel Invoice (Barang | Alumunium | Proyek), gaya Filament —
+     sama seperti halaman lain (Barang Masuk, Pengembalian Barang, ...).
      Dipakai di dalam x-fi.card ber-Alpine `selected` (jumlah invoice dicentang).
 
-     Baris 1 (form GET): pencarian di kiri, filter bulan / tahun / status di
-     kanan. Bulan/tahun/status langsung submit saat diganti; pencarian saat Enter.
-     Baris 2 (bar aksi massal): hanya tampil saat ada invoice yang dicentang;
-     status disabled #delete-button tetap diatur JS halaman.
+     Kiri : aksi massal, hanya tampil saat ada invoice yang dicentang; status
+            disabled #delete-button tetap diatur JS halaman.
+     Kanan: form GET filter bulan / tahun / status + pencarian. Bulan/tahun/
+            status langsung submit saat diganti; pencarian saat Enter.
 
      Props:
      - action            : URL route index (tujuan filter & tombol Reset)
@@ -15,12 +16,23 @@
     $isFiltered = request()->filled('search') || request()->filled('month') || request()->filled('year') || request()->filled('status');
 @endphp
 
-{{-- Filter & Pencarian --}}
-<form method="GET" action="{{ $action }}" id="filterForm"
-    class="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-    <x-fi.search-input :value="request('search')" :placeholder="$searchPlaceholder" class="lg:max-w-sm" />
+<div class="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3 sm:px-6">
+    {{-- Aksi massal: hanya tampil saat ada invoice yang dicentang, agar tidak
+         tertukar dengan hapus satu invoice lewat menu ⋮ --}}
+    <div x-cloak x-show="selected > 0" class="flex shrink-0 items-center gap-3">
+        <span class="whitespace-nowrap text-sm text-gray-500">
+            <span class="font-semibold text-gray-950" x-text="selected"></span> invoice dipilih
+        </span>
 
-    <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center lg:flex-nowrap">
+        <x-fi.button id="delete-button" color="danger" size="sm" icon="trash" outlined disabled
+            onclick="openModal('deleteModal')">
+            Hapus yang dipilih
+        </x-fi.button>
+    </div>
+
+    {{-- Filter & Pencarian (kanan) --}}
+    <form method="GET" action="{{ $action }}" id="filterForm"
+        class="grid w-full grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-end xl:ms-auto xl:w-auto">
         <div class="sm:w-44">
             <x-fi.month-select :value="request('month')" onchange="this.form.requestSubmit()" />
         </div>
@@ -32,6 +44,7 @@
                 :options="['' => 'Semua Status', 'lunas' => 'Sudah Lunas', 'belum' => 'Belum Lunas']"
                 onchange="this.form.requestSubmit()" data-fi-select />
         </div>
+        <x-fi.search-input :value="request('search')" :placeholder="$searchPlaceholder" class="col-span-2 sm:w-64" />
 
         @if ($isFiltered)
             <x-fi.link :href="$action" color="gray" icon="x-mark"
@@ -39,18 +52,5 @@
                 Reset
             </x-fi.link>
         @endif
-    </div>
-</form>
-
-{{-- Aksi massal: hanya tampil saat ada invoice yang dicentang --}}
-<div x-cloak x-show="selected > 0"
-    class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 sm:px-6">
-    <span class="whitespace-nowrap text-sm text-gray-700">
-        <span class="font-semibold text-gray-950" x-text="selected"></span> invoice dipilih
-    </span>
-
-    <x-fi.button id="delete-button" color="danger" size="sm" icon="trash" outlined disabled
-        onclick="openModal('deleteModal')">
-        Hapus yang dipilih
-    </x-fi.button>
+    </form>
 </div>

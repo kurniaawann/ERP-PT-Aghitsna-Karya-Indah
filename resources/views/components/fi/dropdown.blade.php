@@ -9,6 +9,8 @@
     - icon  : ikon tombol pemicu (default ellipsis-vertical)
     - label : label aksesibilitas / tooltip tombol (default "Aksi")
     - width : class lebar panel (default w-56)
+    Slot `trigger` (opsional) mengganti isi tombol pemicu, mis. avatar +
+    nama pada menu pengguna di topbar; class slot diteruskan ke tombol.
 --}}
 @props([
     'icon' => 'ellipsis-vertical',
@@ -17,11 +19,18 @@
 ])
 
 <div {{ $attributes->class('relative inline-flex') }} data-fi-dropdown>
-    <button type="button" data-fi-dropdown-trigger aria-haspopup="menu" aria-expanded="false" title="{{ $label }}"
-        class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 outline-none transition duration-75 hover:bg-gray-100 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-primary/50 aria-expanded:bg-gray-100 aria-expanded:text-gray-600">
-        <x-fi.icon :name="$icon" class="h-5 w-5" />
-        <span class="sr-only">{{ $label }}</span>
-    </button>
+    @isset($trigger)
+        <button type="button" data-fi-dropdown-trigger aria-haspopup="menu" aria-expanded="false" title="{{ $label }}"
+            {{ $trigger->attributes->class('outline-none transition duration-75 focus-visible:ring-2 focus-visible:ring-primary/50') }}>
+            {{ $trigger }}
+        </button>
+    @else
+        <button type="button" data-fi-dropdown-trigger aria-haspopup="menu" aria-expanded="false" title="{{ $label }}"
+            class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 outline-none transition duration-75 hover:bg-gray-100 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-primary/50 aria-expanded:bg-gray-100 aria-expanded:text-gray-600">
+            <x-fi.icon :name="$icon" class="h-5 w-5" />
+            <span class="sr-only">{{ $label }}</span>
+        </button>
+    @endisset
 
     <div data-fi-dropdown-panel role="menu"
         class="hidden fixed z-40 {{ $width }} divide-y divide-gray-100 rounded-lg bg-white text-start shadow-lg ring-1 ring-gray-950/5">

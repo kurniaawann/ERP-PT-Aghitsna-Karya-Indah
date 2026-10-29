@@ -1,6 +1,6 @@
 {{-- Table Invoice Alumunium (gaya Filament).
-     Toolbar (x-finance.invoice-table-toolbar): pencarian + filter bulan /
-     tahun / status, lalu bar aksi massal (muncul saat ada invoice dicentang);
+     Toolbar (x-finance.invoice-table-toolbar): aksi massal di kiri (muncul
+     saat ada invoice dicentang), filter bulan / tahun / status + pencarian di kanan;
      paginasi di bawah. Jumlah invoice terpilih dihitung Alpine; status
      disabled #delete-button tetap diatur aluminium-invoices/index.js.
 
@@ -16,7 +16,7 @@
     x-init="selected = $el.querySelectorAll('[name^=selected_invoices]:checked').length"
     x-on:change="selected = $el.querySelectorAll('[name^=selected_invoices]:checked').length">
 
-    {{-- Toolbar: pencarian (kiri) + filter (kanan), bar aksi massal saat ada yang dicentang --}}
+    {{-- Toolbar: aksi massal (kiri, saat ada yang dicentang) + filter & pencarian (kanan) --}}
     <x-finance.invoice-table-toolbar :action="route('alumunium-invoice.index')"
         searchPlaceholder="Cari no invoice, kepada, proyek..." />
 

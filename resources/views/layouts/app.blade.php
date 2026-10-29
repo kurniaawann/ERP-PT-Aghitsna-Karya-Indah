@@ -26,62 +26,70 @@
 
         {{-- Main Content --}}
         <div class="flex-1 flex flex-col overflow-hidden">
-            {{-- Topbar --}}
-            <header class="bg-surface-base shadow-sm z-10 border-b border-border-light py-1">
-                <div class="flex items-center justify-between p-4">
-                    {{-- Toggle Sidebar untuk Mobile --}}
-                    <button id="toggleSidebar" type="button"
-                        class="lg:hidden text-text-secondary hover:text-text-heading focus:outline-none focus:ring-2 focus:ring-primary rounded-lg p-2">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
+            {{-- Topbar (gaya Filament): tombol menu (mobile), judul halaman, menu pengguna --}}
+            @php
+                $authUser = auth()->user();
+                $userName = $authUser->name ?? 'Guest';
+                // Inisial avatar: huruf pertama dari maksimal 2 kata nama
+                $userInitials = collect(preg_split('/\s+/', trim($userName)))
+                    ->filter()
+                    ->take(2)
+                    ->map(fn ($word) => mb_strtoupper(mb_substr($word, 0, 1)))
+                    ->implode('');
+            @endphp
+            <header class="relative z-10 flex h-16 shrink-0 items-center gap-x-3 bg-white px-4 shadow-sm ring-1 ring-gray-950/5 md:px-6">
+                {{-- Toggle Sidebar untuk Mobile --}}
+                <button id="toggleSidebar" type="button" title="Buka menu"
+                    class="-ms-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 outline-none transition duration-75 hover:bg-gray-100 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-primary/50 lg:hidden">
+                    <x-fi.icon name="bars-3" class="h-6 w-6" />
+                    <span class="sr-only">Buka menu</span>
+                </button>
 
-                    {{-- Judul Halaman --}}
-                    <h1 class="hidden md:block text-xl font-semibold text-text-heading" id="pageTitle">
-                        @yield('title', 'Dashboard')
-                    </h1>
+                {{-- Judul Halaman --}}
+                <h1 class="hidden min-w-0 truncate text-base font-semibold text-gray-950 md:block" id="pageTitle">
+                    @yield('title', 'Dashboard')
+                </h1>
 
-                    {{-- User Info + Dropdown --}}
-                    <div class="relative" x-data="{ open: false }" @click.away="open = false">
-                        <button @click="open = !open"
-                            class="flex items-center space-x-2 text-text-primary hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-lg px-3 py-2 transition-colors duration-200">
-                            <i class="fas fa-user-circle text-lg"></i>
-                            <span class="hidden md:inline text-sm font-medium">{{ auth()->user()->name ?? 'Guest' }}</span>
-                            <i class="fas fa-chevron-down text-xs transition-transform duration-200"
-                                :class="open ? 'rotate-180' : ''"></i>
-                        </button>
+                {{-- Menu Pengguna: avatar inisial + nama & role → Ubah Password, Logout --}}
+                <x-fi.dropdown label="Menu pengguna" width="w-64" class="ms-auto shrink-0">
+                    <x-slot:trigger class="flex items-center gap-x-3 rounded-lg p-1 hover:bg-gray-50 aria-expanded:bg-gray-50 md:pe-2">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+                            {{ $userInitials }}
+                        </span>
+                        <span class="hidden text-start md:block">
+                            <span class="block max-w-[12rem] truncate text-sm font-semibold leading-5 text-gray-950">{{ $userName }}</span>
+                            @if ($authUser)
+                                <span class="block text-xs leading-4 text-gray-500">{{ $authUser->role_label }}</span>
+                            @endif
+                        </span>
+                        <x-fi.icon name="chevron-down" class="hidden h-4 w-4 text-gray-400 md:block" />
+                    </x-slot:trigger>
 
-                        {{-- Dropdown Menu --}}
-                        <div x-show="open" x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-100"
-                            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                            class="absolute right-0 mt-2 w-56 bg-surface-base rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-border-light py-2 z-50"
-                            style="display: none;">
-
-                            <div class="px-4 py-2 border-b border-border-light">
-                                <p class="text-sm font-semibold text-text-heading">{{ auth()->user()->name ?? 'Guest' }}</p>
-                                <p class="text-xs text-text-secondary">{{ auth()->user()->email ?? '' }}</p>
-                            </div>
-
-                            <a href="{{ route('profile.change-password') }}"
-                                class="flex items-center px-4 py-2.5 text-sm text-text-primary hover:bg-primary-light hover:text-primary transition-colors duration-150">
-                                <i class="fas fa-lock w-5 text-text-tertiary"></i>
-                                <span class="ml-2">Ubah Password</span>
-                            </a>
-
-                            <div class="border-t border-border-light mt-1 pt-1">
-                                <form action="{{ route('logout') }}" method="POST">
-                                    @csrf
-                                    <button type="submit"
-                                        class="flex items-center w-full px-4 py-2.5 text-sm text-text-primary hover:bg-red-50 hover:text-error transition-colors duration-150">
-                                        <i class="fas fa-sign-out-alt w-5 text-text-tertiary"></i>
-                                        <span class="ml-2">Logout</span>
-                                    </button>
-                                </form>
-                            </div>
+                    <div class="flex items-center gap-x-3 p-3">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+                            {{ $userInitials }}
+                        </span>
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-gray-950">{{ $userName }}</p>
+                            <p class="truncate text-sm text-gray-500">{{ $authUser->email ?? '' }}</p>
                         </div>
                     </div>
-                </div>
+
+                    <x-fi.dropdown.list>
+                        <x-fi.dropdown.item icon="lock-closed" :href="route('profile.change-password')">
+                            Ubah Password
+                        </x-fi.dropdown.item>
+                    </x-fi.dropdown.list>
+
+                    <x-fi.dropdown.list>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <x-fi.dropdown.item type="submit" icon="arrow-left-start-on-rectangle">
+                                Logout
+                            </x-fi.dropdown.item>
+                        </form>
+                    </x-fi.dropdown.list>
+                </x-fi.dropdown>
             </header>
 
             {{-- Konten Utama --}}
