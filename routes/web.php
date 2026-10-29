@@ -228,6 +228,7 @@ Route::middleware('auth')->group(function () {
 
     // Route Purchase Invoice
     Route::get('/purchase-invoice', [PurchaseInvoiceController::class, 'index'])->name('purchase-invoice.index');
+    Route::get('/purchase-invoice/create', [PurchaseInvoiceController::class, 'create'])->name('purchase-invoice.create');
     Route::post('/purchase-invoice', [PurchaseInvoiceController::class, 'store'])->name('purchase-invoice.store');
     Route::delete('/purchase-invoice/destroy-selected', [PurchaseInvoiceController::class, 'destroySelected'])->name('purchase-invoice.destroy-selected');
     Route::get('/purchase-invoice/export/excel', [PurchaseInvoiceController::class, 'exportExcel'])->name('purchase-invoice.export-excel');

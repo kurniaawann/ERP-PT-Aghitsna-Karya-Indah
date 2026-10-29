@@ -36,6 +36,16 @@ class PurchaseInvoiceController extends Controller
     }
 
     /**
+     * Halaman form Tambah Faktur Pembelian (bisa banyak faktur sekaligus).
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('pages.finance.purchase-invoice-create');
+    }
+
+    /**
      * Simpan faktur pembelian baru (mendukung multiple record sekaligus).
      *
      * @param  StorePurchaseInvoiceRequest $request

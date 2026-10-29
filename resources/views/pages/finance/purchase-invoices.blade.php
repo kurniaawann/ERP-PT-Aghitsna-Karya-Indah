@@ -1,18 +1,23 @@
 {{-- =====================================================================
-     Halaman: Faktur Pembelian (Purchase Invoices)
-     Tujuan: Menampilkan daftar faktur pembelian dengan filter bulan/tahun
-             & pencarian (material, barang, NPWP), export Excel/PDF,
-             serta CRUD (tambah, edit, hapus per baris & massal).
+     Halaman: Faktur Pembelian (Finance)
+     Tujuan: Daftar faktur pembelian dengan filter bulan/tahun & pencarian
+             (material, barang, NPWP), export Excel/PDF, edit (modal),
+             cetak PDF per faktur, dan hapus (per baris & massal).
+     Tampilan memakai komponen bergaya Filament (resources/views/components/fi).
+
      Data dari PurchaseInvoiceController@index:
-     - $invoices: Paginator PurchaseInvoice (15/halaman) hasil
-                  PurchaseInvoiceService::buildFilteredQuery($request)
-                  diurutkan created_at desc, difilter month/year/search.
+     - $invoices : Paginator PurchaseInvoice (15/halaman) hasil
+                   PurchaseInvoiceService::buildFilteredQuery($request),
+                   urut created_at desc.
+
      Komponen yang di-include:
-     - x-filters.month-filter / year-filter / search-input : toolbar filter & pencarian
-     - x-buttons.print-dropdown / delete-button / add-button : tombol aksi
-     - x-finance.purchase-invoices.table / add-modal / edit-modal : UI CRUD
-     - x-pagination                                      : navigasi halaman
-     - x-modal                                           : konfirmasi hapus
+     - x-finance.purchase-invoices.table      : tabel (+ filter, pencarian, hapus massal, paginasi)
+     - x-finance.purchase-invoices.edit-modal : modal edit per faktur
+     - x-fi.modal / x-fi.delete-row-modal     : konfirmasi hapus massal / satu faktur
+
+     Tambah faktur berupa halaman tersendiri: route('purchase-invoice.create')
+     → pages/finance/purchase-invoice-create.blade.php.
+
      JS: @vite('resources/js/pages/finance/purchase-invoices/index.js')
      ===================================================================== --}}
 @extends('layouts.app')
@@ -20,70 +25,53 @@
 @section('title', 'PT Aghitsna Karya Indah - Faktur Pembelian')
 
 @section('content')
-    {{-- ==================== Header Faktur Pembelian ==================== --}}
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Faktur Pembelian</h1>
+    <div class="flex flex-col gap-y-6">
 
-        {{-- ==================== Toolbar Filter & Aksi ==================== --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            {{-- Form Pencarian dan Filter --}}
-            <form method="GET" action="{{ route('purchase-invoice.index') }}"
-                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
-
-                {{-- Filter Bulan --}}
-                <x-filters.month-filter :value="request('month')" responsive="custom" />
-
-                {{-- Filter Tahun --}}
-                <x-filters.year-filter :value="request('year')" responsive="custom" />
-
-                {{-- Search Input --}}
-                <x-filters.search-input :value="request('search')" placeholder="Cari material, barang, atau NPWP..." responsive="custom" />
-            </form>
-
-            {{-- Aksi di Kanan --}}
-            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
-                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                    {{-- Tombol Print/Export --}}
-                    <x-buttons.print-dropdown :excelRoute="route('purchase-invoice.export-excel')" :pdfRoute="route('purchase-invoice.export-pdf')" :queryParams="[
+        {{-- SECTION: Header Halaman + Aksi (Export & Tambah) --}}
+        <x-fi.page-header heading="Faktur Pembelian"
+            :breadcrumbs="['Finance' => null, 'Faktur Pembelian' => route('purchase-invoice.index')]">
+            <x-slot:actions>
+                {{-- Dropdown Export (PDF & Excel, mengikuti filter aktif) --}}
+                <x-fi.export-dropdown :excelRoute="route('purchase-invoice.export-excel')"
+                    :pdfRoute="route('purchase-invoice.export-pdf')" :queryParams="[
                         'search' => request('search'),
                         'month' => request('month'),
                         'year' => request('year'),
-                    ]" responsive="custom" />
+                    ]" />
 
-                    {{-- Tombol Hapus --}}
-                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
+                <x-fi.button icon="plus" :href="route('purchase-invoice.create')">Tambah Faktur</x-fi.button>
+            </x-slot:actions>
+        </x-fi.page-header>
 
-                    {{-- Tombol Tambah --}}
-                    <x-buttons.add-button modalId="addModal" text="Tambah Faktur" responsive="custom" />
-                </div>
-            </div>
-        </div>
-
-        {{-- ==================== Tabel Data ==================== --}}
-        {{-- Tabel faktur pembelian dengan checkbox seleksi dan tombol
-             aksi (edit/hapus/print) per baris. --}}
+        {{-- SECTION: Tabel Faktur Pembelian --}}
         <x-finance.purchase-invoices.table :invoices="$invoices" />
     </div>
 
-    {{-- ==================== Pagination ==================== --}}
-    <x-pagination :paginator="$invoices" />
-
-    {{-- ==================== Modal Tambah Faktur ==================== --}}
-    <x-finance.purchase-invoices.add-modal />
-
-    {{-- ==================== Modal Edit untuk setiap faktur ==================== --}}
-    {{-- Satu modal edit dibuat per baris faktur agar data form tiap
-         faktur tetap terpisah. --}}
+    {{-- SECTION: Modal Edit (satu per faktur) --}}
     @foreach ($invoices as $invoice)
         <x-finance.purchase-invoices.edit-modal :invoice="$invoice" />
     @endforeach
 
-    {{-- ==================== Modal Konfirmasi Bulk Delete ==================== --}}
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
-        Apakah kamu yakin ingin menghapus data yang dipilih?
-    </x-modal>
+    {{-- SECTION: Modal Konfirmasi Hapus Massal --}}
+    <x-fi.modal id="deleteModal" heading="Hapus Faktur Terpilih" icon="trash" color="danger" width="md"
+        onConfirm="submitDeleteForm()" submitLabel="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus semua faktur yang dipilih? Data yang dihapus tidak dapat dikembalikan.
+    </x-fi.modal>
 
-    {{-- ==================== JavaScript ==================== --}}
-    @vite('resources/js/pages/finance/purchase-invoices/index.js')
+    {{-- SECTION: Modal Konfirmasi Hapus 1 Faktur (menu Aksi ⋮ tiap baris) --}}
+    {{-- Mengirim satu id ke route('purchase-invoice.destroy-selected') yang sama dengan hapus massal. --}}
+    <x-fi.delete-row-modal :action="route('purchase-invoice.destroy-selected')" field="selected_invoices"
+        heading="Hapus Faktur Pembelian" />
+
+    {{-- SECTION: Scripts (JavaScript Modular) --}}
+    @push('scripts')
+        <script>
+            // Modal edit yang dibuka ulang karena penyimpanan gagal (editModal-{id})
+            window.PURCHASE_INVOICE_DATA = {
+                reopenModal: @json($errors->any() ? old('_modal') : null),
+            };
+        </script>
+
+        @vite('resources/js/pages/finance/purchase-invoices/index.js')
+    @endpush
 @endsection
