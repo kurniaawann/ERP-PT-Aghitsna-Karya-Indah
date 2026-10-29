@@ -175,6 +175,7 @@ Route::middleware('auth')->group(function () {
     // Route Item Invoice
     Route::get('/item-invoice', [ItemInvoiceController::class, 'index'])->name('item-invoice.index');
     Route::get('/item-invoice/next-number', [ItemInvoiceController::class, 'getNextInvoiceNumber'])->name('item-invoice.getNextNumber');
+    Route::get('/item-invoice/create', [ItemInvoiceController::class, 'create'])->name('item-invoice.create');
     Route::post('/item-invoice', [ItemInvoiceController::class, 'store'])->name('item-invoice.store');
     Route::delete('/item-invoice/destroy-selected', [ItemInvoiceController::class, 'destroySelected'])->name('item-invoice.destroySelected');
     Route::get('/item-invoice/export/excel', [ItemInvoiceController::class, 'exportExcel'])->name('item-invoice.export.excel');

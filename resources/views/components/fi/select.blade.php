@@ -17,7 +17,7 @@
     'prefixIcon' => null,
 ])
 
-<div class="relative flex w-full rounded-lg bg-white shadow-sm ring-1 ring-gray-950/10 transition duration-75 focus-within:ring-2 focus-within:ring-primary">
+<div class="relative flex w-full rounded-lg bg-white shadow-sm ring-1 ring-gray-950/10 transition duration-75 focus-within:ring-2 focus-within:ring-primary has-[:disabled]:bg-gray-50">
     @if ($prefixIcon)
         <div class="pointer-events-none flex shrink-0 items-center ps-3">
             <x-fi.icon :name="$prefixIcon" class="h-5 w-5 text-gray-400" />

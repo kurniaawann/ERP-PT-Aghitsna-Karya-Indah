@@ -37,29 +37,33 @@ class ItemInvoiceController extends Controller
     /**
      * Menampilkan daftar Invoice Barang dengan filter dan pagination.
      *
+     * Tambah/Edit invoice berupa halaman tersendiri (create/edit), jadi
+     * halaman daftar hanya butuh data invoice (+ relasi untuk modal detail).
+     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        $invoices = $this->service->baseQuery($request)->paginate(10)->appends($request->all());
+        $invoices = $this->service->baseQuery($request)
+            ->with(['signedBy', 'division'])
+            ->paginate(10)
+            ->appends($request->all());
 
-        try {
-            $items = Cache::remember(
-                'inventory:items:all',
-                now()->addDay(),
-                fn () => Items::query()->orderBy('name_item')->get()
-            );
-        } catch (\Exception $e) {
-            Log::warning('Cache READ error [inventory:items:all]: ' . $e->getMessage());
-            $items = Items::query()->orderBy('name_item')->get();
-        }
+        return view('pages.finance.item-invoices', compact('invoices'));
+    }
 
-        $paymentAccounts = $this->paymentAccountService->getActiveAccounts();
-        $executives = Executive::where('created_by', auth()->id())->orderBy('name')->get();
-        $divisions = Division::where('created_by', auth()->id())->orderBy('name')->get();
-
-        return view('pages.finance.item-invoices', compact('invoices', 'items', 'paymentAccounts', 'executives', 'divisions'));
+    /**
+     * Menampilkan halaman form Tambah Invoice Barang.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('pages.finance.item-invoice-form', array_merge($this->formData(), [
+            'invoice' => null,
+            'nextInvoiceNumber' => $this->service->generateInvoiceNumber(),
+        ]));
     }
 
     /**
@@ -130,6 +134,11 @@ class ItemInvoiceController extends Controller
 
             return redirect()->route('item-invoice.index')
                 ->with('success', 'Invoice item berhasil ditambahkan dan otomatis masuk ke rekap penjualan!');
+        } catch (\RuntimeException $exception) {
+            // Validasi item dari processItemsForStore (stok kurang, harga tidak valid, dll.)
+            DB::rollBack();
+
+            return back()->with('error', $exception->getMessage())->withInput();
         } catch (\Throwable $throwable) {
             DB::rollBack();
             Log::error('Item Invoice store failed', [
@@ -142,19 +151,30 @@ class ItemInvoiceController extends Controller
     }
 
     /**
-     * Mengambil data invoice untuk modal edit (AJAX response).
+     * Menampilkan halaman form Edit Invoice Barang.
+     *
+     * Request JSON (AJAX) tetap mendapat data invoice & item seperti sebelumnya.
      *
      * @param  string  $invoiceNumber
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
      */
     public function edit(string $invoiceNumber)
     {
-        $invoice = InvoiceBarang::where('invoice_number', $invoiceNumber)->firstOrFail();
+        $invoice = InvoiceBarang::with(['salesRecap', 'paymentProofs'])
+            ->where('invoice_number', $invoiceNumber)
+            ->firstOrFail();
 
-        return response()->json([
+        if (request()->wantsJson()) {
+            return response()->json([
+                'invoice' => $invoice,
+                'items' => is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items,
+            ]);
+        }
+
+        return view('pages.finance.item-invoice-form', array_merge($this->formData(), [
             'invoice' => $invoice,
-            'items' => is_string($invoice->items) ? json_decode($invoice->items, true) : $invoice->items,
-        ]);
+            'isEditable' => $this->service->isEditable($invoice->salesRecap),
+        ]));
     }
 
     /**
@@ -218,6 +238,11 @@ class ItemInvoiceController extends Controller
 
             return redirect()->route('item-invoice.index')
                 ->with('success', 'Invoice item berhasil diupdate!');
+        } catch (\RuntimeException $exception) {
+            // Validasi item dari processItemsForStore (stok kurang, harga tidak valid, dll.)
+            DB::rollBack();
+
+            return back()->with('error', $exception->getMessage())->withInput();
         } catch (\Throwable $throwable) {
             DB::rollBack();
             Log::error('Item Invoice update failed', [
@@ -336,5 +361,31 @@ class ItemInvoiceController extends Controller
             new ItemInvoiceIndexExport($invoices, $request->month, $request->year),
             'Rekap_Invoice_Barang_' . date('Y-m-d') . '.xlsx'
         );
+    }
+
+    /**
+     * Data pilihan untuk halaman form Tambah/Edit Invoice Barang.
+     *
+     * @return array{items: \Illuminate\Support\Collection, paymentAccounts: mixed, executives: \Illuminate\Support\Collection, divisions: \Illuminate\Support\Collection}
+     */
+    private function formData(): array
+    {
+        try {
+            $items = Cache::remember(
+                'inventory:items:all',
+                now()->addDay(),
+                fn () => Items::query()->orderBy('name_item')->get()
+            );
+        } catch (\Exception $e) {
+            Log::warning('Cache READ error [inventory:items:all]: ' . $e->getMessage());
+            $items = Items::query()->orderBy('name_item')->get();
+        }
+
+        return [
+            'items' => $items,
+            'paymentAccounts' => $this->paymentAccountService->getActiveAccounts(),
+            'executives' => Executive::where('created_by', auth()->id())->orderBy('name')->get(),
+            'divisions' => Division::where('created_by', auth()->id())->orderBy('name')->get(),
+        ];
     }
 }

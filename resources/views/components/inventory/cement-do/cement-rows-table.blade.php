@@ -5,7 +5,8 @@
      - #cement-rows-empty       : pesan kosong (tampil bila tidak ada baris)
      - [data-add-cement-row]    : tombol "Tambah Baris"
      - [data-summary="volume"] / [data-summary="subtotal"] : total di <tfoot> --}}
-<div class="overflow-x-auto">
+{{-- relative: elemen absolute di tabel (teks sr-only) tetap terpotong di sini, tidak melebarkan halaman di HP --}}
+<div class="relative overflow-x-auto">
     <table class="w-full table-auto divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>

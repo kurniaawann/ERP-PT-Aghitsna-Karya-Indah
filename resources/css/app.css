@@ -74,7 +74,21 @@
 }
 
 .fi-repeater .remove-row-btn {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg p-0 text-gray-400 transition duration-75 hover:bg-red-50 hover:text-red-600;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg p-0 text-gray-400 transition duration-75 hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50;
+}
+
+/* Input terkunci (readonly/disabled), mis. harga barang "Dari stok" di Invoice Barang */
+.fi-repeater input:not([type='checkbox']):not([type='hidden']):read-only {
+    @apply cursor-default bg-gray-50 text-gray-500;
+}
+
+.fi-repeater input:not([type='checkbox']):not([type='hidden']).is-invalid {
+    @apply ring-red-600 focus:ring-red-600;
+}
+
+/* Baris repeater yang memuat teks bantu di bawah input: isi sel rata atas */
+.fi-repeater.fi-repeater-top td {
+    @apply align-top;
 }
 
 /*

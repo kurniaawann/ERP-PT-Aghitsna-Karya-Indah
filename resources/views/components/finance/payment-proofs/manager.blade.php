@@ -1,12 +1,15 @@
 {{-- =====================================================================
-     Komponen: Payment Proof Manager (dipakai di dalam modal Edit tiap modul)
+     Komponen: Payment Proof Manager (gaya Filament)
+     Dipakai di halaman Edit Invoice (Barang/Alumunium/Proyek, di dalam
+     x-fi.section → bare) dan di modal Edit rekap (Rekap Proyek / Rekap
+     Penjualan, dengan judul sendiri).
      Tujuan: Menampilkan daftar bukti pembayaran milik sebuah invoice/rekap,
              dengan tombol "Upload" (membuka modal upload terpisah) dan
              "Hapus" (membuka modal hapus terpisah).
-     Alasan desain: Modal Edit dibungkus satu <form> (x-modal). Untuk
-     menghindari nested <form> (invalid html), upload & hapus dipindah ke
-     modal terpisah yang dirender di luar form (lihat file upload-modal &
-     delete-modal yang di-include di halaman modul).
+     Alasan desain: form Edit membungkus seluruh isi. Untuk menghindari
+     nested <form> (invalid html), upload & hapus dipindah ke modal terpisah
+     yang dirender di luar form (lihat file upload-modal & delete-modal yang
+     di-include di halaman modul).
 
      Parameter yang dipakai:
      - $proofs       : Collection bukti pembayaran (paymentProofs).
@@ -14,66 +17,73 @@
      - $invoiceKey   : Nilai invoice_number / id yang dikirim saat upload.
      - $manualAmount : bool, true bila nominal pembayaran diisi manual
                        (proyek/recap). Default false.
+     - $bare         : bool, true = tanpa judul & bingkai (sudah di dalam
+                       x-fi.section berjudul). Default false.
      ===================================================================== --}}
 @php
     $proofs = collect($proofs ?? []);
     $manualAmount = $manualAmount ?? in_array($invoiceType ?? '', ['proyek', 'recap'], true);
+    $bare = $bare ?? false;
 @endphp
 
-<div class="mb-4 p-4 border rounded-lg bg-surface-secondary">
-    <div class="flex flex-col gap-1 mb-3">
-        <label class="block text-sm font-semibold text-text-primary">Bukti Pembayaran</label>
-        <p class="text-xs text-text-label">
-            Kelola gambar bukti pembayaran. File akan diperkecil otomatis supaya tidak terlalu besar.
-        </p>
-    </div>
+<div @class(['grid gap-y-4', 'mb-4 rounded-xl bg-white p-4 ring-1 ring-gray-950/10' => ! $bare])>
+    @unless ($bare)
+        <div>
+            <p class="text-sm font-medium leading-6 text-gray-950">Bukti Pembayaran</p>
+            <p class="text-sm text-gray-500">
+                Kelola gambar bukti pembayaran. File akan diperkecil otomatis supaya tidak terlalu besar.
+            </p>
+        </div>
+    @endunless
 
     @if ($proofs->count() > 0)
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             @foreach ($proofs as $proof)
-                <div class="overflow-hidden rounded-lg border bg-white">
-                    <a href="{{ asset('storage/' . $proof->file_path) }}" data-file-preview data-preview-title="Bukti Pembayaran">
-                        <img src="{{ asset('storage/' . $proof->file_path) }}" alt="Bukti pembayaran"
-                            class="h-36 w-full object-cover">
+                <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/10">
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" data-file-preview data-preview-title="Bukti Pembayaran"
+                        class="block bg-gray-50">
+                        <img src="{{ asset('storage/' . $proof->file_path) }}" alt="Bukti pembayaran {{ $proof->file_name }}"
+                            class="h-36 w-full object-cover" loading="lazy">
                     </a>
-                    <div class="p-3 space-y-2">
-                        <div>
-                            <p class="text-sm font-semibold text-text-primary truncate">{{ $proof->file_name }}</p>
-                            <p class="text-xs text-text-label">
+                    <div class="grid gap-y-3 p-3">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-medium text-gray-950" title="{{ $proof->file_name }}">{{ $proof->file_name }}</p>
+                            <p class="text-sm text-gray-500">
                                 {{ optional($proof->payment_date ?? $proof->created_at)->format('d M Y') }}
                                 @if ($proof->amount)
-                                    • Rp {{ number_format($proof->amount, 0, ',', '.') }}
+                                    · <span class="font-medium text-emerald-600">Rp {{ number_format($proof->amount, 0, ',', '.') }}</span>
                                 @endif
                             </p>
                         </div>
 
-                        <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center justify-between gap-3">
                             <a href="{{ asset('storage/' . $proof->file_path) }}" data-file-preview data-preview-title="Bukti Pembayaran"
-                                class="text-sm text-blue-600 hover:underline">
-                                Lihat
+                                class="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">
+                                <x-fi.icon name="eye" class="h-4 w-4" /> Lihat
                             </a>
 
-                            <button type="button"
-                                onclick="openPaymentProofDelete('{{ $proof->id }}')"
-                                class="text-sm text-red-600 hover:underline">
+                            <x-fi.link color="danger" icon="trash" onclick="openPaymentProofDelete('{{ $proof->id }}')">
                                 Hapus
-                            </button>
+                            </x-fi.link>
                         </div>
                     </div>
                 </div>
             @endforeach
         </div>
     @else
-        <div class="mb-4 rounded-lg border border-dashed border-border-strong bg-white p-4 text-sm text-text-label">
-            Belum ada bukti pembayaran yang tersimpan.
+        <div class="flex flex-col items-center rounded-xl border border-dashed border-gray-300 px-6 py-8 text-center">
+            <div class="mb-3 rounded-full bg-gray-100 p-3">
+                <x-fi.icon name="photo" class="h-6 w-6 text-gray-500" />
+            </div>
+            <p class="text-sm font-medium text-gray-950">Belum ada bukti pembayaran</p>
+            <p class="mt-1 text-sm text-gray-500">File akan diperkecil otomatis supaya tidak terlalu besar.</p>
         </div>
     @endif
 
-    <div class="flex justify-end">
-        <button type="button"
-            onclick="openPaymentProofUpload('{{ $invoiceType }}', '{{ addslashes($invoiceKey) }}', {{ $manualAmount ? 'true' : 'false' }})"
-            class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            <i class="fa-solid fa-upload"></i> Upload Bukti Pembayaran
-        </button>
+    <div>
+        <x-fi.button color="gray" icon="arrow-up-tray"
+            onclick="openPaymentProofUpload('{{ $invoiceType }}', '{{ addslashes($invoiceKey) }}', {{ $manualAmount ? 'true' : 'false' }})">
+            Upload Bukti Pembayaran
+        </x-fi.button>
     </div>
 </div>

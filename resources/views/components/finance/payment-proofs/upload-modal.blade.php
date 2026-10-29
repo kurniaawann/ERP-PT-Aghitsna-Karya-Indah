@@ -1,55 +1,55 @@
 {{-- =====================================================================
-     Komponen: Upload Bukti Pembayaran (shared modal)
-     Dipakai: dirender SEKALI di halaman modul (di luar form modal Edit),
+     Komponen: Upload Bukti Pembayaran (shared modal, gaya Filament)
+     Dipakai: dirender SEKALI di halaman modul (di luar form Edit),
      dipicu dari tombol "Upload Bukti Pembayaran" di
-     components.finance.payment-proofs.manager.
+     components.finance.payment-proofs.manager / menu Aksi tabel.
      Field invoice_type & invoice_number di-set via JS (openPaymentProofUpload)
      sebelum modal dibuka.
 
+     Hook JS (payment-proofs/embedded.js): #payment-proof-upload-form,
+     #payment-proof-invoice-type, #payment-proof-invoice-number,
+     #payment-proof-invoice-label, #payment-proof-feedback,
+     #payment-proof-amount-wrap, #payment-proof-amount,
+     #payment-proof-amount-error.
+
      Data dari route payment-proofs.store ('finance' fixed).
      ===================================================================== --}}
-<x-modal id="paymentProofUploadModal" title="Upload Bukti Pembayaran"
-    action="{{ route('payment-proofs.store') }}" method="POST" buttonText="Simpan"
-    enctype="multipart/form-data" formId="payment-proof-upload-form">
+<x-fi.modal id="paymentProofUploadModal" heading="Upload Bukti Pembayaran" icon="arrow-up-tray"
+    :action="route('payment-proofs.store')" submitLabel="Simpan" enctype="multipart/form-data"
+    formId="payment-proof-upload-form">
 
     <input type="hidden" name="module_type" value="finance">
     <input type="hidden" name="invoice_type" id="payment-proof-invoice-type" value="">
     <input type="hidden" name="invoice_number" id="payment-proof-invoice-number" value="">
 
-    <div id="payment-proof-feedback" class="hidden mb-3 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm"></div>
+    <div id="payment-proof-feedback" role="alert"
+        class="hidden rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></div>
 
-    {{-- Section: Info Invoice (read-only) --}}
-    <div class="mb-3 p-3 bg-surface-secondary rounded border">
-        <label class="block text-text-primary mb-1">Invoice</label>
-        <p id="payment-proof-invoice-label" class="font-semibold text-primary">-</p>
+    {{-- Info Invoice (read-only) --}}
+    <div class="rounded-lg bg-gray-50 px-4 py-3 ring-1 ring-inset ring-gray-950/5">
+        <p class="text-sm text-gray-500">Invoice</p>
+        <p id="payment-proof-invoice-label" class="font-semibold text-gray-950">-</p>
     </div>
 
-    {{-- Section: Nominal Pembayaran (hanya proyek/recap) --}}
-    <div class="mb-3 p-3 border rounded bg-amber-50 hidden" id="payment-proof-amount-wrap">
-        <label class="block text-text-primary mb-1">Nominal Pembayaran <span class="text-error">*</span></label>
-        <div class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-text-tertiary text-sm pointer-events-none">Rp</span>
-            <input type="text" name="amount" id="payment-proof-amount" inputmode="numeric"
-                oninput="formatCurrencyInput(this)" placeholder="0"
-                class="w-full border rounded p-2 pl-10">
-        </div>
-        <div id="payment-proof-amount-error" class="hidden mt-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm"></div>
-        <p class="text-xs text-text-secondary mt-1">Nominal ini diisi manual untuk invoice proyek dan rekap proyek.</p>
+    {{-- Nominal Pembayaran (hanya proyek/recap) --}}
+    <div id="payment-proof-amount-wrap" class="hidden">
+        <x-fi.field label="Nominal Pembayaran" for="payment-proof-amount" required
+            hint="Nominal ini diisi manual untuk invoice proyek dan rekap proyek.">
+            <x-fi.input name="amount" id="payment-proof-amount" prefix="Rp" inputmode="numeric" placeholder="0"
+                oninput="formatCurrencyInput(this)" />
+            <div id="payment-proof-amount-error" class="hidden text-sm text-red-600"></div>
+        </x-fi.field>
     </div>
 
-    {{-- Section: Tanggal Pembayaran --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Pembayaran</label>
-        <input type="date" name="payment_date" value="{{ now()->toDateString() }}"
-            class="w-full border rounded p-2">
-        <p class="text-xs text-text-secondary mt-1">Isi manual jika tanggal pembayaran berbeda dari hari ini.</p>
-    </div>
+    {{-- Tanggal Pembayaran --}}
+    <x-fi.field label="Tanggal Pembayaran" for="payment-proof-date"
+        hint="Isi manual jika tanggal pembayaran berbeda dari hari ini.">
+        <x-fi.input type="date" id="payment-proof-date" name="payment_date" :value="now()->toDateString()" />
+    </x-fi.field>
 
-    {{-- Section: File Upload --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Bukti Gambar <span class="text-error">*</span></label>
-        <input type="file" name="proof_image" accept="image/jpeg,image/png,image/gif,image/webp"
-            class="w-full border rounded p-2" required>
-        <p class="text-xs text-text-secondary mt-1">Format: JPG, PNG, GIF, WEBP. Maksimal 5 MB.</p>
-    </div>
-</x-modal>
+    {{-- File Bukti --}}
+    <x-fi.field label="Bukti Gambar" for="payment-proof-file" required hint="Format: JPG, PNG, GIF, WEBP. Maksimal 5 MB.">
+        <input type="file" id="payment-proof-file" name="proof_image" accept="image/jpeg,image/png,image/gif,image/webp" required
+            class="block w-full rounded-lg bg-white text-sm text-gray-500 shadow-sm ring-1 ring-gray-950/10 file:me-3 file:cursor-pointer file:rounded-s-lg file:border-0 file:border-e file:border-gray-200 file:bg-gray-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-700 hover:file:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary">
+    </x-fi.field>
+</x-fi.modal>

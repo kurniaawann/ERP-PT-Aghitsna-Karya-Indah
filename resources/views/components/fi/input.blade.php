@@ -31,7 +31,7 @@
 <div @class([
     'flex w-full overflow-hidden rounded-lg shadow-sm ring-1 ring-gray-950/10 transition duration-75',
     'bg-gray-50' => $locked,
-    'bg-white focus-within:ring-2 focus-within:ring-primary' => ! $locked,
+    'bg-white focus-within:ring-2 focus-within:ring-primary has-[:disabled]:bg-gray-50' => ! $locked,
 ])>
     @if ($prefixIcon || $prefix)
         <div @class([
@@ -51,7 +51,7 @@
         'block w-full min-w-0 border-none bg-transparent py-1.5 pe-3 text-base outline-none transition duration-75 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6',
         'ps-3' => ! $prefixIcon || $prefix,
         'ps-2' => $prefixIcon && ! $prefix,
-        'text-gray-950' => ! $locked,
+        'text-gray-950 disabled:cursor-not-allowed disabled:text-gray-500' => ! $locked,
         'cursor-not-allowed text-gray-500' => $locked,
     ]) }}>
 

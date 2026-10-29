@@ -13,8 +13,8 @@
                           langsung dicentang (struktur di-clone dari item
                           pertama yang ada).
 
-     Catatan: modal quick-add TIDAK membuat elemen <form> (pakai hideFooter)
-     untuk mencegah <form> bersarang di dalam form induk.
+     Catatan: modal quick-add TIDAK membuat elemen <form> (x-fi.modal tanpa
+     action) untuk mencegah <form> bersarang di dalam form induk.
 
      Props:
      - targetSelector: CSS selector select tujuan (mode "select").
@@ -37,54 +37,37 @@
 @endphp
 
 <div class="inline-block">
-    <button type="button" id="{{ $btnId }}"
-        class="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover border border-primary/30 hover:border-primary rounded px-2 py-1 whitespace-nowrap transition-colors"
-        onclick="openModal('{{ $modalId }}')"
-        title="Tambah rekening pembayaran baru">
-        <i class="fa-solid fa-plus"></i> Rekening Baru
-    </button>
+    <x-fi.button id="{{ $btnId }}" color="gray" size="sm" icon="plus"
+        onclick="openModal('{{ $modalId }}')" title="Tambah rekening pembayaran baru">
+        Rekening Baru
+    </x-fi.button>
 </div>
 
-<x-modal id="{{ $modalId }}" title="Tambah Rekening Pembayaran" size="md" :hideFooter="true">
+<x-fi.modal id="{{ $modalId }}" heading="Tambah Rekening Pembayaran" icon="building-library" width="md">
     <input type="hidden" name="quick_add_url" value="{{ $createUrl }}">
     <input type="hidden" name="quick_add_target" value="{{ $targetSelector }}">
     <input type="hidden" name="quick_add_mode" value="{{ $mode }}">
     <input type="hidden" name="quick_add_container" value="{{ $checkboxContainer }}">
 
-    <div class="space-y-4">
-        <div>
-            <label class="block text-text-primary mb-1">Nama Bank <span class="text-error">*</span></label>
-            <input type="text" name="bank_name" class="quick-add-acc-field w-full border rounded p-2"
-                placeholder="Contoh: Bank BCA" maxlength="255"
-                oninvalid="this.setCustomValidity('Nama bank wajib diisi')"
-                oninput="this.setCustomValidity('')">
-        </div>
+    <div class="grid gap-y-5">
+        <x-fi.field label="Nama Bank" for="quick-add-bank-{{ $uid }}" required>
+            <x-fi.input id="quick-add-bank-{{ $uid }}" name="bank_name" class="quick-add-acc-field"
+                placeholder="Contoh: Bank BCA" maxlength="255" />
+        </x-fi.field>
 
-        <div>
-            <label class="block text-text-primary mb-1">Nomor Rekening <span class="text-error">*</span></label>
-            <input type="text" name="account_number" class="quick-add-acc-field w-full border rounded p-2"
-                placeholder="Contoh: 1234567890" maxlength="255"
-                oninvalid="this.setCustomValidity('Nomor rekening wajib diisi')"
-                oninput="this.setCustomValidity('')">
-        </div>
+        <x-fi.field label="Nomor Rekening" for="quick-add-number-{{ $uid }}" required>
+            <x-fi.input id="quick-add-number-{{ $uid }}" name="account_number" class="quick-add-acc-field"
+                placeholder="Contoh: 1234567890" maxlength="255" inputmode="numeric" />
+        </x-fi.field>
 
-        <div>
-            <label class="block text-text-primary mb-1">Nama Pemilik Rekening <span class="text-error">*</span></label>
-            <input type="text" name="account_holder" class="quick-add-acc-field w-full border rounded p-2"
-                placeholder="Contoh: PT Aghitsna Karya Indah" maxlength="255"
-                oninvalid="this.setCustomValidity('Nama pemilik rekening wajib diisi')"
-                oninput="this.setCustomValidity('')">
-        </div>
+        <x-fi.field label="Nama Pemilik Rekening" for="quick-add-holder-{{ $uid }}" required>
+            <x-fi.input id="quick-add-holder-{{ $uid }}" name="account_holder" class="quick-add-acc-field"
+                placeholder="Contoh: PT Aghitsna Karya Indah" maxlength="255" />
+        </x-fi.field>
     </div>
 
-    <div class="flex justify-end gap-2 mt-6">
-        <button type="button" class="bg-button-cancel px-4 py-2 rounded hover:bg-button-cancel-hover"
-            onclick="closeModal('{{ $modalId }}')">
-            Batal
-        </button>
-        <button type="button" data-quick-add-submit
-            class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded">
-            Simpan
-        </button>
+    <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
+        <x-fi.button data-quick-add-submit>Simpan</x-fi.button>
+        <x-fi.button color="gray" onclick="closeModal('{{ $modalId }}')">Batal</x-fi.button>
     </div>
-</x-modal>
+</x-fi.modal>

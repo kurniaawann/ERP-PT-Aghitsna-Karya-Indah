@@ -1,96 +1,74 @@
 {{-- =====================================================================
-     Halaman: Invoice Barang (Item Invoices)
-     Tujuan: Menampilkan daftar invoice barang beserta filter bulan/tahun &
-             search, serta CRUD (tambah, edit, detail, hapus massal).
+     Halaman: Invoice Barang (Finance)
+     Tujuan: Daftar invoice barang beserta filter bulan/tahun/status &
+             pencarian, detail (modal), upload bukti bayar, cetak, dan hapus.
+     Tampilan memakai komponen bergaya Filament (resources/views/components/fi).
+
      Data dari ItemInvoiceController@index:
-     - $invoices       : Paginator InvoiceBarang (10/halaman) dari
-                         ItemInvoiceService::baseQuery($request),
-                         difilter oleh month, year, search.
-- $items          : Daftar item inventory (Items) dari cache
-                          'inventory:items:all', dipakai dropdown di modal
-                          dan di-expose lewat <script type="application/json">
-                          untuk autofill harga.
-     - $paymentAccounts: Rekening pembayaran aktif (PaymentAccountService),
-                         untuk dropdown rekening pada modal tambah/edit.
+     - $invoices : Paginator InvoiceBarang (10/halaman) dari
+                   ItemInvoiceService::baseQuery($request) (+ salesRecap,
+                   paymentProofs, signedBy, division).
+
      Komponen yang di-include:
-     - x-filters.month-filter / year-filter / search-input : toolbar filter & pencarian
-     - x-buttons.delete-button / add-button               : tombol aksi
-     - x-finance.item-invoices.table / add-modal / edit-modal / detail-modal : UI CRUD
-     - x-pagination                                       : navigasi halaman
-     - x-modal                                            : konfirmasi hapus
-JS: @vite('resources/js/pages/finance/item-invoices/index.js')
-          (+ data item via <script type="application/json">)
+     - x-finance.invoice-tabs (Super Admin) : tab Barang | Alumunium | Proyek
+     - x-finance.item-invoices.table        : tabel (+ filter, pencarian, hapus massal, paginasi)
+     - x-finance.item-invoices.detail-modal : modal detail per invoice
+     - payment-proofs upload/delete modal   : upload bukti dari menu Aksi
+     - x-fi.modal / x-fi.delete-row-modal   : konfirmasi hapus massal / satu invoice
+
+     Tambah/Edit invoice berupa halaman tersendiri: route('item-invoice.create') /
+     route('item-invoice.edit') → pages/finance/item-invoice-form.blade.php.
+
+     JS: @vite('resources/js/pages/finance/item-invoices/index.js',
+               'resources/js/pages/finance/payment-proofs/embedded.js')
      ===================================================================== --}}
 @extends('layouts.app')
 
 @section('title', 'PT Aghitsna Karya Indah - Invoice Barang')
 
 @section('content')
-    {{-- Tab Super Admin (satu menu sidebar → beberapa tab, seperti Surat Menyurat) --}}
-    @if (auth()->user()->isSuperAdmin())
-        <x-finance.invoice-tabs active="barang" />
-    @endif
-    {{-- ==================== Kontainer Utama Halaman ==================== --}}
-    <div class="bg-surface-base p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Invoice Barang</h1>
+    <div class="flex flex-col gap-y-6">
 
-        {{-- ==================== Section: Toolbar Filter & Aksi ==================== --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <form method="GET" action="{{ route('item-invoice.index') }}"
-                class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
-                <x-filters.month-filter :value="request('month')" responsive="custom" />
-                <x-filters.year-filter :value="request('year')" responsive="custom" />
-                <x-filters.status-filter :value="request('status')" responsive="custom" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari invoice, penerima, atau keterangan..." responsive="custom" />
-            </form>
+        {{-- SECTION: Header Halaman + Aksi (Tambah) --}}
+        <x-fi.page-header heading="Invoice Barang"
+            :breadcrumbs="['Finance' => null, 'Invoice Barang' => route('item-invoice.index')]">
+            <x-slot:actions>
+                <x-fi.button icon="plus" :href="route('item-invoice.create')">Tambah Invoice</x-fi.button>
+            </x-slot:actions>
+        </x-fi.page-header>
 
-            <div class="flex items-center gap-2 mt-2 min-[1530px]:mt-0 w-full min-[1530px]:w-auto">
-                <div class="flex flex-col min-[1530px]:flex-row gap-2 w-full min-[1530px]:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" responsive="custom" />
+        {{-- SECTION: Tab Invoice (Super Admin: satu menu sidebar → beberapa tab) --}}
+        @if (auth()->user()->isSuperAdmin())
+            <x-finance.invoice-tabs active="barang" />
+        @endif
 
-                    <x-buttons.add-button modalId="addModal" text="Tambah Invoice" responsive="custom" />
-                </div>
-            </div>
-        </div>
-
-        {{-- ==================== Section: Table ==================== --}}
+        {{-- SECTION: Tabel Invoice Barang --}}
         <x-finance.item-invoices.table :invoices="$invoices" />
     </div>
 
-    {{-- ==================== Section: Pagination ==================== --}}
-    <x-pagination :paginator="$invoices" />
-
-    {{-- ==================== Section: Modals ==================== --}}
-    <x-finance.item-invoices.add-modal :items="$items" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
-
-    {{-- Modal Edit & Detail untuk setiap invoice --}}
+    {{-- SECTION: Modal Detail (satu per invoice) --}}
     @foreach ($invoices as $invoice)
-        <x-finance.item-invoices.edit-modal :invoice="$invoice" :items="$items" :paymentAccounts="$paymentAccounts" :executives="$executives" :divisions="$divisions" />
         <x-finance.item-invoices.detail-modal :invoice="$invoice" />
     @endforeach
 
-    {{-- Modal Upload & Hapus Bukti Pembayaran (shared, dipicu dari modal Edit) --}}
+    {{-- SECTION: Modal Upload & Hapus Bukti Pembayaran (dipicu menu Aksi) --}}
     @include('components.finance.payment-proofs.upload-modal')
     @include('components.finance.payment-proofs.delete-modal')
 
-    {{-- ==================== Section: Modal Konfirmasi Bulk Delete ==================== --}}
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
-        Apakah kamu yakin ingin menghapus data yang dipilih?
-    </x-modal>
+    {{-- SECTION: Modal Konfirmasi Hapus Massal --}}
+    <x-fi.modal id="deleteModal" heading="Hapus Invoice Terpilih" icon="trash" color="danger" width="md"
+        onConfirm="submitDeleteForm()" submitLabel="Ya, Hapus">
+        Apakah kamu yakin ingin menghapus semua invoice yang dipilih? Rekap penjualan terkait ikut terhapus dan
+        stok barang dikembalikan. Data yang dihapus tidak dapat dikembalikan.
+    </x-fi.modal>
 
-    {{-- ==================== Section: Scripts (Data Inventory untuk JS) ==================== --}}
-    {{-- Data item inventory di-expose lewat blok JSON (type="application/json"
-         agar tidak di-parse sebagai JS oleh IDE/linter, lalu dibaca index.js). --}}
-    <script type="application/json" id="itemsDataJson">{!! json_encode($items->map(fn($item) => [
-        'id_item' => $item->id_item,
-        'name_item' => $item->name_item,
-        'capital_price' => $item->capital_price,
-        'selling_price' => $item->selling_price,
-        'quantity' => $item->quantity,
-    ])->values()) !!}</script>
+    {{-- SECTION: Modal Konfirmasi Hapus 1 Invoice (menu Aksi ⋮ tiap baris) --}}
+    {{-- Mengirim satu no invoice ke route('item-invoice.destroySelected') yang sama dengan hapus massal. --}}
+    <x-fi.delete-row-modal :action="route('item-invoice.destroySelected')" field="selected_invoices"
+        heading="Hapus Invoice Barang" warning="Rekap penjualan terkait ikut terhapus dan stok barang dikembalikan." />
+
+    {{-- SECTION: Scripts (JavaScript Modular) --}}
+    @push('scripts')
+        @vite(['resources/js/pages/finance/item-invoices/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
+    @endpush
 @endsection
-
-@push('scripts')
-    @vite(['resources/js/pages/finance/item-invoices/index.js', 'resources/js/pages/finance/payment-proofs/embedded.js'])
-@endpush

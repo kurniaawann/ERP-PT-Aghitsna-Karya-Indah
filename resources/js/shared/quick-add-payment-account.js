@@ -89,25 +89,27 @@ function findCheckboxContainer(button, config) {
 }
 
 /**
- * Bangun kartu rekening dari nol (fallback saat tidak ada template/clone).
+ * Bangun kartu rekening dari nol (fallback saat tidak ada template/clone,
+ * mis. daftar rekening masih kosong). Gaya mengikuti kartu rekening fi
+ * (halaman form invoice): nama bank .font-semibold, info .text-sm.
  */
 function buildCardFromScratch(account) {
     const label = document.createElement('label');
-    label.className = 'flex items-start p-2 bg-white rounded border hover:bg-surface-secondary cursor-pointer';
+    label.className = 'flex cursor-pointer items-start gap-3 rounded-lg p-3 ring-1 ring-gray-950/10 transition duration-75 hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:ring-primary';
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.name = 'selected_payment_accounts[]';
     input.value = account.id;
     input.checked = true;
-    input.className = 'mt-1 mr-3 accent-primary';
+    input.className = 'payment-account-checkbox fi-checkbox mt-0.5';
     input.id = 'paymentAccount' + account.id;
-    const wrapper = document.createElement('div');
-    wrapper.className = 'flex-1';
-    const bankEl = document.createElement('div');
-    bankEl.className = 'font-semibold text-text-heading';
+    const wrapper = document.createElement('span');
+    wrapper.className = 'grid min-w-0';
+    const bankEl = document.createElement('span');
+    bankEl.className = 'font-semibold text-gray-950';
     bankEl.textContent = account.bank_name;
-    const infoEl = document.createElement('div');
-    infoEl.className = 'text-sm text-text-label';
+    const infoEl = document.createElement('span');
+    infoEl.className = 'text-sm text-gray-500';
     infoEl.textContent = 'No: ' + account.account_number + ' a/n ' + account.account_holder;
     wrapper.appendChild(bankEl);
     wrapper.appendChild(infoEl);
@@ -158,7 +160,7 @@ function cloneCheckboxRow(container, account) {
  * Tagih elemen "rekening kosong" di dalam container bila ada.
  */
 function removeEmptyState(container) {
-    const empty = container.querySelector('.bg-yellow-100');
+    const empty = container.querySelector('[data-payment-accounts-empty], .bg-yellow-100');
     if (empty) empty.remove();
 }
 
