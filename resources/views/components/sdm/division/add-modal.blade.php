@@ -1,24 +1,21 @@
 {{-- ============================================================
-     Modal Tambah Divisi
+     Modal Tambah Divisi (gaya Filament)
      Form untuk menambah data divisi baru ke dalam sistem.
      Fields:
        - name (required): Nama divisi, maks 100 karakter
        - description (optional): Deskripsi divisi, maks 500 karakter
      ============================================================ --}}
-<x-modal id="addModal" title="Tambah Divisi" action="{{ route('division.store') }}" method="POST" buttonText="Simpan">
+<x-fi.modal id="addModal" heading="Tambah Divisi" icon="rectangle-group" :action="route('division.store')">
 
     {{-- Nama Divisi (wajib diisi) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Divisi <span class="text-error">*</span></label>
-        <input type="text" name="name" class="w-full border rounded p-2" placeholder="Masukkan nama divisi" required
-            maxlength="100" oninvalid="this.setCustomValidity('Nama divisi tidak boleh kosong')"
-            oninput="this.setCustomValidity('')">
-    </div>
+    <x-fi.field label="Nama Divisi" for="add-division-name" required>
+        <x-fi.input id="add-division-name" name="name" placeholder="Masukkan nama divisi" required maxlength="100"
+            oninvalid="this.setCustomValidity('Nama divisi tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
     {{-- Deskripsi Divisi (opsional) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Deskripsi</label>
-        <textarea name="description" class="w-full border rounded p-2" placeholder="Deskripsi divisi" rows="3"
-            maxlength="500"></textarea>
-    </div>
-</x-modal>
+    <x-fi.field label="Deskripsi" for="add-division-description">
+        <x-fi.textarea id="add-division-description" name="description" placeholder="Deskripsi divisi" rows="3"
+            maxlength="500"></x-fi.textarea>
+    </x-fi.field>
+</x-fi.modal>
