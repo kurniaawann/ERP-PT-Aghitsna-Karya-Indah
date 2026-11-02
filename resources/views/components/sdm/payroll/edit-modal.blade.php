@@ -1,82 +1,49 @@
 {{--
-    Edit Payroll Draft Modal
+    Edit Payroll Draft Modal (gaya Filament)
 
-    Modal form for editing draft payroll records.
-    Only available for payroll with status 'draft'.
-
-    Editable fields:
-    - project_name (required)
-    - notes (optional)
-
-    Read-only fields:
-    - Employee name
-    - Period
-    - Daily wage
-    - Net salary
-
-    Validation:
-    - Uses UpdatePayrollRequest for server-side validation
+    Modal form untuk mengubah payroll berstatus 'draft' (sebelum dibayar).
+    Yang bisa diubah: project_name (wajib) dan notes (opsional).
+    Read-only: nama karyawan, periode, upah per hari, upah bersih.
+    Validasi server: UpdatePayrollRequest.
 
     Included from: pages/sdm/payroll.blade.php (inside @foreach loop)
 --}}
+@php($pid = $payroll->id)
+<x-fi.modal id="editModal-{{ $pid }}" heading="Edit Payroll Draft" :description="$payroll->employee->name" icon="pencil-square"
+    width="xl" :action="route('payroll.update', $pid)" method="PUT" submitLabel="Update">
 
-{{-- Modal Edit Payroll --}}
-<x-modal id="editModal-{{ $payroll->id }}" title="Edit Payroll Draft" action="{{ route('payroll.update', $payroll->id) }}"
-    method="PUT" buttonText="Update" size="xl">
-
-    <div class="mb-4 p-4 bg-warning-light border border-warning rounded-lg">
-        <div class="flex gap-2">
-            <i class="fa-solid fa-triangle-exclamation text-warning mt-1"></i>
-            <div class="text-sm text-warning">
-                <p class="font-semibold mb-1">Payroll draft hanya bisa diubah sebelum dibayar.</p>
-                <p>Data absensi, upah pokok, dan perhitungan inti tetap terkunci. Yang dapat diubah hanya data
-                    administratif.</p>
-            </div>
+    <div class="flex gap-3 rounded-lg bg-amber-50 p-4 text-sm ring-1 ring-inset ring-amber-600/20">
+        <x-fi.icon name="exclamation-triangle" class="h-5 w-5 shrink-0 text-amber-600" />
+        <div class="text-amber-800">
+            <p class="font-semibold">Payroll draft hanya bisa diubah sebelum dibayar.</p>
+            <p class="mt-0.5">Data absensi, upah pokok, dan perhitungan inti tetap terkunci. Yang dapat diubah hanya data
+                administratif.</p>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-        <div>
-            <label class="block text-text-primary mb-1">Nama Karyawan</label>
-            <input type="text"
-                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
-                value="{{ $payroll->employee->name }}" disabled>
-        </div>
-
-        <div>
-            <label class="block text-text-primary mb-1">Periode</label>
-            <input type="text"
-                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
-                value="{{ $payroll->formatted_period }}" disabled>
-        </div>
-
-        <div>
-            <label class="block text-text-primary mb-1">Upah Per Hari</label>
-            <input type="text"
-                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
-                value="Rp {{ number_format($payroll->base_salary, 0, ',', '.') }}" disabled>
-        </div>
-
-        <div>
-            <label class="block text-text-primary mb-1">Upah Bersih</label>
-            <input type="text"
-                class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-secondary"
-                value="Rp {{ number_format($payroll->net_salary, 0, ',', '.') }}" disabled>
-        </div>
+    <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+        <x-fi.field label="Nama Karyawan">
+            <x-fi.input :value="$payroll->employee->name" disabled />
+        </x-fi.field>
+        <x-fi.field label="Periode">
+            <x-fi.input :value="$payroll->formatted_period" disabled />
+        </x-fi.field>
+        <x-fi.field label="Upah Per Hari">
+            <x-fi.input :value="number_format($payroll->base_salary, 0, ',', '.')" prefix="Rp" disabled />
+        </x-fi.field>
+        <x-fi.field label="Upah Bersih">
+            <x-fi.input :value="number_format($payroll->net_salary, 0, ',', '.')" prefix="Rp" disabled />
+        </x-fi.field>
     </div>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Proyek <span class="text-error">*</span></label>
-        <input type="text" name="project_name"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan nama proyek" maxlength="255" required
-            value="{{ old('project_name', $payroll->project_name) }}"
-            oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')" oninput="this.setCustomValidity('')">
-    </div>
+    <x-fi.field label="Nama Proyek" for="edit-payroll-project-{{ $pid }}" required>
+        <x-fi.input id="edit-payroll-project-{{ $pid }}" name="project_name" placeholder="Masukkan nama proyek"
+            maxlength="255" required :value="old('project_name', $payroll->project_name)"
+            oninvalid="this.setCustomValidity('Nama proyek tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Catatan</label>
-        <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            rows="2" placeholder="Catatan tambahan (opsional)">{{ old('notes', $payroll->notes) }}</textarea>
-    </div>
-</x-modal>
+    <x-fi.field label="Catatan" for="edit-payroll-notes-{{ $pid }}">
+        <x-fi.textarea id="edit-payroll-notes-{{ $pid }}" name="notes" rows="2"
+            placeholder="Catatan tambahan (opsional)">{{ old('notes', $payroll->notes) }}</x-fi.textarea>
+    </x-fi.field>
+</x-fi.modal>

@@ -1,304 +1,328 @@
 {{--
-    Payroll Table Component
+    Payroll Table Component (gaya Filament)
 
-    Menampilkan data payroll yang dikelompokkan per proyek + periode. Setiap
-    kelompok (satu lembar payroll = satu proyek + satu minggu) berupa satu
-    baris header berisi ringkasan agregat (jumlah karyawan, subtotal upah
-    bersih, status draft/paid) dan bisa di-collapse/expand. Detail per
-    karyawan (nama, upah/hari, hari masuk, kasbon, lembur, upah bersih,
-    status, aksi) tampil pada baris-baris di bawah header grup.
+    Toolbar (aksi massal kiri; filter bulan/tahun/minggu/proyek + pencarian
+    kanan) + tabel + paginasi dalam satu kartu.
 
-    Kolom:
-    - Checkbox (bulk select, semua status — draft maupun paid)
-    - Nama Karyawan
-    - Periode (rentang tanggal + minggu)
-    - Upah/Hari
-    - Hari Masuk
-    - Potongan Kasbon
-    - Lembur
-    - Upah Bersih
-    - Status
-    - Aksi
+    Data dikelompokkan per proyek + periode. Setiap kelompok (satu lembar
+    payroll = satu proyek + satu minggu) berupa satu baris header berisi
+    ringkasan agregat (jumlah karyawan, upah bersih, kasbon, biaya lain-lain,
+    total dibayarkan, status draft/paid) dan bisa di-collapse/expand. Detail
+    per karyawan tampil pada baris-baris di bawah header grup.
 
     Data yang diterima:
-    - $payrollGroups : Collection grup hasil PayrollService::groupPayrollsForView
-                      (sudah dipaginasi per-grup di controller)
+    - $payrollGroups : paginator grup hasil PayrollService::groupPayrollsForView
 
-    Setiap baris karyawan punya modal unik berdasarkan ID payroll (edit-modal
-    untuk draft, detail-modal untuk semua). Dipakai dari pages/sdm/payroll.blade.php.
+    Hook JS (resources/js/pages/sdm/payroll/index.js): #selectAll,
+    .group-select-all (data-group-index), input[name="ids[]"].payroll-checkbox
+    (data-group-index, data-status), #delete-button, #bulk-pay-button,
+    togglePayrollGroup(i) + .payroll-group-rows-{i} / .group-chevron-{i},
+    showAdditionalCostDetail(btn), select[name="month"], select[name="year"],
+    #filter_week_number, #filter_project_name, form#deleteForm, form#bulkPayForm,
+    #additionalCostDetailModal (+ isi #additional-cost-detail-*).
 --}}
+@php
+    $indexUrl = route('payroll.index');
+    $isFiltered = request()->filled('search') || request()->filled('month') || request()->filled('year')
+        || request()->filled('week_number') || request()->filled('project_name');
+    $rupiah = fn ($value) => 'Rp ' . number_format($value ?? 0, 0, ',', '.');
+@endphp
 
-<div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-    <div class="inline-block min-w-full align-middle">
-        <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-            <table class="min-w-full divide-y divide-border-light">
-                <thead class="bg-surface-secondary">
-                    <tr>
-                        <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
-                        <th class="p-2 text-left">Nama Karyawan</th>
-                        <th class="p-2 text-left">Proyek</th>
-                        <th class="p-2 text-center">Periode</th>
-                        <th class="p-2 text-center">Upah/Hari</th>
-                        <th class="p-2 text-center">Hari Masuk</th>
-                        <th class="p-2 text-center">Potongan Kasbon</th>
-                        <th class="p-2 text-center">Lembur</th>
-                        <th class="p-2 text-center">Upah Bersih</th>
-                        <th class="p-2 text-center">Status</th>
-                        <th class="p-2 text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($payrollGroups as $groupIndex => $group)
-                        {{-- ============================================
-                             BARIS HEADER GRUP (proyek + periode)
-                             ============================================ --}}
-                        <tr class="bg-primary-light/20">
-                            <td colspan="11" class="p-0">
-                                <div class="flex items-center gap-3 px-4 py-2">
-                                    <input type="checkbox" class="group-select-all w-4 h-4 accent-primary cursor-pointer"
-                                        data-group-index="{{ $groupIndex }}"
-                                        title="Pilih semua payroll dalam grup ini">
+<x-fi.card x-data="{ selected: 0 }"
+    x-init="selected = $el.querySelectorAll('[name^=ids]:checked').length"
+    x-on:change="selected = $el.querySelectorAll('[name^=ids]:checked').length">
 
-                                    <i class="fa-solid fa-folder-open text-primary"></i>
-                                    <span class="font-semibold text-text-primary">{{ $group['project_name'] }}</span>
+    {{-- ─── Toolbar: aksi massal (kiri) + filter & pencarian (kanan) ─────────── --}}
+    <div class="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3 sm:px-6">
+        <div x-cloak x-show="selected > 0" class="flex flex-wrap items-center gap-3">
+            <span class="whitespace-nowrap text-sm text-gray-500">
+                <span class="font-semibold text-gray-950" x-text="selected"></span> data dipilih
+            </span>
 
-                                    <span class="text-xs text-text-label">
-                                        @php
-                                            $gStart = \Carbon\Carbon::parse($group['period_start_date']);
-                                            $gEnd = \Carbon\Carbon::parse($group['period_end_date']);
-                                        @endphp
-                                        @if ($gStart->month === $gEnd->month && $gStart->year === $gEnd->year)
-                                            {{ $gStart->format('d') }}-{{ $gEnd->format('d M Y') }}
-                                        @elseif ($gStart->year === $gEnd->year)
-                                            {{ $gStart->format('d M') }} - {{ $gEnd->format('d M Y') }}
-                                        @else
-                                            {{ $gStart->format('d M Y') }} - {{ $gEnd->format('d M Y') }}
-                                        @endif
-                                        @if ($group['week_number'])
-                                            · Minggu {{ $group['week_number'] }}
-                                        @endif
-                                        · {{ $group['count'] }} karyawan
-                                    </span>
+            {{-- Bayar Terpilih: aktif bila ada pilihan berstatus draft (JS) --}}
+            <x-fi.button id="bulk-pay-button" color="success" size="sm" icon="banknotes" disabled
+                onclick="openModal('bulkPayModal')">
+                Bayar Terpilih
+            </x-fi.button>
 
-                                    <span class="ml-auto flex items-center gap-3">
-                                        <span class="text-xs text-text-label">Upah Bersih:</span>
-                                        <span class="font-semibold text-primary text-sm">
-                                            {{ 'Rp ' . number_format($group['total_net'], 0, ',', '.') }}
-                                        </span>
-
-                                        @if (($group['total_kasbon'] ?? 0) > 0)
-                                            <span class="text-xs text-text-label">Kasbon:</span>
-                                            <span class="font-semibold text-error text-sm">
-                                                {{ 'Rp ' . number_format($group['total_kasbon'], 0, ',', '.') }}
-                                            </span>
-                                        @endif
-
-                                        @if (($group['additional_cost_count'] ?? 0) > 0)
-                                            <button type="button"
-                                                class="additional-cost-badge inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning hover:bg-warning-light/70 transition-colors duration-200"
-                                                onclick="showAdditionalCostDetail(this)"
-                                                data-title="{{ $group['project_name'] }}"
-                                                data-period="{{ $gStart->format('d M Y') }} - {{ $gEnd->format('d M Y') }}"
-                                                data-items='{{ json_encode($group['additional_costs']->values(), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG) }}'
-                                                title="Lihat rincian biaya lain-lain">
-                                                <i class="fa-solid fa-receipt text-xs"></i>
-                                                {{ $group['additional_cost_count'] }}
-                                            </button>
-                                        @endif
-
-                                        <span class="text-xs text-text-label">Total Dibayarkan:</span>
-                                        <span class="font-bold text-success text-sm">
-                                            {{ 'Rp ' . number_format($group['total_dibayarkan'], 0, ',', '.') }}
-                                        </span>
-
-                                        {{-- Status ringkas grup --}}
-                                        @if ($group['paid_count'] === 0)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
-                                                Draft
-                                            </span>
-                                        @elseif ($group['draft_count'] === 0)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
-                                                Paid
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">
-                                                {{ $group['draft_count'] }} Draft · {{ $group['paid_count'] }} Paid
-                                            </span>
-                                        @endif
-
-                                        {{-- Tombol collapse/expand grup --}}
-                                        <button type="button"
-                                            class="group-toggle flex items-center justify-center w-7 h-7 rounded-lg bg-surface-secondary hover:bg-border-light text-text-secondary transition-colors duration-200"
-                                            onclick="togglePayrollGroup({{ $groupIndex }})"
-                                            title="Tampilkan / sembunyikan karyawan">
-                                            <i class="fa-solid fa-chevron-down group-chevron-{{ $groupIndex }}"></i>
-                                        </button>
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-
-                        {{-- ============================================
-                             BARIS PER KARYAWAN dalam grup
-                             ============================================ --}}
-                        @foreach ($group['payrolls'] as $payroll)
-                            <tr class="payroll-group-rows-{{ $groupIndex }} border-t hover:bg-surface-secondary">
-                                <td class="p-2 text-center">
-                                    <input type="checkbox" name="ids[]" value="{{ $payroll->id }}"
-                                        data-group-index="{{ $groupIndex }}"
-                                        data-status="{{ $payroll->status }}"
-                                        class="payroll-checkbox w-4 h-4 accent-primary cursor-pointer">
-                                </td>
-
-                                <td class="p-2 pl-4">{{ $payroll->employee->name }}</td>
-
-                                {{-- Proyek --}}
-                                <td class="p-2 text-sm">
-                                    @php
-                                        $payrollProject = $payroll->project_name ?: ($payroll->employee->project_name ?? null);
-                                    @endphp
-                                    @if ($payrollProject)
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">{{ $payrollProject }}</span>
-                                    @else
-                                        <span class="text-text-label">-</span>
-                                    @endif
-                                </td>
-
-                                {{-- Periode --}}
-                                <td class="p-2 text-center text-sm">
-                                    @if ($payroll->period_start_date && $payroll->period_end_date)
-                                        @php
-                                            $start = \Carbon\Carbon::parse($payroll->period_start_date);
-                                            $end = \Carbon\Carbon::parse($payroll->period_end_date);
-                                        @endphp
-                                        @if ($start->month === $end->month)
-                                            {{ $start->format('d') }}-{{ $end->format('d M Y') }}
-                                        @else
-                                            {{ $start->format('d M') }} - {{ $end->format('d M Y') }}
-                                        @endif
-                                    @else
-                                        {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('M Y') }}
-                                        @if ($payroll->week_number)
-                                            <br><span class="text-xs text-text-label">Minggu {{ $payroll->week_number }}</span>
-                                        @endif
-                                    @endif
-                                </td>
-
-                                {{-- Upah Per Hari --}}
-                                <td class="p-2 text-right text-sm">
-                                    {{ 'Rp ' . number_format($payroll->base_salary, 0, ',', '.') }}
-                                </td>
-
-                                {{-- Hari Masuk --}}
-                                <td class="p-2 text-center font-medium">
-                                    {{ $payroll->present_days }} hari
-                                </td>
-
-                                {{-- Kasbon --}}
-                                <td class="p-2 text-right text-error text-sm">
-                                    @if ($payroll->kasbon_deduction)
-                                        {{ 'Rp ' . number_format($payroll->kasbon_deduction, 0, ',', '.') }}
-                                    @else
-                                        <span class="text-text-label">-</span>
-                                    @endif
-                                </td>
-
-                                {{-- Lembur --}}
-                                <td class="p-2 text-right text-success text-sm">
-                                    {{ 'Rp ' . number_format($payroll->overtime_total, 0, ',', '.') }}
-                                </td>
-
-                                {{-- Upah Bersih --}}
-                                <td class="p-2 text-right font-semibold text-primary">
-                                    {{ 'Rp ' . number_format($payroll->net_salary, 0, ',', '.') }}
-                                </td>
-
-                                {{-- Status --}}
-                                <td class="p-2 text-center">
-                                    @if ($payroll->status === 'draft')
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-light text-warning">
-                                            Draft
-                                        </span>
-                                    @else
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-light text-success">
-                                            Paid
-                                        </span>
-                                    @endif
-                                </td>
-
-                                {{-- Aksi --}}
-                                <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-2">
-                                        @if ($payroll->status === 'draft')
-                                            <button type="button" onclick="openModal('editModal-{{ $payroll->id }}')"
-                                                class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                                title="Edit Payroll Draft">
-                                                <i class="fa-solid fa-pen w-3 h-3"></i>
-                                                Edit
-                                            </button>
-                                        @endif
-
-                                        <button type="button" onclick="openModal('detailModal-{{ $payroll->id }}')"
-                                            class="flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Detail Payroll">
-                                            <i class="fa-solid fa-eye w-3 h-3"></i>
-                                            Detail
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    @empty
-                        <tr>
-                            <td colspan="11" class="text-center p-4 text-text-secondary">
-                                Data tidak ditemukan.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+            <x-fi.button id="delete-button" color="danger" size="sm" icon="trash" outlined disabled
+                onclick="openModal('deleteModal')">
+                Hapus yang dipilih
+            </x-fi.button>
         </div>
-    </div>
-</div>
 
-{{-- Form untuk Bulk Delete --}}
-<form id="deleteForm" method="POST" action="{{ route('payroll.destroy') }}" style="display: none;">
+        {{-- Form GET: filter langsung submit saat diganti, pencarian saat Enter --}}
+        <form method="GET" action="{{ $indexUrl }}"
+            class="grid w-full grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-end xl:ms-auto xl:w-auto">
+            <div class="sm:w-44">
+                <x-fi.month-select :value="request('month')" onchange="this.form.requestSubmit()" />
+            </div>
+            <div class="sm:w-36">
+                <x-fi.year-select :value="request('year')" onchange="this.form.requestSubmit()" />
+            </div>
+
+            {{-- Filter Minggu: opsi diisi JS via route payroll.get-weeks (bergantung bulan + tahun) --}}
+            <div class="col-span-2 sm:w-56">
+                <x-fi.select name="week_number" id="filter_week_number" aria-label="Filter Minggu" placeholder="Semua Minggu"
+                    onchange="this.form.requestSubmit()" data-fi-select />
+            </div>
+
+            {{-- Filter Proyek: searchable (10 item per load) dari Rekap Proyek --}}
+            <x-fi.project-dropdown class="col-span-2 sm:w-56" :value="request('project_name')"
+                dropdown-id="filter_project_name" all-option="Semua Proyek" placeholder="Semua Proyek" :auto-submit="true" />
+
+            <x-fi.search-input :value="request('search')" placeholder="Cari karyawan..." class="col-span-2 sm:w-56" />
+
+            @if ($isFiltered)
+                <x-fi.link :href="$indexUrl" color="gray" icon="x-mark"
+                    class="justify-self-start whitespace-nowrap" title="Hapus semua filter & pencarian">
+                    Reset
+                </x-fi.link>
+            @endif
+        </form>
+    </div>
+
+    {{-- ─── Tabel ────────────────────────────────────────────────────────────── --}}
+    <div class="relative overflow-x-auto">
+        <table class="w-full table-auto divide-y divide-gray-200 text-start">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="w-1 px-2 py-3 sm:ps-4">
+                        <input type="checkbox" id="selectAll" class="fi-checkbox" title="Pilih semua">
+                    </th>
+                    <x-fi.table.th dense>Nama Karyawan</x-fi.table.th>
+                    <x-fi.table.th dense>Proyek</x-fi.table.th>
+                    <x-fi.table.th dense align="center">Periode</x-fi.table.th>
+                    <x-fi.table.th dense align="end">Upah/Hari</x-fi.table.th>
+                    <x-fi.table.th dense align="center">Hari Masuk</x-fi.table.th>
+                    <x-fi.table.th dense align="end">Potongan Kasbon</x-fi.table.th>
+                    <x-fi.table.th dense align="end">Lembur</x-fi.table.th>
+                    <x-fi.table.th dense align="end">Upah Bersih</x-fi.table.th>
+                    <x-fi.table.th dense align="center">Status</x-fi.table.th>
+                    <x-fi.table.th dense align="center">Aksi</x-fi.table.th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                @forelse ($payrollGroups as $groupIndex => $group)
+                    @php
+                        $gStart = \Carbon\Carbon::parse($group['period_start_date']);
+                        $gEnd = \Carbon\Carbon::parse($group['period_end_date']);
+                    @endphp
+
+                    {{-- ── BARIS HEADER GRUP (proyek + periode) ── --}}
+                    <tr class="bg-gray-50/70">
+                        <td colspan="11" class="p-0">
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-2 py-2.5 sm:ps-4 sm:pe-4">
+                                <input type="checkbox" class="group-select-all fi-checkbox"
+                                    data-group-index="{{ $groupIndex }}" title="Pilih semua payroll dalam grup ini">
+
+                                <div class="flex min-w-0 items-center gap-2">
+                                    <x-fi.icon name="folder-open" class="h-5 w-5 shrink-0 text-primary" />
+                                    <span class="whitespace-normal font-semibold">{{ $group['project_name'] }}</span>
+                                </div>
+
+                                <span class="text-sm text-gray-500">
+                                    @if ($gStart->month === $gEnd->month && $gStart->year === $gEnd->year)
+                                        {{ $gStart->format('d') }}-{{ $gEnd->format('d M Y') }}
+                                    @elseif ($gStart->year === $gEnd->year)
+                                        {{ $gStart->format('d M') }} - {{ $gEnd->format('d M Y') }}
+                                    @else
+                                        {{ $gStart->format('d M Y') }} - {{ $gEnd->format('d M Y') }}
+                                    @endif
+                                    @if ($group['week_number'])
+                                        · Minggu {{ $group['week_number'] }}
+                                    @endif
+                                    · {{ $group['count'] }} karyawan
+                                </span>
+
+                                <div class="ms-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                                    <span class="text-gray-500">Upah Bersih
+                                        <strong class="ms-1 font-semibold text-gray-950 tabular-nums">{{ $rupiah($group['total_net']) }}</strong></span>
+
+                                    @if (($group['total_kasbon'] ?? 0) > 0)
+                                        <span class="text-gray-500">Kasbon
+                                            <strong class="ms-1 font-semibold text-red-600 tabular-nums">{{ $rupiah($group['total_kasbon']) }}</strong></span>
+                                    @endif
+
+                                    @if (($group['additional_cost_count'] ?? 0) > 0)
+                                        <button type="button" onclick="showAdditionalCostDetail(this)"
+                                            class="additional-cost-badge inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 transition hover:brightness-95"
+                                            data-title="{{ $group['project_name'] }}"
+                                            data-period="{{ $gStart->format('d M Y') }} - {{ $gEnd->format('d M Y') }}"
+                                            data-items='{{ json_encode($group['additional_costs']->values(), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG) }}'
+                                            title="Lihat rincian biaya lain-lain">
+                                            <x-fi.icon name="receipt-percent" class="h-4 w-4" />
+                                            {{ $group['additional_cost_count'] }} biaya lain-lain
+                                        </button>
+                                    @endif
+
+                                    <span class="text-gray-500">Total Dibayarkan
+                                        <strong class="ms-1 font-semibold text-emerald-700 tabular-nums">{{ $rupiah($group['total_dibayarkan']) }}</strong></span>
+
+                                    {{-- Status ringkas grup --}}
+                                    @if ($group['paid_count'] === 0)
+                                        <x-fi.badge color="warning">Draft</x-fi.badge>
+                                    @elseif ($group['draft_count'] === 0)
+                                        <x-fi.badge color="success">Paid</x-fi.badge>
+                                    @else
+                                        <x-fi.badge color="primary">{{ $group['draft_count'] }} Draft · {{ $group['paid_count'] }} Paid</x-fi.badge>
+                                    @endif
+
+                                    {{-- Tombol collapse/expand grup --}}
+                                    <button type="button" onclick="togglePayrollGroup({{ $groupIndex }})"
+                                        class="group-toggle flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-500"
+                                        title="Tampilkan / sembunyikan karyawan">
+                                        <x-fi.icon name="chevron-down" class="group-chevron-{{ $groupIndex }} h-5 w-5 transition-transform" />
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    {{-- ── BARIS PER KARYAWAN dalam grup ── --}}
+                    @foreach ($group['payrolls'] as $payroll)
+                        @php
+                            $isDraft = $payroll->status === 'draft';
+                            $payrollProject = $payroll->project_name ?: ($payroll->employee->project_name ?? null);
+                        @endphp
+                        <tr class="payroll-group-rows-{{ $groupIndex }} bg-white transition duration-75 hover:bg-gray-50 has-[:checked]:bg-blue-50">
+                            <td class="w-1 px-2 py-3 sm:ps-4">
+                                <input type="checkbox" name="ids[]" value="{{ $payroll->id }}"
+                                    data-group-index="{{ $groupIndex }}" data-status="{{ $payroll->status }}"
+                                    class="payroll-checkbox fi-checkbox" title="Pilih payroll {{ $payroll->employee->name }}">
+                            </td>
+
+                            <x-fi.table.td dense class="font-medium">{{ $payroll->employee->name }}</x-fi.table.td>
+
+                            {{-- Proyek --}}
+                            <x-fi.table.td dense class="max-w-[12rem] whitespace-normal">
+                                @if ($payrollProject)
+                                    <x-fi.badge color="primary" class="whitespace-normal text-start">{{ $payrollProject }}</x-fi.badge>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </x-fi.table.td>
+
+                            {{-- Periode --}}
+                            <x-fi.table.td dense align="center" class="text-gray-700">
+                                @if ($payroll->period_start_date && $payroll->period_end_date)
+                                    @php
+                                        $start = \Carbon\Carbon::parse($payroll->period_start_date);
+                                        $end = \Carbon\Carbon::parse($payroll->period_end_date);
+                                    @endphp
+                                    @if ($start->month === $end->month)
+                                        {{ $start->format('d') }}-{{ $end->format('d M Y') }}
+                                    @else
+                                        {{ $start->format('d M') }} - {{ $end->format('d M Y') }}
+                                    @endif
+                                @else
+                                    {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('M Y') }}
+                                    @if ($payroll->week_number)
+                                        <div class="text-xs text-gray-500">Minggu {{ $payroll->week_number }}</div>
+                                    @endif
+                                @endif
+                            </x-fi.table.td>
+
+                            <x-fi.table.td dense align="end" class="tabular-nums">{{ $rupiah($payroll->base_salary) }}</x-fi.table.td>
+                            <x-fi.table.td dense align="center" class="font-medium">{{ $payroll->present_days }} hari</x-fi.table.td>
+                            <x-fi.table.td dense align="end" class="tabular-nums text-red-600">
+                                @if ($payroll->kasbon_deduction)
+                                    {{ $rupiah($payroll->kasbon_deduction) }}
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </x-fi.table.td>
+                            <x-fi.table.td dense align="end" class="tabular-nums text-emerald-700">{{ $rupiah($payroll->overtime_total) }}</x-fi.table.td>
+                            <x-fi.table.td dense align="end" class="font-semibold tabular-nums">{{ $rupiah($payroll->net_salary) }}</x-fi.table.td>
+                            <x-fi.table.td dense align="center">
+                                <x-fi.badge :color="$isDraft ? 'warning' : 'success'">{{ $isDraft ? 'Draft' : 'Paid' }}</x-fi.badge>
+                            </x-fi.table.td>
+
+                            {{-- Aksi: tombol ⋮ --}}
+                            <x-fi.table.td dense align="center">
+                                <x-fi.dropdown label="Aksi payroll {{ $payroll->employee->name }}" class="-my-1.5">
+                                    <x-fi.dropdown.list>
+                                        <x-fi.dropdown.item icon="eye" onclick="openModal('detailModal-{{ $payroll->id }}')">
+                                            Lihat Detail
+                                        </x-fi.dropdown.item>
+                                        <x-fi.dropdown.item icon="pencil-square"
+                                            :onclick="$isDraft ? 'openModal(\'editModal-' . $payroll->id . '\')' : null"
+                                            :disabled="! $isDraft" :hint="$isDraft ? null : 'Sudah dibayar'">
+                                            Edit
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
+                                    <x-fi.dropdown.list>
+                                        <x-fi.dropdown.item icon="trash" color="danger" :data-delete-row="$payroll->id"
+                                            :data-delete-row-label="$payroll->employee->name . ' · ' . $group['project_name']">
+                                            Hapus
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
+                                </x-fi.dropdown>
+                            </x-fi.table.td>
+                        </tr>
+                    @endforeach
+                @empty
+                    <tr>
+                        <td colspan="11">
+                            @if ($isFiltered)
+                                <x-fi.empty-state icon="magnifying-glass" heading="Data tidak ditemukan"
+                                    description="Tidak ada payroll yang cocok dengan filter/pencarian.">
+                                    <x-fi.button color="gray" icon="x-mark" :href="$indexUrl">Reset filter</x-fi.button>
+                                </x-fi.empty-state>
+                            @else
+                                <x-fi.empty-state icon="credit-card" heading="Data tidak ditemukan" />
+                            @endif
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- ─── Paginasi ─────────────────────────────────────────────────────────── --}}
+    <div class="border-t border-gray-200 px-4 py-3 sm:px-6">
+        <x-fi.pagination :paginator="$payrollGroups" />
+    </div>
+</x-fi.card>
+
+{{-- Form untuk Bulk Delete (ids[] disalin JS dari checkbox terpilih) --}}
+<form id="deleteForm" method="POST" action="{{ route('payroll.destroy') }}" class="hidden">
     @csrf
     @method('DELETE')
 </form>
 
-{{-- Form untuk Bulk Pay --}}
-<form id="bulkPayForm" method="POST" action="{{ route('payroll.bulk-pay') }}" style="display: none;">
+{{-- Form untuk Bulk Pay (ids[] + payment_date disalin JS) --}}
+<form id="bulkPayForm" method="POST" action="{{ route('payroll.bulk-pay') }}" class="hidden">
     @csrf
     @method('PATCH')
 </form>
 
-{{-- Modal Detail Biaya Lain-lain (shared, diisi via JS) --}}
-<x-modal id="additionalCostDetailModal" title="Biaya Lain-lain" :hideFooter="true">
-    <div class="space-y-4">
+{{-- Modal Detail Biaya Lain-lain (shared, diisi via JS showAdditionalCostDetail) --}}
+<x-fi.modal id="additionalCostDetailModal" heading="Biaya Lain-lain" icon="receipt-percent" width="md">
+    <div class="grid gap-y-4">
         <div>
-            <p class="font-semibold text-text-primary" id="additional-cost-detail-title"></p>
-            <p class="text-xs text-text-label" id="additional-cost-detail-period"></p>
+            <p class="font-semibold text-gray-950" id="additional-cost-detail-title"></p>
+            <p class="text-sm text-gray-500" id="additional-cost-detail-period"></p>
         </div>
 
-        <table class="min-w-full divide-y divide-border-light text-sm">
-            <thead class="bg-surface-secondary">
-                <tr>
-                    <th class="p-2 text-left">No</th>
-                    <th class="p-2 text-left">Nama Biaya</th>
-                    <th class="p-2 text-right">Jumlah</th>
-                </tr>
-            </thead>
-            <tbody id="additional-cost-detail-body"></tbody>
-            <tfoot>
-                <tr class="border-t border-border-strong">
-                    <td colspan="2" class="p-2 font-semibold text-right">Total:</td>
-                    <td class="p-2 text-right font-semibold text-primary" id="additional-cost-detail-total"></td>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="overflow-hidden rounded-lg ring-1 ring-gray-950/5">
+            <table class="w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-start font-semibold text-gray-950">No</th>
+                        <th class="px-3 py-2 text-start font-semibold text-gray-950">Nama Biaya</th>
+                        <th class="px-3 py-2 text-end font-semibold text-gray-950">Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody id="additional-cost-detail-body" class="divide-y divide-gray-200 [&_td]:px-3 [&_td]:py-2"></tbody>
+                <tfoot class="bg-gray-50">
+                    <tr>
+                        <td colspan="2" class="px-3 py-2 text-end font-semibold text-gray-950">Total</td>
+                        <td class="px-3 py-2 text-end font-semibold text-primary tabular-nums" id="additional-cost-detail-total"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
     </div>
-</x-modal>
+</x-fi.modal>

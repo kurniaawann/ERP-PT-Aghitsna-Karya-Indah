@@ -312,7 +312,7 @@ function renderSignatorySections() {
 
     if (projects.length === 0) {
         signatorySectionsContainer.innerHTML =
-            '<p class="text-xs text-text-label italic">Pilih proyek terlebih dahulu untuk memilih penanda tangan.</p>';
+            '<p class="text-sm italic text-gray-500">Pilih proyek terlebih dahulu untuk memilih penanda tangan.</p>';
         return;
     }
 
@@ -324,15 +324,15 @@ function renderSignatorySections() {
 
     projects.forEach(function (project) {
         const block = document.createElement('div');
-        block.className = 'mb-4 p-3 bg-surface-base border border-border-strong rounded-lg';
+        block.className = 'rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-950/5';
         block.dataset.project = project;
 
         const projectAttr = escapeAttr(project);
 
         let blockHTML =
-            '<p class="text-sm font-semibold text-text-primary mb-3">' +
-            '<i class="fa-solid fa-folder-open text-text-label mr-1"></i>' +
-            'Penanda Tangan - <span class="text-primary">' + projectAttr + '</span></p>';
+            '<p class="mb-3 text-sm font-semibold text-gray-950">' +
+            'Penanda Tangan - <span class="text-primary">' + projectAttr + '</span></p>' +
+            '<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-3">';
 
         roleFields.forEach(function (role) {
             const roleKey = role[0];
@@ -344,30 +344,29 @@ function renderSignatorySections() {
             const saved = signatorySelections.get(project + '\u0000' + roleKey);
 
             blockHTML += '<div class="searchable-select-wrapper mb-3" data-select-id="' + inputId + '" data-role="' + roleKey + '">';
-            blockHTML += '<label class="block text-text-primary mb-1" for="' + inputId + '-input">' +
-                roleLabel + ' <span class="text-xs text-text-label">(opsional)</span></label>';
+            blockHTML += '<label class="mb-1 block text-sm font-medium text-gray-950" for="' + inputId + '-input">' +
+                roleLabel + ' <span class="font-normal text-gray-500">(opsional)</span></label>';
             blockHTML += '<div class="relative">';
             blockHTML += '<input type="text" id="' + inputId + '-input" ' +
-                'class="searchable-select-input w-full border rounded p-2 pr-10 focus:border-primary focus:ring-2 focus:ring-primary-light" ' +
+                'class="searchable-select-input fi-control pe-10" ' +
                 'placeholder="Cari penandatangan..." autocomplete="off" ' +
                 'value="' + (saved ? escapeAttr(saved.label) : '') + '">';
-            blockHTML += '<i class="fa-solid fa-chevron-down absolute right-3 top-3 text-text-tertiary pointer-events-none"></i>';
-            blockHTML += '<div class="searchable-dropdown absolute z-50 w-full bg-white border border-border-strong rounded-lg shadow-lg mt-1 max-h-64 overflow-y-auto hidden">';
+            blockHTML += '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>';
+            blockHTML += '<div class="searchable-dropdown absolute z-50 mt-1 hidden max-h-64 w-full overflow-y-auto rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/5">';
             blockHTML += '<div class="searchable-options">';
-            blockHTML += '<div class="p-2 text-sm text-text-secondary hover:bg-surface-secondary cursor-pointer border-b border-border-light searchable-option" data-value="">' +
+            blockHTML += '<div class="searchable-option cursor-pointer rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-50" data-value="">' +
                 '-- Pilih Cari penandatangan... --</div>';
 
             getExecutiveOptions().forEach(function (exec) {
                 const label = exec.name + (exec.position ? ' - ' + exec.position : '');
-                blockHTML += '<div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light searchable-option" ' +
+                blockHTML += '<div class="searchable-option cursor-pointer rounded-md px-2 py-1.5 hover:bg-gray-50" ' +
                     'data-value="' + exec.id + '" data-search="' + escapeAttr(label.toLowerCase()) + '" ' +
                     'data-label="' + escapeAttr(label) + '">' +
-                    '<div class="font-medium text-text-heading">' + escapeAttr(label) + '</div></div>';
+                    '<div class="text-sm text-gray-700">' + escapeAttr(label) + '</div></div>';
             });
 
             blockHTML += '</div>';
-            blockHTML += '<div class="searchable-no-results p-4 text-center text-sm text-text-secondary hidden">' +
-                '<i class="fa-solid fa-search mb-2 text-2xl text-text-placeholder"></i>' +
+            blockHTML += '<div class="searchable-no-results hidden px-2 py-4 text-center text-sm text-gray-500">' +
                 '<p>Tidak ada data ditemukan</p></div>';
             blockHTML += '</div></div>';
             blockHTML += '<input type="hidden" name="' + fieldName + '" class="searchable-select-hidden" value="' +
@@ -375,6 +374,7 @@ function renderSignatorySections() {
             blockHTML += '</div>';
         });
 
+        blockHTML += '</div>';
         block.innerHTML = blockHTML;
         signatorySectionsContainer.appendChild(block);
     });
@@ -446,7 +446,7 @@ function applyCommonSignatories() {
     const applyBtn = document.getElementById('apply-common-signatories');
     if (applyBtn) {
         const originalHtml = applyBtn.innerHTML;
-        applyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Diterapkan';
+        applyBtn.innerHTML = 'Diterapkan ✓';
         clearTimeout(applyCommonSignatories.flashTimer);
         applyCommonSignatories.flashTimer = setTimeout(function () {
             applyBtn.innerHTML = originalHtml;
@@ -495,7 +495,7 @@ function renderAdditionalCostSections() {
 
     if (projects.length === 0) {
         additionalCostsSectionsContainer.innerHTML =
-            '<p class="text-xs text-text-label italic">Pilih proyek terlebih dahulu untuk menambahkan biaya lain-lain.</p>';
+            '<p class="text-sm italic text-gray-500">Pilih proyek terlebih dahulu untuk menambahkan biaya lain-lain.</p>';
         return;
     }
 
@@ -527,18 +527,17 @@ function renderAdditionalCostSections() {
  */
 function createAdditionalCostBlock(project) {
     const block = document.createElement('div');
-    block.className = 'mb-4 p-3 bg-surface-base border border-border-strong rounded-lg additional-cost-block';
+    block.className = 'additional-cost-block rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-950/5';
     block.dataset.project = project;
 
     const projectAttr = escapeAttr(project);
 
     block.innerHTML =
-        '<p class="text-sm font-semibold text-text-primary mb-3">' +
-        '<i class="fa-solid fa-folder-open text-text-label mr-1"></i>' +
+        '<p class="mb-3 text-sm font-semibold text-gray-950">' +
         'Biaya Lain-lain - <span class="text-primary">' + projectAttr + '</span></p>' +
         '<div class="additional-cost-rows"></div>' +
-        '<button type="button" class="additional-cost-add-btn mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover">' +
-        '<i class="fa-solid fa-plus"></i> Tambah Biaya</button>';
+        '<button type="button" class="additional-cost-add-btn mt-1 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">' +
+        '+ Tambah Biaya</button>';
 
     block.querySelector('.additional-cost-rows').appendChild(createAdditionalCostRow(project, 0));
 
@@ -554,18 +553,18 @@ function createAdditionalCostBlock(project) {
  */
 function createAdditionalCostRow(project, index) {
     const row = document.createElement('div');
-    row.className = 'additional-cost-row flex gap-2 mb-2 items-center';
+    row.className = 'additional-cost-row mb-2 flex items-center gap-2';
 
     const projectKey = escapeAttr(project);
 
     row.innerHTML =
         '<input type="text" name="additional_costs[' + projectKey + '][' + index + '][name]" ' +
-        'placeholder="Nama biaya" class="w-1/2 border border-border-strong rounded p-2 bg-surface-base text-text-input text-sm">' +
+        'placeholder="Nama biaya" class="fi-control w-1/2">' +
         '<input type="text" name="additional_costs[' + projectKey + '][' + index + '][amount]" ' +
         'placeholder="Jumlah (Rp)" inputmode="numeric" ' +
-        'class="w-1/3 border border-border-strong rounded p-2 bg-surface-base text-text-input text-sm additional-cost-amount">' +
-        '<button type="button" class="additional-cost-remove-btn text-error hover:text-red-700 px-2">' +
-        '<i class="fa-solid fa-trash"></i></button>';
+        'class="fi-control additional-cost-amount w-1/3">' +
+        '<button type="button" class="additional-cost-remove-btn rounded-lg p-2 text-red-500 hover:bg-red-50 hover:text-red-600" title="Hapus biaya">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg></button>';
 
     return row;
 }
@@ -1012,6 +1011,8 @@ window.togglePayrollGroup = function (index) {
     if (chevron) {
         chevron.classList.toggle('fa-chevron-down');
         chevron.classList.toggle('fa-chevron-up');
+        // Ikon SVG (tampilan Filament): putar chevron saat grup diciutkan
+        chevron.classList.toggle('-rotate-90');
     }
 };
 

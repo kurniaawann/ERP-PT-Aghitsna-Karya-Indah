@@ -509,14 +509,14 @@ async function loadEligibleEmployees() {
         if (!optionsContainer) return;
 
         optionsContainer.innerHTML = (data.data || []).map(function (employee) {
-            return '<div class="p-3 hover:bg-primary-light cursor-pointer border-b border-border-light searchable-multi-option" ' +
+            return '<div class="searchable-multi-option cursor-pointer rounded-md px-2 py-2 hover:bg-gray-50" ' +
                 'data-value="' + escapeAttr(employee.value) + '" ' +
                 'data-search="' + escapeAttr(String(employee.label).toLowerCase()) + '" ' +
                 'data-label="' + escapeAttr(employee.label) + '">' +
                 '<label class="flex items-center gap-2 cursor-pointer">' +
                 '<input type="checkbox" value="' + escapeAttr(employee.value) + '" ' +
-                'class="searchable-multi-checkbox w-4 h-4 accent-primary">' +
-                '<span class="font-medium text-sm text-text-heading">' + escapeAttr(employee.label) + '</span>' +
+                'class="searchable-multi-checkbox fi-checkbox">' +
+                '<span class="text-sm text-gray-700">' + escapeAttr(employee.label) + '</span>' +
                 '</label></div>';
         }).join('');
 
@@ -983,15 +983,15 @@ function initGenerateSteps() {
     const backBtn = document.createElement('button');
     backBtn.type = 'button';
     backBtn.id = 'generate-back-btn';
-    backBtn.className = 'hidden border border-border-strong text-text-primary px-4 py-2 rounded hover:bg-surface-secondary';
-    backBtn.innerHTML = '<i class="fa-solid fa-arrow-left mr-1"></i> Kembali';
+    backBtn.className = 'hidden inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10 transition hover:bg-gray-50';
+    backBtn.innerHTML = '← Kembali';
     backBtn.addEventListener('click', function () { goToGenerateStep(1); });
 
     const nextBtn = document.createElement('button');
     nextBtn.type = 'button';
     nextBtn.id = 'generate-next-btn';
-    nextBtn.className = 'bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded';
-    nextBtn.innerHTML = 'Lanjut: Rekap Absensi <i class="fa-solid fa-arrow-right ml-1"></i>';
+    nextBtn.className = 'inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover';
+    nextBtn.innerHTML = 'Lanjut: Rekap Absensi →';
     nextBtn.addEventListener('click', function () { goToGenerateStep(2); });
 
     submitBtn.parentNode.insertBefore(backBtn, submitBtn);

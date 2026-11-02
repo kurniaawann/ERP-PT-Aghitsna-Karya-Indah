@@ -1,213 +1,178 @@
 {{--
-    Generate Payroll Modal
+    Generate Payroll Modal (gaya Filament)
 
-    Modal form for generating weekly payroll for employees of selected project(s).
+    Form generate payroll mingguan untuk karyawan pada proyek terpilih.
 
-    Process:
-    1. User selects one or more projects (multi-select searchable, same as the
-       employee multi-select in the Attendance module), then month, year, and week
-    2. Auto-checks attendance completeness via AJAX (PayrollController@checkAttendanceCompleteness)
-       — hanya karyawan pada proyek-proyek terpilih yang diperiksa.
-    3. Shows validation results:
-       - Complete employees (all days filled)
-       - Incomplete employees (missing attendance days)
-       - Already generated employees (skip)
-       - Employees without project (blocked)
-    4. Generate button only enabled if all conditions pass (can_generate = true)
-    5. On submit, posts project_name[] (array) + period to PayrollController@generate
+    Proses:
+    1. Pilih satu/lebih proyek (multi-select searchable), lalu bulan, tahun, minggu.
+    2. Kelengkapan absensi dicek otomatis via AJAX
+       (PayrollController@checkAttendanceCompleteness) — hanya karyawan pada
+       proyek terpilih yang diperiksa.
+    3. Hasil validasi: karyawan lengkap, belum lengkap, sudah digenerate,
+       dan karyawan tanpa proyek.
+    4. Tombol Generate hanya aktif bila can_generate = true.
+    5. Submit → project_name[] + periode ke PayrollController@generate.
 
-    Frontend JS: resources/js/pages/sdm/payroll/index.js (checkAttendanceData function)
+    Frontend JS: resources/js/pages/sdm/payroll/index.js (checkAttendanceData,
+    renderSignatorySections, renderAdditionalCostSections). Hook id yang
+    dipakai JS: #generateModal form / button[type=submit], #period_month,
+    #period_year, #week_number, #period_start_date, #period_end_date,
+    #apply-common-signatories, #signatory-sections, #additional-costs-sections,
+    #checking-loader, #already-generated-warning(-list), #incomplete-warning,
+    #incomplete-list, #no-project-warning, #no-project-list, #complete-info,
+    #complete-list, #all-complete.
 --}}
 
-{{-- Modal Generate Payroll --}}
-<x-modal id="generateModal" title="Generate Payroll" action="{{ route('payroll.generate') }}" method="POST"
-    buttonText="Generate">
+<x-fi.modal id="generateModal" heading="Generate Payroll" icon="calculator" color="success" width="4xl"
+    :action="route('payroll.generate')" submitLabel="Generate">
 
-    <div class="mb-4 p-4 bg-primary-light border border-primary rounded-lg">
-        <div class="flex gap-2">
-            <i class="fa-solid fa-info-circle text-primary mt-1"></i>
-            <div class="text-sm text-text-primary">
-                <p class="font-semibold mb-1">Informasi Payroll Mingguan:</p>
-                <ul class="list-disc list-inside space-y-1">
-                    <li>Payroll dibuat <strong>per proyek (bisa lebih dari satu)</strong> — hanya karyawan pada proyek terpilih yang diproses</li>
-                    <li>Sistem menghitung upah harian × hari masuk untuk pekerja harian</li>
-                    <li>Data diambil dari absensi minggu yang dipilih (Minggu-Sabtu)</li>
-                    <li><strong class="text-error">Hari Minggu ikut dihitung</strong> — absensi Minggu wajib
-                        terisi untuk semua karyawan</li>
-                    <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
-                    <li><strong class="text-error">Setiap karyawan harus memiliki absensi lengkap sesuai hari
-                            kerjanya</strong></li>
-                    <li>Kasbon hanya dipotong jika karyawan sudah membayar</li>
-                    <li><strong>Pilih penanda tangan</strong> per proyek untuk dokumen payroll
-                        (Disetujui/Diperiksa/Dibuat oleh)</li>
-                </ul>
-            </div>
+    {{-- Informasi --}}
+    <div class="flex gap-3 rounded-lg bg-blue-50 p-4 text-sm ring-1 ring-inset ring-blue-600/10">
+        <x-fi.icon name="information-circle" class="h-5 w-5 shrink-0 text-primary" />
+        <div class="text-gray-700">
+            <p class="font-semibold text-gray-950">Informasi Payroll Mingguan</p>
+            <ul class="mt-1 list-inside list-disc space-y-0.5">
+                <li>Payroll dibuat <strong>per proyek (bisa lebih dari satu)</strong> — hanya karyawan pada proyek terpilih yang diproses</li>
+                <li>Sistem menghitung upah harian × hari masuk untuk pekerja harian</li>
+                <li>Data diambil dari absensi minggu yang dipilih (Minggu-Sabtu)</li>
+                <li><strong class="text-red-600">Hari Minggu ikut dihitung</strong> — absensi Minggu wajib terisi untuk semua karyawan</li>
+                <li><strong>Tidak masuk = tidak dapat upah hari itu</strong></li>
+                <li><strong class="text-red-600">Setiap karyawan harus memiliki absensi lengkap sesuai hari kerjanya</strong></li>
+                <li>Kasbon hanya dipotong jika karyawan sudah membayar</li>
+                <li><strong>Pilih penanda tangan</strong> per proyek untuk dokumen payroll (Disetujui/Diperiksa/Dibuat oleh)</li>
+            </ul>
         </div>
     </div>
 
-    {{-- Multi-select proyek (searchable), cara kerjanya sama seperti
-         pemilihan karyawan pada modul Absensi. Pilihan disimpan sebagai
-         hidden input project_name[] dan dibaca oleh JS (checkAttendanceData). --}}
-    <x-forms.searchable-multi-select
-        name="project_name"
-        id="generate-project_name"
-        label="Proyek"
-        :required="true"
-        placeholder="Cari proyek..."
-        :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()" />
+    {{-- Proyek (multi-select searchable) → hidden project_name[] (dibaca JS) --}}
+    <x-fi.multi-select name="project_name" id="generate-project_name" label="Proyek" :required="true"
+        placeholder="Cari proyek..." :options="$projects->map(fn ($p) => ['value' => $p, 'label' => $p])->values()" />
 
-    <div class="grid grid-cols-3 gap-3 mb-3">
-        <div>
-            <label class="block text-text-primary mb-1">Bulan <span class="text-error">*</span></label>
-            <select name="period_month" id="period_month"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-                oninvalid="this.setCustomValidity('Bulan tidak boleh kosong')" oninput="this.setCustomValidity('')">
-                <option value="">Pilih</option>
-                <option value="1">Januari</option>
-                <option value="2">Februari</option>
-                <option value="3">Maret</option>
-                <option value="4">April</option>
-                <option value="5">Mei</option>
-                <option value="6">Juni</option>
-                <option value="7">Juli</option>
-                <option value="8">Agustus</option>
-                <option value="9">September</option>
-                <option value="10">Oktober</option>
-                <option value="11">November</option>
-                <option value="12">Desember</option>
-            </select>
-        </div>
+    {{-- Periode --}}
+    <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-3 [&>*]:min-w-0">
+        <x-fi.field label="Bulan" for="period_month" required>
+            <x-fi.select name="period_month" id="period_month" required data-fi-select placeholder="Pilih"
+                :options="[1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember']"
+                oninvalid="this.setCustomValidity('Bulan tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+        </x-fi.field>
 
-        <div>
-            <label class="block text-text-primary mb-1">Tahun <span class="text-error">*</span></label>
-            <input type="number" name="period_year" id="period_year"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-                placeholder="2025" value="{{ date('Y') }}" required min="2000" max="2100">
-        </div>
+        <x-fi.field label="Tahun" for="period_year" required>
+            <x-fi.input type="number" name="period_year" id="period_year" placeholder="2025" :value="date('Y')"
+                required min="2000" max="2100" />
+        </x-fi.field>
 
-        <div>
-            <label class="block text-text-primary mb-1">Minggu <span class="text-error">*</span></label>
-            <select name="week_number" id="week_number"
-                class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
+        <x-fi.field label="Minggu" for="week_number" required>
+            <x-fi.select name="week_number" id="week_number" required data-fi-select
                 oninvalid="this.setCustomValidity('Minggu tidak boleh kosong')" oninput="this.setCustomValidity('')">
                 <option value="">Pilih bulan & tahun terlebih dahulu</option>
-            </select>
-        </div>
+            </x-fi.select>
+        </x-fi.field>
     </div>
 
-    {{-- Hidden inputs for period date range (populated by JS when week is selected) --}}
+    {{-- Rentang tanggal periode (diisi JS saat minggu dipilih) --}}
     <input type="hidden" name="period_start_date" id="period_start_date" value="">
     <input type="hidden" name="period_end_date" id="period_end_date" value="">
 
-    {{-- Penanda Tangan — dipilih PER PROYEK saat generate dan disimpan
-         sebagai snapshot pada tiap payroll (dipakai blok tanda tangan PDF).
-         Blok form per proyek dirender dinamis oleh JS (renderSignatorySections)
-         dari daftar proyek yang dipilih di multi-select di atas. Nama field:
-         signatories[NAMA_PROYEK][disetujui|diperiksa|dibuat] = ID petinggi. --}}
-    <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
-        <div class="flex items-center gap-2 mb-2">
-            <i class="fa-solid fa-pen-nib text-primary"></i>
-            <p class="text-sm font-semibold text-text-primary">Penanda Tangan</p>
-            <button type="button" id="apply-common-signatories"
-                class="ml-auto inline-flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 opacity-50 cursor-not-allowed"
-                disabled title="Salin penanda tangan proyek pertama ke semua proyek yang dipilih">
-                <i class="fa-solid fa-copy"></i> Tanda Tangan Sama Semua
+    {{-- Penanda Tangan — per proyek, blok dirender JS (renderSignatorySections).
+         Field: signatories[NAMA_PROYEK][disetujui|diperiksa|dibuat] = ID petinggi. --}}
+    <section class="rounded-lg ring-1 ring-gray-950/5">
+        <header class="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+            <x-fi.icon name="pencil-square" class="h-5 w-5 text-gray-400" />
+            <h3 class="text-sm font-semibold text-gray-950">Penanda Tangan</h3>
+            <button type="button" id="apply-common-signatories" disabled
+                title="Salin penanda tangan proyek pertama ke semua proyek yang dipilih"
+                class="ms-auto inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                Tanda Tangan Sama Semua
             </button>
+        </header>
+        <div class="grid gap-y-3 p-4">
+            <p class="text-sm text-gray-500">Opsional — tidak wajib diisi. Setiap proyek bisa memiliki penanda tangan yang
+                berbeda. Data diambil dari modul Data Penandatangan; jika dikosongkan, blok tanda tangan pada PDF
+                ditampilkan sebagai garis putus-putus. Gunakan tombol <strong>"Tanda Tangan Sama Semua"</strong> untuk
+                menyalin penanda tangan proyek pertama ke seluruh proyek yang dipilih.</p>
+            <div id="signatory-sections" class="grid gap-y-4"></div>
         </div>
-        <p class="text-xs text-text-secondary mb-3">Opsional — tidak wajib diisi. Setiap proyek bisa memiliki penanda
-            tangan yang berbeda. Data diambil dari modul Data Penandatangan; jika dikosongkan, blok tanda tangan pada PDF
-            ditampilkan sebagai garis putus-putus. Gunakan tombol <strong>"Tanda Tangan Sama Semua"</strong> untuk
-            menyalin penanda tangan proyek pertama ke seluruh proyek yang dipilih.</p>
-        <div id="signatory-sections"></div>
-    </div>
+    </section>
 
-    {{-- Biaya Lain-lain — diisi PER PROYEK saat generate. Blok form per
-         proyek dirender dinamis oleh JS (renderAdditionalCostSections) dari
-         daftar proyek yang dipilih di multi-select. Setiap baris berisi nama
-         biaya dan jumlah; nama field:
-         additional_costs[NAMA_PROYEK][INDEX][name|amount]. Total seluruh
-         biaya ditambahkan ke TOTAL DIBAYARKAN pada cetakan payroll. --}}
-    <div class="mb-3 p-3 bg-surface-secondary border border-border rounded-lg">
-        <div class="flex items-center gap-2 mb-2">
-            <i class="fa-solid fa-receipt text-primary"></i>
-            <p class="text-sm font-semibold text-text-primary">Biaya Lain-lain</p>
+    {{-- Biaya Lain-lain — per proyek, blok dirender JS (renderAdditionalCostSections).
+         Field: additional_costs[NAMA_PROYEK][INDEX][name|amount]; total ditambahkan
+         ke TOTAL DIBAYARKAN pada cetakan payroll. --}}
+    <section class="rounded-lg ring-1 ring-gray-950/5">
+        <header class="flex items-center gap-3 border-b border-gray-200 px-4 py-3">
+            <x-fi.icon name="receipt-percent" class="h-5 w-5 text-gray-400" />
+            <h3 class="text-sm font-semibold text-gray-950">Biaya Lain-lain</h3>
+        </header>
+        <div class="grid gap-y-3 p-4">
+            <p class="text-sm text-gray-500">Opsional — tambahkan biaya tambahan per proyek (misal konsumsi, transport,
+                dll). Jumlahnya akan ditambahkan ke TOTAL DIBAYARKAN pada cetakan payroll.</p>
+            <div id="additional-costs-sections" class="grid gap-y-4"></div>
         </div>
-        <p class="text-xs text-text-secondary mb-3">Opsional — tambahkan biaya tambahan per proyek (misal konsumsi,
-            transport, dll). Jumlahnya akan ditambahkan ke TOTAL DIBAYARKAN pada cetakan payroll.</p>
-        <div id="additional-costs-sections"></div>
+    </section>
+
+    {{-- Loading pengecekan absensi --}}
+    <div id="checking-loader" class="hidden rounded-lg bg-gray-50 p-4 text-center ring-1 ring-inset ring-gray-950/5">
+        <span class="mx-auto mb-2 block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+        <p class="text-sm text-gray-500">Memeriksa kelengkapan data absensi...</p>
     </div>
 
-    {{-- Loading State --}}
-    <div id="checking-loader" class="hidden mb-3 p-4 bg-surface-secondary border border-border rounded-lg text-center">
-        <i class="fa-solid fa-spinner fa-spin text-primary text-2xl mb-2"></i>
-        <p class="text-sm text-text-label">Memeriksa kelengkapan data absensi...</p>
-    </div>
-
-    {{-- Warning - Payroll Sudah Ada --}}
-    <div id="already-generated-warning" class="hidden mb-3 p-4 bg-warning-light border-l-4 border-warning rounded">
-        <div class="flex items-start gap-2">
-            <i class="fa-solid fa-exclamation-triangle text-warning text-lg mt-0.5"></i>
-            <div class="flex-1">
-                <p class="font-semibold text-warning text-sm mb-2">⚠️ Payroll Sudah Digenerate</p>
-                <div id="already-generated-list" class="text-sm text-warning max-h-32 overflow-y-auto"></div>
+    {{-- Payroll sudah ada --}}
+    <div id="already-generated-warning" class="hidden rounded-lg bg-amber-50 p-4 ring-1 ring-inset ring-amber-600/20">
+        <div class="flex gap-3">
+            <x-fi.icon name="exclamation-triangle" class="h-5 w-5 shrink-0 text-amber-600" />
+            <div class="min-w-0 flex-1">
+                <p class="mb-2 text-sm font-semibold text-amber-800">Payroll Sudah Digenerate</p>
+                <div id="already-generated-list" class="max-h-32 overflow-y-auto text-sm text-amber-800"></div>
             </div>
         </div>
     </div>
 
-    {{-- Warning - Data Absensi Tidak Lengkap --}}
-    <div id="incomplete-warning" class="hidden mb-3 p-4 bg-error-light border-l-4 border-error rounded">
-        <div class="flex items-start gap-2">
-            <i class="fa-solid fa-exclamation-circle text-error text-lg mt-0.5"></i>
-            <div class="flex-1">
-                <p class="font-semibold text-error text-sm mb-2">⚠️ Data Absensi Belum Lengkap!</p>
-                <div id="incomplete-list" class="max-h-60 overflow-y-auto space-y-2">
-                    <!-- Will be filled by JavaScript -->
-                </div>
-                <div class="mt-3 p-2 bg-surface-base rounded border border-error">
-                    <p class="text-xs text-error"><strong>Catatan:</strong> Karyawan di atas belum memiliki absensi
-                        lengkap untuk semua hari kerjanya. Pastikan data sudah diinput sebelum generate payroll.</p>
-                </div>
+    {{-- Absensi belum lengkap --}}
+    <div id="incomplete-warning" class="hidden rounded-lg bg-red-50 p-4 ring-1 ring-inset ring-red-600/10">
+        <div class="flex gap-3">
+            <x-fi.icon name="exclamation-circle" class="h-5 w-5 shrink-0 text-red-600" />
+            <div class="min-w-0 flex-1">
+                <p class="mb-2 text-sm font-semibold text-red-800">Data Absensi Belum Lengkap!</p>
+                <div id="incomplete-list" class="max-h-60 space-y-2 overflow-y-auto"></div>
+                <p class="mt-3 rounded-md bg-white p-2 text-xs text-red-700 ring-1 ring-inset ring-red-600/20"><strong>Catatan:</strong>
+                    Karyawan di atas belum memiliki absensi lengkap untuk semua hari kerjanya. Pastikan data sudah diinput
+                    sebelum generate payroll.</p>
             </div>
         </div>
     </div>
 
-    {{-- Warning - Karyawan Belum Punya Proyek --}}
-    <div id="no-project-warning" class="hidden mb-3 p-4 bg-warning-light border-l-4 border-warning rounded">
-        <div class="flex items-start gap-2">
-            <i class="fa-solid fa-exclamation-triangle text-warning text-lg mt-0.5"></i>
-            <div class="flex-1">
-                <p class="font-semibold text-warning text-sm mb-2">⚠️ Karyawan Belum Memiliki Proyek!</p>
-                <div id="no-project-list" class="text-sm text-warning max-h-40 overflow-y-auto space-y-1"></div>
-                <div class="mt-3 p-2 bg-surface-base rounded border border-warning">
-                    <p class="text-xs text-warning"><strong>Catatan:</strong> Pastikan setiap karyawan sudah
-                        memiliki proyek sebelum generate payroll. Lengkapi data proyek di menu <strong>Human Resource → Data
-                            Karyawan</strong>.</p>
-                </div>
+    {{-- Karyawan belum punya proyek --}}
+    <div id="no-project-warning" class="hidden rounded-lg bg-amber-50 p-4 ring-1 ring-inset ring-amber-600/20">
+        <div class="flex gap-3">
+            <x-fi.icon name="exclamation-triangle" class="h-5 w-5 shrink-0 text-amber-600" />
+            <div class="min-w-0 flex-1">
+                <p class="mb-2 text-sm font-semibold text-amber-800">Karyawan Belum Memiliki Proyek!</p>
+                <div id="no-project-list" class="max-h-40 space-y-1 overflow-y-auto text-sm text-amber-800"></div>
+                <p class="mt-3 rounded-md bg-white p-2 text-xs text-amber-800 ring-1 ring-inset ring-amber-600/20"><strong>Catatan:</strong>
+                    Pastikan setiap karyawan sudah memiliki proyek sebelum generate payroll. Lengkapi data proyek di menu
+                    <strong>Human Resource → Data Karyawan</strong>.</p>
             </div>
         </div>
     </div>
 
-    {{-- Info - Karyawan dengan Data Lengkap --}}
-    <div id="complete-info" class="hidden mb-3 p-4 bg-success-light border-l-4 border-success rounded">
-        <div class="flex items-start gap-2">
-            <i class="fa-solid fa-check-circle text-success text-lg mt-0.5"></i>
-            <div class="flex-1">
-                <p class="font-semibold text-success text-sm mb-2">✅ Karyawan dengan Data Lengkap</p>
-                <div id="complete-list" class="max-h-40 overflow-y-auto space-y-1">
-                    <!-- Will be filled by JavaScript -->
-                </div>
+    {{-- Karyawan dengan data lengkap --}}
+    <div id="complete-info" class="hidden rounded-lg bg-emerald-50 p-4 ring-1 ring-inset ring-emerald-600/20">
+        <div class="flex gap-3">
+            <x-fi.icon name="check-circle" class="h-5 w-5 shrink-0 text-emerald-600" />
+            <div class="min-w-0 flex-1">
+                <p class="mb-2 text-sm font-semibold text-emerald-800">Karyawan dengan Data Lengkap</p>
+                <div id="complete-list" class="max-h-40 space-y-1 overflow-y-auto"></div>
             </div>
         </div>
     </div>
 
-    {{-- Success - Semua Data Lengkap --}}
-    <div id="all-complete" class="hidden mb-3 p-4 bg-success-light border-l-4 border-success rounded">
-        <div class="flex items-start gap-2">
-            <i class="fa-solid fa-check-circle text-success text-lg mt-0.5"></i>
-            <div class="flex-1">
-                <p class="font-semibold text-success text-sm mb-1">✅ Semua Data Lengkap!</p>
-                <p class="text-sm text-success">Semua karyawan memiliki data absensi lengkap untuk periode ini.</p>
+    {{-- Semua data lengkap --}}
+    <div id="all-complete" class="hidden rounded-lg bg-emerald-50 p-4 ring-1 ring-inset ring-emerald-600/20">
+        <div class="flex gap-3">
+            <x-fi.icon name="check-circle" class="h-5 w-5 shrink-0 text-emerald-600" />
+            <div>
+                <p class="text-sm font-semibold text-emerald-800">Semua Data Lengkap!</p>
+                <p class="text-sm text-emerald-700">Semua karyawan memiliki data absensi lengkap untuk periode ini.</p>
             </div>
         </div>
     </div>
-</x-modal>
+</x-fi.modal>
