@@ -6,7 +6,7 @@
  * - Manajemen status checkbox individu dan tombol hapus
  * - Pengiriman formulir hapus massal dengan status memuat
  * - Format mata uang (upah harian, gaji pokok, transport, makan, UMP) pada input
- * - Baris dinamis pada modal Tambah (menambah banyak karyawan sekaligus)
+ * - Baris dinamis pada halaman Tambah (menambah banyak karyawan sekaligus)
  * - Penanganan pengiriman formulir Tambah/Edit dengan pencegahan pengiriman ganda
  *
  * Dropdown proyek (searchable + pagination 10 item) di modal Tambah/Edit dan
@@ -464,8 +464,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Submit Form Tambah (dengan pencegahan pengiriman ganda)
-    var addForm = document.querySelector('#addModal form');
+    // Submit Form Tambah — halaman Tambah Karyawan (dengan pencegahan pengiriman ganda)
+    var addForm = document.getElementById('addEmployeesForm');
     if (addForm) {
         addForm.addEventListener('submit', function (e) {
             var submitBtn = this.querySelector('button[type="submit"]');

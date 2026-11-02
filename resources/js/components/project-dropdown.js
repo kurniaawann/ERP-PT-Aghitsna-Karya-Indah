@@ -97,7 +97,7 @@ export function initProjectDropdown(dropdownRoot) {
 
         const row = document.createElement('button');
         row.type = 'button';
-        row.className = 'w-full text-left px-3 py-2 hover:bg-surface-secondary text-sm text-text-primary font-medium border-b border-border-light';
+        row.className = 'w-full rounded-md px-2 py-1.5 text-start text-sm font-medium text-gray-950 hover:bg-gray-50';
         row.textContent = allOption;
 
         row.addEventListener('click', function () {
@@ -118,7 +118,7 @@ export function initProjectDropdown(dropdownRoot) {
         state.loading = true;
 
         if (!append) {
-            list.innerHTML = '<div class="p-2 flex items-center gap-2 text-sm text-text-secondary">' +
+            list.innerHTML = '<div class="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500">' +
                 '<span class="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>' +
                 '<span>Loading...</span></div>';
         }
@@ -146,14 +146,14 @@ export function initProjectDropdown(dropdownRoot) {
 
             if (data.length === 0 && !append) {
                 const el = document.createElement('div');
-                el.className = 'p-2 text-sm text-text-secondary';
+                el.className = 'px-2 py-1.5 text-sm text-gray-500';
                 el.textContent = state.search ? 'Tidak ada proyek yang cocok' : 'Tidak ada data proyek';
                 list.appendChild(el);
             } else {
                 data.forEach(function (project) {
                     const row = document.createElement('button');
                     row.type = 'button';
-                    row.className = 'w-full text-left px-3 py-2 hover:bg-surface-secondary text-sm text-text-primary border-b border-border-light';
+                    row.className = 'w-full rounded-md px-2 py-1.5 text-start text-sm text-gray-700 hover:bg-gray-50';
                     row.textContent = project.project_name;
 
                     row.addEventListener('click', function () {
@@ -175,7 +175,7 @@ export function initProjectDropdown(dropdownRoot) {
                 renderAllOption();
             }
             const el = document.createElement('div');
-            el.className = 'p-2 text-sm text-error';
+            el.className = 'px-2 py-1.5 text-sm text-red-600';
             el.textContent = 'Gagal memuat data proyek. Silakan coba lagi.';
             list.appendChild(el);
         })

@@ -154,10 +154,10 @@
                             </x-fi.table.td>
 
                             <x-fi.table.td dense class="text-gray-700">{{ $reimburse->formatted_date }}</x-fi.table.td>
-                            <x-fi.table.td dense class="min-w-[9rem] max-w-[14rem] whitespace-normal font-medium">
+                            <x-fi.table.td dense class="min-w-[8rem] max-w-[14rem] whitespace-normal font-medium">
                                 <div class="line-clamp-2" title="{{ $reimburse->project_name }}">{{ $reimburse->project_name }}</div>
                             </x-fi.table.td>
-                            <x-fi.table.td dense class="min-w-[12rem] max-w-xs whitespace-normal text-gray-700" title="{{ $reimburse->expense_description }}">
+                            <x-fi.table.td dense class="min-w-[9rem] max-w-xs whitespace-normal text-gray-700" title="{{ $reimburse->expense_description }}">
                                 {{ Str::limit($reimburse->expense_description, 50) }}
                             </x-fi.table.td>
                             <x-fi.table.td dense align="end" class="font-semibold tabular-nums">{{ $reimburse->formatted_total_amount }}</x-fi.table.td>
@@ -171,7 +171,7 @@
                             <x-fi.table.td dense class="text-xs text-gray-500">{{ $reimburse->formatted_status_changed_at }}</x-fi.table.td>
 
                             {{-- Catatan --}}
-                            <x-fi.table.td dense class="min-w-[8rem] max-w-[12rem] whitespace-normal text-gray-700">
+                            <x-fi.table.td dense class="min-w-[7rem] max-w-[12rem] whitespace-normal text-gray-700">
                                 {{ Str::limit($reimburse->notes ?? '-', 30) }}
                             </x-fi.table.td>
 

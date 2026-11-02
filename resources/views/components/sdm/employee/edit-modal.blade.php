@@ -1,125 +1,110 @@
-{{-- Modal Edit Karyawan --}}
-<x-modal id="editModal-{{ $employee->employee_code }}" title="Edit Karyawan"
-    action="{{ route('employee.update', $employee->employee_code) }}" method="POST" buttonText="Update">
-    @method('PUT')
+{{-- ═══════════════════════════════════════════════════════════════════════════
+     MODAL EDIT KARYAWAN (gaya Filament) — satu modal per karyawan.
+     Hook JS (resources/js/pages/sdm/employee/index.js):
+     [id^="editModal-"] form, .edit-employment-type-select (data-employee-code),
+     .edit-wage-field-harian-{kode} / .edit-wage-field-bulanan-{kode} /
+     .edit-harian-extra-{kode} (ditampilkan/disembunyikan via style.display),
+     .daily-wage-input, .base-salary-input, .monthly-currency-input,
+     .project-dropdown (components/project-dropdown.js).
+     Parameter: $employee, $divisions
+     ═══════════════════════════════════════════════════════════════════════════ --}}
+@php
+    $code = $employee->employee_code;
+    $isBulanan = $employee->employment_type === 'bulanan';
+    $fid = fn ($key) => "edit-{$code}-{$key}";
+@endphp
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Kode Karyawan</label>
-        <input type="text" name="employee_code" class="w-full border rounded p-2 bg-surface-hover"
-            value="{{ $employee->employee_code }}" readonly>
-    </div>
+<x-fi.modal id="editModal-{{ $code }}" heading="Edit Karyawan" :description="$code" icon="pencil-square" width="2xl"
+    :action="route('employee.update', $code)" method="PUT" submitLabel="Update">
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Nama Lengkap <span class="text-error">*</span></label>
-        <input type="text" name="name" class="w-full border rounded p-2" placeholder="Masukkan nama lengkap"
-            value="{{ $employee->name }}" required maxlength="255">
-    </div>
+    <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+        <x-fi.field label="Kode Karyawan" :for="$fid('code')">
+            <x-fi.input :id="$fid('code')" name="employee_code" :value="$code" readonly />
+        </x-fi.field>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jabatan <span class="text-text-tertiary text-sm">(Opsional)</span></label>
-        <input type="text" name="position" class="w-full border rounded p-2" placeholder="Masukkan jabatan (opsional)"
-            value="{{ $employee->position }}" maxlength="100">
-    </div>
+        <x-fi.field label="Nama Lengkap" :for="$fid('name')" required>
+            <x-fi.input :id="$fid('name')" name="name" :value="$employee->name" placeholder="Masukkan nama lengkap"
+                required maxlength="255" />
+        </x-fi.field>
 
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jenis Karyawan <span class="text-error">*</span></label>
-        <select name="employment_type" id="edit-employment-type-{{ $employee->employee_code }}"
-            class="w-full border rounded p-2 edit-employment-type-select"
-            data-employee-code="{{ $employee->employee_code }}">
-            <option value="harian" @selected($employee->employment_type === 'harian')>TUKANG PROYEK</option>
-            <option value="bulanan" @selected($employee->employment_type === 'bulanan')>KARYAWAN KANTOR</option>
-        </select>
-    </div>
+        <x-fi.field label="Jabatan" :for="$fid('position')" hint="Opsional">
+            <x-fi.input :id="$fid('position')" name="position" :value="$employee->position"
+                placeholder="Masukkan jabatan (opsional)" maxlength="100" />
+        </x-fi.field>
 
-    <div class="mb-3 edit-wage-field-harian-{{ $employee->employee_code }}"
-        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
-        <label class="block text-text-primary mb-1">Upah Per Hari <span class="text-error">*</span></label>
-        <input type="text" inputmode="numeric" name="daily_wage" class="w-full border rounded p-2 daily-wage-input"
-            placeholder="Masukkan upah per hari" value="{{ $employee->daily_wage }}" required min="0">
-    </div>
+        <x-fi.field label="Jenis Karyawan" for="edit-employment-type-{{ $code }}" required>
+            <x-fi.select name="employment_type" id="edit-employment-type-{{ $code }}"
+                class="edit-employment-type-select" data-employee-code="{{ $code }}" data-fi-select
+                :value="$employee->employment_type"
+                :options="['harian' => 'TUKANG PROYEK', 'bulanan' => 'KARYAWAN KANTOR']" />
+        </x-fi.field>
 
-    <div class="mb-3 edit-wage-field-bulanan-{{ $employee->employee_code }} hidden"
-        @if ($employee->employment_type === 'bulanan') style="display: block;" @endif>
-        <div class="p-3 border border-border-light rounded-lg bg-surface-secondary space-y-3">
-            <div>
-                <label class="block text-text-primary mb-1">Gaji Pokok / Bulan <span class="text-error">*</span></label>
-                <input type="text" inputmode="numeric" name="base_salary" class="w-full border rounded p-2 base-salary-input"
-                    placeholder="Masukkan gaji pokok per bulan" value="{{ $employee->base_salary }}" min="0">
-            </div>
+        {{-- Tukang proyek: upah per hari --}}
+        <div class="edit-wage-field-harian-{{ $code }} sm:col-span-2" @if ($isBulanan) style="display: none;" @endif>
+            <x-fi.field label="Upah Per Hari" :for="$fid('daily_wage')" required>
+                <x-fi.input :id="$fid('daily_wage')" inputmode="numeric" name="daily_wage" prefix="Rp"
+                    class="daily-wage-input" :value="$employee->daily_wage" placeholder="Masukkan upah per hari"
+                    required min="0" />
+            </x-fi.field>
+        </div>
 
-            <div>
-                <label class="block text-text-primary mb-1">Status Karyawan <span class="text-text-tertiary text-sm">(Opsional)</span></label>
-                <input type="text" name="status" class="w-full border rounded p-2"
-                    placeholder="cth: Karyawan Tetap / Kontrak" value="{{ $employee->status }}" maxlength="100">
-            </div>
+        {{-- Karyawan kantor: gaji pokok & tunjangan harian --}}
+        <div class="edit-wage-field-bulanan-{{ $code }} hidden sm:col-span-2" @if ($isBulanan) style="display: block;" @endif>
+            <div class="grid grid-cols-1 gap-x-4 gap-y-5 rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-950/5 sm:grid-cols-2">
+                <x-fi.field label="Gaji Pokok / Bulan" :for="$fid('base_salary')" required>
+                    <x-fi.input :id="$fid('base_salary')" inputmode="numeric" name="base_salary" prefix="Rp"
+                        class="base-salary-input" :value="$employee->base_salary"
+                        placeholder="Masukkan gaji pokok per bulan" min="0" />
+                </x-fi.field>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                    <label class="block text-text-primary mb-1">Transport / Hari <span class="text-text-tertiary text-sm">(Opsional)</span></label>
-                    <input type="text" inputmode="numeric" name="transport_rate" class="w-full border rounded p-2 monthly-currency-input"
-                        placeholder="cth: 5.000" value="{{ $employee->transport_rate }}" min="0">
-                </div>
+                <x-fi.field label="Status Karyawan" :for="$fid('status')" hint="Opsional">
+                    <x-fi.input :id="$fid('status')" name="status" :value="$employee->status"
+                        placeholder="cth: Karyawan Tetap / Kontrak" maxlength="100" />
+                </x-fi.field>
 
-                <div>
-                    <label class="block text-text-primary mb-1">Makan / Hari <span class="text-text-tertiary text-sm">(Opsional)</span></label>
-                    <input type="text" inputmode="numeric" name="meal_rate" class="w-full border rounded p-2 monthly-currency-input"
-                        placeholder="cth: 10.000" value="{{ $employee->meal_rate }}" min="0">
-                </div>
+                <x-fi.field label="Transport / Hari" :for="$fid('transport_rate')" hint="Opsional">
+                    <x-fi.input :id="$fid('transport_rate')" inputmode="numeric" name="transport_rate" prefix="Rp"
+                        class="monthly-currency-input" :value="$employee->transport_rate" placeholder="cth: 5.000" min="0" />
+                </x-fi.field>
 
-                <div>
-                    <label class="block text-text-primary mb-1">UMP <span class="text-text-tertiary text-sm">(Opsional)</span></label>
-                    <input type="text" inputmode="numeric" name="ump" class="w-full border rounded p-2 monthly-currency-input"
-                        placeholder="cth: 4.200.000" value="{{ $employee->ump }}" min="0">
-                </div>
+                <x-fi.field label="Makan / Hari" :for="$fid('meal_rate')" hint="Opsional">
+                    <x-fi.input :id="$fid('meal_rate')" inputmode="numeric" name="meal_rate" prefix="Rp"
+                        class="monthly-currency-input" :value="$employee->meal_rate" placeholder="cth: 10.000" min="0" />
+                </x-fi.field>
+
+                <x-fi.field label="UMP" :for="$fid('ump')" hint="Opsional">
+                    <x-fi.input :id="$fid('ump')" inputmode="numeric" name="ump" prefix="Rp"
+                        class="monthly-currency-input" :value="$employee->ump" placeholder="cth: 4.200.000" min="0" />
+                </x-fi.field>
             </div>
         </div>
-    </div>
 
-    <div class="edit-harian-extra-{{ $employee->employee_code }}"
-        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
-        <x-forms.searchable-select name="division" label="Divisi"
-            placeholder="Cari divisi (opsional)..."
-            :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
-            selected="{{ $employee->division ?? '' }}" />
-    </div>
+        {{-- Detail tukang proyek (disembunyikan untuk karyawan kantor) --}}
+        <div class="edit-harian-extra-{{ $code }}" @if ($isBulanan) style="display: none;" @endif>
+            <x-fi.field label="Divisi" :for="$fid('division')" hint="Opsional">
+                <x-fi.select :id="$fid('division')" name="division" data-fi-select="search" placeholder="-- Pilih Divisi --"
+                    :value="$employee->division ?? ''" :options="$divisions->pluck('name', 'name')" />
+            </x-fi.field>
+        </div>
 
-    <div class="mb-3 edit-harian-extra-{{ $employee->employee_code }}"
-        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
-        <label class="block text-text-primary mb-1">Proyek <span class="text-text-tertiary text-sm">(Opsional)</span></label>
-        <div class="project-dropdown relative" data-route="{{ route('employee.projects-dropdown') }}">
-            <input type="hidden" name="project_name" class="project-dropdown-hidden" value="{{ $employee->project_name ?? '' }}">
-            <button type="button"
-                class="project-dropdown-toggle w-full border border-border-strong rounded p-2 bg-surface-base text-text-input flex items-center justify-between">
-                <span class="project-dropdown-label text-text-input">{{ $employee->project_name ?? '-- Pilih Proyek --' }}</span>
-                <span class="text-text-tertiary text-xs">▼</span>
-            </button>
-            <div class="project-dropdown-menu absolute z-50 w-full bg-surface-base border border-border-strong rounded-lg shadow-lg mt-1 hidden">
-                <div class="p-2 border-b border-border-light">
-                    <input type="text" class="project-dropdown-search w-full border border-border-light rounded px-2 py-1.5 text-sm bg-surface-base text-text-input"
-                        placeholder="Cari nama proyek...">
-                </div>
-                <div class="project-dropdown-list max-h-60 overflow-y-auto">
-                    <div class="p-2 text-sm text-text-secondary">Silakan klik untuk memuat data...</div>
-                </div>
-                <div class="p-2 border-t border-border-light">
-                    <button type="button" class="project-dropdown-clear text-sm text-error hover:text-error">
-                        Reset (- Tidak Ada Proyek -)
-                    </button>
-                </div>
-            </div>
+        <div class="edit-harian-extra-{{ $code }}" @if ($isBulanan) style="display: none;" @endif>
+            <x-fi.field label="No. Telepon" :for="$fid('phone')">
+                <x-fi.input :id="$fid('phone')" name="phone" :value="$employee->phone"
+                    placeholder="Masukkan no. telepon (opsional)" maxlength="20" />
+            </x-fi.field>
+        </div>
+
+        <div class="edit-harian-extra-{{ $code }} sm:col-span-2" @if ($isBulanan) style="display: none;" @endif>
+            <x-fi.field label="Proyek" hint="Opsional">
+                <x-fi.project-dropdown :value="$employee->project_name ?? ''" clearable inline />
+            </x-fi.field>
+        </div>
+
+        <div class="edit-harian-extra-{{ $code }} sm:col-span-2" @if ($isBulanan) style="display: none;" @endif>
+            <x-fi.field label="Alamat" :for="$fid('address')" hint="Opsional">
+                <x-fi.textarea :id="$fid('address')" name="address" rows="3"
+                    placeholder="Masukkan alamat">{{ $employee->address }}</x-fi.textarea>
+            </x-fi.field>
         </div>
     </div>
-
-    <div class="mb-3 edit-harian-extra-{{ $employee->employee_code }}"
-        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
-        <label class="block text-text-primary mb-1">No. Telepon</label>
-        <input type="text" name="phone" class="w-full border rounded p-2" placeholder="Masukkan no. telepon (opsional)"
-            value="{{ $employee->phone }}" maxlength="20">
-    </div>
-
-    <div class="mb-3 edit-harian-extra-{{ $employee->employee_code }}"
-        @if ($employee->employment_type === 'bulanan') style="display: none;" @endif>
-        <label class="block text-text-primary mb-1">Alamat <span class="text-text-tertiary text-sm">(Opsional)</span></label>
-        <textarea name="address" class="w-full border rounded p-2" placeholder="Masukkan alamat" rows="3">{{ $employee->address }}</textarea>
-    </div>
-</x-modal>
+</x-fi.modal>

@@ -50,6 +50,17 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Menampilkan halaman form Tambah Karyawan (bisa banyak karyawan sekaligus).
+     * Penyimpanan tetap lewat store().
+     */
+    public function create(): View
+    {
+        $divisions = $this->employeeService->getAllDivisions();
+
+        return view('pages.sdm.employee-form', compact('divisions'));
+    }
+
+    /**
      * Endpoint JSON untuk dropdown infinite scroll pemilihan proyek.
      *
      * Mengambil nama proyek dari Rekap Proyek (ProjectRecap) milik user login

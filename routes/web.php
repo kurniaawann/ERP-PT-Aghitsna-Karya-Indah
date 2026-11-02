@@ -350,6 +350,7 @@ Route::middleware('auth')->group(function () {
 
         // Route Employee (Karyawan)
         Route::get('/employee', [EmployeeController::class, 'index'])->name('employee.index');
+        Route::get('/employee/create', [EmployeeController::class, 'create'])->name('employee.create');
         Route::post('/employee', [EmployeeController::class, 'store'])->name('employee.store');
         Route::put('/employee/{employee}', [EmployeeController::class, 'update'])->name('employee.update');
         Route::delete('/employee/destroy-selected', [EmployeeController::class, 'destroy'])->name('employee.destroy');
