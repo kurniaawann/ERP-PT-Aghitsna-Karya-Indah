@@ -11,11 +11,17 @@
  *   di-dispatch, sehingga onchange="this.form.requestSubmit()" maupun listener
  *   JS halaman (mis. #month-select / #year-select) tetap berjalan.
  *
+ * - data-fi-select="search" → panel diberi kolom pencarian di atas daftar opsi
+ *   (untuk daftar panjang, mis. pilihan Rekap Proyek / penanda tangan).
+ *
  * Keyboard: ↑/↓ (atau Enter/Spasi) buka & pindah opsi, Home/End, ketik huruf
- * awal untuk lompat, Enter pilih, Escape tutup.
+ * awal untuk lompat (mode search: ketikan masuk ke kolom pencarian), Enter
+ * pilih, Escape tutup.
  */
 
 const SELECTOR = 'select[data-fi-select]';
+
+const SEARCH_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>';
 
 const CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></svg>';
 
@@ -119,6 +125,10 @@ function ensurePanel() {
 
     panel.addEventListener('keydown', onPanelKeydown);
 
+    panel.addEventListener('input', function (e) {
+        if (e.target.matches('.fi-select-search input')) filterOptions(e.target.value);
+    });
+
     // Fokus keluar panel (Tab) → tutup
     panel.addEventListener('focusout', function (e) {
         if (active && e.relatedTarget && !panel.contains(e.relatedTarget) && e.relatedTarget !== active.trigger) {
@@ -138,17 +148,54 @@ function ensurePanel() {
 function renderOptions() {
     const { select } = active;
     panel.setAttribute('aria-label', select.getAttribute('aria-label') || 'Pilih');
-    panel.innerHTML = Array.from(select.options).map((option, index) => {
+
+    const options = Array.from(select.options).map((option, index) => {
         const selected = index === select.selectedIndex;
-        const label = option.textContent.trim().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+        const label = escapeHtml(option.textContent.trim());
         return `<button type="button" role="option" class="fi-select-option${selected ? ' is-selected' : ''}"`
             + ` data-index="${index}" tabindex="-1" aria-selected="${selected}"${option.disabled ? ' disabled' : ''}>`
             + `<span class="truncate">${label}</span>${selected ? CHECK_SVG : ''}</button>`;
     }).join('');
+
+    panel.innerHTML = isSearchable(select)
+        ? `<div class="fi-select-search"><label>${SEARCH_SVG}<input type="text" autocomplete="off" placeholder="Cari..." aria-label="Cari opsi"></label></div>`
+            + options + '<p class="fi-select-empty hidden">Tidak ada hasil.</p>'
+        : options;
+}
+
+function escapeHtml(text) {
+    return text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+}
+
+function isSearchable(select) {
+    return select.dataset.fiSelect === 'search';
+}
+
+function searchInput() {
+    return panel.querySelector('.fi-select-search input');
+}
+
+/**
+ * Saring opsi panel berdasarkan teks pencarian (tidak peka huruf besar/kecil).
+ *
+ * @param {string} query
+ * @returns {void}
+ */
+function filterOptions(query) {
+    const q = query.trim().toLowerCase();
+    let visible = 0;
+
+    panel.querySelectorAll('.fi-select-option').forEach(button => {
+        const match = !q || button.textContent.toLowerCase().includes(q);
+        button.hidden = !match;
+        if (match) visible++;
+    });
+
+    panel.querySelector('.fi-select-empty')?.classList.toggle('hidden', visible > 0);
 }
 
 function optionButtons() {
-    return Array.from(panel.querySelectorAll('.fi-select-option:not([disabled])'));
+    return Array.from(panel.querySelectorAll('.fi-select-option:not([disabled]):not([hidden])'));
 }
 
 /**
@@ -185,7 +232,27 @@ function onPanelKeydown(e) {
     }
 
     const buttons = optionButtons();
+    const search = searchInput();
+
+    // Kolom pencarian: ↓ ke opsi pertama, Enter pilih opsi teratas, huruf lain → ketik biasa
+    if (search && e.target === search) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            focusOption(buttons[0]);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (buttons[0]) choose(+buttons[0].dataset.index);
+        }
+        return;
+    }
+
     const current = buttons.indexOf(document.activeElement);
+
+    if (search && e.key === 'ArrowUp' && current <= 0) {
+        e.preventDefault();
+        search.focus();
+        return;
+    }
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
@@ -194,6 +261,9 @@ function onPanelKeydown(e) {
     } else if (e.key === 'Home' || e.key === 'End') {
         e.preventDefault();
         focusOption(e.key === 'Home' ? buttons[0] : buttons[buttons.length - 1]);
+    } else if (search && e.key.length === 1 && /\S/.test(e.key)) {
+        // Mode search: pindahkan fokus ke kolom pencarian, huruf ikut terketik di sana
+        search.focus();
     } else if (e.key.length === 1 && /\S/.test(e.key)) {
         // Lompat ke opsi berikutnya yang diawali huruf/angka yang diketik
         const key = e.key.toLowerCase();
@@ -256,7 +326,14 @@ function open(trigger) {
     trigger.setAttribute('aria-expanded', 'true');
     active.wrapper.classList.add('fi-select-open');
 
-    focusOption(panel.querySelector('.fi-select-option.is-selected:not([disabled])') || optionButtons()[0]);
+    const selected = panel.querySelector('.fi-select-option.is-selected:not([disabled])');
+    // Fokus otomatis ke kolom pencarian hanya di perangkat ber-mouse (di HP keyboard tidak langsung muncul)
+    if (searchInput() && window.matchMedia('(pointer: fine)').matches) {
+        selected?.scrollIntoView({ block: 'nearest' });
+        searchInput().focus({ preventScroll: true });
+    } else {
+        focusOption(selected || optionButtons()[0]);
+    }
 }
 
 /**
@@ -342,7 +419,14 @@ document.addEventListener('scroll', function (e) {
     else positionPanel();
 }, true);
 
-window.addEventListener('resize', () => close());
+// Resize → tutup, kecuali saat mengetik di kolom pencarian (keyboard HP muncul = viewport mengecil)
+window.addEventListener('resize', function () {
+    if (active && panel.contains(document.activeElement) && document.activeElement.matches('.fi-select-search input')) {
+        positionPanel();
+    } else {
+        close();
+    }
+});
 window.addEventListener('modalClosed', () => close());
 
 function init() {

@@ -1,11 +1,10 @@
-{{-- ==================== Modal Detail Laporan Keuangan Proyek ==================== --}}
-@props(['recap', 'categories'])
+{{-- ==================== Modal Detail Laporan Keuangan Proyek (gaya Filament) ==================== --}}
+@props(['recap'])
 
 @php
     $report = $recap->financialReport;
     $items = optional($report)->items ?? collect();
     $financialItems = $items->where('is_informational', false);
-    $informationalItems = $items->where('is_informational', true);
 
     $totalIncome = (int) $financialItems->sum('income_amount');
     $totalExpense = (int) $financialItems->sum('expense_amount');
@@ -14,129 +13,115 @@
         'total_expense' => $totalExpense,
         'balance' => $totalIncome - $totalExpense,
     ];
+
+    $rupiah = fn ($value) => 'Rp ' . number_format($value, 0, ',', '.');
 @endphp
 
-<x-modal id="detailModal-{{ $recap->id }}" title="Laporan Keuangan — {{ $recap->project_name }}"
-    :hideFooter="true" size="6xl">
+<x-fi.modal id="detailModal-{{ $recap->id }}" heading="Laporan Keuangan — {{ $recap->project_name }}"
+    :description="$recap->id . ($recap->location ? ' (' . $recap->location . ')' : '')" icon="document-currency-dollar"
+    width="6xl">
+    <div class="grid gap-y-6">
 
-    {{-- ==================== Header Informasi ==================== --}}
-    <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
-        <div>
-            <p class="text-sm text-text-secondary">
-                {{ $recap->id }}
-                @if ($recap->location)
-                    <span class="text-text-label">({{ $recap->location }})</span>
-                @endif
-            </p>
-            <p class="text-sm text-text-secondary mt-1">Detail transaksi "Bon" pada proyek ini.</p>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-primary-light text-primary gap-1">
-                <i class="fa-solid fa-file-invoice-dollar"></i>
-                {{ $report->id ?? 'Laporan belum dibuat' }}
-            </span>
-            <button type="button" onclick="openModal('editPfrModal-{{ $recap->id }}')"
-                class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-3 py-1 rounded-lg transition-colors duration-200 text-xs"
-                title="Edit Rekap Proyek & Transaksi">
-                <i class="fa-solid fa-pen w-3 h-3"></i>
-                Edit
-            </button>
-        </div>
-    </div>
-
-    {{-- ==================== Ringkasan Finansial ==================== --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
-            <p class="text-xs text-text-secondary mb-1">Total Uang Masuk</p>
-            <p class="text-xl font-bold text-success">Rp {{ number_format($totals->total_income, 0, ',', '.') }}</p>
-        </div>
-        <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
-            <p class="text-xs text-text-secondary mb-1">Total Uang Keluar</p>
-            <p class="text-xl font-bold text-error">Rp {{ number_format($totals->total_expense, 0, ',', '.') }}</p>
-        </div>
-        <div class="rounded-xl border border-border-strong bg-white p-4 shadow-sm">
-            <p class="text-xs text-text-secondary mb-1">Saldo</p>
-            <p class="text-xl font-bold {{ $totals->balance >= 0 ? 'text-primary' : 'text-error' }}">
-                Rp {{ number_format($totals->balance, 0, ',', '.') }}
-            </p>
-        </div>
-    </div>
-
-    {{-- ==================== Daftar Transaksi ==================== --}}
-    <div class="mt-6">
-        <h6 class="text-text-primary font-semibold mb-3">Daftar Transaksi ({{ $items->count() }})</h6>
-
-        @if ($items->isEmpty())
-            <div class="text-center p-4 border border-dashed border-border-strong rounded bg-surface-secondary">
-                <p class="text-sm text-text-secondary">Belum ada transaksi. Klik "Edit Transaksi" untuk menambah.</p>
+        {{-- Keterangan (kiri) + nomor Laporan Keuangan & tombol Edit (kanan) --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-gray-500">Detail transaksi "Bon" pada proyek ini.</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <x-fi.badge color="primary" icon="document-currency-dollar">{{ $report->id ?? 'Laporan belum dibuat' }}</x-fi.badge>
+                <x-fi.button size="sm" color="gray" icon="pencil-square" :href="route('project-financial-report.edit', $recap)"
+                    title="Edit Rekap Proyek & Transaksi">
+                    Edit
+                </x-fi.button>
             </div>
-        @else
-            <div class="overflow-x-auto">
-                <div class="inline-block min-w-full align-middle">
-                    <div class="border border-border-strong rounded-xl overflow-hidden shadow-sm">
-                        <table class="min-w-full divide-y divide-border-light">
-                            <thead class="bg-surface-secondary">
-                                <tr>
-                                    {{-- Nama kolom HURUF KAPITAL (revisi klien) --}}
-                                    <th class="p-2 text-center">NO</th>
-                                    <th class="p-2 text-left">TANGGAL</th>
-                                    <th class="p-2 text-left">KATEGORI</th>
-                                    <th class="p-2 text-left">KETERANGAN</th>
-                                    <th class="p-2 text-right">JUMLAH</th>
-                                    <th class="p-2 text-left">KETERANGAN BON</th>
-                                    <th class="p-2 text-center">BUKTI</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-surface-base divide-y divide-border-light">
-                                @foreach ($items as $index => $item)
-                                    @php
-                                        $isIncome = (int) ($item->income_amount ?? 0) > 0;
-                                        $amount = (int) ($item->income_amount ?: $item->expense_amount);
-                                    @endphp
-                                    <tr class="hover:bg-surface-secondary transition-colors duration-150">
-                                        <td class="p-2 text-center font-medium text-primary">{{ $index + 1 }}</td>
-                                        <td class="p-2 text-center text-text-secondary">
-                                            {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '-' }}
-                                        </td>
-                                        <td class="p-2 text-text-primary">
+        </div>
+
+        {{-- Ringkasan Finansial --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                <p class="text-sm text-gray-500">Total Uang Masuk</p>
+                <p class="mt-1 text-lg font-semibold tabular-nums text-emerald-600">{{ $rupiah($totals->total_income) }}</p>
+            </div>
+            <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                <p class="text-sm text-gray-500">Total Uang Keluar</p>
+                <p class="mt-1 text-lg font-semibold tabular-nums text-red-600">{{ $rupiah($totals->total_expense) }}</p>
+            </div>
+            <div class="rounded-xl p-4 ring-1 ring-gray-950/10">
+                <p class="text-sm text-gray-500">Saldo</p>
+                <p @class(['mt-1 text-lg font-semibold tabular-nums', 'text-primary' => $totals->balance >= 0, 'text-red-600' => $totals->balance < 0])>
+                    {{ $rupiah($totals->balance) }}
+                </p>
+            </div>
+        </div>
+
+        {{-- Daftar Transaksi --}}
+        <div class="grid gap-y-3">
+            <h3 class="text-sm font-semibold text-gray-950">Daftar Transaksi ({{ $items->count() }})</h3>
+
+            @if ($items->isEmpty())
+                <div class="rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
+                    Belum ada transaksi. Klik "Edit" untuk menambah.
+                </div>
+            @else
+                <div class="relative overflow-x-auto rounded-xl ring-1 ring-gray-950/10">
+                    <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <x-fi.table.th align="center" class="w-1">No</x-fi.table.th>
+                                <x-fi.table.th>Tanggal</x-fi.table.th>
+                                <x-fi.table.th>Kategori</x-fi.table.th>
+                                <x-fi.table.th>Keterangan</x-fi.table.th>
+                                <x-fi.table.th align="end">Jumlah</x-fi.table.th>
+                                <x-fi.table.th>Keterangan Bon</x-fi.table.th>
+                                <x-fi.table.th align="center">Bukti</x-fi.table.th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                            @foreach ($items as $index => $item)
+                                @php
+                                    $isIncome = (int) ($item->income_amount ?? 0) > 0;
+                                    $amount = (int) ($item->income_amount ?: $item->expense_amount);
+                                @endphp
+                                <tr class="bg-white">
+                                    <x-fi.table.td align="center" class="tabular-nums text-gray-500">{{ $index + 1 }}</x-fi.table.td>
+                                    <x-fi.table.td class="text-gray-700">
+                                        {{ $item->transaction_date ? \Carbon\Carbon::parse($item->transaction_date)->format('d/m/Y') : '-' }}
+                                    </x-fi.table.td>
+                                    <x-fi.table.td class="whitespace-normal">
+                                        <span class="inline-flex flex-wrap items-center gap-1.5">
                                             {{ $item->category->name ?? '-' }}
                                             @if ($item->is_informational)
-                                                <span class="ml-1 inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-700"
-                                                    title="Baris informasi — tidak memengaruhi total laporan">
-                                                    <i class="fa-solid fa-circle-info w-2.5 h-2.5 mr-0.5"></i> Info
-                                                </span>
+                                                <x-fi.badge color="primary" icon="information-circle"
+                                                    title="Baris informasi — tidak memengaruhi total laporan">Info</x-fi.badge>
                                             @endif
-                                        </td>
-                                        <td class="p-2 text-text-primary">{{ $item->description }}</td>
-                                        <td class="p-2 text-right font-medium {{ $isIncome ? 'text-success' : 'text-error' }}">
-                                            @if ($item->is_informational)
-                                                <span class="text-text-tertiary">-</span>
-                                            @else
-                                                {{ $isIncome ? '+' : '-' }} Rp {{ number_format($amount, 0, ',', '.') }}
-                                            @endif
-                                        </td>
-                                        <td class="p-2 text-text-secondary">{{ $item->keterangan_bon ?: '-' }}</td>
-                                        <td class="p-2 text-center">
-                                            @if ($item->hasProof())
-                                                {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
-                                                <a href="{{ asset('storage/' . $item->proof_file) }}"
-                                                    onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti — ' . ($item->description ?: 'Transaksi')), downloadName: @js($item->proof_file_name ?: basename($item->proof_file)) })"
-                                                    title="{{ $item->proof_file_name }}"
-                                                    class="text-blue-600 hover:underline text-sm">
-                                                    <i class="fa-solid fa-paperclip"></i> File
-                                                </a>
-                                            @else
-                                                <span class="text-text-tertiary">-</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                        </span>
+                                    </x-fi.table.td>
+                                    <x-fi.table.td class="min-w-[12rem] whitespace-normal">{{ $item->description }}</x-fi.table.td>
+                                    <x-fi.table.td align="end" :class="'font-semibold tabular-nums ' . ($isIncome ? 'text-emerald-600' : 'text-red-600')">
+                                        @if ($item->is_informational)
+                                            <span class="text-gray-400">-</span>
+                                        @else
+                                            {{ $isIncome ? '+' : '-' }} {{ $rupiah($amount) }}
+                                        @endif
+                                    </x-fi.table.td>
+                                    <x-fi.table.td class="min-w-[10rem] whitespace-normal text-gray-700">{{ $item->keterangan_bon ?: '-' }}</x-fi.table.td>
+                                    <x-fi.table.td align="center">
+                                        @if ($item->hasProof())
+                                            {{-- Pratinjau bukti di dalam halaman (tanpa tab baru) --}}
+                                            <a href="{{ asset('storage/' . $item->proof_file) }}"
+                                                onclick="event.preventDefault(); window.openFilePreview(this.href, { title: @js('Bukti — ' . ($item->description ?: 'Transaksi')), downloadName: @js($item->proof_file_name ?: basename($item->proof_file)) })"
+                                                title="{{ $item->proof_file_name }}"
+                                                class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                                                <x-fi.icon name="paper-clip" class="h-4 w-4" /> File
+                                            </a>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </x-fi.table.td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        @endif
+            @endif
+        </div>
     </div>
-
-</x-modal>
+</x-fi.modal>

@@ -110,7 +110,73 @@ class ProjectFinancialReportController extends Controller
 
         $categories = $this->service->getProjectFinanceCategories();
 
-        $rekapOptions = ProjectRecap::query()
+        $rekapOptions = $this->rekapOptions();
+
+        // Petinggi milik user untuk pemilihan penandatangan pada modal edit
+        // (blok Mandor/Kabag Keuangan/Direktur).
+        $executives = Executive::where('created_by', auth()->id())
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.report.project-financial-report', compact('recaps', 'categories', 'rekapOptions', 'executives'));
+    }
+
+    /**
+     * Menampilkan halaman form tambah transaksi "Bon" (pengganti modal tambah).
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        // Pastikan kategori UANG_MASUK (modul project_finance) tersedia untuk
+        // user yang login, sehingga muncul di dropdown kategori.
+        $this->service->resolveIncomeCategory();
+
+        return view('pages.report.project-financial-report-form', [
+            'recap' => null,
+            'categories' => $this->service->getProjectFinanceCategories(),
+            'rekapOptions' => $this->rekapOptions(),
+            'executives' => collect(),
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman form edit gabungan Rekap Proyek + transaksi "Bon"
+     * (pengganti modal edit pada halaman daftar).
+     *
+     * Baris "Uang Masuk" otomatis disinkronkan dulu seperti di halaman daftar
+     * agar form selalu memuat transaksi terbaru.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function edit(ProjectRecap $projectRecap)
+    {
+        $this->authorizeRecap($projectRecap);
+
+        $projectRecap->load(['financialReport.items.category', 'rab', 'paymentProofs', 'invoices.paymentProofs']);
+        $this->syncPaymentProofItems($projectRecap->newCollection([$projectRecap]));
+
+        $this->service->resolveIncomeCategory();
+
+        return view('pages.report.project-financial-report-form', [
+            'recap' => $projectRecap,
+            'categories' => $this->service->getProjectFinanceCategories(),
+            'rekapOptions' => collect(),
+            'executives' => Executive::where('created_by', auth()->id())->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Pilihan Rekap Proyek untuk form tambah transaksi (beserta sisa
+     * pembayarannya, dipakai peringatan "pemasukan melebihi sisa pembayaran").
+     *
+     * Superadmin melihat semua rekap, user lain hanya miliknya.
+     *
+     * @return \Illuminate\Support\Collection<int, array{id: string, project_name: string, location: ?string, remaining_amount: int}>
+     */
+    private function rekapOptions()
+    {
+        return ProjectRecap::query()
             ->when(auth()->user()->role !== 'superadmin', function ($query) {
                 $query->where('created_by', auth()->id());
             })
@@ -125,14 +191,6 @@ class ProjectFinancialReportController extends Controller
                     'remaining_amount' => $rekap->getRemainingAmount(),
                 ];
             });
-
-        // Petinggi milik user untuk pemilihan penandatangan pada modal edit
-        // (blok Mandor/Kabag Keuangan/Direktur).
-        $executives = Executive::where('created_by', auth()->id())
-            ->orderBy('name')
-            ->get();
-
-        return view('pages.report.project-financial-report', compact('recaps', 'categories', 'rekapOptions', 'executives'));
     }
 
     /**

@@ -166,7 +166,9 @@ Route::middleware('auth')->group(function () {
 
     // Route Laporan Keuangan Proyek (per Rekap Proyek)
     Route::get('/report/project-financial-report', [ProjectFinancialReportController::class, 'index'])->name('project-financial-report.index');
+    Route::get('/report/project-financial-report/create', [ProjectFinancialReportController::class, 'create'])->name('project-financial-report.create');
     Route::post('/report/project-financial-report/items', [ProjectFinancialReportController::class, 'storeItem'])->name('project-financial-report.store');
+    Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/edit', [ProjectFinancialReportController::class, 'edit'])->name('project-financial-report.edit');
     Route::put('/recap-proyek/{projectRecap}/laporan-keuangan', [ProjectFinancialReportController::class, 'update'])->name('project-financial-report.update');
     Route::delete('/recap-proyek/{projectRecap}/laporan-keuangan/destroy-selected', [ProjectFinancialReportController::class, 'destroySelected'])->name('project-financial-report.destroySelected');
     Route::get('/recap-proyek/{projectRecap}/laporan-keuangan/export/pdf', [ProjectFinancialReportController::class, 'exportPdf'])->name('project-financial-report.export.pdf');

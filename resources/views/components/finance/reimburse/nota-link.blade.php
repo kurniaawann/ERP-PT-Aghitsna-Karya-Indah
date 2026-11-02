@@ -26,11 +26,11 @@
     <a href="{{ route('nota.administrasi.export.pdf.single', $reimburse->id_nota) }}" data-preview
         data-preview-title="Nota {{ $reimburse->id_nota }}"
         @if ($notaNeedsSign) data-nota-sign="{{ $reimburse->id_nota }}" @endif
-        class="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-hover underline whitespace-nowrap"
+        class="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-primary hover:underline"
         title="Lihat PDF nota">
-        <i class="fa-solid fa-file-pdf"></i>
+        <x-fi.icon name="document-text" class="h-4 w-4" />
         Nota: {{ $reimburse->id_nota }}
     </a>
 @else
-    <span class="text-xs text-text-secondary whitespace-nowrap">Nota: {{ $reimburse->id_nota }}</span>
+    <span class="whitespace-nowrap text-xs text-gray-500">Nota: {{ $reimburse->id_nota }}</span>
 @endif
