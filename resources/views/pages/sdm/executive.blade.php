@@ -1,19 +1,18 @@
 {{-- =====================================================================
-     Halaman: Data Penandatangan (executive)
+     Halaman: Data Penandatangan (executive, gaya Filament)
      Tujuan: Menampilkan daftar penandatangan (pimpinan perusahaan) beserta
              gambar tanda tangan, dengan fitur pencarian, tambah, edit,
-             hapus massal, dan pagination.
+             hapus massal / satu data, dan pagination.
 
      Data dari ExecutiveController@index:
      - $executives : LengthAwarePaginator daftar penandatangan (sudah dipaginasi)
      - $search     : Kata kunci pencarian saat ini (nullable)
 
      Komponen yang di-include:
-     - components.sdm.executive.table      : tabel daftar penandatangan
+     - components.sdm.executive.table      : toolbar + tabel + paginasi
      - components.sdm.executive.add-modal  : modal tambah penandatangan
      - components.sdm.executive.edit-modal : modal edit per penandatangan (loop)
-     - x-pagination                        : kontrol pagination
-     - x-modal (deleteModal)               : konfirmasi hapus massal
+     - x-fi.modal / x-fi.delete-row-modal  : konfirmasi hapus massal / satu data
 
      JS yang di-load:
      - @vite('resources/js/pages/sdm/executive/index.js')
@@ -23,46 +22,40 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Penandatangan')
 
 @section('content')
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Penandatangan</h1>
+    <div class="flex flex-col gap-y-6">
 
-        {{-- Pencarian & Tombol Aksi --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <form method="GET" action="{{ route('executive.index') }}"
-                class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
-                <x-filters.search-input :value="request('search')" placeholder="Cari nama / jabatan..." />
-            </form>
+        {{-- SECTION: Header Halaman + Aksi --}}
+        <x-fi.page-header heading="Data Penandatangan"
+            :breadcrumbs="['Human Resource' => null, 'Data Penandatangan' => route('executive.index')]">
+            <x-slot:actions>
+                <x-fi.button icon="plus" onclick="openModal('addModal')">Tambah Penandatangan</x-fi.button>
+            </x-slot:actions>
+        </x-fi.page-header>
 
-            <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
-                <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" />
-
-                    <x-buttons.add-button modalId="addModal" text="Tambah Data" />
-                </div>
-            </div>
-        </div>
-
-        {{-- Tabel Penandatangan --}}
+        {{-- SECTION: Tabel (+ pencarian, hapus massal, paginasi) --}}
         @include('components.sdm.executive.table', ['executives' => $executives])
     </div>
 
-    {{-- Paginasi --}}
-    <x-pagination :paginator="$executives" />
-
-    {{-- Modal Tambah Penandatangan --}}
+    {{-- SECTION: Modal Tambah --}}
     @include('components.sdm.executive.add-modal')
 
-    {{-- Modal Edit Penandatangan (satu per baris) --}}
+    {{-- SECTION: Modal Edit (satu per baris) --}}
     @foreach ($executives as $executive)
         @include('components.sdm.executive.edit-modal', ['executive' => $executive])
     @endforeach
 
-    {{-- Modal Konfirmasi Bulk Delete --}}
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
+    {{-- SECTION: Modal Konfirmasi Hapus Massal --}}
+    <x-fi.modal id="deleteModal" heading="Hapus Data Terpilih" icon="trash" color="danger" width="md"
+        onConfirm="submitDeleteForm()" submitLabel="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
-    </x-modal>
+    </x-fi.modal>
 
-    {{-- JavaScript --}}
-    @vite('resources/js/pages/sdm/executive/index.js')
+    {{-- SECTION: Modal Konfirmasi Hapus 1 Penandatangan (menu Aksi ⋮ tiap baris) --}}
+    {{-- Mengirim satu id ke route('executive.destroy') yang sama dengan hapus massal (ids[]). --}}
+    <x-fi.delete-row-modal :action="route('executive.destroy')" field="ids" heading="Hapus Penandatangan"
+        warning="Gambar tanda tangannya ikut terhapus." />
+
+    @push('scripts')
+        @vite('resources/js/pages/sdm/executive/index.js')
+    @endpush
 @endsection

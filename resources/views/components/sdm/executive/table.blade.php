@@ -1,77 +1,129 @@
-{{-- =====================================================================
-     Executive Table Component
-     Menampilkan daftar penandatangan dalam format tabel dengan checkbox
-     untuk bulk delete, pratinjau tanda tangan, dan tombol edit per baris.
-     ===================================================================== --}}
-<form id="deleteForm" method="POST" action="{{ route('executive.destroy') }}">
-    @csrf
-    @method('DELETE')
-    <div class="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div class="inline-block min-w-full align-middle">
-            <div class="border-2 border-border-strong rounded-xl overflow-hidden shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200">
-                    {{-- Header Tabel --}}
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                        <tr>
-                            <th class="p-2 text-center"><input type="checkbox" id="selectAll"></th>
-                            <th class="p-2 text-left">Nama</th>
-                            <th class="p-2 text-left">Jabatan</th>
-                            <th class="p-2 text-center">Tanda Tangan</th>
-                            <th class="p-2 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($executives as $executive)
-                            <tr class="border-t hover:bg-surface-secondary">
-                                {{-- Checkbox untuk bulk delete --}}
-                                <td class="p-2 text-center">
-                                    <input type="checkbox" name="ids[]" value="{{ $executive->id }}"
-                                        class="w-4 h-4 accent-primary cursor-pointer">
-                                </td>
+{{-- ═══════════════════════════════════════════════════════════════════════════
+     KOMPONEN TABEL PENANDATANGAN (gaya Filament)
+     Toolbar (hapus massal kiri, pencarian kanan) + tabel + paginasi dalam
+     satu kartu. Tanda tangan bisa diklik untuk pratinjau (openSignature).
 
-                                {{-- Nama Penandatangan --}}
-                                <td class="p-2 font-medium text-primary">{{ $executive->name }}</td>
+     Hook JS (resources/js/pages/sdm/executive/index.js): #selectAll,
+     input[name="ids[]"], #delete-button, form#deleteForm.
+     Parameter: $executives (paginator Executive)
+     ═══════════════════════════════════════════════════════════════════════════ --}}
+@php
+    $indexUrl = route('executive.index');
+    $isFiltered = request()->filled('search');
+@endphp
 
-                                {{-- Jabatan --}}
-                                <td class="p-2">{{ $executive->position ?? '-' }}</td>
+<x-fi.card x-data="{ selected: 0 }"
+    x-init="selected = $el.querySelectorAll('[name^=ids]:checked').length"
+    x-on:change="selected = $el.querySelectorAll('[name^=ids]:checked').length">
 
-                                {{-- Tanda Tangan (pratinjau gambar) --}}
-                                <td class="p-2 text-center">
-                                    @if ($executive->signature_image)
-                                        <button type="button"
-                                            onclick="openSignature(@js(asset('storage/' . $executive->signature_image)), @js($executive->name))"
-                                            title="Klik untuk perbesar" class="inline-block">
-                                            <img src="{{ asset('storage/' . $executive->signature_image) }}"
-                                                alt="Tanda tangan {{ $executive->name }}"
-                                                class="h-12 w-auto max-w-[6rem] object-contain border border-border rounded bg-white cursor-pointer hover:opacity-80 transition-opacity">
-                                        </button>
-                                    @else
-                                        <span class="text-text-tertiary">-</span>
-                                    @endif
-                                </td>
-
-                                {{-- Tombol Aksi --}}
-                                <td class="p-2 text-center">
-                                    <div class="flex justify-center gap-2">
-                                        <button type="button" onclick="openModal('editModal-{{ $executive->id }}')"
-                                            class="flex items-center gap-1 bg-btn-edit hover:bg-btn-edit-hover text-white px-2 py-1 rounded-lg transition-colors duration-200 text-xs"
-                                            title="Edit Penandatangan">
-                                            <i class="fa-solid fa-pen w-3 h-3"></i>
-                                            Edit
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center p-4 text-text-secondary">
-                                    Data tidak ditemukan.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+    {{-- ─── Toolbar: aksi massal (kiri) + pencarian (kanan) ──────────────────── --}}
+    <div class="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3 sm:px-6">
+        <div x-cloak x-show="selected > 0" class="flex flex-wrap items-center gap-3">
+            <span class="whitespace-nowrap text-sm text-gray-500">
+                <span class="font-semibold text-gray-950" x-text="selected"></span> data dipilih
+            </span>
+            <x-fi.button id="delete-button" color="danger" size="sm" icon="trash" outlined disabled
+                onclick="openModal('deleteModal')">
+                Hapus yang dipilih
+            </x-fi.button>
         </div>
+
+        <form method="GET" action="{{ $indexUrl }}"
+            class="flex w-full flex-wrap items-center gap-3 sm:ms-auto sm:w-auto sm:justify-end">
+            <x-fi.search-input :value="request('search')" placeholder="Cari nama / jabatan..." class="w-full sm:w-72" />
+
+            @if ($isFiltered)
+                <x-fi.link :href="$indexUrl" color="gray" icon="x-mark" class="whitespace-nowrap"
+                    title="Hapus pencarian">
+                    Reset
+                </x-fi.link>
+            @endif
+        </form>
     </div>
-</form>
+
+    {{-- ─── Form Hapus Massal + Tabel ────────────────────────────────────────── --}}
+    <form id="deleteForm" method="POST" action="{{ route('executive.destroy') }}">
+        @csrf
+        @method('DELETE')
+
+        <div class="relative overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200 text-start">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="w-1 px-3 py-3.5 sm:ps-6">
+                            <input type="checkbox" id="selectAll" class="fi-checkbox" title="Pilih semua">
+                        </th>
+                        <x-fi.table.th>Nama</x-fi.table.th>
+                        <x-fi.table.th>Jabatan</x-fi.table.th>
+                        <x-fi.table.th align="center">Tanda Tangan</x-fi.table.th>
+                        <x-fi.table.th align="center" class="w-1">Aksi</x-fi.table.th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-200 whitespace-nowrap text-gray-950">
+                    @forelse ($executives as $executive)
+                        <tr class="bg-white transition duration-75 hover:bg-gray-50 has-[:checked]:bg-blue-50">
+                            <td class="w-1 px-3 py-4 sm:ps-6">
+                                <input type="checkbox" name="ids[]" value="{{ $executive->id }}" class="fi-checkbox"
+                                    title="Pilih {{ $executive->name }}">
+                            </td>
+                            <x-fi.table.td class="min-w-[10rem] whitespace-normal font-medium">{{ $executive->name }}</x-fi.table.td>
+                            <x-fi.table.td class="min-w-[8rem] whitespace-normal text-gray-700">{{ $executive->position ?? '-' }}</x-fi.table.td>
+
+                            {{-- Tanda Tangan (klik untuk perbesar) --}}
+                            <x-fi.table.td align="center">
+                                @if ($executive->signature_image)
+                                    <button type="button" title="Klik untuk perbesar"
+                                        onclick="openSignature(@js(asset('storage/' . $executive->signature_image)), @js($executive->name))"
+                                        class="inline-flex rounded-lg bg-white p-1 ring-1 ring-gray-950/10 transition hover:ring-primary">
+                                        <img src="{{ asset('storage/' . $executive->signature_image) }}"
+                                            alt="Tanda tangan {{ $executive->name }}"
+                                            class="h-10 w-auto max-w-[6rem] object-contain">
+                                    </button>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </x-fi.table.td>
+
+                            {{-- Aksi: tombol ⋮ --}}
+                            <x-fi.table.td align="center">
+                                <x-fi.dropdown label="Aksi {{ $executive->name }}" class="-my-1.5">
+                                    <x-fi.dropdown.list>
+                                        <x-fi.dropdown.item icon="pencil-square"
+                                            onclick="openModal('editModal-{{ $executive->id }}')">
+                                            Edit
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
+                                    <x-fi.dropdown.list>
+                                        <x-fi.dropdown.item icon="trash" color="danger"
+                                            :data-delete-row="$executive->id" :data-delete-row-label="$executive->name">
+                                            Hapus
+                                        </x-fi.dropdown.item>
+                                    </x-fi.dropdown.list>
+                                </x-fi.dropdown>
+                            </x-fi.table.td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5">
+                                @if ($isFiltered)
+                                    <x-fi.empty-state icon="magnifying-glass" heading="Data tidak ditemukan"
+                                        description="Tidak ada penandatangan yang cocok dengan pencarian.">
+                                        <x-fi.button color="gray" icon="x-mark" :href="$indexUrl">Reset pencarian</x-fi.button>
+                                    </x-fi.empty-state>
+                                @else
+                                    <x-fi.empty-state icon="pencil-square" heading="Data tidak ditemukan" />
+                                @endif
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+    {{-- ─── Paginasi ─────────────────────────────────────────────────────────── --}}
+    <div class="border-t border-gray-200 px-4 py-3 sm:px-6">
+        <x-fi.pagination :paginator="$executives" />
+    </div>
+</x-fi.card>
