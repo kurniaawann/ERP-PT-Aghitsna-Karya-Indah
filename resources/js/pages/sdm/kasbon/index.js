@@ -95,6 +95,8 @@ window.toggleKasbonProjectSection = function (header) {
     if (chevron) {
         chevron.classList.toggle('fa-chevron-down');
         chevron.classList.toggle('fa-chevron-up');
+        // Ikon SVG (tampilan Filament): chevron menghadap atas saat terbuka
+        chevron.classList.toggle('rotate-180');
     }
 };
 

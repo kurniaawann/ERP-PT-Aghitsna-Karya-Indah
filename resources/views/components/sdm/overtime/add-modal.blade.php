@@ -1,88 +1,67 @@
 {{--
-    Add Overtime Modal Component
+    Add Overtime Modal Component (gaya Filament)
 
-    Displays a modal form for adding a new overtime record.
-    Uses <x-forms.searchable-select> for employee selection with search capability.
+    Form tambah lembur:
+    - Karyawan (x-fi.searchable-select → hidden employee_id, .searchable-select-*)
+    - Tanggal (default kosong, maks hari ini)
+    - Peringatan duplikat/absensi (validasi sisi klien, #add-duplicate-warning)
+    - Jam Lembur (0.01 - 24), Tarif per Jam (Rupiah)
+    - Total Lembur otomatis (jam × tarif), readonly
+    - Keterangan (opsional)
 
-    Sections:
-    - Searchable Select: Employee picker with search filtering
-    - Attendance Date: Date picker (defaults to today)
-    - Duplicate Warning: Client-side validation for existing attendance
-    - Overtime Hours: Numeric input (0.5 - 24)
-    - Overtime Rate: Rate per hour in Rupiah
-    - Total Lembur: Auto-calculated (hours × rate), readonly
-    - Notes: Optional notes textarea
-
-    Variables:
-    - $employees: Collection of Employee models with employee_code and name
+    Variables: $employees (employee_code, name)
+    JS: resources/js/pages/sdm/overtime/index.js (validateAddOvertime,
+    calculateAddOvertimeTotal, formatCurrencyInput).
 --}}
-<x-modal id="addModal" title="Tambah Lembur" action="{{ route('overtime.store') }}" method="POST" buttonText="Simpan">
+<x-fi.modal id="addModal" heading="Tambah Lembur" icon="clock" :action="route('overtime.store')">
 
-    {{-- Searchable Select: Pilih Karyawan --}}
-    <x-forms.searchable-select name="employee_id" label="Pilih Karyawan" :required="true"
-        placeholder="Cari karyawan..."
-        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
+    {{-- Karyawan (pencarian) --}}
+    <x-fi.searchable-select name="employee_id" label="Pilih Karyawan" :required="true" placeholder="Cari karyawan..."
+        :options="$employees->map(fn ($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
 
     {{-- Tanggal Lembur --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="attendance_date" id="add-attendance-date"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input" required
-            max="{{ date('Y-m-d') }}"
-            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Lembur hanya dapat diinput jika karyawan sudah absen dengan status
-            Hadir</p>
-    </div>
+    <x-fi.field label="Tanggal" for="add-attendance-date" required
+        hint="Lembur hanya dapat diinput jika karyawan sudah absen dengan status Hadir">
+        <x-fi.input type="date" name="attendance_date" id="add-attendance-date" required :max="date('Y-m-d')"
+            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
-    {{-- Duplicate Warning: client-side validation --}}
-    <div id="add-duplicate-warning" class="hidden mb-3 p-3 bg-error-light border-l-4 border-error rounded">
-        <div class="flex items-start">
-            <svg class="w-5 h-5 text-error mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clip-rule="evenodd" />
-            </svg>
+    {{-- Peringatan duplikat / belum absen hadir (validasi sisi klien) --}}
+    <div id="add-duplicate-warning" class="hidden rounded-lg bg-red-50 p-4 ring-1 ring-inset ring-red-600/10">
+        <div class="flex gap-3">
+            <x-fi.icon name="exclamation-circle" class="h-5 w-5 shrink-0 text-red-600" />
             <div>
-                <p class="font-semibold text-error text-sm mb-1">Data Sudah Ada!</p>
-                <p id="add-duplicate-warning-text" class="text-sm text-error"></p>
+                <p class="text-sm font-semibold text-red-800">Data Sudah Ada!</p>
+                <p id="add-duplicate-warning-text" class="mt-1 text-sm text-red-700"></p>
             </div>
         </div>
     </div>
 
-    {{-- Jam Lembur --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jam Lembur <span class="text-error">*</span></label>
-        <input type="number" name="overtime_hours"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Contoh: 2.5" required min="0.01" max="24" step="0.01" id="add-overtime-hours"
-            oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')"
-            oninput="calculateAddOvertimeTotal(); this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Maksimal 24 jam</p>
+    <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+        {{-- Jam Lembur --}}
+        <x-fi.field label="Jam Lembur" for="add-overtime-hours" required hint="Maksimal 24 jam">
+            <x-fi.input type="number" name="overtime_hours" id="add-overtime-hours" placeholder="Contoh: 2.5" suffix="jam"
+                required min="0.01" max="24" step="0.01"
+                oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')"
+                oninput="calculateAddOvertimeTotal(); this.setCustomValidity('')" />
+        </x-fi.field>
+
+        {{-- Tarif per Jam --}}
+        <x-fi.field label="Tarif per Jam" for="add-overtime-rate" required>
+            <x-fi.input inputmode="numeric" name="overtime_rate" id="add-overtime-rate" value="0" prefix="Rp"
+                placeholder="Masukkan tarif per jam" required min="0"
+                oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
+                oninput="formatCurrencyInput(this); calculateAddOvertimeTotal(); this.setCustomValidity('')" />
+        </x-fi.field>
     </div>
 
-    {{-- Tarif per Jam (Rupiah currency format) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tarif per Jam <span class="text-error">*</span></label>
-        <input type="text" inputmode="numeric" name="overtime_rate" value="0"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan tarif per jam" required min="0" id="add-overtime-rate"
-            oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
-            oninput="formatCurrencyInput(this); calculateAddOvertimeTotal(); this.setCustomValidity('')">
-    </div>
-
-    {{-- Total Lembur (Auto-calculated) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Total Lembur</label>
-        <input type="text" id="add-overtime-total"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-input" readonly
-            value="Rp 0">
-        <p class="text-xs text-text-secondary mt-1">Otomatis dihitung: Jam Lembur × Tarif</p>
-    </div>
+    {{-- Total Lembur (otomatis) --}}
+    <x-fi.field label="Total Lembur" for="add-overtime-total" hint="Otomatis dihitung: Jam Lembur × Tarif">
+        <x-fi.input id="add-overtime-total" value="Rp 0" readonly class="font-semibold" />
+    </x-fi.field>
 
     {{-- Keterangan --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan keterangan (opsional)" rows="3"></textarea>
-    </div>
-</x-modal>
+    <x-fi.field label="Keterangan" for="add-overtime-notes">
+        <x-fi.textarea id="add-overtime-notes" name="notes" rows="3" placeholder="Masukkan keterangan (opsional)"></x-fi.textarea>
+    </x-fi.field>
+</x-fi.modal>

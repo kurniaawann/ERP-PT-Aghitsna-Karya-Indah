@@ -1,101 +1,92 @@
 {{-- ═══════════════════════════════════════════════════════════════════════
-     Komponen Modal Bayar Cicilan Kasbon
+     Komponen Modal Bayar Cicilan Kasbon (gaya Filament)
      Modal untuk mencatat pembayaran cicilan kasbon (tunai/manual).
-     Menampilkan informasi kasbon saat ini dan form input jumlah bayar.
+     Dibuka/ditutup oleh openPayModal() / closePayModal() di bawah (toggle
+     kelas `hidden` pada #payModal), jadi markup modal ditulis sendiri —
+     bukan x-fi.modal (yang memakai openModal: hidden ↔ flex).
+     Hook: #payModal, #payModalBackdrop, #payForm, #pay-kasbon-code,
+     #pay-kasbon-amount, #pay-kasbon-remaining, #pay-kasbon-status,
+     #pay-amount, #pay-max-amount, #pay-quick-buttons, #pay-submit-btn.
      ═══════════════════════════════════════════════════════════════════════ --}}
-<div id="payModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="payModalTitle" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        {{-- Backdrop --}}
-        <div id="payModalBackdrop" class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
+<div id="payModal" class="fixed inset-0 z-50 hidden overflow-y-auto text-base" aria-labelledby="payModalTitle" role="dialog" aria-modal="true">
+    {{-- Backdrop --}}
+    <div id="payModalBackdrop" class="fixed inset-0 bg-gray-950/50" aria-hidden="true"></div>
 
-        {{-- Spacer --}}
-        <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-lg rounded-xl bg-white shadow-xl ring-1 ring-gray-950/5">
 
-        {{-- Modal Panel --}}
-        <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-surface-base rounded-xl shadow-xl sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+            {{-- Tombol tutup (X) --}}
+            <button type="button" onclick="closePayModal()" title="Tutup"
+                class="absolute end-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-500">
+                <x-fi.icon name="x-mark" class="h-5 w-5" />
+                <span class="sr-only">Tutup</span>
+            </button>
+
             {{-- Header --}}
-            <div class="px-6 pt-5 pb-4 border-b border-border-light">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-text-heading" id="payModalTitle">Bayar Cicilan Kasbon</h3>
-                    <button type="button" onclick="closePayModal()" class="text-text-label hover:text-text-primary transition-colors">
-                        <i class="fa-solid fa-xmark text-xl"></i>
-                    </button>
+            <div class="flex items-start gap-x-4 px-6 pe-16 pt-6">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <x-fi.icon name="banknotes" class="h-5 w-5" />
                 </div>
+                <h2 id="payModalTitle" class="pt-2 text-base font-semibold leading-6 text-gray-950">Bayar Cicilan Kasbon</h2>
             </div>
 
-            {{-- Body --}}
             <form id="payForm" method="POST" action="">
                 @csrf
-                <div class="px-6 py-4 space-y-4">
+                <div class="flex flex-col gap-y-5 px-6 py-6">
                     {{-- Info Kasbon --}}
-                    <div class="p-4 bg-surface-secondary rounded-lg border border-border-light">
-                        <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                                <span class="text-text-label">Kode Kasbon</span>
-                                <p class="font-semibold text-text-primary" id="pay-kasbon-code">-</p>
-                            </div>
-                            <div>
-                                <span class="text-text-label">Jumlah Awal</span>
-                                <p class="font-semibold text-text-primary" id="pay-kasbon-amount">-</p>
-                            </div>
-                            <div>
-                                <span class="text-text-label">Sisa Pembayaran</span>
-                                <p class="font-semibold text-error" id="pay-kasbon-remaining">-</p>
-                            </div>
-                            <div>
-                                <span class="text-text-label">Status</span>
-                                <p id="pay-kasbon-status">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-warning-light text-warning">Belum Dibayar</span>
-                                </p>
-                            </div>
+                    <dl class="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-4 text-sm ring-1 ring-inset ring-gray-950/5">
+                        <div>
+                            <dt class="text-gray-500">Kode Kasbon</dt>
+                            <dd class="font-semibold text-gray-950" id="pay-kasbon-code">-</dd>
                         </div>
-                    </div>
+                        <div>
+                            <dt class="text-gray-500">Jumlah Awal</dt>
+                            <dd class="font-semibold text-gray-950" id="pay-kasbon-amount">-</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Sisa Pembayaran</dt>
+                            <dd class="font-semibold text-red-600" id="pay-kasbon-remaining">-</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Status</dt>
+                            <dd id="pay-kasbon-status"><x-fi.badge color="warning">Belum Dibayar</x-fi.badge></dd>
+                        </div>
+                    </dl>
 
-                    {{-- Input Jumlah Bayar --}}
-                    <div>
-                        <label class="block text-sm font-medium text-text-primary mb-1">
-                            Jumlah Bayar <span class="text-error">*</span>
+                    {{-- Jumlah Bayar --}}
+                    <div class="grid gap-y-2">
+                        <label for="pay-amount" class="text-sm font-medium leading-6 text-gray-950">
+                            Jumlah Bayar<sup class="ms-0.5 text-red-600">*</sup>
                         </label>
-                        <input type="text" inputmode="numeric" name="amount" id="pay-amount"
-                            class="w-full border border-border-strong rounded-lg p-3 bg-surface-base text-text-input text-lg font-semibold focus:ring-2 focus:ring-primary focus:border-transparent"
-                            placeholder="Masukkan jumlah bayar" required min="1">
-                        <p class="text-xs text-text-label mt-1">
-                            Maksimal: <span id="pay-max-amount" class="font-semibold text-error">Rp 0</span>
+                        <x-fi.input inputmode="numeric" name="amount" id="pay-amount" prefix="Rp"
+                            class="!text-lg font-semibold" placeholder="Masukkan jumlah bayar" required min="1" />
+                        <p class="text-sm text-gray-500">
+                            Maksimal: <span id="pay-max-amount" class="font-semibold text-red-600">Rp 0</span>
                         </p>
                     </div>
 
-                    {{-- Quick Amount Buttons --}}
-                    <div>
-                        <label class="block text-xs text-text-label mb-2">Bayar Cepat:</label>
+                    {{-- Bayar Cepat --}}
+                    <div class="grid gap-y-2">
+                        <p class="text-sm text-gray-500">Bayar Cepat:</p>
                         <div class="flex flex-wrap gap-2" id="pay-quick-buttons">
-                            <button type="button" onclick="setPayAmount(this)"
-                                class="px-3 py-1.5 text-xs font-medium bg-surface-secondary border border-border-light rounded-lg hover:bg-primary-light hover:border-primary hover:text-primary transition-colors"
-                                data-amount="10000">Rp 10.000</button>
-                            <button type="button" onclick="setPayAmount(this)"
-                                class="px-3 py-1.5 text-xs font-medium bg-surface-secondary border border-border-light rounded-lg hover:bg-primary-light hover:border-primary hover:text-primary transition-colors"
-                                data-amount="25000">Rp 25.000</button>
-                            <button type="button" onclick="setPayAmount(this)"
-                                class="px-3 py-1.5 text-xs font-medium bg-surface-secondary border border-border-light rounded-lg hover:bg-primary-light hover:border-primary hover:text-primary transition-colors"
-                                data-amount="50000">Rp 50.000</button>
+                            @foreach ([10000, 25000, 50000] as $quick)
+                                <button type="button" onclick="setPayAmount(this)" data-amount="{{ $quick }}"
+                                    class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-950/10 transition hover:bg-gray-50">
+                                    Rp {{ number_format($quick, 0, ',', '.') }}
+                                </button>
+                            @endforeach
                             <button type="button" onclick="setPayFullAmount()"
-                                class="px-3 py-1.5 text-xs font-medium bg-success-light border border-success rounded-lg text-success hover:bg-success hover:text-white transition-colors">
+                                class="rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20 transition hover:bg-emerald-100">
                                 Lunasi Semua
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {{-- Footer --}}
-                <div class="px-6 py-4 bg-surface-secondary border-t border-border-light flex justify-end gap-3">
-                    <button type="button" onclick="closePayModal()"
-                        class="px-4 py-2 text-sm font-medium text-text-label bg-surface-base border border-border-light rounded-lg hover:bg-surface-secondary transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit" id="pay-submit-btn"
-                        class="px-4 py-2 text-sm font-medium text-white bg-success rounded-lg hover:bg-success-hover transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-money-bill-wave"></i>
-                        Bayar Cicilan
-                    </button>
+                {{-- Tombol di kanan: [Batal] [Bayar Cicilan] --}}
+                <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                    <x-fi.button color="gray" onclick="closePayModal()">Batal</x-fi.button>
+                    <x-fi.button type="submit" id="pay-submit-btn" color="success" icon="banknotes">Bayar Cicilan</x-fi.button>
                 </div>
             </form>
         </div>

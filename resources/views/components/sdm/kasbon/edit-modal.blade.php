@@ -1,107 +1,96 @@
 {{-- ═══════════════════════════════════════════════════════════════════════
-     Komponen Modal Edit Kasbon
-     Modal per-baris untuk mengedit kasbon yang tertunda.
-     Mengisi formulir dengan data kasbon saat ini dan menginisialisasi
-     visibilitas bidang karyawan/divisi berdasarkan jenis kasbon.
+     Komponen Modal Edit Kasbon (gaya Filament)
+     Modal per-baris (id editModal{kode}) untuk mengedit kasbon yang belum
+     dibayar. Visibilitas field karyawan/divisi/proyek mengikuti jenis kasbon
+     lewat toggleEmployeeSelect('edit_{kode}') (style.display pada wrapper).
      ═══════════════════════════════════════════════════════════════════════ --}}
-<x-modal id="editModal{{ $kasbon->kasbon_code }}" title="Edit Kasbon"
-    action="{{ route('kasbon.update', $kasbon->kasbon_code) }}" method="PUT" buttonText="Update">
+@php
+    $p = 'edit_' . $kasbon->kasbon_code;
+    $employeeOptions = $employees->map(fn ($e) => [
+        'value' => $e->employee_code,
+        'label' => $e->name . ' (' . $e->employee_code . ') - ' . ($e->employment_type === 'bulanan' ? 'KARYAWAN KANTOR' : 'TUKANG PROYEK'),
+        'type' => $e->employment_type,
+    ])->values();
+@endphp
 
-    {{-- Pilihan Jenis Kasbon --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jenis Kasbon <span class="text-error">*</span></label>
-        <select name="kasbon_type" id="edit_{{ $kasbon->kasbon_code }}_kasbon_type" class="w-full border rounded p-2"
-            onchange="toggleEmployeeSelect('edit_{{ $kasbon->kasbon_code }}')">
-            <option value="">Pilih Jenis</option>
-            <option value="personal" {{ $kasbon->kasbon_type === 'personal' ? 'selected' : '' }}>Per Orang</option>
-            <option value="team" {{ $kasbon->kasbon_type === 'team' ? 'selected' : '' }}>Per Tim/Divisi</option>
-        </select>
+<x-fi.modal id="editModal{{ $kasbon->kasbon_code }}" heading="Edit Kasbon" :description="$kasbon->kasbon_code" icon="pencil-square"
+    width="xl" :action="route('kasbon.update', $kasbon->kasbon_code)" method="PUT" submitLabel="Update">
+
+    {{-- Jenis Kasbon --}}
+    <x-fi.field label="Jenis Kasbon" for="{{ $p }}_kasbon_type" required>
+        <x-fi.select name="kasbon_type" id="{{ $p }}_kasbon_type" data-fi-select placeholder="Pilih Jenis"
+            :value="$kasbon->kasbon_type" :options="['personal' => 'Per Orang', 'team' => 'Per Tim/Divisi']"
+            onchange="toggleEmployeeSelect('{{ $p }}')" />
+    </x-fi.field>
+
+    {{-- Karyawan (Personal) --}}
+    <div id="{{ $p }}_employee_field" class="grid gap-y-2">
+        <p class="flex items-center gap-2 text-sm font-medium leading-6 text-gray-950">
+            <span>Karyawan<sup class="ms-0.5 text-red-600">*</sup></span>
+            <span id="{{ $p }}_employee_type_label" class="hidden rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"></span>
+        </p>
+        <x-fi.searchable-select name="employee_id" id="{{ $p }}_employee_id" invalidMessage="Karyawan" placeholder="Cari karyawan..."
+            :options="$employeeOptions" :extraData="['type']" :selected="$kasbon->employee_id" />
     </div>
 
-    {{-- Pilihan Karyawan (Personal) --}}
-    <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_employee_field">
-        <label class="flex items-center gap-2 text-text-primary mb-1">
-            <span>Karyawan <span class="text-error">*</span></span>
-            <span id="edit_{{ $kasbon->kasbon_code }}_employee_type_label"
-                class="hidden px-2 py-0.5 bg-primary-light text-primary text-xs rounded-full"></span>
-        </label>
-        <x-forms.searchable-select name="employee_id" id="edit_{{ $kasbon->kasbon_code }}_employee_id" :label="''"
-            invalidMessage="Karyawan" placeholder="Cari karyawan..."
-            :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' (' . $e->employee_code . ') - ' . ($e->employment_type === 'bulanan' ? 'KARYAWAN KANTOR' : 'TUKANG PROYEK'), 'type' => $e->employment_type])->values()"
-            :extraData="['type']"
-            :selected="$kasbon->employee_id" />
+    {{-- Divisi (Tim) --}}
+    <div id="{{ $p }}_division_field" style="display: none;">
+        <p class="mb-2 text-sm font-medium leading-6 text-gray-950">Divisi<sup class="ms-0.5 text-red-600">*</sup></p>
+        <x-fi.searchable-select name="division" id="{{ $p }}_division" invalidMessage="Divisi" placeholder="Cari divisi..."
+            :options="$divisions->map(fn ($d) => ['value' => $d->name, 'label' => $d->name])->values()" :selected="$kasbon->division" />
     </div>
 
-    {{-- Pilihan Divisi (Tim) --}}
-    <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_division_field" style="display: none;">
-        <label class="block text-text-primary mb-1">Divisi <span class="text-error">*</span></label>
-        <x-forms.searchable-select name="division" id="edit_{{ $kasbon->kasbon_code }}_division" :label="''"
-            invalidMessage="Divisi" placeholder="Cari divisi..."
-            :options="$divisions->map(fn($d) => ['value' => $d->name, 'label' => $d->name])->values()"
-            :selected="$kasbon->division" />
-    </div>
-
-    {{-- Pilihan Proyek (Tim, satu proyek sesuai data yang sudah ada) --}}
-    <div class="mb-3" id="edit_{{ $kasbon->kasbon_code }}_project_field" style="display: none;">
-        <div class="kasbon-project-section">
-            <div class="flex items-center justify-between cursor-pointer select-none kasbon-project-toggle mb-1 mr-3"
+    {{-- Proyek (Tim, satu proyek sesuai data yang sudah ada) --}}
+    <div id="{{ $p }}_project_field" style="display: none;">
+        <div class="kasbon-project-section grid gap-y-2 rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-950/5">
+            <div class="kasbon-project-toggle flex cursor-pointer select-none items-center justify-between"
                 onclick="toggleKasbonProjectSection(this)">
-                <span class="text-text-primary text-sm font-medium">Proyek <span class="text-error">*</span></span>
-                <i class="fa-solid fa-chevron-down kasbon-project-chevron text-xs text-text-secondary"></i>
+                <span class="text-sm font-medium text-gray-950">Proyek<sup class="ms-0.5 text-red-600">*</sup></span>
+                <x-fi.icon name="chevron-down" class="kasbon-project-chevron fa-chevron-down h-5 w-5 text-gray-400 transition-transform" />
             </div>
             <div class="kasbon-project-body hidden">
-                <x-forms.searchable-select
-                    name="project_names[]"
-                    id="edit_{{ $kasbon->kasbon_code }}_project"
-                    label=""
-                    invalidMessage="Proyek"
-                    :required="true"
-                    placeholder="Cari proyek..."
-                    :options="$projects->map(fn($p) => ['value' => $p, 'label' => $p])->values()"
+                <x-fi.searchable-select name="project_names[]" id="{{ $p }}_project" invalidMessage="Proyek" :required="true"
+                    placeholder="Cari proyek..." :options="$projects->map(fn ($pr) => ['value' => $pr, 'label' => $pr])->values()"
                     :selected="$kasbon->project_names[0] ?? ''" />
             </div>
-            <p class="text-xs text-text-secondary mt-1">Kasbon divisi otomatis lunas saat payroll proyek tersebut dibayar (tidak bisa dicicil).</p>
+            <p class="text-sm text-gray-500">Kasbon divisi otomatis lunas saat payroll proyek tersebut dibayar (tidak bisa dicicil).</p>
         </div>
     </div>
 
-    {{-- Tanggal Kasbon (untuk personal & tim) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal Kasbon <span class="text-error">*</span></label>
-        <input type="date" name="kasbon_date" id="edit_{{ $kasbon->kasbon_code }}_kasbon_date"
-            class="w-full border rounded p-2"
-            value="{{ $kasbon->kasbon_date?->format('Y-m-d') }}"
-            onchange="checkMaxKasbon('edit_{{ $kasbon->kasbon_code }}')">
+    <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+        {{-- Tanggal Kasbon (personal & tim) --}}
+        <x-fi.field label="Tanggal Kasbon" for="{{ $p }}_kasbon_date" required>
+            <x-fi.input type="date" name="kasbon_date" id="{{ $p }}_kasbon_date" :value="$kasbon->kasbon_date?->format('Y-m-d')"
+                onchange="checkMaxKasbon('{{ $p }}')" />
+        </x-fi.field>
+
+        {{-- Jumlah (personal & tim) --}}
+        <x-fi.field label="Jumlah Kasbon" for="{{ $p }}_amount" required>
+            <x-fi.input inputmode="numeric" name="amount" id="{{ $p }}_amount" prefix="Rp" class="kasbon-amount-input"
+                :value="$kasbon->amount" min="1000" step="1000" />
+        </x-fi.field>
     </div>
 
-    {{-- Input Jumlah (untuk kasbon personal & tim) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jumlah Kasbon <span class="text-error">*</span></label>
-        <input type="text" inputmode="numeric" name="amount" id="edit_{{ $kasbon->kasbon_code }}_amount"
-            class="w-full border rounded p-2 kasbon-amount-input"
-            value="{{ $kasbon->amount }}" min="1000" step="1000">
-    </div>
-
-    {{-- Detail Kasbon (Personal) --}}
-    <div id="edit_{{ $kasbon->kasbon_code }}_kasbon_detail_field" style="display: none;">
-        {{-- Bidang Tersembunyi untuk Periode (diisi ulang dari kasbon_date) --}}
-        <input type="hidden" name="week_number" id="edit_{{ $kasbon->kasbon_code }}_week_number"
-            value="{{ $kasbon->week_number }}">
-        <input type="hidden" name="period_start_date" id="edit_{{ $kasbon->kasbon_code }}_period_start_date"
+    {{-- Periode payroll (Personal; diisi ulang dari kasbon_date) --}}
+    <div id="{{ $p }}_kasbon_detail_field" style="display: none;">
+        <input type="hidden" name="week_number" id="{{ $p }}_week_number" value="{{ $kasbon->week_number }}">
+        <input type="hidden" name="period_start_date" id="{{ $p }}_period_start_date"
             value="{{ $kasbon->period_start_date ? $kasbon->period_start_date->format('Y-m-d') : '' }}">
-        <input type="hidden" name="period_end_date" id="edit_{{ $kasbon->kasbon_code }}_period_end_date"
+        <input type="hidden" name="period_end_date" id="{{ $p }}_period_end_date"
             value="{{ $kasbon->period_end_date ? $kasbon->period_end_date->format('Y-m-d') : '' }}">
     </div>
 
     {{-- Catatan --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Catatan</label>
-        <textarea name="notes" class="w-full border rounded p-2" rows="3" maxlength="500">{{ $kasbon->notes }}</textarea>
-    </div>
-</x-modal>
+    <x-fi.field label="Catatan" for="{{ $p }}_notes">
+        <x-fi.textarea id="{{ $p }}_notes" name="notes" rows="3" maxlength="500">{{ $kasbon->notes }}</x-fi.textarea>
+    </x-fi.field>
+</x-fi.modal>
 
-{{-- Inisialisasi visibilitas bidang karyawan saat halaman dimuat --}}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleEmployeeSelect('edit_{{ $kasbon->kasbon_code }}');
-    });
-</script>
+{{-- Inisialisasi visibilitas field sesuai jenis kasbon saat halaman dimuat --}}
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            toggleEmployeeSelect('{{ $p }}');
+        });
+    </script>
+@endpush

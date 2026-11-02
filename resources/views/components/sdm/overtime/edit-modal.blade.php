@@ -1,103 +1,73 @@
 {{--
-    Edit Overtime Modal Component
+    Edit Overtime Modal Component (gaya Filament) — satu modal per data lembur.
 
-    Displays a modal form for editing an existing overtime record.
-    One modal is rendered per overtime record (triggered from the table's Edit button).
-    Uses <x-forms.searchable-select> for employee selection with pre-selected value.
+    - Karyawan (x-fi.searchable-select, terpilih sesuai data). Input teks
+      pencarian ini harus menjadi input[type=text] PERTAMA di form karena JS
+      membaca nama karyawan dari sana untuk pesan validasi.
+    - Tanggal (data-original-date, data-overtime-id untuk validasi duplikat)
+    - Peringatan duplikat (#edit-duplicate-warning-{id})
+    - Jam Lembur, Tarif per Jam, Total Lembur otomatis, Keterangan
 
-    Sections:
-    - Searchable Select: Employee picker (pre-selected with current employee)
-    - Attendance Date: Date picker (pre-populated)
-    - Duplicate Warning: Client-side validation for existing attendance
-    - Overtime Hours: Numeric input (pre-populated)
-    - Overtime Rate: Rate per hour (pre-populated)
-    - Total Lembur: Auto-calculated (hours × rate), readonly
-    - Notes: Optional notes textarea (pre-populated)
-
-    Variables:
-    - $overtime: Attendance model instance with status 'lembur'
-    - $employees: Collection of Employee models with employee_code and name
-
-    Data Attributes (used by JavaScript for duplicate validation):
-    - data-original-date: Original attendance date (to skip validation if unchanged)
-    - data-overtime-id: Overtime record ID (to exclude from duplicate check)
+    Variables: $overtime (Attendance status 'lembur'), $employees
+    JS: resources/js/pages/sdm/overtime/index.js (initEditModalValidation,
+    calculateEditOvertimeTotal).
 --}}
-<x-modal id="editModal-{{ $overtime->id }}" title="Edit Lembur" action="{{ route('overtime.update', $overtime->id) }}"
-    method="POST" buttonText="Update">
-    @method('PUT')
+@php($oid = $overtime->id)
+<x-fi.modal id="editModal-{{ $oid }}" heading="Edit Lembur" :description="$overtime->employee->name ?? null" icon="pencil-square"
+    :action="route('overtime.update', $oid)" method="PUT" submitLabel="Update">
 
-    {{-- Searchable Select: Karyawan (pre-selected) --}}
-    <x-forms.searchable-select name="employee_id"
-        id="edit-employee_id-{{ $overtime->id }}" label="Karyawan" :required="true"
-        placeholder="Cari karyawan..."
-        :options="$employees->map(fn($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()"
-        selected="{{ $overtime->employee_id }}" />
+    {{-- Karyawan (pencarian, terpilih) --}}
+    <x-fi.searchable-select name="employee_id" id="edit-employee_id-{{ $oid }}" label="Karyawan" :required="true"
+        placeholder="Cari karyawan..." :selected="$overtime->employee_id"
+        :options="$employees->map(fn ($e) => ['value' => $e->employee_code, 'label' => $e->name . ' - ' . $e->employee_code])->values()" />
 
     {{-- Tanggal Lembur --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tanggal <span class="text-error">*</span></label>
-        <input type="date" name="attendance_date" id="edit-attendance-date-{{ $overtime->id }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            value="{{ $overtime->attendance_date ? \Carbon\Carbon::parse($overtime->attendance_date)->format('Y-m-d') : '' }}"
-            required data-original-date="{{ $overtime->attendance_date }}" data-overtime-id="{{ $overtime->id }}"
-            max="{{ date('Y-m-d') }}"
-            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Lembur hanya dapat diinput jika karyawan sudah absen dengan status
-            Hadir</p>
-    </div>
+    <x-fi.field label="Tanggal" for="edit-attendance-date-{{ $oid }}" required
+        hint="Lembur hanya dapat diinput jika karyawan sudah absen dengan status Hadir">
+        <x-fi.input type="date" name="attendance_date" id="edit-attendance-date-{{ $oid }}" required :max="date('Y-m-d')"
+            :value="$overtime->attendance_date ? \Carbon\Carbon::parse($overtime->attendance_date)->format('Y-m-d') : ''"
+            data-original-date="{{ $overtime->attendance_date }}" data-overtime-id="{{ $oid }}"
+            oninvalid="this.setCustomValidity('Tanggal tidak boleh kosong')" oninput="this.setCustomValidity('')" />
+    </x-fi.field>
 
-    {{-- Duplicate Warning: client-side validation --}}
-    <div id="edit-duplicate-warning-{{ $overtime->id }}"
-        class="hidden mb-3 p-3 bg-error-light border-l-4 border-error rounded">
-        <div class="flex items-start">
-            <svg class="w-5 h-5 text-error mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clip-rule="evenodd" />
-            </svg>
+    {{-- Peringatan duplikat (validasi sisi klien) --}}
+    <div id="edit-duplicate-warning-{{ $oid }}" class="hidden rounded-lg bg-red-50 p-4 ring-1 ring-inset ring-red-600/10">
+        <div class="flex gap-3">
+            <x-fi.icon name="exclamation-circle" class="h-5 w-5 shrink-0 text-red-600" />
             <div>
-                <p class="font-semibold text-error text-sm mb-1">Data Sudah Ada!</p>
-                <p id="edit-duplicate-warning-text-{{ $overtime->id }}" class="text-sm text-error"></p>
+                <p class="text-sm font-semibold text-red-800">Data Sudah Ada!</p>
+                <p id="edit-duplicate-warning-text-{{ $oid }}" class="mt-1 text-sm text-red-700"></p>
             </div>
         </div>
     </div>
 
-    {{-- Jam Lembur --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Jam Lembur <span class="text-error">*</span></label>
-        <input type="number" name="overtime_hours"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Contoh: 2.5" value="{{ $overtime->overtime_hours }}" required min="0.01" max="24"
-            step="0.01" id="edit-overtime-hours-{{ $overtime->id }}"
-            oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')"
-            oninput="calculateEditOvertimeTotal('{{ $overtime->id }}'); this.setCustomValidity('')">
-        <p class="text-xs text-text-secondary mt-1">Maksimal 24 jam</p>
+    <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+        {{-- Jam Lembur --}}
+        <x-fi.field label="Jam Lembur" for="edit-overtime-hours-{{ $oid }}" required hint="Maksimal 24 jam">
+            <x-fi.input type="number" name="overtime_hours" id="edit-overtime-hours-{{ $oid }}" placeholder="Contoh: 2.5"
+                suffix="jam" :value="$overtime->overtime_hours" required min="0.01" max="24" step="0.01"
+                oninvalid="this.setCustomValidity('Jam lembur tidak boleh kosong')"
+                oninput="calculateEditOvertimeTotal('{{ $oid }}'); this.setCustomValidity('')" />
+        </x-fi.field>
+
+        {{-- Tarif per Jam --}}
+        <x-fi.field label="Tarif per Jam" for="edit-overtime-rate-{{ $oid }}" required>
+            <x-fi.input inputmode="numeric" name="overtime_rate" id="edit-overtime-rate-{{ $oid }}" prefix="Rp"
+                placeholder="Masukkan tarif per jam" :value="number_format($overtime->overtime_rate, 0, ',', '.')" required min="0"
+                oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
+                oninput="formatCurrencyInput(this); calculateEditOvertimeTotal('{{ $oid }}'); this.setCustomValidity('')" />
+        </x-fi.field>
     </div>
 
-    {{-- Tarif per Jam (Rupiah currency format) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Tarif per Jam <span class="text-error">*</span></label>
-        <input type="text" inputmode="numeric" name="overtime_rate"
-            class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan tarif per jam" value="{{ number_format($overtime->overtime_rate, 0, ',', '.') }}"
-            required min="0" id="edit-overtime-rate-{{ $overtime->id }}"
-            oninvalid="this.setCustomValidity('Tarif tidak boleh kosong')"
-            oninput="formatCurrencyInput(this); calculateEditOvertimeTotal('{{ $overtime->id }}'); this.setCustomValidity('')">
-    </div>
-
-    {{-- Total Lembur (Auto-calculated) --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Total Lembur</label>
-        <input type="text" id="edit-overtime-total-{{ $overtime->id }}"
-            class="w-full border border-border-strong rounded p-2 bg-surface-secondary text-text-input" readonly
-            value="Rp {{ number_format($overtime->overtime_total, 0, ',', '.') }}">
-        <p class="text-xs text-text-secondary mt-1">Otomatis dihitung: Jam Lembur × Tarif</p>
-    </div>
+    {{-- Total Lembur (otomatis) --}}
+    <x-fi.field label="Total Lembur" for="edit-overtime-total-{{ $oid }}" hint="Otomatis dihitung: Jam Lembur × Tarif">
+        <x-fi.input id="edit-overtime-total-{{ $oid }}" readonly class="font-semibold"
+            :value="'Rp ' . number_format($overtime->overtime_total, 0, ',', '.')" />
+    </x-fi.field>
 
     {{-- Keterangan --}}
-    <div class="mb-3">
-        <label class="block text-text-primary mb-1">Keterangan</label>
-        <textarea name="notes" class="w-full border border-border-strong rounded p-2 bg-surface-base text-text-input"
-            placeholder="Masukkan keterangan (opsional)" rows="3">{{ $overtime->notes }}</textarea>
-    </div>
-</x-modal>
+    <x-fi.field label="Keterangan" for="edit-overtime-notes-{{ $oid }}">
+        <x-fi.textarea id="edit-overtime-notes-{{ $oid }}" name="notes" rows="3"
+            placeholder="Masukkan keterangan (opsional)">{{ $overtime->notes }}</x-fi.textarea>
+    </x-fi.field>
+</x-fi.modal>

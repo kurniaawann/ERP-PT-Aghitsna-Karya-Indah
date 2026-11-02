@@ -1,26 +1,23 @@
 {{-- =====================================================================
-     Halaman: Data Lembur (overtime)
-     Tujuan: Menampilkan daftar data lembur karyawan dengan fitur pencarian,
-             tambah, edit, hapus massal, dan pagination.
-             Catatan: data lembur disimpan pada tabel attendances
-             dengan status = 'lembur'.
+     Halaman: Data Lembur (overtime, gaya Filament)
+     Tujuan: Menampilkan daftar data lembur karyawan dengan filter bulan/tahun,
+             pencarian, tambah, edit, hapus massal / satu data, dan pagination.
+             Catatan: data lembur disimpan pada tabel attendances dengan
+             status = 'lembur'.
 
      Data dari OvertimeController@index:
-     - $overtimes         : LengthAwarePaginator data lembur (sudah dipaginasi)
-     - $employees         : Collection seluruh karyawan untuk pilihan di form
-                            modal tambah/edit
-     - $search            : Kata kunci pencarian saat ini (nullable)
-     - $month             : Filter bulan aktif (nullable)
-     - $year              : Filter tahun aktif (nullable)
-     - $existingAttendance: Data absensi yang sudah ada untuk validasi duplikat
-                            di sisi klien (via window.overtimeExistingAttendance)
+     - $overtimes          : LengthAwarePaginator data lembur (sudah dipaginasi)
+     - $employees          : karyawan untuk pilihan di modal tambah/edit
+     - $search, $month, $year : filter aktif (nullable)
+     - $existingAttendance : absensi yang sudah ada untuk validasi sisi klien
+                             (window.overtimeExistingAttendance)
 
      Komponen yang di-include:
-     - components.sdm.overtime.table      : tabel daftar lembur
-     - components.sdm.overtime.add-modal  : modal tambah lembur
-     - components.sdm.overtime.edit-modal : modal edit per lembur (loop)
-     - x-pagination                       : kontrol pagination
-     - x-modal (deleteModal)              : konfirmasi hapus massal
+     - x-sdm.allowance-tabs (admin)        : tab Lembur | Kasbon
+     - components.sdm.overtime.table       : toolbar + tabel + paginasi
+     - components.sdm.overtime.add-modal   : modal tambah lembur
+     - components.sdm.overtime.edit-modal  : modal edit per lembur (loop)
+     - x-fi.modal / x-fi.delete-row-modal  : konfirmasi hapus massal / satu data
 
      JS yang di-load:
      - @vite('resources/js/pages/sdm/overtime/index.js')
@@ -30,88 +27,48 @@
 @section('title', 'PT Aghitsna Karya Indah - Data Lembur')
 
 @section('content')
-    @if (auth()->user()->isAdmin())
-        <x-sdm.allowance-tabs active="overtime" />
-    @endif
-    {{-- ============================================================
-         SECTION: Header
-         Judul halaman + toolbar aksi.
-         ============================================================ --}}
-    {{-- Page Header --}}
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow">
-        <h1 class="text-2xl font-semibold text-text-primary mb-4">Data Lembur</h1>
+    <div class="flex flex-col gap-y-6">
 
-        {{-- ============================================================
-             SECTION: Filter / Toolbar
-             Form pencarian (GET ke overtime.index) + tombol aksi.
-             ============================================================ --}}
-        {{-- Search & Action Buttons --}}
-        <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
-            {{-- Search Form --}}
-            <form method="GET" action="{{ route('overtime.index') }}"
-                class="w-full min-[1280px]:w-auto min-[1280px]:flex-1 flex flex-col min-[1280px]:flex-row gap-3">
-                <x-filters.month-filter :value="request('month')" />
-                <x-filters.year-filter :value="request('year')" />
-                <x-filters.search-input :value="request('search')" placeholder="Cari lembur..." />
-            </form>
+        {{-- SECTION: Header Halaman + Aksi --}}
+        <x-fi.page-header heading="Data Lembur"
+            :breadcrumbs="['Human Resource' => null, 'Tunjangan & Potongan' => null, 'Lembur' => route('overtime.index')]">
+            <x-slot:actions>
+                <x-fi.button icon="plus" onclick="openModal('addModal')">Tambah Lembur</x-fi.button>
+            </x-slot:actions>
+        </x-fi.page-header>
 
-            {{-- Action Buttons --}}
-            <div class="flex items-center gap-2 mt-2 min-[1280px]:mt-0 w-full min-[1280px]:w-auto">
-                <div class="flex flex-col min-[1280px]:flex-row gap-2 w-full min-[1280px]:w-auto">
-                    <x-buttons.delete-button modalId="deleteModal" />
+        {{-- SECTION: Tab Lembur | Kasbon (admin) --}}
+        @if (auth()->user()->isAdmin())
+            <x-sdm.allowance-tabs active="overtime" />
+        @endif
 
-                    <x-buttons.add-button modalId="addModal" text="Tambah Data" />
-                </div>
-            </div>
-        </div>
-
-        {{-- ============================================================
-             SECTION: Table
-             Menampilkan daftar data lembur beserta checkbox seleksi massal.
-             ============================================================ --}}
-        {{-- Overtime Table Component --}}
+        {{-- SECTION: Tabel (+ filter, hapus massal, paginasi) --}}
         @include('components.sdm.overtime.table', ['overtimes' => $overtimes])
-
     </div>
 
-    {{-- ============================================================
-         SECTION: Pagination
-         Kontrol navigasi halaman daftar lembur.
-         ============================================================ --}}
-    {{-- Pagination --}}
-    <x-pagination :paginator="$overtimes" />
-
-    {{-- ============================================================
-         SECTION: Modals
-         - add-modal   : form tambah lembur.
-         - edit-modal  : satu modal edit per lembur (loop).
-         - deleteModal : konfirmasi hapus massal.
-         ============================================================ --}}
-    {{-- Add Modal --}}
+    {{-- SECTION: Modal Tambah --}}
     @include('components.sdm.overtime.add-modal', ['employees' => $employees])
 
-    {{-- Edit Modals (one per overtime record on current page) --}}
+    {{-- SECTION: Modal Edit (satu per data lembur di halaman ini) --}}
     @foreach ($overtimes as $overtime)
         @include('components.sdm.overtime.edit-modal', ['overtime' => $overtime])
     @endforeach
 
-    {{-- Bulk Delete Confirmation Modal --}}
-    <x-modal id="deleteModal" title="Konfirmasi Hapus" :confirmDelete="true" onConfirm="submitDeleteForm()"
-        buttonText="Ya, Hapus">
+    {{-- SECTION: Modal Konfirmasi Hapus Massal --}}
+    <x-fi.modal id="deleteModal" heading="Hapus Data Terpilih" icon="trash" color="danger" width="md"
+        onConfirm="submitDeleteForm()" submitLabel="Ya, Hapus">
         Apakah kamu yakin ingin menghapus data yang dipilih?
-    </x-modal>
+    </x-fi.modal>
 
-    {{-- ============================================================
-         SECTION: Scripts
-         Data absensi yang sudah ada diteruskan ke JS melalui
-         window.overtimeExistingAttendance untuk validasi duplikat.
-         Modul JS halaman lembur di-load via Vite.
-         ============================================================ --}}
-    {{-- Pass existing attendance data to JavaScript for client-side duplicate validation --}}
-    <script>
-        window.overtimeExistingAttendance = @json($existingAttendance ?? []);
-    </script>
+    {{-- SECTION: Modal Konfirmasi Hapus 1 Lembur (menu Aksi ⋮ tiap baris) --}}
+    {{-- Mengirim satu id ke route('overtime.destroy') yang sama dengan hapus massal (ids[]). --}}
+    <x-fi.delete-row-modal :action="route('overtime.destroy')" field="ids" heading="Hapus Lembur" />
 
-    {{-- JavaScript --}}
-    @vite('resources/js/pages/sdm/overtime/index.js')
+    @push('scripts')
+        {{-- Absensi yang sudah ada → validasi duplikat sisi klien --}}
+        <script>
+            window.overtimeExistingAttendance = @json($existingAttendance ?? []);
+        </script>
+        @vite('resources/js/pages/sdm/overtime/index.js')
+    @endpush
 @endsection
