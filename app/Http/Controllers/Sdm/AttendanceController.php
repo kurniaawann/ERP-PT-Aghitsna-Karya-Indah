@@ -43,6 +43,20 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Menampilkan halaman form Tambah Absensi (grid karyawan × tanggal).
+     * Penyimpanan tetap lewat store().
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        $employees = $this->attendanceService->getAllEmployees();
+        $existingAttendance = $this->attendanceService->getExistingAttendance();
+
+        return view('pages.sdm.attendance-form', compact('employees', 'existingAttendance'));
+    }
+
+    /**
      * Menyimpan data absensi massal untuk beberapa karyawan dalam rentang tanggal.
      *
      * Memvalidasi input melalui StoreAttendanceRequest, memeriksa duplikat,

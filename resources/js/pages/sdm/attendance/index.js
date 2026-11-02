@@ -4,7 +4,7 @@
  * Menangani semua fungsionalitas interaktif untuk halaman Data Absensi:
  * - Checkbox Pilih Semua & hapus massal
  * - Validasi duplikat absensi di sisi klien
- * - Validasi form Tambah (pemilihan karyawan + rentang tanggal)
+ * - Validasi form Tambah (halaman Tambah Absensi: pemilihan karyawan + rentang tanggal)
  * - Validasi rentang tanggal dengan koreksi otomatis
  * - Penanganan submit form Edit
  *
@@ -108,6 +108,9 @@ async function loadFilterWeeks() {
 
         filterWeekSelect.appendChild(option);
     });
+
+    // Opsi diganti lewat DOM → set ulang value agar label tombol fi-select ikut diperbarui
+    filterWeekSelect.value = filterWeekSelect.value;
 }
 
 // ==========================================
@@ -186,7 +189,7 @@ window.submitDeleteForm = function () {
 function validateDuplicateAttendance() {
     var duplicateWarning = document.getElementById('duplicate-warning');
     var duplicateWarningText = document.getElementById('duplicate-warning-text');
-    var addSubmitBtn = document.querySelector('#addModal button[type="submit"]');
+    var addSubmitBtn = document.querySelector('#attendanceAddForm button[type="submit"]');
     var startDateInput = document.getElementById('start_date');
     var endDateInput = document.getElementById('end_date');
 
@@ -310,7 +313,7 @@ function validateDuplicateAttendance() {
  *   sembunyikan error multi-select.
  */
 function initAddFormHandler() {
-    var addModalForm = document.querySelector('#addModal form');
+    var addModalForm = document.getElementById('attendanceAddForm');
     if (!addModalForm) return;
 
     addModalForm.addEventListener('submit', function(e) {
@@ -358,7 +361,7 @@ function initAddFormHandler() {
     // checkbox opsi, Pilih Semua, atau hapus tag), bukan hanya saat tanggal
     // berubah / submit. Tanpa ini peringatan "Data Absensi Sudah Ada!"
     // bertahan basi meski karyawan sebelumnya sudah dihapus & diganti.
-    var addMultiSelectWrapper = document.querySelector('#addModal .searchable-multi-select-wrapper');
+    var addMultiSelectWrapper = document.querySelector('#attendanceAddForm .searchable-multi-select-wrapper');
     if (addMultiSelectWrapper) {
         addMultiSelectWrapper.addEventListener('change', function(e) {
             if (e.target.classList.contains('searchable-multi-checkbox') ||
@@ -464,9 +467,9 @@ const ATTENDANCE_STATUSES = [
  * @returns {Array<{code: string, name: string}>}
  */
 function getSelectedEmployees() {
-    var container = document.querySelector('#addModal .searchable-multi-hidden-inputs');
+    var container = document.querySelector('#attendanceAddForm .searchable-multi-hidden-inputs');
     var hiddenInputs = container ? container.querySelectorAll('input[type="hidden"]') : [];
-    var wrapper = document.querySelector('#addModal .searchable-multi-select-wrapper');
+    var wrapper = document.querySelector('#attendanceAddForm .searchable-multi-select-wrapper');
     var options = wrapper ? wrapper.querySelectorAll('.searchable-multi-options .searchable-multi-option') : [];
 
     var employees = [];
@@ -532,7 +535,7 @@ function getRangeDates() {
 function buildStatusSelect(name, selectedValue) {
     var select = document.createElement('select');
     select.name = name;
-    select.className = 'w-full border border-border-strong rounded px-1.5 py-1 text-xs';
+    select.className = 'fi-control min-w-[5.5rem] !px-2 !py-1 !text-xs';
 
     ATTENDANCE_STATUSES.forEach(function (s) {
         var option = document.createElement('option');
@@ -569,37 +572,37 @@ function renderAttendanceGrid() {
 
     if (employees.length === 0 || dates.length === 0) {
         container.innerHTML =
-            '<p class="text-sm text-text-secondary">Pilih karyawan dan rentang tanggal untuk menampilkan grid absensi.</p>';
+            '<p class="text-sm text-gray-500">Pilih karyawan dan rentang tanggal untuk menampilkan grid absensi.</p>';
         return;
     }
 
     var wrap = document.createElement('div');
-    wrap.className = 'rounded-lg border border-border';
+    wrap.className = 'overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5';
 
     var headerRow = document.createElement('div');
-    headerRow.className = 'flex items-center justify-between px-3 py-2 bg-surface-secondary rounded-t-lg';
+    headerRow.className = 'flex items-center justify-between gap-3 border-b border-gray-200 px-6 py-4';
     headerRow.innerHTML =
-        '<span class="text-sm font-medium">Absensi Harian</span>' +
-        '<button type="button" id="reset-attendance-grid" class="text-xs text-primary hover:underline">Reset semua ke Hadir</button>';
+        '<span class="text-base font-semibold text-gray-950">Absensi Harian</span>' +
+        '<button type="button" id="reset-attendance-grid" class="text-sm font-medium text-primary hover:underline">Reset semua ke Hadir</button>';
 
     var tableWrap = document.createElement('div');
-    tableWrap.className = 'overflow-x-auto';
+    tableWrap.className = 'relative overflow-x-auto';
 
     var table = document.createElement('table');
-    table.className = 'w-full text-xs';
+    table.className = 'w-full divide-y divide-gray-200 text-sm';
 
     var thead = document.createElement('thead');
     var trHead = document.createElement('tr');
-    trHead.className = 'bg-surface-secondary text-left text-text-secondary';
+    trHead.className = 'bg-gray-50 text-start text-gray-950';
 
     var thEmp = document.createElement('th');
-    thEmp.className = 'px-3 py-2 font-medium whitespace-nowrap';
+    thEmp.className = 'sticky left-0 z-10 bg-gray-50 px-4 py-3 text-start font-semibold whitespace-nowrap sm:ps-6';
     thEmp.textContent = 'Karyawan';
     trHead.appendChild(thEmp);
 
     dates.forEach(function (d) {
         var th = document.createElement('th');
-        th.className = 'px-2 py-2 text-center font-medium whitespace-nowrap';
+        th.className = 'px-2 py-3 text-center font-semibold whitespace-nowrap';
         th.textContent = d.label;
         trHead.appendChild(th);
     });
@@ -608,20 +611,24 @@ function renderAttendanceGrid() {
     table.appendChild(thead);
 
     var tbody = document.createElement('tbody');
+    tbody.className = 'divide-y divide-gray-200';
+
+    // Status dari old input (validasi server gagal) agar pilihan tidak kembali ke Hadir
+    var oldAttendance = config.oldAttendance || {};
     employees.forEach(function (emp) {
         var tr = document.createElement('tr');
-        tr.className = 'border-t border-border';
+        tr.className = 'bg-white';
 
         var tdEmp = document.createElement('td');
-        tdEmp.className = 'px-3 py-2 whitespace-nowrap';
+        tdEmp.className = 'sticky left-0 z-10 bg-white px-4 py-2 whitespace-nowrap sm:ps-6';
         tdEmp.innerHTML = '<div class="font-medium">' + emp.name + '</div>' +
-            '<div class="text-xs text-text-tertiary">' + emp.code + '</div>';
+            '<div class="text-xs text-gray-500">' + emp.code + '</div>';
         tr.appendChild(tdEmp);
 
         dates.forEach(function (d) {
             var td = document.createElement('td');
             td.className = 'px-2 py-2';
-            td.appendChild(buildStatusSelect('attendance[' + emp.code + '][' + d.iso + ']', 'hadir'));
+            td.appendChild(buildStatusSelect('attendance[' + emp.code + '][' + d.iso + ']', (oldAttendance[emp.code] || {})[d.iso] || 'hadir'));
             tr.appendChild(td);
         });
 
@@ -734,6 +741,13 @@ document.addEventListener('DOMContentLoaded', function () {
     initAddFormHandler();
     initDateValidation();
     initEditFormHandlers();
+
+    // Halaman Tambah dibuka ulang dengan old input (validasi server gagal) →
+    // tampilkan lagi grid & cek duplikat untuk karyawan + tanggal yang terisi
+    if (document.getElementById('attendanceAddForm')) {
+        renderAttendanceGrid();
+        validateDuplicateAttendance();
+    }
 
     // Initialize searchable single-select components (used in edit modal)
     if (typeof initSearchableSelects === 'function') {

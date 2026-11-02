@@ -2,7 +2,7 @@
     Badge bergaya Filament.
 
     Props:
-    - color : gray | primary | success | warning | danger (default gray)
+    - color : gray | primary | success | warning | danger | purple (default gray)
     - icon  : nama ikon x-fi.icon (opsional)
     - href  : bila diisi dirender sebagai <a> (badge yang bisa diklik)
 --}}
@@ -18,6 +18,7 @@
         'success' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
         'warning' => 'bg-amber-50 text-amber-700 ring-amber-600/20',
         'danger' => 'bg-red-50 text-red-700 ring-red-600/10',
+        'purple' => 'bg-purple-50 text-purple-700 ring-purple-700/10',
         default => 'bg-gray-50 text-gray-600 ring-gray-600/10',
     };
 

@@ -164,9 +164,9 @@ function createMultiSelectState(wrapper) {
 
         selectedValues.forEach(function (label, value) {
             const tag = document.createElement('span');
-            tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-primary-light text-primary text-xs font-medium rounded-full';
+            tag.className = 'inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10';
             tag.innerHTML = label +
-                ' <button type="button" class="searchable-multi-tag-remove hover:text-error" data-value="' + value + '">&times;</button>';
+                ' <button type="button" class="searchable-multi-tag-remove text-blue-400 hover:text-red-600" data-value="' + value + '">&times;</button>';
             tagsContainer.appendChild(tag);
         });
     };
