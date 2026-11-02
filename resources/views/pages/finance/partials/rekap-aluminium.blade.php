@@ -13,6 +13,8 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <form method="GET" action="{{ route('rekap.index', ['tab' => 'aluminium']) }}"
                 class="w-full min-[1530px]:w-auto min-[1530px]:flex-1 flex flex-col min-[1530px]:flex-row gap-3">
+                {{-- Form GET membuang query string pada action → tab dikirim lewat input --}}
+                <input type="hidden" name="tab" value="aluminium">
                 <x-filters.month-filter :value="request('month')" responsive="custom" />
                 <x-filters.year-filter :value="request('year')" responsive="custom" />
                 <x-filters.search-input :value="request('search')" placeholder="Cari invoice, penerima, atau proyek..." responsive="custom" />

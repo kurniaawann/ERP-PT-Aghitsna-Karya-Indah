@@ -14,6 +14,8 @@
         <div class="mb-4 flex items-center justify-between flex-wrap gap-3">
             <form method="GET" action="{{ route('rekap.index', ['tab' => 'pengeluaran']) }}"
                 class="w-full min-[1520px]:w-auto min-[1520px]:flex-1 flex flex-col min-[1520px]:flex-row gap-3">
+                {{-- Form GET membuang query string pada action → tab dikirim lewat input --}}
+                <input type="hidden" name="tab" value="pengeluaran">
 
                 <x-filters.select-filter name="category" :value="request('category')" :options="$categories" placeholder="Semua Kategori" responsive="custom" />
                 <x-filters.month-filter :value="request('month')" responsive="custom" />

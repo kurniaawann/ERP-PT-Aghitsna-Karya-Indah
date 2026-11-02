@@ -157,12 +157,6 @@
             padding-left: 8px !important;
         }
 
-        .item-code {
-            font-weight: bold;
-            text-align: left;
-            padding-left: 8px !important;
-        }
-
         .currency-symbol {
             width: 15%;
             text-align: left;
@@ -354,22 +348,13 @@
 
                         @php
                             $itemNo = data_get($item, 'no', $loop->iteration);
-                            $itemKode = trim((string) data_get($item, 'kode'));
                         @endphp
 
-                        {{-- Kode Item (judul grup) — hanya bila kode diisi --}}
-                        @if ($itemKode !== '')
-                            <tr>
-                                <td class="text-center">{{ $itemNo }}.</td>
-                                <td colspan="7" class="item-code">{{ $itemKode }}</td>
-                            </tr>
-                        @endif
-
-                        {{-- Detail Sub Item. Tanpa kode, keterangan pertama langsung
-                             sejajar dengan nomor (revisi klien). --}}
+                        {{-- Detail Sub Item. Kode pekerjaan tidak ditampilkan; keterangan
+                             pertama selalu sejajar dengan nomor (revisi klien). --}}
                         @foreach (data_get($item, 'details', []) as $detail)
                             <tr>
-                                <td class="text-center">{{ $itemKode === '' && $loop->first ? $itemNo . '.' : '' }}</td>
+                                <td class="text-center">{{ $loop->first ? $itemNo . '.' : '' }}</td>
                                 <td>{{ $detail['keterangan'] ?? '-' }}</td>
                                 <td class="text-center">{{ $detail['volume'] }}</td>
                                 <td class="text-center">{!! $detail['satuan'] ?? '-' !!}</td>
